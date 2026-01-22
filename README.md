@@ -2,109 +2,108 @@
   <p align="center">
    <img width="150" height="150" src="app-icon.png" alt="Logo">
   </p>
-	<h1 align="center"><b>Music Assistant Companion</b></h1>
-	 <p align="center" style="margin-bottom:0px !important;">
-	<!-- <a href="https://github.com/music-assistant/desktop-companion/releases/latest">
-	  <img src="https://img.shields.io/github/release/music-assistant/desktop-companion?display_name=tag&include_prereleases&label=Latest%20version" alt="latest version">
-	</a>
-	<a href="https://discord.gg/kaVm8hGpne">
-	  <img src="https://img.shields.io/discord/753947050995089438?label=Discord&logo=discord&color=5865F2" alt="discord">
-	</a>
-	<a href="https://github.com/sponsors/music-assistant">
-	  <img src="https://img.shields.io/github/sponsors/music-assistant?label=Sponsors" alt="sponsor">
-	</a>
-	<a href="https://github.com/music-assistant/desktop-companion/blob/main/LICENSE">
-    	<img src="https://img.shields.io/static/v1?label=Licence&message=Apache-2.0&color=000" />
-  	</a>
-	<img src="https://img.shields.io/static/v1?label=Bundled%20Size&message=9.45MB&color=0974B4" />
-  	<img src="https://img.shields.io/static/v1?label=Stage&message=Alpha&color=2BB4AB" /> -->
-	 </p>
+	<h1 align="center"><b>Music Assistant Desktop Companion</b></h1>
 	<p align="center">
-		The desktop companion app for Music Assistant!
+		A native desktop companion app for Music Assistant
     <br />
     <a href="https://music-assistant.io/"><strong>Music Assistant »</strong></a>
     <br />
     <br />
     <b>Download for </b>
-    macOS (<a href="https://github.com/music-assistant/desktop-companion/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_aarch64.dmg">Apple Silicon</a> |
-    <a href="https://github.com/music-assistant/desktop-companion/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_x64.dmg">Intel</a>) ·
-		<a href="https://github.com/music-assistant/desktop-companion/releases/download/v0.0.70/Music.Assistant.Companion_0.0.45_x64_en-US.msi">Windows</a> ·
-    Linux (<a href="https://github.com/music-assistant/desktop-companion/releases/download/v0.0.70/music-assistant-companion_0.0.45_amd64.deb">Debian</a> | <a href="https://github.com/music-assistant/desktop-companion/releases/download/v0.0.70/music-assistant-companion_0.0.45_amd64.AppImage">Other</a>)
-    <br />
+    macOS (<a href="https://github.com/music-assistant/desktop-companion/releases/latest">Apple Silicon</a> |
+    <a href="https://github.com/music-assistant/desktop-companion/releases/latest">Intel</a>) ·
+		<a href="https://github.com/music-assistant/desktop-companion/releases/latest">Windows</a> ·
+    Linux (<a href="https://github.com/music-assistant/desktop-companion/releases/latest">Debian</a> | <a href="https://github.com/music-assistant/desktop-companion/releases/latest">AppImage</a>)
   </p>
 </p>
 
-## Setup
+## Features
 
-When starting the app for the first time you are asked about some information about the Music Assistant Server.
+- **Native Audio Playback** - High-quality audio output via Sendspin protocol with device selection
+- **System Tray Integration** - Control playback and see what's playing from the system tray
+- **OS Media Controls** - Integrates with macOS Control Center, Windows Media Controls, and Linux MPRIS
+- **Discord Rich Presence** - Show what you're listening to on Discord
+- **Server Discovery** - Automatic discovery of Music Assistant servers via mDNS
 
-![image](https://github.com/music-assistant/desktop-companion/assets/74015378/cb97aa3e-12d8-4992-bfc6-0b58cedb81da)
+## Architecture
 
-> [!IMPORTANT]
-> The app requires that the webserver is exposed. You can set that in the settings:
-> ![How to fix](https://raw.githubusercontent.com/music-assistant/desktop-companion/main/cant_connect_error.gif)
+The companion app wraps the Music Assistant frontend (hosted on your MA server) in a native webview, while providing native features that aren't possible in a browser:
 
-<!-- ## Features -->
-
-<!-- ### [Squeezelite](https://en.wikipedia.org/wiki/Squeezelite)
-
-Squeezelite comes embedded in the application. This allows playback of music to your computer. The player name will be the same as your computer name. You can change the name in Music Assistant settings. You can also toggle if you wish to enable squeezelite at all.
-
-To allow playback to the companion app you have to enable the slimproto provider in the Music Assistant settings. -->
-
-<!-- ### [Discord Rich Presence](https://discord.com/developers/docs/rich-presence/how-to#so-what-is-it)
-
-Like the Spotify app, the Music Assistant app can do Discord Rich Presence.
-
-Example of Discord Rich Presence:
-
-![Example of Discord Rich Presence](https://github.com/music-assistant/companion/assets/74015378/8de18bac-b963-4aba-bb61-5730b41759a9) -->
+- Native Sendspin client for bit-perfect audio playback
+- System-level media controls and Now Playing integration
+- Background operation with tray icon
+- Auto-start on system boot
 
 ## Installation
 
 ### Windows
 
-You can download the .msi installer from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
+Download the .msi installer from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
 
-### MacOS
+### macOS
 
-You can download the .dmg from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
+Download the .dmg from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
 
-Or you can download it using homebrew: `brew install music-assistant/tap/companion`
+Or install via Homebrew: `brew install music-assistant/tap/companion`
 
-<!-- ### Arch Linux
+### Debian / Ubuntu
 
-This app is on the arch aur with the name `music-assistant-desktop` or `music-assistant-desktop-bin` for just the binary
+Download the .deb from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
 
-You can install it with yay: `yay music-assistant-desktop-bin` -->
+### Other Linux
 
-### Debian (And debian based distrobutions)
+Download the AppImage from the [releases](https://github.com/music-assistant/desktop-companion/releases/latest/).
 
-You can download the .deb from the [releases](https://github.com/music-assistant/companion/releases/latest/).
+## Development
 
-### All the other linux distros
+### Prerequisites
 
-You can download the AppImage from the [releases](https://github.com/music-assistant/companion/releases/latest/).
+- [Rust](https://www.rust-lang.org/tools/install) (1.77.2 or later)
+- [Node.js](https://nodejs.org/) (for Tauri CLI)
+- Platform-specific dependencies (see [Tauri Prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites))
 
-### From source
-
-If you wish to build the app yourself you should first follow [the offical tauri prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites)
-
-First, clone the repository and install the node dependencies. You can do this by running the following commands:
+### Setup
 
 ```bash
-$ git clone https://github.com/music-assistant/desktop-companion
-$ cd desktop-companion
-$ yarn install
+# Clone the repository
+git clone https://github.com/music-assistant/desktop-companion
+cd desktop-companion
+
+# Install dependencies
+yarn install
+
+# Run in development mode
+yarn dev
+
+# Build for production
+yarn build
 ```
 
-And then build the app
+### Project Structure
 
-`$ yarn tauri build`
+```
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs              # Main Tauri application
+│   │   ├── sendspin/           # Native Sendspin client
+│   │   ├── media_controls.rs   # OS media controls integration
+│   │   ├── now_playing.rs      # Now-playing state management
+│   │   ├── discord_rpc.rs      # Discord Rich Presence
+│   │   ├── mdns_discovery.rs   # Server discovery
+│   │   └── settings.rs         # Settings management
+│   ├── resources/              # HTML resources for settings/login
+│   ├── icons/                  # App icons
+│   └── Cargo.toml              # Rust dependencies
+└── package.json                # Node.js dependencies (Tauri CLI)
+```
 
-# Contributing
+## Contributing
 
-Check the CONTRIBUTING.md file
+Check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+## License
+
+[Apache-2.0](LICENSE)
 
 ---
 

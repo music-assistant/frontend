@@ -1,3 +1,0 @@
-include README.md
-graft music_assistant_frontend
-recursive-exclude * *.py[co]

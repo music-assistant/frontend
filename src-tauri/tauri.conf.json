@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "identifier": "io.music-assistant.companion",
   "mainBinaryName": "music-assistant-companion",
-  "build": {},
+  "build": {
+    "frontendDist": "resources"
+  },
   "app": {
     "withGlobalTauri": true,
     "windows": [
