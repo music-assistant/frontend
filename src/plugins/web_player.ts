@@ -6,12 +6,14 @@ import { resetSendspinConnection } from "./sendspin-connection";
 export enum WebPlayerMode {
   DISABLED = "disabled",
   CONTROLS_ONLY = "controls_only",
-  SENDSPIN = "sendspin",
+  SENDSPIN_ONLY = "sendspin_only",
+  SENDSPIN_WITH_CONTROLS = "sendspin_with_controls",
 }
 
 // Helper to check if a mode is a playback mode (handles actual audio)
 export const isPlaybackMode = (mode: WebPlayerMode) =>
-  mode === WebPlayerMode.SENDSPIN;
+  mode === WebPlayerMode.SENDSPIN_ONLY ||
+  mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS;
 
 let unsubSubscriptions: (() => void)[] = [];
 
@@ -206,9 +208,13 @@ export const webPlayer = reactive({
       }
     }
 
-    if (mode === WebPlayerMode.SENDSPIN) {
+    if (isPlaybackMode(mode)) {
       // Sendspin player is handled separately through the SendspinPlayer component
-      this.audioSource = WebPlayerMode.CONTROLS_ONLY;
+      // audioSource determines whether browser media controls are shown
+      this.audioSource =
+        mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS
+          ? WebPlayerMode.CONTROLS_ONLY
+          : WebPlayerMode.DISABLED;
       const saved_player_id = window.localStorage.getItem(
         "sendspin_webplayer_id",
       );
