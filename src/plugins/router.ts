@@ -394,6 +394,7 @@ router.afterEach((to, from) => {
   console.debug("navigating from ", from.path, " to ", to.path);
   store.prevRoute = from.path;
 
+  // Notify HA of route change for URL sync (uses prefix from HA route property)
   if (store.isIngressSession) {
     notifyHARouteChange(to.fullPath);
   }

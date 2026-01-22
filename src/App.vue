@@ -40,9 +40,9 @@ import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import {
-  getKioskModePreference,
-  subscribeToHAProperties,
-  unsubscribeFromHAProperties,
+    getKioskModePreference,
+    subscribeToHAProperties,
+    unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";

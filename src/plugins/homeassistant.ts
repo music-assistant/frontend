@@ -172,6 +172,14 @@ export function hideHAMenu(): void {
 
   saveKioskModePreference(true);
 
+  if (routerInstance) {
+    storedRouter = routerInstance;
+  }
+
+  if (state.isSubscribed) {
+    unsubscribeFromHAProperties();
+  }
+
   subscribeToHAProperties({
     kioskMode: true,
     router: storedRouter || undefined,
@@ -212,9 +220,16 @@ export function notifyHARouteChange(path: string): void {
     return;
   }
 
-  console.log("[HA Debug] Notifying HA of route change:", path);
+  const prefix = state.properties.route?.prefix;
+  if (!prefix) {
+    console.log("[HA Debug] No route prefix from HA, skipping notify");
+    return;
+  }
 
-  navigateInHA(path, { replace: true });
+  const fullPath = prefix + path;
+  console.log("[HA Debug] Notifying HA of route change:", fullPath);
+
+  navigateInHA(fullPath, { replace: true });
 }
 
 /**

@@ -1,11 +1,11 @@
 import { computed, reactive } from "vue";
 import {
-  MediaType,
-  Player,
-  PlayerQueue,
-  QueueItem,
-  ServerInfoMessage,
-  User,
+    MediaType,
+    Player,
+    PlayerQueue,
+    QueueItem,
+    ServerInfoMessage,
+    User,
 } from "./api/interfaces";
 
 import { StoredState } from "@/components/ItemsListing.vue";
