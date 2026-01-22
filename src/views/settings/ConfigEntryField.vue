@@ -21,9 +21,8 @@
       :type="confEntry.type === ConfigEntryType.ALERT ? 'warning' : 'info'"
       density="comfortable"
       class="config-alert"
-    > 
+    >
       <template v-if="confEntry.action && linkParts.hasLinkToken">
-
         {{ linkParts.before }}
         <v-btn
           variant="text"
@@ -73,17 +72,17 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn 
-        variant="outlined" 
+      <v-btn
+        variant="outlined"
         class="action-btn"
-        :disabled="isFieldDisabled" 
+        :disabled="isFieldDisabled"
         @click="$emit('openDsp')"
       >
         {{ $t("open_dsp_settings") }}
       </v-btn>
-    <span v-if="isFieldDisabled" class="dsp-forbidden-reason">
-      {{ $t(`settings.${confEntry.label}.label`, "") }}
-    </span>
+      <span v-if="isFieldDisabled" class="dsp-forbidden-reason">
+        {{ $t(`settings.${confEntry.label}.label`, "") }}
+      </span>
     </div>
 
     <!-- boolean value: checkbox -->
@@ -308,11 +307,9 @@ const isFieldDisabled = computed(() => {
 const labelKey = computed(() => `settings.${props.confEntry.key}.label`);
 
 const resolvedLabel = computed(() =>
-  $t(
-    labelKey.value,
-    { link: "{link}" },
-    { default: props.confEntry.label } as any,
-  ),
+  $t(labelKey.value, { link: "{link}" }, {
+    default: props.confEntry.label,
+  } as any),
 );
 
 const linkParts = computed(() => {
@@ -459,7 +456,6 @@ const translatedOptions = computed(() => {
 }
 
 .dsp-forbidden-reason {
-
 }
 
 .label-link {

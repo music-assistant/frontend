@@ -405,7 +405,7 @@ const getCurrentValues = function () {
   // Note: entries.value contains the same object references as props.configEntries
   // (pushed in the watch), so user modifications via the form update both
   for (const entry of props.configEntries!) {
-    if (entry.read_only ) continue;
+    if (entry.read_only) continue;
     let value = entry.value;
     // filter out undefined values
     if (value == undefined) value = null;
@@ -436,7 +436,7 @@ const getCategoryIcon = function (category: string): string {
     authentication: "mdi-lock",
     sync: "mdi-sync",
     web_player: "mdi-play-network",
-    group_settings: "mdi-speaker-multiple"
+    group_settings: "mdi-speaker-multiple",
   };
   return iconMap[category] || "mdi-cog-outline";
 };

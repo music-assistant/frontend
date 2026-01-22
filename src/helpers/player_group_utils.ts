@@ -57,7 +57,7 @@ export function deriveGroupContext(
   const isLeader = leaderId === p.player_id;
   const leaderName = leaderId ? (players[leaderId]?.name ?? null) : null;
   const inGroup = leaderId != null;
-  
+
   const dspPerPlayer =
     !inGroup || p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP);
   // dsp settings per group are not supported yet
@@ -66,9 +66,11 @@ export function deriveGroupContext(
   const ownsDSPSettings =
     (p.type != PlayerType.GROUP && dspPerPlayer) || (isLeader && dspPerGroup);
 
-  
   const perGrpCfgKeys = [...perGroupConfigKeys];
-  if (p.type === PlayerType.GROUP || !p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP) ){
+  if (
+    p.type === PlayerType.GROUP ||
+    !p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
+  ) {
     perGrpCfgKeys.push("dsp_settings");
   }
 
