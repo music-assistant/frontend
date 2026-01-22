@@ -2,18 +2,13 @@ import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 import { CONFIG_KEY, type ConfigKey } from "@/plugins/api/constants";
 
-const perGroupOnlyConfigKeys: ConfigKey[] = [
+const perGroupConfigKeys: ConfigKey[] = [
   CONFIG_KEY.CROSSFADE_DURATION,
   CONFIG_KEY.SMART_FADES_MODE,
   CONFIG_KEY.OUTPUT_CHANNELS,
   CONFIG_KEY.VOLUME_NORMALIZATION,
   CONFIG_KEY.OUTPUT_LIMITER,
 ];
-
-const perPlayerRequires: Record<string, string> = {
-  dsp_settings: PlayerFeature.MULTI_DEVICE_DSP,
-  dsp_note_multi_device_group_not_supported: PlayerFeature.MULTI_DEVICE_DSP,
-};
 
 export interface GroupContext {
   inGroup: boolean;
@@ -62,6 +57,7 @@ export function deriveGroupContext(
   const isLeader = leaderId === p.player_id;
   const leaderName = leaderId ? (players[leaderId]?.name ?? null) : null;
   const inGroup = leaderId != null;
+  
   const dspPerPlayer =
     !inGroup || p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP);
   // dsp settings per group are not supported yet
@@ -70,10 +66,11 @@ export function deriveGroupContext(
   const ownsDSPSettings =
     (p.type != PlayerType.GROUP && dspPerPlayer) || (isLeader && dspPerGroup);
 
-  const missingFeatureKeys = Object.entries(perPlayerRequires)
-    .filter(([_, feature]) => !p.supported_features.includes(feature))
-    .map(([key]) => key);
-  const perGrpCfgKeys = [...perGroupOnlyConfigKeys, ...missingFeatureKeys];
+  
+  const perGrpCfgKeys = [...perGroupConfigKeys];
+  if (p.type === PlayerType.GROUP || !p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP) ){
+    perGrpCfgKeys.push("dsp_settings");
+  }
 
   return {
     inGroup,

@@ -21,29 +21,25 @@
       :type="confEntry.type === ConfigEntryType.ALERT ? 'warning' : 'info'"
       density="comfortable"
       class="config-alert"
-    >
-      <span v-if="confEntry.action">
-        <i18n-t
-          v-if="$te(`settings.${confEntry.key}.label`)"
-          :keypath="`settings.${confEntry.key}.label`"
+    > 
+      <template v-if="confEntry.action && linkParts.hasLinkToken">
+
+        {{ linkParts.before }}
+        <v-btn
+          variant="text"
+          density="compact"
+          class="label-link"
+          type="button"
+          :ripple="false"
+          @click="emit('action')"
         >
-          <template #link>
-            <span class="label-link" @click.prevent="emit('action')">
-              {{ confEntry.action_label }}
-            </span>
-          </template>
-        </i18n-t>
-        <span v-else>
-          {{ fallbackLinkLabel.before }}
-          <span class="label-link" @click.prevent="emit('action')">
-            {{ confEntry.action_label }}
-          </span>
-          {{ fallbackLinkLabel.after }}
-        </span>
-      </span>
-      <span v-else>
-        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
-      </span>
+          {{ confEntry.action_label }}
+        </v-btn>
+        {{ linkParts.after }}
+      </template>
+      <template v-else>
+        {{ resolvedLabel }}
+      </template>
     </v-alert>
 
     <!-- action type -->
@@ -77,14 +73,17 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn
-        variant="outlined"
+      <v-btn 
+        variant="outlined" 
         class="action-btn"
-        :disabled="isFieldDisabled"
+        :disabled="isFieldDisabled" 
         @click="$emit('openDsp')"
       >
         {{ $t("open_dsp_settings") }}
       </v-btn>
+    <span v-if="isFieldDisabled" class="dsp-forbidden-reason">
+      {{ $t(`settings.${confEntry.label}.label`, "") }}
+    </span>
     </div>
 
     <!-- boolean value: checkbox -->
@@ -306,9 +305,24 @@ const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
-const fallbackLinkLabel = computed(() => {
-  const [before, ...rest] = props.confEntry.label.split("{link}");
-  return { before: before ?? "", after: rest.join("{link}") ?? "" };
+const labelKey = computed(() => `settings.${props.confEntry.key}.label`);
+
+const resolvedLabel = computed(() =>
+  $t(
+    labelKey.value,
+    { link: "{link}" },
+    { default: props.confEntry.label } as any,
+  ),
+);
+
+const linkParts = computed(() => {
+  const text = String(resolvedLabel.value ?? "");
+  const parts = text.split("{link}");
+  return {
+    hasLinkToken: parts.length > 1,
+    before: parts[0] ?? "",
+    after: parts.slice(1).join("{link}") ?? "",
+  };
 });
 
 const emit = defineEmits<{
@@ -444,8 +458,17 @@ const translatedOptions = computed(() => {
   color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
+.dsp-forbidden-reason {
+
+}
+
 .label-link {
-  cursor: pointer;
+  text-transform: none;
+  display: inline;
   text-decoration: underline;
+  padding: 0;
+  min-width: 0;
+  height: auto;
+  color: inherit;
 }
 </style>

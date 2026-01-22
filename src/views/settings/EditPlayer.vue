@@ -174,6 +174,7 @@ const sessionId = nanoid(11);
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+const leaderConfig = ref<PlayerConfig | null>(null);  
 
 // props
 const props = defineProps<{
@@ -220,7 +221,7 @@ function addGroupLabel(
       ...base,
       key: "grouping_prevents_settings",
       label:
-        "This player is part of a group. Settings are inherited from {link}.",
+        "Settings are inherited from {link}.",
       action: "group_leader_link",
       action_label: groupCtx.leaderName ?? "",
     });
@@ -247,78 +248,73 @@ const config_entries = computed(() => {
   if (!player) return [];
 
   const entries = Object.values(config.value.values);
-  // inject a DSP config property if the player is not a group
-  if (group_ctx.value.ownsDSPSettings) {
-    entries.push({
-      key: "dsp_settings",
-      type: ConfigEntryType.DSP_SETTINGS,
-      label: "",
-      default_value: dspEnabled.value,
-      required: false,
-      category: "audio",
-    });
-  } else if (player.type === PlayerType.GROUP && group_ctx.value.dspPerPlayer) {
-    entries.push({
-      key: "dsp_note_multi_device_group",
-      type: ConfigEntryType.LABEL,
-      label: "You can configure the DSP for each player individually.",
-      default_value: null,
-      required: false,
-      category: "audio",
-    });
-  } else {
-    entries.push({
-      key: "dsp_note_multi_device_group_unsupported",
-      type: ConfigEntryType.LABEL,
-      label:
-        "This group type does not support DSP when playing to multiple devices.",
-      default_value: null,
-      required: false,
-      category: "audio",
-    });
-  }
-
+  
+  // inject a DSP config property  
+  const reason_key_if_disabled: string = (
+      group_ctx.value.dspPerPlayer ? 
+      "dsp_note_multi_device_group" :
+      "dsp_note_multi_device_group_not_supported"
+  );
+  entries.push({
+    key: "dsp_settings",
+    type: ConfigEntryType.DSP_SETTINGS,
+    label: reason_key_if_disabled,
+    default_value: dspEnabled.value,
+    required: false,
+    category: "audio",
+  });
+  
   if (group_ctx.value.inGroup) {
     const adjEntries: ConfigEntry[] = [];
-    const byCategory = new Map<string, ConfigEntry[]>();
-
-    for (const e of entries) {
-      const arr = byCategory.get(e.category);
-      if (arr) arr.push(e);
-      else byCategory.set(e.category, [e]);
-    }
 
     const toFilterSet = new Set(group_ctx.value.perGrpCfgKeys);
-    for (const [category, arr] of byCategory) {
-      const perGroupOnly = arr.filter((e) => toFilterSet.has(e.key));
-      const remaining = arr.filter((e) => !toFilterSet.has(e.key));
-
-      if (perGroupOnly.length > 0) {
-        addGroupLabel(adjEntries, category, group_ctx.value);
-
-        const perGroupOut = group_ctx.value.isLeader
-          ? perGroupOnly
-          : perGroupOnly.map((e) => ({ ...e, read_only: true }));
-        adjEntries.push(...perGroupOut);
-
-        if (remaining.length > 0) {
-          adjEntries.push({
-            key: `group_config_divider_${category}`,
-            type: ConfigEntryType.DIVIDER,
-            label:
-              player.type == PlayerType.GROUP
-                ? ""
-                : t(
-                    "settings.player_specific_divider",
-                    "Player-specific settings:",
-                  ),
-            category: category,
-          });
-        }
+    const perGroupOnly = new Map<string, ConfigEntry[]>();
+    
+    const leader_values: Map<string, ConfigValueType> | null =
+      !group_ctx.isLeader && leaderConfig.value?.values
+        ? new Map(
+            Object.values(leaderConfig.value.values).map(e => [e.key, e.value])
+          )
+        : null;
+    
+    for (const e of entries) {
+      if( !toFilterSet.has(e.key) ){
+        adjEntries.push(e);
+        continue;
       }
-      adjEntries.push(...remaining);
-    }
 
+      const copyEntry: ConfigEntry = {
+        ...e,
+        read_only:
+          !group_ctx.value.isLeader ||
+          (e.key === "dsp_settings" && !group_ctx.value.dspPerGroup),
+        category: "group_settings",
+        value: leader_values && leader_values.has(e.key)
+          ? leader_values.get(e.key)!
+          : e.value
+      };
+      const arr = perGroupOnly.get(e.category);
+      if (arr) arr.push(copyEntry);
+      else perGroupOnly.set(e.category, [copyEntry]);
+    }
+    let first = true;
+    for (const [category, arr] of perGroupOnly) {
+      const nonHidden: ConfigEntry[] = arr.filter(e => !e.hidden);
+      if( !nonHidden.length ){
+        adjEntries.push(...arr);  
+      } else if (first) {
+        first = false;
+        addGroupLabel(adjEntries, "group_settings", group_ctx.value);
+        adjEntries.push(...arr)
+      } else {
+          adjEntries.push({
+              key: "group_config_divider",
+              type: ConfigEntryType.DIVIDER,
+              category: "group_settings" 
+          });
+        adjEntries.push(...arr);  
+      }
+    }
     return adjEntries;
   }
 
@@ -348,6 +344,23 @@ watch(showRenameDialog, (val) => {
     editName.value = config.value.name || null;
   }
 });
+
+watch(
+  () => [group_ctx.value.isLeader, group_ctx.value.leaderId] as const,
+  async ([isLeader, leaderId], _old, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => { cancelled = true; });
+
+    if (!isLeader && leaderId) {
+      const cfg = await api.getPlayerConfig(leaderId);
+      if (!cancelled) leaderConfig.value = cfg;
+    } else {
+      leaderConfig.value = null;
+    }
+  },
+  { immediate: true }
+);
+
 
 // methods
 const saveRename = function () {
@@ -419,7 +432,6 @@ const openPlayerConfig = function (player_id: string) {
   const route = router.currentRoute.value;
   const segments = route.path.split("/").filter(Boolean);
   segments[segments.length - 1] = player_id;
-  router.push(`${router.currentRoute.value.path}`);
   const newPath = "/" + segments.join("/");
   router.push(newPath);
 };

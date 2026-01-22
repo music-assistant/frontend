@@ -314,7 +314,9 @@
             "presets": "Presets",
             "sync_options": "Sync\/import options",
             "builtin_playlists": "Builtin Playlist Settings",
-            "web_player": "Web Player"
+            "web_player": "Web Player",
+            "player_queue": "Player Queue",
+            "group_settings": "Group Playback"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -520,11 +522,11 @@
         "dsp_note_multi_device_group": {
             "label": "You can configure the DSP for each player individually."
         },
-        "dsp_note_multi_device_group_unsupported": {
+        "dsp_note_multi_device_group_not_supported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
         "grouping_prevents_settings": {
-            "label": "This player is part of a group. Settings are inherited from {link}."
+            "label": "Settings are inherited from {link}."
         },
         "settings_apply_to_group_members": {
             "label": "This player is the group leader. Changes here affect all players in the group."   
