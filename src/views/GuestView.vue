@@ -984,11 +984,9 @@ const skipCurrentSong = async () => {
   }
 };
 
-// Exit guest mode
+// Exit party mode guest session
 const exitGuestMode = () => {
-  // Clear guest mode flag
-  localStorage.removeItem("guest_mode");
-  // Clear auth token
+  // Clear auth token to end the session
   localStorage.removeItem("ma_access_token");
   // Redirect to home page (which will trigger normal login flow)
   window.location.href = "/";

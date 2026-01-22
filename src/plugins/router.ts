@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import { authManager } from "./auth";
 import { store } from "./store";
 
 const routes = [
@@ -420,9 +421,10 @@ router.onError((error, to) => {
 router.beforeEach((to, _from, next) => {
   const currentUser = store.currentUser;
 
-  // If guest user is trying to navigate away from /guest, redirect back to guest
-  if (currentUser?.role === "guest" && to.path !== "/guest") {
-    console.debug("Guest mode: preventing navigation to", to.path);
+  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
+  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
+    console.debug("Party mode guest: preventing navigation to", to.path);
     next({ name: "guest" });
     return;
   }

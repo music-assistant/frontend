@@ -200,9 +200,11 @@ const completeInitialization = async () => {
 
   // For guest users, skip fetching library counts and state (they don't have permission)
   // Just set them to initialized state so they can access the guest view
-  const isGuestUser = userInfo.role === UserRole.GUEST;
+  const isGuestRole = userInfo.role === UserRole.GUEST;
+  // Party mode guests are identified by JWT claims (decoded by authManager)
+  const isPartyModeGuest = authManager.isPartyModeGuest();
 
-  if (!isGuestUser) {
+  if (!isGuestRole) {
     // Full initialization for non-guest users
     await api.fetchState();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
@@ -236,8 +238,8 @@ const completeInitialization = async () => {
   const browserControlsEnabledPref =
     localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
 
-  // Disable web player for guest users and companion mode
-  if (isGuestUser || companionMode.value) {
+  // Disable web player for party mode guests and companion mode
+  if (isPartyModeGuest || companionMode.value) {
     webPlayer.setMode(WebPlayerMode.DISABLED);
   } else if (
     webPlayerEnabledPref !== "false" &&
@@ -269,9 +271,8 @@ const completeInitialization = async () => {
   ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
-  } else if (isGuestUser) {
-    // Guest users should always be redirected to the guest view
-    localStorage.setItem("guest_mode", "true");
+  } else if (isPartyModeGuest) {
+    // Party mode guests should always be redirected to the guest view
     router.push("/guest");
   }
   api.state.value = ConnectionState.INITIALIZED;
