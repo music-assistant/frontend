@@ -19,12 +19,12 @@
       webPlayer.interacted == true
     "
   />
-  <!-- Sendspin web player is disabled when running in companion mode (native app handles audio) -->
   <SendspinPlayer
     v-if="
-      webPlayer.tabMode === WebPlayerMode.SENDSPIN &&
-      webPlayer.player_id &&
-      !companionMode
+      [
+        WebPlayerMode.SENDSPIN_ONLY,
+        WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+      ].includes(webPlayer.tabMode) && webPlayer.player_id
     "
     :player-id="webPlayer.player_id"
   />
@@ -207,16 +207,35 @@ const completeInitialization = async () => {
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
-  const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
-  if (
-    webPlayerModePref !== "disabled" &&
-    api.getProvider("sendspin")?.available
+  const webPlayerEnabledPref =
+    localStorage.getItem("frontend.settings.web_player_enabled") || "true";
+  const browserControlsEnabledPref =
+    localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
+  if (companionMode.value) {
+    // the webplayer is completely disabled if we're running companion mode (no sendspin, no controls)
+    webPlayer.setMode(WebPlayerMode.DISABLED);
+  } else if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref !== "false"
   ) {
-    webPlayer.setMode(WebPlayerMode.SENDSPIN);
-  } else {
+    // sendspin enabled, browser controls enabled
+    webPlayer.setMode(WebPlayerMode.SENDSPIN_WITH_CONTROLS);
+  } else if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref === "false"
+  ) {
+    // sendspin enabled but no browser controls
+    webPlayer.setMode(WebPlayerMode.SENDSPIN_ONLY);
+  } else if (
+    webPlayerEnabledPref === "false" &&
+    browserControlsEnabledPref !== "false"
+  ) {
+    // sendspin disabled but browser controls allowed
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+  } else {
+    webPlayer.setMode(WebPlayerMode.DISABLED);
   }
+
   const urlParams = new URLSearchParams(window.location.search);
   if (
     (urlParams.get("onboard") === "true" ||

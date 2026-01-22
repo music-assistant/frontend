@@ -317,8 +317,12 @@ const unregisterPlayerCommandHandler = (): void => {
  */
 const startNowPlayingWatcher = (): void => {
   // Don't start if already watching
-  if (unwatchNowPlaying) return;
+  if (unwatchNowPlaying) {
+    console.log("[Companion] Now-playing watcher already active, skipping");
+    return;
+  }
 
+  console.log("[Companion] Starting now-playing watcher...");
   const invoke = getCompanionInvoke();
   if (!invoke) {
     console.warn("[Companion] No invoke function available");
@@ -360,6 +364,7 @@ const startNowPlayingWatcher = (): void => {
  */
 const stopNowPlayingWatcher = (): void => {
   if (unwatchNowPlaying) {
+    console.log("[Companion] Stopping existing now-playing watcher");
     unwatchNowPlaying();
     unwatchNowPlaying = null;
   }
@@ -377,6 +382,10 @@ export const initializeCompanionIntegration = async (
   if (!isCompanionApp()) {
     return;
   }
+
+  // Clean up any existing state first (handles reconnection case)
+  stopNowPlayingWatcher();
+  unregisterPlayerCommandHandler();
 
   console.log(
     "[Companion] Companion app detected, initializing integrations...",
