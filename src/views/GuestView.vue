@@ -124,15 +124,6 @@
       <p class="empty-hint">Try a different search term</p>
     </div>
 
-    <!-- Initial State -->
-    <!-- <div v-else-if="!searching && !searchQuery" class="empty-state">
-      <v-icon size="64" color="primary">mdi-music-note-plus</v-icon>
-      <p>Start searching to add songs to the queue</p>
-      <p class="empty-hint">
-        Search for your favorite tracks, artists, or albums
-      </p>
-    </div> -->
-
     <!-- Current Queue Section - Hidden when search results are showing -->
     <div
       v-if="!searchQuery || searchResults.length === 0"
@@ -269,7 +260,6 @@ import {
   watch,
   nextTick,
 } from "vue";
-import { useRouter } from "vue-router";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
@@ -282,7 +272,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 
-const router = useRouter();
 const handleBack = (event: PopStateEvent) => {
   if (searchQuery.value || searchResults.value.length > 0) {
     event.preventDefault(); // Prevent leaving
@@ -291,9 +280,6 @@ const handleBack = (event: PopStateEvent) => {
     history.pushState(null, "", location.href);
   }
 };
-
-// Responsive state
-const isMobile = computed(() => store.mobileLayout);
 
 // Search state
 const searchQuery = ref("");
@@ -366,8 +352,6 @@ const playNextBadgeColor = ref("");
 const playNextTokens = ref(3);
 const addQueueTokens = ref(10);
 const skipSongTokens = ref(1);
-const playNextAvailable = computed(() => playNextTokens.value > 0);
-const skipSongAvailable = computed(() => skipSongTokens.value > 0);
 const nextTokenCountdown = ref<string>("");
 const skipTokenCountdown = ref<string>("");
 const skippingSong = ref(false);
@@ -575,10 +559,6 @@ const scrollToCurrentItem = async () => {
     const containerRect = container.getBoundingClientRect();
     const itemRect = activeItem.getBoundingClientRect();
     const relativeTop = itemRect.top - containerRect.top + container.scrollTop;
-
-    // Center the item in the viewport, accounting for container height
-    const containerHeight = containerRect.height;
-    const itemHeight = itemRect.height;
 
     container.scrollTo({ top: relativeTop, behavior: "smooth" });
   }
@@ -982,14 +962,6 @@ const skipCurrentSong = async () => {
   } finally {
     skippingSong.value = false;
   }
-};
-
-// Exit party mode guest session
-const exitGuestMode = () => {
-  // Clear auth token to end the session
-  localStorage.removeItem("ma_access_token");
-  // Redirect to home page (which will trigger normal login flow)
-  window.location.href = "/";
 };
 
 // Lifecycle

@@ -51,6 +51,7 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  queueItem: undefined,
   requestBadgeColor: "#2196F3", // Default: Blue
   playNextBadgeColor: "#FF5722", // Default: Orange
 });
