@@ -17,7 +17,9 @@
       >
         <canvas ref="qrCanvas"></canvas>
       </a>
-      <p class="qr-instructions text-h4">Scan to join the party!</p>
+      <p v-if="instructionText" class="qr-instructions text-h4">
+        {{ instructionText }}
+      </p>
     </div>
     <div v-else class="qr-error">
       <v-icon size="64" icon="mdi-alert-circle-outline" />
@@ -39,6 +41,7 @@ const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
+const instructionText = ref("Scan to join!");
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
@@ -71,6 +74,24 @@ const checkRemoteAccessStatus = async () => {
     lastRemoteAccessEnabled.value = currentEnabled;
   } catch {
     // Ignore errors - remote_access/info may not be available
+  }
+};
+
+const fetchConfig = async () => {
+  try {
+    const config = (await api.sendCommand("party_mode/config")) as {
+      qr_show_instruction_text?: boolean;
+      qr_instruction_text?: string;
+    };
+    // Only show text if toggle is enabled
+    if (config.qr_show_instruction_text === false) {
+      instructionText.value = "";
+    } else {
+      instructionText.value = config.qr_instruction_text || "Scan to join!";
+    }
+  } catch {
+    // Use default if config fetch fails
+    instructionText.value = "Scan to join!";
   }
 };
 
@@ -138,6 +159,7 @@ const generateQRCode = async () => {
 };
 
 onMounted(async () => {
+  await fetchConfig();
   await generateQRCode();
 
   // Initialize remote access status tracking
@@ -175,8 +197,8 @@ onMounted(async () => {
       (p) => p.domain === "party_mode",
     );
     if (hasPartyMode) {
-      // Regenerate QR code to reflect any config changes
-      // This will fetch the latest URL from the backend with updated config
+      // Refresh config and QR code to reflect any changes
+      await fetchConfig();
       await generateQRCode();
     } else {
       // Provider was unloaded, clear the QR code and mark as disabled
