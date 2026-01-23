@@ -76,6 +76,10 @@ export default defineConfig({
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
+  server: {
+    port: 3000,
+    host: true,
+  },
   build: {
     outDir: "./music_assistant_frontend",
     rollupOptions: {
