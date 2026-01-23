@@ -76,36 +76,6 @@ export default defineConfig({
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
-  server: {
-    port: 3000,
-    host: true,
-    proxy: {
-      // Proxy API endpoints to the backend server
-      "/ws": {
-        target: "http://localhost:8095",
-        ws: true, // Enable WebSocket proxying
-      },
-      "/api": {
-        target: "http://localhost:8095",
-      },
-      "/auth": {
-        target: "http://localhost:8095",
-      },
-      "/info": {
-        target: "http://localhost:8095",
-      },
-      "/imageproxy": {
-        target: "http://localhost:8095",
-      },
-      "/preview": {
-        target: "http://localhost:8095",
-      },
-      "/sendspin": {
-        target: "http://localhost:8095",
-        ws: true,
-      },
-    },
-  },
   build: {
     outDir: "./music_assistant_frontend",
     rollupOptions: {
