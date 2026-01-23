@@ -321,8 +321,41 @@ const backgroundStyle = computed(() => {
 // Track unsubscribe functions
 const unsubscribeFunctions = ref<(() => void)[]>([]);
 
+// Screen Wake Lock to prevent display from sleeping
+let wakeLock: WakeLockSentinel | null = null;
+
+const requestWakeLock = async () => {
+  if ("wakeLock" in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => {
+        console.debug("Wake lock released");
+        wakeLock = null;
+        // Re-acquire wake lock if document is still visible
+        // This handles cases where the system releases it unexpectedly
+        if (document.visibilityState === "visible") {
+          requestWakeLock();
+        }
+      });
+      console.debug("Wake lock acquired");
+    } catch (err) {
+      console.debug("Wake lock request failed:", err);
+    }
+  }
+};
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === "visible" && !wakeLock) {
+    // Re-acquire wake lock when page becomes visible again
+    requestWakeLock();
+  }
+};
+
 // Lifecycle and event subscriptions
 onMounted(async () => {
+  // Request wake lock to keep screen on
+  await requestWakeLock();
+  document.addEventListener("visibilitychange", handleVisibilityChange);
   // Fetch party mode configuration (for album art background setting)
   try {
     const config = (await api.sendCommand(
@@ -372,6 +405,13 @@ onMounted(async () => {
 
 // Cleanup when leaving the party view
 onBeforeUnmount(() => {
+  // Release wake lock
+  if (wakeLock) {
+    wakeLock.release();
+    wakeLock = null;
+  }
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+
   // Unsubscribe from events
   unsubscribeFunctions.value.forEach((unsub) => unsub());
 });
