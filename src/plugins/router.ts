@@ -363,6 +363,29 @@ const router = createRouter({
   routes,
 });
 
+// Handle chunk loading errors (e.g., after frontend update with stale cache)
+// When a dynamic import fails with a 404, it means the chunk no longer exists
+// on the server (likely due to a new deployment with different hashes).
+// In this case, we reload the page to get the fresh assets.
+router.onError((error, to) => {
+  // Check if this is a chunk loading error
+  const isChunkLoadError =
+    error.message.includes("Failed to fetch dynamically imported module") ||
+    error.message.includes("Loading chunk") ||
+    error.message.includes("Loading CSS chunk") ||
+    (error.name === "TypeError" && error.message.includes("fetch"));
+
+  if (isChunkLoadError) {
+    console.warn(
+      "Chunk loading failed, likely due to app update. Reloading page...",
+      error,
+    );
+    // Use location.href to do a full reload to the intended route
+    // This ensures we get fresh HTML and assets from the server
+    window.location.href = window.location.origin + window.location.pathname + "#" + to.fullPath;
+  }
+});
+
 // Navigation guard for admin-only routes
 router.beforeEach((to, _from, next) => {
   // Check admin-only routes - check all matched routes for requiresAdmin meta

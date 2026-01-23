@@ -26,7 +26,7 @@ const DEVICE_TYPE: DeviceType = md.tablet()
 
 interface Store {
   activePlayerId?: string;
-  isInStandaloneMode: boolean;
+  isInPWAMode: boolean;
   showPlayersMenu: boolean;
   showFullscreenPlayer: boolean;
   frameless: boolean;
@@ -58,11 +58,12 @@ interface Store {
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
+  companionPlayerId?: string;
 }
 
 export const store: Store = reactive({
   activePlayerId: undefined,
-  isInStandaloneMode: false,
+  isInPWAMode: false,
   showPlayersMenu: false,
   showFullscreenPlayer: false,
   frameless: false,
