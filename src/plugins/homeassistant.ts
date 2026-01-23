@@ -38,9 +38,6 @@ function handleMessage(event: MessageEvent) {
     state.properties.narrow = event.data.narrow ?? false;
     state.properties.route = event.data.route ?? null;
 
-    console.log("[HA Debug] Received properties:", event.data);
-    console.log("[HA Debug] Route from HA:", state.properties.route);
-
     if (
       state.routeSyncEnabled &&
       routerInstance &&
@@ -49,11 +46,7 @@ function handleMessage(event: MessageEvent) {
       const haRoutePath = state.properties.route.path;
       const currentMARoute = routerInstance.currentRoute.value.fullPath;
 
-      console.log("[HA Debug] HA route path:", haRoutePath);
-      console.log("[HA Debug] Current MA route:", currentMARoute);
-
       if (haRoutePath !== currentMARoute && oldRoute !== haRoutePath) {
-        console.log("[HA Debug] Navigating MA to:", haRoutePath);
         isNavigatingFromHA = true;
         routerInstance.push(haRoutePath).finally(() => {
           isNavigatingFromHA = false;
@@ -81,7 +74,6 @@ export function subscribeToHAProperties(
   if (options.router) {
     routerInstance = options.router;
     state.routeSyncEnabled = true;
-    console.log("[HA Debug] Route sync enabled with router");
   }
 
   messageHandler = handleMessage;
@@ -152,14 +144,11 @@ function saveKioskModePreference(enabled: boolean): void {
  * This unsubscribes from properties (which disables kiosk mode).
  */
 export function showHAMenu(): void {
-  console.log("[HA Debug] showHAMenu called");
-
   if (routerInstance) {
     storedRouter = routerInstance;
   }
 
   saveKioskModePreference(false);
-
   unsubscribeFromHAProperties();
 }
 
@@ -168,8 +157,6 @@ export function showHAMenu(): void {
  * This re-subscribes with kioskMode: true.
  */
 export function hideHAMenu(): void {
-  console.log("[HA Debug] hideHAMenu called");
-
   saveKioskModePreference(true);
 
   if (routerInstance) {
@@ -192,11 +179,6 @@ export function hideHAMenu(): void {
  * When hidden (kiosk mode on), shows it.
  */
 export function toggleHAMenuVisibility(): void {
-  console.log(
-    "[HA Debug] toggleHAMenuVisibility - current kioskMode:",
-    state.kioskModeEnabled,
-  );
-
   if (state.kioskModeEnabled) {
     showHAMenu();
   } else {
@@ -216,19 +198,15 @@ export function notifyHARouteChange(path: string): void {
   }
 
   if (isNavigatingFromHA) {
-    console.log("[HA Debug] Skipping notify - navigation from HA");
     return;
   }
 
   const prefix = state.properties.route?.prefix;
   if (!prefix) {
-    console.log("[HA Debug] No route prefix from HA, skipping notify");
     return;
   }
 
   const fullPath = prefix + path;
-  console.log("[HA Debug] Notifying HA of route change:", fullPath);
-
   navigateInHA(fullPath, { replace: true });
 }
 

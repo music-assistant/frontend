@@ -1,11 +1,11 @@
 import { computed, reactive } from "vue";
 import {
-    MediaType,
-    Player,
-    PlayerQueue,
-    QueueItem,
-    ServerInfoMessage,
-    User,
+  MediaType,
+  Player,
+  PlayerQueue,
+  QueueItem,
+  ServerInfoMessage,
+  User,
 } from "./api/interfaces";
 
 import { StoredState } from "@/components/ItemsListing.vue";
@@ -129,8 +129,3 @@ export const store: Store = reactive({
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
 });
-
-// Debug logging for HA session detection
-console.log("[HA Debug] Store initialized");
-console.log("[HA Debug] window.location.pathname:", window.location.pathname);
-console.log("[HA Debug] store.isIngressSession:", store.isIngressSession);

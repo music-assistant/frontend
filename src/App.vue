@@ -40,9 +40,9 @@ import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import {
-    getKioskModePreference,
-    subscribeToHAProperties,
-    unsubscribeFromHAProperties,
+  getKioskModePreference,
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -189,27 +189,9 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
-  console.log("[HA Debug] completeInitialization called");
-  console.log("[HA Debug] window.location.pathname:", window.location.pathname);
-  console.log("[HA Debug] store.isIngressSession:", store.isIngressSession);
-  console.log(
-    "[HA Debug] serverInfo.homeassistant_addon:",
-    serverInfo.homeassistant_addon,
-  );
-  console.log(
-    "[HA Debug] Should enable HA integration:",
-    store.isIngressSession && serverInfo.homeassistant_addon,
-  );
-
   if (store.isIngressSession && serverInfo.homeassistant_addon) {
     const kioskPref = getKioskModePreference();
-    console.log(
-      "[HA Debug] Subscribing to HA properties, kioskMode:",
-      kioskPref,
-    );
     subscribeToHAProperties({ kioskMode: kioskPref, router });
-  } else {
-    console.log("[HA Debug] NOT subscribing - conditions not met");
   }
 
   if (api.baseUrl) {

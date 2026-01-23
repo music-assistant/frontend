@@ -16,7 +16,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
-import { store } from "@/plugins/store";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -71,7 +70,7 @@ const handleHAMenuToggle = () => {
     </SidebarHeader>
     <SidebarContent>
       <!-- HA Menu Toggle Button (only in ingress/app session) -->
-      <div v-if="store.isIngressSession" class="px-2 w-full mb-2">
+      <div class="px-2 w-full mb-2">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button

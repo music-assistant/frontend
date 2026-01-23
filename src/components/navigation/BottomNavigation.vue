@@ -6,7 +6,6 @@
     role="navigation"
   >
     <v-btn
-      v-if="store.isIngressSession"
       aria-label="Home Assistant"
       tabindex="0"
       variant="text"
@@ -67,7 +66,6 @@
 
 <script setup lang="ts">
 import { toggleHAMenu } from "@/plugins/homeassistant";
-import { store } from "@/plugins/store";
 import { LibraryIcon } from "lucide-vue-next";
 import { ref } from "vue";
 import { getMenuItems } from "./utils/getMenuItems";
