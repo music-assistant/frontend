@@ -166,7 +166,7 @@ import { openLinkInNewTab } from "@/helpers/utils";
 import { nanoid } from "nanoid";
 import { useI18n } from "vue-i18n";
 import { GroupContext, deriveGroupContext } from "@/helpers/player_group_utils";
-import { 
+import {
   ConfigEntryUI,
   DspLinkConfigEntry,
   makeDspLinkEntry,
@@ -209,7 +209,6 @@ const unsub = api.subscribe(
 );
 onBeforeUnmount(unsub);
 
-
 // computed properties
 const group_ctx = computed<GroupContext>(() => {
   const playerId = config.value?.player_id;
@@ -225,12 +224,14 @@ const config_entries = computed(() => {
   const entries: ConfigEntryUI[] = Object.values(config.value.values);
 
   // inject a link to DSP settings
-  entries.push(makeDspLinkEntry({
-    default_value: dspEnabled.value,
-    note_key: group_ctx.value.dspPerPlayer
-    ? "dsp_note_multi_device_group"
-    : "dsp_note_multi_device_group_not_supported",
-  }));
+  entries.push(
+    makeDspLinkEntry({
+      default_value: dspEnabled.value,
+      note_key: group_ctx.value.dspPerPlayer
+        ? "dsp_note_multi_device_group"
+        : "dsp_note_multi_device_group_not_supported",
+    }),
+  );
 
   if (group_ctx.value.inGroup) {
     const adjEntries: ConfigEntryUI[] = [];
@@ -264,7 +265,7 @@ const config_entries = computed(() => {
           leader_values && leader_values.has(e.key)
             ? leader_values.get(e.key)!
             : e.value,
-        injected: e.injected || !group_ctx.value.isLeader
+        injected: e.injected || !group_ctx.value.isLeader,
       };
       const arr = perGroupOnly.get(e.category);
       if (arr) arr.push(copyEntry);
@@ -274,7 +275,7 @@ const config_entries = computed(() => {
       type: ConfigEntryType.LABEL,
       default_value: null,
       required: false,
-      category: "per_group_settings"
+      category: "per_group_settings",
     };
     let first = true;
     for (const [category, arr] of perGroupOnly) {

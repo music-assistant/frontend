@@ -61,10 +61,7 @@
     </v-btn>
 
     <!-- DSP Config Button -->
-    <div
-      v-else-if="isDspLinkEntry(confEntry)"
-      class="dsp-config"
-    >
+    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
       <span class="dsp-status">
         {{
           confEntry.value
@@ -291,7 +288,7 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import { 
+import {
   ConfigEntryUI,
   DspLinkConfigEntry,
   isDspLinkEntry,

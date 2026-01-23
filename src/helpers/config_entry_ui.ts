@@ -27,8 +27,10 @@ export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
 export const isDspLinkEntry = (e: ConfigEntryUI): e is DspLinkConfigEntry =>
   isInjected(e) && e.type === "dsp_settings_link";
 
-
-const DEFAULT_DSP_LINK_ENTRY: Omit<DspLinkConfigEntryUI, "value" | "default_value"> & {
+const DEFAULT_DSP_LINK_ENTRY: Omit<
+  DspLinkConfigEntryUI,
+  "value" | "default_value"
+> & {
   value: boolean;
   default_value: boolean;
 } = {
@@ -46,7 +48,7 @@ export function makeDspLinkEntry(
   return {
     ...DEFAULT_DSP_LINK_ENTRY,
     ...overrides,
-    injected: true,               
+    injected: true,
     type: "dsp_settings_link",
   };
 }
