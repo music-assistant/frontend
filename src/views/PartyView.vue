@@ -605,3 +605,11 @@ watch(
   }
 }
 </style>
+
+<style>
+/* Global styles to prevent parent container scrolling when party view is active */
+.content-section:has(.party-view) {
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+}
+</style>
