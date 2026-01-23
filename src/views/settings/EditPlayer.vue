@@ -164,10 +164,7 @@ import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { nanoid } from "nanoid";
-import {
-  ConfigEntryUI,
-  makeDspLinkEntry
-} from "@/helpers/config_entry_ui";
+import { ConfigEntryUI, makeDspLinkEntry } from "@/helpers/config_entry_ui";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -207,14 +204,15 @@ const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
   if (!player) return [];
-  
+
   // inject a link to the DSP config if the player is not a group
   const entries: ConfigEntryUI[] = Object.values(config.value.values);
   if (player.type !== PlayerType.GROUP) {
     entries.push(
       makeDspLinkEntry({
-      default_value: dspEnabled.value,
-    }));
+        default_value: dspEnabled.value,
+      }),
+    );
   } else if (
     player.type === PlayerType.GROUP &&
     player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
@@ -226,9 +224,10 @@ const config_entries = computed(() => {
       default_value: null,
       required: false,
       category: "audio",
-      injected: true
+      injected: true,
     });
-  } else if (player.type === PlayerType.GROUP &&
+  } else if (
+    player.type === PlayerType.GROUP &&
     !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
     entries.push({
@@ -239,7 +238,7 @@ const config_entries = computed(() => {
       default_value: null,
       required: false,
       category: "audio",
-      injected: true
+      injected: true,
     });
   }
   return entries;
