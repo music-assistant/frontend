@@ -387,10 +387,14 @@ watch(
 
 <style scoped>
 .party-view {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   overflow: hidden;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,6 +419,8 @@ watch(
   display: flex;
   padding: 2vw;
   gap: 2vw;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .qr-section {
@@ -436,10 +442,11 @@ watch(
 .track-list {
   position: relative;
   width: 100%;
-  height: 80vh;
+  height: 80%;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
 /* Empty State */

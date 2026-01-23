@@ -164,8 +164,9 @@ const infoSizeClass = computed(() => {
   border-radius: 1.2vw;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(1vw);
-  width: 100%;
-  max-width: 80vw;
+  width: 95%;
+  max-width: 95%;
+  box-sizing: border-box;
   /* Transform combines centering, vertical position, and scale */
   transform: translateX(-50%) translateY(calc(-50% + var(--y, 0vh)))
     scale(var(--scale, 1));
@@ -175,7 +176,6 @@ const infoSizeClass = computed(() => {
   transition:
     transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-    max-width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -185,7 +185,6 @@ const infoSizeClass = computed(() => {
   --scale: 0.85;
   --opacity: 0.5;
   --z-index: 1;
-  max-width: 68vw;
 }
 
 .track-card.position-previous-1 {
@@ -193,7 +192,6 @@ const infoSizeClass = computed(() => {
   --scale: 0.9;
   --opacity: 0.7;
   --z-index: 2;
-  max-width: 72vw;
 }
 
 .track-card.position-current {
@@ -242,7 +240,6 @@ const infoSizeClass = computed(() => {
   --scale: 0.9;
   --opacity: 0.7;
   --z-index: 2;
-  max-width: 72vw;
 }
 
 .track-card.position-next-2 {
@@ -250,7 +247,6 @@ const infoSizeClass = computed(() => {
   --scale: 0.85;
   --opacity: 0.5;
   --z-index: 1;
-  max-width: 68vw;
 }
 
 .track-artwork {
