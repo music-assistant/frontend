@@ -62,7 +62,7 @@
 
     <!-- DSP Config Button -->
     <div
-      v-else-if="confEntry.type == ConfigEntryType.DSP_SETTINGS"
+      v-else-if="isDspLinkEntry(confEntry)"
       class="dsp-config"
     >
       <span class="dsp-status">
@@ -291,17 +291,26 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
+import { 
+  ConfigEntryUI,
+  DspLinkConfigEntry,
+  isDspLinkEntry,
+} from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 const props = defineProps<{
-  confEntry: ConfigEntry;
+  confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled?: boolean;
 }>();
 
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
+});
+
+const isDspEntry = computed(() => {
+  return isDspLinkEntry(props.confEntry);
 });
 
 const labelKey = computed(() => `settings.${props.confEntry.key}.label`);

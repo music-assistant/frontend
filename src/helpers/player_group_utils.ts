@@ -71,7 +71,7 @@ export function deriveGroupContext(
     p.type === PlayerType.GROUP ||
     !p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
-    perGrpCfgKeys.push("dsp_settings");
+    perGrpCfgKeys.push("dsp_settings_link");
   }
 
   return {

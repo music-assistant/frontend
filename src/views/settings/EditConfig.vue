@@ -146,6 +146,7 @@ import { $t } from "@/plugins/i18n";
 import { HelpCircle } from "lucide-vue-next";
 import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -153,7 +154,7 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
-  configEntries: ConfigEntry[];
+  configEntries: ConfigEntryUI[];
   disabled: boolean;
 }
 
@@ -405,7 +406,7 @@ const getCurrentValues = function () {
   // Note: entries.value contains the same object references as props.configEntries
   // (pushed in the watch), so user modifications via the form update both
   for (const entry of props.configEntries!) {
-    if (entry.read_only) continue;
+    if (isInjected(entry)) continue;
     let value = entry.value;
     // filter out undefined values
     if (value == undefined) value = null;
