@@ -369,9 +369,6 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
-
-  // Only used in the frontend
-  DSP_SETTINGS = "dsp_settings",
 }
 
 export enum VolumeNormalizationMode {
