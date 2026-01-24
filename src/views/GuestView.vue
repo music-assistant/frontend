@@ -11,6 +11,8 @@
         clearable
         autofocus
         hide-details
+        inputmode="search"
+        enterkeyhint="search"
         class="search-input"
         @keyup.enter="performSearch"
         @click:clear="clearSearch"
@@ -25,6 +27,37 @@
       >
         Search
       </v-btn>
+    </div>
+
+    <!-- Search Filter Chips -->
+    <div v-if="hasSearched || searchQuery.length >= 2" class="filter-section">
+      <v-chip-group
+        v-model="searchFilter"
+        mandatory
+        selected-class="filter-active"
+      >
+        <v-chip value="all" variant="outlined" size="small" class="filter-chip">
+          All
+        </v-chip>
+        <v-chip
+          value="track"
+          variant="outlined"
+          size="small"
+          class="filter-chip"
+        >
+          <v-icon start size="small">mdi-music-note</v-icon>
+          Songs
+        </v-chip>
+        <v-chip
+          value="artist"
+          variant="outlined"
+          size="small"
+          class="filter-chip"
+        >
+          <v-icon start size="small">mdi-account-music</v-icon>
+          Artists
+        </v-chip>
+      </v-chip-group>
     </div>
 
     <!-- Artist Tracks View (when drilling into an artist) -->
@@ -401,6 +434,7 @@ const searchResults = ref<any[]>([]);
 const searching = ref(false);
 const addingItems = ref(new Set<string>());
 const hasSearched = ref(false); // Track if a search has been performed
+const searchFilter = ref<"all" | "track" | "artist">("all"); // Filter for search results
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Artist drill-down state
@@ -726,19 +760,142 @@ const snackbar = ref({
   color: "success",
 });
 
+// Helper to blur active element (hides mobile keyboard)
+const blurActiveElement = () => {
+  (document.activeElement as HTMLElement)?.blur();
+};
+
+// Levenshtein distance for string similarity
+const levenshteinDistance = (str1: string, str2: string): number => {
+  const m = str1.length;
+  const n = str2.length;
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+};
+
+// Calculate relevance score for a search result
+const calculateRelevanceScore = (item: any, query: string): number => {
+  const normalizedQuery = query.toLowerCase().trim();
+  const normalizedName = (item.name || "").toLowerCase().trim();
+
+  // Get artist name for tracks
+  let artistName = "";
+  if (item.artists && item.artists.length > 0) {
+    artistName = item.artists
+      .map((a: any) => a.name)
+      .join(" ")
+      .toLowerCase();
+  }
+
+  // Base score starts at 0, higher is better
+  let score = 0;
+
+  // 1. Exact match bonus (highest priority)
+  if (normalizedName === normalizedQuery) {
+    score += 1000;
+  } else if (normalizedName.startsWith(normalizedQuery)) {
+    // Starts with query - strong match
+    score += 500;
+  } else if (normalizedName.includes(normalizedQuery)) {
+    // Contains query
+    score += 200;
+  }
+
+  // 2. Artist name match for tracks
+  if (artistName) {
+    if (artistName === normalizedQuery) {
+      score += 800;
+    } else if (artistName.startsWith(normalizedQuery)) {
+      score += 400;
+    } else if (artistName.includes(normalizedQuery)) {
+      score += 150;
+    }
+  }
+
+  // 3. Levenshtein similarity (normalized to 0-100)
+  const distance = levenshteinDistance(
+    normalizedName.slice(0, 50),
+    normalizedQuery,
+  );
+  const maxLen = Math.max(normalizedName.length, normalizedQuery.length, 1);
+  const similarity = Math.max(0, 100 - (distance / maxLen) * 100);
+  score += similarity;
+
+  // 4. Popularity bonus (0-100 from metadata)
+  const popularity = item.metadata?.popularity ?? 0;
+  score += popularity * 0.5; // Weight popularity at 50%
+
+  // 5. Artist type bonus when searching for artists
+  // (so artist "Taylor Swift" ranks above track "Taylor Swift" when name matches)
+  if (
+    item.media_type === "artist" &&
+    normalizedName.includes(normalizedQuery)
+  ) {
+    score += 100;
+  }
+
+  return score;
+};
+
+// Sort search results by relevance score
+const sortByRelevance = (items: any[], query: string): any[] => {
+  return [...items].sort((a, b) => {
+    const scoreA = calculateRelevanceScore(a, query);
+    const scoreB = calculateRelevanceScore(b, query);
+    return scoreB - scoreA; // Higher score first
+  });
+};
+
 // Search functionality
 const performSearch = async () => {
   if (!searchQuery.value || searchQuery.value.length < 2) return;
 
+  // Blur the input to hide mobile keyboard
+  blurActiveElement();
+
   searching.value = true;
   hasSearched.value = true;
   try {
-    const results = await api.search(searchQuery.value, [
-      MediaType.TRACK,
-      MediaType.ARTIST,
-    ]);
-    // Show tracks and artists - guests can drill into artists to see their tracks
-    searchResults.value = [...results.tracks, ...results.artists];
+    // Determine which media types to search based on filter
+    const mediaTypes: MediaType[] = [];
+    if (searchFilter.value === "all" || searchFilter.value === "track") {
+      mediaTypes.push(MediaType.TRACK);
+    }
+    if (searchFilter.value === "all" || searchFilter.value === "artist") {
+      mediaTypes.push(MediaType.ARTIST);
+    }
+
+    const results = await api.search(searchQuery.value, mediaTypes);
+
+    // Combine and sort results based on filter
+    let combinedResults: any[];
+    if (searchFilter.value === "track") {
+      combinedResults = results.tracks;
+    } else if (searchFilter.value === "artist") {
+      combinedResults = results.artists;
+    } else {
+      // "all" - combine tracks and artists
+      combinedResults = [...results.tracks, ...results.artists];
+    }
+
+    // Sort by relevance (Levenshtein distance + popularity)
+    searchResults.value = sortByRelevance(combinedResults, searchQuery.value);
+
     // Reset displayed count for new search
     displayedResultsCount.value = 10;
   } catch (error) {
@@ -772,6 +929,13 @@ watch(searchQuery, (newQuery) => {
     }
   } else {
     debouncedSearch();
+  }
+});
+
+// Watch for filter changes and re-search if there's a query
+watch(searchFilter, () => {
+  if (searchQuery.value && searchQuery.value.length >= 2) {
+    performSearch();
   }
 });
 
@@ -1268,12 +1432,29 @@ onMounted(async () => {
 .search-section {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem;
   flex-shrink: 0;
 }
 
 .search-input {
   flex: 1;
+}
+
+.filter-section {
+  display: flex;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.filter-chip {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-active {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
 }
 
 .search-btn {
@@ -1628,7 +1809,15 @@ onMounted(async () => {
   .search-section {
     flex-direction: column;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-section {
+    margin-bottom: 0.75rem;
+  }
+
+  .filter-chip {
+    font-size: 0.75rem;
   }
 
   .section-header {
