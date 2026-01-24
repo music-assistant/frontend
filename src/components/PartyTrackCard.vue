@@ -82,31 +82,53 @@ const badgeText = computed(() => {
   return "Request";
 });
 
-// Computed track name - prefer stream metadata title for radio streams
+// Computed track name - prefer media_item.name for proper track title
 const trackName = computed(() => {
   if (!props.queueItem) return "";
   // For radio streams, stream_metadata.title contains the current track
   const streamTitle = props.queueItem.streamdetails?.stream_metadata?.title;
   if (streamTitle) return streamTitle;
+  // Use media_item.name for proper track title (not "Artist - Title" format)
+  if (props.queueItem.media_item && "name" in props.queueItem.media_item) {
+    return props.queueItem.media_item.name;
+  }
   // Fallback to queue item name
   return props.queueItem.name;
 });
 
-// Computed artist name - check both media_item.artists and stream_metadata.artist
+// Computed subtitle - shows "Artist - Album" or just artist for streams
 const artistName = computed(() => {
   if (!props.queueItem) return "";
-  // First check media_item.artists (for regular tracks)
+
+  // For radio streams, just show the artist
+  const streamArtist = props.queueItem.streamdetails?.stream_metadata?.artist;
+  if (streamArtist) return streamArtist;
+
+  // Build "Artist - Album" format for regular tracks
+  const parts: string[] = [];
+
+  // Get artist name(s)
   if (
     props.queueItem.media_item &&
     "artists" in props.queueItem.media_item &&
     props.queueItem.media_item.artists?.length
   ) {
-    return props.queueItem.media_item.artists
+    const artistStr = props.queueItem.media_item.artists
       .map((a: { name: string }) => a.name)
       .join(", ");
+    parts.push(artistStr);
   }
-  // Fallback to stream_metadata.artist (for radio streams)
-  return props.queueItem.streamdetails?.stream_metadata?.artist || "";
+
+  // Get album name
+  if (
+    props.queueItem.media_item &&
+    "album" in props.queueItem.media_item &&
+    props.queueItem.media_item.album?.name
+  ) {
+    parts.push(props.queueItem.media_item.album.name);
+  }
+
+  return parts.join(" • ");
 });
 
 const artworkSize = computed(() => {

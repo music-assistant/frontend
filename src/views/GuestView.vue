@@ -4,7 +4,7 @@
     <div class="search-section">
       <v-text-field
         v-model="searchQuery"
-        placeholder="Search for songs, artists, or albums..."
+        placeholder="Search for songs or artists..."
         prepend-inner-icon="mdi-magnify"
         variant="outlined"
         density="comfortable"
@@ -27,8 +27,97 @@
       </v-btn>
     </div>
 
+    <!-- Artist Tracks View (when drilling into an artist) -->
+    <div v-if="selectedArtist" class="results-section">
+      <div class="section-header">
+        <v-btn
+          variant="text"
+          color="primary"
+          class="back-btn"
+          @click="clearArtistSelection"
+        >
+          <v-icon start>mdi-arrow-left</v-icon>
+          Back
+        </v-btn>
+        <h2 class="section-title artist-title">
+          {{ selectedArtist.name }}
+        </h2>
+        <div v-if="rateLimitingEnabled" class="play-next-tokens">
+          <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
+          <span class="token-count"
+            >{{ playNextTokens }}/{{ PLAY_NEXT_MAX_TOKENS }}</span
+          >
+          <span class="token-label">Play Next available</span>
+        </div>
+      </div>
+      <!-- Loading state -->
+      <div v-if="loadingArtistTracks" class="loading-artist-tracks">
+        <v-progress-circular indeterminate color="primary" size="48" />
+        <p>Loading tracks...</p>
+      </div>
+      <!-- Artist tracks list -->
+      <div v-else-if="artistTracks.length > 0" class="results-list">
+        <div
+          v-for="track in artistTracks"
+          :key="`track-${track.item_id}`"
+          class="result-item"
+        >
+          <div class="result-info">
+            <v-avatar size="56" rounded class="result-avatar">
+              <v-img :src="getImageUrl(track)" :alt="track.name" cover>
+                <template #placeholder>
+                  <div class="avatar-placeholder">
+                    <v-icon>mdi-music</v-icon>
+                  </div>
+                </template>
+              </v-img>
+            </v-avatar>
+            <div class="result-text">
+              <div class="result-name scroll-text">
+                <span>{{ track.name }}</span>
+              </div>
+              <div class="result-artist scroll-text">
+                <span>{{ getArtistName(track) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="result-actions">
+            <v-btn
+              v-if="addQueueEnabled"
+              color="primary"
+              variant="elevated"
+              :loading="addingItems.has(`track-${track.item_id}-end`)"
+              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+              class="action-btn action-btn-primary"
+              @click="addToQueue(track, 'end')"
+            >
+              <v-icon start>mdi-playlist-plus</v-icon>
+              Add
+            </v-btn>
+            <v-btn
+              v-if="playNextEnabled"
+              color="secondary"
+              variant="flat"
+              :loading="addingItems.has(`track-${track.item_id}-next`)"
+              :disabled="rateLimitingEnabled && playNextTokens <= 0"
+              class="action-btn action-btn-secondary"
+              @click="addToQueue(track, 'next')"
+            >
+              <v-icon start>mdi-playlist-play</v-icon>
+              Next
+            </v-btn>
+          </div>
+        </div>
+      </div>
+      <!-- Empty state for no tracks -->
+      <div v-else class="empty-state">
+        <v-icon size="64" color="grey">mdi-music-off</v-icon>
+        <p>No tracks found for this artist</p>
+      </div>
+    </div>
+
     <!-- Search Results -->
-    <div v-if="searchResults.length > 0" class="results-section">
+    <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
           Search Results ({{ searchResults.length }})
@@ -70,13 +159,14 @@
               </div>
               <div class="result-artist scroll-text">
                 <span>{{ getArtistName(item) }}</span>
-                <span v-if="item.media_type !== 'track'" class="result-type">
-                  • {{ formatMediaType(item.media_type) }}
+                <span v-if="item.media_type === 'artist'" class="result-type">
+                  • Artist
                 </span>
               </div>
             </div>
           </div>
-          <div class="result-actions">
+          <!-- Actions for tracks -->
+          <div v-if="item.media_type === 'track'" class="result-actions">
             <v-btn
               v-if="addQueueEnabled"
               color="primary"
@@ -106,6 +196,18 @@
               Next
             </v-btn>
           </div>
+          <!-- Actions for artists - drill down to see tracks -->
+          <div v-else-if="item.media_type === 'artist'" class="result-actions">
+            <v-btn
+              color="primary"
+              variant="elevated"
+              class="action-btn action-btn-primary"
+              @click="selectArtist(item)"
+            >
+              <v-icon start>mdi-music-note-outline</v-icon>
+              View Songs
+            </v-btn>
+          </div>
         </div>
         <!-- Loading indicator for infinite scroll -->
         <div v-if="loadingMoreResults" class="loading-more">
@@ -116,7 +218,12 @@
 
     <!-- Empty State - only show when a search has completed with no results -->
     <div
-      v-else-if="!searching && hasSearched && searchResults.length === 0"
+      v-else-if="
+        !searching &&
+        hasSearched &&
+        searchResults.length === 0 &&
+        !selectedArtist
+      "
       class="empty-state"
     >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
@@ -124,9 +231,9 @@
       <p class="empty-hint">Try a different search term</p>
     </div>
 
-    <!-- Current Queue Section - Hidden when search results are showing -->
+    <!-- Current Queue Section - Hidden when search results or artist tracks are showing -->
     <div
-      v-if="!searchQuery || searchResults.length === 0"
+      v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
       class="queue-section"
     >
       <h2 class="section-title">Current Queue</h2>
@@ -167,10 +274,10 @@
           </v-avatar>
           <div class="queue-info">
             <div class="queue-name scroll-text">
-              <span>{{ item.name }}</span>
+              <span>{{ getQueueItemTitle(item) }}</span>
             </div>
             <div class="queue-artist scroll-text">
-              <span>{{ getQueueItemArtist(item) }}</span>
+              <span>{{ getQueueItemSubtitle(item) }}</span>
             </div>
           </div>
           <!-- Guest request badge (right aligned) -->
@@ -273,10 +380,17 @@ import {
 import { getMediaItemImageUrl } from "@/helpers/utils";
 
 const handleBack = (event: PopStateEvent) => {
+  // First, clear artist selection if viewing artist tracks
+  if (selectedArtist.value) {
+    event.preventDefault();
+    clearArtistSelection();
+    history.pushState(null, "", location.href);
+    return;
+  }
+  // Then, clear search if there are results
   if (searchQuery.value || searchResults.value.length > 0) {
-    event.preventDefault(); // Prevent leaving
+    event.preventDefault();
     clearSearch();
-    // Push state so the user can press back again if needed
     history.pushState(null, "", location.href);
   }
 };
@@ -288,6 +402,11 @@ const searching = ref(false);
 const addingItems = ref(new Set<string>());
 const hasSearched = ref(false); // Track if a search has been performed
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Artist drill-down state
+const selectedArtist = ref<any | null>(null);
+const artistTracks = ref<any[]>([]);
+const loadingArtistTracks = ref(false);
 
 // Infinite scroll state
 const resultsListRef = ref<HTMLElement | null>(null);
@@ -616,15 +735,10 @@ const performSearch = async () => {
   try {
     const results = await api.search(searchQuery.value, [
       MediaType.TRACK,
-      MediaType.ALBUM,
       MediaType.ARTIST,
     ]);
-    // Combine all search results into a single array
-    searchResults.value = [
-      ...results.tracks,
-      ...results.albums,
-      ...results.artists,
-    ];
+    // Show tracks and artists - guests can drill into artists to see their tracks
+    searchResults.value = [...results.tracks, ...results.artists];
     // Reset displayed count for new search
     displayedResultsCount.value = 10;
   } catch (error) {
@@ -669,6 +783,41 @@ const clearSearch = () => {
   searchResults.value = [];
   displayedResultsCount.value = 10; // Reset to initial count
   hasSearched.value = false;
+  // Clear artist drill-down state
+  selectedArtist.value = null;
+  artistTracks.value = [];
+};
+
+// Artist drill-down - fetch tracks for selected artist
+const selectArtist = async (artist: any) => {
+  selectedArtist.value = artist;
+  loadingArtistTracks.value = true;
+  artistTracks.value = [];
+
+  try {
+    // Get the provider from the artist's provider_mappings
+    const providerMapping = artist.provider_mappings?.[0];
+    if (!providerMapping) {
+      throw new Error("No provider mapping found for artist");
+    }
+
+    const tracks = await api.getArtistTracks(
+      providerMapping.item_id,
+      providerMapping.provider_instance,
+    );
+    artistTracks.value = tracks;
+  } catch (error) {
+    console.error("Failed to fetch artist tracks:", error);
+    showSnackbar("Failed to load artist tracks. Please try again.", "error");
+    selectedArtist.value = null;
+  } finally {
+    loadingArtistTracks.value = false;
+  }
+};
+
+const clearArtistSelection = () => {
+  selectedArtist.value = null;
+  artistTracks.value = [];
 };
 
 // Infinite scroll handler
@@ -897,24 +1046,39 @@ const getArtistName = (item: any) => {
   return "Unknown Artist";
 };
 
-const getQueueItemArtist = (item: QueueItem) => {
-  // QueueItem has media_item which contains the full track details
+// Get proper track title from media_item (not "Artist - Title" format)
+const getQueueItemTitle = (item: QueueItem) => {
   const mediaItem = item.media_item as any;
+  // Prefer media_item.name for proper track title
+  if (mediaItem?.name) {
+    return mediaItem.name;
+  }
+  // Fallback to queue item name
+  return item.name;
+};
+
+// Get "Artist • Album" subtitle for queue items
+const getQueueItemSubtitle = (item: QueueItem) => {
+  const mediaItem = item.media_item as any;
+  const parts: string[] = [];
+
+  // Get artist name(s)
   if (
     mediaItem?.artists &&
     Array.isArray(mediaItem.artists) &&
     mediaItem.artists.length > 0
   ) {
-    return mediaItem.artists.map((a: any) => a.name).join(", ");
+    parts.push(mediaItem.artists.map((a: any) => a.name).join(", "));
+  } else if (mediaItem?.artist?.name) {
+    parts.push(mediaItem.artist.name);
   }
-  if (mediaItem?.artist?.name) {
-    return mediaItem.artist.name;
-  }
-  return "Unknown Artist";
-};
 
-const formatMediaType = (type: string) => {
-  return type.charAt(0).toUpperCase() + type.slice(1);
+  // Get album name
+  if (mediaItem?.album?.name) {
+    parts.push(mediaItem.album.name);
+  }
+
+  return parts.length > 0 ? parts.join(" • ") : "Unknown Artist";
 };
 
 const showSnackbar = (message: string, color: string = "success") => {
@@ -1167,11 +1331,15 @@ onMounted(async () => {
 }
 
 .results-section {
-  margin-bottom: 2rem;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.results-section .section-header {
+  flex-shrink: 0;
 }
 
 .results-list {
@@ -1254,6 +1422,7 @@ onMounted(async () => {
 }
 .result-type {
   text-transform: capitalize;
+  opacity: 0.7;
 }
 
 .result-actions {
@@ -1261,6 +1430,25 @@ onMounted(async () => {
   gap: 0.5rem;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.artist-title {
+  flex: 1;
+  text-align: center;
+}
+
+.loading-artist-tracks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  opacity: 0.7;
 }
 
 .action-btn {
@@ -1433,34 +1621,40 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .guest-view {
-    padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .section-title {
-    width: 100%;
-  }
-
-  .play-next-tokens {
-    width: 100%;
-    justify-content: center;
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
   }
 
   .search-section {
     flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .play-next-tokens {
+    display: none;
   }
 
   .result-item {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.75rem;
+    gap: 0.5rem;
     min-height: auto;
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+
+  .results-list {
+    gap: 0.5rem;
+    padding-right: 0.25rem;
   }
 
   .result-info {
