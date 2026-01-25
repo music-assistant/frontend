@@ -95,15 +95,8 @@ const useAlbumArtBackground = computed(() => {
   return albumArtBackgroundEnabled.value;
 });
 
-// Check if player controls should be shown - prioritize query parameter over config
-// frameless=false in URL means show controls, frameless=true means hide controls
+// Check if player controls should be shown (from party mode config)
 const showPlayerControls = computed(() => {
-  // Query parameter takes precedence for manual override
-  if (route.query.frameless !== undefined) {
-    // frameless=false means show controls, frameless=true means hide controls
-    return route.query.frameless === "false";
-  }
-  // Otherwise use config value
   return showPlayerControlsEnabled.value;
 });
 
@@ -266,7 +259,6 @@ const backgroundStyle = computed(() => {
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         transition: "background 0.8s ease-in-out",
-        position: "relative" as const,
       };
     }
   }
@@ -428,13 +420,9 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  height: 100vh;
+  flex: 1;
   overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -489,14 +477,19 @@ watch(
   overflow: hidden;
 }
 
-/* Empty State */
+/* Empty State - same dimensions as .track-list for consistent layout */
 .empty-state {
+  position: relative;
+  width: 100%;
+  height: 80%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 3rem;
+  box-sizing: border-box;
+  overflow: hidden;
   animation: fadeIn 0.6s ease-in-out;
 }
 
@@ -556,6 +549,10 @@ watch(
     height: 60vh;
   }
 
+  .empty-state {
+    height: 60vh;
+  }
+
   .qr-box {
     width: 12vh;
     height: 12vh;
@@ -596,6 +593,10 @@ watch(
   }
 
   .track-list {
+    height: 50vh;
+  }
+
+  .empty-state {
     height: 50vh;
   }
 
@@ -647,9 +648,11 @@ watch(
 </style>
 
 <style>
-/* Global styles to prevent parent container scrolling when party view is active */
+/* Global styles to ensure party view fills its container properly */
 .content-section:has(.party-view) {
   overflow: hidden !important;
   padding-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
 }
 </style>
