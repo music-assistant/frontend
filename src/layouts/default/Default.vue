@@ -1,11 +1,8 @@
 <template>
   <v-app>
-    <MainView v-if="store.frameless" />
-    <template v-else>
-      <PlayerSelect />
-      <MainView />
-      <Footer />
-    </template>
+    <PlayerSelect />
+    <MainView />
+    <Footer />
   </v-app>
   <reload-prompt />
 </template>
@@ -45,13 +42,6 @@ watch(
   () => route.query.showFullscreenPlayer,
   (showFullscreenPlayer) => {
     store.showFullscreenPlayer = !!showFullscreenPlayer;
-  },
-  { immediate: true },
-);
-watch(
-  () => route.query.frameless,
-  (frameless) => {
-    store.frameless = !!frameless;
   },
   { immediate: true },
 );

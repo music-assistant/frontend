@@ -52,7 +52,7 @@ export const getMenuItems = function () {
       items.push({
         label: "party_mode",
         icon: PartyPopper,
-        path: "/party?frameless=true",
+        path: "/party",
         isLibraryNode: false,
         hidden: !store.partyModeEnabled,
       });
