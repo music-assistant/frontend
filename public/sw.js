@@ -61,15 +61,6 @@ self.addEventListener("message", async (event) => {
     // Handle HTTP proxy response
     const { id, status, headers, body } = data;
 
-    console.log(
-      "[ServiceWorker] Received http-proxy-response:",
-      id,
-      "status:",
-      status,
-      "pending:",
-      pendingRequests.has(id),
-    );
-
     const pendingRequest = pendingRequests.get(id);
     if (pendingRequest) {
       pendingRequests.delete(id);
@@ -84,21 +75,10 @@ self.addEventListener("message", async (event) => {
           headers: new Headers(headers),
         });
 
-        console.log("[ServiceWorker] Resolving http-proxy-response:", id);
         pendingRequest.resolve(response);
       } catch (error) {
-        console.error(
-          "[ServiceWorker] Error processing http-proxy-response:",
-          id,
-          error,
-        );
         pendingRequest.reject(error);
       }
-    } else {
-      console.warn(
-        "[ServiceWorker] Received http-proxy-response for unknown request:",
-        id,
-      );
     }
   } else if (type === "set-remote-mode") {
     // Update remote mode state in PERSISTENT storage
@@ -160,11 +140,8 @@ async function handleHttpProxyRequest(request) {
   if (cachedResponse) {
     // Return cached response immediately (cache-first strategy)
     // We'll still revalidate in the background for next time
-    console.log("[ServiceWorker] Cache HIT for:", url.pathname);
     return cachedResponse;
   }
-
-  console.log("[ServiceWorker] Cache MISS for:", url.pathname);
 
   // Generate unique request ID
   const requestId = generateRequestId();
@@ -178,11 +155,6 @@ async function handleHttpProxyRequest(request) {
     setTimeout(() => {
       if (pendingRequests.has(requestId)) {
         pendingRequests.delete(requestId);
-        console.error(
-          "[ServiceWorker] HTTP proxy request TIMEOUT:",
-          requestId,
-          url.pathname,
-        );
         reject(new Error("HTTP proxy request timeout"));
       }
     }, 30000);
@@ -201,14 +173,6 @@ async function handleHttpProxyRequest(request) {
 
   // Send HTTP proxy request to main thread
   const clients = await self.clients.matchAll();
-  console.log(
-    "[ServiceWorker] Sending http-proxy-request:",
-    requestId,
-    url.pathname,
-    "clients:",
-    clients.length,
-  );
-
   if (clients.length > 0) {
     clients[0].postMessage({
       type: "http-proxy-request",
@@ -219,9 +183,7 @@ async function handleHttpProxyRequest(request) {
         headers: headers,
       },
     });
-    console.log("[ServiceWorker] Message posted to client:", requestId);
   } else {
-    console.error("[ServiceWorker] No clients available for:", requestId);
     pendingRequests.delete(requestId);
     return new Response("Service worker error: No client found", {
       status: 503,
