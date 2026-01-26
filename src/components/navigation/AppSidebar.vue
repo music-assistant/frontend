@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +17,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
+import { ArrowLeftToLine, ArrowRightToLine } from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -41,6 +44,10 @@ const isCollapsed = computed(() => state.value === "collapsed");
 
 const haButtonText = computed(() => {
   return haState.kioskModeEnabled ? "Show HA Menu" : "Hide HA Menu";
+});
+
+const haIcon = computed(() => {
+  return haState.kioskModeEnabled ? ArrowRightToLine : ArrowLeftToLine;
 });
 
 const haButtonTooltip = computed(() => {
@@ -70,7 +77,7 @@ const handleHAMenuToggle = () => {
     </SidebarHeader>
     <SidebarContent>
       <!-- HA Menu Toggle Button (only in ingress/app session) -->
-      <div class="px-2 w-full mb-2">
+      <div v-if="store.isIngressSession" class="px-2 w-full">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button
@@ -81,6 +88,13 @@ const handleHAMenuToggle = () => {
               ]"
               @click="handleHAMenuToggle"
             >
+              <component
+                :is="haIcon"
+                :size="16"
+                color="#03a9f4"
+                :stroke-width="2.5"
+                class="home-assistant-arrow"
+              />
               <img
                 src="@/assets/home-assistant-logo.svg"
                 alt="Home Assistant"
@@ -97,6 +111,7 @@ const handleHAMenuToggle = () => {
             {{ haButtonTooltip }}
           </TooltipContent>
         </Tooltip>
+        <Separator class="mt-4" />
       </div>
       <NavMain :items="navItems" />
     </SidebarContent>
@@ -154,10 +169,18 @@ const handleHAMenuToggle = () => {
 .home-assistant-button {
   transition: all 0.2s ease;
   padding-left: 8px !important;
+  gap: 0.5rem;
+  font-weight: 600 !important;
+}
+
+.home-assistant-arrow {
+  flex-shrink: 0;
+  transition: all 0.2s ease;
 }
 
 .home-assistant-icon {
   flex-shrink: 0;
+  margin-bottom: 2px;
   width: 1rem;
   height: 1rem;
   transition: all 0.2s ease;
@@ -169,7 +192,6 @@ const handleHAMenuToggle = () => {
     width 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
-  margin-left: 0.5rem;
 }
 
 .home-assistant-collapsed {
@@ -177,8 +199,10 @@ const handleHAMenuToggle = () => {
   align-items: center;
   justify-content: center !important;
   padding-right: 7px !important;
+  gap: 0 !important;
 }
 
+.home-assistant-collapsed .home-assistant-arrow,
 .home-assistant-collapsed .home-assistant-icon {
   margin: 0 auto;
 }
