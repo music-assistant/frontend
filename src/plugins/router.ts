@@ -382,7 +382,8 @@ router.onError((error, to) => {
     );
     // Use location.href to do a full reload to the intended route
     // This ensures we get fresh HTML and assets from the server
-    window.location.href = window.location.origin + window.location.pathname + "#" + to.fullPath;
+    window.location.href =
+      window.location.origin + window.location.pathname + "#" + to.fullPath;
   }
 });
 

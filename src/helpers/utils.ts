@@ -1,7 +1,6 @@
 import {
   Artist,
   BrowseFolder,
-  HidePlayerOption,
   ImageType,
   ItemMapping,
   MediaItemImage,
@@ -701,37 +700,20 @@ export const playerVisible = function (
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  if (player.hide_player_in_ui.includes(HidePlayerOption.ALWAYS)) {
+  if (player.hide_in_ui && player.player_id != webPlayer.player_id) {
     return false;
   }
-  if (
-    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_SYNCED) &&
-    player.synced_to &&
-    !allowGroupChilds
-  ) {
+  if (player.synced_to && !allowGroupChilds) {
     return false;
   }
-  if (
-    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_GROUP_ACTIVE) &&
-    player.active_group &&
-    !allowGroupChilds
-  )
-    return false;
-  if (
-    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_OFF) &&
-    player.powered === false
-  ) {
-    return false;
-  }
-  if (
-    player.hide_player_in_ui.includes(HidePlayerOption.WHEN_UNAVAILABLE) &&
-    !player.available
-  ) {
+  if (player.active_group && !allowGroupChilds) return false;
+  if (!player.available) {
     return false;
   }
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
+    player.player_id != webPlayer.player_id &&
     !store.currentUser.player_filter.includes(player.player_id)
   ) {
     // for non-admin users, the playerfilter is applied in the backend

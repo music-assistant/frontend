@@ -230,6 +230,14 @@ const showPlayerSearch = computed(() => allPlayers.value.length > 8);
 // Preferred players shown at top (playing, active, recently selected, web player)
 const preferredPlayers = computed(() => {
   const players = Object.values(api.players).filter((x) => playerVisible(x));
+  if (players.length <= 3) {
+    // If 3 or fewer players, show all as preferred
+    return players.sort((a, b) => {
+      const indexA = playerSortOrder.value.indexOf(a.player_id);
+      const indexB = playerSortOrder.value.indexOf(b.player_id);
+      return indexA - indexB;
+    });
+  }
   // Filter to only players with priority > 0, then sort by frozen order, limit to top 3
   const preferred = players.filter((p) => getPlayerPriority(p) > 0);
   return preferred
