@@ -234,7 +234,7 @@ const config_entries = computed(() => {
     !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
     entries.push({
-      key: "dsp_note_multi_device_group_not_supported",
+      key: "dsp_note_multi_device_group_unsupported",
       type: ConfigEntryType.LABEL,
       label:
         "This group type does not support DSP when playing to multiple devices.",
