@@ -1,3 +1,4 @@
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
 import {
@@ -11,7 +12,6 @@ import {
   Radio,
   Search,
   Settings,
-  UserRound,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -50,7 +50,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "artists") {
       items.push({
         label: "artists",
-        icon: UserRound,
+        icon: ArtistIcon,
         path: "/artists",
         isLibraryNode: true,
         hidden: store.libraryArtistsCount === 0,
