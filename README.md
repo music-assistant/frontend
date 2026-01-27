@@ -52,7 +52,7 @@ yarn lint
 
 ## UI Framework
 
-This project has migrated from **Vuetify** to **[shadcn-vue](https://www.shadcn-vue.com/)** as its primary UI component library.
+This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-vue.com/)** as its primary UI component library.
 
 ### Guidelines
 
