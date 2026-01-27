@@ -165,12 +165,12 @@ const emit = defineEmits<{
 }>();
 
 // global refs
-const entries = ref<ConfigEntry[]>();
+const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
 const activePanel = ref<string[]>([]);
 const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntry>();
+const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 
 // props
@@ -281,7 +281,7 @@ const action = async function (action: string) {
   emit("action", action, getCurrentValues());
 };
 
-const onValueUpdate = function (entry: ConfigEntry, value: ConfigValueType) {
+const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
   // If immediate_apply is set, emit the value change immediately
   if (entry.immediate_apply) {
@@ -354,11 +354,11 @@ const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 
-const isVisible = function (entry: ConfigEntry) {
+const isVisible = function (entry: ConfigEntryUI) {
   return !entry.hidden;
 };
 
-const isDisabled = function (entry: ConfigEntry) {
+const isDisabled = function (entry: ConfigEntryUI) {
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependentEntry = entries.value?.find(
       (x) => x.key == entry.depends_on,
@@ -381,7 +381,7 @@ const isDisabled = function (entry: ConfigEntry) {
 };
 
 const visibleEntriesByCategory = computed(() => {
-  const result: Record<string, ConfigEntry[]> = {};
+  const result: Record<string, ConfigEntryUI[]> = {};
   if (!entries.value) return result;
 
   for (const entry of entries.value) {
@@ -442,7 +442,7 @@ const getCategoryIcon = function (category: string): string {
   return iconMap[category] || "mdi-cog-outline";
 };
 
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
+const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   // overly complicated way to determine we have a description for the entry
   // in either the translations (by entry key), on the entry itself as fallback
   // OR it has a help link
