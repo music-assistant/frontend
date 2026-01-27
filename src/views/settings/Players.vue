@@ -201,7 +201,9 @@ const providersWithCreateGroupSupport = computed(() => {
 
 // methods
 const loadItems = async function () {
-  playerConfigs.value = (await api.getPlayerConfigs())
+  playerConfigs.value = (
+    await api.getPlayerConfigs(undefined, false, false, true)
+  )
     .filter((x) => !isHiddenSendspinWebPlayer(x))
     .sort((a, b) => getPlayerName(a).localeCompare(getPlayerName(b)));
 };

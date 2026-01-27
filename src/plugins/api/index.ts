@@ -1513,9 +1513,19 @@ export class MusicAssistantApi {
 
   // PlayerConfig related functions
 
-  public async getPlayerConfigs(provider?: string): Promise<PlayerConfig[]> {
+  public async getPlayerConfigs(
+    provider?: string,
+    include_values?: boolean,
+    include_unavailable?: boolean,
+    include_disabled?: boolean,
+  ): Promise<PlayerConfig[]> {
     // Return all known player configurations, optionally filtered by provider domain.
-    return this.sendCommand("config/players", { provider });
+    return this.sendCommand("config/players", {
+      provider,
+      include_values,
+      include_unavailable,
+      include_disabled,
+    });
   }
 
   public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
