@@ -74,7 +74,6 @@
     "queue_empty": "Keine Einträge in der Warteschlange",
     "queue_move_down": "Nach unten",
     "queue_move_up": "Nach oben",
-    "queue_move_end": "Nach Ende",
     "queue_next_items": "Nächste Titel",
     "queue_options": "Warteschlangen-Einstellungen",
     "queue_previous_items": "Gespielte Titel",
