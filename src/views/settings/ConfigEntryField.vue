@@ -78,7 +78,7 @@
         {{ $t("open_dsp_settings") }}
       </v-btn>
       <span v-if="isFieldDisabled" class="dsp-forbidden-reason">
-        {{ $t(`settings.${confEntry.label}.label`, "") }}
+        {{ $t(`settings.${confEntry.note_key}.label`, "") }}
       </span>
     </div>
 

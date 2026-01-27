@@ -316,7 +316,7 @@
             "builtin_playlists": "Builtin Playlist Settings",
             "web_player": "Web Player",
             "player_queue": "Player Queue",
-            "group_settings": "Group Playback"
+            "per_group_settings": "Group Playback"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
