@@ -288,10 +288,7 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import {
-  ConfigEntryUI,
-  isDspLinkEntry,
-} from "@/helpers/config_entry_ui";
+import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
