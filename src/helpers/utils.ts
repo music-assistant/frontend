@@ -732,7 +732,7 @@ export const handlePlayBtnClick = function (
   forceMenu?: boolean,
 ) {
   // we show the play menu for the item once (if playerTip has not been dismissed)
-  if (!forceMenu && store.playerTipShown && store.activePlayer?.available) {
+  if (!forceMenu && store.activePlayer?.available) {
     store.playActionInProgress = true;
     if (
       item.media_type == MediaType.TRACK &&
@@ -780,15 +780,10 @@ export const handleMediaItemClick = function (
     return;
   }
 
-  // podcast episode has no details view so always start playback
+  // podcast episode has no details view so show play menu directly
+  // TODO: revisit this once we have a proper podcast episode details view
   if (item.media_type == MediaType.PODCAST_EPISODE) {
-    handlePlayBtnClick(item, posX, posY, parentItem);
-    return;
-  }
-
-  // track or radio clicked in a sublisting - start playback
-  if ([MediaType.TRACK, MediaType.RADIO].includes(item.media_type)) {
-    handlePlayBtnClick(item, posX, posY, parentItem, false);
+    handlePlayBtnClick(item, posX, posY, parentItem, true);
     return;
   }
 
@@ -818,6 +813,7 @@ export const handleMenuBtnClick = function (
     parentItem,
     posX,
     posY,
+    includePlayMenuItems,
     includePlayMenuItems,
   );
 };
