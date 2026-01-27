@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
 import { PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
@@ -38,9 +39,10 @@ const handleHAMenuToggle = () => {
     ]"
   >
     <!-- HA Menu Toggle Button -->
-    <Tooltip>
+    <Tooltip v-if="store.isIngressSession">
       <TooltipTrigger as-child>
         <Button
+          v-if="store.isIngressSession"
           variant="ghost"
           size="icon"
           :class="[, isCollapsed && 'order-first']"
