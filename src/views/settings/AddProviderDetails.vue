@@ -78,6 +78,7 @@ import { api } from "@/plugins/api";
 import {
   ConfigValueType,
   ConfigEntry,
+  ConfigEntryType,
   EventType,
   EventMessage,
 } from "@/plugins/api/interfaces";
@@ -157,6 +158,36 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     });
 };
 
+const requiredValuesPresent = function (entries: ConfigEntry[]): boolean {
+  for (const entry of entries) {
+    if (
+      entry.required &&
+      !(
+        (entry.value !== null && entry.value !== undefined) ||
+        (entry.default_value !== null && entry.default_value !== undefined) ||
+        entry.type == ConfigEntryType.DIVIDER ||
+        entry.type == ConfigEntryType.LABEL ||
+        entry.type == ConfigEntryType.ALERT ||
+        entry.type == ConfigEntryType.ACTION
+      )
+    )
+      return false;
+  }
+  return true;
+};
+
+const getConfigValues = function (
+  entries: ConfigEntry[],
+): Record<string, ConfigValueType> {
+  const values: Record<string, ConfigValueType> = {};
+  for (const entry of entries) {
+    let value = entry.value;
+    if (value == undefined) value = entry.default_value ?? null;
+    values[entry.key] = value;
+  }
+  return values;
+};
+
 const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
@@ -175,6 +206,10 @@ const onAction = async function (
     .getProviderConfigEntries(props.domain, undefined, action, values)
     .then((entries) => {
       config_entries.value = entries;
+      // Auto-save after OAuth2 authentication completes if all required values are present
+      if (requiredValuesPresent(entries)) {
+        onSubmit(getConfigValues(entries));
+      }
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
