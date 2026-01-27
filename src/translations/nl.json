@@ -635,14 +635,6 @@
         "players_total": "{0} totale speler{1}",
         "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn momenteel geen providers die het aanmaken van groepen ondersteunen",
-        "web_player_mode": {
-            "label": "Webspelermodus",
-            "description": "Kies hoe deze browser omgaat met het afspelen van audio.",
-            "options": {
-                "sendspin": "Sendspin (experimenteel)",
-                "disabled": "Uitgeschakeld (alleen besturingselementen)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin-synchronisatievertraging (ms)",
             "description": "Statische vertraging in milliseconden om de audiosynchronisatie aan te passen. Positieve waarden vertragen het afspelen, negatieve waarden vervroegen het. Gebruik dit om apparaatspecifieke audiovertraging te compenseren."
@@ -672,7 +664,15 @@
         "provider_requires_attention": "Deze provider heeft aandacht nodig",
         "provider_requires_attention_detail": "Een of meerdere providers hebben aandacht nodig. Controleer de providerinstellingen.",
         "reconfigure": "Opnieuw instellen",
-        "fix_now": "Nu oplossen"
+        "fix_now": "Nu oplossen",
+        "web_player_enabled": {
+            "label": "Schakel de ingebouwde (Sendspin) Webspeler in.",
+            "description": "Sta afspelen op dit apparaat\/in deze browser toe met de ingebouwde Sendspin-webspeler."
+        },
+        "enable_browser_controls": {
+            "label": "Schakel de mediabediening van de browser in",
+            "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",

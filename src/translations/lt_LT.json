@@ -635,14 +635,6 @@
         "players_total": "{0} bendras grotuvas{1}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Šiuo metu neturite jokių tiekėjų, kurie palaikytų grupių kūrimą",
-        "web_player_mode": {
-            "label": "Žiniatinklio grotuvo režimas",
-            "description": "Pasirinkite, kaip ši naršyklė apdoros garso atkūrimą.",
-            "options": {
-                "sendspin": "Sendspin (eksperimentinis)",
-                "disabled": "Išjungta (tik valdikliai)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin sinchronizavimo vėlavimas (ms)",
             "description": "Statinis delsos laikas milisekundėmis garso sinchronizavimui reguliuoti. Teigiamos vertės sulėtina atkūrimą, neigiamos – pagreitina. Naudokite tai, kad kompensuotumėte įrenginiui būdingą garso delsą."

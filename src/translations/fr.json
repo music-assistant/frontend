@@ -635,14 +635,6 @@
         "players_total": "{0} lecteur{1} au total",
         "api_docs": "Documentation de l'API",
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
-        "web_player_mode": {
-            "label": "Mode lecteur Web",
-            "description": "Choisissez comment ce navigateur gère la lecture audio.",
-            "options": {
-                "sendspin": "Sendspin (expérimental)",
-                "disabled": "Désactivé (commandes uniquement)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Délai de synchronisation Sendspin (ms)",
             "description": "Délai statique en millisecondes pour ajuster la synchronisation audio. Les valeurs positives retardent la lecture, les valeurs négatives l'avancent. Utilisez ce paramètre pour compenser la latence audio propre à votre appareil."

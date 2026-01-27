@@ -390,6 +390,18 @@
             "channels": {
                 "FL": "Izquierda"
             }
+        },
+        "remote_access_disabled_success": "El acceso remoto ha sido deshabilitado",
+        "sendspin_output_latency_compensation": {
+            "label": "Utilizar la detección de latencia del navegador"
+        },
+        "remote_access_qr_code_description": "Escanea con la cámara de tu teléfono para conectarte al instante.",
+        "reset_to_defaults_confirm": "¿Estás seguro de que quieres restablecer todos los ajustes a sus valores por defecto? Esto guardará los cambios inmediatamente.",
+        "unsaved_changes_message": "Tienes cambios sin guardar. ¿Estás seguro de que quieres irte sin guardar?",
+        "discard": "Descartar cambios",
+        "enable_browser_controls": {
+            "label": "Activar los controles multimedia del navegador",
+            "description": "Permitir el control de la reproducción mediante los controles multimedia integrados en el navegador (por ejemplo, las teclas multimedia del teclado)."
         }
     },
     "show_info": "Mostrar información",
@@ -453,7 +465,8 @@
         "play_sample": "Reproducir muestra",
         "album_type": "Tipo de álbum",
         "loading": "El servidor está procesando una solicitud o sincronizando música.",
-        "primary_image": "Esta es la imagen primario para este tipo de imagen"
+        "primary_image": "Esta es la imagen primario para este tipo de imagen",
+        "in_provider_library": "Este elemento está en la librería del proveedor"
     },
     "topresult": "Resultados mas importantes",
     "track": "Pista",
@@ -513,5 +526,23 @@
     "shuffle_disable": "Deshabilitar reproducción aleatoria",
     "shuffle_enable": "Activar reproducción aleatoria",
     "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
-    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'"
+    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'",
+    "recommendations": {
+        "recently_played": "Escuchado recientemente",
+        "recent_favorite_tracks": "Pistas favoritas recientes",
+        "recommended": "Recomendado",
+        "recently_added": "Añadido recientemente",
+        "episodes_recently_added": "Episodios añadidos recientemente",
+        "discover": "Descubrir",
+        "libraries": "Librerías",
+        "library": "Librería"
+    },
+    "uri_copied": "URI copiado en el portapapeles",
+    "uri_copy_failed": "Error al copiar URI al portapapeles",
+    "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",
+    "login": {
+        "scan_qr": "Escanear QR",
+        "qr_invalid": "Código QR no válido. Por favor escanea el código ID QR remoto de Music Assistant."
+    },
+    "narrators": "Narradores"
 }

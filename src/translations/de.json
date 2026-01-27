@@ -635,14 +635,6 @@
         "players_total": "{0} Wiedergabegeräte insgesamt{1}",
         "api_docs": "API-Dokumentation",
         "no_group_providers": "Du hast derzeit keine Anbieter, die die Erstellung von Gruppen unterstützen.",
-        "web_player_mode": {
-            "label": "Webplayer-Modus",
-            "description": "Wähle aus, wie dieser Browser die Audiowiedergabe handhabt.",
-            "options": {
-                "sendspin": "Sendspin (experimentell)",
-                "disabled": "Deaktiviert (nur Steuerung)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin-Synchronisierungsverzögerung (ms)",
             "description": "Statische Verzögerung in Millisekunden zur Anpassung der Audiosynchronisation. Positive Werte verzögern die Wiedergabe, negative Werte beschleunigen sie. Verwende diese Einstellung, um gerätespezifische Audiolatenzen auszugleichen."
@@ -672,7 +664,15 @@
         "provider_requires_attention": "Dieser Anbieter erfordert Aufmerksamkeit",
         "provider_requires_attention_detail": "Bei einem oder mehreren Anbietern ist Aufmerksamkeit erforderlich. Bitte überprüfe die Anbietereinstellungen.",
         "reconfigure": "Neu konfigurieren",
-        "fix_now": "Jetzt reparieren"
+        "fix_now": "Jetzt reparieren",
+        "web_player_enabled": {
+            "label": "Integrierten (Sendspin) Web Player aktivieren",
+            "description": "Die Wiedergabe auf diesem Gerät\/Browser soll über den integrierten Sendspin-Webplayer ermöglicht werden."
+        },
+        "enable_browser_controls": {
+            "label": "Aktivieren der Browser-Mediensteuerung",
+            "description": "Erlaube die Steuerung der Wiedergabe über die im Browser integrierten Mediensteuerungselemente (z. B. die Medientasten auf der Tastatur)."
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
