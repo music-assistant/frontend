@@ -167,10 +167,13 @@ import { nanoid } from "nanoid";
 import { useI18n } from "vue-i18n";
 import { GroupContext, deriveGroupContext } from "@/helpers/player_group_utils";
 import {
+  CONFIG_KEY_UI,
+  UI_ENTRY_TYPE,
+  ConfigKeyUI,
   ConfigEntryUI,
-  DspLinkConfigEntry,
-  makeDspLinkEntry,
+  InjectedConfigEntry,
   isDspLinkEntry,
+  isInjected,
 } from "@/helpers/config_entry_ui";
 // global refs
 const router = useRouter();
@@ -224,22 +227,29 @@ const config_entries = computed(() => {
   const entries: ConfigEntryUI[] = Object.values(config.value.values);
 
   // inject a link to DSP settings
-  entries.push(
-    makeDspLinkEntry({
-      default_value: dspEnabled.value,
-      note_key: group_ctx.value.dspPerPlayer
+  entries.push({
+    injected: true,
+    key: CONFIG_KEY_UI.DSP_SETTINGS_LINK,
+    type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
+    category: "audio",
+    label: "",
+    required: false,
+    read_only: false,
+    default_value: dspEnabled.value,
+    note_key: group_ctx.value.ownsDSPSettings
+      ? undefined
+      : group_ctx.value.dspPerPlayer
         ? "dsp_note_multi_device_group"
         : "dsp_note_multi_device_group_not_supported",
-    }),
-  );
+  });
 
   if (group_ctx.value.inGroup) {
     const adjEntries: ConfigEntryUI[] = [];
 
-    const toFilterSet = new Set(group_ctx.value.perGrpCfgKeys);
+    const toFilterSet = new Set<string>(group_ctx.value.perGrpCfgKeys);
     const perGroupOnly = new Map<string, ConfigEntryUI[]>();
 
-    const leader_values: Map<string, ConfigValueType> | null =
+    const leader_values: Map<string, ConfigValueType | undefined> | null =
       !group_ctx.value.isLeader && leaderConfig.value?.values
         ? new Map(
             Object.values(leaderConfig.value.values).map((e) => [
@@ -255,7 +265,8 @@ const config_entries = computed(() => {
         continue;
       }
 
-      const copyEntry: ConfigEntryUI = {
+      const shouldInject = isInjected(e) || !group_ctx.value.isLeader;
+      const baseEntry = {
         ...e,
         read_only:
           !group_ctx.value.isLeader ||
@@ -265,13 +276,16 @@ const config_entries = computed(() => {
           leader_values && leader_values.has(e.key)
             ? leader_values.get(e.key)!
             : e.value,
-        injected: e.injected || !group_ctx.value.isLeader,
       };
+      const copyEntry: ConfigEntryUI = shouldInject
+        ? { ...baseEntry, injected: true }
+        : baseEntry;
       const arr = perGroupOnly.get(e.category);
       if (arr) arr.push(copyEntry);
       else perGroupOnly.set(e.category, [copyEntry]);
     }
-    const baseGrpLabel: Omit<ConfigEntryUI, "key"> = {
+    const baseGrpLabel: Omit<InjectedConfigEntry, "key" | "label"> = {
+      injected: true,
       type: ConfigEntryType.LABEL,
       default_value: null,
       required: false,
@@ -305,7 +319,7 @@ const config_entries = computed(() => {
           key: "per_group_settings_divider",
           type: ConfigEntryType.DIVIDER,
           category: "per_group_settings",
-        });
+        } as InjectedConfigEntry);
         adjEntries.push(...arr);
       }
     }
@@ -422,7 +436,8 @@ const onAction = async function (
     });
 };
 
-const openPlayerConfig = function (player_id: string) {
+const openPlayerConfig = function (player_id: string | null) {
+  if (!player_id) return;
   const route = router.currentRoute.value;
   const segments = route.path.split("/").filter(Boolean);
   segments[segments.length - 1] = player_id;

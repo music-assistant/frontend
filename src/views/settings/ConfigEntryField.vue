@@ -77,7 +77,7 @@
       >
         {{ $t("open_dsp_settings") }}
       </v-btn>
-      <span v-if="isFieldDisabled" class="dsp-forbidden-reason">
+      <span v-if="confEntry.note_key" class="dsp-forbidden-reason">
         {{ $t(`settings.${confEntry.note_key}.label`, "") }}
       </span>
     </div>
@@ -290,7 +290,6 @@ import {
 } from "@/plugins/api/interfaces";
 import {
   ConfigEntryUI,
-  DspLinkConfigEntry,
   isDspLinkEntry,
 } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";

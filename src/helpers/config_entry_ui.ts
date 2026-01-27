@@ -1,54 +1,41 @@
 import type { ConfigEntry, ConfigEntryType } from "@/plugins/api/interfaces";
+import type { ConfigKey } from "@/plugins/api/constants";
 
-export type ConfigEntryUIOnlyType = "dsp_settings_link";
-export type ConfigEntryUIType = ConfigEntryType | ConfigEntryUIOnlyType;
+export const CONFIG_KEY_UI = {
+  DSP_SETTINGS_LINK: "dsp_settings_link",
+} as const;
+
+export type UiOnlyKey = (typeof CONFIG_KEY_UI)[keyof typeof CONFIG_KEY_UI];
+export type ConfigKeyUI = ConfigKey | UiOnlyKey;
+
+export const UI_ENTRY_TYPE = {
+  // entry type equals key for dsp_settings_link
+  DSP_SETTINGS_LINK: CONFIG_KEY_UI.DSP_SETTINGS_LINK,
+} as const;
+
+export type UiOnlyEntryType =
+  (typeof UI_ENTRY_TYPE)[keyof typeof UI_ENTRY_TYPE];
+export type ConfigEntryUIType = ConfigEntryType | UiOnlyEntryType;
 
 export type InjectedConfigEntry = Omit<ConfigEntry, "type"> & {
   injected: true;
-  type: ConfigEntryUIOnlyType;
+  type: ConfigEntryUIType;
+  read_only?: boolean;
   i18nParams?: Record<string, string | number>;
-};
-
-export type DspLinkConfigEntryUI = InjectedConfigEntry & {
-  type: "dsp_settings_link";
   note_key?: string;
 };
 
-// server entries stay unchanged
 export type ServerConfigEntryUI = ConfigEntry & {
   injected?: false;
+  note_key?: string;
 };
-
 export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
 
 export const isInjected = (e: ConfigEntryUI): e is InjectedConfigEntry =>
-  "injected" in e && e.injected === true;
+  (e as InjectedConfigEntry).injected === true;
 
-export const isDspLinkEntry = (e: ConfigEntryUI): e is DspLinkConfigEntry =>
-  isInjected(e) && e.type === "dsp_settings_link";
-
-const DEFAULT_DSP_LINK_ENTRY: Omit<
-  DspLinkConfigEntryUI,
-  "value" | "default_value"
-> & {
-  value: boolean;
-  default_value: boolean;
-} = {
-  injected: true,
-  type: "dsp_settings_link",
-  key: "dsp_settings_link",
-  category: "audio",
-  label: "",
-  required: false,
-};
-
-export function makeDspLinkEntry(
-  overrides: Partial<DspLinkConfigEntryUI> = {},
-): DspLinkConfigEntryUI {
-  return {
-    ...DEFAULT_DSP_LINK_ENTRY,
-    ...overrides,
-    injected: true,
-    type: "dsp_settings_link",
-  };
-}
+export const isDspLinkEntry = (
+  e: ConfigEntryUI,
+): e is InjectedConfigEntry & {
+  type: typeof UI_ENTRY_TYPE.DSP_SETTINGS_LINK;
+} => isInjected(e) && e.type === UI_ENTRY_TYPE.DSP_SETTINGS_LINK;

@@ -1,8 +1,9 @@
 import api from "@/plugins/api";
-import { Player, PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
+import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 import { CONFIG_KEY, type ConfigKey } from "@/plugins/api/constants";
+import { CONFIG_KEY_UI, ConfigKeyUI } from "@/helpers/config_entry_ui";
 
-const perGroupConfigKeys: ConfigKey[] = [
+const perGroupConfigKeys: ConfigKeyUI[] = [
   CONFIG_KEY.CROSSFADE_DURATION,
   CONFIG_KEY.SMART_FADES_MODE,
   CONFIG_KEY.OUTPUT_CHANNELS,
@@ -16,7 +17,7 @@ export interface GroupContext {
   leaderName: string | null;
   isLeader: boolean;
   // config keys which take affect per group rather than per group member
-  perGrpCfgKeys: string[];
+  perGrpCfgKeys: ConfigKeyUI[];
   // are the DSP settings of this player active in the group?
   ownsDSPSettings: boolean;
   dspPerPlayer: boolean;
@@ -44,8 +45,9 @@ export function deriveGroupContext(
       leaderName: null,
       isLeader: false,
       perGrpCfgKeys: [],
-      global_dsp: false,
-      individual_dsp: false,
+      ownsDSPSettings: false,
+      dspPerPlayer: false,
+      dspPerGroup: false,
     };
   }
 
@@ -71,7 +73,7 @@ export function deriveGroupContext(
     p.type === PlayerType.GROUP ||
     !p.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
-    perGrpCfgKeys.push("dsp_settings_link");
+    perGrpCfgKeys.push(CONFIG_KEY_UI.DSP_SETTINGS_LINK);
   }
 
   return {

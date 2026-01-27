@@ -262,7 +262,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
-import { deriveGroupContext } from "@/helpers/player_group_utils";
+import { GroupContext, deriveGroupContext } from "@/helpers/player_group_utils";
 
 const { t } = useI18n();
 const router = useRouter();
