@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -9,16 +7,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
-import { store } from "@/plugins/store";
-import { ArrowLeftToLine, ArrowRightToLine } from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -26,7 +15,6 @@ import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
 const { t } = useI18n();
-const { state, isMobile } = useSidebar();
 
 const menuItems = getMenuItems();
 
@@ -39,26 +27,6 @@ const navItems = computed(() => {
       icon: item.icon,
     }));
 });
-
-const isCollapsed = computed(() => state.value === "collapsed");
-
-const haButtonText = computed(() => {
-  return haState.kioskModeEnabled ? "Show HA Menu" : "Hide HA Menu";
-});
-
-const haIcon = computed(() => {
-  return haState.kioskModeEnabled ? ArrowRightToLine : ArrowLeftToLine;
-});
-
-const haButtonTooltip = computed(() => {
-  return haState.kioskModeEnabled
-    ? "Show Home Assistant Menu"
-    : "Hide Home Assistant Menu";
-});
-
-const handleHAMenuToggle = () => {
-  toggleHAMenuVisibility();
-};
 </script>
 
 <template>
@@ -76,43 +44,6 @@ const handleHAMenuToggle = () => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <!-- HA Menu Toggle Button (only in ingress/app session) -->
-      <div v-if="store.isIngressSession" class="px-2 w-full">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button
-              variant="outline"
-              :class="[
-                'home-assistant-button w-full justify-start',
-                isCollapsed && 'home-assistant-collapsed',
-              ]"
-              @click="handleHAMenuToggle"
-            >
-              <component
-                :is="haIcon"
-                :size="16"
-                color="#03a9f4"
-                :stroke-width="2.5"
-                class="home-assistant-arrow"
-              />
-              <img
-                src="@/assets/home-assistant-logo.svg"
-                alt="Home Assistant"
-                class="home-assistant-icon"
-              />
-              <span class="home-assistant-text">{{ haButtonText }}</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            align="center"
-            :hidden="state !== 'collapsed' || isMobile"
-          >
-            {{ haButtonTooltip }}
-          </TooltipContent>
-        </Tooltip>
-        <Separator class="mt-4" />
-      </div>
       <NavMain :items="navItems" />
     </SidebarContent>
     <SidebarFooter>
@@ -164,54 +95,5 @@ const handleHAMenuToggle = () => {
   width: 2rem !important;
   height: 2rem !important;
   margin-right: 0.5rem !important;
-}
-
-.home-assistant-button {
-  transition: all 0.2s ease;
-  padding-left: 8px !important;
-  gap: 0.5rem;
-  font-weight: 600 !important;
-}
-
-.home-assistant-arrow {
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.home-assistant-icon {
-  flex-shrink: 0;
-  margin-bottom: 2px;
-  width: 1rem;
-  height: 1rem;
-  transition: all 0.2s ease;
-}
-
-.home-assistant-text {
-  transition:
-    opacity 0.2s ease,
-    width 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.home-assistant-collapsed {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center !important;
-  padding-right: 7px !important;
-  gap: 0 !important;
-}
-
-.home-assistant-collapsed .home-assistant-arrow,
-.home-assistant-collapsed .home-assistant-icon {
-  margin: 0 auto;
-}
-
-.home-assistant-collapsed .home-assistant-text {
-  opacity: 0;
-  width: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
 }
 </style>
