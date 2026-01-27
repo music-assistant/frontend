@@ -47,7 +47,7 @@
             player.powered == false ||
             !player.supported_features.includes(PlayerFeature.VOLUME_MUTE)
           "
-          @click.stop="api.playerCommandMuteToggle(player.player_id)"
+          @click.stop="handlePlayerMuteToggle(player)"
         >
           <component
             :is="getVolumeIconComponent(player, mainDisplayVolume)"
@@ -442,6 +442,23 @@ const syncCheckBoxChange = async function (
         playersToUnSync.value = [];
       });
   }, 500);
+};
+
+const handlePlayerMuteToggle = function (player: Player) {
+  if (player.group_members.length > 0) {
+    // TODO: revisit this when api/server supports group mute toggle
+    const muted = !player.volume_muted;
+    for (const memberId of player.group_members) {
+      const childPlayer = api.players[memberId];
+      if (!childPlayer) continue;
+      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
+        continue;
+      }
+      api.playerCommandVolumeMute(memberId, muted);
+    }
+  } else {
+    api.playerCommandMuteToggle(player.player_id);
+  }
 };
 </script>
 
