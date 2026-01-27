@@ -1266,12 +1266,17 @@ export class MusicAssistantApi {
     return this.playerCommandPower(playerId, !this.players[playerId].powered);
   }
 
-  public async playerCommandVolumeSet(playerId: string, newVolume: number) {
+  public async playerCommandVolumeSet(
+    playerId: string,
+    newVolume: number,
+    preserveMute: boolean = false,
+  ) {
     newVolume = Math.max(newVolume, 0);
     newVolume = Math.min(newVolume, 100);
 
     await this.playerCommand(playerId, "volume_set", {
       volume_level: newVolume,
+      preserve_mute: preserveMute,
     });
     this.players[playerId].volume_level = newVolume;
   }
@@ -1388,6 +1393,20 @@ export class MusicAssistantApi {
   }
   public playerCommandGroupVolumeDown(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_down");
+  }
+  public playerCommandGroupVolumeMute(
+    playerId: string,
+    muted: boolean,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_mute", {
+      muted,
+    });
+  }
+  public playerCommandGroupMuteToggle(playerId: string): Promise<void> {
+    return this.playerCommandGroupVolumeMute(
+      playerId,
+      !this.players[playerId].volume_muted,
+    );
   }
 
   public async createPlayerGroup(
