@@ -181,10 +181,9 @@ const panels = computed(() => {
   const allCategories = new Set(
     entries
       .value!.map((x) => x.category)
-      .filter((x) => !["generic", "advanced"].includes(x)),
+      .filter((x) => !["per_user", "per_browser", "advanced"].includes(x)),
   );
-  // ensure generic is always first and advanced always last
-  return ["generic", ...allCategories, "advanced"];
+  return ["per_user", "per_browser", ...allCategories, "advanced"];
 });
 
 const requiredValuesPresent = computed(() => {
