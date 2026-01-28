@@ -46,7 +46,11 @@ function handleMessage(event: MessageEvent) {
       const haRoutePath = state.properties.route.path;
       const currentMARoute = routerInstance.currentRoute.value.fullPath;
 
-      if (haRoutePath !== currentMARoute && oldRoute !== haRoutePath) {
+      if (
+        oldRoute &&
+        haRoutePath !== currentMARoute &&
+        oldRoute !== haRoutePath
+      ) {
         isNavigatingFromHA = true;
         routerInstance.push(haRoutePath).finally(() => {
           isNavigatingFromHA = false;
