@@ -141,6 +141,7 @@
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
+        "settings_saved": "Settings saved successfully",
         "setup_provider": "Setup provider: {0}",
         "sync": "Synchronize now",
         "sync_running": "This provider is now being synchronized",
