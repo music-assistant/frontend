@@ -707,12 +707,14 @@ const autoConnect = async () => {
   const authCode = urlParams.get("code");
   const urlRemoteId = urlParams.get("remote_id");
 
-  // If remote_id is in URL, pre-fill and potentially auto-connect
+  // If remote_id is in URL, pre-fill and auto-connect (when in remote-only mode)
+  let urlRemoteIdForAutoConnect: string | null = null;
   if (urlRemoteId) {
     console.debug("[Login] Found remote_id in URL:", urlRemoteId);
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (cleanRemoteId.length === 26) {
       setRemoteIdFromString(cleanRemoteId);
+      urlRemoteIdForAutoConnect = cleanRemoteId;
       // Clean up the URL
       urlParams.delete("remote_id");
       const queryString = urlParams.toString();
@@ -798,18 +800,24 @@ const autoConnect = async () => {
       remoteConnectionManager.getStoredRemoteId();
     const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
-    if (storedRemoteId && storedToken) {
+    // Auto-connect if we have remote_id from URL (from portal redirect)
+    // or if we have stored credentials
+    const remoteIdToConnect = urlRemoteIdForAutoConnect || (storedRemoteId && storedToken ? storedRemoteId : null);
+
+    if (remoteIdToConnect) {
       console.debug(
-        "[Login] Found stored remote ID and token, trying auto-connect",
+        "[Login] Auto-connecting to remote:",
+        remoteIdToConnect,
+        urlRemoteIdForAutoConnect ? "(from URL)" : "(from storage)",
       );
       connectionStatusMessage.value = t(
         "login.connecting_remote",
         "Connecting to remote server...",
       );
-      setRemoteIdFromString(storedRemoteId);
+      setRemoteIdFromString(remoteIdToConnect);
 
       try {
-        const cleanRemoteId = storedRemoteId.trim().toUpperCase();
+        const cleanRemoteId = remoteIdToConnect.trim().toUpperCase();
         const transport =
           await remoteConnectionManager.connectRemote(cleanRemoteId);
 
@@ -818,15 +826,15 @@ const autoConnect = async () => {
 
         // Wait for API to be ready
         if (await waitForApiConnection()) {
-          // Try to authenticate with stored token
-          if (await tryStoredTokenAuth()) {
+          // Try to authenticate with stored token (if available)
+          if (storedToken && (await tryStoredTokenAuth())) {
             console.info("[Login] Remote auto-login successful!");
             return; // Success - App.vue will take over
           }
         }
 
-        // Token auth failed, show login form
-        console.debug("[Login] Remote token auth failed, showing login form");
+        // No token or token auth failed, show login form
+        console.debug("[Login] Showing login form for remote connection");
         connectedServerName.value = `Remote: ${cleanRemoteId}`;
         isRemoteConnection.value = true;
         await fetchAuthProviders();
