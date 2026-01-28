@@ -41,7 +41,6 @@
 <script setup lang="ts">
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
-import { api } from "@/plugins/api";
 import { webPlayer } from "@/plugins/web_player";
 import {
   ConfigEntry,
@@ -55,6 +54,7 @@ import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { store } from "@/plugins/store";
+import { companionMode, isCompanionApp } from "@/plugins/companion";
 
 // global refs
 const router = useRouter();
@@ -154,6 +154,19 @@ onMounted(() => {
       value: store.currentUser?.preferences?.menu_items || enabledMenuItems,
     },
     {
+      key: "enable_browser_controls",
+      type: ConfigEntryType.BOOLEAN,
+      label: "enable_browser_controls",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "generic",
+      hidden: companionMode.value,
+      value:
+        localStorage.getItem("frontend.settings.enable_browser_controls") !==
+        "false",
+    },
+    {
       key: "force_mobile_layout",
       type: ConfigEntryType.BOOLEAN,
       label: "force_mobile_layout",
@@ -167,34 +180,23 @@ onMounted(() => {
     },
   ];
 
-  // Show web player mode setting when Sendspin provider is available
-  const sendspinAvailable = api.getProvider("sendspin")?.available ?? false;
-  if (sendspinAvailable) {
-    configEntries.splice(3, 0, {
-      key: "web_player_mode",
-      type: ConfigEntryType.STRING,
-      label: "web_player_mode",
-      default_value: "sendspin",
+  // Add web player settings (if not running in companion mode)
+  if (!companionMode.value) {
+    configEntries.push({
+      key: "web_player_enabled",
+      type: ConfigEntryType.BOOLEAN,
+      label: "web_player_enabled",
+      default_value: true,
       required: false,
-      options: [
-        {
-          title: $t("settings.web_player_mode.options.sendspin"),
-          value: "sendspin",
-        },
-        {
-          title: $t("settings.web_player_mode.options.disabled"),
-          value: "disabled",
-        },
-      ],
-      multi_value: false,
       category: "web_player",
       value:
-        localStorage.getItem("frontend.settings.web_player_mode") || "sendspin",
+        localStorage.getItem("frontend.settings.web_player_enabled") !==
+        "false",
     });
 
     // Sendspin sync delay option
     const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    configEntries.splice(4, 0, {
+    configEntries.push({
       key: "sendspin_sync_delay",
       type: ConfigEntryType.INTEGER,
       label: "sendspin_sync_delay",
@@ -209,13 +211,14 @@ onMounted(() => {
       ),
       range: [-1000, 1000],
       immediate_apply: true,
+      depends_on: "web_player_enabled",
     });
 
     // Output latency compensation - enabled by default everywhere
     const storedOutputLatency = localStorage.getItem(
       "frontend.settings.sendspin_output_latency_compensation",
     );
-    configEntries.splice(5, 0, {
+    configEntries.push({
       key: "sendspin_output_latency_compensation",
       type: ConfigEntryType.BOOLEAN,
       label: "sendspin_output_latency_compensation",
@@ -225,6 +228,7 @@ onMounted(() => {
       category: "web_player",
       value:
         storedOutputLatency !== null ? storedOutputLatency === "true" : true,
+      depends_on: "web_player_enabled",
     });
   }
 

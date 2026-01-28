@@ -144,7 +144,7 @@
         "download_log": "Download logfile",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
-        "add_group_player": "Add player group",
+        "add_group_player": "Add group player",
         "group_members": "Group members",
         "log_level": {
             "label": "Log level",
@@ -557,23 +557,23 @@
         "core_module": {
             "cache": {
                 "name": "Cache",
-                "description": "Manages caching of metadata and images"
+                "description": "Configuration of the core module that handles caching of data across the application"
             },
             "metadata": {
                 "name": "Metadata",
-                "description": "Handles metadata retrieval and matching"
+                "description": "Configuration of the core metadata management module"
             },
             "music": {
                 "name": "Music",
-                "description": "Core music library management"
+                "description": "Configuration of the core music (library) management module"
             },
             "players": {
                 "name": "Players",
-                "description": "Core player management and control"
+                "description": "Configuration of the core player management module"
             },
             "player_queues": {
                 "name": "Player Queues",
-                "description": "Manages playback queues for all players"
+                "description": "Configuration of the core player queue management module"
             },
             "remote_access": {
                 "name": "Remote Access",
@@ -581,11 +581,11 @@
             },
             "streams": {
                 "name": "Streams",
-                "description": "Audio streaming and processing engine"
+                "description": "Configuration of the audio streaming and processing engine"
             },
             "webserver": {
                 "name": "Webserver",
-                "description": "Manage the webserver and API"
+                "description": "Configuration of the web server and API"
             }
         },
         "remote_access": "Remote Access",
@@ -635,14 +635,6 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_mode": {
-            "label": "Web player mode",
-            "description": "Choose how this browser handles audio playback.",
-            "options": {
-                "sendspin": "Sendspin (experimental)",
-                "disabled": "Disabled (controls only)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin sync delay (ms)",
             "description": "Static delay in milliseconds to adjust audio synchronisation. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
@@ -1003,7 +995,9 @@
         "no_players_selected": "All players (no restrictions)",
         "no_providers_selected": "All providers (no restrictions)",
         "select_players": "Select players",
-        "select_providers": "Select providers"
+        "select_providers": "Select providers",
+        "save_changes": "Save changes",
+        "update_password": "Update password"
     },
     "login": {
         "subtitle": "Connect to your music server",
@@ -1095,5 +1089,12 @@
     "search_all_providers_confirm": "Are you sure you want to search for matches on all providers? This can take some time to complete and will be executed in the background.",
     "remove_provider_mapping": "Remove provider mapping",
     "remove_provider_mapping_confirm": "Are you sure you want to remove this provider mapping? This will unlink the item from the current item details. It may come back if you perform a rescan for all provider matches.",
-    "map_provider_mapping": "Map this provider entry to the current item"
+    "map_provider_mapping": "Map this provider entry to the current item",
+    "player_tip": {
+        "selected_player": "Selected player",
+        "currently_playing": "Currently playing on",
+        "click_to_change": "Click below to change output device"
+    },
+    "more_options": "More options",
+    "edit": "Edit"
 }

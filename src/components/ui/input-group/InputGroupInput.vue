@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
-import { useAttrs } from "vue";
+import { ref, useAttrs } from "vue";
 
 defineOptions({
   inheritAttrs: false,
@@ -13,10 +13,21 @@ const props = defineProps<{
 }>();
 
 const attrs = useAttrs();
+
+const inputRef = ref<InstanceType<typeof Input> | null>(null);
+
+const focus = () => {
+  inputRef.value?.focus();
+};
+
+defineExpose({
+  focus,
+});
 </script>
 
 <template>
   <Input
+    ref="inputRef"
     v-bind="attrs"
     data-slot="input-group-control"
     :class="

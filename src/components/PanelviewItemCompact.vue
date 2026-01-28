@@ -31,7 +31,10 @@
         <MediaItemThumb :item="isAvailable ? item : undefined" />
         <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
           <ProviderIcon
-            v-if="showProviderOnCover && 'provider_mappings' in item"
+            v-if="
+              (showProviderOnCover || item.media_type === MediaType.PLAYLIST) &&
+              'provider_mappings' in item
+            "
             :domain="
               item.media_type == MediaType.PLAYLIST
                 ? item.provider_mappings[0].provider_domain

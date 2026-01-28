@@ -1,9 +1,9 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent
-      class="add-provider-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
+      class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
     >
-      <DialogHeader class="px-6 pt-4 pb-4 flex-shrink-0">
+      <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
       </DialogHeader>
 
@@ -134,7 +134,7 @@ const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
 const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
-const searchInput = ref<{ $el?: HTMLElement } | null>(null);
+const searchInput = ref<{ focus: () => void } | null>(null);
 
 const providerTypeOptions = computed(() => [
   { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
@@ -290,13 +290,7 @@ watch(
 
     if (isOpen) {
       nextTick(() => {
-        const el = searchInput.value?.$el;
-        if (el) {
-          const input = (el as HTMLElement).querySelector(
-            "input",
-          ) as HTMLInputElement | null;
-          input?.focus();
-        }
+        searchInput.value?.focus();
       });
     }
   },

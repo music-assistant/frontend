@@ -18,7 +18,7 @@ import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { webPlayer } from "@/plugins/web_player";
 import {
   prepareSendspinSession,
   isDirectConnection,
@@ -86,6 +86,14 @@ const metadataPlayerId = computed(() => {
     return props.playerId;
   }
   return undefined;
+});
+
+const correctionMode = computed(() => {
+  // Only do the more precise but distorting "full" correction when grouped
+  const thisPlayer = api.players[props.playerId];
+  const isGrouped =
+    thisPlayer && (thisPlayer.synced_to || thisPlayer.group_members.length > 0);
+  return isGrouped ? "sync" : "quality-local";
 });
 
 // Subscribe to metadata immediately (doesn't require user interaction)
@@ -176,13 +184,13 @@ watch(
   { immediate: true },
 );
 
+watch(correctionMode, (mode) => {
+  player?.setCorrectionMode(mode);
+});
+
 // Setup on mount
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
-
-  // Set audio source to indicate this tab is handling audio
-  // (for coordination with other tabs via web_player.ts)
-  webPlayer.audioSource = WebPlayerMode.SENDSPIN;
 
   // If already showing active player metadata, play silent audio now that silentAudioRef exists
   if (
@@ -227,11 +235,7 @@ onMounted(() => {
         player = new SendspinPlayer({
           playerId: props.playerId,
           baseUrl: "http://sendspin.local",
-          // Web player config
-          audioOutputMode: "media-element",
           audioElement,
-          isAndroid,
-          silentAudioSrc: almostSilentMp3,
           clientName: getDeviceName(),
           codecs,
           syncDelay,
@@ -243,6 +247,7 @@ onMounted(() => {
             muted.value = state.muted;
             playerState.value = state.playerState;
           },
+          correctionMode: correctionMode.value,
         });
 
         // Register callback for real-time sync delay changes from settings

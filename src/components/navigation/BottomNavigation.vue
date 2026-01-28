@@ -6,6 +6,22 @@
     role="navigation"
   >
     <v-btn
+      v-if="store.isIngressSession"
+      aria-label="Home Assistant"
+      tabindex="0"
+      variant="text"
+      base-color="grey"
+      @click="handleHAButtonClick"
+    >
+      <img
+        src="@/assets/home-assistant-logo.svg"
+        alt="Home Assistant"
+        class="w-6 h-6"
+      />
+      <span class="menuButton">HA</span>
+    </v-btn>
+
+    <v-btn
       v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode)"
       :key="menuItem.label"
       :to="menuItem.path"
@@ -50,6 +66,8 @@
 </template>
 
 <script setup lang="ts">
+import { toggleHAMenu } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
 import { LibraryIcon } from "lucide-vue-next";
 import { ref } from "vue";
 import { getMenuItems } from "./utils/getMenuItems";
@@ -62,6 +80,10 @@ defineProps<Props>();
 const menuItems = getMenuItems();
 
 const isLibraryOpen = ref(false);
+
+const handleHAButtonClick = () => {
+  toggleHAMenu();
+};
 </script>
 
 <style>

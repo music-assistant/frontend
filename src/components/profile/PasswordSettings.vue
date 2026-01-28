@@ -1,127 +1,168 @@
 <template>
-  <div class="password-settings">
-    <div class="section-header">
-      <h3>{{ $t("auth.change_password") }}</h3>
-      <p class="section-subtitle">
+  <Card>
+    <CardHeader>
+      <CardTitle>{{ $t("auth.change_password") }}</CardTitle>
+      <CardDescription>
         {{ $t("auth.update_your_password") }}
-      </p>
-    </div>
-
-    <v-alert
-      v-if="store.isIngressSession"
-      type="info"
-      variant="tonal"
-      density="compact"
-      class="mb-4"
-    >
-      {{ $t("auth.ingress_password_note") }}
-    </v-alert>
-
-    <v-form ref="passwordForm" @submit.prevent="handleChangePassword">
-      <v-text-field
-        v-model="newPassword"
-        :label="$t('auth.new_password')"
-        type="password"
-        variant="outlined"
-        density="comfortable"
-        class="mb-2"
-        :rules="[rules.required, rules.passwordLength]"
-      />
-
-      <v-text-field
-        v-model="confirmNewPassword"
-        :label="$t('auth.confirm_password')"
-        type="password"
-        variant="outlined"
-        density="comfortable"
-        class="mb-4"
-        :rules="[rules.required, rules.passwordMatch]"
-      />
-
-      <v-btn
-        type="submit"
-        color="primary"
-        variant="flat"
-        :loading="changing"
-        :disabled="!canChangePassword"
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div
+        v-if="store.isIngressSession"
+        class="mb-4 rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-600 dark:text-blue-400"
       >
-        {{ $t("auth.change_password") }}
-      </v-btn>
-    </v-form>
-  </div>
+        {{ $t("auth.ingress_password_note") }}
+      </div>
+
+      <form id="form-password-settings" @submit.prevent="form.handleSubmit">
+        <FieldGroup>
+          <form.Field name="newPassword">
+            <template #default="{ field }">
+              <Field :data-invalid="isInvalid(field)">
+                <FieldLabel :for="field.name">
+                  {{ $t("auth.new_password") }}
+                </FieldLabel>
+                <Input
+                  :id="field.name"
+                  :name="field.name"
+                  :model-value="field.state.value"
+                  type="password"
+                  :aria-invalid="isInvalid(field)"
+                  autocomplete="new-password"
+                  @blur="field.handleBlur"
+                  @input="handleNewPasswordInput($event, field)"
+                />
+                <FieldError
+                  v-if="isInvalid(field)"
+                  :errors="field.state.meta.errors"
+                />
+              </Field>
+            </template>
+          </form.Field>
+
+          <form.Field name="confirmPassword">
+            <template #default="{ field }">
+              <Field :data-invalid="isInvalid(field)">
+                <FieldLabel :for="field.name">
+                  {{ $t("auth.confirm_password") }}
+                </FieldLabel>
+                <Input
+                  :id="field.name"
+                  :name="field.name"
+                  :model-value="field.state.value"
+                  type="password"
+                  :aria-invalid="isInvalid(field)"
+                  autocomplete="new-password"
+                  @blur="field.handleBlur"
+                  @input="handleConfirmPasswordInput($event, field)"
+                />
+                <FieldError
+                  v-if="isInvalid(field)"
+                  :errors="field.state.meta.errors"
+                />
+              </Field>
+            </template>
+          </form.Field>
+        </FieldGroup>
+      </form>
+    </CardContent>
+    <CardFooter>
+      <Button
+        type="submit"
+        form="form-password-settings"
+        :disabled="!canChangePassword || changing"
+        :loading="changing"
+      >
+        {{ $t("auth.update_password") || "Update password" }}
+      </Button>
+    </CardFooter>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import { api } from "@/plugins/api";
-import { store } from "@/plugins/store";
-import { computed, nextTick, ref } from "vue";
+import { useForm } from "@tanstack/vue-form";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vuetify-sonner";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { createPasswordSchema } from "@/lib/forms/profile";
+import { api } from "@/plugins/api";
+import { store } from "@/plugins/store";
+
 const { t } = useI18n();
 
-const newPassword = ref("");
-const confirmNewPassword = ref("");
 const changing = ref(false);
-const passwordForm = ref<any>(null);
 
-const rules = {
-  required: (v: string) => !!v || t("auth.field_required"),
-  passwordLength: (v: string) => v.length >= 8 || t("auth.password_min_length"),
-  passwordMatch: (v: string) =>
-    v === newPassword.value || t("auth.passwords_must_match"),
-};
+const currentNewPassword = ref("");
+const currentConfirmPassword = ref("");
 
-const canChangePassword = computed(() => {
-  return (
-    newPassword.value.length >= 8 &&
-    newPassword.value === confirmNewPassword.value
-  );
+const form = useForm({
+  defaultValues: {
+    newPassword: "",
+    confirmPassword: "",
+  },
+  validators: {
+    onSubmit: createPasswordSchema(t),
+  },
+  onSubmit: async ({ value }) => {
+    changing.value = true;
+
+    try {
+      const result = await api.changePassword(value.newPassword);
+
+      if (result) {
+        toast.success(t("auth.password_changed"));
+        form.reset();
+        currentNewPassword.value = "";
+        currentConfirmPassword.value = "";
+      } else {
+        toast.error(t("auth.password_change_failed"));
+      }
+    } catch (err: any) {
+      toast.error(err.message || t("auth.password_change_failed"));
+    } finally {
+      changing.value = false;
+    }
+  },
 });
 
-const handleChangePassword = async () => {
-  changing.value = true;
+const canChangePassword = computed(() => {
+  const newPassword =
+    currentNewPassword.value || form.state.values.newPassword || "";
+  const confirmPassword =
+    currentConfirmPassword.value || form.state.values.confirmPassword || "";
+  return newPassword === confirmPassword && confirmPassword.length > 0;
+});
 
-  try {
-    const result = await api.changePassword(newPassword.value);
+function isInvalid(field: any) {
+  return field.state.meta.isTouched && !field.state.meta.isValid;
+}
 
-    if (result) {
-      toast.success(t("auth.password_changed"));
+const handleNewPasswordInput = (e: Event, field: any) => {
+  const value = (e.target as HTMLInputElement).value;
+  currentNewPassword.value = value;
+  field.handleChange(value);
+};
 
-      newPassword.value = "";
-      confirmNewPassword.value = "";
-
-      await nextTick();
-      passwordForm.value?.resetValidation();
-    } else {
-      toast.error(t("auth.password_change_failed"));
-    }
-  } catch (err: any) {
-    toast.error(err.message || t("auth.password_change_failed"));
-  } finally {
-    changing.value = false;
-  }
+const handleConfirmPasswordInput = (e: Event, field: any) => {
+  const value = (e.target as HTMLInputElement).value;
+  currentConfirmPassword.value = value;
+  field.handleChange(value);
 };
 </script>
-
-<style scoped>
-.password-settings {
-  margin-bottom: 24px;
-}
-
-.section-header {
-  margin-bottom: 16px;
-}
-
-.section-header h3 {
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-.section-subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.813rem;
-  margin: 0;
-  line-height: 1.4;
-}
-</style>

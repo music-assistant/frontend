@@ -401,12 +401,12 @@
         },
         "volume_normalization_fixed_gain_radio": {
             "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
-            "description": "Korekcija fiksnog\/rezervnog pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). \n Koristite pozitivnu vrednost za povećanje jačine zvuka, negativnu vrednost za smanjenje jačine zvuka. \n \n Ovo podešavanje se koristi kada je metod normalizacije jačine zvuka podešen na „Korekcija fiksnog pojačanja“ ili „Rezervni korak za korekciju pojačanja“."
+            "description": "Fiksna\/rezervna korekcija pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). Koristite pozitivnu vrednost da povećate jačinu, negativnu da je smanjite. \n\nOvo podešavanje se koristi kada je metod normalizacije jačine zvuka postavljen na „Fiksna korekcija pojačanja“ ili „Rezervna korekcija pojačanja“."
         },
         "add_group_player_desc": "Kada se kreira grupni plejer za {0} provajdera, automatski će biti formirana sinhronizovana grupa, što znači da će svi članovi te grupe biti sinhronizovani kada pustite muziku na toj grupi plejera.",
         "dynamic_members": {
             "label": "Članovi dinamičke grupe",
-            "description": "Dozvolite članovima da se (privremeno) dinamički pridruže\/napuste grupu, tako da se grupa manje-više ponaša isto kao i ručna sinhronizacija plejera, s tim da je glavna razlika u tome što će plejer grupe čuvati red."
+            "description": "Dozvolite članovima da se (privremeno) pridruže\/napuste grupu dinamički, tako da se grupa ponaša približno isto kao ručno sinhronizovanje plejera, sa glavnom razlikom da grupni plejer drži red reprodukcije."
         },
         "dsp": {
             "configure_on": "Konfigurisanje DSP-a na: {name}",
@@ -479,15 +479,15 @@
         },
         "power_control": {
             "label": "Kontrola uključivanja",
-            "description": "Definišite\/zamenite ponašanje kontrole paljenja za ovaj plejer. \n Omogućava vam, na primer, da preusmerite komande za uključivanje\/isključivanje paljenja na drugi uređaj ili da koristite lažnu kontrolu paljenja ako vaš plejer ne podržava komande za uključivanje\/isključivanje, ali želite da imate posebno stanje za plejer koji se ne koristi."
+            "description": "Definišite\/prevaziđite ponašanje kontrole napajanja za ovaj plejer. Ovo vam omogućava, na primer, da preusmerite komande za uključivanje\/isključivanje na drugi uređaj ili da koristite „lažnu“ kontrolu napajanja ako vaš plejer ne podržava komande za uključivanje\/isključivanje, ali želite da imate posebno stanje za plejer koji nije u upotrebi."
         },
         "volume_control": {
             "label": "Kontrola jačine zvuka",
-            "description": "Definišite\/zamenite ponašanje kontrole jačine zvuka za ovaj plejer. \nOmogućava vam, na primer, da preusmerite komande za kontrolu jačine zvuka na drugi uređaj ili da ga potpuno onemogućite."
+            "description": "Definišite\/prevaziđite ponašanje kontrole jačine zvuka za ovaj plejer. Ovo vam omogućava, na primer, da preusmerite komande za kontrolu jačine zvuka na drugi uređaj ili da ih potpuno onemogućite."
         },
         "mute_control": {
             "label": "Kontrola isključivanja zvuka",
-            "description": "Definišite\/zamenite ponašanje kontrole isključivanja zvuka za ovaj plejer. \n Omogućava vam, na primer, da preusmerite komande za kontrolu isključivanja zvuka na drugi uređaj ili da ga potpuno onemogućite. \n \n Nudimo opciju „lažne“ kontrole isključivanja zvuka, koja će simulirati isključivanje zvuka podešavanjem jačine zvuka na 0 i vraćanjem jačine zvuka kada se zvuk uključi."
+            "description": "Definišite\/prevaziđite ponašanje kontrole isključivanja zvuka za ovaj plejer. Ovo vam omogućava, na primer, da preusmerite komande za isključivanje zvuka na drugi uređaj ili da ih potpuno onemogućite. \n\nNudimo opciju „lažne“ kontrole isključivanja zvuka, koja simulira isključivanje tako što postavlja jačinu zvuka na 0 i vraća je kada se zvuk ponovo uključi."
         },
         "output_limiter": {
             "label": "Omogućite ograničavanje da biste sprečili isecanje",
@@ -501,7 +501,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Ovaj tip grupe ne podržava DSP pri reprodukciji na više uređaja."
         },
-        "add_group_player_desc_universal": "Kreiranjem Univerzalne grupe plejera, možete grupisati plejere iz različitih provajdera\/ekosistema. \n Ovo će distribuirati isti zvuk svim plejerima članovima (ali ne sinhronizovano).",
+        "add_group_player_desc_universal": "Kreiranjem univerzalne grupe plejera možete grupisati plejere iz različitih provajdera\/ekosistema.\nOvo će distribuirati isti zvuk svim članovima grupe (ali bez sinhronizacije).",
         "edit_provider": "Uredi provajdera: {0}",
         "metadata": "Metapodaci",
         "metadataprovider": "Provajder metapodataka",
@@ -598,7 +598,7 @@
         "remote_access_feature_no_port_forwarding": "Nije potrebno prosleđivanje portova niti VPN",
         "remote_access_mode_optimized": "Optimizovani režim (HA Cloud)",
         "remote_access_mode_basic": "Pokrenuto u osnovnom režimu",
-        "remote_access_mode_optimized_description": "Za najbolje performanse koriste se STUN\/TURN serveri iz Home Assistant Cloud‑a. Rešenje radi pouzdano u svim mrežnim konfiguracijama.",
+        "remote_access_mode_optimized_description": "Korišćenje STUN\/TURN servera iz Home Assistant Cloud-a za optimalne performanse. Radi pouzdano u svim mrežnim konfiguracijama.",
         "remote_access_mode_basic_description": "Javni STUN serveri – može biti problem u složenim mrežama. Pređite na HA Cloud za najbolje iskustvo.",
         "remote_access_upgrade_to_optimized": "Nadogradi na Home Assistant Cloud",
         "remote_access_status": "Status udaljenog pristupa",
@@ -635,21 +635,13 @@
         "players_total": "{0} ukupno plejer{1}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Trenutno nema dostupnih provajdera koji podržavaju kreiranje grupa.",
-        "web_player_mode": {
-            "label": "Režim web plejera",
-            "description": "Odaberi način reprodukcije zvuka u pregledaču.",
-            "options": {
-                "sendspin": "MA Slanje‑spin (eksperimentalno)",
-                "disabled": "Onemogućeno (samo kontrole)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin sinhrono kašnjenje (ms)",
-            "description": "Statičko kašnjenje u milisekundama za podešavanje sinhronizacije zvuka. Pozitivne vrednosti odlažu reprodukciju, negativne je ubrzavaju. Koristi se za kompenzaciju latencije specifične za uređaj."
+            "description": "Statičko kašnjenje u milisekundama za podešavanje sinhronizacije zvuka. Pozitivne vrednosti odlažu reprodukciju, negativne je ubrzavaju. Koristite ovo da kompenzujete kašnjenje zvuka specifično za uređaj."
         },
         "sendspin_output_latency_compensation": {
             "label": "Upotrebi detekciju latencije u pregledaču",
-            "description": "Automatski kompenzuje hardversku audio latenciju (npr. Bluetooth slušalice) koristeći API za izlaznu latenciju u pregledaču. Ovaj API je prilično nov i možda neće pouzdano raditi na svim pregledačima i operativnim sistemima."
+            "description": "Automatski kompenzuj hardversku audio latenciju (npr. Bluetooth slušalice) koristeći API izlazne latencije pregledača. Ovaj API je prilično nov i možda neće pouzdano raditi na svim pregledačima i operativnim sistemima."
         },
         "provider_codeowners": "Ovaj provajder je doprinos zajednice i održava ga…",
         "provider_credits": "Omogućeno od strane",
@@ -672,7 +664,15 @@
         "provider_requires_attention": "Ovaj provajder zahteva pažnju",
         "provider_requires_attention_detail": "Jedan ili više provajdera zahtevaju pažnju. Molimo proverite podešavanja provajdera.",
         "reconfigure": "Rekonfiguriši",
-        "fix_now": "Popravi odmah"
+        "fix_now": "Popravi odmah",
+        "web_player_enabled": {
+            "label": "Omogući ugrađeni (Sendspin) veb plejer",
+            "description": "Dozvoli reprodukciju na ovom uređaju\/pregledaču pomoću ugrađenog Sendspin veb plejera."
+        },
+        "enable_browser_controls": {
+            "label": "Omogući medijske kontrole u pregledaču",
+            "description": "Dozvoli kontrolu reprodukcije pomoću ugrađenih medija kontrola u pregledaču (npr. medija tasteri na tastaturi)."
+        }
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
@@ -836,7 +836,7 @@
         "input_gain": "Ulazno pojačanje ({0} dB)",
         "output_gain": "Izlazno pojačanje ({0} dB)",
         "output_limiter": "Ograničivač izlaza",
-        "output_limiter_info": "Automatski smanjuje veoma glasne zvukove kako bi se sprečilo izobličenje i zaštitili zvučnici",
+        "output_limiter_info": "Automatski smanjuje veoma glasne zvuke kako bi sprečio izobličenje i zaštitio vaše zvučnike",
         "dsp_unsupported": "DSP nije podržan",
         "dsp_disabled_by_unsupported_group": "Ovaj provajder plejera ne podržava DSP sa sinhronizovanom reprodukcijom",
         "file_info": {
@@ -861,7 +861,7 @@
             }
         },
         "click_to_expand": "Kliknite da biste videli sve plejere",
-        "output_format_pcm_info": "Audio se prosleđuje kao PCM provajderu plejera. Provader plejera zatim može konvertovati zvuk u drugi format pre nego što ga pošalje plejeru."
+        "output_format_pcm_info": "Audio se prosleđuje kao PCM provajderu plejera. Provajder plejera zatim može konvertovati audio u drugi format pre nego što ga pošalje plejeru."
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Izaberite izvor",
@@ -870,7 +870,7 @@
     "all_enqueue_options": "Sve opcije stavljanja u red",
     "music_assistant_source": "Red za reprodukciju Music Assistant-a",
     "music_assistant_library": "Biblioteka Music Assistant-a",
-    "select_all_confirmation": "Želite da izaberete sve stavke? Učitavanje svih podataka može potrajati neko vreme.",
+    "select_all_confirmation": "Izabrati sve stavke? Ova operacija može potrajati dok se svi podaci učitaju.",
     "this_device": "Ovaj uređaj",
     "recommendations": {
         "in_progress_items": "Nastavite sa slušanjem...",
@@ -889,7 +889,19 @@
         "new_releases_for_you": "Nova izdanja za vas",
         "recent_favorite_tracks": "Nedavno dodate numere u omiljene",
         "favorite_playlists": "Omiljene plejliste",
-        "favorite_radio_stations": "Omiljene radio stanice"
+        "favorite_radio_stations": "Omiljene radio stanice",
+        "listen_again": "Preslušaj ponovo",
+        "in_progress_series": "Nastavi seriju...",
+        "recommended": "Preporučeno",
+        "recently_added": "Nedavno dodato",
+        "episodes_recently_added": "Nedavno dodate epizode",
+        "recent_series": "Nedavne serije",
+        "newest_authors": "Najnoviji autori",
+        "newest_episodes": "Najnovije epizode",
+        "discover": "Otkrij",
+        "libraries": "Biblioteke",
+        "library": "Biblioteka",
+        "trending_podcasts": "Podkasti u trendu"
     },
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
@@ -922,7 +934,7 @@
         "login_error": "Došlo je do greške prilikom prijave",
         "setup_subtitle": "Hajde da počnemo",
         "create_admin_account": "Kreirajte svoj administratorski nalog",
-        "setup_description": "Kreirajte administratorski nalog za upravljanje Muzičkim asistentom. Ovaj nalog će imati potpuni pristup svim podešavanjima i funkcijama.",
+        "setup_description": "Kreirajte administratorski nalog za upravljanje Music Assistant-om. Ovaj nalog će imati pun pristup svim podešavanjima i funkcijama.",
         "create_account": "Kreirajte nalog",
         "setup_failed": "Podešavanje nije uspelo. Pokušajte ponovo.",
         "setup_error": "Došlo je do greške tokom podešavanja",
@@ -931,25 +943,25 @@
         "manage_your_profile_info": "Upravljajte informacijama i podešavanjima svog profila",
         "change_password": "Promenite lozinku",
         "update_your_password": "Ažurirajte lozinku svog naloga",
-        "old_password": "Tekuća lozinka",
+        "old_password": "Trenutna lozinka",
         "new_password": "Nova lozinka",
         "password_changed": "Lozinka je uspešno promenjena",
         "password_change_failed": "Promena lozinke nije uspela",
         "tokens": "Pristupni tokeni",
         "active_sessions": "Aktivne sesije",
         "manage_active_sessions": "Pregledajte i upravljajte svojim aktivnim sesijama prijave",
-        "active_sessions_description": "Ovo su sesije koje se kreiraju prilikom prijave. Automatski se obnavljaju kada se koriste i ističu nakon 30 dana neaktivnosti.",
+        "active_sessions_description": "Ovo su sesije koje se kreiraju kada se prijavite. Automatski se obnavljaju kada se koriste i ističu nakon 30 dana neaktivnosti.",
         "no_active_sessions": "Nema aktivnih sesija",
         "long_lived_tokens": "Dugotrajni pristupni tokeni",
         "api_tokens_description": "Kreirajte i upravljajte API tokenima za spoljne integracije",
-        "long_lived_tokens_description": "Tokeni dugog veka koriste se za spoljne integracije i API pristup. Ističu nakon 10 godina i ne obnavljaju se automatski.",
+        "long_lived_tokens_description": "Dugotrajni tokeni se koriste za spoljne integracije i API pristup. Ističu nakon 10 godina i ne obnavljaju se automatski.",
         "no_long_lived_tokens": "Nema dugotrajnih pristupnih tokena",
         "no_tokens": "Još nema tokena",
         "create_token_hint": "Kreirajte token za korišćenje Muzičkog asistenta sa spoljnim aplikacijama",
         "token_name": "Naziv tokena",
-        "token_name_hint": "npr. 'Home Assistant', 'Mobile App'",
+        "token_name_hint": "npr. \"Home Assistant\", \"Mobile App\"",
         "create_token": "Kreirajte novi token",
-        "revoke_token": "Opozovite sesiju",
+        "revoke_token": "Opozovite token",
         "revoke_token_confirm": "Da li ste sigurni da želite da opozovete ovaj token? Ova radnja se ne može poništiti.",
         "revoke_session": "Opozovite sesiju",
         "revoke_session_confirm": "Da li ste sigurni da želite da opozovete ovu sesiju? Ova radnja se ne može poništiti.",
@@ -957,7 +969,7 @@
         "token_revoked": "Token je uspešno opozvan",
         "token_revoke_failed": "Nije uspelo opozivanje tokena",
         "session_revoked": "Sesija je uspešno opozvana",
-        "session_revoke_failed": "Nije uspelo opozivanje sesije",
+        "session_revoke_failed": "Opozivanje sesije nije uspelo",
         "manage_tokens": "Upravljajte pristupnim tokenima",
         "token_created": "Token je uspešno kreiran",
         "token_create_failed": "Nije uspelo kreiranje tokena. Pokušajte ponovo.",
@@ -991,7 +1003,7 @@
         "avatar_url": "URL avatara",
         "avatar_url_hint": "Unesite URL do slike avatara",
         "change_avatar": "Promenite avatar",
-        "profile_updated": "Profil je uspešno ažurira",
+        "profile_updated": "Profil je uspešno ažuriran",
         "ingress_password_note": "Kada pristupate Muzičkom asistentu izvan Home Assistant‑a, biće vam potrebna ova lozinka za prijavu.",
         "copy_new_token_hint": "Kopirajte svoj pristupni token. Neće biti ponovo prikazan.",
         "token_copied": "Token je kopiran u privremenu memoriju",
@@ -1003,7 +1015,9 @@
         "no_players_selected": "Svi plejeri (bez ograničenja)",
         "no_providers_selected": "Svi provajderi (bez ograničenja)",
         "select_players": "Izaberite plejere",
-        "select_providers": "Izaberite provajdere"
+        "select_providers": "Izaberite provajdere",
+        "save_changes": "Sačuvaj izmene",
+        "update_password": "Ažuriraj lozinku"
     },
     "login": {
         "subtitle": "Povežite se sa svojim muzičkim serverom",
@@ -1012,7 +1026,7 @@
         "complete_in_browser": "Dovršite prijavu u pregledaču",
         "establishing_connection": "Uspostavljanje veze...",
         "local_server": "Lokalni server",
-        "remote_server": "Daljinski",
+        "remote_server": "Udaljeni",
         "server_address": "Adresa servera",
         "server_address_placeholder": "http:\/\/192.168.1.100:8095",
         "remote_id": "Udaljeni ID",
@@ -1050,7 +1064,7 @@
         "scan_qr": "Skeniraj QR",
         "scan_qr_code": "Skenirajte QR kod",
         "scan_qr_hint": "Usmerite kameru ka QR kodu prikazanom u podešavanjima Music Assistant servera.",
-        "qr_invalid": "Nevažeći QR kod. Skenirajte QR kod sa ID‑om daljinskog upravljača za Music Assistant.",
+        "qr_invalid": "Nevažeći QR kod. Skenirajte QR kod sa ID‑om udaljenog Music Assistant-a.",
         "qr_camera_error": "Nije moguće pristupiti kameri. Proverite dozvole."
     },
     "remote": {
@@ -1059,7 +1073,7 @@
         "subtitle_login": "Prijavite se da biste pristupili svojoj muzici",
         "remote_id": "Udaljeni ID",
         "remote_id_placeholder": "npr. MA-X7K9-P2M4",
-        "remote_id_hint": "Pronađite svoj udaljeni ID u podešavanjima Music Assistant servera, pod \"Udaljeni pristup\".",
+        "remote_id_hint": "Pronađite svoj udaljeni ID u podešavanjima Music Assistant servera pod „Udaljeni pristup“.",
         "recent_connections": "Nedavne veze",
         "connect": "Poveži",
         "connect_locally": "Poveži se sa lokalnim serverom",
@@ -1078,12 +1092,12 @@
         "retry": "Pokušaj ponovo",
         "error_unknown": "Došlo je do nepoznate greške",
         "error_login_failed": "Prijava nije uspela. Proverite svoje akreditive.",
-        "error_server_not_found": "Server nije pronađen. Uverite se da je vaš server Muzičkog asistenta pokrenut i da je omogućeno udaljeno pristupanje.",
+        "error_server_not_found": "Server nije pronađen. Uverite se da je vaš Music Assistant server pokrenut i da je omogućeno udaljeno pristupanje.",
         "login_with_ha": "Prijavite se putem Home Assistant‑a",
         "or": "ili",
         "subtitle_oauth": "Dovršite prijavu u pregledaču",
         "oauth_waiting_title": "Dovršite prijavu",
-        "oauth_waiting_message": "Otvoren je prozor pregledača. Prijavite se na Home Assistant, a zatim se vratite ovde.",
+        "oauth_waiting_message": "Otvoren je prozor pregledača. Molimo prijavite se na Home Assistant, a zatim se vratite ovde.",
         "oauth_waiting_hint": "Čekanje na autentifikaciju...",
         "error_oauth_failed": "Nije uspela autentifikacija sa Home Assistant‑om."
     },
@@ -1101,5 +1115,12 @@
         "currently_playing": "Trenutno se reprodukuje na",
         "click_to_change": "Kliknite ispod da promenite izlazni uređaj"
     },
-    "more_options": "Više opcija"
+    "more_options": "Više opcija",
+    "edit": "Uredi",
+    "authors": "Autori",
+    "collection": "Kolekcija",
+    "collections": "Kolekcije",
+    "narrators": "Naratori",
+    "series_plural": "Serije",
+    "series_singular": "Serije"
 }

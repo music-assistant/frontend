@@ -23,15 +23,19 @@
     "artist_albums": "Albums",
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
+    "authors": "Authors",
     "browse": "Browse",
     "clear_selection": "Clear selection",
     "close": "Close",
+    "collection": "Collection",
+    "collections": "Collections",
     "create_playlist": "Create new playlist on {0}",
     "crossfade_disabled": "Crossfade is disabled",
     "crossfade_enabled": "Crossfade is enabled",
     "dark_mode": "Dark mode",
     "delete_db": "Delete item from database",
     "details": "Details",
+    "edit": "Edit",
     "enter_url": "Enter the URL you want to manually add to the database",
     "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",
@@ -42,6 +46,7 @@
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
     "mass": "Music Assistant",
+    "narrators": "Narrators",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
@@ -90,6 +95,8 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "search": "Search",
+    "series_plural": "Series",
+    "series_singular": "Series",
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
@@ -656,13 +663,9 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_mode": {
-            "label": "Web player mode",
-            "description": "Choose how this browser handles audio playback.",
-            "options": {
-                "sendspin": "Sendspin (experimental)",
-                "disabled": "Disabled (controls only)"
-            }
+        "web_player_enabled": {
+            "label": "Enable built-in (Sendspin) Web Player",
+            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
         },
         "sendspin_sync_delay": {
             "label": "Sendspin sync delay (ms)",
@@ -671,6 +674,10 @@
         "sendspin_output_latency_compensation": {
             "label": "Use browser latency detection",
             "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
+        },
+        "enable_browser_controls": {
+            "label": "Enable browser media controls",
+            "description": "Allow control of playback using the browser's built-in media controls (e.g., media keys on your keyboard)."
         },
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
@@ -901,7 +908,19 @@
         "new_releases_for_you": "New releases for you",
         "recent_favorite_tracks": "Recently favorited tracks",
         "favorite_playlists": "Favorite playlists",
-        "favorite_radio_stations": "Favorite radio stations"
+        "favorite_radio_stations": "Favorite radio stations",
+        "listen_again": "Listen again",
+        "in_progress_series": "Continue series...",
+        "recommended": "Recommended",
+        "recently_added": "Recently added",
+        "episodes_recently_added": "Recently added episodes",
+        "recent_series": "Recent series",
+        "newest_authors": "Newest authors",
+        "newest_episodes": "Newest episodes",
+        "discover": "Discover",
+        "libraries": "Libraries",
+        "library": "Library",
+        "trending_podcasts": "Trending podcasts"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
@@ -1004,6 +1023,8 @@
         "avatar_url_hint": "Enter URL to avatar image",
         "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
+        "save_changes": "Save changes",
+        "update_password": "Update password",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
         "copy_new_token_hint": "Copy your access token. It will not be shown again.",
         "token_copied": "Token copied to clipboard",

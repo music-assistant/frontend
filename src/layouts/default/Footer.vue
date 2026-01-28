@@ -34,7 +34,7 @@ import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { parseBool } from "@/helpers/utils";
 
 const bottomNavHeight = computed(() => {
-  if (store.isInStandaloneMode) {
+  if (store.isInPWAMode) {
     // for iOS standalone we need extra padding at the bottom due to the apphandle
     return 100;
   }
