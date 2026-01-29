@@ -1,27 +1,116 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
 import { PanelLeft } from "lucide-vue-next";
-import type { HTMLAttributes } from "vue";
+import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar } = useSidebar();
+const { toggleSidebar, state, isMobile } = useSidebar();
+
+const isCollapsed = computed(() => state.value === "collapsed");
+
+const haButtonTooltip = computed(() => {
+  return haState.kioskModeEnabled
+    ? "Show Home Assistant Menu"
+    : "Hide Home Assistant Menu";
+});
+
+const handleHAMenuToggle = () => {
+  toggleHAMenuVisibility();
+};
 </script>
 
 <template>
-  <Button
-    data-sidebar="trigger"
-    data-slot="sidebar-trigger"
-    variant="ghost"
-    size="icon"
-    :class="cn('h-10 w-10', props.class)"
-    @click="toggleSidebar"
+  <div
+    :class="[
+      'trigger-container',
+      isCollapsed ? 'flex-col -mr-2' : 'flex-row',
+      props.class,
+    ]"
   >
-    <PanelLeft />
-    <span class="sr-only">Toggle Sidebar</span>
-  </Button>
+    <!-- HA Menu Toggle Button -->
+    <Tooltip v-if="store.isIngressSession">
+      <TooltipTrigger as-child>
+        <Button
+          v-if="store.isIngressSession"
+          variant="ghost"
+          size="icon"
+          :class="[, isCollapsed && 'order-first']"
+          @click="handleHAMenuToggle"
+        >
+          <img
+            src="@/assets/home-assistant-logo.svg"
+            alt="Home Assistant"
+            class="ha-logo-icon"
+          />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        :hidden="!isCollapsed || isMobile"
+      >
+        {{ haButtonTooltip }}
+      </TooltipContent>
+    </Tooltip>
+
+    <!-- Sidebar Toggle Button -->
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          class="flex-shrink-0"
+          @click="toggleSidebar"
+        >
+          <PanelLeft />
+          <span class="sr-only">Toggle Sidebar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        :hidden="!isCollapsed || isMobile"
+      >
+        {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+      </TooltipContent>
+    </Tooltip>
+  </div>
 </template>
+
+<style scoped>
+.trigger-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.trigger-container.flex-col {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.trigger-container.flex-row {
+  flex-direction: row;
+}
+
+.ha-logo-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin: auto;
+}
+</style>

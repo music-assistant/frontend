@@ -61,7 +61,7 @@
         block
         color="primary"
         size="large"
-        :disabled="!requiredValuesPresent"
+        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
         {{ $t("settings.save") }}
@@ -557,5 +557,10 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
+}
+
+.config-actions .v-btn--disabled {
+  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+  color: rgba(var(--v-theme-on-surface), 0.38) !important;
 }
 </style>

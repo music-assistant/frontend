@@ -42,19 +42,14 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
-import {
-  CoreConfig,
-  ConfigValueType,
-  ConfigEntry,
-} from "@/plugins/api/interfaces";
+import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { nanoid } from "nanoid";
+import { toast } from "vuetify-sonner";
 
 // global refs
-const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
 const sessionId = nanoid(11);
@@ -114,17 +109,16 @@ const getCoreIcon = (domain: string): string => {
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  // save new provider config
+  // save core config
   loading.value = true;
   api
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
       loading.value = false;
-      router.push({ name: "providersettings" });
+      toast.success(t("settings.settings_saved"));
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(err.message || err);
       loading.value = false;
     });
 };
@@ -153,8 +147,7 @@ const onAction = async function (
       loading.value = false;
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(err.message || err);
       loading.value = false;
     });
 };

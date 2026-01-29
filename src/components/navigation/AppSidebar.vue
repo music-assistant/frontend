@@ -44,7 +44,9 @@ const navItems = computed(() => {
     <SidebarContent>
       <NavMain :items="navItems" />
     </SidebarContent>
-    <SidebarFooter> <SidebarTrigger class="-ml-1" /> </SidebarFooter>
+    <SidebarFooter>
+      <SidebarTrigger class="-ml-1" />
+    </SidebarFooter>
   </Sidebar>
 </template>
 
@@ -91,5 +93,10 @@ const navItems = computed(() => {
   width: 2rem !important;
   height: 2rem !important;
   margin-right: 0.5rem !important;
+}
+
+:deep([data-sidebar="menu-button"] > svg.artist-icon) {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
 }
 </style>

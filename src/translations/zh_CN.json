@@ -635,14 +635,6 @@
         "players_total": "{0} 个播放器{1}",
         "api_docs": "API 文档",
         "no_group_providers": "您目前没有任何支持创建群组的提供程序",
-        "web_player_mode": {
-            "label": "网页播放器模式",
-            "description": "选择此浏览器处理音频播放的方式。",
-            "options": {
-                "sendspin": "Sendspin（实验性）",
-                "disabled": "禁用（仅控制）"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin 同步延迟（毫秒）",
             "description": "以毫秒为单位的静态延迟，用于调整音频同步。正值会延迟播放，负值会提前播放。用它来补偿特定设备的音频延迟。"

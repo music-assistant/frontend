@@ -633,14 +633,6 @@
         "players_total": "{0} łącznie odtwarzaczy{1}",
         "api_docs": "Dokumentacja API",
         "no_group_providers": "Obecnie nie masz żadnych dostawców obsługujących tworzenie grup",
-        "web_player_mode": {
-            "label": "Tryb odtwarzacza internetowego",
-            "description": "Wybierz sposób, w jaki ta przeglądarka będzie obsługiwać odtwarzanie dźwięku.",
-            "options": {
-                "sendspin": "Sendspin (eksperymentalne)",
-                "disabled": "Wyłączone (tylko sterowanie)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Opóźnienie synchronizacji Sendspin (ms)",
             "description": "Statyczne opóźnienie w milisekundach do regulacji synchronizacji dźwięku. Wartości dodatnie opóźniają odtwarzanie, wartości ujemne przyspieszają je. Służy do kompensacji opóźnienia dźwięku specyficznego dla urządzenia."

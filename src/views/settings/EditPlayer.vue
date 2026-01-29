@@ -9,7 +9,7 @@
     >
       <!-- Disabled banner -->
       <v-alert
-        v-if="!config.enabled"
+        v-if="!config?.enabled"
         type="warning"
         variant="tonal"
         class="mb-4"
@@ -29,7 +29,7 @@
       </v-alert>
 
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
+      <v-card v-if="config" class="header-card mb-4" elevation="0">
         <div class="header-content">
           <div class="header-icon">
             <v-icon size="32" color="primary">mdi-speaker</v-icon>
@@ -94,9 +94,21 @@
       </v-card>
     </div>
 
+    <!-- Not available banner -->
+    <v-alert
+      v-if="config && !api.players[config.player_id]?.available"
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_not_available") }}</span>
+      </div>
+    </v-alert>
+
     <edit-config
-      v-if="config"
-      :disabled="!config.enabled"
+      v-else-if="config"
+      :disabled="!config?.enabled"
       :config-entries="allConfigEntries"
       @submit="onSubmit"
       @action="onAction"
@@ -222,7 +234,7 @@ const config_entries = computed(() => {
     !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
     entries.push({
-      key: "dsp_note_multi_device_group_not_supported",
+      key: "dsp_note_multi_device_group_unsupported",
       type: ConfigEntryType.LABEL,
       label:
         "This group type does not support DSP when playing to multiple devices.",

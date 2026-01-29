@@ -1,44 +1,21 @@
-import { getImageThumbForItem } from "@/helpers/utils";
+import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
-import {
-  ImageType,
-  MediaType,
-  QueueItem,
-  Track,
-} from "@/plugins/api/interfaces";
+import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed, watch } from "vue";
 
-function playerMediaToMetadata(item: QueueItem) {
-  let artist: string | undefined;
-  let album: string | undefined;
-
-  //here we cast to Track to access properties that are only available on Track
-  if (item.media_item?.media_type === MediaType.TRACK) {
-    const currentMedia = item.media_item as Track;
-    artist = currentMedia.artists.map((a) => a.name).join(", ");
-    album = currentMedia.album?.name;
-  }
+function playerMediaToMetadata(item: PlayerMedia) {
   const artwork = [
     {
-      src: getImageThumbForItem(item, ImageType.THUMB, 128) || "",
-      sizes: "128x128",
-    },
-    {
-      src: getImageThumbForItem(item, ImageType.THUMB, 256) || "",
-      sizes: "256x256",
-    },
-    {
-      src: getImageThumbForItem(item, ImageType.THUMB, 512) || "",
-      sizes: "512x512",
+      src: getMediaImageUrl(item.image_url),
     },
   ];
 
   return new MediaMetadata({
-    title: item.media_item!.name,
-    artist,
-    album,
-    artwork: artwork,
+    title: item.title,
+    artist: item.artist,
+    album: item.album,
+    artwork,
   });
 }
 // If no player_id is passed, the currently selected player is shown
@@ -77,23 +54,30 @@ export function useMediaBrowserMetaData(player_id?: string) {
     }
     return undefined;
   });
-  const queueItem = computed(() => {
-    if (playerQueue.value && playerQueue.value.active)
-      return playerQueue.value.current_item;
-    return undefined;
+
+  const mediaMetadata = computed(() => {
+    return player.value?.current_media
+      ? playerMediaToMetadata(player.value?.current_media)
+      : undefined;
   });
-  let currentMediaUri: string | undefined;
+
+  let currentMediaMetadata: MediaMetadata | undefined;
 
   //watch the current media to update the metadata
   const unwatch_metadata = watch(
-    () => queueItem.value,
-    (newMedia) => {
-      if (!newMedia || !newMedia.media_item) return;
+    () => mediaMetadata.value,
+    (newMetadata) => {
+      if (!newMetadata) return;
       //Lets make sure that the new media isn't spammed
-      if (newMedia.media_item.uri === currentMediaUri) return;
-      const newMediaMetaData = playerMediaToMetadata(newMedia);
-      currentMediaUri = newMedia.media_item.uri;
-      navigator.mediaSession.metadata = newMediaMetaData;
+      if (
+        newMetadata.album === currentMediaMetadata?.album &&
+        newMetadata.title === currentMediaMetadata?.title &&
+        newMetadata.artist === currentMediaMetadata?.artist &&
+        newMetadata.artwork === currentMediaMetadata?.artwork
+      )
+        return;
+      navigator.mediaSession.metadata = newMetadata;
+      currentMediaMetadata = newMetadata;
     },
     { immediate: true },
   );

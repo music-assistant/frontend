@@ -208,7 +208,6 @@ export class WebRTCTransport extends BaseTransport {
     if (!this.dataChannel) return;
 
     this.dataChannel.onopen = () => {
-      console.log("[WebRTCTransport] Data channel opened");
       this.setState(TransportState.CONNECTED);
       this.emit("open");
     };
@@ -232,21 +231,12 @@ export class WebRTCTransport extends BaseTransport {
       // Check if this is an HTTP proxy response
       try {
         const data = JSON.parse(event.data);
-        console.log(
-          "[WebRTCTransport] DataChannel message received, type:",
-          data.type,
-          "id:",
-          data.id,
-        );
         if (data.type === "http-proxy-response") {
           this.handleHttpProxyResponse(data);
           return;
         }
       } catch {
         // Not JSON or not HTTP proxy response, treat as normal message
-        console.log(
-          "[WebRTCTransport] DataChannel message received (non-JSON or non-proxy)",
-        );
       }
 
       this.emit("message", event.data);
@@ -383,25 +373,12 @@ export class WebRTCTransport extends BaseTransport {
     headers: Record<string, string>;
     body: Uint8Array;
   }> {
-    console.log(
-      "[WebRTCTransport] sendHttpProxyRequest called:",
-      method,
-      path,
-      "dataChannel state:",
-      this.dataChannel?.readyState,
-    );
-
     if (!this.dataChannel || this.dataChannel.readyState !== "open") {
-      console.error(
-        "[WebRTCTransport] DataChannel is not open:",
-        this.dataChannel?.readyState,
-      );
       throw new Error("DataChannel is not open");
     }
 
     // Generate unique request ID
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    console.log("[WebRTCTransport] Generated request ID:", requestId);
 
     // Create promise for response
     const responsePromise = new Promise<{
@@ -416,11 +393,6 @@ export class WebRTCTransport extends BaseTransport {
       setTimeout(() => {
         if (this.httpProxyCallbacks.has(requestId)) {
           this.httpProxyCallbacks.delete(requestId);
-          console.error(
-            "[WebRTCTransport] HTTP proxy request TIMEOUT:",
-            requestId,
-            path,
-          );
           reject(new Error("HTTP proxy request timeout"));
         }
       }, 30000);
@@ -435,11 +407,6 @@ export class WebRTCTransport extends BaseTransport {
       headers,
     };
 
-    console.log(
-      "[WebRTCTransport] Sending request through DataChannel:",
-      requestId,
-      path,
-    );
     this.dataChannel.send(JSON.stringify(request));
 
     return responsePromise;
@@ -451,15 +418,6 @@ export class WebRTCTransport extends BaseTransport {
   private handleHttpProxyResponse(data: any): void {
     const { id, status, headers, body } = data;
 
-    console.log(
-      "[WebRTCTransport] Received http-proxy-response:",
-      id,
-      "status:",
-      status,
-      "has callback:",
-      this.httpProxyCallbacks.has(id),
-    );
-
     const callbacks = this.httpProxyCallbacks.get(id);
     if (callbacks) {
       this.httpProxyCallbacks.delete(id);
@@ -468,7 +426,6 @@ export class WebRTCTransport extends BaseTransport {
         // Convert hex string to Uint8Array
         const bodyBytes = this.hexToBytes(body);
 
-        console.log("[WebRTCTransport] Resolving http-proxy-response:", id);
         callbacks.resolve({
           status,
           headers,

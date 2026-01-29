@@ -635,14 +635,6 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_mode": {
-            "label": "Web player mode",
-            "description": "Choose how this browser handles audio playback.",
-            "options": {
-                "sendspin": "Sendspin (experimental)",
-                "disabled": "Disabled (controls only)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin sync delay (ms)",
             "description": "Static delay in milliseconds to adjust audio synchronisation. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
