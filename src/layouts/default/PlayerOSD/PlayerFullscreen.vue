@@ -299,10 +299,15 @@
                     </template>
                     <template #append>
                       <span
-                        v-if="item.extra_attributes?.added_by_user_role === 'guest'"
+                        v-if="
+                          item.extra_attributes?.added_by_user_role === 'guest'
+                        "
                         :class="[
                           'guest-request-badge',
-                          { 'play-next': item.extra_attributes?.queue_option === 'next' },
+                          {
+                            'play-next':
+                              item.extra_attributes?.queue_option === 'next',
+                          },
                         ]"
                       >
                         <v-icon size="x-small">{{
@@ -311,7 +316,9 @@
                             : "mdi-account-music"
                         }}</v-icon>
                         {{
-                          item.extra_attributes?.queue_option === "next" ? "Play Next" : "Request"
+                          item.extra_attributes?.queue_option === "next"
+                            ? "Play Next"
+                            : "Request"
                         }}
                       </span>
                       <NowPlayingBadge
