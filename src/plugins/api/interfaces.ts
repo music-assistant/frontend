@@ -755,6 +755,11 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
+  // Guest priority queue: track who added this item
+  added_by_user_id?: string;
+  added_by_user_role?: string; // e.g., "guest", "admin"
+  added_at?: number; // Unix timestamp when item was added
+  queue_option?: string; // how item was added: "next", "add", "play", etc.
 }
 
 // player_queue
@@ -949,6 +954,7 @@ export interface ButtonProps {
 export enum UserRole {
   ADMIN = "admin",
   USER = "user",
+  GUEST = "guest",
 }
 
 export enum AuthProviderType {
@@ -967,6 +973,8 @@ export interface User {
   preferences: Record<string, any>;
   provider_filter: string[];
   player_filter: string[];
+  // Note: Session-specific claims like client_type are in the JWT token.
+  // Use authManager.isPartyModeGuest() to check for party mode sessions.
 }
 
 export interface AuthToken {

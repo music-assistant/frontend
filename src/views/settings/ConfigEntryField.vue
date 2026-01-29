@@ -69,17 +69,24 @@
       </v-btn>
     </div>
 
-    <!-- boolean value: checkbox -->
-    <v-checkbox
+    <!-- boolean value: switch -->
+    <div
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
-      :model-value="confEntry.value"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
-      color="primary"
-      :disabled="isFieldDisabled"
-      hide-details
-      density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-    />
+      class="config-switch-wrapper"
+    >
+      <v-label class="config-switch-label">
+        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      </v-label>
+      <v-switch
+        :model-value="confEntry.value"
+        color="primary"
+        :disabled="isFieldDisabled"
+        hide-details
+        density="comfortable"
+        class="config-switch"
+        @update:model-value="$emit('update:value', $event)"
+      />
+    </div>
 
     <!-- int/float value in range: slider control -->
     <div
@@ -419,5 +426,23 @@ const translatedOptions = computed(() => {
 .dsp-status {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.config-switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.config-switch-label {
+  font-size: 0.875rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.config-switch {
+  flex-shrink: 0;
 }
 </style>

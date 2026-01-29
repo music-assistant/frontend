@@ -1,6 +1,6 @@
 /**
  * Authentication Manager for Music Assistant Frontend
- * Handles token storage, and authentication state
+ * Handles token storage, JWT claims, and authentication state
  */
 
 import type { User } from "./api/interfaces";
@@ -8,12 +8,52 @@ import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
 
+/**
+ * JWT claims structure from Music Assistant tokens
+ */
+interface JWTClaims {
+  sub: string; // user_id
+  jti: string; // token_id
+  iat: number; // issued at
+  exp: number; // expiration
+  username: string;
+  role: string;
+  permissions: string[];
+  player_filter: string[];
+  provider_filter: string[];
+  token_name: string;
+  is_long_lived: boolean;
+  client_type?: string; // "party_mode" for party mode guests
+}
+
 export class AuthManager {
   private token: string | null = null;
+  private claims: JWTClaims | null = null;
   private baseUrl: string = "";
 
   constructor() {
     this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (this.token) {
+      this.claims = this.decodeJWT(this.token);
+    }
+  }
+
+  /**
+   * Decode JWT payload without signature verification.
+   * Signature verification is the server's responsibility.
+   * This allows the frontend to read claims from the self-contained token.
+   */
+  private decodeJWT(token: string): JWTClaims | null {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      // Base64url decode the payload (middle part)
+      const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const decoded = JSON.parse(atob(payload));
+      return decoded as JWTClaims;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -53,10 +93,35 @@ export class AuthManager {
 
   /**
    * Set token directly (for server-side login flow)
+   * Automatically decodes JWT claims for frontend use
    */
   setToken(token: string): void {
     this.token = token;
+    this.claims = this.decodeJWT(token);
     localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  }
+
+  /**
+   * Get decoded JWT claims
+   */
+  getClaims(): JWTClaims | null {
+    return this.claims;
+  }
+
+  /**
+   * Get a specific claim from the JWT
+   */
+  getClaim<K extends keyof JWTClaims>(key: K): JWTClaims[K] | undefined {
+    return this.claims?.[key];
+  }
+
+  /**
+   * Check if this is a party mode guest session.
+   * Party mode guests authenticate via QR code/join code and have
+   * restricted UI access (only the guest view).
+   */
+  isPartyModeGuest(): boolean {
+    return this.claims?.client_type === "party_mode";
   }
 
   /**
@@ -67,10 +132,11 @@ export class AuthManager {
   }
 
   /**
-   * Clear authentication token and user
+   * Clear authentication token, claims, and user
    */
   clearAuth(): void {
     this.token = null;
+    this.claims = null;
     store.currentUser = undefined;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   }
