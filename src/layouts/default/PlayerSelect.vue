@@ -169,8 +169,11 @@ const getPlayerPriority = (player: Player): number => {
     score += 2;
   }
 
-  // "This device" web player = 2 points
-  if (player.player_id === webPlayer.player_id) {
+  // "This device" web/companion player = 2 points
+  if (
+    player.player_id === webPlayer.player_id ||
+    player.player_id === store.companionPlayerId
+  ) {
     score += 2;
   }
 
@@ -227,6 +230,14 @@ const showPlayerSearch = computed(() => allPlayers.value.length > 8);
 // Preferred players shown at top (playing, active, recently selected, web player)
 const preferredPlayers = computed(() => {
   const players = Object.values(api.players).filter((x) => playerVisible(x));
+  if (players.length <= 3) {
+    // If 3 or fewer players, show all as preferred
+    return players.sort((a, b) => {
+      const indexA = playerSortOrder.value.indexOf(a.player_id);
+      const indexB = playerSortOrder.value.indexOf(b.player_id);
+      return indexA - indexB;
+    });
+  }
   // Filter to only players with priority > 0, then sort by frozen order, limit to top 3
   const preferred = players.filter((p) => getPlayerPriority(p) > 0);
   return preferred
@@ -322,7 +333,7 @@ onMounted(() => {
 });
 
 const checkDefaultPlayer = function () {
-  if (store.activePlayer && playerVisible(store.activePlayer)) return;
+  if (store.activePlayer) return;
   const newDefaultPlayerId = selectDefaultPlayer();
   if (newDefaultPlayerId) {
     store.activePlayerId = newDefaultPlayerId;
@@ -336,15 +347,24 @@ const selectDefaultPlayer = function () {
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
     getPreference<string>("activePlayerId").value;
-  if (
-    lastPlayerId &&
-    lastPlayerId in api.players &&
-    api.players[lastPlayerId].available
-  ) {
+  if (lastPlayerId && lastPlayerId in api.players) {
     return lastPlayerId;
   }
-  if (webPlayer.player_id) {
+  // select webPlayer if available (only if we do not have a previous player stored)
+  if (
+    !lastPlayerId &&
+    webPlayer.player_id &&
+    webPlayer.player_id in api.players
+  ) {
     return webPlayer.player_id;
+  }
+  // select companionPlayer if available (only if we do not have a previous player stored)
+  if (
+    !lastPlayerId &&
+    store.companionPlayerId &&
+    store.companionPlayerId in api.players
+  ) {
+    return store.companionPlayerId;
   }
 };
 </script>

@@ -379,15 +379,6 @@ export enum VolumeNormalizationMode {
   FALLBACK_DYNAMIC = "fallback_dynamic",
 }
 
-export enum HidePlayerOption {
-  NEVER = "never",
-  WHEN_OFF = "when_off",
-  WHEN_GROUP_ACTIVE = "when_group_active",
-  WHEN_SYNCED = "when_synced",
-  WHEN_UNAVAILABLE = "when_unavailable",
-  ALWAYS = "always",
-}
-
 //// api
 
 export interface CommandMessage {
@@ -861,7 +852,7 @@ export interface Player {
   synced_to?: string;
 
   group_volume: number;
-  hide_player_in_ui: HidePlayerOption[];
+  hide_in_ui: boolean;
   icon: string;
   power_control: string;
   volume_control: string;

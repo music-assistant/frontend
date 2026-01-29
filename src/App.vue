@@ -20,7 +20,12 @@
     "
   />
   <SendspinPlayer
-    v-if="webPlayer.tabMode === WebPlayerMode.SENDSPIN && webPlayer.player_id"
+    v-if="
+      [
+        WebPlayerMode.SENDSPIN_ONLY,
+        WebPlayerMode.SENDSPIN_WITH_CONTROLS,
+      ].includes(webPlayer.tabMode) && webPlayer.player_id
+    "
     :player-id="webPlayer.player_id"
   />
 </template>
@@ -32,16 +37,25 @@ import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 import { VSonner } from "vuetify-sonner";
 import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import {
+  getKioskModePreference,
+  subscribeToHAProperties,
+  unsubscribeFromHAProperties,
+} from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
+import {
+  initializeCompanionIntegration,
+  companionMode,
+} from "./plugins/companion";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
@@ -183,6 +197,12 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.serverInfo = serverInfo;
 
+  // Enable kiosk mode when running in Home Assistant ingress
+  if (store.isIngressSession && serverInfo.homeassistant_addon) {
+    const kioskPref = getKioskModePreference();
+    subscribeToHAProperties({ kioskMode: kioskPref, router });
+  }
+
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
@@ -198,16 +218,35 @@ const completeInitialization = async () => {
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
-  const webPlayerModePref =
-    localStorage.getItem("frontend.settings.web_player_mode") || "sendspin";
-  if (
-    webPlayerModePref !== "disabled" &&
-    api.getProvider("sendspin")?.available
+  const webPlayerEnabledPref =
+    localStorage.getItem("frontend.settings.web_player_enabled") || "true";
+  const browserControlsEnabledPref =
+    localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
+  if (companionMode.value) {
+    // the webplayer is completely disabled if we're running companion mode (no sendspin, no controls)
+    webPlayer.setMode(WebPlayerMode.DISABLED);
+  } else if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref !== "false"
   ) {
-    webPlayer.setMode(WebPlayerMode.SENDSPIN);
-  } else {
+    // sendspin enabled, browser controls enabled
+    webPlayer.setMode(WebPlayerMode.SENDSPIN_WITH_CONTROLS);
+  } else if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref === "false"
+  ) {
+    // sendspin enabled but no browser controls
+    webPlayer.setMode(WebPlayerMode.SENDSPIN_ONLY);
+  } else if (
+    webPlayerEnabledPref === "false" &&
+    browserControlsEnabledPref !== "false"
+  ) {
+    // sendspin disabled but browser controls allowed
     webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+  } else {
+    webPlayer.setMode(WebPlayerMode.DISABLED);
   }
+
   const urlParams = new URLSearchParams(window.location.search);
   if (
     (urlParams.get("onboard") === "true" ||
@@ -218,11 +257,20 @@ const completeInitialization = async () => {
     router.push("/settings/providers");
   }
   api.state.value = ConnectionState.INITIALIZED;
+
+  // Initialize companion app integration
+  if (api.baseUrl) {
+    initializeCompanionIntegration(api.baseUrl);
+  }
 };
 
 onMounted(async () => {
-  // @ts-ignore
-  store.isInStandaloneMode = window.navigator.standalone || false;
+  // Detect if running as installed PWA (works across iOS, Android, and desktop)
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  store.isInPWAMode =
+    nav.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches;
 
   // Cache language settings
   const langPref = localStorage.getItem("frontend.settings.language") || "auto";
@@ -301,5 +349,9 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
+});
+
+onUnmounted(() => {
+  unsubscribeFromHAProperties();
 });
 </script>
