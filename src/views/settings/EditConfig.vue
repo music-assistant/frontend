@@ -171,6 +171,7 @@ const activePanel = ref<string[]>([]);
 const showPasswordValues = ref(false);
 const showHelpInfo = ref<ConfigEntry>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
+const oldValuesInitialized = ref(false);
 
 // props
 const props = defineProps<Props>();
@@ -242,18 +243,27 @@ watch(
   () => props.configEntries,
   (val) => {
     entries.value = [];
-    oldValues.value = {}; // Reset old values when config entries change
+    // Only capture oldValues on the FIRST load, not on subsequent updates from actions.
+    // This ensures that action-triggered changes (like OAuth tokens being set) are
+    // still detected as unsaved changes that need to be saved.
+    const shouldCaptureOldValues = !oldValuesInitialized.value;
+    if (shouldCaptureOldValues) {
+      oldValues.value = {};
+    }
     for (const entry of val || []) {
       // handle missing values (undefined or null)
       if (entry.value == undefined || entry.value == null)
         entry.value = entry.default_value;
       // Store the initial value AFTER applying defaults (deep clone for arrays/objects)
-      oldValues.value[entry.key] =
-        typeof entry.value === "object" && entry.value !== null
-          ? JSON.parse(JSON.stringify(entry.value))
-          : entry.value;
+      if (shouldCaptureOldValues) {
+        oldValues.value[entry.key] =
+          typeof entry.value === "object" && entry.value !== null
+            ? JSON.parse(JSON.stringify(entry.value))
+            : entry.value;
+      }
       entries.value.push(entry);
     }
+    oldValuesInitialized.value = true;
     // Set active panels after entries are populated
     // Expand all panels by default, except "advanced" which stays collapsed
     const expandedPanels = panels.value.filter((p) => p !== "advanced");
