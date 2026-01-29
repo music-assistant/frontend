@@ -401,6 +401,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import type { AuthProvider } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -686,8 +687,9 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    // Store the JWT token for auto-login
+    // Store the JWT token for auto-login and decode claims (including client_type)
     localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
+    authManager.setToken(result.access_token);
 
     // Authenticate the WebSocket session with the JWT
     const authResult = await api.authenticateWithToken(result.access_token);
@@ -1024,7 +1026,9 @@ const autoConnect = async () => {
 
     // Auto-connect if we have remote_id from URL (from portal redirect)
     // or if we have stored credentials
-    const remoteIdToConnect = urlRemoteIdForAutoConnect || (storedRemoteId && storedToken ? storedRemoteId : null);
+    const remoteIdToConnect =
+      urlRemoteIdForAutoConnect ||
+      (storedRemoteId && storedToken ? storedRemoteId : null);
 
     if (remoteIdToConnect) {
       console.debug(

@@ -755,11 +755,13 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
-  // Guest priority queue: track who added this item
-  added_by_user_id?: string;
-  added_by_user_role?: string; // e.g., "guest", "admin"
-  added_at?: number; // Unix timestamp when item was added
-  queue_option?: string; // how item was added: "next", "add", "play", etc.
+  // Guest priority queue: extra_attributes stores who added this item
+  extra_attributes?: {
+    added_by_user_id?: string;
+    added_by_user_role?: string; // e.g., "guest", "admin"
+    added_at?: number; // Unix timestamp when item was added
+    queue_option?: string; // how item was added: "next", "add", "play", etc.
+  };
 }
 
 // player_queue

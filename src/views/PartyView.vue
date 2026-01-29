@@ -204,8 +204,15 @@ const fetchQueueItems = async (force = false) => {
       const existing = queueItems.value.find(
         (item) => item?.queue_item_id === newItem?.queue_item_id,
       );
-      // If it exists, reuse the exact same object reference
-      merged.push(existing || newItem);
+      if (existing) {
+        // Update extra_attributes from new data (needed for guest badge display)
+        if (newItem.extra_attributes) {
+          existing.extra_attributes = newItem.extra_attributes;
+        }
+        merged.push(existing);
+      } else {
+        merged.push(newItem);
+      }
     }
 
     queueItems.value = merged;

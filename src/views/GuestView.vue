@@ -116,28 +116,28 @@
           </div>
           <div class="result-actions">
             <v-btn
-              v-if="addQueueEnabled"
-              color="primary"
-              variant="elevated"
-              :loading="addingItems.has(`track-${track.item_id}-end`)"
-              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
-              class="action-btn action-btn-primary"
-              @click="addToQueue(track, 'end')"
-            >
-              <v-icon start>mdi-playlist-plus</v-icon>
-              Add
-            </v-btn>
-            <v-btn
               v-if="playNextEnabled"
-              color="secondary"
-              variant="flat"
+              variant="elevated"
               :loading="addingItems.has(`track-${track.item_id}-next`)"
               :disabled="rateLimitingEnabled && playNextTokens <= 0"
-              class="action-btn action-btn-secondary"
+              class="action-btn"
+              :style="{ backgroundColor: playNextBadgeColor, color: '#fff' }"
               @click="addToQueue(track, 'next')"
             >
               <v-icon start>mdi-playlist-play</v-icon>
               Next
+            </v-btn>
+            <v-btn
+              v-if="addQueueEnabled"
+              variant="elevated"
+              :loading="addingItems.has(`track-${track.item_id}-end`)"
+              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: requestBadgeColor, color: '#fff' }"
+              @click="addToQueue(track, 'end')"
+            >
+              <v-icon start>mdi-playlist-plus</v-icon>
+              Add
             </v-btn>
           </div>
         </div>
@@ -201,32 +201,32 @@
           <!-- Actions for tracks -->
           <div v-if="item.media_type === 'track'" class="result-actions">
             <v-btn
+              v-if="playNextEnabled"
+              variant="elevated"
+              :loading="
+                addingItems.has(`${item.media_type}-${item.item_id}-next`)
+              "
+              :disabled="rateLimitingEnabled && playNextTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: playNextBadgeColor, color: '#fff' }"
+              @click="addToQueue(item, 'next')"
+            >
+              <v-icon start>mdi-playlist-play</v-icon>
+              Next
+            </v-btn>
+            <v-btn
               v-if="addQueueEnabled"
-              color="primary"
               variant="elevated"
               :loading="
                 addingItems.has(`${item.media_type}-${item.item_id}-end`)
               "
               :disabled="rateLimitingEnabled && addQueueTokens <= 0"
-              class="action-btn action-btn-primary"
+              class="action-btn"
+              :style="{ backgroundColor: requestBadgeColor, color: '#fff' }"
               @click="addToQueue(item, 'end')"
             >
               <v-icon start>mdi-playlist-plus</v-icon>
               Add
-            </v-btn>
-            <v-btn
-              v-if="playNextEnabled"
-              color="secondary"
-              variant="flat"
-              :loading="
-                addingItems.has(`${item.media_type}-${item.item_id}-next`)
-              "
-              :disabled="rateLimitingEnabled && playNextTokens <= 0"
-              class="action-btn action-btn-secondary"
-              @click="addToQueue(item, 'next')"
-            >
-              <v-icon start>mdi-playlist-play</v-icon>
-              Next
             </v-btn>
           </div>
           <!-- Actions for artists - drill down to see tracks -->
@@ -283,6 +283,7 @@
           :class="{
             'queue-item-current':
               queueFetchOffset + index === currentQueueIndex,
+            'queue-item-played': queueFetchOffset + index < currentQueueIndex,
           }"
         >
           <div class="queue-position">
@@ -315,22 +316,24 @@
           </div>
           <!-- Guest request badge (right aligned) -->
           <span
-            v-if="item.added_by_user_role === 'guest'"
+            v-if="item.extra_attributes?.added_by_user_role === 'guest'"
             class="guest-request-badge"
             :style="{
               '--badge-color':
-                item.queue_option === 'next'
+                item.extra_attributes?.queue_option === 'next'
                   ? playNextBadgeColor
                   : requestBadgeColor,
             }"
           >
             <v-icon size="x-small">{{
-              item.queue_option === "next"
+              item.extra_attributes?.queue_option === "next"
                 ? "mdi-playlist-play"
                 : "mdi-account-music"
             }}</v-icon>
             <span>{{
-              item.queue_option === "next" ? "Play Next" : "Request"
+              item.extra_attributes?.queue_option === "next"
+                ? "Play Next"
+                : "Request"
             }}</span>
           </span>
           <!-- Skip button for currently playing item -->
@@ -915,7 +918,7 @@ const debouncedSearch = () => {
   if (searchQuery.value && searchQuery.value.length >= 2) {
     searchDebounceTimer = setTimeout(() => {
       performSearch();
-    }, 400); // 400ms debounce delay
+    }, 1000); // 1 second debounce delay
   }
 };
 
@@ -1720,6 +1723,11 @@ onMounted(async () => {
   background: rgba(var(--v-theme-primary), 0.15);
   border-left: 3px solid rgb(var(--v-theme-primary));
   padding-left: calc(0.75rem - 3px);
+}
+
+.queue-item-played {
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0.5;
 }
 
 .queue-position {

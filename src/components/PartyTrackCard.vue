@@ -58,7 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Get the badge color based on queue option (fallback to defaults if empty)
 const badgeColor = computed(() => {
-  const isNext = props.queueItem?.queue_option === "next";
+  const isNext = props.queueItem?.extra_attributes?.queue_option === "next";
   const color = isNext ? props.playNextBadgeColor : props.requestBadgeColor;
   // Fallback to defaults if color is empty (before config loads)
   if (!color) return isNext ? "#FF5722" : "#2196F3";
@@ -67,12 +67,12 @@ const badgeColor = computed(() => {
 
 // Check if this is a guest request
 const isGuestRequest = computed(() => {
-  return props.queueItem?.added_by_user_role === "guest";
+  return props.queueItem?.extra_attributes?.added_by_user_role === "guest";
 });
 
 // Check if this was added via "Play Next"
 const isPlayNext = computed(() => {
-  return props.queueItem?.queue_option === "next";
+  return props.queueItem?.extra_attributes?.queue_option === "next";
 });
 
 // Get badge text based on queue option
