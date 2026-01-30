@@ -14,6 +14,7 @@ import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
+import { deriveGroupContext } from "@/helpers/player_group_utils";
 
 export const getPlayerMenuItems = (
   player: Player,
@@ -225,9 +226,9 @@ export const getPlayerMenuItems = (
       },
       icon: "mdi-cog-outline",
     });
-
+    const group_ctx = deriveGroupContext(player.player_id, api.players);
     // add shortcut to dsp settings
-    if (player.type !== PlayerType.GROUP) {
+    if (group_ctx.ownsDSPSettings) {
       menuItems.push({
         label: "open_dsp_settings",
         labelArgs: [],

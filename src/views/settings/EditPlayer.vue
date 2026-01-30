@@ -164,7 +164,17 @@ import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { nanoid } from "nanoid";
-
+import { useI18n } from "vue-i18n";
+import { GroupContext, deriveGroupContext } from "@/helpers/player_group_utils";
+import {
+  CONFIG_KEY_UI,
+  UI_ENTRY_TYPE,
+  ConfigKeyUI,
+  ConfigEntryUI,
+  InjectedConfigEntry,
+  isDspLinkEntry,
+  isInjected,
+} from "@/helpers/config_entry_ui";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -172,11 +182,14 @@ const sessionId = nanoid(11);
 const loading = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+const leaderConfig = ref<PlayerConfig | null>(null);
 
 // props
 const props = defineProps<{
   playerId?: string;
 }>();
+
+const { t } = useI18n();
 
 const dspEnabled = ref(false);
 
@@ -200,49 +213,119 @@ const unsub = api.subscribe(
 onBeforeUnmount(unsub);
 
 // computed properties
+const group_ctx = computed<GroupContext>(() => {
+  const playerId = config.value?.player_id;
+  const players = api.players;
+  return deriveGroupContext(playerId, players);
+});
 
 const config_entries = computed(() => {
   if (!config.value) return [];
-  const entries = Object.values(config.value.values);
-  // inject a DSP config property if the player is not a group
   const player = api.players[config.value.player_id];
-  if (player && player.type !== PlayerType.GROUP) {
-    entries.push({
-      key: "dsp_settings",
-      type: ConfigEntryType.DSP_SETTINGS,
-      label: "",
-      default_value: dspEnabled.value,
-      required: false,
-      category: "audio",
-    });
-  } else if (
-    player &&
-    player.type === PlayerType.GROUP &&
-    player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
-  ) {
-    entries.push({
-      key: "dsp_note_multi_device_group",
+  if (!player) return [];
+
+  const entries: ConfigEntryUI[] = Object.values(config.value.values);
+
+  // inject a link to DSP settings
+  entries.push({
+    injected: true,
+    key: CONFIG_KEY_UI.DSP_SETTINGS_LINK,
+    type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
+    category: "audio",
+    label: "",
+    required: false,
+    read_only: false,
+    default_value: dspEnabled.value,
+    note_key: group_ctx.value.ownsDSPSettings
+      ? undefined
+      : group_ctx.value.dspPerPlayer
+        ? "dsp_note_multi_device_group"
+        : "dsp_note_multi_device_group_not_supported",
+  });
+
+  if (group_ctx.value.inGroup) {
+    const adjEntries: ConfigEntryUI[] = [];
+
+    const toFilterSet = new Set<string>(group_ctx.value.perGrpCfgKeys);
+    const perGroupOnly = new Map<string, ConfigEntryUI[]>();
+
+    const leader_values: Map<string, ConfigValueType | undefined> | null =
+      !group_ctx.value.isLeader && leaderConfig.value?.values
+        ? new Map(
+            Object.values(leaderConfig.value.values).map((e) => [
+              e.key,
+              e.value,
+            ]),
+          )
+        : null;
+
+    for (const e of entries) {
+      if (!toFilterSet.has(e.key)) {
+        adjEntries.push(e);
+        continue;
+      }
+
+      const shouldInject = isInjected(e) || !group_ctx.value.isLeader;
+      const baseEntry = {
+        ...e,
+        read_only:
+          !group_ctx.value.isLeader ||
+          (isDspLinkEntry(e) && !group_ctx.value.dspPerGroup),
+        category: "per_group_settings",
+        value:
+          leader_values && leader_values.has(e.key)
+            ? leader_values.get(e.key)!
+            : e.value,
+      };
+      const copyEntry: ConfigEntryUI = shouldInject
+        ? { ...baseEntry, injected: true }
+        : baseEntry;
+      const arr = perGroupOnly.get(e.category);
+      if (arr) arr.push(copyEntry);
+      else perGroupOnly.set(e.category, [copyEntry]);
+    }
+    const baseGrpLabel: Omit<InjectedConfigEntry, "key" | "label"> = {
+      injected: true,
       type: ConfigEntryType.LABEL,
-      label: "You can configure the DSP for each player individually.",
       default_value: null,
       required: false,
-      category: "audio",
-    });
-  } else if (
-    player &&
-    player.type === PlayerType.GROUP &&
-    !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
-  ) {
-    entries.push({
-      key: "dsp_note_multi_device_group_unsupported",
-      type: ConfigEntryType.LABEL,
-      label:
-        "This group type does not support DSP when playing to multiple devices.",
-      default_value: null,
-      required: false,
-      category: "audio",
-    });
+      category: "per_group_settings",
+    };
+    let first = true;
+    for (const [category, arr] of perGroupOnly) {
+      const nonHidden: ConfigEntryUI[] = arr.filter((e) => !e.hidden);
+      if (!nonHidden.length) {
+        adjEntries.push(...arr);
+      } else if (first) {
+        first = false;
+        if (!group_ctx.value.isLeader) {
+          adjEntries.push({
+            ...baseGrpLabel,
+            key: "grouping_prevents_settings",
+            label: "Settings are inherited from {link}.",
+            action: "group_leader_link",
+            action_label: group_ctx.value.leaderName ?? "",
+          });
+        } else {
+          adjEntries.push({
+            ...baseGrpLabel,
+            key: "settings_apply_to_group_members",
+            label: "Changes here affect all players in the group.",
+          });
+        }
+        adjEntries.push(...arr);
+      } else {
+        adjEntries.push({
+          key: "per_group_settings_divider",
+          type: ConfigEntryType.DIVIDER,
+          category: "per_group_settings",
+        } as InjectedConfigEntry);
+        adjEntries.push(...arr);
+      }
+    }
+    return adjEntries;
   }
+
   return entries;
 });
 
@@ -270,6 +353,24 @@ watch(showRenameDialog, (val) => {
   }
 });
 
+watch(
+  () => [group_ctx.value.isLeader, group_ctx.value.leaderId] as const,
+  async ([isLeader, leaderId], _old, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => {
+      cancelled = true;
+    });
+
+    if (!isLeader && leaderId) {
+      const cfg = await api.getPlayerConfig(leaderId);
+      if (!cancelled) leaderConfig.value = cfg;
+    } else {
+      leaderConfig.value = null;
+    }
+  },
+  { immediate: true },
+);
+
 // methods
 const saveRename = function () {
   if (config.value) {
@@ -288,7 +389,6 @@ const saveRename = function () {
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
@@ -305,6 +405,10 @@ const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
 ) {
+  if (action === "group_leader_link") {
+    openPlayerConfig(group_ctx.value.leaderId);
+    return;
+  }
   loading.value = true;
   // append existing ConfigEntry values to allow
   // values be passed between flow steps
@@ -330,6 +434,15 @@ const onAction = async function (
     .finally(() => {
       loading.value = false;
     });
+};
+
+const openPlayerConfig = function (player_id: string | null) {
+  if (!player_id) return;
+  const route = router.currentRoute.value;
+  const segments = route.path.split("/").filter(Boolean);
+  segments[segments.length - 1] = player_id;
+  const newPath = "/" + segments.join("/");
+  router.push(newPath);
 };
 </script>
 
