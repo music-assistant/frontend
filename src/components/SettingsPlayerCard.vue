@@ -1,75 +1,94 @@
 <template>
   <v-card
     class="flex-fill rounded-lg player-card"
-    min-height="200px"
+    :class="{
+      'player-disabled': !playerConfig.enabled,
+      'player-unavailable': !isAvailable,
+    }"
     @click="handleClick"
   >
-    <template #prepend>
-      <provider-icon
-        :domain="providerDomain"
-        :size="50"
-        class="listitem-media-thumb"
-        style="margin-top: 5px; margin-bottom: 5px"
-      />
-    </template>
-
-    <template #append>
-      <v-btn
-        v-if="!playerConfig.enabled"
-        variant="text"
-        size="small"
-        icon
-        :title="$t('settings.player_disabled')"
-        @click.stop
-      >
-        <v-icon color="grey">mdi-cancel</v-icon>
-      </v-btn>
-      <v-btn
-        v-else-if="!isAvailable"
-        variant="text"
-        size="small"
-        icon
-        :title="$t('settings.player_not_available')"
-        @click.stop
-      >
-        <v-icon icon="mdi-timer-sand" />
-      </v-btn>
-      <v-btn
-        variant="text"
-        size="small"
-        icon
-        :title="playerTypeTitle"
-        @click.stop
-      >
-        <v-icon :icon="playerTypeIcon" />
-      </v-btn>
-      <v-btn
-        icon="mdi-dots-vertical"
-        size="small"
-        variant="text"
-        @click.stop="handleMenu"
-      />
-    </template>
-
-    <v-card-title>
-      {{ playerName }}
-    </v-card-title>
-
-    <v-card-text class="player-description">
-      <div class="provider-name">
-        {{ providerName }}
+    <div class="card-content">
+      <div class="card-header">
+        <div class="player-icon-wrapper">
+          <v-icon :icon="player?.icon || 'mdi-speaker'" :size="24" />
+        </div>
+        <div class="player-info">
+          <div class="player-name">{{ playerName }}</div>
+          <div class="provider-name">{{ providerName }}</div>
+        </div>
+        <v-btn
+          icon="mdi-dots-vertical"
+          size="small"
+          variant="text"
+          class="menu-btn"
+          @click.stop="handleMenu"
+        />
       </div>
-      <div v-if="playerTypeLabel" class="player-type-label">
-        {{ playerTypeLabel }}
+      <div class="card-footer">
+        <div class="protocol-chips">
+          <v-chip
+            v-for="protocol in outputProtocols"
+            :key="protocol.output_protocol_id"
+            size="x-small"
+            variant="tonal"
+            class="protocol-chip"
+          >
+            <template #prepend>
+              <ProviderIcon
+                :domain="protocol.protocol_domain!"
+                :size="14"
+                class="chip-icon"
+              />
+            </template>
+            {{
+              api.getProviderManifest(protocol.protocol_domain!)?.name ||
+              protocol.protocol_domain
+            }}
+          </v-chip>
+          <v-chip
+            v-if="outputProtocols.length === 0"
+            size="x-small"
+            variant="tonal"
+            class="protocol-chip"
+          >
+            <template #prepend>
+              <ProviderIcon
+                :domain="providerDomain"
+                :size="14"
+                class="chip-icon"
+              />
+            </template>
+            {{
+              api.getProviderManifest(providerDomain)?.name ||
+              props.playerConfig.provider
+            }}
+          </v-chip>
+        </div>
+        <div class="status-icons">
+          <v-icon
+            v-if="!playerConfig.enabled"
+            icon="mdi-cancel"
+            size="16"
+            color="grey"
+            :title="$t('settings.player_disabled')"
+          />
+          <v-icon
+            v-else-if="!isAvailable"
+            icon="mdi-timer-sand"
+            size="16"
+            color="grey"
+            :title="$t('settings.player_not_available')"
+          />
+        </div>
       </div>
-    </v-card-text>
+    </div>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
-import { PlayerConfig, PlayerType } from "@/plugins/api/interfaces";
+import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
@@ -89,11 +108,15 @@ const providerDomain = computed(
     api.getProviderManifest(props.playerConfig.provider)?.domain ||
     props.playerConfig.provider,
 );
-const providerName = computed(
-  () =>
+const providerName = computed(() => {
+  if (player.value?.device_info) {
+    return `${player.value.device_info.manufacturer} / ${player.value.device_info.model}`;
+  }
+  return (
     api.getProviderManifest(props.playerConfig.provider)?.name ||
-    props.playerConfig.provider,
-);
+    props.playerConfig.provider
+  );
+});
 
 const playerName = computed(() => {
   return (
@@ -104,26 +127,12 @@ const playerName = computed(() => {
   );
 });
 
-const playerType = computed(() => player.value?.type ?? PlayerType.PLAYER);
-
-const playerTypeTitle = computed(() => {
-  return $t(`player_type.${playerType.value}`);
-});
-
-const playerTypeIcon = computed(() => {
-  const iconMap = {
-    [PlayerType.PLAYER]: "mdi-speaker",
-    [PlayerType.GROUP]: "mdi-speaker-multiple",
-    [PlayerType.STEREO_PAIR]: "mdi-speaker-wireless",
-  };
-  return iconMap[playerType.value] || "mdi-speaker";
-});
-
-const playerTypeLabel = computed(() => {
-  if (playerType.value === PlayerType.PLAYER) {
-    return null;
-  }
-  return $t(`player_type.${playerType.value}`);
+const outputProtocols = computed(() => {
+  // Return only non-native protocols (ones with a protocol_domain)
+  return (
+    player.value?.output_protocols?.filter((p) => p.protocol_domain !== null) ||
+    []
+  );
 });
 
 const handleClick = () => {
@@ -146,22 +155,114 @@ const handleMenu = (event: Event) => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.player-description {
+.player-disabled {
+  opacity: 0.6;
+}
+
+.player-unavailable {
+  opacity: 0.7;
+}
+
+.card-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  padding: 16px;
+  height: 100%;
+  min-height: 120px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(var(--v-theme-primary), 0.15);
+  flex-shrink: 0;
+}
+
+.player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .provider-name {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  font-weight: 500;
+  font-size: 13px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.player-type-label {
-  font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+.menu-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin: -4px -8px 0 0;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.protocol-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.protocol-chip {
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.status-icons {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.chip-icon {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.chip-icon :deep(div) {
+  margin-left: 0 !important;
+  margin-right: 4px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper svg) {
+  width: 14px !important;
+  height: 14px !important;
 }
 </style>

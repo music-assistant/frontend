@@ -802,7 +802,9 @@ const autoConnect = async () => {
 
     // Auto-connect if we have remote_id from URL (from portal redirect)
     // or if we have stored credentials
-    const remoteIdToConnect = urlRemoteIdForAutoConnect || (storedRemoteId && storedToken ? storedRemoteId : null);
+    const remoteIdToConnect =
+      urlRemoteIdForAutoConnect ||
+      (storedRemoteId && storedToken ? storedRemoteId : null);
 
     if (remoteIdToConnect) {
       console.debug(
