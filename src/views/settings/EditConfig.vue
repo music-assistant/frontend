@@ -76,7 +76,7 @@
       <div class="protocol-section-header">
         <v-icon icon="mdi-swap-horizontal" class="mr-3" size="24" />
         <span class="protocol-section-title">
-          {{ $t("settings.protocol_configuration") }}
+          {{ $t("settings.category.protocol_settings") }}
         </span>
       </div>
       <!-- General protocol settings (shown before accordion) -->
