@@ -47,10 +47,14 @@
             player.powered == false ||
             !player.supported_features.includes(PlayerFeature.VOLUME_MUTE)
           "
-          @click.stop="handlePlayerMuteToggle(player)"
+          @click.stop="
+            player.group_members.length > 0
+              ? api.playerCommandGroupMuteToggle(player.player_id)
+              : api.playerCommandMuteToggle(player.player_id)
+          "
         >
           <component
-            :is="getVolumeIconComponent(player, mainDisplayVolume)"
+            :is="getVolumeIconComponent(player, mainDisplayVolume, true)"
             :size="22"
           />
         </Button>
@@ -63,7 +67,7 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            player.volume_muted ||
+            isGroupMuted(player) ||
             !player.supported_features.includes(PlayerFeature.VOLUME_SET)
           "
           :model-value="
@@ -201,7 +205,6 @@
               :disabled="
                 !childPlayer.available ||
                 childPlayer.powered == false ||
-                childPlayer.volume_muted ||
                 !childPlayer.supported_features.includes(
                   PlayerFeature.VOLUME_SET,
                 )
@@ -209,7 +212,11 @@
               :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level || 0)"
               @update:model-value="
-                api.playerCommandVolumeSet(childPlayer.player_id, $event)
+                api.playerCommandVolumeSet(
+                  childPlayer.player_id,
+                  $event,
+                  !!childPlayer.volume_muted,
+                )
               "
               @update:local-value="
                 childDisplayVolumes[childPlayer.player_id] = $event
@@ -293,11 +300,26 @@ const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
 
+const isGroupMuted = function (player: Player): boolean {
+  if (!player.group_members.length) {
+    return !!player.volume_muted;
+  }
+  // For group players, only show muted if ALL members are muted
+  for (const memberId of player.group_members) {
+    const member = api?.players[memberId];
+    if (member && member.available && !member.volume_muted) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const getVolumeIconComponent = function (
   player: Player,
   displayVolume?: number,
+  groupLevel: boolean = false,
 ) {
-  if (player.volume_muted) {
+  if (groupLevel ? isGroupMuted(player) : player.volume_muted) {
     return VolumeX;
   }
 
@@ -444,22 +466,6 @@ const syncCheckBoxChange = async function (
   }, 500);
 };
 
-const handlePlayerMuteToggle = function (player: Player) {
-  if (player.group_members.length > 0) {
-    // TODO: revisit this when api/server supports group mute toggle
-    const muted = !player.volume_muted;
-    for (const memberId of player.group_members) {
-      const childPlayer = api.players[memberId];
-      if (!childPlayer) continue;
-      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
-        continue;
-      }
-      api.playerCommandVolumeMute(memberId, muted);
-    }
-  } else {
-    api.playerCommandMuteToggle(player.player_id);
-  }
-};
 </script>
 
 <style scoped>
