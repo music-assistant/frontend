@@ -312,7 +312,7 @@
         "protocol_configuration": "Output Protocol Configuration",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "playback": "Playback and audio settings",
+            "playback": "Playback related settings",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
             "announcements": "Announcements configuration",

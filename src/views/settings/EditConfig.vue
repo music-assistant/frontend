@@ -130,7 +130,80 @@
           </Button>
         </div>
       </div>
-      <v-expansion-panels v-model="activeProtocolPanel" class="protocol-panels">
+      <!-- Single protocol: show directly without expansion -->
+      <div
+        v-if="
+          protocolPanels.filter(
+            (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
+          ).length === 1
+        "
+        class="protocol-single-panel"
+      >
+        <div
+          v-for="panel of protocolPanels.filter(
+            (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
+          )"
+          :key="panel"
+        >
+          <div
+            v-if="entriesForCategory(panel).length === 0"
+            class="protocol-disabled-message"
+          >
+            {{ getProtocolEmptyMessage(panel) }}
+          </div>
+          <div
+            v-for="conf_entry of entriesForCategory(panel)"
+            :key="conf_entry.key"
+            class="config-entry"
+            :class="{ 'config-entry-advanced': conf_entry.advanced }"
+          >
+            <ConfigEntryField
+              :conf-entry="conf_entry"
+              :show-password-values="showPasswordValues"
+              :disabled="isDisabled(conf_entry)"
+              @toggle-password="showPasswordValues = !showPasswordValues"
+              @update:value="onValueUpdate(conf_entry, $event)"
+              @action="
+                action(conf_entry.action || conf_entry.key);
+                conf_entry.value = conf_entry.action ? null : conf_entry.key;
+              "
+              @open-dsp="openDspConfig"
+            />
+            <v-chip
+              v-if="conf_entry.advanced"
+              size="x-small"
+              color="grey"
+              variant="outlined"
+              class="advanced-badge"
+            >
+              {{ $t("settings.advanced") }}
+            </v-chip>
+            <Button
+              v-if="hasDescriptionOrHelpLink(conf_entry)"
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="help-btn"
+              @click="
+                $t(
+                  `settings.${conf_entry?.key}.description`,
+                  conf_entry.description || '',
+                )
+                  ? (showHelpInfo = conf_entry)
+                  : openLink(conf_entry.help_link!)
+              "
+            >
+              <HelpCircle :size="20" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      <!-- Multiple protocols: show as accordion -->
+      <v-expansion-panels
+        v-else
+        v-model="activeProtocolPanel"
+        class="protocol-panels"
+      >
         <v-expansion-panel
           v-for="panel of protocolPanels.filter(
             (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
@@ -1078,6 +1151,16 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
   font-size: 1.1rem;
   font-weight: 600;
   color: rgb(var(--v-theme-primary));
+}
+
+/* Single protocol (non-collapsible) */
+.protocol-single-panel {
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 0 0 8px 8px;
+  background: rgba(var(--v-theme-surface), 1);
+  padding: 20px;
 }
 
 .protocol-panels {
