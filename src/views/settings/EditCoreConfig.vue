@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
 import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
@@ -50,6 +51,7 @@ import { nanoid } from "nanoid";
 import { toast } from "vuetify-sonner";
 
 // global refs
+const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
 const sessionId = nanoid(11);
@@ -114,11 +116,12 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
-      loading.value = false;
-      toast.success(t("settings.settings_saved"));
+      router.push({ name: "systemsettings" });
     })
     .catch((err) => {
       toast.error(err.message || err);
+    })
+    .finally(() => {
       loading.value = false;
     });
 };
