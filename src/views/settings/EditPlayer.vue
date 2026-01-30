@@ -78,11 +78,34 @@
                 {{ api.players[config.player_id].device_info.model }}
               </span>
               <span
-                v-if="api.players[config.player_id]?.device_info.ip_address"
+                v-if="
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.IP_ADDRESS
+                  ]
+                "
                 class="meta-item"
               >
                 <v-icon size="14" class="mr-1">mdi-ip-network</v-icon>
-                {{ api.players[config.player_id].device_info.ip_address }}
+                {{
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.IP_ADDRESS
+                  ]
+                }}
+              </span>
+              <span
+                v-if="
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.MAC_ADDRESS
+                  ]
+                "
+                class="meta-item"
+              >
+                <v-icon size="14" class="mr-1">mdi-network</v-icon>
+                {{
+                  api.players[config.player_id]?.device_info.identifiers[
+                    IdentifierType.MAC_ADDRESS
+                  ]
+                }}
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
                 <v-icon size="14" class="mr-1">mdi-tag</v-icon>
@@ -109,7 +132,7 @@
     <edit-config
       v-else-if="config"
       :disabled="!config?.enabled"
-      :config-entries="allConfigEntries"
+      :config-entries="config_entries"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -143,6 +166,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-overlay
+      v-model="loading"
+      scrim="true"
+      persistent
+      style="display: flex; align-items: center; justify-content: center"
+    >
+      <v-progress-circular indeterminate size="64" color="primary" />
+    </v-overlay>
   </section>
 </template>
 
@@ -158,7 +189,7 @@ import {
   PlayerConfig,
   PlayerFeature,
   PlayerType,
-  ConfigEntry,
+  IdentifierType,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
@@ -213,7 +244,7 @@ const config_entries = computed(() => {
       label: "",
       default_value: dspEnabled.value,
       required: false,
-      category: "audio",
+      category: "dsp",
     });
   } else if (
     player &&
@@ -226,7 +257,7 @@ const config_entries = computed(() => {
       label: "You can configure the DSP for each player individually.",
       default_value: null,
       required: false,
-      category: "audio",
+      category: "dsp",
     });
   } else if (
     player &&
@@ -240,16 +271,10 @@ const config_entries = computed(() => {
         "This group type does not support DSP when playing to multiple devices.",
       default_value: null,
       required: false,
-      category: "audio",
+      category: "dsp",
     });
   }
   return entries;
-});
-
-const allConfigEntries = computed(() => {
-  // Pass all entries (including hidden ones) to EditConfig
-  // Hidden entries contain values that need to be preserved on save
-  return config_entries.value;
 });
 
 // watchers
@@ -275,11 +300,9 @@ const saveRename = function () {
   if (config.value) {
     config.value.name = editName.value || undefined;
   }
+  loading.value = true;
   api
     .savePlayerConfig(props.playerId!, { name: config.value!.name || null })
-    .then(() => {
-      loading.value = true;
-    })
     .finally(() => {
       loading.value = false;
       showRenameDialog.value = false;
@@ -298,7 +321,20 @@ const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
   // Immediately apply a config value change to the backend
-  api.savePlayerConfig(props.playerId!, values);
+  loading.value = true;
+  api
+    .savePlayerConfig(props.playerId!, values)
+    .then((updatedConfig) => {
+      // update local config values without overwriting the entire object
+      // because the action may have added new entries
+      for (const [key, entry] of Object.entries(updatedConfig.values)) {
+        if (config.value!.values[key] != null) continue;
+        config.value!.values[key] = entry;
+      }
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 const onAction = async function (

@@ -44,13 +44,12 @@
           @menu="(evt) => onMenu(evt, item)"
         >
           <template #prepend>
-            <ProviderIcon
-              :domain="
-                api.getProviderManifest(item.provider)?.domain || item.provider
-              "
-              :size="40"
-              class="player-icon"
-            />
+            <div class="player-icon-wrapper">
+              <v-icon
+                :icon="api.players[item.player_id]?.icon || 'mdi-speaker'"
+                :size="20"
+              />
+            </div>
           </template>
 
           <template #title>
@@ -63,17 +62,53 @@
             <div class="player-meta">
               <span class="provider-name">
                 {{
-                  api.getProviderManifest(item.provider)?.name || item.provider
+                  api.players[item.player_id]?.device_info
+                    ? `${api.players[item.player_id].device_info.manufacturer} / ${api.players[item.player_id].device_info.model}`
+                    : api.getProviderManifest(item.provider)?.name ||
+                      item.provider
                 }}
               </span>
-              <span
-                v-if="
-                  api.players[item.player_id]?.type &&
-                  api.players[item.player_id]?.type !== PlayerType.PLAYER
-                "
-                class="player-type-badge"
-              >
-                {{ $t(`player_type.${api.players[item.player_id]?.type}`) }}
+              <span class="protocol-chips">
+                <v-chip
+                  v-for="protocol in getOutputProtocols(item.player_id)"
+                  :key="protocol.output_protocol_id"
+                  size="x-small"
+                  variant="tonal"
+                  class="protocol-chip"
+                >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="protocol.protocol_domain!"
+                      :size="14"
+                      class="chip-icon"
+                    />
+                  </template>
+                  {{
+                    api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                    protocol.protocol_domain
+                  }}
+                </v-chip>
+                <v-chip
+                  v-if="getOutputProtocols(item.player_id).length === 0"
+                  size="x-small"
+                  variant="tonal"
+                  class="protocol-chip"
+                >
+                  <template #prepend>
+                    <ProviderIcon
+                      :domain="
+                        api.getProvider(item.provider)?.domain || item.provider
+                      "
+                      :size="14"
+                      class="chip-icon"
+                    />
+                  </template>
+                  {{
+                    api.getProviderManifest(
+                      api.getProvider(item.provider)?.domain || item.provider,
+                    )?.name || item.provider
+                  }}
+                </v-chip>
               </span>
             </div>
           </template>
@@ -93,13 +128,6 @@
                 size="20"
                 color="grey"
                 :title="$t('settings.player_not_available')"
-              />
-              <v-icon
-                v-if="api.players[item.player_id]?.type"
-                :icon="getPlayerTypeIcon(api.players[item.player_id]?.type)"
-                size="20"
-                color="grey"
-                :title="$t(`player_type.${api.players[item.player_id]?.type}`)"
               />
             </div>
           </template>
@@ -257,13 +285,13 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
   );
 };
 
-const getPlayerTypeIcon = function (playerType?: PlayerType) {
-  const iconMap = {
-    [PlayerType.PLAYER]: "mdi-speaker",
-    [PlayerType.GROUP]: "mdi-speaker-multiple",
-    [PlayerType.STEREO_PAIR]: "mdi-speaker-wireless",
-  };
-  return iconMap[playerType || PlayerType.PLAYER] || "mdi-speaker";
+const getOutputProtocols = function (playerId: string) {
+  // Return only non-native protocols (ones with a protocol_domain)
+  return (
+    api.players[playerId]?.output_protocols?.filter(
+      (p) => p.protocol_domain !== null,
+    ) || []
+  );
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -484,12 +512,44 @@ watch(
   color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
-.player-type-badge {
-  font-size: 11px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+.protocol-chips {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.protocol-chip {
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.chip-icon {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.chip-icon :deep(div) {
+  margin-left: 0 !important;
+  margin-right: 4px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper svg) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+@media (max-width: 960px) {
+  .protocol-chips {
+    display: none;
+  }
 }
 
 .player-status-icons {
@@ -498,8 +558,14 @@ watch(
   gap: 8px;
 }
 
-.player-icon {
-  margin-right: 12px;
+.player-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(var(--v-theme-primary), 0.15);
 }
 
 .player-disabled {
