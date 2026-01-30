@@ -366,10 +366,33 @@ const getAllFilteredPlayers = function () {
   }
 
   if (selectedProviders.value.length > 0) {
+    // Build set of provider domains from selected provider instance_ids for efficient lookup
+    const selectedProviderDomains = new Set(
+      selectedProviders.value
+        .map((instanceId) => api.getProvider(instanceId)?.domain)
+        .filter((domain): domain is string => domain !== undefined),
+    );
+
     filtered = filtered.filter((item) => {
       const providerInstance = api.getProvider(item.provider);
       if (!providerInstance) return false;
-      return selectedProviders.value.includes(providerInstance.instance_id);
+
+      // Check if player's provider is selected
+      if (selectedProviders.value.includes(providerInstance.instance_id)) {
+        return true;
+      }
+
+      // Check if any output protocol's domain matches a selected provider domain
+      const player = api.players[item.player_id];
+      if (player?.output_protocols) {
+        return player.output_protocols.some(
+          (protocol) =>
+            protocol.protocol_domain &&
+            selectedProviderDomains.has(protocol.protocol_domain),
+        );
+      }
+
+      return false;
     });
   }
 
