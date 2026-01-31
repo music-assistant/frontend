@@ -75,12 +75,19 @@
         <h2 class="section-title artist-title">
           {{ selectedArtist.name }}
         </h2>
-        <div v-if="rateLimitingEnabled" class="play-next-tokens">
+        <div v-if="rateLimitingEnabled" class="boost-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
           <span class="token-label">Boost available</span>
+          <span
+            v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
+            class="token-countdown"
+          >
+            <v-icon size="x-small">mdi-clock-outline</v-icon>
+            {{ nextTokenCountdown }}
+          </span>
         </div>
       </div>
       <!-- Loading state -->
@@ -155,7 +162,7 @@
         <h2 class="section-title">
           Search Results ({{ searchResults.length }})
         </h2>
-        <div v-if="rateLimitingEnabled" class="play-next-tokens">
+        <div v-if="rateLimitingEnabled" class="boost-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
@@ -453,13 +460,13 @@ const displayedResults = computed(() =>
   searchResults.value.slice(0, displayedResultsCount.value),
 );
 
-// Rate limiting - Token bucket implementation for "Play Next", "Add to Queue", and "Skip Song"
+// Rate limiting - Token bucket implementation for "Boost", "Add to Queue", and "Skip Song"
 const BOOST_STORAGE_KEY = "guest_boost_bucket";
 const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
 const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
 
 // Default values (will be overridden by server config)
-const BOOST_MAX_TOKENS = ref(3); // Maximum tokens for Play Next
+const BOOST_MAX_TOKENS = ref(3); // Maximum tokens for Boost
 const BOOST_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
 
 // More lenient defaults for general Add to Queue
@@ -586,7 +593,7 @@ const getTimeUntilNextTokenRefill = (
 };
 
 // Convenience wrappers for each token type
-const consumePlayNextToken = (): boolean =>
+const consumeBoostToken = (): boolean =>
   consumeToken(
     BOOST_STORAGE_KEY,
     BOOST_MAX_TOKENS.value,
@@ -645,7 +652,7 @@ const formatCountdown = (milliseconds: number): string => {
 
 // Update countdown display for all token types
 const updateCountdown = () => {
-  // Update Play Next tokens
+  // Update Boost tokens
   const boostBucket = loadTokenBucket(
     BOOST_STORAGE_KEY,
     BOOST_MAX_TOKENS.value,
@@ -1038,7 +1045,7 @@ const addToQueue = async (item: any, position: "next" | "end") => {
   if (rateLimitingEnabled.value) {
     // Check token bucket rate limit for "Boost"
     if (position === "next") {
-      if (!consumePlayNextToken()) {
+      if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
         showSnackbar(
           `Boost limit reached. Next use available in ${minutesUntilNext} minutes.`,
@@ -1480,7 +1487,7 @@ onMounted(async () => {
   flex: 1;
 }
 
-.play-next-tokens {
+.boost-tokens {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1835,8 +1842,18 @@ onMounted(async () => {
     padding-bottom: 0.25rem;
   }
 
-  .play-next-tokens {
+  .boost-tokens {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .boost-tokens .token-label {
     display: none;
+  }
+
+  .boost-tokens .token-countdown {
+    padding-left: 0.375rem;
+    border-left: none;
   }
 
   .result-item {
