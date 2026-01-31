@@ -39,7 +39,7 @@
         confEntry.type == ConfigEntryType.ACTION ||
         (confEntry.action && !confEntry.value)
       "
-      variant="outlined"
+      color="primary"
       class="action-btn"
       :disabled="isFieldDisabled"
       @click="$emit('action')"
@@ -374,6 +374,9 @@ const translatedOptions = computed(() => {
 
 .action-btn {
   margin: 8px 0;
+  margin-bottom: 20px;
+  width: 100%;
+  height: 50px;
 }
 
 .config-slider-wrapper {
