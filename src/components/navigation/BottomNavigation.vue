@@ -22,7 +22,7 @@
     </v-btn>
 
     <v-btn
-      v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode)"
+      v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode && !x.hidden)"
       :key="menuItem.label"
       :to="menuItem.path"
       :aria-label="$t(menuItem.label)"
@@ -51,7 +51,9 @@
 
       <v-list>
         <v-list-item
-          v-for="menuItem of menuItems.filter((x) => x.isLibraryNode)"
+          v-for="menuItem of menuItems.filter(
+            (x) => x.isLibraryNode && !x.hidden,
+          )"
           :key="menuItem.label"
           :title="$t(menuItem.label)"
           :to="menuItem.path"
@@ -69,7 +71,7 @@
 import { toggleHAMenu } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { LibraryIcon } from "lucide-vue-next";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { getMenuItems } from "./utils/getMenuItems";
 
 export interface Props {
@@ -77,7 +79,7 @@ export interface Props {
 }
 defineProps<Props>();
 
-const menuItems = getMenuItems();
+const menuItems = computed(() => getMenuItems());
 
 const isLibraryOpen = ref(false);
 

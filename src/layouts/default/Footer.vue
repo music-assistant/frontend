@@ -1,37 +1,68 @@
 <template>
-  <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
-  <div
-    v-if="store.mobileLayout"
-    :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
-    :style="`
-      position: fixed;
-      width: 100%;
-      height: 180px;
-      bottom: 0px;
-      z-index: 999;
-    `"
-  ></div>
-  <BottomNavigation v-if="store.mobileLayout" :height="bottomNavHeight" />
-  <v-footer
-    app
-    color="default"
-    :class="`py-0 px-0 ${
-      store.mobileLayout
-        ? 'mediacontrols-player-float'
-        : 'mediacontrols-player-default'
-    }`"
-  >
-    <Player :use-floating-player="store.mobileLayout" />
-  </v-footer>
+  <!-- Hide footer entirely when on party view with controls disabled -->
+  <template v-if="!hideFooter">
+    <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
+    <div
+      v-if="store.mobileLayout"
+      :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
+      :style="`
+        position: fixed;
+        width: 100%;
+        height: 180px;
+        bottom: 0px;
+        z-index: 999;
+      `"
+    ></div>
+    <BottomNavigation v-if="store.mobileLayout" :height="bottomNavHeight" />
+    <v-footer
+      app
+      color="default"
+      :class="`py-0 px-0 ${
+        store.mobileLayout
+          ? 'mediacontrols-player-float'
+          : 'mediacontrols-player-default'
+      }`"
+    >
+      <Player :use-floating-player="store.mobileLayout" />
+    </v-footer>
+  </template>
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import Player from "./PlayerOSD/Player.vue";
 import { store } from "@/plugins/store";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import { parseBool } from "@/helpers/utils";
+import api from "@/plugins/api";
+
+const route = useRoute();
+
+// Party mode config for show_player_controls setting
+const partyModeShowControls = ref(false);
+
+// Fetch party mode config when entering party route
+watch(
+  () => route.path,
+  async (path) => {
+    if (path === "/party") {
+      try {
+        const config = (await api.sendCommand("party_mode/config")) as {
+          show_player_controls?: boolean;
+        };
+        partyModeShowControls.value = config?.show_player_controls ?? false;
+      } catch {
+        partyModeShowControls.value = false;
+      }
+    }
+  },
+  { immediate: true },
+);
+
+// Hide footer when on party view and controls are disabled
+const hideFooter = computed(() => {
+  return route.path === "/party" && !partyModeShowControls.value;
+});
 
 const bottomNavHeight = computed(() => {
   if (store.isInPWAMode) {

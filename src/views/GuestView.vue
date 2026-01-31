@@ -1,0 +1,1924 @@
+<template>
+  <div class="guest-view">
+    <!-- Search Section -->
+    <div class="search-section">
+      <v-text-field
+        v-model="searchQuery"
+        placeholder="Search for songs or artists..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="comfortable"
+        clearable
+        autofocus
+        hide-details
+        inputmode="search"
+        enterkeyhint="search"
+        class="search-input"
+        @keyup.enter="performSearch"
+        @click:clear="clearSearch"
+      />
+      <v-btn
+        color="primary"
+        size="large"
+        :loading="searching"
+        :disabled="!searchQuery || searchQuery.length < 2"
+        class="search-btn"
+        @click="performSearch"
+      >
+        Search
+      </v-btn>
+    </div>
+
+    <!-- Search Filter Chips -->
+    <div v-if="hasSearched || searchQuery.length >= 2" class="filter-section">
+      <v-chip-group
+        v-model="searchFilter"
+        mandatory
+        selected-class="filter-active"
+      >
+        <v-chip value="all" variant="outlined" size="small" class="filter-chip">
+          All
+        </v-chip>
+        <v-chip
+          value="track"
+          variant="outlined"
+          size="small"
+          class="filter-chip"
+        >
+          <v-icon start size="small">mdi-music-note</v-icon>
+          Songs
+        </v-chip>
+        <v-chip
+          value="artist"
+          variant="outlined"
+          size="small"
+          class="filter-chip"
+        >
+          <v-icon start size="small">mdi-account-music</v-icon>
+          Artists
+        </v-chip>
+      </v-chip-group>
+    </div>
+
+    <!-- Artist Tracks View (when drilling into an artist) -->
+    <div v-if="selectedArtist" class="results-section">
+      <div class="section-header">
+        <v-btn
+          variant="text"
+          color="primary"
+          class="back-btn"
+          @click="clearArtistSelection"
+        >
+          <v-icon start>mdi-arrow-left</v-icon>
+          Back
+        </v-btn>
+        <h2 class="section-title artist-title">
+          {{ selectedArtist.name }}
+        </h2>
+        <div v-if="rateLimitingEnabled" class="boost-tokens">
+          <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
+          <span class="token-count"
+            >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
+          >
+          <span class="token-label">Boost available</span>
+          <span
+            v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
+            class="token-countdown"
+          >
+            <v-icon size="x-small">mdi-clock-outline</v-icon>
+            {{ nextTokenCountdown }}
+          </span>
+        </div>
+      </div>
+      <!-- Loading state -->
+      <div v-if="loadingArtistTracks" class="loading-artist-tracks">
+        <v-progress-circular indeterminate color="primary" size="48" />
+        <p>Loading tracks...</p>
+      </div>
+      <!-- Artist tracks list -->
+      <div v-else-if="artistTracks.length > 0" class="results-list">
+        <div
+          v-for="track in artistTracks"
+          :key="`track-${track.item_id}`"
+          class="result-item"
+        >
+          <div class="result-info">
+            <v-avatar size="56" rounded class="result-avatar">
+              <v-img :src="getImageUrl(track)" :alt="track.name" cover>
+                <template #placeholder>
+                  <div class="avatar-placeholder">
+                    <v-icon>mdi-music</v-icon>
+                  </div>
+                </template>
+              </v-img>
+            </v-avatar>
+            <div class="result-text">
+              <div class="result-name scroll-text">
+                <span>{{ track.name }}</span>
+              </div>
+              <div class="result-artist scroll-text">
+                <span>{{ getArtistName(track) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="result-actions">
+            <v-btn
+              v-if="boostEnabled"
+              variant="elevated"
+              :loading="addingItems.has(`track-${track.item_id}-next`)"
+              :disabled="rateLimitingEnabled && boostTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: boostBadgeColor, color: '#fff' }"
+              @click="addToQueue(track, 'next')"
+            >
+              <v-icon start>mdi-rocket-launch</v-icon>
+              Boost
+            </v-btn>
+            <v-btn
+              v-if="addQueueEnabled"
+              variant="elevated"
+              :loading="addingItems.has(`track-${track.item_id}-end`)"
+              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: requestBadgeColor, color: '#fff' }"
+              @click="addToQueue(track, 'end')"
+            >
+              <v-icon start>mdi-playlist-plus</v-icon>
+              Add
+            </v-btn>
+          </div>
+        </div>
+      </div>
+      <!-- Empty state for no tracks -->
+      <div v-else class="empty-state">
+        <v-icon size="64" color="grey">mdi-music-off</v-icon>
+        <p>No tracks found for this artist</p>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div v-else-if="searchResults.length > 0" class="results-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          Search Results ({{ searchResults.length }})
+        </h2>
+        <div v-if="rateLimitingEnabled" class="boost-tokens">
+          <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
+          <span class="token-count"
+            >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
+          >
+          <span class="token-label">Boost available</span>
+          <span
+            v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
+            class="token-countdown"
+          >
+            <v-icon size="x-small">mdi-clock-outline</v-icon>
+            {{ nextTokenCountdown }}
+          </span>
+        </div>
+      </div>
+      <div ref="resultsListRef" class="results-list" @scroll="handleScroll">
+        <div
+          v-for="item in displayedResults"
+          :key="`${item.media_type}-${item.item_id}`"
+          class="result-item"
+        >
+          <div class="result-info">
+            <v-avatar size="56" rounded class="result-avatar">
+              <v-img :src="getImageUrl(item)" :alt="item.name" cover>
+                <template #placeholder>
+                  <div class="avatar-placeholder">
+                    <v-icon>mdi-music</v-icon>
+                  </div>
+                </template>
+              </v-img>
+            </v-avatar>
+            <div class="result-text">
+              <div class="result-name scroll-text">
+                <span>{{ item.name }}</span>
+              </div>
+              <div class="result-artist scroll-text">
+                <span>{{ getArtistName(item) }}</span>
+                <span v-if="item.media_type === 'artist'" class="result-type">
+                  • Artist
+                </span>
+              </div>
+            </div>
+          </div>
+          <!-- Actions for tracks -->
+          <div v-if="item.media_type === 'track'" class="result-actions">
+            <v-btn
+              v-if="boostEnabled"
+              variant="elevated"
+              :loading="
+                addingItems.has(`${item.media_type}-${item.item_id}-next`)
+              "
+              :disabled="rateLimitingEnabled && boostTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: boostBadgeColor, color: '#fff' }"
+              @click="addToQueue(item, 'next')"
+            >
+              <v-icon start>mdi-rocket-launch</v-icon>
+              Boost
+            </v-btn>
+            <v-btn
+              v-if="addQueueEnabled"
+              variant="elevated"
+              :loading="
+                addingItems.has(`${item.media_type}-${item.item_id}-end`)
+              "
+              :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+              class="action-btn"
+              :style="{ backgroundColor: requestBadgeColor, color: '#fff' }"
+              @click="addToQueue(item, 'end')"
+            >
+              <v-icon start>mdi-playlist-plus</v-icon>
+              Add
+            </v-btn>
+          </div>
+          <!-- Actions for artists - drill down to see tracks -->
+          <div v-else-if="item.media_type === 'artist'" class="result-actions">
+            <v-btn
+              color="primary"
+              variant="elevated"
+              class="action-btn action-btn-primary"
+              @click="selectArtist(item)"
+            >
+              <v-icon start>mdi-music-note-outline</v-icon>
+              View Songs
+            </v-btn>
+          </div>
+        </div>
+        <!-- Loading indicator for infinite scroll -->
+        <div v-if="loadingMoreResults" class="loading-more">
+          <v-progress-circular indeterminate color="primary" size="32" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State - only show when a search has completed with no results -->
+    <div
+      v-else-if="
+        !searching &&
+        hasSearched &&
+        searchResults.length === 0 &&
+        !selectedArtist
+      "
+      class="empty-state"
+    >
+      <v-icon size="64" color="grey">mdi-magnify</v-icon>
+      <p>No results found for "{{ searchQuery }}"</p>
+      <p class="empty-hint">Try a different search term</p>
+    </div>
+
+    <!-- Current Queue Section - Hidden when search results or artist tracks are showing -->
+    <div
+      v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
+      class="queue-section"
+    >
+      <h2 class="section-title">Current Queue</h2>
+      <div
+        v-if="queueItems.length > 0"
+        ref="queueListRef"
+        class="queue-list"
+        @scroll="handleQueueScroll"
+      >
+        <div
+          v-for="(item, index) in queueItems"
+          :key="item.queue_item_id"
+          class="queue-item"
+          :class="{
+            'queue-item-current':
+              queueFetchOffset + index === currentQueueIndex,
+            'queue-item-played': queueFetchOffset + index < currentQueueIndex,
+          }"
+        >
+          <div class="queue-position">
+            <v-icon
+              v-if="queueFetchOffset + index === currentQueueIndex"
+              color="primary"
+            >
+              mdi-play-circle
+            </v-icon>
+            <span v-else class="queue-number">{{
+              queueFetchOffset + index + 1
+            }}</span>
+          </div>
+          <v-avatar size="48" rounded class="queue-avatar">
+            <v-img :src="getQueueItemImageUrl(item)" :alt="item.name" cover>
+              <template #placeholder>
+                <div class="avatar-placeholder">
+                  <v-icon>mdi-music</v-icon>
+                </div>
+              </template>
+            </v-img>
+          </v-avatar>
+          <div class="queue-info">
+            <div class="queue-name scroll-text">
+              <span>{{ getQueueItemTitle(item) }}</span>
+            </div>
+            <div class="queue-artist scroll-text">
+              <span>{{ getQueueItemSubtitle(item) }}</span>
+            </div>
+          </div>
+          <!-- Guest request badge (right aligned) -->
+          <span
+            v-if="item.extra_attributes?.added_by_user_role === 'guest'"
+            class="guest-request-badge"
+            :style="{
+              '--badge-color':
+                item.extra_attributes?.queue_option === 'next'
+                  ? boostBadgeColor
+                  : requestBadgeColor,
+            }"
+          >
+            <v-icon size="x-small">{{
+              item.extra_attributes?.queue_option === "next"
+                ? "mdi-rocket-launch"
+                : "mdi-account-music"
+            }}</v-icon>
+            <span>{{
+              item.extra_attributes?.queue_option === "next"
+                ? "Boost"
+                : "Request"
+            }}</span>
+          </span>
+          <!-- Skip button for currently playing item -->
+          <div
+            v-if="
+              skipSongEnabled && queueFetchOffset + index === currentQueueIndex
+            "
+            class="queue-item-actions"
+          >
+            <v-btn
+              color="secondary"
+              variant="flat"
+              size="small"
+              :loading="skippingSong"
+              :disabled="rateLimitingEnabled && skipSongTokens <= 0"
+              class="skip-btn"
+              @click="skipCurrentSong"
+            >
+              <v-icon start size="small">mdi-skip-next</v-icon>
+              Skip
+              <span
+                v-if="rateLimitingEnabled"
+                class="skip-token-badge"
+                :class="{ 'no-tokens': skipSongTokens <= 0 }"
+              >
+                {{ skipSongTokens }}
+              </span>
+            </v-btn>
+            <span
+              v-if="
+                rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown
+              "
+              class="skip-countdown"
+            >
+              <v-icon size="x-small">mdi-clock-outline</v-icon>
+              {{ skipTokenCountdown }}
+            </span>
+          </div>
+        </div>
+        <!-- Loading indicator for infinite scroll -->
+        <div v-if="loadingMoreQueueItems" class="loading-more">
+          <v-progress-circular indeterminate color="primary" size="32" />
+        </div>
+      </div>
+      <div v-else class="empty-queue">
+        <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
+        <p>Queue is empty</p>
+      </div>
+    </div>
+
+    <!-- Snackbar for feedback -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+      {{ snackbar.message }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar.show = false"> Close </v-btn>
+      </template>
+    </v-snackbar>
+  </div>
+</template>
+
+<script setup lang="ts">
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  nextTick,
+} from "vue";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import {
+  EventType,
+  EventMessage,
+  PlayerQueue,
+  QueueItem,
+  MediaType,
+  QueueOption,
+} from "@/plugins/api/interfaces";
+import { getMediaItemImageUrl } from "@/helpers/utils";
+
+const handleBack = (event: PopStateEvent) => {
+  // First, clear artist selection if viewing artist tracks
+  if (selectedArtist.value) {
+    event.preventDefault();
+    clearArtistSelection();
+    history.pushState(null, "", location.href);
+    return;
+  }
+  // Then, clear search if there are results
+  if (searchQuery.value || searchResults.value.length > 0) {
+    event.preventDefault();
+    clearSearch();
+    history.pushState(null, "", location.href);
+  }
+};
+
+// Search state
+const searchQuery = ref("");
+const searchResults = ref<any[]>([]);
+const searching = ref(false);
+const addingItems = ref(new Set<string>());
+const hasSearched = ref(false); // Track if a search has been performed
+const searchFilter = ref<"all" | "track" | "artist">("all"); // Filter for search results
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Artist drill-down state
+const selectedArtist = ref<any | null>(null);
+const artistTracks = ref<any[]>([]);
+const loadingArtistTracks = ref(false);
+
+// Infinite scroll state
+const resultsListRef = ref<HTMLElement | null>(null);
+const displayedResultsCount = ref(10); // Start with 10 results
+const loadingMoreResults = ref(false);
+const displayedResults = computed(() =>
+  searchResults.value.slice(0, displayedResultsCount.value),
+);
+
+// Rate limiting - Token bucket implementation for "Boost", "Add to Queue", and "Skip Song"
+const BOOST_STORAGE_KEY = "guest_boost_bucket";
+const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
+const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
+
+// Default values (will be overridden by server config)
+const BOOST_MAX_TOKENS = ref(3); // Maximum tokens for Boost
+const BOOST_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
+
+// More lenient defaults for general Add to Queue
+const ADD_QUEUE_MAX_TOKENS = ref(10); // Maximum tokens for Add to Queue
+const ADD_QUEUE_REFILL_RATE = ref(1000 * 60 * 2); // 2 minutes per token
+
+// Skip song - more restrictive by default (1 per hour)
+const SKIP_SONG_MAX_TOKENS = ref(1); // Maximum tokens for Skip Song
+const SKIP_SONG_REFILL_RATE = ref(1000 * 60 * 60); // 60 minutes per token
+
+interface TokenBucket {
+  tokens: number;
+  lastRefill: number;
+}
+
+interface PartyModeConfig {
+  enable_rate_limiting: boolean;
+  // Add to Queue feature
+  enable_add_queue: boolean;
+  add_queue_limit: number;
+  add_queue_refill_minutes: number;
+  // Boost feature
+  enable_boost: boolean;
+  boost_limit: number;
+  boost_refill_minutes: number;
+  // Skip Song feature
+  enable_skip_song: boolean;
+  skip_song_limit: number;
+  skip_song_refill_minutes: number;
+  // UI settings
+  album_art_background: boolean;
+  // Badge colors
+  request_badge_color?: string;
+  boost_badge_color?: string;
+}
+
+const rateLimitingEnabled = ref(true); // Default to enabled
+// Feature enable toggles (can be disabled by admin)
+const addQueueEnabled = ref(true);
+const boostEnabled = ref(true);
+const skipSongEnabled = ref(true);
+// Badge colors (hex values from config, loaded from party_mode/config)
+const requestBadgeColor = ref("");
+const boostBadgeColor = ref("");
+// Token counts
+const boostTokens = ref(3);
+const addQueueTokens = ref(10);
+const skipSongTokens = ref(1);
+const nextTokenCountdown = ref<string>("");
+const skipTokenCountdown = ref<string>("");
+const skippingSong = ref(false);
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+// Generic token bucket functions
+const loadTokenBucket = (
+  storageKey: string,
+  maxTokens: number,
+  refillRate: number,
+): TokenBucket => {
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) {
+    return {
+      tokens: maxTokens,
+      lastRefill: Date.now(),
+    };
+  }
+
+  try {
+    const bucket: TokenBucket = JSON.parse(stored);
+    const now = Date.now();
+    const timeSinceRefill = now - bucket.lastRefill;
+    const tokensToAdd = Math.floor(timeSinceRefill / refillRate);
+
+    if (tokensToAdd > 0) {
+      bucket.tokens = Math.min(maxTokens, bucket.tokens + tokensToAdd);
+      bucket.lastRefill = now;
+    }
+
+    return bucket;
+  } catch {
+    return {
+      tokens: maxTokens,
+      lastRefill: Date.now(),
+    };
+  }
+};
+
+const saveTokenBucket = (storageKey: string, bucket: TokenBucket) => {
+  localStorage.setItem(storageKey, JSON.stringify(bucket));
+};
+
+// Generic token consumption function
+const consumeToken = (
+  storageKey: string,
+  maxTokens: number,
+  refillRate: number,
+  tokenRef: { value: number },
+): boolean => {
+  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
+  if (bucket.tokens <= 0) {
+    return false;
+  }
+
+  bucket.tokens -= 1;
+  saveTokenBucket(storageKey, bucket);
+  tokenRef.value = bucket.tokens;
+  return true;
+};
+
+// Generic time until next token function
+const getTimeUntilNextTokenRefill = (
+  storageKey: string,
+  maxTokens: number,
+  refillRate: number,
+): number => {
+  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
+  if (bucket.tokens >= maxTokens) {
+    return 0;
+  }
+
+  const timeSinceRefill = Date.now() - bucket.lastRefill;
+  const timeUntilNext = refillRate - (timeSinceRefill % refillRate);
+  return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
+};
+
+// Convenience wrappers for each token type
+const consumeBoostToken = (): boolean =>
+  consumeToken(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
+    boostTokens,
+  );
+
+const consumeAddQueueToken = (): boolean =>
+  consumeToken(
+    ADD_QUEUE_STORAGE_KEY,
+    ADD_QUEUE_MAX_TOKENS.value,
+    ADD_QUEUE_REFILL_RATE.value,
+    addQueueTokens,
+  );
+
+const consumeSkipSongToken = (): boolean =>
+  consumeToken(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+    skipSongTokens,
+  );
+
+const getTimeUntilNextToken = (): number =>
+  getTimeUntilNextTokenRefill(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
+  );
+
+const getTimeUntilNextAddQueueToken = (): number =>
+  getTimeUntilNextTokenRefill(
+    ADD_QUEUE_STORAGE_KEY,
+    ADD_QUEUE_MAX_TOKENS.value,
+    ADD_QUEUE_REFILL_RATE.value,
+  );
+
+const getTimeUntilNextSkipToken = (): number =>
+  getTimeUntilNextTokenRefill(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
+
+// Format countdown timer for next token
+const formatCountdown = (milliseconds: number): string => {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${seconds}s`;
+};
+
+// Update countdown display for all token types
+const updateCountdown = () => {
+  // Update Boost tokens
+  const boostBucket = loadTokenBucket(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
+  );
+  boostTokens.value = boostBucket.tokens;
+
+  if (boostBucket.tokens >= BOOST_MAX_TOKENS.value) {
+    nextTokenCountdown.value = "";
+  } else {
+    const timeSinceRefill = Date.now() - boostBucket.lastRefill;
+    const timeUntilNext =
+      BOOST_REFILL_RATE.value - (timeSinceRefill % BOOST_REFILL_RATE.value);
+    nextTokenCountdown.value = formatCountdown(timeUntilNext);
+  }
+
+  // Update Skip Song tokens
+  const skipBucket = loadTokenBucket(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
+  skipSongTokens.value = skipBucket.tokens;
+
+  if (skipBucket.tokens >= SKIP_SONG_MAX_TOKENS.value) {
+    skipTokenCountdown.value = "";
+  } else {
+    const timeSinceRefill = Date.now() - skipBucket.lastRefill;
+    const timeUntilNext =
+      SKIP_SONG_REFILL_RATE.value -
+      (timeSinceRefill % SKIP_SONG_REFILL_RATE.value);
+    skipTokenCountdown.value = formatCountdown(timeUntilNext);
+  }
+};
+
+// Queue state
+const queueItems = ref<QueueItem[]>([]);
+const partyModeQueueId = ref<string | null>(null);
+const queueListRef = ref<HTMLElement | null>(null);
+const queueFetchOffset = ref(0);
+const queueTotalItems = ref(0);
+const loadingMoreQueueItems = ref(false);
+
+// Simple computed to get current queue and its state directly from the API
+const currentQueue = computed(() => {
+  const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+  return queueId ? api.queues[queueId] : null;
+});
+
+const currentQueueIndex = computed(
+  () => currentQueue.value?.current_index ?? 0,
+);
+
+// Scroll to the currently playing item
+const scrollToCurrentItem = async () => {
+  await nextTick();
+  if (!queueListRef.value) return;
+
+  const activeItem = queueListRef.value.querySelector(
+    ".queue-item-current",
+  ) as HTMLElement;
+  if (activeItem) {
+    // Scroll within the queue container, not the whole page
+    const container = queueListRef.value;
+    // Calculate position relative to the container
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    const relativeTop = itemRect.top - containerRect.top + container.scrollTop;
+
+    container.scrollTo({ top: relativeTop, behavior: "smooth" });
+  }
+};
+
+// Auto-scroll to currently playing item when it changes
+watch(currentQueueIndex, scrollToCurrentItem);
+
+// Also scroll when queue items are loaded (but not when appending more items)
+watch(
+  queueItems,
+  async (newItems, oldItems) => {
+    if (newItems.length > 0) {
+      // Only scroll to current item on initial load or reset, not when appending
+      // We detect append by checking if new items were added to the end
+      const isAppending =
+        oldItems &&
+        oldItems.length > 0 &&
+        newItems.length > oldItems.length &&
+        newItems
+          .slice(0, oldItems.length)
+          .every((item, i) => item.queue_item_id === oldItems[i].queue_item_id);
+
+      if (!isAppending) {
+        scrollToCurrentItem();
+      }
+      runMarqueeScan();
+    }
+  },
+  { deep: true },
+);
+
+// Run marquee scan when search results change
+watch(
+  () => displayedResults.value,
+  async () => {
+    await nextTick();
+    runMarqueeScan();
+  },
+);
+
+// Snackbar state
+const snackbar = ref({
+  show: false,
+  message: "",
+  color: "success",
+});
+
+// Helper to blur active element (hides mobile keyboard)
+const blurActiveElement = () => {
+  (document.activeElement as HTMLElement)?.blur();
+};
+
+// Levenshtein distance for string similarity
+const levenshteinDistance = (str1: string, str2: string): number => {
+  const m = str1.length;
+  const n = str2.length;
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+};
+
+// Calculate relevance score for a search result
+const calculateRelevanceScore = (item: any, query: string): number => {
+  const normalizedQuery = query.toLowerCase().trim();
+  const normalizedName = (item.name || "").toLowerCase().trim();
+
+  // Get artist name for tracks
+  let artistName = "";
+  if (item.artists && item.artists.length > 0) {
+    artistName = item.artists
+      .map((a: any) => a.name)
+      .join(" ")
+      .toLowerCase();
+  }
+
+  // Base score starts at 0, higher is better
+  let score = 0;
+
+  // 1. Exact match bonus (highest priority)
+  if (normalizedName === normalizedQuery) {
+    score += 1000;
+  } else if (normalizedName.startsWith(normalizedQuery)) {
+    // Starts with query - strong match
+    score += 500;
+  } else if (normalizedName.includes(normalizedQuery)) {
+    // Contains query
+    score += 200;
+  }
+
+  // 2. Artist name match for tracks
+  if (artistName) {
+    if (artistName === normalizedQuery) {
+      score += 800;
+    } else if (artistName.startsWith(normalizedQuery)) {
+      score += 400;
+    } else if (artistName.includes(normalizedQuery)) {
+      score += 150;
+    }
+  }
+
+  // 3. Levenshtein similarity (normalized to 0-100)
+  const distance = levenshteinDistance(
+    normalizedName.slice(0, 50),
+    normalizedQuery,
+  );
+  const maxLen = Math.max(normalizedName.length, normalizedQuery.length, 1);
+  const similarity = Math.max(0, 100 - (distance / maxLen) * 100);
+  score += similarity;
+
+  // 4. Popularity bonus (0-100 from metadata)
+  const popularity = item.metadata?.popularity ?? 0;
+  score += popularity * 0.5; // Weight popularity at 50%
+
+  // 5. Artist type bonus when searching for artists
+  // (so artist "Taylor Swift" ranks above track "Taylor Swift" when name matches)
+  if (
+    item.media_type === "artist" &&
+    normalizedName.includes(normalizedQuery)
+  ) {
+    score += 100;
+  }
+
+  return score;
+};
+
+// Sort search results by relevance score
+const sortByRelevance = (items: any[], query: string): any[] => {
+  return [...items].sort((a, b) => {
+    const scoreA = calculateRelevanceScore(a, query);
+    const scoreB = calculateRelevanceScore(b, query);
+    return scoreB - scoreA; // Higher score first
+  });
+};
+
+// Search functionality
+const performSearch = async () => {
+  if (!searchQuery.value || searchQuery.value.length < 2) return;
+
+  // Blur the input to hide mobile keyboard
+  blurActiveElement();
+
+  searching.value = true;
+  hasSearched.value = true;
+  try {
+    // Determine which media types to search based on filter
+    const mediaTypes: MediaType[] = [];
+    if (searchFilter.value === "all" || searchFilter.value === "track") {
+      mediaTypes.push(MediaType.TRACK);
+    }
+    if (searchFilter.value === "all" || searchFilter.value === "artist") {
+      mediaTypes.push(MediaType.ARTIST);
+    }
+
+    const results = await api.search(searchQuery.value, mediaTypes);
+
+    // Combine and sort results based on filter
+    let combinedResults: any[];
+    if (searchFilter.value === "track") {
+      combinedResults = results.tracks;
+    } else if (searchFilter.value === "artist") {
+      combinedResults = results.artists;
+    } else {
+      // "all" - combine tracks and artists
+      combinedResults = [...results.tracks, ...results.artists];
+    }
+
+    // Sort by relevance (Levenshtein distance + popularity)
+    searchResults.value = sortByRelevance(combinedResults, searchQuery.value);
+
+    // Reset displayed count for new search
+    displayedResultsCount.value = 10;
+  } catch (error) {
+    console.error("Search failed:", error);
+    showSnackbar("Search failed. Please try again.", "error");
+  } finally {
+    searching.value = false;
+  }
+};
+
+// Debounced search - triggers after user pauses typing
+const debouncedSearch = () => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  // Only trigger if query is long enough
+  if (searchQuery.value && searchQuery.value.length >= 2) {
+    searchDebounceTimer = setTimeout(() => {
+      performSearch();
+    }, 1000); // 1 second debounce delay
+  }
+};
+
+// Watch for search query changes and trigger debounced search
+watch(searchQuery, (newQuery) => {
+  if (!newQuery || newQuery.length < 2) {
+    // Clear results if query is too short
+    if (hasSearched.value) {
+      searchResults.value = [];
+      hasSearched.value = false;
+    }
+  } else {
+    debouncedSearch();
+  }
+});
+
+// Watch for filter changes and re-search if there's a query
+watch(searchFilter, () => {
+  if (searchQuery.value && searchQuery.value.length >= 2) {
+    performSearch();
+  }
+});
+
+const clearSearch = () => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  searchQuery.value = "";
+  searchResults.value = [];
+  displayedResultsCount.value = 10; // Reset to initial count
+  hasSearched.value = false;
+  // Clear artist drill-down state
+  selectedArtist.value = null;
+  artistTracks.value = [];
+};
+
+// Artist drill-down - fetch tracks for selected artist
+const selectArtist = async (artist: any) => {
+  selectedArtist.value = artist;
+  loadingArtistTracks.value = true;
+  artistTracks.value = [];
+
+  try {
+    // Get the provider from the artist's provider_mappings
+    const providerMapping = artist.provider_mappings?.[0];
+    if (!providerMapping) {
+      throw new Error("No provider mapping found for artist");
+    }
+
+    const tracks = await api.getArtistTracks(
+      providerMapping.item_id,
+      providerMapping.provider_instance,
+    );
+    artistTracks.value = tracks;
+  } catch (error) {
+    console.error("Failed to fetch artist tracks:", error);
+    showSnackbar("Failed to load artist tracks. Please try again.", "error");
+    selectedArtist.value = null;
+  } finally {
+    loadingArtistTracks.value = false;
+  }
+};
+
+const clearArtistSelection = () => {
+  selectedArtist.value = null;
+  artistTracks.value = [];
+};
+
+// Infinite scroll handler
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target) return;
+
+  // Check if we've scrolled near the bottom
+  const scrollPosition = target.scrollTop + target.clientHeight;
+  const scrollHeight = target.scrollHeight;
+  const threshold = 100; // Load more when within 100px of bottom
+
+  if (
+    scrollPosition >= scrollHeight - threshold &&
+    !loadingMoreResults.value &&
+    displayedResultsCount.value < searchResults.value.length
+  ) {
+    loadMoreResults();
+  }
+};
+
+// Load more results
+const loadMoreResults = () => {
+  loadingMoreResults.value = true;
+
+  // Simulate a small delay for smooth UX
+  setTimeout(() => {
+    const increment = 10;
+    const newCount = Math.min(
+      displayedResultsCount.value + increment,
+      searchResults.value.length,
+    );
+    displayedResultsCount.value = newCount;
+    loadingMoreResults.value = false;
+    // runMarqueeScan();
+  }, 300);
+};
+
+// Add to queue functionality
+const addToQueue = async (item: any, position: "next" | "end") => {
+  // Check if the feature is enabled
+  if (position === "next" && !boostEnabled.value) {
+    showSnackbar("Boost is disabled by the host.", "warning");
+    return;
+  }
+  if (position === "end" && !addQueueEnabled.value) {
+    showSnackbar("Add to Queue is disabled by the host.", "warning");
+    return;
+  }
+
+  // Only check token limits if rate limiting is enabled
+  if (rateLimitingEnabled.value) {
+    // Check token bucket rate limit for "Boost"
+    if (position === "next") {
+      if (!consumeBoostToken()) {
+        const minutesUntilNext = getTimeUntilNextToken();
+        showSnackbar(
+          `Boost limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          "warning",
+        );
+        return;
+      }
+    } else {
+      // Check token bucket rate limit for "Add to Queue"
+      if (!consumeAddQueueToken()) {
+        const minutesUntilNext = getTimeUntilNextAddQueueToken();
+        showSnackbar(
+          `Add to Queue limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          "warning",
+        );
+        return;
+      }
+    }
+  }
+
+  const key = `${item.media_type}-${item.item_id}-${position}`;
+  addingItems.value.add(key);
+
+  try {
+    // Use party mode queue if configured, otherwise use active player queue
+    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    if (!queueId) {
+      throw new Error("No player queue available");
+    }
+
+    await api.playMedia(
+      item.uri,
+      position === "next" ? QueueOption.NEXT : QueueOption.ADD, // option
+      undefined, // radio_mode
+      undefined, // start_item
+      queueId, // queue_id - use configured party mode player
+    );
+
+    const action = position === "next" ? "boosted" : "added to queue";
+    showSnackbar(`"${item.name}" ${action}`, "success");
+  } catch (error) {
+    console.error("Failed to add to queue:", error);
+    showSnackbar("Failed to add to queue. Please try again.", "error");
+  } finally {
+    addingItems.value.delete(key);
+  }
+};
+
+// Queue fetching with smart windowing
+const fetchQueueItems = async (reset = true) => {
+  const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+  if (!queueId) {
+    queueItems.value = [];
+    return;
+  }
+
+  try {
+    // Fetch the queue state first to ensure we have the current index
+    // This is important on initial load when api.queues may not be populated yet
+    const queue = await api.sendCommand<PlayerQueue>("player_queues/get", {
+      queue_id: queueId,
+    });
+    // Update the reactive queues object so currentQueue computed works
+    if (queue) {
+      api.queues[queueId] = queue;
+      queueTotalItems.value = queue.items || 0;
+    }
+
+    if (reset) {
+      // Initial load: fetch 50 items starting from current playing position minus 10
+      // This ensures the current song is visible with some context before and after
+      const currentIdx = queue?.current_index ?? 0;
+      const offset = Math.max(0, currentIdx - 10);
+      queueFetchOffset.value = offset;
+
+      const items = await api.getPlayerQueueItems(queueId, 50, offset);
+      queueItems.value = items;
+    } else {
+      // Load more items (append to existing)
+      loadingMoreQueueItems.value = true;
+      const newOffset = queueFetchOffset.value + queueItems.value.length;
+
+      if (newOffset < queueTotalItems.value) {
+        const items = await api.getPlayerQueueItems(queueId, 50, newOffset);
+        queueItems.value = [...queueItems.value, ...items];
+      }
+
+      loadingMoreQueueItems.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to fetch queue items:", error);
+    loadingMoreQueueItems.value = false;
+  }
+};
+
+// Queue scroll handler for infinite scroll
+const handleQueueScroll = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target || loadingMoreQueueItems.value) return;
+
+  // Check if scrolled near bottom
+  const scrollPosition = target.scrollTop + target.clientHeight;
+  const scrollHeight = target.scrollHeight;
+  const threshold = 100;
+
+  // Load more if near bottom and there are more items to load
+  const hasMore =
+    queueFetchOffset.value + queueItems.value.length < queueTotalItems.value;
+  if (scrollPosition >= scrollHeight - threshold && hasMore) {
+    fetchQueueItems(false);
+  }
+};
+
+// Marquee helper functions
+const applyMarquee = (el: HTMLElement) => {
+  const span = el.querySelector("span") as HTMLElement;
+  if (!span) return;
+
+  // Reset first to get accurate measurements
+  el.classList.remove("marquee");
+  span.style.setProperty("--marquee-distance", "0px");
+
+  // Use requestAnimationFrame to ensure layout is complete
+  requestAnimationFrame(() => {
+    const overflow = span.scrollWidth - el.clientWidth;
+
+    if (overflow <= 2) {
+      el.classList.remove("marquee");
+      span.style.setProperty("--marquee-distance", "0px");
+      return;
+    }
+
+    // Set the distance to scroll (the overflow amount + small padding)
+    span.style.setProperty("--marquee-distance", `-${overflow + 16}px`);
+    // Speed based on distance: ~30px per second
+    const duration = Math.max((overflow + 16) / 30, 3);
+    span.style.setProperty("--marquee-duration", `${duration}s`);
+    el.classList.add("marquee");
+  });
+};
+
+const runMarqueeScan = () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      document
+        .querySelectorAll(".scroll-text")
+        .forEach((el) => applyMarquee(el as HTMLElement));
+    });
+  });
+};
+
+const getImageUrl = (item: any) => {
+  return getMediaItemImageUrl(item.metadata?.images?.[0] || item.image);
+};
+
+const getQueueItemImageUrl = (item: QueueItem) => {
+  if (!item.image) return "";
+  return getMediaItemImageUrl(item.image);
+};
+
+const getArtistName = (item: any) => {
+  if (item.media_type === "artist") {
+    return "Artist";
+  }
+  if (item.artists && item.artists.length > 0) {
+    return item.artists.map((a: any) => a.name).join(", ");
+  }
+  if (item.artist) {
+    return item.artist.name;
+  }
+  return "Unknown Artist";
+};
+
+// Get proper track title from media_item (not "Artist - Title" format)
+const getQueueItemTitle = (item: QueueItem) => {
+  const mediaItem = item.media_item as any;
+  // Prefer media_item.name for proper track title
+  if (mediaItem?.name) {
+    return mediaItem.name;
+  }
+  // Fallback to queue item name
+  return item.name;
+};
+
+// Get "Artist • Album" subtitle for queue items
+const getQueueItemSubtitle = (item: QueueItem) => {
+  const mediaItem = item.media_item as any;
+  const parts: string[] = [];
+
+  // Get artist name(s)
+  if (
+    mediaItem?.artists &&
+    Array.isArray(mediaItem.artists) &&
+    mediaItem.artists.length > 0
+  ) {
+    parts.push(mediaItem.artists.map((a: any) => a.name).join(", "));
+  } else if (mediaItem?.artist?.name) {
+    parts.push(mediaItem.artist.name);
+  }
+
+  // Get album name
+  if (mediaItem?.album?.name) {
+    parts.push(mediaItem.album.name);
+  }
+
+  return parts.length > 0 ? parts.join(" • ") : "Unknown Artist";
+};
+
+const showSnackbar = (message: string, color: string = "success") => {
+  snackbar.value = {
+    show: true,
+    message,
+    color,
+  };
+};
+
+// Skip current song functionality
+const skipCurrentSong = async () => {
+  // Check if the feature is enabled
+  if (!skipSongEnabled.value) {
+    showSnackbar("Skip Song is disabled by the host.", "warning");
+    return;
+  }
+
+  // Check token bucket rate limit if rate limiting is enabled
+  if (rateLimitingEnabled.value) {
+    if (!consumeSkipSongToken()) {
+      const minutesUntilNext = getTimeUntilNextSkipToken();
+      showSnackbar(
+        `Skip limit reached. Next skip available in ${minutesUntilNext} minutes.`,
+        "warning",
+      );
+      return;
+    }
+  }
+
+  skippingSong.value = true;
+  try {
+    // queue_id is the same as player_id in Music Assistant
+    const playerId =
+      partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    if (!playerId) {
+      throw new Error("No player available");
+    }
+
+    await api.playerCommandNext(playerId);
+    showSnackbar("Song skipped!", "success");
+  } catch (error) {
+    console.error("Failed to skip song:", error);
+    showSnackbar("Failed to skip song. Please try again.", "error");
+  } finally {
+    skippingSong.value = false;
+  }
+};
+
+// Lifecycle
+onMounted(async () => {
+  // Fetch party mode configuration (token limits and refill rate)
+  try {
+    const config = (await api.sendCommand(
+      "party_mode/config",
+    )) as PartyModeConfig;
+    if (config) {
+      rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
+      // Feature enable toggles
+      addQueueEnabled.value = config.enable_add_queue ?? true;
+      boostEnabled.value = config.enable_boost ?? true;
+      skipSongEnabled.value = config.enable_skip_song ?? true;
+      // Token limits and refill rates
+      ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit || 10;
+      ADD_QUEUE_REFILL_RATE.value =
+        (config.add_queue_refill_minutes || 2) * 60 * 1000;
+      BOOST_MAX_TOKENS.value = config.boost_limit || 3;
+      BOOST_REFILL_RATE.value = (config.boost_refill_minutes || 20) * 60 * 1000;
+      SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
+      SKIP_SONG_REFILL_RATE.value =
+        (config.skip_song_refill_minutes || 60) * 60 * 1000;
+      // Badge colors (always set from config)
+      requestBadgeColor.value = config.request_badge_color || "#2196F3";
+      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+    }
+  } catch (error) {
+    console.error("Failed to fetch party mode config:", error);
+    // Use defaults if fetch fails
+    requestBadgeColor.value = "#2196F3";
+    boostBadgeColor.value = "#FF5722";
+  }
+
+  // Push initial state to enable back interception
+  history.pushState(null, "", location.href);
+  window.addEventListener("popstate", handleBack);
+
+  // Initialize token buckets (after fetching config)
+  const boostBucket = loadTokenBucket(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
+  );
+  boostTokens.value = boostBucket.tokens;
+
+  const addQueueBucket = loadTokenBucket(
+    ADD_QUEUE_STORAGE_KEY,
+    ADD_QUEUE_MAX_TOKENS.value,
+    ADD_QUEUE_REFILL_RATE.value,
+  );
+  addQueueTokens.value = addQueueBucket.tokens;
+
+  const skipSongBucket = loadTokenBucket(
+    SKIP_SONG_STORAGE_KEY,
+    SKIP_SONG_MAX_TOKENS.value,
+    SKIP_SONG_REFILL_RATE.value,
+  );
+  skipSongTokens.value = skipSongBucket.tokens;
+
+  // Start countdown timer
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+
+  // Fetch party mode player configuration
+  try {
+    partyModeQueueId.value = await api.sendCommand("party_mode/player");
+  } catch (error) {
+    console.error("Failed to fetch party mode player:", error);
+  }
+
+  // Initial queue fetch
+  fetchQueueItems();
+
+  // Subscribe to queue updates - refetch when items change
+  const unsub1 = api.subscribe(
+    EventType.QUEUE_ITEMS_UPDATED,
+    (evt: EventMessage) => {
+      const queueId =
+        partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+      if (evt.object_id === queueId) {
+        // When items are added/removed, do a full reset to recalculate offset
+        fetchQueueItems(true);
+      }
+    },
+  );
+
+  // Refetch if current playing position moves outside our fetched window
+  const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
+    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    if (evt.object_id === queueId) {
+      const currentIdx = currentQueueIndex.value;
+      const fetchedStart = queueFetchOffset.value;
+      const fetchedEnd = fetchedStart + queueItems.value.length;
+
+      // Refetch if current song is outside our window or getting close to boundaries
+      if (
+        currentIdx < fetchedStart + 5 ||
+        currentIdx > fetchedEnd - 5 ||
+        queueItems.value.length === 0
+      ) {
+        fetchQueueItems(true);
+      }
+    }
+  });
+
+  onBeforeUnmount(() => {
+    window.removeEventListener("popstate", handleBack);
+    unsub1();
+    unsub2();
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+  });
+});
+</script>
+
+<style scoped>
+.guest-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  /* Add safe area padding for mobile devices with browser UI */
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  /* Use dvh (dynamic viewport height) to account for mobile browser UI */
+  /* max-height ensures content doesn't exceed viewport */
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.search-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.filter-section {
+  display: flex;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.filter-chip {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-active {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.search-btn {
+  min-width: 120px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+  flex: 1;
+}
+
+.boost-tokens {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(var(--v-theme-primary), 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(var(--v-theme-primary), 0.3);
+}
+
+.token-count {
+  font-weight: 700;
+  font-size: 1rem;
+  color: rgb(var(--v-theme-primary));
+}
+
+.token-label {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.token-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-secondary));
+  padding-left: 0.5rem;
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.2);
+}
+
+.results-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.results-section .section-header {
+  flex-shrink: 0;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.5rem;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(var(--v-theme-surface-variant), 0.25);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  min-height: 72px;
+}
+
+.result-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+}
+
+.result-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.result-avatar,
+.queue-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--v-theme-primary), 0.1);
+}
+
+.result-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.result-name,
+.result-artist,
+.queue-name,
+.queue-artist {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-type {
+  text-transform: capitalize;
+  opacity: 0.7;
+}
+
+.result-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.artist-title {
+  flex: 1;
+  text-align: center;
+}
+
+.loading-artist-tracks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  opacity: 0.7;
+}
+
+.action-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.action-btn-primary {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4) !important;
+}
+
+.action-btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.6) !important;
+  transform: translateY(-1px);
+}
+
+.action-btn-secondary {
+  background: rgb(var(--v-theme-secondary)) !important;
+  color: rgb(var(--v-theme-on-secondary)) !important;
+}
+
+.action-btn-secondary:hover {
+  background: rgba(var(--v-theme-secondary), 0.85) !important;
+  transform: translateY(-1px);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  opacity: 0.6;
+}
+
+.empty-state p {
+  font-size: 1.125rem;
+  margin-top: 1rem;
+}
+
+.empty-hint {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.queue-section {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  /* Fill remaining space */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.queue-section .section-title {
+  flex: none;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* Fill remaining space in queue-section */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 8px;
+  min-height: 64px;
+  transition: all 0.2s ease;
+}
+
+.queue-item-current {
+  background: rgba(var(--v-theme-primary), 0.15);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+  padding-left: calc(0.75rem - 3px);
+}
+
+.queue-item-played {
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0.5;
+}
+
+.queue-position {
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.queue-number {
+  font-size: 0.875rem;
+  opacity: 0.6;
+}
+
+.queue-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.guest-request-badge {
+  /* Color set via inline style from config; CSS fallback only if style missing */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.queue-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.skip-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.skip-token-badge {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.skip-token-badge.no-tokens {
+  background: rgba(255, 100, 100, 0.3);
+}
+
+.skip-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.empty-queue {
+  text-align: center;
+  padding: 2rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .guest-view {
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .search-section {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-section {
+    margin-bottom: 0.75rem;
+  }
+
+  .filter-chip {
+    font-size: 0.75rem;
+  }
+
+  .section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .boost-tokens {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .boost-tokens .token-label {
+    display: none;
+  }
+
+  .boost-tokens .token-countdown {
+    padding-left: 0.375rem;
+    border-left: none;
+  }
+
+  .result-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: auto;
+    padding: 0.75rem;
+  }
+
+  .results-list {
+    gap: 0.5rem;
+    padding-right: 0.25rem;
+  }
+
+  .result-info {
+    width: 100%;
+    overflow: visible;
+  }
+
+  .result-text {
+    overflow: hidden;
+  }
+
+  .result-actions {
+    width: 100%;
+    flex-direction: row;
+    margin-left: 0;
+  }
+
+  .result-actions .v-btn {
+    flex: 1;
+  }
+}
+/* ---------- MARQUEE ---------- */
+
+.scroll-text {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.scroll-text span {
+  display: inline-block;
+  white-space: nowrap;
+  --marquee-distance: 0px;
+  --marquee-duration: 3s;
+}
+
+.scroll-text.marquee span {
+  animation: marquee var(--marquee-duration) linear infinite;
+  animation-delay: 1s;
+}
+
+@keyframes marquee {
+  0%,
+  10% {
+    transform: translateX(0);
+  }
+  45%,
+  55% {
+    transform: translateX(var(--marquee-distance));
+  }
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+}
+</style>
