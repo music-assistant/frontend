@@ -141,6 +141,19 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- album type and year -->
+            <v-card-subtitle
+              v-if="item.media_type == MediaType.ALBUM"
+              class="caption"
+            >
+              <span v-if="'album_type' in item && item.album_type !== 'unknown'">
+                {{ $t("album_type." + item.album_type) }}
+              </span>
+              <span v-if="'year' in item && item.year">
+                • {{ item.year }}
+              </span>
+            </v-card-subtitle>
+
             <!-- audiobook author(s) -->
             <v-card-subtitle
               v-if="'authors' in item && item.authors.length > 0"
