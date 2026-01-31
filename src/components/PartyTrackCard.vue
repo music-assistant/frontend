@@ -8,10 +8,10 @@
     ]"
     :style="isGuestRequest ? { '--guest-color': badgeColor } : {}"
   >
-    <div :class="['track-artwork', artworkSizeClass]">
+    <div :class="['track-artwork', sizeClass]">
       <MediaItemThumb :item="queueItem" :size="artworkSize" />
     </div>
-    <div :class="['track-info', infoSizeClass]">
+    <div :class="['track-info', sizeClass]">
       <div class="track-name">
         <MarqueeText :disabled="position !== 'current'">
           {{ trackName }}
@@ -30,7 +30,7 @@
       :style="{ '--badge-color': badgeColor }"
     >
       <v-icon size="small">{{
-        isPlayNext ? "mdi-playlist-play" : "mdi-account-music"
+        isBoost ? "mdi-rocket-launch" : "mdi-account-music"
       }}</v-icon>
       <span v-if="position === 'current'">{{ badgeText }}</span>
     </div>
@@ -47,22 +47,13 @@ export interface Props {
   queueItem?: QueueItem;
   position: "previous-2" | "previous-1" | "current" | "next-1" | "next-2";
   requestBadgeColor?: string;
-  playNextBadgeColor?: string;
+  boostBadgeColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   queueItem: undefined,
   requestBadgeColor: "#2196F3", // Default: Blue
-  playNextBadgeColor: "#FF5722", // Default: Orange
-});
-
-// Get the badge color based on queue option (fallback to defaults if empty)
-const badgeColor = computed(() => {
-  const isNext = props.queueItem?.extra_attributes?.queue_option === "next";
-  const color = isNext ? props.playNextBadgeColor : props.requestBadgeColor;
-  // Fallback to defaults if color is empty (before config loads)
-  if (!color) return isNext ? "#FF5722" : "#2196F3";
-  return color;
+  boostBadgeColor: "#FF5722", // Default: Orange
 });
 
 // Check if this is a guest request
@@ -70,15 +61,23 @@ const isGuestRequest = computed(() => {
   return props.queueItem?.extra_attributes?.added_by_user_role === "guest";
 });
 
-// Check if this was added via "Play Next"
-const isPlayNext = computed(() => {
+// Check if this was added via "Boost"
+const isBoost = computed(() => {
   return props.queueItem?.extra_attributes?.queue_option === "next";
+});
+
+// Get the badge color based on queue option (fallback to defaults if empty)
+const badgeColor = computed(() => {
+  const color = isBoost.value ? props.boostBadgeColor : props.requestBadgeColor;
+  // Fallback to defaults if color is empty (before config loads)
+  if (!color) return isBoost.value ? "#FF5722" : "#2196F3";
+  return color;
 });
 
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
-  if (isPlayNext.value) return "Play Next";
+  if (isBoost.value) return "Boost";
   return "Request";
 });
 
@@ -145,32 +144,9 @@ const artworkSize = computed(() => {
   }
 });
 
-const artworkSizeClass = computed(() => {
-  switch (props.position) {
-    case "previous-2":
-    case "next-2":
-    case "previous-1":
-    case "next-1":
-      return "size-medium";
-    case "current":
-      return "size-large";
-    default:
-      return "size-medium";
-  }
-});
-
-const infoSizeClass = computed(() => {
-  switch (props.position) {
-    case "previous-2":
-    case "next-2":
-    case "previous-1":
-    case "next-1":
-      return "size-medium";
-    case "current":
-      return "size-large";
-    default:
-      return "size-medium";
-  }
+// Size class used by both artwork and info sections
+const sizeClass = computed(() => {
+  return props.position === "current" ? "size-large" : "size-medium";
 });
 </script>
 

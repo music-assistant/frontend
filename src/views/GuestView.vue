@@ -78,9 +78,9 @@
         <div v-if="rateLimitingEnabled" class="play-next-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
-            >{{ playNextTokens }}/{{ PLAY_NEXT_MAX_TOKENS }}</span
+            >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">Play Next available</span>
+          <span class="token-label">Boost available</span>
         </div>
       </div>
       <!-- Loading state -->
@@ -116,16 +116,16 @@
           </div>
           <div class="result-actions">
             <v-btn
-              v-if="playNextEnabled"
+              v-if="boostEnabled"
               variant="elevated"
               :loading="addingItems.has(`track-${track.item_id}-next`)"
-              :disabled="rateLimitingEnabled && playNextTokens <= 0"
+              :disabled="rateLimitingEnabled && boostTokens <= 0"
               class="action-btn"
-              :style="{ backgroundColor: playNextBadgeColor, color: '#fff' }"
+              :style="{ backgroundColor: boostBadgeColor, color: '#fff' }"
               @click="addToQueue(track, 'next')"
             >
-              <v-icon start>mdi-playlist-play</v-icon>
-              Next
+              <v-icon start>mdi-rocket-launch</v-icon>
+              Boost
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -158,11 +158,11 @@
         <div v-if="rateLimitingEnabled" class="play-next-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
-            >{{ playNextTokens }}/{{ PLAY_NEXT_MAX_TOKENS }}</span
+            >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">Play Next available</span>
+          <span class="token-label">Boost available</span>
           <span
-            v-if="playNextTokens < PLAY_NEXT_MAX_TOKENS && nextTokenCountdown"
+            v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
             class="token-countdown"
           >
             <v-icon size="x-small">mdi-clock-outline</v-icon>
@@ -201,18 +201,18 @@
           <!-- Actions for tracks -->
           <div v-if="item.media_type === 'track'" class="result-actions">
             <v-btn
-              v-if="playNextEnabled"
+              v-if="boostEnabled"
               variant="elevated"
               :loading="
                 addingItems.has(`${item.media_type}-${item.item_id}-next`)
               "
-              :disabled="rateLimitingEnabled && playNextTokens <= 0"
+              :disabled="rateLimitingEnabled && boostTokens <= 0"
               class="action-btn"
-              :style="{ backgroundColor: playNextBadgeColor, color: '#fff' }"
+              :style="{ backgroundColor: boostBadgeColor, color: '#fff' }"
               @click="addToQueue(item, 'next')"
             >
-              <v-icon start>mdi-playlist-play</v-icon>
-              Next
+              <v-icon start>mdi-rocket-launch</v-icon>
+              Boost
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -321,18 +321,18 @@
             :style="{
               '--badge-color':
                 item.extra_attributes?.queue_option === 'next'
-                  ? playNextBadgeColor
+                  ? boostBadgeColor
                   : requestBadgeColor,
             }"
           >
             <v-icon size="x-small">{{
               item.extra_attributes?.queue_option === "next"
-                ? "mdi-playlist-play"
+                ? "mdi-rocket-launch"
                 : "mdi-account-music"
             }}</v-icon>
             <span>{{
               item.extra_attributes?.queue_option === "next"
-                ? "Play Next"
+                ? "Boost"
                 : "Request"
             }}</span>
           </span>
@@ -454,13 +454,13 @@ const displayedResults = computed(() =>
 );
 
 // Rate limiting - Token bucket implementation for "Play Next", "Add to Queue", and "Skip Song"
-const PLAY_NEXT_STORAGE_KEY = "guest_play_next_bucket";
+const BOOST_STORAGE_KEY = "guest_boost_bucket";
 const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
 const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
 
 // Default values (will be overridden by server config)
-const PLAY_NEXT_MAX_TOKENS = ref(3); // Maximum tokens for Play Next
-const PLAY_NEXT_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
+const BOOST_MAX_TOKENS = ref(3); // Maximum tokens for Play Next
+const BOOST_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
 
 // More lenient defaults for general Add to Queue
 const ADD_QUEUE_MAX_TOKENS = ref(10); // Maximum tokens for Add to Queue
@@ -481,10 +481,10 @@ interface PartyModeConfig {
   enable_add_queue: boolean;
   add_queue_limit: number;
   add_queue_refill_minutes: number;
-  // Play Next feature
-  enable_play_next: boolean;
-  play_next_limit: number;
-  play_next_refill_minutes: number;
+  // Boost feature
+  enable_boost: boolean;
+  boost_limit: number;
+  boost_refill_minutes: number;
   // Skip Song feature
   enable_skip_song: boolean;
   skip_song_limit: number;
@@ -493,19 +493,19 @@ interface PartyModeConfig {
   album_art_background: boolean;
   // Badge colors
   request_badge_color?: string;
-  play_next_badge_color?: string;
+  boost_badge_color?: string;
 }
 
 const rateLimitingEnabled = ref(true); // Default to enabled
 // Feature enable toggles (can be disabled by admin)
 const addQueueEnabled = ref(true);
-const playNextEnabled = ref(true);
+const boostEnabled = ref(true);
 const skipSongEnabled = ref(true);
 // Badge colors (hex values from config, loaded from party_mode/config)
 const requestBadgeColor = ref("");
-const playNextBadgeColor = ref("");
+const boostBadgeColor = ref("");
 // Token counts
-const playNextTokens = ref(3);
+const boostTokens = ref(3);
 const addQueueTokens = ref(10);
 const skipSongTokens = ref(1);
 const nextTokenCountdown = ref<string>("");
@@ -588,10 +588,10 @@ const getTimeUntilNextTokenRefill = (
 // Convenience wrappers for each token type
 const consumePlayNextToken = (): boolean =>
   consumeToken(
-    PLAY_NEXT_STORAGE_KEY,
-    PLAY_NEXT_MAX_TOKENS.value,
-    PLAY_NEXT_REFILL_RATE.value,
-    playNextTokens,
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
+    boostTokens,
   );
 
 const consumeAddQueueToken = (): boolean =>
@@ -612,9 +612,9 @@ const consumeSkipSongToken = (): boolean =>
 
 const getTimeUntilNextToken = (): number =>
   getTimeUntilNextTokenRefill(
-    PLAY_NEXT_STORAGE_KEY,
-    PLAY_NEXT_MAX_TOKENS.value,
-    PLAY_NEXT_REFILL_RATE.value,
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
   );
 
 const getTimeUntilNextAddQueueToken = (): number =>
@@ -646,20 +646,19 @@ const formatCountdown = (milliseconds: number): string => {
 // Update countdown display for all token types
 const updateCountdown = () => {
   // Update Play Next tokens
-  const playNextBucket = loadTokenBucket(
-    PLAY_NEXT_STORAGE_KEY,
-    PLAY_NEXT_MAX_TOKENS.value,
-    PLAY_NEXT_REFILL_RATE.value,
+  const boostBucket = loadTokenBucket(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
   );
-  playNextTokens.value = playNextBucket.tokens;
+  boostTokens.value = boostBucket.tokens;
 
-  if (playNextBucket.tokens >= PLAY_NEXT_MAX_TOKENS.value) {
+  if (boostBucket.tokens >= BOOST_MAX_TOKENS.value) {
     nextTokenCountdown.value = "";
   } else {
-    const timeSinceRefill = Date.now() - playNextBucket.lastRefill;
+    const timeSinceRefill = Date.now() - boostBucket.lastRefill;
     const timeUntilNext =
-      PLAY_NEXT_REFILL_RATE.value -
-      (timeSinceRefill % PLAY_NEXT_REFILL_RATE.value);
+      BOOST_REFILL_RATE.value - (timeSinceRefill % BOOST_REFILL_RATE.value);
     nextTokenCountdown.value = formatCountdown(timeUntilNext);
   }
 
@@ -1026,8 +1025,8 @@ const loadMoreResults = () => {
 // Add to queue functionality
 const addToQueue = async (item: any, position: "next" | "end") => {
   // Check if the feature is enabled
-  if (position === "next" && !playNextEnabled.value) {
-    showSnackbar("Play Next is disabled by the host.", "warning");
+  if (position === "next" && !boostEnabled.value) {
+    showSnackbar("Boost is disabled by the host.", "warning");
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
@@ -1037,12 +1036,12 @@ const addToQueue = async (item: any, position: "next" | "end") => {
 
   // Only check token limits if rate limiting is enabled
   if (rateLimitingEnabled.value) {
-    // Check token bucket rate limit for "Play Next"
+    // Check token bucket rate limit for "Boost"
     if (position === "next") {
       if (!consumePlayNextToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
         showSnackbar(
-          `Play Next limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          `Boost limit reached. Next use available in ${minutesUntilNext} minutes.`,
           "warning",
         );
         return;
@@ -1078,7 +1077,7 @@ const addToQueue = async (item: any, position: "next" | "end") => {
       queueId, // queue_id - use configured party mode player
     );
 
-    const action = position === "next" ? "will play next" : "added to queue";
+    const action = position === "next" ? "boosted" : "added to queue";
     showSnackbar(`"${item.name}" ${action}`, "success");
   } catch (error) {
     console.error("Failed to add to queue:", error);
@@ -1306,27 +1305,26 @@ onMounted(async () => {
       rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
       // Feature enable toggles
       addQueueEnabled.value = config.enable_add_queue ?? true;
-      playNextEnabled.value = config.enable_play_next ?? true;
+      boostEnabled.value = config.enable_boost ?? true;
       skipSongEnabled.value = config.enable_skip_song ?? true;
       // Token limits and refill rates
       ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit || 10;
       ADD_QUEUE_REFILL_RATE.value =
         (config.add_queue_refill_minutes || 2) * 60 * 1000;
-      PLAY_NEXT_MAX_TOKENS.value = config.play_next_limit || 3;
-      PLAY_NEXT_REFILL_RATE.value =
-        (config.play_next_refill_minutes || 20) * 60 * 1000;
+      BOOST_MAX_TOKENS.value = config.boost_limit || 3;
+      BOOST_REFILL_RATE.value = (config.boost_refill_minutes || 20) * 60 * 1000;
       SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
       SKIP_SONG_REFILL_RATE.value =
         (config.skip_song_refill_minutes || 60) * 60 * 1000;
       // Badge colors (always set from config)
       requestBadgeColor.value = config.request_badge_color || "#2196F3";
-      playNextBadgeColor.value = config.play_next_badge_color || "#FF5722";
+      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
     // Use defaults if fetch fails
     requestBadgeColor.value = "#2196F3";
-    playNextBadgeColor.value = "#FF5722";
+    boostBadgeColor.value = "#FF5722";
   }
 
   // Push initial state to enable back interception
@@ -1334,12 +1332,12 @@ onMounted(async () => {
   window.addEventListener("popstate", handleBack);
 
   // Initialize token buckets (after fetching config)
-  const playNextBucket = loadTokenBucket(
-    PLAY_NEXT_STORAGE_KEY,
-    PLAY_NEXT_MAX_TOKENS.value,
-    PLAY_NEXT_REFILL_RATE.value,
+  const boostBucket = loadTokenBucket(
+    BOOST_STORAGE_KEY,
+    BOOST_MAX_TOKENS.value,
+    BOOST_REFILL_RATE.value,
   );
-  playNextTokens.value = playNextBucket.tokens;
+  boostTokens.value = boostBucket.tokens;
 
   const addQueueBucket = loadTokenBucket(
     ADD_QUEUE_STORAGE_KEY,

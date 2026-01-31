@@ -305,19 +305,19 @@
                         :class="[
                           'guest-request-badge',
                           {
-                            'play-next':
+                            boost:
                               item.extra_attributes?.queue_option === 'next',
                           },
                         ]"
                       >
                         <v-icon size="x-small">{{
                           item.extra_attributes?.queue_option === "next"
-                            ? "mdi-playlist-play"
+                            ? "mdi-rocket-launch"
                             : "mdi-account-music"
                         }}</v-icon>
                         {{
                           item.extra_attributes?.queue_option === "next"
-                            ? "Play Next"
+                            ? "Boost"
                             : "Request"
                         }}
                       </span>
@@ -1655,7 +1655,7 @@ button {
   margin-right: 0.5rem;
 }
 
-.guest-request-badge.play-next {
-  --badge-color: #ff5722; /* Orange for Play Next */
+.guest-request-badge.boost {
+  --badge-color: #ff5722; /* Orange for Boost */
 }
 </style>

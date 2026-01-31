@@ -28,7 +28,7 @@
             :queue-item="item"
             :position="getPosition(item)"
             :request-badge-color="requestBadgeColor"
-            :play-next-badge-color="playNextBadgeColor"
+            :boost-badge-color="boostBadgeColor"
           />
         </TransitionGroup>
       </div>
@@ -69,21 +69,21 @@ const route = useRoute();
 
 // Party mode configuration
 interface PartyModeConfig {
-  play_next_limit: number;
-  play_next_refill_minutes: number;
+  boost_limit: number;
+  boost_refill_minutes: number;
   add_queue_limit: number;
   add_queue_refill_minutes: number;
   album_art_background: boolean;
   show_player_controls: boolean;
   request_badge_color?: string;
-  play_next_badge_color?: string;
+  boost_badge_color?: string;
 }
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControlsEnabled = ref(false); // Default to false (frameless)
 // Badge colors (hex values from config, loaded from party_mode/config)
 const requestBadgeColor = ref("");
-const playNextBadgeColor = ref("");
+const boostBadgeColor = ref("");
 
 // Check if album art background is enabled - prioritize query parameter over config
 const useAlbumArtBackground = computed(() => {
@@ -369,13 +369,13 @@ onMounted(async () => {
       }
       // Badge colors (always set from config)
       requestBadgeColor.value = config.request_badge_color || "#2196F3";
-      playNextBadgeColor.value = config.play_next_badge_color || "#FF5722";
+      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
     // Use defaults if fetch fails
     requestBadgeColor.value = "#2196F3";
-    playNextBadgeColor.value = "#FF5722";
+    boostBadgeColor.value = "#FF5722";
   }
 
   // Initial fetch
