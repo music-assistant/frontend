@@ -7,27 +7,6 @@
           api.providerManifests
       "
     >
-      <!-- Disabled banner -->
-      <v-alert
-        v-if="!config?.enabled"
-        type="warning"
-        variant="tonal"
-        class="mb-4"
-        closable
-      >
-        <div class="disabled-banner">
-          <span>{{ $t("settings.player_disabled") }}</span>
-          <v-btn
-            size="small"
-            color="warning"
-            variant="flat"
-            @click="config.enabled = true"
-          >
-            {{ $t("settings.enable_player") }}
-          </v-btn>
-        </div>
-      </v-alert>
-
       <!-- Header card -->
       <v-card v-if="config" class="header-card mb-4" elevation="0">
         <div class="header-content">
@@ -117,9 +96,32 @@
       </v-card>
     </div>
 
+    <!-- Disabled banner -->
+    <v-alert
+      v-if="!config?.enabled"
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+      closable
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_disabled") }}</span>
+        <v-btn
+          size="small"
+          color="warning"
+          variant="flat"
+          @click="enablePlayer"
+        >
+          {{ $t("settings.enable_player") }}
+        </v-btn>
+      </div>
+    </v-alert>
+
     <!-- Not available banner -->
     <v-alert
-      v-if="config && !api.players[config.player_id]?.available"
+      v-if="
+        config && config.enabled && !api.players[config.player_id]?.available
+      "
       type="warning"
       variant="tonal"
       class="mb-4"
@@ -308,6 +310,18 @@ const saveRename = function () {
       showRenameDialog.value = false;
     });
   showRenameDialog.value = false;
+};
+
+const enablePlayer = function () {
+  loading.value = true;
+  api
+    .savePlayerConfig(props.playerId!, { enabled: true })
+    .then(() => {
+      router.push({ name: "playersettings" });
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

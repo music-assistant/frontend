@@ -59,7 +59,7 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn variant="outlined" class="action-btn" @click="$emit('openDsp')">
+      <v-btn variant="outlined" @click="$emit('openDsp')">
         {{ $t("open_dsp_settings") }}
       </v-btn>
     </div>

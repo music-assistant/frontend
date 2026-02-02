@@ -48,6 +48,7 @@
               <v-icon
                 :icon="api.players[item.player_id]?.icon || 'mdi-speaker'"
                 :size="20"
+                style="left: 3px"
               />
             </div>
           </template>

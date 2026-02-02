@@ -379,7 +379,7 @@
       </div>
     </div>
 
-    <div class="config-actions">
+    <div v-if="!disabled" class="config-actions">
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
         <v-switch
