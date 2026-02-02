@@ -235,6 +235,7 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Album,
   BrowseFolder,
+  EventType,
   MediaItem,
   MediaItemType,
   MediaItemTypeOrItemMapping,
@@ -931,7 +932,13 @@ export const getContextMenuItems = async function (
       action: async () => {
         const updatedInfo = await api.refreshItem(items[0]);
         if (updatedInfo) {
-          Object.assign(items[0], updatedInfo);
+          // Emit synthetic MEDIA_ITEM_UPDATED event to trigger UI refresh
+          // This ensures child components (like track listings) also refresh
+          api.signalEvent({
+            event: EventType.MEDIA_ITEM_UPDATED,
+            object_id: updatedInfo.uri,
+            data: updatedInfo,
+          });
         }
       },
       icon: "mdi-refresh",
