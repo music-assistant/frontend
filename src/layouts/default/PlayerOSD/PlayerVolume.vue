@@ -74,7 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   isPowered: true,
   width: "100%",
-  step: 2,
+  step: 1,
   allowWheel: false,
   color: "secondary",
   style: "",
