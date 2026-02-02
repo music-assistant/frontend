@@ -107,7 +107,7 @@
     </v-alert>
 
     <edit-config
-      v-else-if="config"
+      v-if="config"
       :disabled="!config?.enabled"
       :config-entries="allConfigEntries"
       @submit="onSubmit"
