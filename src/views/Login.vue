@@ -674,20 +674,20 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       "Authenticating...",
     );
 
-    // Exchange the guest code for a JWT token via auth/guest API
+    // Exchange the short code for a JWT token via auth/code API
     const result = await api.sendCommand<{
       success: boolean;
       access_token?: string;
       user?: { user_id: string; username: string; role: string };
       error?: string;
-    }>("auth/guest", { code: code.toUpperCase() });
+    }>("auth/code", { code: code.toUpperCase() });
 
     if (!result.success || !result.access_token) {
       console.error("[Login] Guest code exchange failed:", result.error);
       return false;
     }
 
-    // Store the JWT token for auto-login and decode claims (including client_type)
+    // Store the JWT token for auto-login and decode claims (including provider_name)
     localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
     authManager.setToken(result.access_token);
 

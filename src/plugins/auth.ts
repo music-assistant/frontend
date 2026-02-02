@@ -23,7 +23,7 @@ interface JWTClaims {
   provider_filter: string[];
   token_name: string;
   is_long_lived: boolean;
-  client_type?: string; // "party_mode" for party mode guests
+  provider_name?: string; // "party_mode" for party mode guests
 }
 
 export class AuthManager {
@@ -121,7 +121,7 @@ export class AuthManager {
    * restricted UI access (only the guest view).
    */
   isPartyModeGuest(): boolean {
-    return this.claims?.client_type === "party_mode";
+    return this.claims?.provider_name === "party_mode";
   }
 
   /**
