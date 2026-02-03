@@ -146,6 +146,7 @@ import { $t } from "@/plugins/i18n";
 import { HelpCircle } from "lucide-vue-next";
 import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -153,7 +154,7 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
-  configEntries: ConfigEntry[];
+  configEntries: ConfigEntryUI[];
   disabled: boolean;
 }
 
@@ -164,12 +165,12 @@ const emit = defineEmits<{
 }>();
 
 // global refs
-const entries = ref<ConfigEntry[]>();
+const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
 const activePanel = ref<string[]>([]);
 const showPasswordValues = ref(false);
-const showHelpInfo = ref<ConfigEntry>();
+const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
@@ -289,7 +290,7 @@ const action = async function (action: string) {
   emit("action", action, getCurrentValues());
 };
 
-const onValueUpdate = function (entry: ConfigEntry, value: ConfigValueType) {
+const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
   // If immediate_apply is set, emit the value change immediately
   if (entry.immediate_apply) {
@@ -362,11 +363,11 @@ const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 
-const isVisible = function (entry: ConfigEntry) {
+const isVisible = function (entry: ConfigEntryUI) {
   return !entry.hidden;
 };
 
-const isDisabled = function (entry: ConfigEntry) {
+const isDisabled = function (entry: ConfigEntryUI) {
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependentEntry = entries.value?.find(
       (x) => x.key == entry.depends_on,
@@ -389,7 +390,7 @@ const isDisabled = function (entry: ConfigEntry) {
 };
 
 const visibleEntriesByCategory = computed(() => {
-  const result: Record<string, ConfigEntry[]> = {};
+  const result: Record<string, ConfigEntryUI[]> = {};
   if (!entries.value) return result;
 
   for (const entry of entries.value) {
@@ -415,6 +416,7 @@ const getCurrentValues = function () {
   // Note: entries.value contains the same object references as props.configEntries
   // (pushed in the watch), so user modifications via the form update both
   for (const entry of props.configEntries!) {
+    if (isInjected(entry)) continue;
     let value = entry.value;
     // filter out undefined values
     if (value == undefined) value = null;
@@ -445,11 +447,12 @@ const getCategoryIcon = function (category: string): string {
     authentication: "mdi-lock",
     sync: "mdi-sync",
     web_player: "mdi-play-network",
+    group_settings: "mdi-speaker-multiple",
   };
   return iconMap[category] || "mdi-cog-outline";
 };
 
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
+const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   // overly complicated way to determine we have a description for the entry
   // in either the translations (by entry key), on the entry itself as fallback
   // OR it has a help link

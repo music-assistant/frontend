@@ -11,26 +11,34 @@
       </v-label>
     </div>
 
-    <!-- label value -->
+    <!-- label / alert value -->
     <v-alert
-      v-else-if="confEntry.type == ConfigEntryType.LABEL"
+      v-else-if="
+        confEntry.type == ConfigEntryType.LABEL ||
+        confEntry.type == ConfigEntryType.ALERT
+      "
       variant="tonal"
-      type="info"
+      :type="confEntry.type === ConfigEntryType.ALERT ? 'warning' : 'info'"
       density="comfortable"
       class="config-alert"
     >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
-    </v-alert>
-
-    <!-- alert value -->
-    <v-alert
-      v-else-if="confEntry.type == ConfigEntryType.ALERT"
-      density="comfortable"
-      type="warning"
-      variant="tonal"
-      class="config-alert"
-    >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      <template v-if="confEntry.action && linkParts.hasLinkToken">
+        {{ linkParts.before }}
+        <v-btn
+          variant="text"
+          density="compact"
+          class="label-link"
+          type="button"
+          :ripple="false"
+          @click="emit('action')"
+        >
+          {{ confEntry.action_label }}
+        </v-btn>
+        {{ linkParts.after }}
+      </template>
+      <template v-else>
+        {{ resolvedLabel }}
+      </template>
     </v-alert>
 
     <!-- action type -->
@@ -53,10 +61,7 @@
     </v-btn>
 
     <!-- DSP Config Button -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.DSP_SETTINGS"
-      class="dsp-config"
-    >
+    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
       <span class="dsp-status">
         {{
           confEntry.value
@@ -64,9 +69,17 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn variant="outlined" class="action-btn" @click="$emit('openDsp')">
+      <v-btn
+        variant="outlined"
+        class="action-btn"
+        :disabled="isFieldDisabled"
+        @click="$emit('openDsp')"
+      >
         {{ $t("open_dsp_settings") }}
       </v-btn>
+      <span v-if="confEntry.note_key" class="dsp-forbidden-reason">
+        {{ $t(`settings.${confEntry.note_key}.label`, "") }}
+      </span>
     </div>
 
     <!-- boolean value: checkbox -->
@@ -275,17 +288,40 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
+import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 const props = defineProps<{
-  confEntry: ConfigEntry;
+  confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled?: boolean;
 }>();
 
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
+});
+
+const isDspEntry = computed(() => {
+  return isDspLinkEntry(props.confEntry);
+});
+
+const labelKey = computed(() => `settings.${props.confEntry.key}.label`);
+
+const resolvedLabel = computed(() =>
+  $t(labelKey.value, { link: "{link}" }, {
+    default: props.confEntry.label,
+  } as any),
+);
+
+const linkParts = computed(() => {
+  const text = String(resolvedLabel.value ?? "");
+  const parts = text.split("{link}");
+  return {
+    hasLinkToken: parts.length > 1,
+    before: parts[0] ?? "",
+    after: parts.slice(1).join("{link}") ?? "",
+  };
 });
 
 const emit = defineEmits<{
@@ -422,5 +458,18 @@ const translatedOptions = computed(() => {
 .dsp-status {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.dsp-forbidden-reason {
+}
+
+.label-link {
+  text-transform: none;
+  display: inline;
+  text-decoration: underline;
+  padding: 0;
+  min-width: 0;
+  height: auto;
+  color: inherit;
 }
 </style>

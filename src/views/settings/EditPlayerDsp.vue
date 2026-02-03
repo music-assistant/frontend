@@ -1,5 +1,18 @@
 <template>
-  <section v-if="dsp">
+  <v-alert
+    v-if="!group_ctx.ownsDSPSettings"
+    type="warning"
+    variant="tonal"
+    class="mb-4"
+  >
+    {{
+      $t(
+        "settings.dsp_note_multi_device_group_not_supported.label",
+        "This group type does not support DSP when playing to multiple devices.",
+      )
+    }}
+  </v-alert>
+  <section v-else-if="dsp">
     <v-toolbar color="transparent" class="border-b pr-4">
       <v-switch
         v-model="dsp.enabled"
@@ -249,6 +262,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import { GroupContext, deriveGroupContext } from "@/helpers/player_group_utils";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -276,6 +290,12 @@ const filterTypes = Object.values(DSPFilterType).map((value) => {
     value: value,
     title: t(`settings.dsp.types.${value}`),
   };
+});
+
+const group_ctx = computed<GroupContext>(() => {
+  const playerId = props.playerId;
+  const players = api.players;
+  return deriveGroupContext(playerId, players);
 });
 
 // Methods
