@@ -672,7 +672,8 @@
         "enable_browser_controls": {
             "label": "Schakel de mediabediening van de browser in",
             "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
-        }
+        },
+        "settings_saved": "Instellingen succesvol opgeslagen"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
