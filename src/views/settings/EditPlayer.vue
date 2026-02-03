@@ -164,7 +164,7 @@ import EditConfig from "./EditConfig.vue";
 import { watch } from "vue";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { nanoid } from "nanoid";
-
+import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -200,23 +200,25 @@ const unsub = api.subscribe(
 onBeforeUnmount(unsub);
 
 // computed properties
-
 const config_entries = computed(() => {
   if (!config.value) return [];
-  const entries = Object.values(config.value.values);
-  // inject a DSP config property if the player is not a group
   const player = api.players[config.value.player_id];
-  if (player && player.type !== PlayerType.GROUP) {
+  if (!player) return [];
+
+  // inject a link to the DSP config if the player is not a group
+  const entries: ConfigEntryUI[] = Object.values(config.value.values);
+  if (player.type !== PlayerType.GROUP) {
     entries.push({
+      injected: true,
       key: "dsp_settings",
-      type: ConfigEntryType.DSP_SETTINGS,
-      label: "",
-      default_value: dspEnabled.value,
-      required: false,
+      type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
       category: "audio",
+      label: "",
+      required: false,
+      read_only: false,
+      default_value: dspEnabled.value,
     });
   } else if (
-    player &&
     player.type === PlayerType.GROUP &&
     player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
@@ -227,9 +229,9 @@ const config_entries = computed(() => {
       default_value: null,
       required: false,
       category: "audio",
+      injected: true,
     });
   } else if (
-    player &&
     player.type === PlayerType.GROUP &&
     !player.supported_features.includes(PlayerFeature.MULTI_DEVICE_DSP)
   ) {
@@ -241,6 +243,7 @@ const config_entries = computed(() => {
       default_value: null,
       required: false,
       category: "audio",
+      injected: true,
     });
   }
   return entries;
@@ -288,7 +291,6 @@ const saveRename = function () {
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
   api.savePlayerConfig(props.playerId!, values);
   router.push({ name: "playersettings" });
