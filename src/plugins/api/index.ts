@@ -1842,7 +1842,6 @@ export class MusicAssistantApi {
 
   /**
    * Signal an event to all registered listeners.
-   * Can be used to emit synthetic events from the frontend.
    */
   public signalEvent(evt: MassEvent) {
     // signal event to all listeners
