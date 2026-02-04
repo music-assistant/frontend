@@ -13,8 +13,8 @@ TypeScript cannot handle type information for `.vue` imports by default, so we r
 If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
 
 1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
+   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
+   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
 2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
 
 ## Customize configuration
@@ -49,6 +49,17 @@ yarn build
 ```sh
 yarn lint
 ```
+
+## UI Framework
+
+This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-vue.com/)** as its primary UI component library.
+
+### Guidelines
+
+- **All new features** should be built using shadcn-vue components
+- Shadcn-vue components are located in `src/components/ui/`
+- When working on existing features that use Vuetify, consider refactoring them to use shadcn-vue components if you have time
+- Refer to the [shadcn-vue documentation](https://www.shadcn-vue.com/) for available components and usage examples
 
 # Translation Management
 

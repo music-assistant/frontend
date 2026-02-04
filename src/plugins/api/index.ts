@@ -707,7 +707,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-  ): Promise<Track[]> {
+  ): Promise<(Track | Radio)[]> {
     return this.sendCommand("music/playlists/playlist_tracks", {
       item_id,
       provider_instance_id_or_domain,
@@ -1513,9 +1513,19 @@ export class MusicAssistantApi {
 
   // PlayerConfig related functions
 
-  public async getPlayerConfigs(provider?: string): Promise<PlayerConfig[]> {
+  public async getPlayerConfigs(
+    provider?: string,
+    include_values?: boolean,
+    include_unavailable?: boolean,
+    include_disabled?: boolean,
+  ): Promise<PlayerConfig[]> {
     // Return all known player configurations, optionally filtered by provider domain.
-    return this.sendCommand("config/players", { provider });
+    return this.sendCommand("config/players", {
+      provider,
+      include_values,
+      include_unavailable,
+      include_disabled,
+    });
   }
 
   public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
@@ -1730,8 +1740,10 @@ export class MusicAssistantApi {
       else this.queues[queue.queue_id] = queue;
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
-      if (queueId in this.queues)
+      if (queueId in this.queues) {
         this.queues[queueId].elapsed_time = msg.data as unknown as number;
+        this.queues[queueId].elapsed_time_last_updated = Date.now() / 1000;
+      }
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
       this.players[player.player_id] = player;
@@ -1828,7 +1840,10 @@ export class MusicAssistantApi {
     });
   }
 
-  private signalEvent(evt: MassEvent) {
+  /**
+   * Signal an event to all registered listeners.
+   */
+  public signalEvent(evt: MassEvent) {
     // signal event to all listeners
     for (const listener of this.eventCallbacks) {
       if (listener[0] === EventType.ALL || listener[0] === evt.event) {

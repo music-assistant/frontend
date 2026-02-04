@@ -235,6 +235,7 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Album,
   BrowseFolder,
+  EventType,
   MediaItem,
   MediaItemType,
   MediaItemTypeOrItemMapping,
@@ -838,27 +839,32 @@ export const getContextMenuItems = async function (
     }
   }
 
-  // remove from playlist (playlist tracks only)
+  // remove from playlist (playlist tracks and radio items)
   if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
     const playlist = parentItem as Playlist;
-    if (items[0].media_type === MediaType.TRACK && playlist.is_editable) {
+    if (
+      (items[0].media_type === MediaType.TRACK ||
+        items[0].media_type === MediaType.RADIO) &&
+      playlist.is_editable
+    ) {
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
         action: () => {
           api.removePlaylistTracks(
             playlist.item_id,
-            items.map((x) => (x as Track).position as number),
+            items.map((x) => ("position" in x ? x.position : 0) as number),
           );
         },
         icon: "mdi-minus-circle-outline",
       });
     }
   }
-  // add to playlist action (tracks only)
+  // add to playlist action (tracks, albums, and radios)
   if (
     items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM
+    items[0].media_type === MediaType.ALBUM ||
+    items[0].media_type === MediaType.RADIO
   ) {
     contextMenuItems.push({
       label: "add_playlist",
@@ -926,7 +932,13 @@ export const getContextMenuItems = async function (
       action: async () => {
         const updatedInfo = await api.refreshItem(items[0]);
         if (updatedInfo) {
-          Object.assign(items[0], updatedInfo);
+          // Emit synthetic MEDIA_ITEM_UPDATED event to trigger UI refresh
+          // This ensures child components (like track listings) also refresh
+          api.signalEvent({
+            event: EventType.MEDIA_ITEM_UPDATED,
+            object_id: updatedInfo.uri,
+            data: updatedInfo,
+          });
         }
       },
       icon: "mdi-refresh",

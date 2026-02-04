@@ -45,9 +45,9 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            !player.supported_features.includes(PlayerFeature.VOLUME_MUTE)
+            player.mute_control == PLAYER_CONTROL_NONE
           "
-          @click.stop="api.playerCommandMuteToggle(player.player_id)"
+          @click.stop="handlePlayerMuteToggle(player)"
         >
           <component
             :is="getVolumeIconComponent(player, mainDisplayVolume)"
@@ -64,7 +64,7 @@
             !player.available ||
             player.powered == false ||
             player.volume_muted ||
-            !player.supported_features.includes(PlayerFeature.VOLUME_SET)
+            player.volume_control == PLAYER_CONTROL_NONE
           "
           :model-value="
             Math.round(
@@ -176,9 +176,7 @@
               :disabled="
                 !childPlayer.available ||
                 childPlayer.powered == false ||
-                !childPlayer.supported_features.includes(
-                  PlayerFeature.VOLUME_MUTE,
-                )
+                childPlayer.mute_control == PLAYER_CONTROL_NONE
               "
               @click="api.playerCommandMuteToggle(childPlayer.player_id)"
             >
@@ -202,9 +200,7 @@
                 !childPlayer.available ||
                 childPlayer.powered == false ||
                 childPlayer.volume_muted ||
-                !childPlayer.supported_features.includes(
-                  PlayerFeature.VOLUME_SET,
-                )
+                childPlayer.volume_control == PLAYER_CONTROL_NONE
               "
               :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level || 0)"
@@ -336,8 +332,12 @@ const getVolumePlayers = function (player: Player) {
     for (const syncPlayer of Object.values(api?.players)) {
       if (syncPlayer.player_id == player.player_id) continue;
       if (
-        !player.can_group_with.includes(syncPlayer.player_id) &&
-        !player.can_group_with.includes(syncPlayer.provider)
+        !(
+          player.can_group_with.includes(syncPlayer.player_id) ||
+          // also allow grouping with same provider players even if not explicitly listed
+          // this can be removed in a future version where the server handles this
+          player.can_group_with.includes(syncPlayer.provider)
+        )
       ) {
         continue;
       }
@@ -351,16 +351,6 @@ const getVolumePlayers = function (player: Player) {
       if (
         syncPlayer.active_group &&
         syncPlayer.active_group != player.player_id
-      )
-        continue;
-
-      // skip if player is already playing other content
-      if (
-        syncPlayer.active_source &&
-        syncPlayer.playback_state == PlaybackState.PLAYING &&
-        ![player.player_id, syncPlayer.player_id].includes(
-          syncPlayer.active_source,
-        )
       )
         continue;
 
@@ -442,6 +432,23 @@ const syncCheckBoxChange = async function (
         playersToUnSync.value = [];
       });
   }, 500);
+};
+
+const handlePlayerMuteToggle = function (player: Player) {
+  if (player.group_members.length > 0) {
+    // TODO: revisit this when api/server supports group mute toggle
+    const muted = !player.volume_muted;
+    for (const memberId of player.group_members) {
+      const childPlayer = api.players[memberId];
+      if (!childPlayer) continue;
+      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
+        continue;
+      }
+      api.playerCommandVolumeMute(memberId, muted);
+    }
+  } else {
+    api.playerCommandMuteToggle(player.player_id);
+  }
 };
 </script>
 

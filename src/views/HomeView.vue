@@ -137,6 +137,14 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
+  console.log("Home page mounted");
+  console.log("[HA Debug] window.location.pathname:", window.location.pathname);
+  console.log("[HA Debug] store.isIngressSession:", store.isIngressSession);
+  console.log(
+    "[HA Debug] serverInfo.homeassistant_addon:",
+    store.serverInfo?.homeassistant_addon,
+  );
+
   if (authManager.isAdmin()) {
     try {
       const configs = await api.getProviderConfigs();

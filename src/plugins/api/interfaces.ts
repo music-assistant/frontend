@@ -379,13 +379,14 @@ export enum VolumeNormalizationMode {
   FALLBACK_DYNAMIC = "fallback_dynamic",
 }
 
-export enum HidePlayerOption {
-  NEVER = "never",
-  WHEN_OFF = "when_off",
-  WHEN_GROUP_ACTIVE = "when_group_active",
-  WHEN_SYNCED = "when_synced",
-  WHEN_UNAVAILABLE = "when_unavailable",
-  ALWAYS = "always",
+export enum IdentifierType {
+  // Types of identifiers/connections for a device.
+  // Also used to match protocol players to their parent device.
+  MAC_ADDRESS = "mac_address", // Most reliable - e.g., "AA:BB:CC:DD:EE:FF"
+  SERIAL_NUMBER = "serial_number", // Device serial number
+  UUID = "uuid", // Universal unique identifier
+  IP_ADDRESS = "ip_address", // Less reliable (DHCP) but useful for fallback
+  UNKNOWN = "unknown",
 }
 
 //// api
@@ -498,6 +499,19 @@ export interface ConfigEntry {
   action_label?: string;
   // immediate_apply: whether changes to this config entry should be applied immediately
   immediate_apply?: boolean;
+  // requires_reload: indicates that a reload of the provider (or player playback)
+  // is required when this setting is changed
+  requires_reload?: boolean;
+  // translation_key: optional custom translation key for this entry
+  translation_key?: string;
+  // translation_params: optional parameters for the translation key
+  translation_params?: string[];
+  // category_translation_key: optional custom translation key for the category
+  category_translation_key?: string;
+  // category_translation_params: optional parameters for the category translation key
+  category_translation_params?: string[];
+  // advanced: indicates this is an advanced setting (hidden by default)
+  advanced?: boolean;
 
   value?: ConfigValueType;
 }
@@ -517,6 +531,8 @@ export interface ProviderConfig extends Config {
   enabled: boolean;
   // name: an (optional) custom name for this provider instance/config
   name?: string;
+  // default_name: default name to use when there is name available
+  default_name?: string;
   last_error?: string;
 }
 
@@ -801,14 +817,29 @@ export interface PlayerQueue {
 
 // player
 
+export interface OutputProtocol {
+  // Represents an output protocol for a player.
+  // This provides a unified view of all ways to play audio to a device:
+  // - Native output (if player supports PLAY_MEDIA)
+  // - Protocol outputs (AirPlay, Chromecast, DLNA, etc.)
+
+  output_protocol_id: string; // Unique ID: "native" or protocol player_id
+  name: string; // Display name: "Native (Sonos)" or "AirPlay"
+  is_native: boolean; // True if this is the player's native output
+  protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
+  priority: number; // Lower = more preferred (native = 0 if supported)
+  available: boolean; // Whether this output protocol is currently available
+}
+
 export interface DeviceInfo {
   model: string;
   manufacturer: string;
   software_version?: string;
   model_id?: string;
   manufacturer_id?: string;
-  ip_address?: string;
-  mac_address?: string;
+  // Identifiers for device identification and protocol player linking
+  // Maps IdentifierType to value (e.g., MAC_ADDRESS -> "AA:BB:CC:DD:EE:FF")
+  identifiers: Record<IdentifierType, string>;
 }
 
 export interface PlayerMedia {
@@ -861,11 +892,20 @@ export interface Player {
   synced_to?: string;
 
   group_volume: number;
-  hide_player_in_ui: HidePlayerOption[];
+  hide_in_ui: boolean;
   icon: string;
   power_control: string;
   volume_control: string;
   mute_control: string;
+
+  // output_protocols: all available output methods for this player
+  // Includes native output (if PLAY_MEDIA supported) + protocol outputs
+  output_protocols?: OutputProtocol[];
+
+  // active_output_protocol: which output protocol is currently being used for playback
+  // Can be "native" or a protocol player_id
+  // null means no playback in progress or native playback without explicit selection
+  active_output_protocol?: string | null;
 }
 
 // provider

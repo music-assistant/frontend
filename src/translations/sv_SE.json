@@ -635,14 +635,6 @@
         "players_total": "{0}total spelare{1}",
         "api_docs": "API Dokumentation",
         "no_group_providers": "Du har för närvarande inga leverantörer som stöder att skapa grupper",
-        "web_player_mode": {
-            "label": "Webbspelarens läge",
-            "description": "Välj hur den här webbläsaren hanterar ljuduppspelning.",
-            "options": {
-                "sendspin": "Sendspin (experimentell)",
-                "disabled": "Inaktiverad (endast kontroller)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin synkroniseringsfördröjning (ms)",
             "description": "Statisk fördröjning i millisekunder för att justera ljudsynkronisering. Positiva värden fördröjer uppspelningen, negativa värden ökar den. Använd detta för att kompensera för enhetsspecifik ljud fördröjning."
@@ -672,7 +664,16 @@
         "provider_requires_attention": "Denna leverantör kräver uppmärksamhet",
         "provider_requires_attention_detail": "En eller flera leverantörer behöver uppmärksammas. Kontrollera leverantörsinställningarna.",
         "reconfigure": "Konfigurera om",
-        "fix_now": "Åtgärda nu"
+        "fix_now": "Åtgärda nu",
+        "web_player_enabled": {
+            "label": "Aktivera den inbyggd (Sendspin) webbspelare",
+            "description": "Tillåt uppspelning till den här enheten\/webbläsaren med den inbyggda Sendspin webbspelaren."
+        },
+        "enable_browser_controls": {
+            "label": "Aktivera webbläsarens mediekontroller",
+            "description": "Tillåt kontroll över uppspelning med webbläsarens inbyggda mediekontroller (t.ex. medietangenter på tangentbordet)."
+        },
+        "settings_saved": "Inställningarna har sparats"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -889,7 +890,19 @@
         "new_releases_for_you": "Nya releaser för dig",
         "recent_favorite_tracks": "Nyligen favoritmarkerade låtar",
         "favorite_playlists": "Favoritspellistor",
-        "favorite_radio_stations": "Favoritradiostationer"
+        "favorite_radio_stations": "Favoritradiostationer",
+        "listen_again": "Lyssna igen",
+        "in_progress_series": "Fortsatta serier...",
+        "recommended": "Rekommenderad",
+        "recently_added": "Nyligen tillagd",
+        "episodes_recently_added": "Nyligen tillagda avsnitt",
+        "recent_series": "Senaste serierna",
+        "newest_authors": "Nyaste författare",
+        "newest_episodes": "Nyaste avsnitten",
+        "discover": "Upptäck",
+        "libraries": "Bibliotek",
+        "library": "Bibliotek",
+        "trending_podcasts": "Trendiga poddar"
     },
     "homescreen_edit_enable": "Redigera startskärm",
     "homescreen_edit_disable": "Lämna redigeringsläget för startskärmen",
@@ -1104,5 +1117,11 @@
         "click_to_change": "Klicka nedan för att byta utdataenhet"
     },
     "more_options": "Fler alternativ",
-    "edit": "Redigera"
+    "edit": "Redigera",
+    "authors": "Författare",
+    "collection": "Samling",
+    "collections": "Samlingar",
+    "narrators": "Berättare",
+    "series_plural": "Serier",
+    "series_singular": "Serier"
 }

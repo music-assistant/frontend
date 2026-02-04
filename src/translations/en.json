@@ -141,6 +141,7 @@
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
+        "settings_saved": "Settings saved successfully",
         "setup_provider": "Setup provider: {0}",
         "sync": "Synchronize now",
         "sync_running": "This provider is now being synchronized",
@@ -303,18 +304,27 @@
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
         "discard": "Discard changes",
+        "protocol_disabled_message": "Enable this protocol to configure its settings",
+        "protocol_no_settings": "This output protocol does not have any additional configuration",
+        "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
+        "show_advanced_settings": "Show advanced settings",
+        "advanced": "Advanced",
+
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "audio": "Audio",
+            "playback": "Playback settings",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
-            "announcements": "Announcements configuration",
+            "announcements": "Announcements settings",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
             "presets": "Presets",
             "sync_options": "Sync\/import options",
             "builtin_playlists": "Builtin Playlist Settings",
-            "web_player": "Web Player"
+            "web_player": "Web Player",
+            "protocol_settings": "Protocol Settings",
+            "protocol_output_settings": "Enable {0} support",
+            "dsp": "Digital Signal Processing (DSP)"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -657,13 +667,9 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_mode": {
-            "label": "Web player mode",
-            "description": "Choose how this browser handles audio playback.",
-            "options": {
-                "sendspin": "Sendspin (experimental)",
-                "disabled": "Disabled (controls only)"
-            }
+        "web_player_enabled": {
+            "label": "Enable built-in (Sendspin) Web Player",
+            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
         },
         "sendspin_sync_delay": {
             "label": "Sendspin sync delay (ms)",
@@ -672,6 +678,10 @@
         "sendspin_output_latency_compensation": {
             "label": "Use browser latency detection",
             "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
+        },
+        "enable_browser_controls": {
+            "label": "Enable browser media controls",
+            "description": "Allow control of playback using the browser's built-in media controls (e.g., media keys on your keyboard)."
         },
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",

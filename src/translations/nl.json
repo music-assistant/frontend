@@ -516,8 +516,8 @@
             "label": "Fase",
             "options": {
                 "stable": "Stabiel",
-                "beta": "Beta",
-                "alpha": "Alpha",
+                "beta": "Bèta",
+                "alpha": "Alfa",
                 "experimental": "Experimenteel",
                 "unmaintained": "Niet onderhouden",
                 "deprecated": "Verouderd"
@@ -635,14 +635,6 @@
         "players_total": "{0} totale speler{1}",
         "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn momenteel geen providers die het aanmaken van groepen ondersteunen",
-        "web_player_mode": {
-            "label": "Webspelermodus",
-            "description": "Kies hoe deze browser omgaat met het afspelen van audio.",
-            "options": {
-                "sendspin": "Sendspin (experimenteel)",
-                "disabled": "Uitgeschakeld (alleen besturingselementen)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin-synchronisatievertraging (ms)",
             "description": "Statische vertraging in milliseconden om de audiosynchronisatie aan te passen. Positieve waarden vertragen het afspelen, negatieve waarden vervroegen het. Gebruik dit om apparaatspecifieke audiovertraging te compenseren."
@@ -672,7 +664,16 @@
         "provider_requires_attention": "Deze provider heeft aandacht nodig",
         "provider_requires_attention_detail": "Een of meerdere providers hebben aandacht nodig. Controleer de providerinstellingen.",
         "reconfigure": "Opnieuw instellen",
-        "fix_now": "Nu oplossen"
+        "fix_now": "Nu oplossen",
+        "web_player_enabled": {
+            "label": "Schakel de ingebouwde (Sendspin) Webspeler in.",
+            "description": "Sta afspelen op dit apparaat\/in deze browser toe met de ingebouwde Sendspin-webspeler."
+        },
+        "enable_browser_controls": {
+            "label": "Schakel de mediabediening van de browser in",
+            "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
+        },
+        "settings_saved": "Instellingen succesvol opgeslagen"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -889,7 +890,19 @@
         "new_releases_for_you": "Nieuwe releases voor jou",
         "recent_favorite_tracks": "Onlangs als favoriet gemarkeerde nummers",
         "favorite_playlists": "Favoriete afspeellijsten",
-        "favorite_radio_stations": "Favoriete radiozenders"
+        "favorite_radio_stations": "Favoriete radiozenders",
+        "listen_again": "Opnieuw luisteren",
+        "in_progress_series": "Vervolg serie...",
+        "recommended": "Aanbevolen",
+        "recently_added": "Onlangs toegevoegd",
+        "episodes_recently_added": "Onlangs toegevoegde afleveringen",
+        "recent_series": "Recente series",
+        "newest_authors": "Nieuwste auteurs",
+        "newest_episodes": "Nieuwste afleveringen",
+        "discover": "Ontdekken",
+        "libraries": "Bibliotheken",
+        "library": "Bibliotheek",
+        "trending_podcasts": "Populaire podcasts"
     },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
@@ -1104,5 +1117,11 @@
         "click_to_change": "Klik hieronder om het uitvoerapparaat te wijzigen"
     },
     "more_options": "Meer opties",
-    "edit": "Bewerken"
+    "edit": "Bewerken",
+    "authors": "Auteurs",
+    "collection": "Collectie",
+    "collections": "Collecties",
+    "narrators": "Vertellers",
+    "series_plural": "Series",
+    "series_singular": "Serie"
 }

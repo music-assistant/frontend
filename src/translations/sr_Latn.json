@@ -635,14 +635,6 @@
         "players_total": "{0} ukupno plejer{1}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Trenutno nema dostupnih provajdera koji podržavaju kreiranje grupa.",
-        "web_player_mode": {
-            "label": "Režim web plejera",
-            "description": "Odaberi način reprodukcije zvuka u pregledaču.",
-            "options": {
-                "sendspin": "MA Slanje‑spin (eksperimentalno)",
-                "disabled": "Onemogućeno (samo kontrole)"
-            }
-        },
         "sendspin_sync_delay": {
             "label": "Sendspin sinhrono kašnjenje (ms)",
             "description": "Statičko kašnjenje u milisekundama za podešavanje sinhronizacije zvuka. Pozitivne vrednosti odlažu reprodukciju, negativne je ubrzavaju. Koristite ovo da kompenzujete kašnjenje zvuka specifično za uređaj."
@@ -672,7 +664,16 @@
         "provider_requires_attention": "Ovaj provajder zahteva pažnju",
         "provider_requires_attention_detail": "Jedan ili više provajdera zahtevaju pažnju. Molimo proverite podešavanja provajdera.",
         "reconfigure": "Rekonfiguriši",
-        "fix_now": "Popravi odmah"
+        "fix_now": "Popravi odmah",
+        "web_player_enabled": {
+            "label": "Omogući ugrađeni (Sendspin) veb plejer",
+            "description": "Dozvoli reprodukciju na ovom uređaju\/pregledaču pomoću ugrađenog Sendspin veb plejera."
+        },
+        "enable_browser_controls": {
+            "label": "Omogući medijske kontrole u pregledaču",
+            "description": "Dozvoli kontrolu reprodukcije pomoću ugrađenih medija kontrola u pregledaču (npr. medija tasteri na tastaturi)."
+        },
+        "settings_saved": "Podešavanja su uspešno sačuvana"
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
@@ -889,7 +890,19 @@
         "new_releases_for_you": "Nova izdanja za vas",
         "recent_favorite_tracks": "Nedavno dodate numere u omiljene",
         "favorite_playlists": "Omiljene plejliste",
-        "favorite_radio_stations": "Omiljene radio stanice"
+        "favorite_radio_stations": "Omiljene radio stanice",
+        "listen_again": "Preslušaj ponovo",
+        "in_progress_series": "Nastavi seriju...",
+        "recommended": "Preporučeno",
+        "recently_added": "Nedavno dodato",
+        "episodes_recently_added": "Nedavno dodate epizode",
+        "recent_series": "Nedavne serije",
+        "newest_authors": "Najnoviji autori",
+        "newest_episodes": "Najnovije epizode",
+        "discover": "Otkrij",
+        "libraries": "Biblioteke",
+        "library": "Biblioteka",
+        "trending_podcasts": "Podkasti u trendu"
     },
     "homescreen_edit_enable": "Izmeni početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
@@ -931,7 +944,7 @@
         "manage_your_profile_info": "Upravljajte informacijama i podešavanjima svog profila",
         "change_password": "Promenite lozinku",
         "update_your_password": "Ažurirajte lozinku svog naloga",
-        "old_password": "Tekuća lozinka",
+        "old_password": "Trenutna lozinka",
         "new_password": "Nova lozinka",
         "password_changed": "Lozinka je uspešno promenjena",
         "password_change_failed": "Promena lozinke nije uspela",
@@ -947,9 +960,9 @@
         "no_tokens": "Još nema tokena",
         "create_token_hint": "Kreirajte token za korišćenje Muzičkog asistenta sa spoljnim aplikacijama",
         "token_name": "Naziv tokena",
-        "token_name_hint": "npr. 'Home Assistant', 'Mobile App'",
+        "token_name_hint": "npr. \"Home Assistant\", \"Mobile App\"",
         "create_token": "Kreirajte novi token",
-        "revoke_token": "Opozovite sesiju",
+        "revoke_token": "Opozovite token",
         "revoke_token_confirm": "Da li ste sigurni da želite da opozovete ovaj token? Ova radnja se ne može poništiti.",
         "revoke_session": "Opozovite sesiju",
         "revoke_session_confirm": "Da li ste sigurni da želite da opozovete ovu sesiju? Ova radnja se ne može poništiti.",
@@ -957,7 +970,7 @@
         "token_revoked": "Token je uspešno opozvan",
         "token_revoke_failed": "Nije uspelo opozivanje tokena",
         "session_revoked": "Sesija je uspešno opozvana",
-        "session_revoke_failed": "Nije uspelo opozivanje sesije",
+        "session_revoke_failed": "Opozivanje sesije nije uspelo",
         "manage_tokens": "Upravljajte pristupnim tokenima",
         "token_created": "Token je uspešno kreiran",
         "token_create_failed": "Nije uspelo kreiranje tokena. Pokušajte ponovo.",
@@ -991,7 +1004,7 @@
         "avatar_url": "URL avatara",
         "avatar_url_hint": "Unesite URL do slike avatara",
         "change_avatar": "Promenite avatar",
-        "profile_updated": "Profil je uspešno ažurira",
+        "profile_updated": "Profil je uspešno ažuriran",
         "ingress_password_note": "Kada pristupate Muzičkom asistentu izvan Home Assistant‑a, biće vam potrebna ova lozinka za prijavu.",
         "copy_new_token_hint": "Kopirajte svoj pristupni token. Neće biti ponovo prikazan.",
         "token_copied": "Token je kopiran u privremenu memoriju",
@@ -1014,7 +1027,7 @@
         "complete_in_browser": "Dovršite prijavu u pregledaču",
         "establishing_connection": "Uspostavljanje veze...",
         "local_server": "Lokalni server",
-        "remote_server": "Daljinski",
+        "remote_server": "Udaljeni",
         "server_address": "Adresa servera",
         "server_address_placeholder": "http:\/\/192.168.1.100:8095",
         "remote_id": "Udaljeni ID",
@@ -1052,7 +1065,7 @@
         "scan_qr": "Skeniraj QR",
         "scan_qr_code": "Skenirajte QR kod",
         "scan_qr_hint": "Usmerite kameru ka QR kodu prikazanom u podešavanjima Music Assistant servera.",
-        "qr_invalid": "Nevažeći QR kod. Skenirajte QR kod sa ID‑om daljinskog upravljača za Music Assistant.",
+        "qr_invalid": "Nevažeći QR kod. Skenirajte QR kod sa ID‑om udaljenog Music Assistant-a.",
         "qr_camera_error": "Nije moguće pristupiti kameri. Proverite dozvole."
     },
     "remote": {
@@ -1104,5 +1117,11 @@
         "click_to_change": "Kliknite ispod da promenite izlazni uređaj"
     },
     "more_options": "Više opcija",
-    "edit": "Uredi"
+    "edit": "Uredi",
+    "authors": "Autori",
+    "collection": "Kolekcija",
+    "collections": "Kolekcije",
+    "narrators": "Naratori",
+    "series_plural": "Serije",
+    "series_singular": "Serije"
 }

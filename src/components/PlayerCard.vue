@@ -43,9 +43,12 @@
 
       <!-- playername -->
       <template #title>
-        <!-- special builtin player -->
+        <!-- special builtin player (web player or companion native player) -->
         <div
-          v-if="webPlayer.player_id === player.player_id"
+          v-if="
+            webPlayer.player_id === player.player_id ||
+            store.companionPlayerId === player.player_id
+          "
           style="margin-bottom: 3px"
         >
           <span>{{
@@ -141,7 +144,7 @@
         <Button
           v-if="
             showSyncControls &&
-            player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+            player.can_group_with.length > 0 &&
             showVolumeControl
           "
           variant="ghost-icon"
