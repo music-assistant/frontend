@@ -144,7 +144,7 @@
         <Button
           v-if="
             showSyncControls &&
-            player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+            player.can_group_with.length > 0 &&
             showVolumeControl
           "
           variant="ghost-icon"
