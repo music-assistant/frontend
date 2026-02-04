@@ -646,6 +646,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.MPEG) return iconMp3;
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
+  if (contentType == ContentType.WAV) return iconWAV;
   if (isPcm(contentType)) return iconPcm;
   return null;
 };
@@ -791,6 +792,7 @@ export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 export const iconPcm = new URL("@/assets/pcm.svg", import.meta.url).href;
+export const iconWAV = new URL("@/assets/wav.png", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;
