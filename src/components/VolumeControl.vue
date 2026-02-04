@@ -212,11 +212,7 @@
               :allow-wheel="allowWheel"
               :model-value="Math.round(childPlayer.volume_level || 0)"
               @update:model-value="
-                api.playerCommandVolumeSet(
-                  childPlayer.player_id,
-                  $event,
-                  !!childPlayer.volume_muted,
-                )
+                api.playerCommandVolumeSet(childPlayer.player_id, $event)
               "
               @update:local-value="
                 childDisplayVolumes[childPlayer.player_id] = $event

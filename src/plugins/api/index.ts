@@ -1266,17 +1266,12 @@ export class MusicAssistantApi {
     return this.playerCommandPower(playerId, !this.players[playerId].powered);
   }
 
-  public async playerCommandVolumeSet(
-    playerId: string,
-    newVolume: number,
-    preserveMute: boolean = false,
-  ) {
+  public async playerCommandVolumeSet(playerId: string, newVolume: number) {
     newVolume = Math.max(newVolume, 0);
     newVolume = Math.min(newVolume, 100);
 
     await this.playerCommand(playerId, "volume_set", {
       volume_level: newVolume,
-      preserve_mute: preserveMute,
     });
     this.players[playerId].volume_level = newVolume;
   }
