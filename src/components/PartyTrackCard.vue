@@ -10,6 +10,9 @@
   >
     <div :class="['track-artwork', sizeClass]">
       <MediaItemThumb :item="queueItem" :size="artworkSize" />
+      <div v-if="position === 'current' && isPlaying" class="now-playing-overlay">
+        <NowPlayingBadge :show-badge="false" />
+      </div>
     </div>
     <div :class="['track-info', sizeClass]">
       <div class="track-name">
@@ -41,17 +44,20 @@
 import { computed } from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 
 export interface Props {
   queueItem?: QueueItem;
   position: "previous-2" | "previous-1" | "current" | "next-1" | "next-2";
+  isPlaying?: boolean;
   requestBadgeColor?: string;
   boostBadgeColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   queueItem: undefined,
+  isPlaying: false,
   requestBadgeColor: "#2196F3", // Default: Blue
   boostBadgeColor: "#FF5722", // Default: Orange
 });
@@ -248,12 +254,29 @@ const sizeClass = computed(() => {
 }
 
 .track-artwork {
+  position: relative;
   flex-shrink: 0;
   border-radius: 0.8vw;
   overflow: hidden;
   transition:
     width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.now-playing-overlay {
+  position: absolute;
+  bottom: 0.4vw;
+  right: 0.4vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  padding: 0.3vw;
+}
+
+.now-playing-overlay :deep(.now-playing-icon .bar) {
+  background: white;
 }
 
 .track-artwork.size-small {

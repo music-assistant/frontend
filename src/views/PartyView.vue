@@ -27,6 +27,7 @@
             :key="item.queue_item_id"
             :queue-item="item"
             :position="getPosition(item)"
+            :is-playing="isPlaying"
             :request-badge-color="requestBadgeColor"
             :boost-badge-color="boostBadgeColor"
           />
@@ -61,6 +62,7 @@ import {
   EventType,
   EventMessage,
   PartyModeConfig,
+  PlaybackState,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import {
@@ -71,7 +73,6 @@ import {
 
 const theme = useTheme();
 const route = useRoute();
-
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControlsEnabled = ref(false); // Default to false (frameless)
@@ -93,6 +94,10 @@ const useAlbumArtBackground = computed(() => {
 const showPlayerControls = computed(() => {
   return showPlayerControlsEnabled.value;
 });
+
+const isPlaying = computed(
+  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+);
 
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
