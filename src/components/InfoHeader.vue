@@ -115,7 +115,8 @@
             <!-- track release date -->
             <v-card-subtitle
               v-if="
-                item.media_type == MediaType.TRACK && item.metadata?.release_date
+                item.media_type == MediaType.TRACK &&
+                item.metadata?.release_date
               "
               class="title d-flex"
             >
