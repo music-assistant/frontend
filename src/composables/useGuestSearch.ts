@@ -40,6 +40,13 @@ export function useGuestSearch(options: {
   const performSearch = async () => {
     if (!searchQuery.value || searchQuery.value.length < 2) return;
 
+    // Cancel any pending debounce to prevent double-fire when Enter triggers
+    // an immediate search while a debounce timer is still pending
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = null;
+    }
+
     blurActiveElement();
 
     searching.value = true;
