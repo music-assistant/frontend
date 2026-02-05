@@ -249,10 +249,6 @@
             </v-btn>
           </div>
         </div>
-        <!-- Loading indicator for infinite scroll -->
-        <div v-if="loadingMoreResults" class="loading-more">
-          <v-progress-circular indeterminate color="primary" size="32" />
-        </div>
       </div>
     </div>
 
@@ -485,7 +481,6 @@ const {
   artistTracks,
   loadingArtistTracks,
   displayedResults,
-  loadingMoreResults,
   displayedResultsCount,
   resultsListRef,
   performSearch,
@@ -656,6 +651,9 @@ const skipCurrentSong = async () => {
 };
 
 // --- Lifecycle ---
+let cleanupCountdown: (() => void) | null = null;
+let cleanupQueueEvents: (() => void) | null = null;
+
 onMounted(async () => {
   // Fetch and apply party mode configuration
   try {
@@ -676,7 +674,7 @@ onMounted(async () => {
   window.addEventListener("popstate", handleBack);
 
   // Initialize token buckets and start countdown
-  const cleanupCountdown = rateLimit.startCountdown();
+  cleanupCountdown = rateLimit.startCountdown();
 
   // Fetch party mode player configuration
   try {
@@ -687,14 +685,14 @@ onMounted(async () => {
 
   // Initial queue fetch and event subscriptions
   fetchQueueItems();
-  const cleanupQueueEvents = queue.subscribeToEvents();
+  cleanupQueueEvents = queue.subscribeToEvents();
+});
 
-  onBeforeUnmount(() => {
-    window.removeEventListener("popstate", handleBack);
-    cleanupQueueEvents();
-    cleanupCountdown();
-    search.cleanup();
-  });
+onBeforeUnmount(() => {
+  window.removeEventListener("popstate", handleBack);
+  cleanupQueueEvents?.();
+  cleanupCountdown?.();
+  search.cleanup();
 });
 </script>
 
