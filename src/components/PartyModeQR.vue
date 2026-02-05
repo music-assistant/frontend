@@ -5,8 +5,8 @@
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
       <v-icon size="64" icon="mdi-qrcode-off" />
-      <p>{{ $t('party.guest_access_disabled') }}</p>
-      <p class="qr-hint">{{ $t('party.enable_in_settings') }}</p>
+      <p>{{ $t("party.guest_access_disabled") }}</p>
+      <p class="qr-hint">{{ $t("party.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
       <a
@@ -23,14 +23,14 @@
     </div>
     <div v-else class="qr-error">
       <v-icon size="64" icon="mdi-alert-circle-outline" />
-      <p>{{ $t('party.qr_failed') }}</p>
-      <p class="qr-hint">{{ $t('party.check_network') }}</p>
+      <p>{{ $t("party.qr_failed") }}</p>
+      <p class="qr-hint">{{ $t("party.check_network") }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import QRCode from "qrcode";
 import api from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
@@ -46,7 +46,6 @@ const instructionText = ref($t("party.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
-let remoteAccessPollInterval: ReturnType<typeof setInterval> | null = null;
 
 const calculateQRSize = () => {
   if (!qrContainer.value) return 320;
@@ -88,13 +87,32 @@ const fetchConfig = async () => {
     if (config.qr_show_instruction_text === false) {
       instructionText.value = "";
     } else {
-      instructionText.value = config.qr_instruction_text || $t("party.scan_to_join");
+      instructionText.value =
+        config.qr_instruction_text || $t("party.scan_to_join");
     }
   } catch {
     // Use default if config fetch fails
     instructionText.value = $t("party.scan_to_join");
   }
 };
+
+const renderQRToCanvas = async () => {
+  if (!qrCanvas.value || !qrCodeUrl.value) return;
+  qrSize.value = calculateQRSize();
+  await QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
+    width: qrSize.value,
+    margin: 2,
+    color: {
+      dark: "#03a9f4",
+      light: "#00000000",
+    },
+  });
+};
+
+// Render QR code when canvas mounts (after v-if switches to the qr-display branch)
+watch(qrCanvas, (canvas) => {
+  if (canvas) renderQRToCanvas();
+});
 
 const generateQRCode = async () => {
   loading.value = true;
@@ -117,38 +135,12 @@ const generateQRCode = async () => {
       return;
     }
 
-    // Set URL to trigger display
+    // Set URL — the watch on qrCanvas handles initial mount rendering
     qrCodeUrl.value = url;
 
-    // Wait for DOM to be ready - need multiple ticks to ensure canvas is mounted
-    await nextTick();
-    await nextTick();
-
-    // Generate QR code on canvas with MA brand blue and transparent background
-    qrSize.value = calculateQRSize();
+    // If canvas is already mounted (e.g., re-generating after config change), render now
     if (qrCanvas.value) {
-      await QRCode.toCanvas(qrCanvas.value, url, {
-        width: qrSize.value,
-        margin: 2,
-        color: {
-          dark: "#03a9f4", // Music Assistant brand blue
-          light: "#00000000", // Transparent background
-        },
-      });
-    } else {
-      // Canvas not ready, try again after a small delay
-      setTimeout(async () => {
-        if (qrCanvas.value) {
-          await QRCode.toCanvas(qrCanvas.value, url, {
-            width: qrSize.value,
-            margin: 2,
-            color: {
-              dark: "#03a9f4", // Music Assistant brand blue
-              light: "#00000000", // Transparent background
-            },
-          });
-        }
-      }, 50);
+      await renderQRToCanvas();
     }
   } catch (error) {
     console.error("Failed to generate QR code:", error);
@@ -166,33 +158,25 @@ onMounted(async () => {
   // Initialize remote access status tracking
   await checkRemoteAccessStatus();
 
-  // Poll for remote access status changes every 2 seconds
-  remoteAccessPollInterval = setInterval(checkRemoteAccessStatus, 2000);
-
   // Set up ResizeObserver to regenerate QR code when container size changes
   if (qrContainer.value) {
     resizeObserver = new ResizeObserver(() => {
       if (qrCodeUrl.value && qrCanvas.value) {
         const newSize = calculateQRSize();
         if (newSize !== qrSize.value) {
-          qrSize.value = newSize;
-          QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
-            width: qrSize.value,
-            margin: 2,
-            color: {
-              dark: "#03a9f4",
-              light: "#00000000",
-            },
-          });
+          renderQRToCanvas();
         }
       }
     });
     resizeObserver.observe(qrContainer.value);
   }
 
-  // Subscribe to PROVIDERS_UPDATED to detect when party_mode provider is reloaded
-  // When config changes, the provider is unloaded and reloaded, firing this event twice
+  // Subscribe to PROVIDERS_UPDATED to detect when party_mode or remote_access
+  // provider is reloaded. This replaces polling for remote access status changes.
   unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    // Check remote access status (replaces 2s polling)
+    await checkRemoteAccessStatus();
+
     // Check if party_mode provider exists
     const hasPartyMode = Object.values(api.providers).some(
       (p) => p.domain === "party_mode",
@@ -215,9 +199,6 @@ onUnmounted(() => {
   }
   if (resizeObserver) {
     resizeObserver.disconnect();
-  }
-  if (remoteAccessPollInterval) {
-    clearInterval(remoteAccessPollInterval);
   }
 });
 </script>
