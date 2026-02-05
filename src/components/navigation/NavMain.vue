@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 interface NavItem {
@@ -23,9 +24,15 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
+const { isMobile, setOpenMobile } = useSidebar();
 
-const isActive = (url: string) => {
-  return route.path === url || route.path.startsWith(url + "/");
+const isActive = (url: string) =>
+  route.path === url || route.path.startsWith(url + "/");
+
+const handleClick = () => {
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
 };
 </script>
 
@@ -44,6 +51,7 @@ const isActive = (url: string) => {
                 ? 'no-underline font-bold text-sm'
                 : 'no-underline font-medium text-sm'
             "
+            @click="handleClick"
           >
             <component
               :is="item.icon"

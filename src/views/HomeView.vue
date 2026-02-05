@@ -1,8 +1,8 @@
 <template>
   <div>
     <Toolbar :show-loading="true" :home="true" color="background">
-      <template #append>
-        <!-- User avatar menu -->
+      <template v-if="!store.mobileLayout" #append>
+        <!-- User avatar menu (desktop only; on mobile see NavUser in sidebar) -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <div class="avatar-trigger">
@@ -118,9 +118,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { LogOut, Pencil, Settings, User } from "lucide-vue-next";
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -136,14 +137,12 @@ const navigateToProviders = () => {
   router.push("/settings/providers");
 };
 
+const handleHomescreenEditToggle = () => {
+  editMode.value = !editMode.value;
+};
+
 onMounted(async () => {
-  console.log("Home page mounted");
-  console.log("[HA Debug] window.location.pathname:", window.location.pathname);
-  console.log("[HA Debug] store.isIngressSession:", store.isIngressSession);
-  console.log(
-    "[HA Debug] serverInfo.homeassistant_addon:",
-    store.serverInfo?.homeassistant_addon,
-  );
+  eventbus.on("homescreen-edit-toggle", handleHomescreenEditToggle);
 
   if (authManager.isAdmin()) {
     try {
@@ -155,6 +154,10 @@ onMounted(async () => {
       // Ignore errors - this is a best-effort feature
     }
   }
+});
+
+onUnmounted(() => {
+  eventbus.off("homescreen-edit-toggle", handleHomescreenEditToggle);
 });
 </script>
 

@@ -84,6 +84,7 @@
     "queue_empty": "No items in the queue",
     "queue_move_down": "Move down",
     "queue_move_up": "Move up",
+    "queue_move_end": "Move to end",
     "queue_next_items": "Next items",
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
@@ -558,6 +559,14 @@
         "force_mobile_layout": {
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
+        },
+        "mobile_sidebar_side": {
+            "label": "Mobile sidebar side",
+            "description": "Which side the navigation menu (sheet) opens from on mobile. Default is left.",
+            "options": {
+                "left": "Left",
+                "right": "Right"
+            }
         },
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",

@@ -34,6 +34,13 @@
         <span v-if="'version' in item && item.version"
           >({{ item.version }})</span
         >
+        <span
+          v-if="
+            item.media_type == MediaType.TRACK && item.metadata?.release_date
+          "
+        >
+          ({{ new Date(item.metadata.release_date).getFullYear() }})</span
+        >
       </span>
       <!-- explicit icon -->
       <v-tooltip v-if="item && item.metadata" location="bottom">
@@ -61,7 +68,10 @@
             {{ getArtistsString(item.artists, 2) }}
           </v-item>
           <v-item v-if="showAlbum && 'album' in item && item.album">
-            • {{ item.album.name }}
+            • {{ item.album.name
+            }}<span v-if="'year' in item.album && item.album.year">
+              • {{ item.album.year }}</span
+            >
           </v-item>
           <v-item
             v-if="showDiscNumber && 'disc_number' in item && item.disc_number"

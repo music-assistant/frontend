@@ -112,6 +112,23 @@
               </v-tooltip>
             </v-card-subtitle>
 
+            <!-- track release date -->
+            <v-card-subtitle
+              v-if="
+                item.media_type == MediaType.TRACK &&
+                item.metadata?.release_date
+              "
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-calendar"
+              />
+              {{ new Date(item.metadata.release_date).getFullYear() }}
+            </v-card-subtitle>
+
             <!-- item artists -->
             <v-card-subtitle
               v-if="'artists' in item && item.artists"
@@ -139,6 +156,21 @@
                   >
                 </span>
               </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- album type and year -->
+            <v-card-subtitle
+              v-if="item.media_type == MediaType.ALBUM"
+              class="caption"
+            >
+              <span
+                v-if="'album_type' in item && item.album_type !== 'unknown'"
+              >
+                {{ $t("album_type." + item.album_type) }}
+              </span>
+              <span v-if="'year' in item && item.year">
+                • {{ item.year }}
+              </span>
             </v-card-subtitle>
 
             <!-- audiobook author(s) -->
@@ -226,6 +258,8 @@
                   style="color: secondary"
                   @click="albumClick((item as Track)?.album)"
                   >{{ item.album.name }}</a
+                ><span v-if="'year' in item.album && item.album.year">
+                  • {{ item.album.year }}</span
                 ></MarqueeText
               >
             </v-card-subtitle>

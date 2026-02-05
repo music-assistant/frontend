@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
+import NavUser from "@/components/navigation/NavUser.vue";
 import {
   Sidebar,
   SidebarContent,
@@ -7,6 +8,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -27,19 +29,23 @@ const navItems = computed(() => {
       icon: item.icon,
     }));
 });
+
+const { isMobile } = useSidebar();
 </script>
 
 <template>
   <Sidebar collapsible="icon">
     <SidebarHeader>
       <SidebarMenu>
-        <div class="sidebar-header" @click="router.push('/')">
-          <img
-            src="@/assets/icon.svg"
-            alt="Music Assistant"
-            class="sidebar-header-logo"
-          />
-          <div class="sidebar-header-title">Music Assistant</div>
+        <div class="sidebar-header-row">
+          <div class="sidebar-header" @click="router.push('/')">
+            <img
+              src="@/assets/icon.svg"
+              alt="Music Assistant"
+              class="sidebar-header-logo"
+            />
+            <div class="sidebar-header-title">Music Assistant</div>
+          </div>
         </div>
       </SidebarMenu>
     </SidebarHeader>
@@ -47,12 +53,20 @@ const navItems = computed(() => {
       <NavMain :items="navItems" />
     </SidebarContent>
     <SidebarFooter>
-      <SidebarTrigger class="-ml-1" />
+      <NavUser v-if="isMobile" />
+      <SidebarTrigger v-if="!isMobile" class="-ml-1" />
     </SidebarFooter>
   </Sidebar>
 </template>
 
 <style scoped>
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .sidebar-header-logo {
   width: 30px;
   height: 30px;
@@ -80,6 +94,27 @@ const navItems = computed(() => {
   cursor: pointer;
 }
 
+.ha-header-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-right: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ha-header-button:hover {
+  opacity: 0.9;
+}
+
+.ha-logo-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 :deep([data-sidebar="group"]) {
   padding-left: 0 !important;
   padding-right: 0.5rem !important;
@@ -101,5 +136,18 @@ const navItems = computed(() => {
   width: 1.4rem !important;
   height: 1.4rem !important;
   margin-right: 0.3rem !important;
+}
+</style>
+
+<style>
+[data-mobile="true"] [data-sidebar="footer"] [data-sidebar="menu-button"] {
+  margin-left: 0 !important;
+}
+[data-mobile="true"]
+  [data-sidebar="footer"]
+  [data-sidebar="menu-button"]
+  > svg {
+  width: 1rem !important;
+  height: 1rem !important;
 }
 </style>

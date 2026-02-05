@@ -1104,6 +1104,15 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
     {
+      label: "queue_move_end",
+      labelArgs: [],
+      action: () => {
+        queueCommand(item, "end");
+      },
+      icon: "mdi-arrow-collapse-down",
+      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
+    },
+    {
       label: "queue_delete",
       labelArgs: [],
       action: () => {
@@ -1159,6 +1168,11 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
     );
   } else if (command == "down") {
     api.queueCommandMoveDown(
+      store.activePlayerQueue?.queue_id,
+      item.queue_item_id,
+    );
+  } else if (command == "end") {
+    api.queueCommandMoveItemEnd(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );

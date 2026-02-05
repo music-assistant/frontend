@@ -11,7 +11,6 @@
       z-index: 999;
     `"
   ></div>
-  <BottomNavigation v-if="store.mobileLayout" :height="bottomNavHeight" />
   <v-footer
     app
     color="default"
@@ -30,7 +29,6 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import Player from "./PlayerOSD/Player.vue";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
-import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { parseBool } from "@/helpers/utils";
 
 const bottomNavHeight = computed(() => {
