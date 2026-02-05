@@ -252,7 +252,7 @@ import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
+import { toast } from "vue-sonner";
 
 import { Button } from "@/components/ui/button";
 import {

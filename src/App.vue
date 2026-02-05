@@ -1,5 +1,5 @@
 <template>
-  <VSonner position="bottom-right" />
+  <Toaster rich-colors />
 
   <!-- Login screen (when not authenticated) -->
   <Login
@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -39,11 +40,14 @@ import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
-import { VSonner } from "vuetify-sonner";
-import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import {
+  companionMode,
+  initializeCompanionIntegration,
+} from "./plugins/companion";
 import {
   getKioskModePreference,
   subscribeToHAProperties,
@@ -52,10 +56,6 @@ import {
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
-import {
-  initializeCompanionIntegration,
-  companionMode,
-} from "./plugins/companion";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 

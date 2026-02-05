@@ -266,7 +266,7 @@ import { useVModel } from "@vueuse/core";
 import { Copy, Key, Monitor, Plus, Trash2 } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
+import { toast } from "vue-sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
