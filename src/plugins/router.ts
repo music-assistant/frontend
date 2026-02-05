@@ -1,9 +1,25 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
 const routes = [
-  // All routes go through default layout - authentication is handled by server redirect
+  // Guest view uses minimal layout without navigation/player controls
+  // Guest authentication is handled by Login.vue via the ?code= query parameter
+  // which exchanges the short code for a JWT before navigating here
+  {
+    path: "/guest",
+    component: () => import("@/layouts/GuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "guest",
+        component: () =>
+          import(/* webpackChunkName: "guest" */ "@/views/GuestView.vue"),
+      },
+    ],
+  },
+  // All other routes go through default layout with navigation/player controls
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
@@ -197,6 +213,21 @@ const routes = [
         ],
       },
       {
+        path: "/party",
+        name: "party",
+        component: () =>
+          import(/* webpackChunkName: "party" */ "@/views/PartyView.vue"),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        beforeEnter: (_to: any, _from: any, next: any) => {
+          // Only allow access if party mode plugin is enabled
+          if (!store.enabledPlugins.has("party_mode")) {
+            next({ name: "home" });
+            return;
+          }
+          next();
+        },
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -387,13 +418,22 @@ router.onError((error, to) => {
   }
 });
 
-// Navigation guard for admin-only routes
+// Navigation guard for admin-only routes and guest mode restrictions
 router.beforeEach((to, _from, next) => {
+  const currentUser = store.currentUser;
+
+  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
+  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
+    console.debug("Party mode guest: preventing navigation to", to.path);
+    next({ name: "guest" });
+    return;
+  }
+
   // Check admin-only routes - check all matched routes for requiresAdmin meta
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
   if (requiresAdmin) {
-    const currentUser = store.currentUser;
     console.debug(
       "Admin route check:",
       to.path,

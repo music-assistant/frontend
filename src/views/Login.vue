@@ -401,6 +401,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import type { AuthProvider } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -412,6 +413,8 @@ const { t } = useI18n();
 const STORAGE_KEY_SERVER_ADDRESS = "mass_server_address";
 const STORAGE_KEY_REMOTE_ID = "mass_remote_id";
 const STORAGE_KEY_TOKEN = "ma_access_token";
+// Session storage key for pending guest code (survives SW reload but not browser close)
+const SESSION_KEY_PENDING_JOIN_CODE = "ma_pending_join_code";
 
 // Props and emits
 const emit = defineEmits<{
@@ -639,26 +642,66 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
   }
 
   try {
-    console.debug("[Login] Trying to authenticate with token");
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
     );
 
-    // Authenticate the WebSocket session with the token
     const result = await api.authenticateWithToken(authToken);
-    console.debug("[Login] Token authentication successful");
-
-    // Emit authenticated event - App.vue will handle the rest
     emit("authenticated", { token: authToken, user: result.user });
     return true;
-  } catch (error) {
-    console.debug("[Login] Token authentication failed:", error);
-    // Clear invalid token (we're already connected, so this is a real auth failure)
+  } catch {
+    // Clear invalid token if we're not using a URL parameter token
     if (!token) {
-      // Only clear stored token if we're not using a URL parameter token
       localStorage.removeItem(STORAGE_KEY_TOKEN);
     }
+    return false;
+  }
+};
+
+/**
+ * Try to authenticate with a guest code (exchange for JWT)
+ * This is the new short code system for party mode guest access
+ */
+const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
+  if (!code) {
+    return false;
+  }
+
+  try {
+    connectionStatusMessage.value = t(
+      "login.authenticating",
+      "Authenticating...",
+    );
+
+    // Exchange the short code for a JWT token via auth/code API
+    const result = await api.sendCommand<{
+      success: boolean;
+      access_token?: string;
+      user?: { user_id: string; username: string; role: string };
+      error?: string;
+    }>("auth/code", { code: code.toUpperCase() });
+
+    if (!result.success || !result.access_token) {
+      console.error("[Login] Guest code exchange failed:", result.error);
+      return false;
+    }
+
+    // Store the JWT token for auto-login and decode claims (including provider_name)
+    localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
+    authManager.setToken(result.access_token);
+
+    // Authenticate the WebSocket session with the JWT
+    const authResult = await api.authenticateWithToken(result.access_token);
+
+    // Emit authenticated event - App.vue will handle the rest
+    emit("authenticated", {
+      token: result.access_token,
+      user: authResult.user,
+    });
+    return true;
+  } catch (error) {
+    console.error("[Login] Guest code authentication failed:", error);
     return false;
   }
 };
@@ -668,7 +711,6 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
  */
 const tryIngressAuth = async (): Promise<boolean> => {
   try {
-    console.debug("[Login] Trying ingress auto-authentication");
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
@@ -677,17 +719,12 @@ const tryIngressAuth = async (): Promise<boolean> => {
     // In ingress mode, simply call auth/me to get the auto-authenticated user
     const user = await api.getCurrentUserInfo();
     if (!user) {
-      console.debug("[Login] Ingress authentication failed - no user returned");
       return false;
     }
 
-    console.debug("[Login] Ingress authentication successful");
-
-    // Emit authenticated event with user info (no token needed for ingress)
     emit("authenticated", { user });
     return true;
-  } catch (error) {
-    console.debug("[Login] Ingress authentication failed:", error);
+  } catch {
     return false;
   }
 };
@@ -706,10 +743,110 @@ const autoConnect = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const authCode = urlParams.get("code");
   const urlRemoteId = urlParams.get("remote_id");
+  // Guest code is the short code (e.g., "ABCD1234") exchanged for JWT
+  const urlJoinCode = urlParams.get("join");
+
+  // Also check for pending guest code from sessionStorage (survives SW reload)
+  const pendingJoinCode = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_CODE);
+  const storedRemoteIdForPending = localStorage.getItem(STORAGE_KEY_REMOTE_ID);
+
+  // Determine the effective guest code and remote ID
+  // Priority: URL params > sessionStorage (for reload recovery)
+  let effectiveJoinCode = urlJoinCode || null;
+  let effectiveRemoteId = urlRemoteId;
+
+  // If no guest code in URL but we have a pending one in sessionStorage, use that
+  // This handles the case where SW reload cleared the URL but code was stored
+  if (!effectiveJoinCode && pendingJoinCode && storedRemoteIdForPending) {
+    effectiveJoinCode = pendingJoinCode;
+    effectiveRemoteId = storedRemoteIdForPending;
+  }
+
+  if (effectiveRemoteId && effectiveJoinCode) {
+    const cleanRemoteId = effectiveRemoteId
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+    if (cleanRemoteId.length === 26) {
+      // Clear any stale token before guest code auth
+      if (localStorage.getItem(STORAGE_KEY_TOKEN)) {
+        localStorage.removeItem(STORAGE_KEY_TOKEN);
+      }
+
+      localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
+      // Store guest code in sessionStorage for SW reload recovery
+      sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, effectiveJoinCode);
+
+      connectionStatusMessage.value = t(
+        "login.connecting_remote_party",
+        "Connecting to party...",
+      );
+
+      try {
+        setRemoteIdFromString(cleanRemoteId);
+        step.value = "connecting";
+
+        const transport =
+          await remoteConnectionManager.connectRemote(cleanRemoteId);
+
+        // Connection established, emit connected event
+        emit("connected", transport);
+
+        // Wait for API to be ready
+        const apiConnected = await waitForApiConnection(15000);
+
+        if (apiConnected) {
+          // Exchange the guest code for a JWT token
+          const guestAuthResult = await tryGuestCodeAuth(effectiveJoinCode);
+
+          if (guestAuthResult) {
+            // Clear the pending guest code - it's been successfully used
+            sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+            // Clean up URL
+            const successUrlParams = new URLSearchParams(
+              window.location.search,
+            );
+            if (
+              successUrlParams.has("remote_id") ||
+              successUrlParams.has("join")
+            ) {
+              successUrlParams.delete("remote_id");
+              successUrlParams.delete("join");
+              const queryString = successUrlParams.toString();
+              const cleanUrl =
+                window.location.origin +
+                window.location.pathname +
+                (queryString ? "?" + queryString : "");
+              window.history.replaceState({}, "", cleanUrl);
+            }
+            return; // Success - App.vue will complete initialization
+          }
+        }
+
+        // Code exchange failed
+        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        connectionError.value = t(
+          "login.error_party_auth_failed",
+          "Failed to join party. The code may have expired.",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        console.error("[Login] Remote party connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
+  }
 
   // If remote_id is in URL, pre-fill and auto-connect (when in remote-only mode)
   let urlRemoteIdForAutoConnect: string | null = null;
-  if (urlRemoteId) {
+  if (urlRemoteId && !urlJoinCode) {
     console.debug("[Login] Found remote_id in URL:", urlRemoteId);
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (cleanRemoteId.length === 26) {
@@ -727,11 +864,9 @@ const autoConnect = async () => {
     }
   }
 
-  if (authCode) {
-    console.debug(
-      "[Login] Found auth code in URL, storing token and continuing auto-connect",
-    );
-    // Store the token and clean up the URL (remove code param but keep others like onboard)
+  // Handle auth code from OAuth flow (long codes, not 8-character guest codes)
+  if (authCode && authCode.length > 8) {
+    // Store the token and clean up the URL
     localStorage.setItem(STORAGE_KEY_TOKEN, authCode);
     urlParams.delete("code");
     const queryString = urlParams.toString();
@@ -741,39 +876,82 @@ const autoConnect = async () => {
       (queryString ? "?" + queryString : "") +
       window.location.hash;
     window.history.replaceState({}, "", newUrl);
-    // Continue with normal auto-connect flow which will use the stored token
+  }
+
+  // Handle local guest code (no remote_id, just the join code)
+  if (urlJoinCode && !urlRemoteId) {
+    // Clean up URL - remove join param
+    urlParams.delete("join");
+    const queryString = urlParams.toString();
+    const cleanUrl =
+      window.location.origin +
+      window.location.pathname +
+      (queryString ? "?" + queryString : "");
+    window.history.replaceState({}, "", cleanUrl);
+
+    // Check if we're hosted with the API
+    isHostedWithAPI.value = await checkIfHostedWithAPI();
+
+    if (isHostedWithAPI.value) {
+      connectionStatusMessage.value = t(
+        "login.connecting_local_party",
+        "Connecting to party...",
+      );
+
+      try {
+        const address =
+          window.location.origin + window.location.pathname.replace(/\/$/, "");
+        serverAddress.value = address;
+
+        emit("local-connect", address);
+        localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+
+        if (await waitForApiConnection()) {
+          if (await tryGuestCodeAuth(urlJoinCode)) {
+            return; // Success - App.vue will take over
+          }
+        }
+
+        connectionError.value = t(
+          "login.error_party_auth_failed",
+          "Failed to join party. The code may have expired.",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        console.error("[Login] Local party mode connection failed:", error);
+        connectionError.value =
+          error instanceof Error
+            ? error.message
+            : t("login.error_unknown", "Unknown error occurred");
+        step.value = "error";
+        return;
+      }
+    }
   }
 
   // Check if we're hosted with the API
   isHostedWithAPI.value = await checkIfHostedWithAPI();
-  console.debug("[Login] Hosted with API:", isHostedWithAPI.value);
 
   // Special handling for Home Assistant Ingress mode
   if (isIngressMode.value) {
-    console.info("[Login] Home Assistant Ingress mode detected");
     connectionStatusMessage.value = t(
       "login.connecting_ingress",
       "Connecting via Home Assistant...",
     );
 
-    // In ingress mode, connect to the local server (current URL)
     const address =
       window.location.origin + window.location.pathname.replace(/\/$/, "");
 
     try {
-      // Establish connection
       emit("local-connect", address);
 
-      // Wait for WebSocket connection
       if (await waitForApiConnection()) {
-        // Try ingress auto-authentication
         if (await tryIngressAuth()) {
-          console.info("[Login] Ingress auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
-      // Ingress auth failed - this shouldn't happen in proper ingress setup
       console.error("[Login] Ingress authentication failed");
       connectionError.value = t(
         "login.error_ingress_failed",
@@ -794,11 +972,57 @@ const autoConnect = async () => {
 
   // If in remote-only mode, skip all local connection attempts
   if (isRemoteOnlyMode.value) {
-    console.debug("[Login] Remote-only mode, checking for stored remote ID");
     const storedRemoteId =
       localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
       remoteConnectionManager.getStoredRemoteId();
-    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+
+    // Check for pending guest code - if present, don't use stored token
+    const hasPendingGuestCode = sessionStorage.getItem(
+      SESSION_KEY_PENDING_JOIN_CODE,
+    );
+
+    if (hasPendingGuestCode && storedRemoteId) {
+      // Try to complete the guest auth flow after SW reload
+      connectionStatusMessage.value = t(
+        "login.connecting_remote_party",
+        "Connecting to party...",
+      );
+
+      try {
+        setRemoteIdFromString(storedRemoteId);
+        step.value = "connecting";
+
+        const transport =
+          await remoteConnectionManager.connectRemote(storedRemoteId);
+        emit("connected", transport);
+
+        if (await waitForApiConnection(15000)) {
+          if (await tryGuestCodeAuth(hasPendingGuestCode)) {
+            sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+            return;
+          }
+        }
+
+        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        connectionError.value = t(
+          "login.error_party_auth_failed",
+          "Failed to join party. The code may have expired.",
+        );
+        step.value = "error";
+        return;
+      } catch (error) {
+        console.error("[Login] Pending guest code recovery error:", error);
+        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        // Fall through to show login form
+      }
+    } else if (hasPendingGuestCode) {
+      sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+    }
+
+    // Use stored token for auto-login (only if no pending guest code)
+    const storedToken = hasPendingGuestCode
+      ? null
+      : localStorage.getItem(STORAGE_KEY_TOKEN);
 
     // Auto-connect if we have remote_id from URL (from portal redirect)
     // or if we have stored credentials
@@ -823,10 +1047,8 @@ const autoConnect = async () => {
         const transport =
           await remoteConnectionManager.connectRemote(cleanRemoteId);
 
-        // Connection established, emit connected event
         emit("connected", transport);
 
-        // Wait for API to be ready
         if (await waitForApiConnection()) {
           // Try to authenticate with stored token (if available)
           if (storedToken && (await tryStoredTokenAuth())) {
@@ -843,26 +1065,18 @@ const autoConnect = async () => {
         step.value = "login";
         return;
       } catch (error) {
-        console.debug("[Login] Remote auto-connect failed:", error);
+        // Fall through to show selection screen
       }
     } else if (storedRemoteId) {
-      // Just pre-fill the remote ID field
-      console.debug(
-        "[Login] Found stored remote ID (no token):",
-        storedRemoteId,
-      );
       setRemoteIdFromString(storedRemoteId);
     }
 
-    // Show selection screen (only remote option)
-    console.debug("[Login] Remote-only mode, showing selection screen");
     step.value = "select-mode";
     return;
   }
 
   // 1. If hosted with API, try connecting to current host first
   if (isHostedWithAPI.value) {
-    console.debug("[Login] Hosted with API, trying local connection");
     connectionStatusMessage.value = t(
       "login.checking_local",
       "Checking local server...",
@@ -872,26 +1086,20 @@ const autoConnect = async () => {
     const localWsUrl = getWebSocketUrlFromLocation();
 
     if (await tryConnect(localWsUrl, 3000)) {
-      console.debug("[Login] Local server found!");
       const address =
         window.location.origin + window.location.pathname.replace(/\/$/, "");
       serverAddress.value = address;
 
-      // Establish connection
       emit("local-connect", address);
       localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
 
-      // Wait for WebSocket connection
       if (await waitForApiConnection()) {
-        // Try to authenticate with stored token if available
         if (storedToken && (await tryStoredTokenAuth())) {
-          console.info("[Login] Auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Show login form for this server
-      console.debug("[Login] Showing login form for local server");
       try {
         const url = new URL(address);
         connectedServerName.value = url.hostname;
@@ -909,7 +1117,6 @@ const autoConnect = async () => {
   const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
 
   if (storedAddress && storedToken) {
-    console.debug("[Login] Found stored server address and token");
     connectionStatusMessage.value = t(
       "login.connecting_to_saved",
       "Connecting to saved server...",
@@ -917,24 +1124,18 @@ const autoConnect = async () => {
 
     const wsUrl = buildWebSocketUrl(storedAddress);
     if (await tryConnect(wsUrl)) {
-      console.debug("[Login] Stored server reachable, establishing connection");
       serverAddress.value = storedAddress;
 
-      // Establish connection
       emit("local-connect", storedAddress);
       localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, storedAddress);
 
-      // Wait for WebSocket connection
       if (await waitForApiConnection()) {
-        // Try to authenticate with stored token
         if (await tryStoredTokenAuth()) {
-          console.info("[Login] Auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Token auth failed, show login form for this server
-      console.debug("[Login] Token auth failed, showing login form");
       try {
         const url = new URL(storedAddress);
         connectedServerName.value = url.hostname;
@@ -945,12 +1146,10 @@ const autoConnect = async () => {
       step.value = "login";
       return;
     }
-    console.debug("[Login] Stored server connection failed");
   }
 
   // 3. Try stored server address without token (show login form)
   if (storedAddress) {
-    console.debug("[Login] Found stored server address (no token)");
     connectionStatusMessage.value = t(
       "login.connecting_to_saved",
       "Connecting to saved server...",
@@ -958,7 +1157,6 @@ const autoConnect = async () => {
 
     const wsUrl = buildWebSocketUrl(storedAddress);
     if (await tryConnect(wsUrl)) {
-      console.debug("[Login] Stored server reachable");
       serverAddress.value = storedAddress;
       await performLocalConnect(storedAddress);
       return;
@@ -970,9 +1168,6 @@ const autoConnect = async () => {
     localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
     remoteConnectionManager.getStoredRemoteId();
   if (storedRemoteId && storedToken) {
-    console.debug(
-      "[Login] Found stored remote ID and token, trying auto-connect",
-    );
     connectionStatusMessage.value = t(
       "login.connecting_remote",
       "Connecting to remote server...",
@@ -984,37 +1179,28 @@ const autoConnect = async () => {
       const transport =
         await remoteConnectionManager.connectRemote(cleanRemoteId);
 
-      // Connection established, emit connected event
       emit("connected", transport);
 
-      // Wait for API to be ready
       if (await waitForApiConnection()) {
-        // Try to authenticate with stored token
         if (await tryStoredTokenAuth()) {
-          console.info("[Login] Remote auto-login successful!");
           return; // Success - App.vue will take over
         }
       }
 
       // Token auth failed, show login form
-      console.debug("[Login] Remote token auth failed, showing login form");
       connectedServerName.value = `Remote: ${cleanRemoteId}`;
       isRemoteConnection.value = true;
       await fetchAuthProviders();
       step.value = "login";
       return;
-    } catch (error) {
-      console.debug("[Login] Remote auto-connect failed:", error);
+    } catch {
       // Fall through to show selection screen
     }
   } else if (storedRemoteId) {
-    // Just pre-fill the remote ID field
-    console.debug("[Login] Found stored remote ID (no token):", storedRemoteId);
     setRemoteIdFromString(storedRemoteId);
   }
 
   // 5. No auto-connect possible, show selection screen
-  console.debug("[Login] Auto-connect failed, showing selection screen");
   step.value = "select-mode";
 };
 
@@ -1287,6 +1473,46 @@ const connectToRemote = async () => {
       throw new Error("Failed to establish API connection");
     }
 
+    // Check if there's a join code in the URL (party mode)
+    const currentUrlParams = new URLSearchParams(window.location.search);
+    const joinCodeFromUrl = currentUrlParams.get("join");
+
+    console.info(
+      "[Login/connectToRemote] Checking for join code:",
+      "\n  window.location.search:",
+      window.location.search,
+      "\n  joinCodeFromUrl:",
+      joinCodeFromUrl,
+    );
+
+    if (joinCodeFromUrl) {
+      connectionStatusMessage.value = t(
+        "login.joining_party",
+        "Joining party...",
+      );
+
+      if (await tryGuestCodeAuth(joinCodeFromUrl)) {
+        // Clean up URL - remove join param
+        currentUrlParams.delete("join");
+        const queryString = currentUrlParams.toString();
+        const cleanUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? "?" + queryString : "");
+        window.history.replaceState({}, "", cleanUrl);
+        return; // Success - App.vue will handle redirect
+      } else {
+        // Clean up URL and fall through to login form
+        currentUrlParams.delete("join");
+        const queryString = currentUrlParams.toString();
+        const cleanUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? "?" + queryString : "");
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    }
+
     // Fetch available auth providers
     await fetchAuthProviders();
 
@@ -1310,23 +1536,14 @@ const fetchAuthProviders = async () => {
     const serverInfo = api.serverInfo.value;
     if (serverInfo && (serverInfo as any).auth_providers) {
       authProviders.value = (serverInfo as any).auth_providers;
-      console.debug(
-        "[Login] Auth providers from serverInfo:",
-        authProviders.value,
-      );
       return;
     }
 
     // Try to fetch auth providers (may require auth on some servers)
     const providers = await api.sendCommand<AuthProvider[]>("auth/providers");
     authProviders.value = providers || [];
-    console.debug("[Login] Auth providers:", authProviders.value);
-  } catch (error) {
+  } catch {
     // Auth providers fetch failed - this is expected if server requires auth first
-    // Just show username/password form without OAuth options
-    console.debug(
-      "[Login] Auth providers not available (may require auth first)",
-    );
     authProviders.value = [];
   }
 };
@@ -1467,15 +1684,16 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
   if (detectedCodes.length === 0) return;
 
   const qrData = detectedCodes[0].rawValue;
-  console.debug("[Login] QR code detected:", qrData);
 
-  // Try to extract remote_id from the QR code
+  // Try to extract remote_id and/or guest code from the QR code
   let extractedRemoteId: string | null = null;
+  let extractedGuestCode: string | null = null;
 
-  // Check if it's a URL with remote_id parameter
+  // Check if it's a URL with parameters
   try {
     const url = new URL(qrData);
     extractedRemoteId = url.searchParams.get("remote_id");
+    extractedGuestCode = url.searchParams.get("join");
   } catch {
     // Not a URL, check if it's a raw remote ID (26 alphanumeric characters)
     const cleanData = qrData.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -1484,18 +1702,35 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
     }
   }
 
+  // If we have a guest code (party mode QR), navigate to the full URL
+  // This will trigger the autoConnect flow with the code parameter
+  if (extractedGuestCode) {
+    closeQrScanner();
+
+    // Build the URL and navigate to trigger guest login flow
+    if (extractedRemoteId) {
+      // Remote party mode
+      const newUrl = `${window.location.origin}${window.location.pathname}?remote_id=${extractedRemoteId}&join=${extractedGuestCode}#/guest`;
+      window.location.href = newUrl;
+    } else {
+      // Local party mode
+      const newUrl = `${window.location.origin}${window.location.pathname}?join=${extractedGuestCode}#/guest`;
+      window.location.href = newUrl;
+    }
+    return;
+  }
+
+  // If we only have a remote ID (regular remote access QR), connect to remote
   if (extractedRemoteId) {
-    console.debug("[Login] Extracted remote ID:", extractedRemoteId);
     setRemoteIdFromString(extractedRemoteId);
     closeQrScanner();
-    // Auto-connect after scanning
     nextTick(() => {
       connectToRemote();
     });
   } else {
     qrScannerError.value = t(
       "login.qr_invalid",
-      "Invalid QR code. Please scan a Music Assistant remote ID QR code.",
+      "Invalid QR code. Please scan a Music Assistant QR code.",
     );
   }
 };

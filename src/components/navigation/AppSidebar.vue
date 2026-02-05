@@ -16,10 +16,8 @@ import { getMenuItems } from "./utils/getMenuItems";
 const router = useRouter();
 const { t } = useI18n();
 
-const menuItems = getMenuItems();
-
 const navItems = computed(() => {
-  return menuItems
+  return getMenuItems()
     .filter((item) => !item.hidden)
     .map((item) => ({
       title: t(item.label),

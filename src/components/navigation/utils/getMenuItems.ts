@@ -8,6 +8,7 @@ import {
   House,
   ListMusic,
   Music2,
+  PartyPopper,
   Podcast,
   Radio,
   Search,
@@ -45,6 +46,15 @@ export const getMenuItems = function () {
         icon: Search,
         path: "/search",
         isLibraryNode: false,
+      });
+    }
+    if (enabledMenuItemStr === "party") {
+      items.push({
+        label: "party_mode",
+        icon: PartyPopper,
+        path: "/party",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("party_mode"),
       });
     }
     if (enabledMenuItemStr === "artists") {
