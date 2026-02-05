@@ -113,12 +113,12 @@
               </v-img>
             </v-avatar>
             <div class="result-text">
-              <div class="result-name scroll-text">
-                <span>{{ track.name }}</span>
-              </div>
-              <div class="result-artist scroll-text">
-                <span>{{ getArtistName(track) }}</span>
-              </div>
+              <MarqueeText class="result-name">
+                {{ track.name }}
+              </MarqueeText>
+              <MarqueeText class="result-artist">
+                {{ getArtistName(track) }}
+              </MarqueeText>
             </div>
           </div>
           <div class="result-actions">
@@ -194,15 +194,15 @@
               </v-img>
             </v-avatar>
             <div class="result-text">
-              <div class="result-name scroll-text">
-                <span>{{ item.name }}</span>
-              </div>
-              <div class="result-artist scroll-text">
-                <span>{{ getArtistName(item) }}</span>
+              <MarqueeText class="result-name">
+                {{ item.name }}
+              </MarqueeText>
+              <MarqueeText class="result-artist">
+                {{ getArtistName(item) }}
                 <span v-if="item.media_type === 'artist'" class="result-type">
                   • {{ $t("artist") }}
                 </span>
-              </div>
+              </MarqueeText>
             </div>
           </div>
           <!-- Actions for tracks -->
@@ -314,12 +314,12 @@
             </v-img>
           </v-avatar>
           <div class="queue-info">
-            <div class="queue-name scroll-text">
-              <span>{{ getQueueItemTitle(item) }}</span>
-            </div>
-            <div class="queue-artist scroll-text">
-              <span>{{ getQueueItemSubtitle(item) }}</span>
-            </div>
+            <MarqueeText class="queue-name">
+              {{ getQueueItemTitle(item) }}
+            </MarqueeText>
+            <MarqueeText class="queue-artist">
+              {{ getQueueItemSubtitle(item) }}
+            </MarqueeText>
           </div>
           <!-- Guest request badge (right aligned) -->
           <span
@@ -404,7 +404,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
@@ -420,6 +420,7 @@ import { $t } from "@/plugins/i18n";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import { useGuestQueue } from "@/composables/useGuestQueue";
 import { useGuestSearch } from "@/composables/useGuestSearch";
+import MarqueeText from "@/components/MarqueeText.vue";
 
 // --- Snackbar ---
 const snackbar = ref({
@@ -457,7 +458,7 @@ const {
   getTimeUntilNextSkipToken,
 } = rateLimit;
 
-const queue = useGuestQueue({ onItemsChanged: runMarqueeScan });
+const queue = useGuestQueue();
 const {
   queueItems,
   queueListRef,
@@ -512,49 +513,6 @@ const handleBack = (event: PopStateEvent) => {
     history.pushState(null, "", location.href);
   }
 };
-
-// --- Marquee helpers ---
-const applyMarquee = (el: HTMLElement) => {
-  const span = el.querySelector("span") as HTMLElement;
-  if (!span) return;
-
-  el.classList.remove("marquee");
-  span.style.setProperty("--marquee-distance", "0px");
-
-  requestAnimationFrame(() => {
-    const overflow = span.scrollWidth - el.clientWidth;
-
-    if (overflow <= 2) {
-      el.classList.remove("marquee");
-      span.style.setProperty("--marquee-distance", "0px");
-      return;
-    }
-
-    span.style.setProperty("--marquee-distance", `-${overflow + 16}px`);
-    const duration = Math.max((overflow + 16) / 30, 3);
-    span.style.setProperty("--marquee-duration", `${duration}s`);
-    el.classList.add("marquee");
-  });
-};
-
-function runMarqueeScan() {
-  nextTick(() => {
-    requestAnimationFrame(() => {
-      document
-        .querySelectorAll(".scroll-text")
-        .forEach((el) => applyMarquee(el as HTMLElement));
-    });
-  });
-}
-
-// Run marquee scan when search results change
-watch(
-  () => displayedResults.value,
-  async () => {
-    await nextTick();
-    runMarqueeScan();
-  },
-);
 
 // --- Display helpers ---
 const getImageUrl = (item: Track | Artist) => {
@@ -1206,39 +1164,6 @@ onMounted(async () => {
 
   .result-actions .v-btn {
     flex: 1;
-  }
-}
-/* ---------- MARQUEE ---------- */
-
-.scroll-text {
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.scroll-text span {
-  display: inline-block;
-  white-space: nowrap;
-  --marquee-distance: 0px;
-  --marquee-duration: 3s;
-}
-
-.scroll-text.marquee span {
-  animation: marquee var(--marquee-duration) linear infinite;
-  animation-delay: 1s;
-}
-
-@keyframes marquee {
-  0%,
-  10% {
-    transform: translateX(0);
-  }
-  45%,
-  55% {
-    transform: translateX(var(--marquee-distance));
-  }
-  90%,
-  100% {
-    transform: translateX(0);
   }
 }
 </style>

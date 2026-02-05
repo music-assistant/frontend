@@ -9,9 +9,7 @@ import { store } from "@/plugins/store";
 import type { PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 
-export function useGuestQueue(options?: {
-  onItemsChanged?: () => void;
-}) {
+export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   const queueItems = ref<QueueItem[]>([]);
   const partyModeQueueId = ref<string | null>(null);
   const queueListRef = ref<HTMLElement | null>(null);
@@ -39,7 +37,8 @@ export function useGuestQueue(options?: {
       const container = queueListRef.value;
       const containerRect = container.getBoundingClientRect();
       const itemRect = activeItem.getBoundingClientRect();
-      const relativeTop = itemRect.top - containerRect.top + container.scrollTop;
+      const relativeTop =
+        itemRect.top - containerRect.top + container.scrollTop;
 
       container.scrollTo({ top: relativeTop, behavior: "smooth" });
     }
@@ -59,7 +58,9 @@ export function useGuestQueue(options?: {
           newItems.length > oldItems.length &&
           newItems
             .slice(0, oldItems.length)
-            .every((item, i) => item.queue_item_id === oldItems[i].queue_item_id);
+            .every(
+              (item, i) => item.queue_item_id === oldItems[i].queue_item_id,
+            );
 
         if (!isAppending) {
           scrollToCurrentItem();
@@ -140,22 +141,26 @@ export function useGuestQueue(options?: {
       },
     );
 
-    const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
-      const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-      if (evt.object_id === queueId) {
-        const currentIdx = currentQueueIndex.value;
-        const fetchedStart = queueFetchOffset.value;
-        const fetchedEnd = fetchedStart + queueItems.value.length;
+    const unsub2 = api.subscribe(
+      EventType.QUEUE_UPDATED,
+      (evt: EventMessage) => {
+        const queueId =
+          partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+        if (evt.object_id === queueId) {
+          const currentIdx = currentQueueIndex.value;
+          const fetchedStart = queueFetchOffset.value;
+          const fetchedEnd = fetchedStart + queueItems.value.length;
 
-        if (
-          currentIdx < fetchedStart + 5 ||
-          currentIdx > fetchedEnd - 5 ||
-          queueItems.value.length === 0
-        ) {
-          fetchQueueItems(true);
+          if (
+            currentIdx < fetchedStart + 5 ||
+            currentIdx > fetchedEnd - 5 ||
+            queueItems.value.length === 0
+          ) {
+            fetchQueueItems(true);
+          }
         }
-      }
-    });
+      },
+    );
 
     return () => {
       unsub1();
