@@ -1,29 +1,32 @@
 <template>
   <v-toolbar :color="color" class="header">
-    <template v-if="icon" #prepend>
-      <v-btn
-        :icon="typeof icon === 'string' ? icon : undefined"
-        size="small"
-        :disabled="iconAction == null"
-        style="opacity: 0.8"
-        @click="iconAction?.()"
-      >
-        <component :is="icon" v-if="typeof icon !== 'string'" class="w-6 h-6" />
-      </v-btn>
+    <template #prepend>
+      <div class="toolbar-prepend">
+        <MobileSidebarTrigger v-if="store.mobileLayout" />
+        <v-btn
+          v-if="icon && !store.mobileLayout"
+          :icon="typeof icon === 'string' ? icon : undefined"
+          size="small"
+          :disabled="iconAction == null"
+          style="opacity: 0.8"
+          @click="iconAction?.()"
+        >
+          <component
+            :is="icon"
+            v-if="typeof icon !== 'string'"
+            class="w-6 h-6"
+          />
+        </v-btn>
+      </div>
     </template>
 
     <template #title>
       <slot name="title">
-        <div v-if="store.mobileLayout && home" class="mobile-brand">
-          <img
-            src="@/assets/icon.svg"
-            alt="Music Assistant"
-            class="mobile-brand-logo"
-          />
-          <span class="mobile-brand-text">Music Assistant</span>
-        </div>
-        <button v-else-if="title" @click="emit('titleClicked')">
-          {{ title }}
+        <button
+          v-if="title || (store.mobileLayout && home)"
+          @click="emit('titleClicked')"
+        >
+          {{ title || (home ? $t("home") : "") }}
         </button>
       </slot>
     </template>
@@ -150,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import MobileSidebarTrigger from "@/components/ui/sidebar/MobileSidebarTrigger.vue";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
@@ -261,18 +265,9 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 }
 
 /* Mobile branding on the left */
-.mobile-brand {
+.toolbar-prepend {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-.mobile-brand-logo {
-  height: 30px;
-  width: 30px;
-}
-.mobile-brand-text {
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  gap: 0.5rem;
 }
 </style>

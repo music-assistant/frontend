@@ -20,6 +20,7 @@ export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
   clearSelection: void;
+  "homescreen-edit-toggle": void;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();
