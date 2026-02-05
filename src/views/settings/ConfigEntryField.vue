@@ -19,7 +19,7 @@
       density="comfortable"
       class="config-alert"
     >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      {{ getTranslatedLabel() }}
     </v-alert>
 
     <!-- alert value -->
@@ -30,7 +30,7 @@
       variant="tonal"
       class="config-alert"
     >
-      {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+      {{ getTranslatedLabel() }}
     </v-alert>
 
     <!-- action type -->
@@ -44,12 +44,7 @@
       :disabled="isFieldDisabled"
       @click="$emit('action')"
     >
-      {{
-        $t(
-          `settings.${confEntry.action || confEntry.key}.label`,
-          confEntry.action_label || confEntry.label,
-        )
-      }}
+      {{ getTranslatedActionLabel() }}
     </v-btn>
 
     <!-- DSP Config Button -->
@@ -64,29 +59,22 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn variant="outlined" class="action-btn" @click="$emit('openDsp')">
+      <v-btn variant="outlined" @click="$emit('openDsp')">
         {{ $t("open_dsp_settings") }}
       </v-btn>
     </div>
 
-    <!-- boolean value: switch -->
-    <div
+    <!-- boolean value: checkbox -->
+    <v-checkbox
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
-      class="config-switch-wrapper"
-    >
-      <v-label class="config-switch-label">
-        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
-      </v-label>
-      <v-switch
-        :model-value="confEntry.value"
-        color="primary"
-        :disabled="isFieldDisabled"
-        hide-details
-        density="comfortable"
-        class="config-switch"
-        @update:model-value="$emit('update:value', $event)"
-      />
-    </div>
+      :model-value="confEntry.value"
+      :label="getTranslatedLabel()"
+      color="primary"
+      :disabled="isFieldDisabled"
+      hide-details
+      density="comfortable"
+      @update:model-value="$emit('update:value', $event)"
+    />
 
     <!-- int/float value in range: slider control -->
     <div
@@ -99,7 +87,7 @@
       class="config-slider-wrapper"
     >
       <v-label class="config-slider-label">
-        {{ $t(`settings.${confEntry.key}.label`, confEntry.label) }}
+        {{ getTranslatedLabel() }}
       </v-label>
       <div class="config-slider-block">
         <v-slider
@@ -142,7 +130,7 @@
     <v-text-field
       v-else-if="confEntry.type == ConfigEntryType.SECURE_STRING"
       :model-value="confEntry.value"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :required="confEntry.required"
       :disabled="isFieldDisabled"
       :rules="[
@@ -175,7 +163,7 @@
       :multiple="confEntry.multi_value"
       :items="translatedOptions"
       :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :required="confEntry.required"
       :rules="[
         (v) =>
@@ -197,7 +185,7 @@
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -217,7 +205,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :prepend-inner-icon="confEntry.value as string"
       variant="outlined"
       density="comfortable"
@@ -235,7 +223,7 @@
       chips
       :clearable="true"
       :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -253,7 +241,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="$t(`settings.${confEntry.key}.label`, confEntry.label)"
+      :label="getTranslatedLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -301,6 +289,41 @@ const emit = defineEmits<{
   (e: "openDsp"): void;
   (e: "update:value", value: ConfigValueType): void;
 }>();
+
+// Helper function to get the translated label for a config entry
+const getTranslatedLabel = () => {
+  // prefer translation_key over key (using key for translations is deprecated)
+  const key = props.confEntry.translation_key || props.confEntry.key;
+  const translationKey = `settings.${key}.label`;
+  const fallback = props.confEntry.label;
+
+  // If translation_params are provided, pass them directly
+  if (
+    props.confEntry.translation_params &&
+    props.confEntry.translation_params.length > 0
+  ) {
+    return $t(translationKey, props.confEntry.translation_params) || fallback;
+  }
+
+  return $t(translationKey, fallback);
+};
+
+// Helper function to get the translated action label for a config entry
+const getTranslatedActionLabel = () => {
+  const key = props.confEntry.translation_key || props.confEntry.key;
+  const translationKey = `settings.${key}.label`;
+  const fallback = props.confEntry.action_label || props.confEntry.label;
+
+  // If translation_params are provided, pass them directly
+  if (
+    props.confEntry.translation_params &&
+    props.confEntry.translation_params.length > 0
+  ) {
+    return $t(translationKey, props.confEntry.translation_params) || fallback;
+  }
+
+  return $t(translationKey, fallback);
+};
 
 const onUpdateValue = (value: ConfigValueType) => {
   // When value is cleared (null/undefined/empty string/empty array), emit the default value instead
@@ -429,23 +452,5 @@ const translatedOptions = computed(() => {
 .dsp-status {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.config-switch-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
-}
-
-.config-switch-label {
-  font-size: 0.875rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.config-switch {
-  flex-shrink: 0;
 }
 </style>

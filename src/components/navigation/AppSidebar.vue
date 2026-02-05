@@ -96,7 +96,8 @@ const navItems = computed(() => {
 }
 
 :deep([data-sidebar="menu-button"] > svg.artist-icon) {
-  width: 1.5rem !important;
-  height: 1.5rem !important;
+  width: 1.4rem !important;
+  height: 1.4rem !important;
+  margin-right: 0.3rem !important;
 }
 </style>
