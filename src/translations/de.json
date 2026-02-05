@@ -158,7 +158,7 @@
             }
         },
         "flow_mode": {
-            "label": "Warteschlangen-\"Flow\"-Modus aktivieren",
+            "label": "Warteschlangen-„Flow“-Modus aktivieren",
             "description": "Aktiviere den „Flow“-Modus, in dem alle Titel der Warteschlange als kontinuierlicher Audiostream gesendet werden. \nVerwende diese Funktion für Wiedergabegeräte, die lückenloses Abspielen und\/oder Überblenden nicht nativ unterstützen oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
         },
         "auto_play": {
@@ -290,7 +290,7 @@
             "airplay": "Spezielle AirPlay-Einstellungen",
             "player_controls": "Wiedergabegeräte-Steuerung",
             "presets": "Voreinstellungen",
-            "sync_options": "Synchronisiere\/Importiere Optionen",
+            "sync_options": "Synchronisiere\/importiere Optionen",
             "builtin_playlists": "Integrierte Wiedergabelisten-Einstellungen",
             "web_player": "Webplayer"
         },
@@ -373,35 +373,35 @@
         "no_player_providers_detail": "Konfiguriere die Wiedergabegeräte-Anbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
         "volume_normalization_radio": {
             "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\nOptionen:\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Ausgeschaltet",
                 "dynamic": "Erzwinge dynamisch",
                 "measurement_only": "Nur Messung (kein Fallback)",
-                "fallback_fixed_gain": "Fallback auf Gainanpassung",
-                "fixed_gain": "Feste Gainanpassung",
+                "fallback_fixed_gain": "Fallback auf Gain-Anpassung",
+                "fixed_gain": "Feste Gain-Anpassung",
                 "fallback_dynamic": "Fallback auf dynamisch"
             }
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/Die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – Keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – Erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- \"Fallback auf Dynamik – Wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\nOptionen:\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
                 "dynamic": "Erzwinge dynamisch",
                 "measurement_only": "Nur Messung (kein Fallback)",
-                "fallback_fixed_gain": "Fallback auf Gainanpassung",
-                "fixed_gain": "Statische Gainanpassung",
+                "fallback_fixed_gain": "Fallback auf Gain-Anpassung",
+                "fixed_gain": "Statische Gain-Anpassung",
                 "fallback_dynamic": "Fallback auf dynamisch"
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Feste\/Fallback Gainanpassung für Songs",
-            "description": "Feste\/Fallback Gainkorrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung 'Lautstärkenormalisierungsmethode').\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf \"Feste Gainkorrektur\" oder \"Fallback auf Gainkorrektur\" eingestellt ist"
+            "label": "Feste\/Fallback Gain-Anpassung für Songs",
+            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
-            "label": "Feste\/Fallback Gainanpassung für Radio",
-            "description": "Feste\/Fallback Gainkorrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung' Lautstärkenormalisierungsmethode' ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf 'Feste Gainkorrektur' oder 'Fallback auf Gainkorrektur' eingestellt ist."
+            "label": "Feste\/Fallback Gain-Anpassung für Radio",
+            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung „Lautstärkenormalisierungsmethode“ ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist."
         },
         "add_group_player_desc": "Für ein Gruppen-Wiedergabegerät, das für den Anbieter {0} erstellt wurde, wird automatisch eine Syncgroup erstellt, d.h., wenn du zu dieser Wiedergabegeräte-Gruppe spielst, werden die Wiedergabegeräte der Mitglieder automatisch synchronisiert.",
         "dynamic_members": {
@@ -672,7 +672,8 @@
         "enable_browser_controls": {
             "label": "Aktivieren der Browser-Mediensteuerung",
             "description": "Erlaube die Steuerung der Wiedergabe über die im Browser integrierten Mediensteuerungselemente (z. B. die Medientasten auf der Tastatur)."
-        }
+        },
+        "settings_saved": "Einstellungen erfolgreich gespeichert"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -798,8 +799,8 @@
     },
     "shuffle_disable": "Deaktiviere Zufallswiedergabe",
     "shuffle_enable": "Aktiviere Zufallswiedergabe",
-    "dont_stop_the_music_enable": "'Don't stop the Music!' einschalten.",
-    "dont_stop_the_music_disable": "'Don't stop the Music!' ausschalten.",
+    "dont_stop_the_music_enable": "„Don't stop the Music!“ einschalten.",
+    "dont_stop_the_music_disable": "„Don't stop the Music!“ ausschalten.",
     "open_dsp_settings": "DSP Einstellungen öffnen",
     "audiobook": "Audiobuch",
     "audiobooks": "Audiobücher",
@@ -891,7 +892,7 @@
         "favorite_playlists": "Playlist-Favoriten",
         "favorite_radio_stations": "Radiosender-Favoriten",
         "listen_again": "Nochmal hören",
-        "in_progress_series": "Fortsetzung der Serie...",
+        "in_progress_series": "Fortsetzung der Serie…",
         "recommended": "Empfohlen",
         "recently_added": "Zuletzt hinzugefügt",
         "episodes_recently_added": "Kürzlich hinzugefügte Episoden",
@@ -932,7 +933,7 @@
         "passwords_must_match": "Die Passwörter müssen übereinstimmen",
         "login_failed": "Login fehlgeschlagen. Überprüfe deine Anmeldedaten.",
         "login_error": "Bei der Anmeldung ist ein Fehler aufgetreten",
-        "setup_subtitle": "Los geht's!",
+        "setup_subtitle": "Los gehts!",
         "create_admin_account": "Erstelle dein Administratorkonto.",
         "setup_description": "Erstelle dir dein Administratorkonto, um Music Assistant zu verwalten. Dieses Konto hat vollen Zugriff auf alle Einstellungen und Funktionen.",
         "create_account": "Konto erstellen",
@@ -959,7 +960,7 @@
         "no_tokens": "Noch keine Tokens",
         "create_token_hint": "Erstellen eines Tokens zur Verwendung von Music Assistant mit externen Anwendungen",
         "token_name": "Token-Name",
-        "token_name_hint": "z. B. „Home Assistant“, „Mobile App“",
+        "token_name_hint": "z. B. „Home Assistant“, „Mobile App“",
         "create_token": "Neuen Token erstellen",
         "revoke_token": "Token widerrufen",
         "revoke_token_confirm": "Bist du sicher, dass du diesen Token widerrufen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -1063,8 +1064,8 @@
         "error_oauth_failed": "Authentifizierung mit Home Assistant fehlgeschlagen.",
         "scan_qr": "Scanne den QR-Code.",
         "scan_qr_code": "Scanne den QR-Code.",
-        "scan_qr_hint": "Richte deine Kamera auf den QR-Code, der in den Servereinstellungen deines Musikassistenten angezeigt wird.",
-        "qr_invalid": "Ungültiger QR-Code. Bitte scanne einen QR-Code mit der Fernbedienungs-ID des Musikassistenten.",
+        "scan_qr_hint": "Richte deine Kamera auf den QR-Code, der in den Servereinstellungen deines Music Assistant angezeigt wird.",
+        "qr_invalid": "Ungültiger QR-Code. Bitte scanne einen Music Assistant Fernbedienungs-ID QR-Code.",
         "qr_camera_error": "Kann nicht auf Kamera zugreifen. Prüfe die Berechtigungen."
     },
     "remote": {
@@ -1073,7 +1074,7 @@
         "subtitle_login": "Melde dich an, um auf deine Musik zuzugreifen.",
         "remote_id": "Remote ID",
         "remote_id_placeholder": "z. B. MA-X7K9-P2M4",
-        "remote_id_hint": "Deine Remote-ID findest du in den Einstellungen deines Music Assistant Servers unter \"Remote Access\".",
+        "remote_id_hint": "Deine Remote-ID findest du in den Einstellungen deines Music Assistant Servers unter „Remote Access“.",
         "recent_connections": "Frühere Verbindungen",
         "connect": "Verbinde",
         "connect_locally": "Stattdessen mit lokalem Server verbinden",

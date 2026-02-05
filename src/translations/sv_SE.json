@@ -672,7 +672,8 @@
         "enable_browser_controls": {
             "label": "Aktivera webbläsarens mediekontroller",
             "description": "Tillåt kontroll över uppspelning med webbläsarens inbyggda mediekontroller (t.ex. medietangenter på tangentbordet)."
-        }
+        },
+        "settings_saved": "Inställningarna har sparats"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",

@@ -449,7 +449,10 @@ const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
     | undefined;
   if (!current) return false;
   switch (itemtype) {
-    case "tracks": {
+    case "tracks":
+    case "playlisttracks":
+    case "albumtracks":
+    case "artisttracks": {
       return item.item_id === current.item_id;
     }
     case "albums": {
