@@ -315,13 +315,9 @@
             "playback": "Playback settings",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
-<<<<<<< add-startup-view-setting
             "per_user": "Preferences",
             "per_browser": "Display",
-            "announcements": "Announcements configuration",
-=======
             "announcements": "Announcements settings",
->>>>>>> main
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
             "presets": "Presets",
