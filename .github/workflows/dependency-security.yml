@@ -1,0 +1,128 @@
+name: Dependency Security
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'yarn.lock'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22.x"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Need full history for comparison
+
+      # 1. GitHub's built-in vulnerability + license check
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime
+          comment-summary-in-pr: always
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+      # 2. Socket.dev for malicious package detection
+      - name: Socket Security Scan
+        uses: SocketDev/socket-security-action@v1
+        with:
+          issue-on-security-risk: true
+          severity: high
+        continue-on-error: true  # Don't block PRs, just warn
+
+      # 3. Show lockfile changes for easy review
+      - name: Lockfile Changes
+        uses: Simek/yarn-lock-changes@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          collapsibleThreshold: 10
+          updateComment: true
+        continue-on-error: true
+
+      # 4. Run yarn audit for known vulnerabilities
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Yarn Audit
+        run: |
+          echo "### Yarn Audit Results" >> $GITHUB_STEP_SUMMARY
+          if yarn audit --level moderate --groups dependencies; then
+            echo "✅ No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Vulnerabilities detected - review output above" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+      # 5. Detect and highlight new/changed packages
+      - name: Detect New Dependencies
+        run: |
+          echo "## 📦 Package Changes" >> $GITHUB_STEP_SUMMARY
+
+          # Check if package.json changed
+          if git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "package.json"; then
+            echo "### New/Updated Dependencies:" >> $GITHUB_STEP_SUMMARY
+            echo '```diff' >> $GITHUB_STEP_SUMMARY
+            git diff origin/${{ github.base_ref }}...HEAD package.json | \
+              grep -E '^\+.*"(@?[a-zA-Z0-9@/._-]+)":' | \
+              sed 's/^\+/+ /' >> $GITHUB_STEP_SUMMARY || echo "No dependency changes detected"
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            # Extract package names and create npmjs.com links
+            NEW_PACKAGES=$(git diff origin/${{ github.base_ref }}...HEAD package.json | \
+              grep -E '^\+.*"(@?[a-zA-Z0-9@/._-]+)":' | \
+              sed -E 's/.*"(@?[^"]+)".*/\1/' | sed 's/^[[:space:]]*//' || true)
+
+            if [ -n "$NEW_PACKAGES" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### 🔍 Review these packages:" >> $GITHUB_STEP_SUMMARY
+              echo "$NEW_PACKAGES" | while read pkg; do
+                [ -z "$pkg" ] && continue
+                echo "- [\`$pkg\`](https://www.npmjs.com/package/$pkg)" >> $GITHUB_STEP_SUMMARY
+              done
+            fi
+          else
+            echo "✅ No package.json changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check yarn.lock integrity
+          if git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "package.json"; then
+            if ! git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "yarn.lock"; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### ⚠️ Warning" >> $GITHUB_STEP_SUMMARY
+              echo "package.json changed but yarn.lock was not updated!" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::package.json changed but yarn.lock was not updated"
+            fi
+          fi
+
+      # 6. Summary of security status
+      - name: Security Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Security Check Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All automated security checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Remember to:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Review all warnings above" >> $GITHUB_STEP_SUMMARY
+          echo "- Check package reputation on npmjs.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify package maintainers and download counts" >> $GITHUB_STEP_SUMMARY
+          echo "- Look for signs of typosquatting" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📚 See [DEPENDENCY_SECURITY.md](../DEPENDENCY_SECURITY.md) for review guidelines" >> $GITHUB_STEP_SUMMARY
