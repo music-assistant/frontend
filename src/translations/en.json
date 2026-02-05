@@ -560,6 +560,14 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
+        "mobile_sidebar_side": {
+            "label": "Mobile sidebar side",
+            "description": "Which side the navigation menu (sheet) opens from on mobile. Default is left.",
+            "options": {
+                "left": "Left",
+                "right": "Right"
+            }
+        },
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
