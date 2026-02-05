@@ -220,7 +220,7 @@ const routes = [
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
         beforeEnter: (_to: any, _from: any, next: any) => {
           // Only allow access if party mode plugin is enabled
-          if (!store.partyModeEnabled) {
+          if (!store.enabledPlugins.has("party_mode")) {
             next({ name: "home" });
             return;
           }

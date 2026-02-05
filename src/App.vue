@@ -235,11 +235,14 @@ const completeInitialization = async () => {
       ProviderType.PLUGIN,
       "party_mode",
     );
-    store.partyModeEnabled =
-      partyModeProviders.length > 0 && partyModeProviders[0].enabled;
+    if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
+      store.enabledPlugins.add("party_mode");
+    } else {
+      store.enabledPlugins.delete("party_mode");
+    }
   } catch (error) {
     console.error("[App] Failed to check party mode status:", error);
-    store.partyModeEnabled = false;
+    store.enabledPlugins.delete("party_mode");
   }
 
   // Enable Sendspin if available and not explicitly disabled
@@ -380,15 +383,18 @@ onMounted(async () => {
     await completeInitialization();
   }
 
-  // Subscribe to PROVIDERS_UPDATED to keep partyModeEnabled in sync
+  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     try {
       const partyModeProviders = await api.getProviderConfigs(
         ProviderType.PLUGIN,
         "party_mode",
       );
-      store.partyModeEnabled =
-        partyModeProviders.length > 0 && partyModeProviders[0].enabled;
+      if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
+        store.enabledPlugins.add("party_mode");
+      } else {
+        store.enabledPlugins.delete("party_mode");
+      }
     } catch (error) {
       console.error("[App] Failed to update party mode status:", error);
     }

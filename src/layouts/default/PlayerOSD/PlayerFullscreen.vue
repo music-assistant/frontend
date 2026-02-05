@@ -1247,8 +1247,6 @@ const fetchBadgeColors = async () => {
 
 onMounted(() => {
   fetchBadgeColors();
-  const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, fetchBadgeColors);
-  onBeforeUnmount(unsub);
 });
 
 // listen for item updates to refresh items when that happens

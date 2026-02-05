@@ -10,7 +10,10 @@
   >
     <div :class="['track-artwork', sizeClass]">
       <MediaItemThumb :item="queueItem" :size="artworkSize" />
-      <div v-if="position === 'current' && isPlaying" class="now-playing-overlay">
+      <div
+        v-if="position === 'current' && isPlaying"
+        class="now-playing-overlay"
+      >
         <NowPlayingBadge :show-badge="false" />
       </div>
     </div>

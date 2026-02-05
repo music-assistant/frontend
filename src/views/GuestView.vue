@@ -290,11 +290,15 @@
           }"
         >
           <div class="queue-position">
+            <NowPlayingBadge
+              v-if="queueFetchOffset + index === currentQueueIndex && isPlaying"
+              :show-badge="false"
+            />
             <v-icon
-              v-if="queueFetchOffset + index === currentQueueIndex"
+              v-else-if="queueFetchOffset + index === currentQueueIndex"
               color="primary"
             >
-              mdi-play-circle
+              mdi-pause-circle
             </v-icon>
             <span v-else class="queue-number">{{
               queueFetchOffset + index + 1
@@ -400,15 +404,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   type Artist,
-  EventType,
   type PartyModeConfig,
   type QueueItem,
   MediaType,
+  PlaybackState,
   QueueOption,
   type Track,
 } from "@/plugins/api/interfaces";
@@ -418,6 +422,7 @@ import { useRateLimiting } from "@/composables/useRateLimiting";
 import { useGuestQueue } from "@/composables/useGuestQueue";
 import { useGuestSearch } from "@/composables/useGuestSearch";
 import MarqueeText from "@/components/MarqueeText.vue";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 
 // --- Snackbar ---
 const snackbar = ref({
@@ -429,6 +434,10 @@ const snackbar = ref({
 const showSnackbar = (message: string, color: string = "success") => {
   snackbar.value = { show: true, message, color };
 };
+
+const isPlaying = computed(
+  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+);
 
 // --- Composables ---
 const rateLimit = useRateLimiting();
@@ -654,7 +663,6 @@ const skipCurrentSong = async () => {
 // --- Lifecycle ---
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
-let cleanupProvidersSub: (() => void) | null = null;
 
 const fetchAndApplyConfig = async () => {
   try {
@@ -666,8 +674,6 @@ const fetchAndApplyConfig = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
-    requestBadgeColor.value = "#2196F3";
-    boostBadgeColor.value = "#FF5722";
   }
 };
 
@@ -691,19 +697,12 @@ onMounted(async () => {
   // Initial queue fetch and event subscriptions
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();
-
-  // Re-apply config when provider settings change (e.g. badge colors)
-  cleanupProvidersSub = api.subscribe(
-    EventType.PROVIDERS_UPDATED,
-    fetchAndApplyConfig,
-  );
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("popstate", handleBack);
   cleanupQueueEvents?.();
   cleanupCountdown?.();
-  cleanupProvidersSub?.();
   search.cleanup();
 });
 </script>
@@ -1027,6 +1026,13 @@ onBeforeUnmount(() => {
   width: 32px;
   text-align: center;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.queue-position :deep(.now-playing-icon) {
+  margin: 0;
 }
 
 .queue-number {

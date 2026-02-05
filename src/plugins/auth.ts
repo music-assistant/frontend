@@ -35,7 +35,6 @@ export class AuthManager {
     this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (this.token) {
       this.claims = this.decodeJWT(this.token);
-      store.isPartyModeGuest = this.isPartyModeGuest();
     }
   }
 
@@ -100,7 +99,6 @@ export class AuthManager {
     this.token = token;
     this.claims = this.decodeJWT(token);
     localStorage.setItem(TOKEN_STORAGE_KEY, token);
-    store.isPartyModeGuest = this.isPartyModeGuest();
   }
 
   /**
@@ -157,7 +155,6 @@ export class AuthManager {
     this.token = null;
     this.claims = null;
     store.currentUser = undefined;
-    store.isPartyModeGuest = false;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   }
 
