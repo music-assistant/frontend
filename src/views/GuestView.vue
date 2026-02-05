@@ -404,39 +404,108 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  nextTick,
-} from "vue";
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
-  Artist,
-  EventType,
-  EventMessage,
-  PartyModeConfig,
-  PlayerQueue,
-  QueueItem,
+  type Artist,
+  type PartyModeConfig,
+  type QueueItem,
   MediaType,
   QueueOption,
-  Track,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
+import { useRateLimiting } from "@/composables/useRateLimiting";
+import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestSearch } from "@/composables/useGuestSearch";
 
+// --- Snackbar ---
+const snackbar = ref({
+  show: false,
+  message: "",
+  color: "success",
+});
+
+const showSnackbar = (message: string, color: string = "success") => {
+  snackbar.value = { show: true, message, color };
+};
+
+// --- Composables ---
+const rateLimit = useRateLimiting();
+const {
+  rateLimitingEnabled,
+  boostEnabled,
+  addQueueEnabled,
+  skipSongEnabled,
+  requestBadgeColor,
+  boostBadgeColor,
+  boostTokens,
+  addQueueTokens,
+  skipSongTokens,
+  BOOST_MAX_TOKENS,
+  ADD_QUEUE_MAX_TOKENS,
+  SKIP_SONG_MAX_TOKENS,
+  nextTokenCountdown,
+  skipTokenCountdown,
+  consumeBoostToken,
+  consumeAddQueueToken,
+  consumeSkipSongToken,
+  getTimeUntilNextToken,
+  getTimeUntilNextAddQueueToken,
+  getTimeUntilNextSkipToken,
+} = rateLimit;
+
+const queue = useGuestQueue({ onItemsChanged: runMarqueeScan });
+const {
+  queueItems,
+  queueListRef,
+  queueFetchOffset,
+  queueTotalItems,
+  loadingMoreQueueItems,
+  partyModeQueueId,
+  currentQueue,
+  currentQueueIndex,
+  fetchQueueItems,
+  handleQueueScroll,
+} = queue;
+
+const search = useGuestSearch({
+  showSnackbar: (msg, color) => showSnackbar(msg, color),
+});
+const {
+  searchQuery,
+  searchResults,
+  searching,
+  hasSearched,
+  searchFilter,
+  selectedArtist,
+  artistTracks,
+  loadingArtistTracks,
+  displayedResults,
+  loadingMoreResults,
+  displayedResultsCount,
+  resultsListRef,
+  performSearch,
+  clearSearch,
+  selectArtist,
+  clearArtistSelection,
+  handleScroll,
+} = search;
+
+// --- Template-specific state ---
+const addingItems = ref(new Set<string>());
+const skippingSong = ref(false);
+
+// --- Back button handler ---
 const handleBack = (event: PopStateEvent) => {
-  // First, clear artist selection if viewing artist tracks
   if (selectedArtist.value) {
     event.preventDefault();
     clearArtistSelection();
     history.pushState(null, "", location.href);
     return;
   }
-  // Then, clear search if there are results
   if (searchQuery.value || searchResults.value.length > 0) {
     event.preventDefault();
     clearSearch();
@@ -444,299 +513,39 @@ const handleBack = (event: PopStateEvent) => {
   }
 };
 
-// Search state
-const searchQuery = ref("");
-const searchResults = ref<(Track | Artist)[]>([]);
-const searching = ref(false);
-const addingItems = ref(new Set<string>());
-const hasSearched = ref(false); // Track if a search has been performed
-const searchFilter = ref<"all" | "track" | "artist">("all"); // Filter for search results
-let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+// --- Marquee helpers ---
+const applyMarquee = (el: HTMLElement) => {
+  const span = el.querySelector("span") as HTMLElement;
+  if (!span) return;
 
-// Artist drill-down state
-const selectedArtist = ref<Artist | null>(null);
-const artistTracks = ref<Track[]>([]);
-const loadingArtistTracks = ref(false);
+  el.classList.remove("marquee");
+  span.style.setProperty("--marquee-distance", "0px");
 
-// Infinite scroll state
-const resultsListRef = ref<HTMLElement | null>(null);
-const displayedResultsCount = ref(10); // Start with 10 results
-const loadingMoreResults = ref(false);
-const displayedResults = computed(() =>
-  searchResults.value.slice(0, displayedResultsCount.value),
-);
+  requestAnimationFrame(() => {
+    const overflow = span.scrollWidth - el.clientWidth;
 
-// Rate limiting - Token bucket implementation for "Boost", "Add to Queue", and "Skip Song"
-const BOOST_STORAGE_KEY = "guest_boost_bucket";
-const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
-const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
+    if (overflow <= 2) {
+      el.classList.remove("marquee");
+      span.style.setProperty("--marquee-distance", "0px");
+      return;
+    }
 
-// Default values (will be overridden by server config)
-const BOOST_MAX_TOKENS = ref(3); // Maximum tokens for Boost
-const BOOST_REFILL_RATE = ref(1000 * 60 * 20); // 20 minutes in milliseconds
+    span.style.setProperty("--marquee-distance", `-${overflow + 16}px`);
+    const duration = Math.max((overflow + 16) / 30, 3);
+    span.style.setProperty("--marquee-duration", `${duration}s`);
+    el.classList.add("marquee");
+  });
+};
 
-// More lenient defaults for general Add to Queue
-const ADD_QUEUE_MAX_TOKENS = ref(10); // Maximum tokens for Add to Queue
-const ADD_QUEUE_REFILL_RATE = ref(1000 * 60 * 2); // 2 minutes per token
-
-// Skip song - more restrictive by default (1 per hour)
-const SKIP_SONG_MAX_TOKENS = ref(1); // Maximum tokens for Skip Song
-const SKIP_SONG_REFILL_RATE = ref(1000 * 60 * 60); // 60 minutes per token
-
-interface TokenBucket {
-  tokens: number;
-  lastRefill: number;
+function runMarqueeScan() {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      document
+        .querySelectorAll(".scroll-text")
+        .forEach((el) => applyMarquee(el as HTMLElement));
+    });
+  });
 }
-
-const rateLimitingEnabled = ref(true); // Default to enabled
-// Feature enable toggles (can be disabled by admin)
-const addQueueEnabled = ref(true);
-const boostEnabled = ref(true);
-const skipSongEnabled = ref(true);
-// Badge colors (hex values from config, loaded from party_mode/config)
-const requestBadgeColor = ref("");
-const boostBadgeColor = ref("");
-// Token counts
-const boostTokens = ref(3);
-const addQueueTokens = ref(10);
-const skipSongTokens = ref(1);
-const nextTokenCountdown = ref<string>("");
-const skipTokenCountdown = ref<string>("");
-const skippingSong = ref(false);
-let countdownInterval: ReturnType<typeof setInterval> | null = null;
-
-// Generic token bucket functions
-const loadTokenBucket = (
-  storageKey: string,
-  maxTokens: number,
-  refillRate: number,
-): TokenBucket => {
-  const stored = localStorage.getItem(storageKey);
-  if (!stored) {
-    return {
-      tokens: maxTokens,
-      lastRefill: Date.now(),
-    };
-  }
-
-  try {
-    const bucket: TokenBucket = JSON.parse(stored);
-    const now = Date.now();
-    const timeSinceRefill = now - bucket.lastRefill;
-    const tokensToAdd = Math.floor(timeSinceRefill / refillRate);
-
-    if (tokensToAdd > 0) {
-      bucket.tokens = Math.min(maxTokens, bucket.tokens + tokensToAdd);
-      bucket.lastRefill = now;
-    }
-
-    return bucket;
-  } catch {
-    return {
-      tokens: maxTokens,
-      lastRefill: Date.now(),
-    };
-  }
-};
-
-const saveTokenBucket = (storageKey: string, bucket: TokenBucket) => {
-  localStorage.setItem(storageKey, JSON.stringify(bucket));
-};
-
-// Generic token consumption function
-const consumeToken = (
-  storageKey: string,
-  maxTokens: number,
-  refillRate: number,
-  tokenRef: { value: number },
-): boolean => {
-  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
-  if (bucket.tokens <= 0) {
-    return false;
-  }
-
-  bucket.tokens -= 1;
-  saveTokenBucket(storageKey, bucket);
-  tokenRef.value = bucket.tokens;
-  return true;
-};
-
-// Generic time until next token function
-const getTimeUntilNextTokenRefill = (
-  storageKey: string,
-  maxTokens: number,
-  refillRate: number,
-): number => {
-  const bucket = loadTokenBucket(storageKey, maxTokens, refillRate);
-  if (bucket.tokens >= maxTokens) {
-    return 0;
-  }
-
-  const timeSinceRefill = Date.now() - bucket.lastRefill;
-  const timeUntilNext = refillRate - (timeSinceRefill % refillRate);
-  return Math.ceil(timeUntilNext / 1000 / 60); // Return minutes
-};
-
-// Convenience wrappers for each token type
-const consumeBoostToken = (): boolean =>
-  consumeToken(
-    BOOST_STORAGE_KEY,
-    BOOST_MAX_TOKENS.value,
-    BOOST_REFILL_RATE.value,
-    boostTokens,
-  );
-
-const consumeAddQueueToken = (): boolean =>
-  consumeToken(
-    ADD_QUEUE_STORAGE_KEY,
-    ADD_QUEUE_MAX_TOKENS.value,
-    ADD_QUEUE_REFILL_RATE.value,
-    addQueueTokens,
-  );
-
-const consumeSkipSongToken = (): boolean =>
-  consumeToken(
-    SKIP_SONG_STORAGE_KEY,
-    SKIP_SONG_MAX_TOKENS.value,
-    SKIP_SONG_REFILL_RATE.value,
-    skipSongTokens,
-  );
-
-const getTimeUntilNextToken = (): number =>
-  getTimeUntilNextTokenRefill(
-    BOOST_STORAGE_KEY,
-    BOOST_MAX_TOKENS.value,
-    BOOST_REFILL_RATE.value,
-  );
-
-const getTimeUntilNextAddQueueToken = (): number =>
-  getTimeUntilNextTokenRefill(
-    ADD_QUEUE_STORAGE_KEY,
-    ADD_QUEUE_MAX_TOKENS.value,
-    ADD_QUEUE_REFILL_RATE.value,
-  );
-
-const getTimeUntilNextSkipToken = (): number =>
-  getTimeUntilNextTokenRefill(
-    SKIP_SONG_STORAGE_KEY,
-    SKIP_SONG_MAX_TOKENS.value,
-    SKIP_SONG_REFILL_RATE.value,
-  );
-
-// Format countdown timer for next token
-const formatCountdown = (milliseconds: number): string => {
-  const totalSeconds = Math.ceil(milliseconds / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  }
-  return `${seconds}s`;
-};
-
-// Update countdown display for all token types
-const updateCountdown = () => {
-  // Update Boost tokens
-  const boostBucket = loadTokenBucket(
-    BOOST_STORAGE_KEY,
-    BOOST_MAX_TOKENS.value,
-    BOOST_REFILL_RATE.value,
-  );
-  boostTokens.value = boostBucket.tokens;
-
-  if (boostBucket.tokens >= BOOST_MAX_TOKENS.value) {
-    nextTokenCountdown.value = "";
-  } else {
-    const timeSinceRefill = Date.now() - boostBucket.lastRefill;
-    const timeUntilNext =
-      BOOST_REFILL_RATE.value - (timeSinceRefill % BOOST_REFILL_RATE.value);
-    nextTokenCountdown.value = formatCountdown(timeUntilNext);
-  }
-
-  // Update Skip Song tokens
-  const skipBucket = loadTokenBucket(
-    SKIP_SONG_STORAGE_KEY,
-    SKIP_SONG_MAX_TOKENS.value,
-    SKIP_SONG_REFILL_RATE.value,
-  );
-  skipSongTokens.value = skipBucket.tokens;
-
-  if (skipBucket.tokens >= SKIP_SONG_MAX_TOKENS.value) {
-    skipTokenCountdown.value = "";
-  } else {
-    const timeSinceRefill = Date.now() - skipBucket.lastRefill;
-    const timeUntilNext =
-      SKIP_SONG_REFILL_RATE.value -
-      (timeSinceRefill % SKIP_SONG_REFILL_RATE.value);
-    skipTokenCountdown.value = formatCountdown(timeUntilNext);
-  }
-};
-
-// Queue state
-const queueItems = ref<QueueItem[]>([]);
-const partyModeQueueId = ref<string | null>(null);
-const queueListRef = ref<HTMLElement | null>(null);
-const queueFetchOffset = ref(0);
-const queueTotalItems = ref(0);
-const loadingMoreQueueItems = ref(false);
-
-// Simple computed to get current queue and its state directly from the API
-const currentQueue = computed(() => {
-  const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-  return queueId ? api.queues[queueId] : null;
-});
-
-const currentQueueIndex = computed(
-  () => currentQueue.value?.current_index ?? 0,
-);
-
-// Scroll to the currently playing item
-const scrollToCurrentItem = async () => {
-  await nextTick();
-  if (!queueListRef.value) return;
-
-  const activeItem = queueListRef.value.querySelector(
-    ".queue-item-current",
-  ) as HTMLElement;
-  if (activeItem) {
-    // Scroll within the queue container, not the whole page
-    const container = queueListRef.value;
-    // Calculate position relative to the container
-    const containerRect = container.getBoundingClientRect();
-    const itemRect = activeItem.getBoundingClientRect();
-    const relativeTop = itemRect.top - containerRect.top + container.scrollTop;
-
-    container.scrollTo({ top: relativeTop, behavior: "smooth" });
-  }
-};
-
-// Auto-scroll to currently playing item when it changes
-watch(currentQueueIndex, scrollToCurrentItem);
-
-// Also scroll when queue items are loaded (but not when appending more items)
-watch(
-  queueItems,
-  async (newItems, oldItems) => {
-    if (newItems.length > 0) {
-      // Only scroll to current item on initial load or reset, not when appending
-      // We detect append by checking if new items were added to the end
-      const isAppending =
-        oldItems &&
-        oldItems.length > 0 &&
-        newItems.length > oldItems.length &&
-        newItems
-          .slice(0, oldItems.length)
-          .every((item, i) => item.queue_item_id === oldItems[i].queue_item_id);
-
-      if (!isAppending) {
-        scrollToCurrentItem();
-      }
-      runMarqueeScan();
-    }
-  },
-  { deep: true },
-);
 
 // Run marquee scan when search results change
 watch(
@@ -747,444 +556,7 @@ watch(
   },
 );
 
-// Snackbar state
-const snackbar = ref({
-  show: false,
-  message: "",
-  color: "success",
-});
-
-// Helper to blur active element (hides mobile keyboard)
-const blurActiveElement = () => {
-  (document.activeElement as HTMLElement)?.blur();
-};
-
-// Levenshtein distance for string similarity
-const levenshteinDistance = (str1: string, str2: string): number => {
-  const m = str1.length;
-  const n = str2.length;
-  const dp: number[][] = Array(m + 1)
-    .fill(null)
-    .map(() => Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (str1[i - 1] === str2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-      }
-    }
-  }
-  return dp[m][n];
-};
-
-// Calculate relevance score for a search result
-const calculateRelevanceScore = (item: Track | Artist, query: string): number => {
-  const normalizedQuery = query.toLowerCase().trim();
-  const normalizedName = (item.name || "").toLowerCase().trim();
-
-  // Get artist name for tracks
-  let artistName = "";
-  if ("artists" in item && item.artists.length > 0) {
-    artistName = item.artists
-      .map((a) => a.name)
-      .join(" ")
-      .toLowerCase();
-  }
-
-  // Base score starts at 0, higher is better
-  let score = 0;
-
-  // 1. Exact match bonus (highest priority)
-  if (normalizedName === normalizedQuery) {
-    score += 1000;
-  } else if (normalizedName.startsWith(normalizedQuery)) {
-    // Starts with query - strong match
-    score += 500;
-  } else if (normalizedName.includes(normalizedQuery)) {
-    // Contains query
-    score += 200;
-  }
-
-  // 2. Artist name match for tracks
-  if (artistName) {
-    if (artistName === normalizedQuery) {
-      score += 800;
-    } else if (artistName.startsWith(normalizedQuery)) {
-      score += 400;
-    } else if (artistName.includes(normalizedQuery)) {
-      score += 150;
-    }
-  }
-
-  // 3. Levenshtein similarity (normalized to 0-100)
-  const distance = levenshteinDistance(
-    normalizedName.slice(0, 50),
-    normalizedQuery,
-  );
-  const maxLen = Math.max(normalizedName.length, normalizedQuery.length, 1);
-  const similarity = Math.max(0, 100 - (distance / maxLen) * 100);
-  score += similarity;
-
-  // 4. Popularity bonus (0-100 from metadata)
-  const popularity = item.metadata?.popularity ?? 0;
-  score += popularity * 0.5; // Weight popularity at 50%
-
-  // 5. Artist type bonus when searching for artists
-  // (so artist "Taylor Swift" ranks above track "Taylor Swift" when name matches)
-  if (
-    item.media_type === "artist" &&
-    normalizedName.includes(normalizedQuery)
-  ) {
-    score += 100;
-  }
-
-  return score;
-};
-
-// Sort search results by relevance score
-const sortByRelevance = (items: (Track | Artist)[], query: string): (Track | Artist)[] => {
-  return [...items].sort((a, b) => {
-    const scoreA = calculateRelevanceScore(a, query);
-    const scoreB = calculateRelevanceScore(b, query);
-    return scoreB - scoreA; // Higher score first
-  });
-};
-
-// Search functionality
-const performSearch = async () => {
-  if (!searchQuery.value || searchQuery.value.length < 2) return;
-
-  // Blur the input to hide mobile keyboard
-  blurActiveElement();
-
-  searching.value = true;
-  hasSearched.value = true;
-  try {
-    // Determine which media types to search based on filter
-    const mediaTypes: MediaType[] = [];
-    if (searchFilter.value === "all" || searchFilter.value === "track") {
-      mediaTypes.push(MediaType.TRACK);
-    }
-    if (searchFilter.value === "all" || searchFilter.value === "artist") {
-      mediaTypes.push(MediaType.ARTIST);
-    }
-
-    const results = await api.search(searchQuery.value, mediaTypes);
-
-    // Combine and sort results based on filter
-    let combinedResults: (Track | Artist)[];
-    if (searchFilter.value === "track") {
-      combinedResults = results.tracks;
-    } else if (searchFilter.value === "artist") {
-      combinedResults = results.artists;
-    } else {
-      // "all" - combine tracks and artists
-      combinedResults = [...results.tracks, ...results.artists];
-    }
-
-    // Sort by relevance (Levenshtein distance + popularity)
-    searchResults.value = sortByRelevance(combinedResults, searchQuery.value);
-
-    // Reset displayed count for new search
-    displayedResultsCount.value = 10;
-  } catch (error) {
-    console.error("Search failed:", error);
-    showSnackbar($t("guest.search_failed"), "error");
-  } finally {
-    searching.value = false;
-  }
-};
-
-// Debounced search - triggers after user pauses typing
-const debouncedSearch = () => {
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer);
-  }
-  // Only trigger if query is long enough
-  if (searchQuery.value && searchQuery.value.length >= 2) {
-    searchDebounceTimer = setTimeout(() => {
-      performSearch();
-    }, 1000); // 1 second debounce delay
-  }
-};
-
-// Watch for search query changes and trigger debounced search
-watch(searchQuery, (newQuery) => {
-  if (!newQuery || newQuery.length < 2) {
-    // Clear results if query is too short
-    if (hasSearched.value) {
-      searchResults.value = [];
-      hasSearched.value = false;
-    }
-  } else {
-    debouncedSearch();
-  }
-});
-
-// Watch for filter changes and re-search if there's a query
-watch(searchFilter, () => {
-  if (searchQuery.value && searchQuery.value.length >= 2) {
-    performSearch();
-  }
-});
-
-const clearSearch = () => {
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer);
-  }
-  searchQuery.value = "";
-  searchResults.value = [];
-  displayedResultsCount.value = 10; // Reset to initial count
-  hasSearched.value = false;
-  // Clear artist drill-down state
-  selectedArtist.value = null;
-  artistTracks.value = [];
-};
-
-// Artist drill-down - fetch tracks for selected artist
-const selectArtist = async (artist: Artist) => {
-  selectedArtist.value = artist;
-  loadingArtistTracks.value = true;
-  artistTracks.value = [];
-
-  try {
-    // Get the provider from the artist's provider_mappings
-    const providerMapping = artist.provider_mappings?.[0];
-    if (!providerMapping) {
-      throw new Error("No provider mapping found for artist");
-    }
-
-    const tracks = await api.getArtistTracks(
-      providerMapping.item_id,
-      providerMapping.provider_instance,
-    );
-    artistTracks.value = tracks;
-  } catch (error) {
-    console.error("Failed to fetch artist tracks:", error);
-    showSnackbar($t("guest.load_artist_tracks_failed"), "error");
-    selectedArtist.value = null;
-  } finally {
-    loadingArtistTracks.value = false;
-  }
-};
-
-const clearArtistSelection = () => {
-  selectedArtist.value = null;
-  artistTracks.value = [];
-};
-
-// Infinite scroll handler
-const handleScroll = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target) return;
-
-  // Check if we've scrolled near the bottom
-  const scrollPosition = target.scrollTop + target.clientHeight;
-  const scrollHeight = target.scrollHeight;
-  const threshold = 100; // Load more when within 100px of bottom
-
-  if (
-    scrollPosition >= scrollHeight - threshold &&
-    !loadingMoreResults.value &&
-    displayedResultsCount.value < searchResults.value.length
-  ) {
-    loadMoreResults();
-  }
-};
-
-// Load more results
-const loadMoreResults = () => {
-  loadingMoreResults.value = true;
-
-  // Simulate a small delay for smooth UX
-  setTimeout(() => {
-    const increment = 10;
-    const newCount = Math.min(
-      displayedResultsCount.value + increment,
-      searchResults.value.length,
-    );
-    displayedResultsCount.value = newCount;
-    loadingMoreResults.value = false;
-    // runMarqueeScan();
-  }, 300);
-};
-
-// Add to queue functionality
-const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
-  // Check if the feature is enabled
-  if (position === "next" && !boostEnabled.value) {
-    showSnackbar($t("guest.boost_disabled"), "warning");
-    return;
-  }
-  if (position === "end" && !addQueueEnabled.value) {
-    showSnackbar($t("guest.add_queue_disabled"), "warning");
-    return;
-  }
-
-  // Only check token limits if rate limiting is enabled
-  if (rateLimitingEnabled.value) {
-    // Check token bucket rate limit for "Boost"
-    if (position === "next") {
-      if (!consumeBoostToken()) {
-        const minutesUntilNext = getTimeUntilNextToken();
-        showSnackbar(
-          $t("guest.boost_limit_reached", [minutesUntilNext]),
-          "warning",
-        );
-        return;
-      }
-    } else {
-      // Check token bucket rate limit for "Add to Queue"
-      if (!consumeAddQueueToken()) {
-        const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        showSnackbar(
-          $t("guest.add_queue_limit_reached", [minutesUntilNext]),
-          "warning",
-        );
-        return;
-      }
-    }
-  }
-
-  const key = `${item.media_type}-${item.item_id}-${position}`;
-  addingItems.value.add(key);
-
-  try {
-    // Use party mode queue if configured, otherwise use active player queue
-    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-    if (!queueId) {
-      throw new Error("No player queue available");
-    }
-
-    await api.playMedia(
-      item.uri,
-      position === "next" ? QueueOption.NEXT : QueueOption.ADD, // option
-      undefined, // radio_mode
-      undefined, // start_item
-      queueId, // queue_id - use configured party mode player
-    );
-
-    const message =
-      position === "next"
-        ? $t("guest.item_boosted", [item.name])
-        : $t("guest.item_added_to_queue", [item.name]);
-    showSnackbar(message, "success");
-  } catch (error) {
-    console.error("Failed to add to queue:", error);
-    showSnackbar($t("guest.add_to_queue_failed"), "error");
-  } finally {
-    addingItems.value.delete(key);
-  }
-};
-
-// Queue fetching with smart windowing
-const fetchQueueItems = async (reset = true) => {
-  const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-  if (!queueId) {
-    queueItems.value = [];
-    return;
-  }
-
-  try {
-    // Fetch the queue state first to ensure we have the current index
-    // This is important on initial load when api.queues may not be populated yet
-    const queue = await api.sendCommand<PlayerQueue>("player_queues/get", {
-      queue_id: queueId,
-    });
-    // Update the reactive queues object so currentQueue computed works
-    if (queue) {
-      api.queues[queueId] = queue;
-      queueTotalItems.value = queue.items || 0;
-    }
-
-    if (reset) {
-      // Initial load: fetch 50 items starting from current playing position minus 10
-      // This ensures the current song is visible with some context before and after
-      const currentIdx = queue?.current_index ?? 0;
-      const offset = Math.max(0, currentIdx - 10);
-      queueFetchOffset.value = offset;
-
-      const items = await api.getPlayerQueueItems(queueId, 50, offset);
-      queueItems.value = items;
-    } else {
-      // Load more items (append to existing)
-      loadingMoreQueueItems.value = true;
-      const newOffset = queueFetchOffset.value + queueItems.value.length;
-
-      if (newOffset < queueTotalItems.value) {
-        const items = await api.getPlayerQueueItems(queueId, 50, newOffset);
-        queueItems.value = [...queueItems.value, ...items];
-      }
-
-      loadingMoreQueueItems.value = false;
-    }
-  } catch (error) {
-    console.error("Failed to fetch queue items:", error);
-    loadingMoreQueueItems.value = false;
-  }
-};
-
-// Queue scroll handler for infinite scroll
-const handleQueueScroll = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target || loadingMoreQueueItems.value) return;
-
-  // Check if scrolled near bottom
-  const scrollPosition = target.scrollTop + target.clientHeight;
-  const scrollHeight = target.scrollHeight;
-  const threshold = 100;
-
-  // Load more if near bottom and there are more items to load
-  const hasMore =
-    queueFetchOffset.value + queueItems.value.length < queueTotalItems.value;
-  if (scrollPosition >= scrollHeight - threshold && hasMore) {
-    fetchQueueItems(false);
-  }
-};
-
-// Marquee helper functions
-const applyMarquee = (el: HTMLElement) => {
-  const span = el.querySelector("span") as HTMLElement;
-  if (!span) return;
-
-  // Reset first to get accurate measurements
-  el.classList.remove("marquee");
-  span.style.setProperty("--marquee-distance", "0px");
-
-  // Use requestAnimationFrame to ensure layout is complete
-  requestAnimationFrame(() => {
-    const overflow = span.scrollWidth - el.clientWidth;
-
-    if (overflow <= 2) {
-      el.classList.remove("marquee");
-      span.style.setProperty("--marquee-distance", "0px");
-      return;
-    }
-
-    // Set the distance to scroll (the overflow amount + small padding)
-    span.style.setProperty("--marquee-distance", `-${overflow + 16}px`);
-    // Speed based on distance: ~30px per second
-    const duration = Math.max((overflow + 16) / 30, 3);
-    span.style.setProperty("--marquee-duration", `${duration}s`);
-    el.classList.add("marquee");
-  });
-};
-
-const runMarqueeScan = () => {
-  nextTick(() => {
-    requestAnimationFrame(() => {
-      document
-        .querySelectorAll(".scroll-text")
-        .forEach((el) => applyMarquee(el as HTMLElement));
-    });
-  });
-};
-
+// --- Display helpers ---
 const getImageUrl = (item: Track | Artist) => {
   const img = item.metadata?.images?.[0];
   return img ? getMediaItemImageUrl(img) : "";
@@ -1205,7 +577,6 @@ const getArtistName = (item: Track | Artist) => {
   return $t("guest.unknown_artist");
 };
 
-// Get proper track title from media_item (not "Artist - Title" format)
 const getQueueItemTitle = (item: QueueItem) => {
   if (item.media_item?.name) {
     return item.media_item.name;
@@ -1213,7 +584,6 @@ const getQueueItemTitle = (item: QueueItem) => {
   return item.name;
 };
 
-// Get "Artist • Album" subtitle for queue items
 const getQueueItemSubtitle = (item: QueueItem) => {
   const mediaItem = item.media_item;
   const parts: string[] = [];
@@ -1229,23 +599,75 @@ const getQueueItemSubtitle = (item: QueueItem) => {
   return parts.length > 0 ? parts.join(" • ") : $t("guest.unknown_artist");
 };
 
-const showSnackbar = (message: string, color: string = "success") => {
-  snackbar.value = {
-    show: true,
-    message,
-    color,
-  };
+// --- Action glue (bridges rate limiting + API + snackbar) ---
+const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
+  if (position === "next" && !boostEnabled.value) {
+    showSnackbar($t("guest.boost_disabled"), "warning");
+    return;
+  }
+  if (position === "end" && !addQueueEnabled.value) {
+    showSnackbar($t("guest.add_queue_disabled"), "warning");
+    return;
+  }
+
+  if (rateLimitingEnabled.value) {
+    if (position === "next") {
+      if (!consumeBoostToken()) {
+        const minutesUntilNext = getTimeUntilNextToken();
+        showSnackbar(
+          $t("guest.boost_limit_reached", [minutesUntilNext]),
+          "warning",
+        );
+        return;
+      }
+    } else {
+      if (!consumeAddQueueToken()) {
+        const minutesUntilNext = getTimeUntilNextAddQueueToken();
+        showSnackbar(
+          $t("guest.add_queue_limit_reached", [minutesUntilNext]),
+          "warning",
+        );
+        return;
+      }
+    }
+  }
+
+  const key = `${item.media_type}-${item.item_id}-${position}`;
+  addingItems.value.add(key);
+
+  try {
+    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    if (!queueId) {
+      throw new Error("No player queue available");
+    }
+
+    await api.playMedia(
+      item.uri,
+      position === "next" ? QueueOption.NEXT : QueueOption.ADD,
+      undefined,
+      undefined,
+      queueId,
+    );
+
+    const message =
+      position === "next"
+        ? $t("guest.item_boosted", [item.name])
+        : $t("guest.item_added_to_queue", [item.name]);
+    showSnackbar(message, "success");
+  } catch (error) {
+    console.error("Failed to add to queue:", error);
+    showSnackbar($t("guest.add_to_queue_failed"), "error");
+  } finally {
+    addingItems.value.delete(key);
+  }
 };
 
-// Skip current song functionality
 const skipCurrentSong = async () => {
-  // Check if the feature is enabled
   if (!skipSongEnabled.value) {
     showSnackbar($t("guest.skip_disabled"), "warning");
     return;
   }
 
-  // Check token bucket rate limit if rate limiting is enabled
   if (rateLimitingEnabled.value) {
     if (!consumeSkipSongToken()) {
       const minutesUntilNext = getTimeUntilNextSkipToken();
@@ -1259,7 +681,6 @@ const skipCurrentSong = async () => {
 
   skippingSong.value = true;
   try {
-    // queue_id is the same as player_id in Music Assistant
     const playerId =
       partyModeQueueId.value || store.activePlayerQueue?.queue_id;
     if (!playerId) {
@@ -1276,35 +697,18 @@ const skipCurrentSong = async () => {
   }
 };
 
-// Lifecycle
+// --- Lifecycle ---
 onMounted(async () => {
-  // Fetch party mode configuration (token limits and refill rate)
+  // Fetch and apply party mode configuration
   try {
     const config = (await api.sendCommand(
       "party_mode/config",
     )) as PartyModeConfig;
     if (config) {
-      rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
-      // Feature enable toggles
-      addQueueEnabled.value = config.enable_add_queue ?? true;
-      boostEnabled.value = config.enable_boost ?? true;
-      skipSongEnabled.value = config.enable_skip_song ?? true;
-      // Token limits and refill rates
-      ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit || 10;
-      ADD_QUEUE_REFILL_RATE.value =
-        (config.add_queue_refill_minutes || 2) * 60 * 1000;
-      BOOST_MAX_TOKENS.value = config.boost_limit || 3;
-      BOOST_REFILL_RATE.value = (config.boost_refill_minutes || 20) * 60 * 1000;
-      SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
-      SKIP_SONG_REFILL_RATE.value =
-        (config.skip_song_refill_minutes || 60) * 60 * 1000;
-      // Badge colors (always set from config)
-      requestBadgeColor.value = config.request_badge_color || "#2196F3";
-      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+      rateLimit.configure(config);
     }
   } catch (error) {
     console.error("Failed to fetch party mode config:", error);
-    // Use defaults if fetch fails
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
   }
@@ -1313,31 +717,8 @@ onMounted(async () => {
   history.pushState(null, "", location.href);
   window.addEventListener("popstate", handleBack);
 
-  // Initialize token buckets (after fetching config)
-  const boostBucket = loadTokenBucket(
-    BOOST_STORAGE_KEY,
-    BOOST_MAX_TOKENS.value,
-    BOOST_REFILL_RATE.value,
-  );
-  boostTokens.value = boostBucket.tokens;
-
-  const addQueueBucket = loadTokenBucket(
-    ADD_QUEUE_STORAGE_KEY,
-    ADD_QUEUE_MAX_TOKENS.value,
-    ADD_QUEUE_REFILL_RATE.value,
-  );
-  addQueueTokens.value = addQueueBucket.tokens;
-
-  const skipSongBucket = loadTokenBucket(
-    SKIP_SONG_STORAGE_KEY,
-    SKIP_SONG_MAX_TOKENS.value,
-    SKIP_SONG_REFILL_RATE.value,
-  );
-  skipSongTokens.value = skipSongBucket.tokens;
-
-  // Start countdown timer
-  updateCountdown();
-  countdownInterval = setInterval(updateCountdown, 1000);
+  // Initialize token buckets and start countdown
+  const cleanupCountdown = rateLimit.startCountdown();
 
   // Fetch party mode player configuration
   try {
@@ -1346,51 +727,15 @@ onMounted(async () => {
     console.error("Failed to fetch party mode player:", error);
   }
 
-  // Initial queue fetch
+  // Initial queue fetch and event subscriptions
   fetchQueueItems();
-
-  // Subscribe to queue updates - refetch when items change
-  const unsub1 = api.subscribe(
-    EventType.QUEUE_ITEMS_UPDATED,
-    (evt: EventMessage) => {
-      const queueId =
-        partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-      if (evt.object_id === queueId) {
-        // When items are added/removed, do a full reset to recalculate offset
-        fetchQueueItems(true);
-      }
-    },
-  );
-
-  // Refetch if current playing position moves outside our fetched window
-  const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
-    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
-    if (evt.object_id === queueId) {
-      const currentIdx = currentQueueIndex.value;
-      const fetchedStart = queueFetchOffset.value;
-      const fetchedEnd = fetchedStart + queueItems.value.length;
-
-      // Refetch if current song is outside our window or getting close to boundaries
-      if (
-        currentIdx < fetchedStart + 5 ||
-        currentIdx > fetchedEnd - 5 ||
-        queueItems.value.length === 0
-      ) {
-        fetchQueueItems(true);
-      }
-    }
-  });
+  const cleanupQueueEvents = queue.subscribeToEvents();
 
   onBeforeUnmount(() => {
     window.removeEventListener("popstate", handleBack);
-    unsub1();
-    unsub2();
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-    }
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
+    cleanupQueueEvents();
+    cleanupCountdown();
+    search.cleanup();
   });
 });
 </script>
