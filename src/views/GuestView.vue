@@ -415,6 +415,7 @@ import {
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
+  Artist,
   EventType,
   EventMessage,
   PartyModeConfig,
@@ -422,6 +423,7 @@ import {
   QueueItem,
   MediaType,
   QueueOption,
+  Track,
 } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
@@ -444,7 +446,7 @@ const handleBack = (event: PopStateEvent) => {
 
 // Search state
 const searchQuery = ref("");
-const searchResults = ref<any[]>([]);
+const searchResults = ref<(Track | Artist)[]>([]);
 const searching = ref(false);
 const addingItems = ref(new Set<string>());
 const hasSearched = ref(false); // Track if a search has been performed
@@ -452,8 +454,8 @@ const searchFilter = ref<"all" | "track" | "artist">("all"); // Filter for searc
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Artist drill-down state
-const selectedArtist = ref<any | null>(null);
-const artistTracks = ref<any[]>([]);
+const selectedArtist = ref<Artist | null>(null);
+const artistTracks = ref<Track[]>([]);
 const loadingArtistTracks = ref(false);
 
 // Infinite scroll state
@@ -485,7 +487,6 @@ interface TokenBucket {
   tokens: number;
   lastRefill: number;
 }
-
 
 const rateLimitingEnabled = ref(true); // Default to enabled
 // Feature enable toggles (can be disabled by admin)
@@ -782,15 +783,15 @@ const levenshteinDistance = (str1: string, str2: string): number => {
 };
 
 // Calculate relevance score for a search result
-const calculateRelevanceScore = (item: any, query: string): number => {
+const calculateRelevanceScore = (item: Track | Artist, query: string): number => {
   const normalizedQuery = query.toLowerCase().trim();
   const normalizedName = (item.name || "").toLowerCase().trim();
 
   // Get artist name for tracks
   let artistName = "";
-  if (item.artists && item.artists.length > 0) {
+  if ("artists" in item && item.artists.length > 0) {
     artistName = item.artists
-      .map((a: any) => a.name)
+      .map((a) => a.name)
       .join(" ")
       .toLowerCase();
   }
@@ -846,7 +847,7 @@ const calculateRelevanceScore = (item: any, query: string): number => {
 };
 
 // Sort search results by relevance score
-const sortByRelevance = (items: any[], query: string): any[] => {
+const sortByRelevance = (items: (Track | Artist)[], query: string): (Track | Artist)[] => {
   return [...items].sort((a, b) => {
     const scoreA = calculateRelevanceScore(a, query);
     const scoreB = calculateRelevanceScore(b, query);
@@ -876,7 +877,7 @@ const performSearch = async () => {
     const results = await api.search(searchQuery.value, mediaTypes);
 
     // Combine and sort results based on filter
-    let combinedResults: any[];
+    let combinedResults: (Track | Artist)[];
     if (searchFilter.value === "track") {
       combinedResults = results.tracks;
     } else if (searchFilter.value === "artist") {
@@ -946,7 +947,7 @@ const clearSearch = () => {
 };
 
 // Artist drill-down - fetch tracks for selected artist
-const selectArtist = async (artist: any) => {
+const selectArtist = async (artist: Artist) => {
   selectedArtist.value = artist;
   loadingArtistTracks.value = true;
   artistTracks.value = [];
@@ -1014,7 +1015,7 @@ const loadMoreResults = () => {
 };
 
 // Add to queue functionality
-const addToQueue = async (item: any, position: "next" | "end") => {
+const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   // Check if the feature is enabled
   if (position === "next" && !boostEnabled.value) {
     showSnackbar($t("guest.boost_disabled"), "warning");
@@ -1184,8 +1185,9 @@ const runMarqueeScan = () => {
   });
 };
 
-const getImageUrl = (item: any) => {
-  return getMediaItemImageUrl(item.metadata?.images?.[0] || item.image);
+const getImageUrl = (item: Track | Artist) => {
+  const img = item.metadata?.images?.[0];
+  return img ? getMediaItemImageUrl(img) : "";
 };
 
 const getQueueItemImageUrl = (item: QueueItem) => {
@@ -1193,48 +1195,34 @@ const getQueueItemImageUrl = (item: QueueItem) => {
   return getMediaItemImageUrl(item.image);
 };
 
-const getArtistName = (item: any) => {
-  if (item.media_type === "artist") {
+const getArtistName = (item: Track | Artist) => {
+  if (item.media_type === MediaType.ARTIST) {
     return $t("artist");
   }
-  if (item.artists && item.artists.length > 0) {
-    return item.artists.map((a: any) => a.name).join(", ");
-  }
-  if (item.artist) {
-    return item.artist.name;
+  if ("artists" in item && item.artists.length > 0) {
+    return item.artists.map((a) => a.name).join(", ");
   }
   return $t("guest.unknown_artist");
 };
 
 // Get proper track title from media_item (not "Artist - Title" format)
 const getQueueItemTitle = (item: QueueItem) => {
-  const mediaItem = item.media_item as any;
-  // Prefer media_item.name for proper track title
-  if (mediaItem?.name) {
-    return mediaItem.name;
+  if (item.media_item?.name) {
+    return item.media_item.name;
   }
-  // Fallback to queue item name
   return item.name;
 };
 
 // Get "Artist • Album" subtitle for queue items
 const getQueueItemSubtitle = (item: QueueItem) => {
-  const mediaItem = item.media_item as any;
+  const mediaItem = item.media_item;
   const parts: string[] = [];
 
-  // Get artist name(s)
-  if (
-    mediaItem?.artists &&
-    Array.isArray(mediaItem.artists) &&
-    mediaItem.artists.length > 0
-  ) {
-    parts.push(mediaItem.artists.map((a: any) => a.name).join(", "));
-  } else if (mediaItem?.artist?.name) {
-    parts.push(mediaItem.artist.name);
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists.length > 0) {
+    parts.push(mediaItem.artists.map((a) => a.name).join(", "));
   }
 
-  // Get album name
-  if (mediaItem?.album?.name) {
+  if (mediaItem && "album" in mediaItem && mediaItem.album?.name) {
     parts.push(mediaItem.album.name);
   }
 
