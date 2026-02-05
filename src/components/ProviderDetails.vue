@@ -133,6 +133,7 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   MediaType,
@@ -140,11 +141,10 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { computed, reactive, ref } from "vue";
-import { copyToClipboard } from "@/helpers/utils";
-import { toast } from "vuetify-sonner";
-import { useI18n } from "vue-i18n";
 import { eventbus } from "@/plugins/eventbus";
+import { computed, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { toast } from "vue-sonner";
 
 export interface Props {
   itemDetails: MediaItemType;

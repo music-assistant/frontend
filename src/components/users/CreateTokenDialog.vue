@@ -96,7 +96,7 @@ import { useForm } from "@tanstack/vue-form";
 import { Copy } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
+import { toast } from "vue-sonner";
 
 import { Button } from "@/components/ui/button";
 import {

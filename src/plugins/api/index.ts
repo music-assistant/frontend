@@ -2,10 +2,10 @@ import { store } from "../store";
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, reactive, ref } from "vue";
-import { toast } from "vuetify-sonner";
-import { getDeviceName } from "./helpers";
+import { toast } from "vue-sonner";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
+import { getDeviceName } from "./helpers";
 import {
   type Album,
   type Artist,
