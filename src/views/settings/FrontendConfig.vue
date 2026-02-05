@@ -149,6 +149,21 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
     },
+    {
+      key: "mobile_sidebar_side",
+      type: ConfigEntryType.STRING,
+      label: "mobile_sidebar_side",
+      default_value: "left",
+      required: false,
+      options: [
+        { title: "Left", value: "left" },
+        { title: "Right", value: "right" },
+      ],
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
+    },
   ];
 
   // Add web player settings (if not running in companion mode)
