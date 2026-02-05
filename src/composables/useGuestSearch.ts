@@ -27,7 +27,6 @@ export function useGuestSearch(options: {
   // Infinite scroll state
   const resultsListRef = ref<HTMLElement | null>(null);
   const displayedResultsCount = ref(10);
-  const loadingMoreResults = ref(false);
   const displayedResults = computed(() =>
     searchResults.value.slice(0, displayedResultsCount.value),
   );
@@ -163,7 +162,6 @@ export function useGuestSearch(options: {
 
     if (
       scrollPosition >= scrollHeight - threshold &&
-      !loadingMoreResults.value &&
       displayedResultsCount.value < searchResults.value.length
     ) {
       loadMoreResults();
@@ -171,17 +169,11 @@ export function useGuestSearch(options: {
   };
 
   const loadMoreResults = () => {
-    loadingMoreResults.value = true;
-
-    setTimeout(() => {
-      const increment = 10;
-      const newCount = Math.min(
-        displayedResultsCount.value + increment,
-        searchResults.value.length,
-      );
-      displayedResultsCount.value = newCount;
-      loadingMoreResults.value = false;
-    }, 300);
+    const increment = 10;
+    displayedResultsCount.value = Math.min(
+      displayedResultsCount.value + increment,
+      searchResults.value.length,
+    );
   };
 
   const cleanup = () => {
@@ -200,7 +192,6 @@ export function useGuestSearch(options: {
     artistTracks,
     loadingArtistTracks,
     displayedResults,
-    loadingMoreResults,
     resultsListRef,
     displayedResultsCount,
     performSearch,
