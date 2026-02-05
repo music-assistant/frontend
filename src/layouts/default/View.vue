@@ -4,7 +4,7 @@
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
     <SidebarProvider>
-      <AppSidebar v-if="!store.mobileLayout" />
+      <AppSidebar />
       <SidebarInset>
         <div
           :class="[
