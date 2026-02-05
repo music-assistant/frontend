@@ -302,13 +302,13 @@
                         v-if="
                           item.extra_attributes?.added_by_user_role === 'guest'
                         "
-                        :class="[
-                          'guest-request-badge',
-                          {
-                            boost:
-                              item.extra_attributes?.queue_option === 'next',
-                          },
-                        ]"
+                        class="guest-request-badge"
+                        :style="{
+                          '--badge-color':
+                            item.extra_attributes?.queue_option === 'next'
+                              ? boostBadgeColor
+                              : requestBadgeColor,
+                        }"
                       >
                         <v-icon size="x-small">{{
                           item.extra_attributes?.queue_option === "next"
@@ -567,6 +567,7 @@ import {
   MediaItemChapter,
   MediaItemType,
   MediaType,
+  type PartyModeConfig,
   PlaybackState,
   PlayerFeature,
   PlayerQueue,
@@ -613,6 +614,10 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
+
+// Badge colors for guest request badges (loaded from party_mode/config)
+const requestBadgeColor = ref("#2196f3");
+const boostBadgeColor = ref("#ff5722");
 
 // Lyrics elapsed time computation (similar to PlayerTimeline)
 const nowTick = ref(0);
@@ -1225,6 +1230,21 @@ const loadNextPage = async function ({ done }: { done: any }) {
   }
 };
 
+// Fetch badge colors from party mode config
+onMounted(async () => {
+  try {
+    const config = (await api.sendCommand(
+      "party_mode/config",
+    )) as PartyModeConfig;
+    if (config) {
+      requestBadgeColor.value = config.request_badge_color || "#2196F3";
+      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+    }
+  } catch {
+    // Party mode not enabled or config unavailable - use defaults
+  }
+});
+
 // listen for item updates to refresh items when that happens
 onMounted(() => {
   const unsub = api.subscribe(
@@ -1638,8 +1658,6 @@ button {
 }
 
 .guest-request-badge {
-  /* Fixed colors for main app (not party mode views which use config) */
-  --badge-color: #2196f3; /* Blue for regular requests */
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -1653,9 +1671,5 @@ button {
   letter-spacing: 0.3px;
   color: var(--badge-color);
   margin-right: 0.5rem;
-}
-
-.guest-request-badge.boost {
-  --badge-color: #ff5722; /* Orange for Boost */
 }
 </style>
