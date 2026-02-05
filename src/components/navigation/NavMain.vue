@@ -39,9 +39,18 @@ const isActive = (url: string) => {
             v-bind="{ to: item.url }"
             :is-active="isActive(item.url)"
             :tooltip="item.title"
-            class="no-underline font-semibold text-sm"
+            :class="
+              isActive(item.url)
+                ? 'no-underline font-bold text-sm'
+                : 'no-underline font-medium text-sm'
+            "
           >
-            <component :is="item.icon" v-if="item.icon" class="mr-1" />
+            <component
+              :is="item.icon"
+              v-if="item.icon"
+              class="mr-1"
+              :stroke-width="isActive(item.url) ? 2.5 : 2"
+            />
             <span>{{ item.title }}</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

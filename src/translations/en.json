@@ -304,18 +304,27 @@
         "unsaved_changes_message": "You have unsaved changes. Are you sure you want to leave without saving?",
         "stay": "Stay",
         "discard": "Discard changes",
+        "protocol_disabled_message": "Enable this protocol to configure its settings",
+        "protocol_no_settings": "This output protocol does not have any additional configuration",
+        "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
+        "show_advanced_settings": "Show advanced settings",
+        "advanced": "Advanced",
+
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "audio": "Audio",
+            "playback": "Playback settings",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
-            "announcements": "Announcements configuration",
+            "announcements": "Announcements settings",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
             "presets": "Presets",
             "sync_options": "Sync\/import options",
             "builtin_playlists": "Builtin Playlist Settings",
-            "web_player": "Web Player"
+            "web_player": "Web Player",
+            "protocol_settings": "Protocol Settings",
+            "protocol_output_settings": "Enable {0} support",
+            "dsp": "Digital Signal Processing (DSP)"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
