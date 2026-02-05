@@ -16,8 +16,8 @@
           class="empty-state"
         >
           <v-icon size="120" icon="mdi-music-off" class="empty-icon" />
-          <h2 class="empty-title">{{ $t('party.nothing_playing') }}</h2>
-          <p class="empty-message">{{ $t('party.get_started') }}</p>
+          <h2 class="empty-title">{{ $t("party.nothing_playing") }}</h2>
+          <p class="empty-message">{{ $t("party.get_started") }}</p>
         </div>
 
         <!-- Track List -->
@@ -57,7 +57,12 @@ import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { EventType, EventMessage, QueueItem } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  EventMessage,
+  PartyModeConfig,
+  QueueItem,
+} from "@/plugins/api/interfaces";
 import {
   ImageColorPalette,
   getColorPalette,
@@ -67,17 +72,6 @@ import {
 const theme = useTheme();
 const route = useRoute();
 
-// Party mode configuration
-interface PartyModeConfig {
-  boost_limit: number;
-  boost_refill_minutes: number;
-  add_queue_limit: number;
-  add_queue_refill_minutes: number;
-  album_art_background: boolean;
-  show_player_controls: boolean;
-  request_badge_color?: string;
-  boost_badge_color?: string;
-}
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControlsEnabled = ref(false); // Default to false (frameless)

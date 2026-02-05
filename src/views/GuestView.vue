@@ -25,7 +25,7 @@
         class="search-btn"
         @click="performSearch"
       >
-        {{ $t('search') }}
+        {{ $t("search") }}
       </v-btn>
     </div>
 
@@ -37,7 +37,7 @@
         selected-class="filter-active"
       >
         <v-chip value="all" variant="outlined" size="small" class="filter-chip">
-          {{ $t('searchtype_all') }}
+          {{ $t("searchtype_all") }}
         </v-chip>
         <v-chip
           value="track"
@@ -46,7 +46,7 @@
           class="filter-chip"
         >
           <v-icon start size="small">mdi-music-note</v-icon>
-          {{ $t('guest.filter_songs') }}
+          {{ $t("guest.filter_songs") }}
         </v-chip>
         <v-chip
           value="artist"
@@ -55,7 +55,7 @@
           class="filter-chip"
         >
           <v-icon start size="small">mdi-account-music</v-icon>
-          {{ $t('artists') }}
+          {{ $t("artists") }}
         </v-chip>
       </v-chip-group>
     </div>
@@ -70,7 +70,7 @@
           @click="clearArtistSelection"
         >
           <v-icon start>mdi-arrow-left</v-icon>
-          {{ $t('back') }}
+          {{ $t("back") }}
         </v-btn>
         <h2 class="section-title artist-title">
           {{ selectedArtist.name }}
@@ -80,7 +80,7 @@
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">{{ $t('guest.boost_available') }}</span>
+          <span class="token-label">{{ $t("guest.boost_available") }}</span>
           <span
             v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
             class="token-countdown"
@@ -93,7 +93,7 @@
       <!-- Loading state -->
       <div v-if="loadingArtistTracks" class="loading-artist-tracks">
         <v-progress-circular indeterminate color="primary" size="48" />
-        <p>{{ $t('guest.loading_tracks') }}</p>
+        <p>{{ $t("guest.loading_tracks") }}</p>
       </div>
       <!-- Artist tracks list -->
       <div v-else-if="artistTracks.length > 0" class="results-list">
@@ -132,7 +132,7 @@
               @click="addToQueue(track, 'next')"
             >
               <v-icon start>mdi-rocket-launch</v-icon>
-              {{ $t('guest.boost') }}
+              {{ $t("guest.boost") }}
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -144,7 +144,7 @@
               @click="addToQueue(track, 'end')"
             >
               <v-icon start>mdi-playlist-plus</v-icon>
-              {{ $t('guest.add') }}
+              {{ $t("guest.add") }}
             </v-btn>
           </div>
         </div>
@@ -152,7 +152,7 @@
       <!-- Empty state for no tracks -->
       <div v-else class="empty-state">
         <v-icon size="64" color="grey">mdi-music-off</v-icon>
-        <p>{{ $t('guest.no_tracks_for_artist') }}</p>
+        <p>{{ $t("guest.no_tracks_for_artist") }}</p>
       </div>
     </div>
 
@@ -160,14 +160,14 @@
     <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
-          {{ $t('guest.search_results_count', [searchResults.length]) }}
+          {{ $t("guest.search_results_count", [searchResults.length]) }}
         </h2>
         <div v-if="rateLimitingEnabled" class="boost-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">{{ $t('guest.boost_available') }}</span>
+          <span class="token-label">{{ $t("guest.boost_available") }}</span>
           <span
             v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
             class="token-countdown"
@@ -200,7 +200,7 @@
               <div class="result-artist scroll-text">
                 <span>{{ getArtistName(item) }}</span>
                 <span v-if="item.media_type === 'artist'" class="result-type">
-                  • {{ $t('artist') }}
+                  • {{ $t("artist") }}
                 </span>
               </div>
             </div>
@@ -219,7 +219,7 @@
               @click="addToQueue(item, 'next')"
             >
               <v-icon start>mdi-rocket-launch</v-icon>
-              {{ $t('guest.boost') }}
+              {{ $t("guest.boost") }}
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -233,7 +233,7 @@
               @click="addToQueue(item, 'end')"
             >
               <v-icon start>mdi-playlist-plus</v-icon>
-              {{ $t('guest.add') }}
+              {{ $t("guest.add") }}
             </v-btn>
           </div>
           <!-- Actions for artists - drill down to see tracks -->
@@ -245,7 +245,7 @@
               @click="selectArtist(item)"
             >
               <v-icon start>mdi-music-note-outline</v-icon>
-              {{ $t('guest.view_songs') }}
+              {{ $t("guest.view_songs") }}
             </v-btn>
           </div>
         </div>
@@ -267,8 +267,8 @@
       class="empty-state"
     >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
-      <p>{{ $t('guest.no_results_for', [searchQuery]) }}</p>
-      <p class="empty-hint">{{ $t('guest.try_different_search') }}</p>
+      <p>{{ $t("guest.no_results_for", [searchQuery]) }}</p>
+      <p class="empty-hint">{{ $t("guest.try_different_search") }}</p>
     </div>
 
     <!-- Current Queue Section - Hidden when search results or artist tracks are showing -->
@@ -276,7 +276,7 @@
       v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
       class="queue-section"
     >
-      <h2 class="section-title">{{ $t('guest.current_queue') }}</h2>
+      <h2 class="section-title">{{ $t("guest.current_queue") }}</h2>
       <div
         v-if="queueItems.length > 0"
         ref="queueListRef"
@@ -339,8 +339,8 @@
             }}</v-icon>
             <span>{{
               item.extra_attributes?.queue_option === "next"
-                ? $t('guest.boost')
-                : $t('guest.request')
+                ? $t("guest.boost")
+                : $t("guest.request")
             }}</span>
           </span>
           <!-- Skip button for currently playing item -->
@@ -360,7 +360,7 @@
               @click="skipCurrentSong"
             >
               <v-icon start size="small">mdi-skip-next</v-icon>
-              {{ $t('guest.skip') }}
+              {{ $t("guest.skip") }}
               <span
                 v-if="rateLimitingEnabled"
                 class="skip-token-badge"
@@ -387,7 +387,7 @@
       </div>
       <div v-else class="empty-queue">
         <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
-        <p>{{ $t('guest.queue_empty') }}</p>
+        <p>{{ $t("guest.queue_empty") }}</p>
       </div>
     </div>
 
@@ -395,7 +395,9 @@
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
       {{ snackbar.message }}
       <template #actions>
-        <v-btn variant="text" @click="snackbar.show = false"> {{ $t('close') }} </v-btn>
+        <v-btn variant="text" @click="snackbar.show = false">
+          {{ $t("close") }}
+        </v-btn>
       </template>
     </v-snackbar>
   </div>
@@ -415,6 +417,7 @@ import { store } from "@/plugins/store";
 import {
   EventType,
   EventMessage,
+  PartyModeConfig,
   PlayerQueue,
   QueueItem,
   MediaType,
@@ -483,26 +486,6 @@ interface TokenBucket {
   lastRefill: number;
 }
 
-interface PartyModeConfig {
-  enable_rate_limiting: boolean;
-  // Add to Queue feature
-  enable_add_queue: boolean;
-  add_queue_limit: number;
-  add_queue_refill_minutes: number;
-  // Boost feature
-  enable_boost: boolean;
-  boost_limit: number;
-  boost_refill_minutes: number;
-  // Skip Song feature
-  enable_skip_song: boolean;
-  skip_song_limit: number;
-  skip_song_refill_minutes: number;
-  // UI settings
-  album_art_background: boolean;
-  // Badge colors
-  request_badge_color?: string;
-  boost_badge_color?: string;
-}
 
 const rateLimitingEnabled = ref(true); // Default to enabled
 // Feature enable toggles (can be disabled by admin)

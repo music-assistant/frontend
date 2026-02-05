@@ -1029,3 +1029,22 @@ export interface RemoteAccessInfo {
   using_ha_cloud: boolean;
   signaling_url: string;
 }
+
+// Party Mode interfaces
+
+export interface PartyModeConfig {
+  enable_rate_limiting: boolean;
+  enable_add_queue: boolean;
+  add_queue_limit: number;
+  add_queue_refill_minutes: number;
+  enable_boost: boolean;
+  boost_limit: number;
+  boost_refill_minutes: number;
+  enable_skip_song: boolean;
+  skip_song_limit: number;
+  skip_song_refill_minutes: number;
+  album_art_background: boolean;
+  show_player_controls: boolean;
+  request_badge_color?: string;
+  boost_badge_color?: string;
+}
