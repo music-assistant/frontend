@@ -195,6 +195,7 @@ const completeInitialization = async () => {
     return;
   }
   authManager.setCurrentUser(userInfo);
+  store.currentUser = userInfo;
   store.serverInfo = serverInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
@@ -256,6 +257,8 @@ const completeInitialization = async () => {
     store.isOnboarding = true;
     router.push("/settings/providers");
   }
+  // Don't push to any route here - let the router handle navigation naturally
+  // from the URL hash. The router config already redirects "/" to "/home"
   api.state.value = ConnectionState.INITIALIZED;
 
   // Initialize companion app integration
