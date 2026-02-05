@@ -317,8 +317,8 @@
                         }}</v-icon>
                         {{
                           item.extra_attributes?.queue_option === "next"
-                            ? "Boost"
-                            : "Request"
+                            ? $t("guest.boost")
+                            : $t("guest.request")
                         }}
                       </span>
                       <NowPlayingBadge

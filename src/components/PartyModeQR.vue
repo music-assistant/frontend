@@ -5,8 +5,8 @@
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
       <v-icon size="64" icon="mdi-qrcode-off" />
-      <p>Guest Access Disabled</p>
-      <p class="qr-hint">Enable in party mode plugin settings</p>
+      <p>{{ $t('party.guest_access_disabled') }}</p>
+      <p class="qr-hint">{{ $t('party.enable_in_settings') }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
       <a
@@ -23,8 +23,8 @@
     </div>
     <div v-else class="qr-error">
       <v-icon size="64" icon="mdi-alert-circle-outline" />
-      <p>Failed to generate QR code</p>
-      <p class="qr-hint">Check your network settings</p>
+      <p>{{ $t('party.qr_failed') }}</p>
+      <p class="qr-hint">{{ $t('party.check_network') }}</p>
     </div>
   </div>
 </template>
@@ -33,6 +33,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import QRCode from "qrcode";
 import api from "@/plugins/api";
+import { $t } from "@/plugins/i18n";
 import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
@@ -41,7 +42,7 @@ const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
-const instructionText = ref("Scan to join!");
+const instructionText = ref($t("party.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
@@ -87,11 +88,11 @@ const fetchConfig = async () => {
     if (config.qr_show_instruction_text === false) {
       instructionText.value = "";
     } else {
-      instructionText.value = config.qr_instruction_text || "Scan to join!";
+      instructionText.value = config.qr_instruction_text || $t("party.scan_to_join");
     }
   } catch {
     // Use default if config fetch fails
-    instructionText.value = "Scan to join!";
+    instructionText.value = $t("party.scan_to_join");
   }
 };
 

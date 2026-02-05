@@ -4,7 +4,7 @@
     <div class="search-section">
       <v-text-field
         v-model="searchQuery"
-        placeholder="Search for songs or artists..."
+        :placeholder="$t('guest.search_placeholder')"
         prepend-inner-icon="mdi-magnify"
         variant="outlined"
         density="comfortable"
@@ -25,7 +25,7 @@
         class="search-btn"
         @click="performSearch"
       >
-        Search
+        {{ $t('search') }}
       </v-btn>
     </div>
 
@@ -37,7 +37,7 @@
         selected-class="filter-active"
       >
         <v-chip value="all" variant="outlined" size="small" class="filter-chip">
-          All
+          {{ $t('searchtype_all') }}
         </v-chip>
         <v-chip
           value="track"
@@ -46,7 +46,7 @@
           class="filter-chip"
         >
           <v-icon start size="small">mdi-music-note</v-icon>
-          Songs
+          {{ $t('guest.filter_songs') }}
         </v-chip>
         <v-chip
           value="artist"
@@ -55,7 +55,7 @@
           class="filter-chip"
         >
           <v-icon start size="small">mdi-account-music</v-icon>
-          Artists
+          {{ $t('artists') }}
         </v-chip>
       </v-chip-group>
     </div>
@@ -70,7 +70,7 @@
           @click="clearArtistSelection"
         >
           <v-icon start>mdi-arrow-left</v-icon>
-          Back
+          {{ $t('back') }}
         </v-btn>
         <h2 class="section-title artist-title">
           {{ selectedArtist.name }}
@@ -80,7 +80,7 @@
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">Boost available</span>
+          <span class="token-label">{{ $t('guest.boost_available') }}</span>
           <span
             v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
             class="token-countdown"
@@ -93,7 +93,7 @@
       <!-- Loading state -->
       <div v-if="loadingArtistTracks" class="loading-artist-tracks">
         <v-progress-circular indeterminate color="primary" size="48" />
-        <p>Loading tracks...</p>
+        <p>{{ $t('guest.loading_tracks') }}</p>
       </div>
       <!-- Artist tracks list -->
       <div v-else-if="artistTracks.length > 0" class="results-list">
@@ -132,7 +132,7 @@
               @click="addToQueue(track, 'next')"
             >
               <v-icon start>mdi-rocket-launch</v-icon>
-              Boost
+              {{ $t('guest.boost') }}
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -144,7 +144,7 @@
               @click="addToQueue(track, 'end')"
             >
               <v-icon start>mdi-playlist-plus</v-icon>
-              Add
+              {{ $t('guest.add') }}
             </v-btn>
           </div>
         </div>
@@ -152,7 +152,7 @@
       <!-- Empty state for no tracks -->
       <div v-else class="empty-state">
         <v-icon size="64" color="grey">mdi-music-off</v-icon>
-        <p>No tracks found for this artist</p>
+        <p>{{ $t('guest.no_tracks_for_artist') }}</p>
       </div>
     </div>
 
@@ -160,14 +160,14 @@
     <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
-          Search Results ({{ searchResults.length }})
+          {{ $t('guest.search_results_count', [searchResults.length]) }}
         </h2>
         <div v-if="rateLimitingEnabled" class="boost-tokens">
           <v-icon size="small" color="primary">mdi-timer-sand</v-icon>
           <span class="token-count"
             >{{ boostTokens }}/{{ BOOST_MAX_TOKENS }}</span
           >
-          <span class="token-label">Boost available</span>
+          <span class="token-label">{{ $t('guest.boost_available') }}</span>
           <span
             v-if="boostTokens < BOOST_MAX_TOKENS && nextTokenCountdown"
             class="token-countdown"
@@ -200,7 +200,7 @@
               <div class="result-artist scroll-text">
                 <span>{{ getArtistName(item) }}</span>
                 <span v-if="item.media_type === 'artist'" class="result-type">
-                  • Artist
+                  • {{ $t('artist') }}
                 </span>
               </div>
             </div>
@@ -219,7 +219,7 @@
               @click="addToQueue(item, 'next')"
             >
               <v-icon start>mdi-rocket-launch</v-icon>
-              Boost
+              {{ $t('guest.boost') }}
             </v-btn>
             <v-btn
               v-if="addQueueEnabled"
@@ -233,7 +233,7 @@
               @click="addToQueue(item, 'end')"
             >
               <v-icon start>mdi-playlist-plus</v-icon>
-              Add
+              {{ $t('guest.add') }}
             </v-btn>
           </div>
           <!-- Actions for artists - drill down to see tracks -->
@@ -245,7 +245,7 @@
               @click="selectArtist(item)"
             >
               <v-icon start>mdi-music-note-outline</v-icon>
-              View Songs
+              {{ $t('guest.view_songs') }}
             </v-btn>
           </div>
         </div>
@@ -267,8 +267,8 @@
       class="empty-state"
     >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
-      <p>No results found for "{{ searchQuery }}"</p>
-      <p class="empty-hint">Try a different search term</p>
+      <p>{{ $t('guest.no_results_for', [searchQuery]) }}</p>
+      <p class="empty-hint">{{ $t('guest.try_different_search') }}</p>
     </div>
 
     <!-- Current Queue Section - Hidden when search results or artist tracks are showing -->
@@ -276,7 +276,7 @@
       v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
       class="queue-section"
     >
-      <h2 class="section-title">Current Queue</h2>
+      <h2 class="section-title">{{ $t('guest.current_queue') }}</h2>
       <div
         v-if="queueItems.length > 0"
         ref="queueListRef"
@@ -339,8 +339,8 @@
             }}</v-icon>
             <span>{{
               item.extra_attributes?.queue_option === "next"
-                ? "Boost"
-                : "Request"
+                ? $t('guest.boost')
+                : $t('guest.request')
             }}</span>
           </span>
           <!-- Skip button for currently playing item -->
@@ -360,7 +360,7 @@
               @click="skipCurrentSong"
             >
               <v-icon start size="small">mdi-skip-next</v-icon>
-              Skip
+              {{ $t('guest.skip') }}
               <span
                 v-if="rateLimitingEnabled"
                 class="skip-token-badge"
@@ -387,7 +387,7 @@
       </div>
       <div v-else class="empty-queue">
         <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
-        <p>Queue is empty</p>
+        <p>{{ $t('guest.queue_empty') }}</p>
       </div>
     </div>
 
@@ -395,7 +395,7 @@
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
       {{ snackbar.message }}
       <template #actions>
-        <v-btn variant="text" @click="snackbar.show = false"> Close </v-btn>
+        <v-btn variant="text" @click="snackbar.show = false"> {{ $t('close') }} </v-btn>
       </template>
     </v-snackbar>
   </div>
@@ -421,6 +421,7 @@ import {
   QueueOption,
 } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
 
 const handleBack = (event: PopStateEvent) => {
   // First, clear artist selection if viewing artist tracks
@@ -909,7 +910,7 @@ const performSearch = async () => {
     displayedResultsCount.value = 10;
   } catch (error) {
     console.error("Search failed:", error);
-    showSnackbar("Search failed. Please try again.", "error");
+    showSnackbar($t("guest.search_failed"), "error");
   } finally {
     searching.value = false;
   }
@@ -981,7 +982,7 @@ const selectArtist = async (artist: any) => {
     artistTracks.value = tracks;
   } catch (error) {
     console.error("Failed to fetch artist tracks:", error);
-    showSnackbar("Failed to load artist tracks. Please try again.", "error");
+    showSnackbar($t("guest.load_artist_tracks_failed"), "error");
     selectedArtist.value = null;
   } finally {
     loadingArtistTracks.value = false;
@@ -1033,11 +1034,11 @@ const loadMoreResults = () => {
 const addToQueue = async (item: any, position: "next" | "end") => {
   // Check if the feature is enabled
   if (position === "next" && !boostEnabled.value) {
-    showSnackbar("Boost is disabled by the host.", "warning");
+    showSnackbar($t("guest.boost_disabled"), "warning");
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
-    showSnackbar("Add to Queue is disabled by the host.", "warning");
+    showSnackbar($t("guest.add_queue_disabled"), "warning");
     return;
   }
 
@@ -1048,7 +1049,7 @@ const addToQueue = async (item: any, position: "next" | "end") => {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
         showSnackbar(
-          `Boost limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          $t("guest.boost_limit_reached", [minutesUntilNext]),
           "warning",
         );
         return;
@@ -1058,7 +1059,7 @@ const addToQueue = async (item: any, position: "next" | "end") => {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
         showSnackbar(
-          `Add to Queue limit reached. Next use available in ${minutesUntilNext} minutes.`,
+          $t("guest.add_queue_limit_reached", [minutesUntilNext]),
           "warning",
         );
         return;
@@ -1084,11 +1085,14 @@ const addToQueue = async (item: any, position: "next" | "end") => {
       queueId, // queue_id - use configured party mode player
     );
 
-    const action = position === "next" ? "boosted" : "added to queue";
-    showSnackbar(`"${item.name}" ${action}`, "success");
+    const message =
+      position === "next"
+        ? $t("guest.item_boosted", [item.name])
+        : $t("guest.item_added_to_queue", [item.name]);
+    showSnackbar(message, "success");
   } catch (error) {
     console.error("Failed to add to queue:", error);
-    showSnackbar("Failed to add to queue. Please try again.", "error");
+    showSnackbar($t("guest.add_to_queue_failed"), "error");
   } finally {
     addingItems.value.delete(key);
   }
@@ -1208,7 +1212,7 @@ const getQueueItemImageUrl = (item: QueueItem) => {
 
 const getArtistName = (item: any) => {
   if (item.media_type === "artist") {
-    return "Artist";
+    return $t("artist");
   }
   if (item.artists && item.artists.length > 0) {
     return item.artists.map((a: any) => a.name).join(", ");
@@ -1216,7 +1220,7 @@ const getArtistName = (item: any) => {
   if (item.artist) {
     return item.artist.name;
   }
-  return "Unknown Artist";
+  return $t("guest.unknown_artist");
 };
 
 // Get proper track title from media_item (not "Artist - Title" format)
@@ -1251,7 +1255,7 @@ const getQueueItemSubtitle = (item: QueueItem) => {
     parts.push(mediaItem.album.name);
   }
 
-  return parts.length > 0 ? parts.join(" • ") : "Unknown Artist";
+  return parts.length > 0 ? parts.join(" • ") : $t("guest.unknown_artist");
 };
 
 const showSnackbar = (message: string, color: string = "success") => {
@@ -1266,7 +1270,7 @@ const showSnackbar = (message: string, color: string = "success") => {
 const skipCurrentSong = async () => {
   // Check if the feature is enabled
   if (!skipSongEnabled.value) {
-    showSnackbar("Skip Song is disabled by the host.", "warning");
+    showSnackbar($t("guest.skip_disabled"), "warning");
     return;
   }
 
@@ -1275,7 +1279,7 @@ const skipCurrentSong = async () => {
     if (!consumeSkipSongToken()) {
       const minutesUntilNext = getTimeUntilNextSkipToken();
       showSnackbar(
-        `Skip limit reached. Next skip available in ${minutesUntilNext} minutes.`,
+        $t("guest.skip_limit_reached", [minutesUntilNext]),
         "warning",
       );
       return;
@@ -1292,10 +1296,10 @@ const skipCurrentSong = async () => {
     }
 
     await api.playerCommandNext(playerId);
-    showSnackbar("Song skipped!", "success");
+    showSnackbar($t("guest.song_skipped"), "success");
   } catch (error) {
     console.error("Failed to skip song:", error);
-    showSnackbar("Failed to skip song. Please try again.", "error");
+    showSnackbar($t("guest.skip_failed"), "error");
   } finally {
     skippingSong.value = false;
   }
