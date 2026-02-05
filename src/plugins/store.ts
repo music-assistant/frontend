@@ -11,7 +11,6 @@ import {
 import { StoredState } from "@/components/ItemsListing.vue";
 import { isTouchscreenDevice, parseBool } from "@/helpers/utils";
 import api from "./api";
-import { authManager } from "./auth";
 
 import MobileDetect from "mobile-detect";
 import { getBreakpointValue } from "./breakpoint";
@@ -59,7 +58,7 @@ interface Store {
   serverInfo?: ServerInfoMessage;
   isIngressSession: boolean;
   isOnboarding: boolean;
-  partyModeEnabled: boolean;
+  enabledPlugins: Set<string>;
   isPartyModeGuest: boolean;
   companionPlayerId?: string;
 }
@@ -132,10 +131,6 @@ export const store: Store = reactive({
   serverInfo: undefined,
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
-  partyModeEnabled: false,
-  isPartyModeGuest: computed(() => {
-    // Check JWT claims for party mode client type
-    // This is the authoritative source - JWT is self-contained
-    return authManager.isPartyModeGuest();
-  }),
+  enabledPlugins: new Set(),
+  isPartyModeGuest: false,
 });

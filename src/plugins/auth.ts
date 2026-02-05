@@ -35,6 +35,7 @@ export class AuthManager {
     this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (this.token) {
       this.claims = this.decodeJWT(this.token);
+      store.isPartyModeGuest = this.isPartyModeGuest();
     }
   }
 
@@ -99,6 +100,7 @@ export class AuthManager {
     this.token = token;
     this.claims = this.decodeJWT(token);
     localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    store.isPartyModeGuest = this.isPartyModeGuest();
   }
 
   /**
@@ -116,12 +118,29 @@ export class AuthManager {
   }
 
   /**
+   * Get the provider name from JWT claims.
+   * This identifies which provider created the session (e.g., "party_mode").
+   * Returns undefined for regular login sessions.
+   */
+  getProviderName(): string | undefined {
+    return this.claims?.provider_name;
+  }
+
+  /**
+   * Check if this session was created by a specific provider.
+   * Useful for providers that need to restrict UI access.
+   */
+  isProviderGuest(providerName: string): boolean {
+    return this.claims?.provider_name === providerName;
+  }
+
+  /**
    * Check if this is a party mode guest session.
    * Party mode guests authenticate via QR code/join code and have
    * restricted UI access (only the guest view).
    */
   isPartyModeGuest(): boolean {
-    return this.claims?.provider_name === "party_mode";
+    return this.isProviderGuest("party_mode");
   }
 
   /**
@@ -138,6 +157,7 @@ export class AuthManager {
     this.token = null;
     this.claims = null;
     store.currentUser = undefined;
+    store.isPartyModeGuest = false;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   }
 
