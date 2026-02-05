@@ -9,6 +9,7 @@
     :show-favorites-only-filter="false"
     :show-track-number="false"
     :show-refresh-button="true"
+    :refresh-on-parent-update="true"
     :load-items="loadPlaylistTracks"
     :sort-keys="[
       'position',

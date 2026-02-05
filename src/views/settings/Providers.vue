@@ -672,7 +672,7 @@ const getProviderName = function (config: ProviderConfig) {
   }
   // fallback on configured name or manifest name
   const manifest = api.providerManifests[config.domain];
-  return config.name || manifest?.name;
+  return config.name || config.default_name || manifest?.name;
 };
 
 const isTextTruncated = function (text: string) {

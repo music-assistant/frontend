@@ -672,7 +672,8 @@
         "enable_browser_controls": {
             "label": "Omogući medijske kontrole u pregledaču",
             "description": "Dozvoli kontrolu reprodukcije pomoću ugrađenih medija kontrola u pregledaču (npr. medija tasteri na tastaturi)."
-        }
+        },
+        "settings_saved": "Podešavanja su uspešno sačuvana"
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
