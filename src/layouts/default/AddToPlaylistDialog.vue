@@ -104,7 +104,7 @@ import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { toast } from "vuetify-sonner";
+import { toast } from "vue-sonner";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);

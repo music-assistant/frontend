@@ -608,6 +608,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
+  release_date?: string;
   cache_checksum?: string;
   chapters?: MediaItemChapter[];
 }
@@ -637,6 +638,7 @@ export interface MediaItem extends _MediaItemBase {
 export interface ItemMapping extends _MediaItemBase {
   available: boolean;
   image?: MediaItemImage;
+  year?: number;
 }
 
 export interface Artist extends MediaItem {}

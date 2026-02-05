@@ -944,22 +944,6 @@ const loadData = async function (
     newContentAvailable.value = false;
   }
 
-  const libraryItemTypes = [
-    "artists",
-    "albums",
-    "tracks",
-    "playlists",
-    "audiobooks",
-    "podcasts",
-    "radios",
-  ];
-  if (
-    (clear || !initialDataReceived.value) &&
-    libraryItemTypes.includes(props.itemtype)
-  ) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
-
   params.value.offset = offset;
   params.value.limit = props.limit;
   params.value.refresh = refresh;

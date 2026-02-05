@@ -57,6 +57,7 @@ defineProps<Props>();
 
 const showTip = ref(false);
 let tipWasShown = false;
+let autoDismissTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const isPlaying = computed(() => {
   return (
@@ -76,6 +77,10 @@ function dismissTip() {
   showTip.value = false;
   tipWasShown = true;
   store.playerTipShown = true;
+  if (autoDismissTimeout) {
+    clearTimeout(autoDismissTimeout);
+    autoDismissTimeout = null;
+  }
 }
 
 function openPlayersMenu() {
@@ -99,12 +104,20 @@ onMounted(() => {
     if (shouldShowTip.value) {
       showTip.value = true;
       document.addEventListener("click", handleGlobalClick, { capture: true });
+      // Auto-dismiss after 2.5 seconds
+      autoDismissTimeout = setTimeout(() => {
+        dismissTip();
+      }, 2500);
     }
   }, 1000);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", handleGlobalClick, { capture: true });
+  if (autoDismissTimeout) {
+    clearTimeout(autoDismissTimeout);
+    autoDismissTimeout = null;
+  }
 });
 
 watch(
