@@ -405,6 +405,7 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   type Artist,
+  EventType,
   type PartyModeConfig,
   type QueueItem,
   MediaType,
@@ -653,9 +654,9 @@ const skipCurrentSong = async () => {
 // --- Lifecycle ---
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
+let cleanupProvidersSub: (() => void) | null = null;
 
-onMounted(async () => {
-  // Fetch and apply party mode configuration
+const fetchAndApplyConfig = async () => {
   try {
     const config = (await api.sendCommand(
       "party_mode/config",
@@ -668,6 +669,10 @@ onMounted(async () => {
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
   }
+};
+
+onMounted(async () => {
+  await fetchAndApplyConfig();
 
   // Push initial state to enable back interception
   history.pushState(null, "", location.href);
@@ -686,12 +691,19 @@ onMounted(async () => {
   // Initial queue fetch and event subscriptions
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();
+
+  // Re-apply config when provider settings change (e.g. badge colors)
+  cleanupProvidersSub = api.subscribe(
+    EventType.PROVIDERS_UPDATED,
+    fetchAndApplyConfig,
+  );
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("popstate", handleBack);
   cleanupQueueEvents?.();
   cleanupCountdown?.();
+  cleanupProvidersSub?.();
   search.cleanup();
 });
 </script>

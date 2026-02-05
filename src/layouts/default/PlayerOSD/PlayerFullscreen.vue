@@ -1231,7 +1231,7 @@ const loadNextPage = async function ({ done }: { done: any }) {
 };
 
 // Fetch badge colors from party mode config
-onMounted(async () => {
+const fetchBadgeColors = async () => {
   try {
     const config = (await api.sendCommand(
       "party_mode/config",
@@ -1243,6 +1243,12 @@ onMounted(async () => {
   } catch {
     // Party mode not enabled or config unavailable - use defaults
   }
+};
+
+onMounted(() => {
+  fetchBadgeColors();
+  const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, fetchBadgeColors);
+  onBeforeUnmount(unsub);
 });
 
 // listen for item updates to refresh items when that happens
