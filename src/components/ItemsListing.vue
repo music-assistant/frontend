@@ -1078,7 +1078,8 @@ if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
     const key = props.path || props.itemtype;
-    const el = document.querySelector("#cont");
+    const el = document.querySelector(".content-section");
+
     store.prevState = {
       path: key,
       scrollPos: el?.scrollTop || 0,
@@ -1161,7 +1162,8 @@ onMounted(async () => {
     initialDataReceived.value = store.prevState.initialDataReceived;
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
-      const el = document.getElementById("cont");
+      const el = document.querySelector(".content-section") as HTMLElement;
+
       if (el) {
         scrollElement(el, store.prevState!.scrollPos, 50);
       }
