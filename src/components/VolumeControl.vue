@@ -236,14 +236,14 @@ import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {
-  PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
+import { getVolumeIconComponent } from "@/helpers/utils";
+import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
 
 export interface Props {
   player: Player;
@@ -257,61 +257,16 @@ const compProps = defineProps<Props>();
 const playersToSync = ref<string[]>([]);
 const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
-const mainDisplayVolume = ref(0);
 const childDisplayVolumes = ref<Record<string, number>>({});
-const isInitialized = ref(false);
 
 // emits
 defineEmits<{
   (e: "toggle-expand", player: Player): void;
 }>();
 
-onMounted(() => {
-  if (!isInitialized.value) {
-    mainDisplayVolume.value = Math.round(
-      compProps.player.group_members.length
-        ? compProps.player.group_volume
-        : compProps.player.volume_level || 0,
-    );
-
-    for (const childId of compProps.player.group_members) {
-      if (api?.players[childId]) {
-        childDisplayVolumes.value[childId] = Math.round(
-          api.players[childId].volume_level || 0,
-        );
-      }
-    }
-    isInitialized.value = true;
-  }
-});
-
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
-
-const getVolumeIconComponent = function (
-  player: Player,
-  displayVolume?: number,
-) {
-  if (player.volume_muted) {
-    return VolumeX;
-  }
-
-  const volume =
-    displayVolume !== undefined
-      ? displayVolume
-      : player.group_members.length
-        ? player.group_volume
-        : player.volume_level || 0;
-
-  if (volume === 0) {
-    return Volume;
-  } else if (volume < 50) {
-    return Volume1;
-  } else {
-    return Volume2;
-  }
-};
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];
@@ -432,23 +387,6 @@ const syncCheckBoxChange = async function (
         playersToUnSync.value = [];
       });
   }, 500);
-};
-
-const handlePlayerMuteToggle = function (player: Player) {
-  if (player.group_members.length > 0) {
-    // TODO: revisit this when api/server supports group mute toggle
-    const muted = !player.volume_muted;
-    for (const memberId of player.group_members) {
-      const childPlayer = api.players[memberId];
-      if (!childPlayer) continue;
-      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
-        continue;
-      }
-      api.playerCommandVolumeMute(memberId, muted);
-    }
-  } else {
-    api.playerCommandMuteToggle(player.player_id);
-  }
 };
 </script>
 
