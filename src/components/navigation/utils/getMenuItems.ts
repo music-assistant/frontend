@@ -24,7 +24,7 @@ export interface MenuItem {
 }
 
 export const getMenuItems = function () {
-  // Read from user preferences first, fallback to localStorage for migration
+  // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   const userMenuItems = store.currentUser?.preferences?.menu_items;
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
 

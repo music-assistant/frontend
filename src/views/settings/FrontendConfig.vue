@@ -63,6 +63,8 @@ const loading = ref(false);
 const mode = useColorMode();
 
 onMounted(() => {
+  // TODO: Remove localStorage fallbacks below once migration period is over
+  // (theme, language, menu_items moved from localStorage to user preferences)
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
@@ -125,10 +127,7 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "preferences",
-      value:
-        store.currentUser?.preferences?.startup_view ||
-        localStorage.getItem("frontend.settings.startup_view") ||
-        "home",
+      value: store.currentUser?.preferences?.startup_view || "home",
     },
     {
       key: "menu_items",
