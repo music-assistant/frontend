@@ -11,11 +11,8 @@ const routes = [
       {
         path: "",
         redirect: () => {
-          // Read from user preferences first, fallback to localStorage for migration
           const startupView =
-            store.currentUser?.preferences?.startup_view ||
-            localStorage.getItem("frontend.settings.startup_view") ||
-            "home";
+            store.currentUser?.preferences?.startup_view || "home";
           return `/${startupView}`;
         },
       },
