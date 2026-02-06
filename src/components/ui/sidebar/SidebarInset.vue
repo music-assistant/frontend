@@ -10,6 +10,13 @@ const props = defineProps<{
 
 const { isMobile, openMobile, setOpenMobile } = useSidebar();
 
+const mobileSidebarSide = ref<"left" | "right">("left");
+
+if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+  const stored = localStorage.getItem("frontend.settings.mobile_sidebar_side");
+  mobileSidebarSide.value = stored === "right" ? "right" : "left";
+}
+
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const trackingSwipe = ref(false);
@@ -25,7 +32,17 @@ function onTouchStart(event: TouchEvent) {
 
   touchStartX.value = touch.clientX;
   touchStartY.value = touch.clientY;
-  trackingSwipe.value = touchStartX.value <= EDGE_ZONE_PX;
+  if (mobileSidebarSide.value === "left") {
+    trackingSwipe.value = touchStartX.value <= EDGE_ZONE_PX;
+  } else {
+    const width =
+      window.innerWidth ||
+      (typeof document !== "undefined"
+        ? document.documentElement.clientWidth
+        : 0);
+    trackingSwipe.value =
+      width > 0 && touchStartX.value >= width - EDGE_ZONE_PX;
+  }
 }
 
 function onTouchMove(event: TouchEvent) {
@@ -42,7 +59,10 @@ function onTouchMove(event: TouchEvent) {
     return;
   }
 
-  if (deltaX > SWIPE_THRESHOLD_PX) {
+  if (
+    (mobileSidebarSide.value === "left" && deltaX > SWIPE_THRESHOLD_PX) ||
+    (mobileSidebarSide.value === "right" && -deltaX > SWIPE_THRESHOLD_PX)
+  ) {
     setOpenMobile(true);
     trackingSwipe.value = false;
   }
