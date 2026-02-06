@@ -11,6 +11,17 @@
       z-index: 999;
     `"
   ></div>
+
+  <!-- bottom navigation for mobile layout -->
+  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
+  <BottomNavigation
+    v-if="store.mobileLayout"
+    app
+    :style="
+      store.isInPWAMode ? 'padding-bottom: 10px;height: 70px;' : 'height: 60px;'
+    "
+  />
+
   <v-footer
     app
     color="default"
@@ -19,34 +30,25 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
+    :style="store.isInPWAMode ? 'margin-bottom: 10px;' : ''"
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
 </template>
 
 <script setup lang="ts">
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import Player from "./PlayerOSD/Player.vue";
 import { store } from "@/plugins/store";
-import { computed } from "vue";
-import { parseBool } from "@/helpers/utils";
-
-const bottomNavHeight = computed(() => {
-  if (store.isInPWAMode) {
-    // for iOS standalone we need extra padding at the bottom due to the apphandle
-    return 100;
-  }
-  return 80;
-});
+import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 </script>
 
 <style>
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  margin: 10px;
-  margin-bottom: 5px;
-  width: calc(100% - 20px) !important;
+  margin: 5px;
+  margin-bottom: 0px;
+  width: calc(100% - 10px) !important;
   border-radius: 10px !important;
 }
 
@@ -69,5 +71,8 @@ const bottomNavHeight = computed(() => {
 
 .v-bottom-navigation--active {
   box-shadow: none;
+}
+.v-footer {
+  z-index: 1200 !important;
 }
 </style>

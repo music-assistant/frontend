@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Toolbar :show-loading="true" :home="true" color="background">
+    <Toolbar :show-loading="true" :home="true" :icon="House" color="background">
       <template v-if="!store.mobileLayout" #append>
         <!-- User avatar menu (desktop only; on mobile see NavUser in sidebar) -->
         <DropdownMenu>
@@ -120,7 +120,7 @@ import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LogOut, Pencil, Settings, User } from "lucide-vue-next";
+import { House, LogOut, Pencil, Settings, User } from "lucide-vue-next";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
