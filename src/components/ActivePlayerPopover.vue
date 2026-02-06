@@ -76,6 +76,7 @@ const shouldShowTip = computed(() => {
   if (tipWasShown || store.playerTipShown) return false;
   if (!store.activePlayer) return false;
   if (store.activePlayerId === webPlayer.player_id) return false;
+  if (store.showPlayersMenu) return false;
   return true;
 });
 
@@ -108,8 +109,20 @@ onMounted(() => {
 
   if (!props.autoShow) return;
 
+  // Don't show if players menu is already open
+  if (store.showPlayersMenu) {
+    tipWasShown = true;
+    store.playerTipShown = true;
+    return;
+  }
+
   setTimeout(() => {
-    if (shouldShowTip.value) {
+    // Double-check conditions right before showing
+    if (
+      shouldShowTip.value &&
+      !store.playerTipShown &&
+      !store.showPlayersMenu
+    ) {
       showTip.value = true;
       document.addEventListener("click", handleGlobalClick, { capture: true });
       // Auto-dismiss after 2.5 seconds
@@ -144,6 +157,16 @@ watch(showTip, (newVal, oldVal) => {
     store.playerTipShown = true;
   }
 });
+
+// Watch for players menu opening and dismiss tip immediately
+watch(
+  () => store.showPlayersMenu,
+  (isOpen) => {
+    if (isOpen && showTip.value) {
+      dismissTip();
+    }
+  },
+);
 </script>
 
 <style>
