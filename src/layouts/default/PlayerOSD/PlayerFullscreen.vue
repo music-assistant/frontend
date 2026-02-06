@@ -298,6 +298,29 @@
                       </div>
                     </template>
                     <template #append>
+                      <span
+                        v-if="
+                          item.extra_attributes?.added_by_user_role === 'guest'
+                        "
+                        class="guest-request-badge"
+                        :style="{
+                          '--badge-color':
+                            item.extra_attributes?.queue_option === 'next'
+                              ? boostBadgeColor
+                              : requestBadgeColor,
+                        }"
+                      >
+                        <v-icon size="x-small">{{
+                          item.extra_attributes?.queue_option === "next"
+                            ? "mdi-rocket-launch"
+                            : "mdi-account-music"
+                        }}</v-icon>
+                        {{
+                          item.extra_attributes?.queue_option === "next"
+                            ? $t("guest.boost")
+                            : $t("guest.request")
+                        }}
+                      </span>
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
@@ -544,6 +567,7 @@ import {
   MediaItemChapter,
   MediaItemType,
   MediaType,
+  type PartyModeConfig,
   PlaybackState,
   PlayerFeature,
   PlayerQueue,
@@ -590,6 +614,10 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
+
+// Badge colors for guest request badges (loaded from party_mode/config)
+const requestBadgeColor = ref("#2196f3");
+const boostBadgeColor = ref("#ff5722");
 
 // Lyrics elapsed time computation (similar to PlayerTimeline)
 const nowTick = ref(0);
@@ -1202,6 +1230,25 @@ const loadNextPage = async function ({ done }: { done: any }) {
   }
 };
 
+// Fetch badge colors from party mode config
+const fetchBadgeColors = async () => {
+  try {
+    const config = (await api.sendCommand(
+      "party_mode/config",
+    )) as PartyModeConfig;
+    if (config) {
+      requestBadgeColor.value = config.request_badge_color || "#2196F3";
+      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+    }
+  } catch {
+    // Party mode not enabled or config unavailable - use defaults
+  }
+};
+
+onMounted(() => {
+  fetchBadgeColors();
+});
+
 // listen for item updates to refresh items when that happens
 onMounted(() => {
   const unsub = api.subscribe(
@@ -1612,5 +1659,21 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.guest-request-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 35%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  margin-right: 0.5rem;
 }
 </style>

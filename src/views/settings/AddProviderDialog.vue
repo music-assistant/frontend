@@ -268,12 +268,13 @@ const close = function () {
   emit("update:show", false);
 };
 
+// Load items initially and when providers change
 watch(
   () => api.providers,
-  (val) => {
-    if (val) loadItems();
+  () => {
+    loadItems();
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -289,6 +290,8 @@ watch(
     }
 
     if (isOpen) {
+      // Refresh provider configs when dialog opens
+      loadItems();
       nextTick(() => {
         searchInput.value?.focus();
       });

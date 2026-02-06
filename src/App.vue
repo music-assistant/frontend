@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
+import { EventType, ProviderType, UserRole } from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -196,6 +197,7 @@ const completeInitialization = async () => {
   }
   authManager.setCurrentUser(userInfo);
   store.serverInfo = serverInfo;
+  store.currentUser = userInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
   if (store.isIngressSession && serverInfo.homeassistant_addon) {
@@ -207,14 +209,41 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  await api.fetchState();
-  store.libraryArtistsCount = await api.getLibraryArtistsCount();
-  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
-  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
-  store.libraryRadiosCount = await api.getLibraryRadiosCount();
-  store.libraryTracksCount = await api.getLibraryTracksCount();
-  store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
-  store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+  // For guest users, skip fetching library counts and state (they don't have permission)
+  // Just set them to initialized state so they can access the guest view
+  const isGuestRole = userInfo.role === UserRole.GUEST;
+  // Party mode guests are identified by JWT claims (decoded by authManager)
+  const isPartyModeGuest = authManager.isPartyModeGuest();
+
+  if (!isGuestRole) {
+    // Full initialization for non-guest users
+    await api.fetchState();
+    store.libraryArtistsCount = await api.getLibraryArtistsCount();
+    store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+    store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+    store.libraryRadiosCount = await api.getLibraryRadiosCount();
+    store.libraryTracksCount = await api.getLibraryTracksCount();
+    store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
+    store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+  } else {
+    console.debug("[App] Guest user - skipping full state fetch");
+  }
+
+  // Check if party mode plugin is enabled
+  try {
+    const partyModeProviders = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "party_mode",
+    );
+    if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
+      store.enabledPlugins.add("party_mode");
+    } else {
+      store.enabledPlugins.delete("party_mode");
+    }
+  } catch (error) {
+    console.error("[App] Failed to check party mode status:", error);
+    store.enabledPlugins.delete("party_mode");
+  }
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
@@ -222,8 +251,9 @@ const completeInitialization = async () => {
     localStorage.getItem("frontend.settings.web_player_enabled") || "true";
   const browserControlsEnabledPref =
     localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
-  if (companionMode.value) {
-    // the webplayer is completely disabled if we're running companion mode (no sendspin, no controls)
+
+  // Disable web player for party mode guests and companion mode
+  if (isPartyModeGuest || companionMode.value) {
     webPlayer.setMode(WebPlayerMode.DISABLED);
   } else if (
     webPlayerEnabledPref !== "false" &&
@@ -255,6 +285,9 @@ const completeInitialization = async () => {
   ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
+  } else if (isPartyModeGuest) {
+    // Party mode guests should always be redirected to the guest view
+    router.push("/guest");
   }
   api.state.value = ConnectionState.INITIALIZED;
 
@@ -349,6 +382,23 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
+
+  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    try {
+      const partyModeProviders = await api.getProviderConfigs(
+        ProviderType.PLUGIN,
+        "party_mode",
+      );
+      if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
+        store.enabledPlugins.add("party_mode");
+      } else {
+        store.enabledPlugins.delete("party_mode");
+      }
+    } catch (error) {
+      console.error("[App] Failed to update party mode status:", error);
+    }
+  });
 });
 
 onUnmounted(() => {

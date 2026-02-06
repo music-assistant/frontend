@@ -780,6 +780,13 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
+  // Guest priority queue: extra_attributes stores who added this item
+  extra_attributes?: {
+    added_by_user_id?: string;
+    added_by_user_role?: string; // e.g., "guest", "admin"
+    added_at?: number; // Unix timestamp when item was added
+    queue_option?: string; // how item was added: "next", "add", "play", etc.
+  };
 }
 
 // player_queue
@@ -998,6 +1005,7 @@ export interface ButtonProps {
 export enum UserRole {
   ADMIN = "admin",
   USER = "user",
+  GUEST = "guest",
 }
 
 export enum AuthProviderType {
@@ -1016,6 +1024,8 @@ export interface User {
   preferences: Record<string, any>;
   provider_filter: string[];
   player_filter: string[];
+  // Note: Session-specific claims like provider_name are in the JWT token.
+  // Use authManager.isPartyModeGuest() to check for party mode sessions.
 }
 
 export interface AuthToken {
@@ -1067,4 +1077,23 @@ export interface RemoteAccessInfo {
   remote_id: string;
   using_ha_cloud: boolean;
   signaling_url: string;
+}
+
+// Party Mode interfaces
+
+export interface PartyModeConfig {
+  enable_rate_limiting: boolean;
+  enable_add_queue: boolean;
+  add_queue_limit: number;
+  add_queue_refill_minutes: number;
+  enable_boost: boolean;
+  boost_limit: number;
+  boost_refill_minutes: number;
+  enable_skip_song: boolean;
+  skip_song_limit: number;
+  skip_song_refill_minutes: number;
+  album_art_background: boolean;
+  show_player_controls: boolean;
+  request_badge_color?: string;
+  boost_badge_color?: string;
 }
