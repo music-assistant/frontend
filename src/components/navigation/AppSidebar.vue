@@ -10,7 +10,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { computed } from "vue";
+import { eventbus } from "@/plugins/eventbus";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { getMenuItems } from "./utils/getMenuItems";
@@ -30,7 +31,21 @@ const navItems = computed(() => {
     }));
 });
 
-const { isMobile } = useSidebar();
+const { isMobile, toggleSidebar } = useSidebar();
+
+const handleOpenSidebar = () => {
+  if (isMobile.value) {
+    toggleSidebar();
+  }
+};
+
+onMounted(() => {
+  eventbus.on("mobile-sidebar-open", handleOpenSidebar);
+});
+
+onUnmounted(() => {
+  eventbus.off("mobile-sidebar-open", handleOpenSidebar);
+});
 </script>
 
 <template>

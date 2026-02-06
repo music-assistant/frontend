@@ -21,6 +21,7 @@ export type Events = {
   playlistdialog: PlaylistDialogEvent;
   clearSelection: void;
   "homescreen-edit-toggle": void;
+  "mobile-sidebar-open": void;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

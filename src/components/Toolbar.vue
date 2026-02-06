@@ -1,23 +1,15 @@
 <template>
   <v-toolbar :color="color" class="header">
-    <template #prepend>
-      <div class="toolbar-prepend">
-        <MobileSidebarTrigger v-if="store.mobileLayout" />
-        <v-btn
-          v-if="icon && !store.mobileLayout"
-          :icon="typeof icon === 'string' ? icon : undefined"
-          size="small"
-          :disabled="iconAction == null"
-          style="opacity: 0.8"
-          @click="iconAction?.()"
-        >
-          <component
-            :is="icon"
-            v-if="typeof icon !== 'string'"
-            class="w-6 h-6"
-          />
-        </v-btn>
-      </div>
+    <template v-if="icon" #prepend>
+      <v-btn
+        :icon="typeof icon === 'string' ? icon : undefined"
+        size="small"
+        :disabled="iconAction == null"
+        style="opacity: 0.8"
+        @click="iconAction?.()"
+      >
+        <component :is="icon" v-if="typeof icon !== 'string'" class="w-6 h-6" />
+      </v-btn>
     </template>
 
     <template #title>
@@ -153,7 +145,6 @@
 </template>
 
 <script setup lang="ts">
-import MobileSidebarTrigger from "@/components/ui/sidebar/MobileSidebarTrigger.vue";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";

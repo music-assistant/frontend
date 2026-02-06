@@ -29,6 +29,7 @@ import {
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -860,4 +861,28 @@ export const isHiddenSendspinWebPlayer = function (
 
   const player = api.players[playerConfig.player_id];
   return !player?.available;
+};
+
+export const getVolumeIconComponent = function (
+  player: Player,
+  displayVolume?: number,
+) {
+  if (player.volume_muted) {
+    return VolumeX;
+  }
+
+  const volume =
+    displayVolume !== undefined
+      ? displayVolume
+      : player.group_members.length
+        ? player.group_volume
+        : player.volume_level || 0;
+
+  if (volume === 0) {
+    return Volume;
+  } else if (volume < 50) {
+    return Volume1;
+  } else {
+    return Volume2;
+  }
 };
