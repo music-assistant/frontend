@@ -1,5 +1,8 @@
 <template>
-  <SpeakerBtn v-if="player && player.isVisible" :color="player.color" />
+  <SpeakerBtn
+    v-if="!store.mobileLayout && player && player.isVisible"
+    :color="player.color"
+  />
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="player.color"
@@ -17,6 +20,7 @@
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import VolumeBtn from "./PlayerControlBtn/VolumeBtn.vue";
+import { store } from "@/plugins/store";
 
 // properties
 export interface Props {

@@ -11,6 +11,10 @@
       z-index: 999;
     `"
   ></div>
+  <BottomNavigation
+    v-if="store.mobileLayout"
+    :height="Math.round(bottomNavHeight / 2)"
+  />
   <v-footer
     app
     color="default"
@@ -30,6 +34,7 @@ import Player from "./PlayerOSD/Player.vue";
 import { store } from "@/plugins/store";
 import { computed } from "vue";
 import { parseBool } from "@/helpers/utils";
+import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 
 const bottomNavHeight = computed(() => {
   if (store.isInPWAMode) {
