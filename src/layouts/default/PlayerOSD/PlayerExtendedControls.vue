@@ -1,8 +1,14 @@
 <template>
-  <SpeakerBtn
+  <ActivePlayerPopover
     v-if="!store.mobileLayout && player && player.isVisible"
-    :color="player.color"
-  />
+    auto-show
+    align="end"
+    arrow-offset="30px"
+  >
+    <template #trigger>
+      <SpeakerBtn :color="player.color" />
+    </template>
+  </ActivePlayerPopover>
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="player.color"
@@ -20,6 +26,7 @@
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import VolumeBtn from "./PlayerControlBtn/VolumeBtn.vue";
+import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
 
 // properties

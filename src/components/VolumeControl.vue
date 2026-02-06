@@ -74,11 +74,7 @@
             )
           "
           @click.stop
-          @update:model-value="
-            player.group_members.length > 0
-              ? api.playerCommandGroupVolume(player.player_id, $event)
-              : api.playerCommandVolumeSet(player.player_id, $event)
-          "
+          @update:model-value="mainDisplayVolume = $event"
           @update:local-value="mainDisplayVolume = $event"
         />
       </template>
@@ -267,6 +263,14 @@ defineEmits<{
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
+
+const mainDisplayVolume = ref(
+  Math.round(
+    compProps.player.group_members.length
+      ? compProps.player.group_volume
+      : compProps.player.volume_level || 0,
+  ),
+);
 
 const getVolumePlayers = function (player: Player) {
   const items: Player[] = [];

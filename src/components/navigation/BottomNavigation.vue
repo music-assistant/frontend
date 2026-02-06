@@ -27,15 +27,19 @@
       <span class="menuButton">{{ $t("discover") }}</span>
     </v-btn>
 
-    <v-btn
-      :aria-label="$t('players')"
-      tabindex="0"
-      variant="text"
-      @click="handlePlayersClick"
-    >
-      <Speaker class="w-5 h-5" />
-      <span class="menuButton">{{ $t("players") }}</span>
-    </v-btn>
+    <ActivePlayerPopover auto-show align="end" @click="handlePlayersClick">
+      <template #trigger="{ onClick }">
+        <v-btn
+          :aria-label="$t('players')"
+          tabindex="0"
+          variant="text"
+          @click="onClick"
+        >
+          <Speaker class="w-5 h-5" />
+          <span class="menuButton">{{ $t("players") }}</span>
+        </v-btn>
+      </template>
+    </ActivePlayerPopover>
   </v-bottom-navigation>
 </template>
 
@@ -44,6 +48,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Home, Menu, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
+import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
 const router = useRouter();
 

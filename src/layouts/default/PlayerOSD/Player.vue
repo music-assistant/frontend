@@ -356,8 +356,8 @@ watch(
 }
 
 .volume-slider {
-  width: calc(100% - 32px);
-  margin: -4px 6px 6px 12px;
+  width: calc(100% - 34px);
+  margin: -4px 6px 6px 14px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>
