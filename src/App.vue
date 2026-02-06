@@ -83,7 +83,7 @@ const showMainApp = computed(() => {
 });
 
 const setTheme = function () {
-  // Read from user preferences first, fallback to localStorage for migration
+  // TODO: Remove localStorage fallback once migration period is over (theme moved to user preferences)
   const themePref =
     store.currentUser?.preferences?.theme ||
     localStorage.getItem("frontend.settings.theme") ||
@@ -314,7 +314,7 @@ onMounted(async () => {
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: fullscreen)").matches;
 
-  // Cache language settings - read from user preferences first, fallback to localStorage
+  // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =
     store.currentUser?.preferences?.language ||
     localStorage.getItem("frontend.settings.language") ||
