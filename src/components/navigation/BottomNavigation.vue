@@ -1,6 +1,7 @@
 <template>
   <v-bottom-navigation
-    :height="height"
+    app
+    height="60"
     bg-color="default"
     grow
     role="navigation"
@@ -9,7 +10,6 @@
       aria-label="Menu"
       tabindex="0"
       variant="text"
-      base-color="grey"
       @click="handleMenuClick"
     >
       <Menu class="w-5 h-5" />
@@ -21,7 +21,6 @@
       tabindex="0"
       variant="text"
       active-color="fg"
-      base-color="grey"
       @click="handleDiscoverClick"
     >
       <Home class="w-5 h-5" />
@@ -32,10 +31,9 @@
       :aria-label="$t('players')"
       tabindex="0"
       variant="text"
-      base-color="grey"
       @click="handlePlayersClick"
     >
-      <Volume2 class="w-5 h-5" />
+      <Speaker class="w-5 h-5" />
       <span class="menuButton">{{ $t("players") }}</span>
     </v-btn>
   </v-bottom-navigation>
@@ -44,13 +42,8 @@
 <script setup lang="ts">
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Home, Menu, Volume2 } from "lucide-vue-next";
+import { Home, Menu, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
-
-export interface Props {
-  height: number;
-}
-defineProps<Props>();
 
 const router = useRouter();
 
