@@ -65,14 +65,14 @@ const props = withDefaults(defineProps<Props>(), {
   boostBadgeColor: "#FF5722", // Default: Orange
 });
 
-// Check if this is a guest request
+// Check if this is a guest request (party mode sets party_mode_guest=true)
 const isGuestRequest = computed(() => {
-  return props.queueItem?.extra_attributes?.added_by_user_role === "guest";
+  return props.queueItem?.extra_attributes?.party_mode_guest === true;
 });
 
-// Check if this was added via "Boost"
+// Check if this was added via "Boost" (party mode sets party_mode_boosted=true)
 const isBoost = computed(() => {
-  return props.queueItem?.extra_attributes?.queue_option === "next";
+  return props.queueItem?.extra_attributes?.party_mode_boosted === true;
 });
 
 // Get the badge color based on queue option (fallback to defaults if empty)
