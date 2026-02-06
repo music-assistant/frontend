@@ -35,24 +35,66 @@ jobs:
           comment-summary-in-pr: always
           deny-licenses: GPL-3.0, AGPL-3.0
 
-      # 2. Socket.dev for malicious package detection
-      - name: Socket Security Scan
-        uses: SocketDev/socket-security-action@v1
-        with:
-          issue-on-security-risk: true
-          severity: high
-        continue-on-error: true  # Don't block PRs, just warn
+      # 2. Check for suspicious package patterns
+      - name: Check for Suspicious Packages
+        run: |
+          echo "## 🔍 Package Security Scan" >> $GITHUB_STEP_SUMMARY
 
-      # 3. Show lockfile changes for easy review
+          # Check for newly added packages
+          if git diff origin/${{ github.base_ref }}...HEAD package.json | grep -E '^\+.*"(@?[a-zA-Z0-9@/._-]+)":'; then
+            NEW_PKGS=$(git diff origin/${{ github.base_ref }}...HEAD package.json | grep -E '^\+.*"(@?[a-zA-Z0-9@/._-]+)":' | sed -E 's/.*"(@?[^"]+)".*/\1/' | sed 's/^[[:space:]]*//')
+
+            echo "### Checking for known typosquatting patterns..." >> $GITHUB_STEP_SUMMARY
+
+            # Common typosquatting patterns
+            SUSPICIOUS=0
+            while IFS= read -r pkg; do
+              [ -z "$pkg" ] && continue
+
+              # Check for common typos of popular packages
+              case "$pkg" in
+                *recat*|*vue-js*|*vuejs*|*expres*|*loadsh*|*reqest*|*axios-*|*node-fetch-*)
+                  echo "⚠️ **Warning**: \`$pkg\` may be a typosquatting attempt" >> $GITHUB_STEP_SUMMARY
+                  echo "::warning::Suspicious package name detected: $pkg"
+                  SUSPICIOUS=1
+                  ;;
+              esac
+
+              # Check for packages with very similar names to popular ones
+              if echo "$pkg" | grep -qE "(react|vue|lodash|axios|express)"; then
+                if ! echo "$pkg" | grep -qE "^(react|vue|lodash|axios|express)$|^@"; then
+                  echo "⚠️ **Check**: \`$pkg\` - verify this is the correct package" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+            done <<< "$NEW_PKGS"
+
+            if [ $SUSPICIOUS -eq 0 ]; then
+              echo "✅ No obvious typosquatting patterns detected" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "✅ No new packages to scan" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+      # 3. Socket.dev for malicious package detection (optional - requires setup)
+      # To enable: Install Socket Security GitHub App from https://github.com/apps/socket-security
+      # Then uncomment these lines:
+      # - name: Socket Security Scan
+      #   uses: SocketDev/action@v1
+      #   with:
+      #     api-key: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+      #   continue-on-error: true
+
+      # 4. Show lockfile changes for easy review
       - name: Lockfile Changes
-        uses: Simek/yarn-lock-changes@v2
+        uses: Simek/yarn-lock-changes@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           collapsibleThreshold: 10
           updateComment: true
         continue-on-error: true
 
-      # 4. Run yarn audit for known vulnerabilities
+      # 5. Run yarn audit for known vulnerabilities
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
@@ -68,7 +110,7 @@ jobs:
           fi
         continue-on-error: true
 
-      # 5. Detect and highlight new/changed packages
+      # 6. Detect and highlight new/changed packages
       - name: Detect New Dependencies
         run: |
           echo "## 📦 Package Changes" >> $GITHUB_STEP_SUMMARY
@@ -109,7 +151,7 @@ jobs:
             fi
           fi
 
-      # 6. Summary of security status
+      # 7. Summary of security status
       - name: Security Summary
         if: always()
         run: |
