@@ -780,12 +780,10 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
-  // Guest priority queue: extra_attributes stores who added this item
+  // Party mode: extra_attributes for guest-added items
   extra_attributes?: {
-    added_by_user_id?: string;
-    added_by_user_role?: string; // e.g., "guest", "admin"
-    added_at?: number; // Unix timestamp when item was added
-    queue_option?: string; // how item was added: "next", "add", "play", etc.
+    party_mode_guest?: boolean; // true if added by party mode guest
+    party_mode_boosted?: boolean; // true if added as "boost" (play next)
   };
 }
 

@@ -300,23 +300,23 @@
                     <template #append>
                       <span
                         v-if="
-                          item.extra_attributes?.added_by_user_role === 'guest'
+                          item.extra_attributes?.party_mode_guest === true
                         "
                         class="guest-request-badge"
                         :style="{
                           '--badge-color':
-                            item.extra_attributes?.queue_option === 'next'
+                            item.extra_attributes?.party_mode_boosted === true
                               ? boostBadgeColor
                               : requestBadgeColor,
                         }"
                       >
                         <v-icon size="x-small">{{
-                          item.extra_attributes?.queue_option === "next"
+                          item.extra_attributes?.party_mode_boosted === true
                             ? "mdi-rocket-launch"
                             : "mdi-account-music"
                         }}</v-icon>
                         {{
-                          item.extra_attributes?.queue_option === "next"
+                          item.extra_attributes?.party_mode_boosted === true
                             ? $t("guest.boost")
                             : $t("guest.request")
                         }}
