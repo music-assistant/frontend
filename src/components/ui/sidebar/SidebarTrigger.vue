@@ -15,7 +15,7 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar, state, isMobile } = useSidebar();
+const { toggleSidebar, state, isMobile, setOpenMobile } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
@@ -26,6 +26,10 @@ const haButtonTooltip = computed(() => {
 });
 
 const handleHAMenuToggle = () => {
+  // Close MA sidebar on mobile when opening HA sidebar
+  if (isMobile.value && haState.kioskModeEnabled) {
+    setOpenMobile(false);
+  }
   toggleHAMenuVisibility();
 };
 </script>

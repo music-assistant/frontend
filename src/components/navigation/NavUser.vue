@@ -59,6 +59,10 @@ const haButtonTooltip = computed(() => {
 });
 
 const handleHAMenuToggle = () => {
+  // Close MA sidebar on mobile when opening HA sidebar
+  if (isMobile.value && haState.kioskModeEnabled) {
+    setOpenMobile(false);
+  }
   toggleHAMenuVisibility();
 };
 </script>
