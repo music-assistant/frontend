@@ -4,7 +4,7 @@
       class="add-player-group-dialog max-w-[800px] h-[60vh] max-h-[60vh] flex flex-col p-0"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
-        <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
+        <DialogTitle>{{ $t("settings.add_group_player")}}</DialogTitle>
       </DialogHeader>
 
       <div
@@ -76,6 +76,8 @@ const availableProviders = computed(() => {
       (x) =>
         x.available &&
         (x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER) ||
+          // universal_group can always create group players
+          x.domain === "universal_group" ||
           // for backwards compatibility - if provider doesn't explicitly support
           // group players, but does support syncing players,
           // allow it as well (since that was the old way of doing syncgroup players)
