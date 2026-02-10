@@ -1356,6 +1356,13 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "ungroup");
   }
 
+  public playerCommandSelectSoundMode(
+    playerId: string,
+    sound_mode: string,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "select_sound_mode", { sound_mode });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,
@@ -1416,13 +1423,6 @@ export class MusicAssistantApi {
     source: string,
   ): Promise<void> {
     return this.playerCommand(playerId, "select_source", { source });
-  }
-
-  public playerCommandGroupSelectSoundMode(
-    playerId: string,
-    sound_mode: string,
-  ): Promise<void> {
-    return this.playerCommand(playerId, "select_sound_mode", { sound_mode });
   }
 
   // Play Media related functions

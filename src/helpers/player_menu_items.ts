@@ -217,7 +217,7 @@ export const getPlayerMenuItems = (
             disabled: s.id == player.active_sound_mode,
             selected: s.id == player.active_sound_mode,
             action: () => {
-              api.playerCommandGroupSelectSoundMode(player.player_id, s.id);
+              api.playerCommandSelectSoundMode(player.player_id, s.id);
             },
           };
         })
