@@ -283,7 +283,6 @@
         "default": "numatytasis",
         "provider_depends_on_confirm": "Prieš nustatymą {0}, jums reikia turėti {1} Paslaugų teikėjas sukonfigūruotas, ar norite tai padaryti dabar?",
         "category": {
-            "audio": "Garsas",
             "advanced": "Išplėstiniai nustatymai",
             "generic": "Bendrieji nustatymai",
             "announcements": "Pranešimų konfigūracija",

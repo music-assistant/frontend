@@ -283,7 +283,6 @@
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar o {0}, você precisa ter o provedor {1} configurado. Deseja fazer isso agora?",
         "category": {
-            "audio": "Áudio",
             "advanced": "Configurações avançadas",
             "generic": "Configurações genéricas",
             "announcements": "Configuração de anúncios",

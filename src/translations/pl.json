@@ -283,7 +283,6 @@
         "default": "domyślnie",
         "provider_depends_on_confirm": "Zanim będziesz mógł skonfigurować {0}, musisz skonfigurować dostawcę {1}. Czy chcesz to zrobić teraz?",
         "category": {
-            "audio": "Dźwięk",
             "advanced": "Zaawansowane ustawienia",
             "generic": "Ustawienia ogólne",
             "announcements": "Konfiguracja powiadomień",

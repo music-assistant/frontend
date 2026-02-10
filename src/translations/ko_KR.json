@@ -281,7 +281,6 @@
         "default": "기본값",
         "provider_depends_on_confirm": "{0} 설정하기 전에 {1} 공급자를 구성해야 합니다. 지금 구성하시겠습니까?",
         "category": {
-            "audio": "오디오",
             "advanced": "고급 설정",
             "generic": "일반 설정",
             "announcements": "공지사항 구성",

@@ -283,16 +283,19 @@
         "default": "standard",
         "provider_depends_on_confirm": "Innan du kan konfigurera {0}, måste du ha {1} -leverantören konfigurerad, vill du göra det nu?",
         "category": {
-            "audio": "Ljud",
             "advanced": "Avancerade inställningar",
             "generic": "Allmänna inställningar",
-            "announcements": "Konfiguration av meddelanden",
+            "announcements": "Inställningar för meddelanden",
             "airplay": "AirPlay specifika inställningar",
             "player_controls": "Spelarens kontroller",
             "presets": "Förinställningar",
             "sync_options": "Synkroniseringar\/importalternativ",
             "builtin_playlists": "Inställningar för inbyggda spellistor",
-            "web_player": "Webbspelare"
+            "web_player": "Webbspelare",
+            "playback": "Uppspelningsinställningar",
+            "protocol_settings": "Protokollinställningar",
+            "protocol_output_settings": "Aktivera {0} support",
+            "dsp": "Digital signalbehandling (DSP)"
         },
         "tts_pre_announce": {
             "label": "Förannonsera TTS-meddelanden",
@@ -673,7 +676,20 @@
             "label": "Aktivera webbläsarens mediekontroller",
             "description": "Tillåt kontroll över uppspelning med webbläsarens inbyggda mediekontroller (t.ex. medietangenter på tangentbordet)."
         },
-        "settings_saved": "Inställningarna har sparats"
+        "settings_saved": "Inställningarna har sparats",
+        "protocol_disabled_message": "Aktivera det här protokollet för att konfigurera dess inställningar",
+        "protocol_no_settings": "Detta utdataprotokoll har ingen ytterligare konfiguration",
+        "protocol_no_settings_with_advanced": "Inga inställningar syns. Aktivera avancerade inställningar för att se fler konfigurationsalternativ.",
+        "show_advanced_settings": "Visa avancerade inställningar",
+        "advanced": "Avancerat",
+        "mobile_sidebar_side": {
+            "label": "Mobilens sidofältsida",
+            "description": "Vilken sida navigeringsmenyn (arket) öppnas från på mobilen. Standardinställningen är vänster.",
+            "options": {
+                "left": "Vänster",
+                "right": "Höger"
+            }
+        }
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -1123,5 +1139,7 @@
     "collections": "Samlingar",
     "narrators": "Berättare",
     "series_plural": "Serier",
-    "series_singular": "Serier"
+    "series_singular": "Serier",
+    "queue_move_end": "Flytta till slutet",
+    "discover": "Upptäck"
 }
