@@ -266,6 +266,15 @@ export enum PlayerType {
   STEREO_PAIR = "stereo_pair",
 }
 
+export enum PlayerOptionType {
+  BOOLEAN = "boolean",
+  INTEGER = "integer",
+  FLOAT = "float",
+  STRING = "string",
+}
+
+export type PlayerOptionType = number | string | boolean;
+
 export enum PlayerFeature {
   POWER = "power",
   VOLUME_SET = "volume_set",
@@ -878,6 +887,32 @@ export interface PlayerSoundMode {
   translation_key?: string;
 }
 
+export interface PlayerOptionEntry {
+  key: string;
+  name: string;
+  type: PlayerOptionType;
+
+  value: PlayerOptionValueType;
+}
+
+export interface PlayerOption {
+  key: string;
+  name: string;
+  type: PlayerOptionType;
+
+  translation_key?: string;
+  translation_params?: string[];
+
+  value: PlayerOptionValueType;
+  read_only: boolean;
+
+  min_value?: number;
+  max_value?: number;
+  step?: number;
+
+  options?: PlayerOptionEntry[];
+}
+
 export interface Player {
   player_id: string;
   provider: string;
@@ -902,6 +937,7 @@ export interface Player {
   source_list: PlayerSource[];
   active_sound_mode?: string;
   sound_mode_list: PlayerSoundMode[];
+  options: PlayerOption[];
   active_group?: string;
   synced_to?: string;
 
