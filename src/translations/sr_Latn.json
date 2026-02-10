@@ -283,7 +283,6 @@
         "default": "Podrazumevano",
         "provider_depends_on_confirm": "Pre nego što možete da podesite {0}, morate da konfigurišete provajdera {1}, da li želite da to uradite sada?",
         "category": {
-            "audio": "Audio",
             "advanced": "Napredna podešavanja",
             "generic": "Generička podešavanja",
             "announcements": "Konfiguracija objava",

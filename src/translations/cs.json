@@ -281,7 +281,6 @@
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
         "category": {
-            "audio": "Audio",
             "advanced": "Rozšířená nastavení",
             "generic": "Obecná nastavení",
             "announcements": "Nastavení oznámení",

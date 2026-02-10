@@ -283,7 +283,6 @@
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
         "category": {
-            "audio": "Lyd",
             "advanced": "Avanserte innstillinger",
             "generic": "Generiske innstillinger",
             "announcements": "Konfigurasjon av kunngjøringer",

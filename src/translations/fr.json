@@ -283,7 +283,6 @@
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
         "category": {
-            "audio": "Son",
             "advanced": "Paramètres avancés",
             "generic": "Paramètres génériques",
             "announcements": "Configuration des annonces",

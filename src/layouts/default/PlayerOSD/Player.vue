@@ -195,6 +195,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 //@ts-ignore
+import Button from "@/components/Button.vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -203,12 +204,14 @@ import {
   ImageColorPalette,
   getColorPalette,
   getMediaImageUrl,
+  getVolumeIconComponent,
 } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
 import {
   MediaType,
-  PlayerFeature,
   PLAYER_CONTROL_NONE,
+  PlayerFeature,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
@@ -219,9 +222,6 @@ import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import PlayerTrackDetails from "./PlayerTrackDetails.vue";
 import PlayerVolume from "./PlayerVolume.vue";
-import { getVolumeIconComponent } from "@/helpers/utils";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
-import Button from "@/components/Button.vue";
 
 interface Props {
   useFloatingPlayer: boolean;

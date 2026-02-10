@@ -29,7 +29,7 @@
         "clsx": "^2.1.1",
         "color": "5.0.3",
         "colorthief": "2.6.0",
-        "happy-dom": "^20.4.0",
+        "happy-dom": "^20.5.3",
         "lucide-vue-next": "^0.563.0",
         "marked": "^17.0.1",
         "mitt": "3.0.1",
@@ -56,7 +56,7 @@
     "devDependencies": {
         "@fontsource/roboto": "5.2.9",
         "@types/color": "4.2.0",
-        "@types/node": "25.2.0",
+        "@types/node": "25.2.2",
         "@typescript-eslint/eslint-plugin": "7.0.0",
         "@typescript-eslint/parser": "6.21.0",
         "@vitejs/plugin-vue": "6.0.4",

@@ -75,17 +75,18 @@
             <h3>{{ $t("all_players") }}</h3>
           </v-expansion-panel-title>
           <v-expansion-panel-text style="padding: 0">
-            <v-text-field
-              v-if="showPlayerSearch"
-              v-model="playerSearchQuery"
-              :placeholder="$t('search')"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              variant="outlined"
-              density="compact"
-              hide-details
-              style="margin: 0 8px 24px 8px"
-            />
+            <div style="margin: 0 8px 24px 8px">
+              <InputGroup>
+                <InputGroupInput
+                  ref="playerSearchInput"
+                  v-model="playerSearchQuery"
+                  :placeholder="$t('search')"
+                />
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
             <v-list flat style="margin: -20px 3px 5px 3px">
               <PlayerCard
                 v-for="player in filteredPlayers"
@@ -116,14 +117,20 @@
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
-import { PlaybackState, Player, PlayerFeature } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
+import { PlaybackState, Player, PlayerFeature } from "@/plugins/api/interfaces";
 
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import { Search } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
@@ -131,6 +138,9 @@ const recentlySelectedPlayerIds = ref<string[]>([]);
 const playerSortOrder = ref<string[]>([]);
 const allPlayersExpanded = ref<number | undefined>(undefined);
 const playerSearchQuery = ref("");
+const playerSearchInput = ref<InstanceType<typeof InputGroupInput> | null>(
+  null,
+);
 const { getPreference, setPreference } = useUserPreferences();
 
 const MAX_RECENT_PLAYERS = 3;
@@ -256,6 +266,11 @@ watch(
     if (newVal) {
       // Calculate sort order when menu opens
       calculateSortOrder();
+      nextTick(() => {
+        if (allPlayersExpanded.value === 0) {
+          playerSearchInput.value?.focus?.();
+        }
+      });
     } else {
       // Save preferences and reset state when menu closes
       playerSearchQuery.value = "";

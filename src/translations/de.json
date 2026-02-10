@@ -283,16 +283,19 @@
         "default": "Standard",
         "provider_depends_on_confirm": "Bevor du {0} einrichten kannst, musst du den Anbieter {1} konfigurieren. Möchtest du das jetzt tun?",
         "category": {
-            "audio": "Audio",
             "advanced": "Erweiterte Einstellungen",
             "generic": "Allgemeine Einstellungen",
-            "announcements": "Einstellungen für Ankündigungen",
+            "announcements": "Ankündigungseinstellungen",
             "airplay": "Spezielle AirPlay-Einstellungen",
             "player_controls": "Wiedergabegeräte-Steuerung",
             "presets": "Voreinstellungen",
             "sync_options": "Synchronisiere\/importiere Optionen",
             "builtin_playlists": "Integrierte Wiedergabelisten-Einstellungen",
-            "web_player": "Webplayer"
+            "web_player": "Webplayer",
+            "playback": "Wiedergabeeinstellungen",
+            "protocol_settings": "Protokolleinstellungen",
+            "protocol_output_settings": "Unterstützung von {0} aktivieren",
+            "dsp": "Digitale Signalverarbeitung (DSP)"
         },
         "tts_pre_announce": {
             "label": "TTS-Durchsagen vorankündigen",
@@ -673,7 +676,20 @@
             "label": "Aktivieren der Browser-Mediensteuerung",
             "description": "Erlaube die Steuerung der Wiedergabe über die im Browser integrierten Mediensteuerungselemente (z. B. die Medientasten auf der Tastatur)."
         },
-        "settings_saved": "Einstellungen erfolgreich gespeichert"
+        "settings_saved": "Einstellungen erfolgreich gespeichert",
+        "protocol_disabled_message": "Aktiviere dieses Protokoll, um seine Einstellungen zu konfigurieren.",
+        "protocol_no_settings": "Dieses Ausgabeprotokoll erfordert keine zusätzliche Konfiguration.",
+        "protocol_no_settings_with_advanced": "Es sind keine Einstellungen sichtbar. Aktiviere die erweiterten Einstellungen, um weitere Konfigurationsoptionen anzuzeigen.",
+        "show_advanced_settings": "Erweiterte Einstellungen anzeigen",
+        "advanced": "Erweitert",
+        "mobile_sidebar_side": {
+            "label": "Mobile Seitenleiste",
+            "description": "Auf welcher Seite sich das Navigationsmenü (die Navigationsseite) auf Mobilgeräten öffnet. Standardmäßig ist es links.",
+            "options": {
+                "left": "Links",
+                "right": "Rechts"
+            }
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1123,5 +1139,7 @@
     "collections": "Sammlungen",
     "narrators": "Erzähler",
     "series_plural": "Serien",
-    "series_singular": "Serien"
+    "series_singular": "Serien",
+    "queue_move_end": "Zum Ende bewegen",
+    "discover": "Entdecken"
 }
