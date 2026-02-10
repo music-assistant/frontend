@@ -281,7 +281,6 @@
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnod kell a(z) {1} szolgáltatót. Szeretnéd ezt most megtenni?",
         "category": {
-            "audio": "Hang",
             "advanced": "Speciális beállítások",
             "generic": "Általános beállítások",
             "announcements": "Bejelentések beállítása",

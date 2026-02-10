@@ -283,7 +283,6 @@
         "default": "默认",
         "provider_depends_on_confirm": "在您设置{0}之前，您可能需要配置{1}提供者，您想现在这样做吗？",
         "category": {
-            "audio": "音频",
             "advanced": "高级设置",
             "generic": "常规设置",
             "announcements": "宣告配置",
