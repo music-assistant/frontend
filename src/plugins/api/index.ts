@@ -1418,6 +1418,13 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "select_source", { source });
   }
 
+  public playerCommandGroupSelectSoundMode(
+    playerId: string,
+    sound_mode: string,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "select_sound_mode", { sound_mode });
+  }
+
   // Play Media related functions
 
   public playMedia(

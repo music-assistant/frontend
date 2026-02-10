@@ -278,6 +278,8 @@ export enum PlayerFeature {
   PLAY_ANNOUNCEMENT = "play_announcement",
   ENQUEUE = "enqueue",
   SELECT_SOURCE = "select_source",
+  SELECT_SOUND_MODE = "select_sound_mode",
+  OPTIONS = "options",
 }
 
 export enum EventType {
@@ -298,6 +300,7 @@ export enum EventType {
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
+  PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
@@ -868,6 +871,13 @@ export interface PlayerSource {
   can_next_previous: boolean;
 }
 
+export interface PlayerSoundMode {
+  id: string;
+  name: string;
+  passive: boolean;
+  translation_key?: string;
+}
+
 export interface Player {
   player_id: string;
   provider: string;
@@ -890,6 +900,8 @@ export interface Player {
   static_group_members: string[];
   active_source?: string;
   source_list: PlayerSource[];
+  active_sound_mode?: string;
+  sound_mode_list: PlayerSoundMode[];
   active_group?: string;
   synced_to?: string;
 
