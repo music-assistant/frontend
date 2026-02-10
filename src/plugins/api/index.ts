@@ -23,6 +23,7 @@ import {
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
+  type PlayerOptionValueType,
   type SyncTask,
   type Track,
   type User,
@@ -1358,9 +1359,31 @@ export class MusicAssistantApi {
 
   public playerCommandSelectSoundMode(
     playerId: string,
-    sound_mode: string,
+    soundMode: string,
   ): Promise<void> {
-    return this.playerCommand(playerId, "select_sound_mode", { sound_mode });
+    /*
+      Handle SELECT_SOUND_MODE on given player
+          - playerId: playerId of the player to handle the command.
+          - soundMode: selected sound mode
+    */
+    return this.playerCommand(playerId, "select_sound_mode", { soundMode });
+  }
+
+  public playerCommandSetOption(
+    playerId: string,
+    optionKey: string,
+    optionValue: PlayerOptionValueType,
+  ): Promise<void> {
+    /*
+      Handle SET_OPTION on given player
+          - playerId: playerId of the player to handle the command.
+          - optionKey: the option's key
+          - optionValue: the option's new value
+    */
+    return this.playerCommand(playerId, "set_option", {
+      optionKey,
+      optionValue,
+    });
   }
 
   public playerCommand(
