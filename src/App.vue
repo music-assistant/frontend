@@ -48,10 +48,10 @@ import {
   companionMode,
   initializeCompanionIntegration,
 } from "./plugins/companion";
-import {
-  subscribeToHAProperties,
-  unsubscribeFromHAProperties,
-} from "./plugins/homeassistant";
+// import {
+//   subscribeToHAProperties,
+//   unsubscribeFromHAProperties,
+// } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
@@ -198,9 +198,10 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
-  if (store.isIngressSession && serverInfo.homeassistant_addon) {
-    subscribeToHAProperties({ kioskMode: true, router });
-  }
+  // COMMENTED OUT - HA INTEGRATION DISABLED
+  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
+  //   subscribeToHAProperties({ kioskMode: true, router });
+  // }
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
@@ -353,6 +354,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  unsubscribeFromHAProperties();
+  // unsubscribeFromHAProperties();
 });
 </script>

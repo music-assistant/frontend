@@ -6,9 +6,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toggleHAMenu } from "@/plugins/homeassistant";
-import { store } from "@/plugins/store";
-import { ArrowLeftToLine, PanelLeft } from "lucide-vue-next";
+// import { toggleHAMenu } from "@/plugins/homeassistant";
+// import { store } from "@/plugins/store";
+import { PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
 
@@ -16,18 +16,18 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar, state, isMobile, setOpenMobile } = useSidebar();
+const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
-const showHaButton = computed(() => store.isIngressSession);
+// const showHaButton = computed(() => store.isIngressSession);
 
-const handleHAMenuToggle = () => {
-  if (isMobile.value) {
-    setOpenMobile(false);
-  }
-  toggleHAMenu();
-};
+// const handleHAMenuToggle = () => {
+//   if (isMobile.value) {
+//     setOpenMobile(false);
+//   }
+//   toggleHAMenu();
+// };
 </script>
 
 <template>
@@ -45,7 +45,8 @@ const handleHAMenuToggle = () => {
         isCollapsed ? 'flex-col' : 'flex-row',
       ]"
     >
-      <Tooltip v-if="showHaButton">
+      <!-- HA BUTTON COMMENTED OUT -->
+      <!-- <Tooltip v-if="showHaButton">
         <TooltipTrigger as-child>
           <Button
             v-if="showHaButton"
@@ -80,7 +81,7 @@ const handleHAMenuToggle = () => {
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
           HA Menu
         </TooltipContent>
-      </Tooltip>
+      </Tooltip> -->
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
@@ -90,7 +91,7 @@ const handleHAMenuToggle = () => {
             size="icon"
             :class="[
               'flex-shrink-0',
-              !showHaButton && !isCollapsed && 'ml-auto',
+              !isCollapsed && 'ml-auto',
             ]"
             @click="toggleSidebar"
           >
