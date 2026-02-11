@@ -6,13 +6,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
+import { toggleHAMenu } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
-import {
-  ArrowLeftToLine,
-  ArrowRightFromLine,
-  PanelLeft,
-} from "lucide-vue-next";
+import { ArrowLeftToLine, PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
 
@@ -26,21 +22,11 @@ const isCollapsed = computed(() => state.value === "collapsed");
 
 const showHaButton = computed(() => store.isIngressSession);
 
-const haButtonTooltip = computed(() => {
-  return haState.kioskModeEnabled
-    ? "Show Home Assistant Menu"
-    : "Hide Home Assistant Menu";
-});
-
-const haButtonTitle = computed(() => {
-  return haState.kioskModeEnabled ? "Show HA menu" : "Hide HA menu";
-});
-
 const handleHAMenuToggle = () => {
-  if (isMobile.value && haState.kioskModeEnabled) {
+  if (isMobile.value) {
     setOpenMobile(false);
   }
-  toggleHAMenuVisibility();
+  toggleHAMenu();
 };
 </script>
 
@@ -85,16 +71,9 @@ const handleHAMenuToggle = () => {
                   alt="Home Assistant"
                   class="h-4 w-4 shrink-0"
                 />
-                <span class="min-w-0">{{ haButtonTitle }}</span>
+                <span class="min-w-0">HA Menu</span>
               </span>
-              <component
-                :is="
-                  haState.kioskModeEnabled
-                    ? ArrowLeftToLine
-                    : ArrowRightFromLine
-                "
-                class="ha-menu-arrow ml-auto size-4 shrink-0"
-              />
+              <ArrowLeftToLine class="ha-menu-arrow ml-auto size-4 shrink-0" />
             </template>
           </Button>
         </TooltipTrigger>
@@ -103,7 +82,7 @@ const handleHAMenuToggle = () => {
           align="center"
           :hidden="!isCollapsed || isMobile"
         >
-          {{ haButtonTooltip }}
+          HA Menu
         </TooltipContent>
       </Tooltip>
       <Tooltip>
