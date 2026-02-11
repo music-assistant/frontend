@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toggleHAMenuVisibility } from "@/plugins/homeassistant";
+import { toggleHAMenu } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { ArrowLeftToLine, PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
@@ -16,14 +16,17 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar, state } = useSidebar();
+const { toggleSidebar, state, isMobile, setOpenMobile } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
 const showHaButton = computed(() => store.isIngressSession);
 
 const handleHAMenuToggle = () => {
-  toggleHAMenuVisibility();
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
+  toggleHAMenu();
 };
 </script>
 
