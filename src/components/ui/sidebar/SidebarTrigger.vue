@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toggleHAMenu } from "@/plugins/homeassistant";
+import { toggleHAMenuVisibility } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { ArrowLeftToLine, PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
@@ -16,17 +16,14 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
-const { toggleSidebar, state, isMobile, setOpenMobile } = useSidebar();
+const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
 const showHaButton = computed(() => store.isIngressSession);
 
 const handleHAMenuToggle = () => {
-  if (isMobile.value) {
-    setOpenMobile(false);
-  }
-  toggleHAMenu();
+  toggleHAMenuVisibility();
 };
 </script>
 
@@ -77,11 +74,7 @@ const handleHAMenuToggle = () => {
             </template>
           </Button>
         </TooltipTrigger>
-        <TooltipContent
-          side="right"
-          align="center"
-          :hidden="!isCollapsed || isMobile"
-        >
+        <TooltipContent side="right" align="center" :hidden="!isCollapsed">
           HA Menu
         </TooltipContent>
       </Tooltip>
@@ -102,11 +95,7 @@ const handleHAMenuToggle = () => {
             <span class="sr-only">Toggle Sidebar</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent
-          side="right"
-          align="center"
-          :hidden="!isCollapsed || isMobile"
-        >
+        <TooltipContent side="right" align="center" :hidden="!isCollapsed">
           {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
         </TooltipContent>
       </Tooltip>
