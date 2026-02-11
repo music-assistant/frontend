@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
-import NavUser from "@/components/navigation/NavUser.vue";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +13,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import NavMobile from "./NavMobile.vue";
 import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
@@ -31,7 +31,8 @@ const navItems = computed(() => {
     }));
 });
 
-const { isMobile, toggleSidebar } = useSidebar();
+const { toggleSidebar, state, isMobile } = useSidebar();
+const collapsed = computed(() => state.value === "collapsed");
 
 const handleOpenSidebar = () => {
   if (isMobile.value) {
@@ -59,7 +60,9 @@ onUnmounted(() => {
               alt="Music Assistant"
               class="sidebar-header-logo"
             />
-            <div class="sidebar-header-title">Music Assistant</div>
+            <div v-if="!collapsed" class="sidebar-header-title">
+              Music Assistant
+            </div>
           </div>
         </div>
       </SidebarMenu>
@@ -68,8 +71,8 @@ onUnmounted(() => {
       <NavMain :items="navItems" />
     </SidebarContent>
     <SidebarFooter>
-      <NavUser v-if="isMobile" />
-      <SidebarTrigger v-if="!isMobile" class="-ml-1" />
+      <NavMobile v-if="isMobile" />
+      <SidebarTrigger v-else />
     </SidebarFooter>
   </Sidebar>
 </template>

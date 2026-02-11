@@ -1,73 +1,12 @@
 <template>
   <div>
-    <Toolbar :show-loading="true" :home="true" :icon="House" color="background">
-      <template v-if="!store.mobileLayout" #append>
-        <!-- User avatar menu (desktop only; on mobile see NavUser in sidebar) -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <div class="avatar-trigger">
-              <Avatar class="user-avatar size-10">
-                <AvatarImage
-                  v-if="store.currentUser?.avatar_url"
-                  :src="store.currentUser.avatar_url"
-                />
-                <AvatarFallback class="bg-primary">
-                  <User :size="20" class="text-white" />
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <div class="user-header-section">
-              <Avatar class="user-avatar size-10">
-                <AvatarImage
-                  v-if="store.currentUser?.avatar_url"
-                  :src="store.currentUser.avatar_url"
-                />
-                <AvatarFallback class="bg-primary">
-                  <User :size="20" class="text-white" />
-                </AvatarFallback>
-              </Avatar>
-              <div class="flex flex-col">
-                <span class="text-sm font-semibold">
-                  {{
-                    store.currentUser?.display_name ||
-                    store.currentUser?.username
-                  }}
-                </span>
-                <span class="text-xs text-muted-foreground">
-                  {{ store.currentUser?.username }}
-                </span>
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="router.push({ name: 'profile' })">
-              <Settings :size="16" />
-              <span>{{ $t("auth.profile") }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="editMode = !editMode">
-              <Pencil :size="16" />
-              <span>
-                {{
-                  $t(
-                    editMode
-                      ? "homescreen_edit_disable"
-                      : "homescreen_edit_enable",
-                  )
-                }}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              v-if="!store.isIngressSession"
-              @click="handleLogout"
-            >
-              <LogOut :size="16" />
-              <span>{{ $t("auth.logout") }}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </template>
-    </Toolbar>
+    <Toolbar
+      :show-loading="true"
+      :home="true"
+      :icon="House"
+      color="background"
+      :title="$t('home')"
+    />
 
     <!-- Provider error warning banner -->
     <v-alert
@@ -108,19 +47,10 @@
 import Container from "@/components/Container.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
-import { House, LogOut, Pencil, Settings, User } from "lucide-vue-next";
+import { House } from "lucide-vue-next";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
