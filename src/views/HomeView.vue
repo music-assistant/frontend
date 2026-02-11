@@ -40,7 +40,7 @@
         <template #fallback><v-progress-circular indeterminate /> </template>
       </Suspense>
 
-      <!-- Debug panel to compare Chrome vs HA companion app -->
+      <!-- Debug panel to understand HA ingress, kiosk mode and mobile layout behaviour -->
       <div class="debug-panel">
         <h3>Environment debug</h3>
         <p><strong>store.deviceType</strong>: {{ store.deviceType }}</p>
@@ -51,6 +51,8 @@
         <p>
           <strong>window.externalApp in window</strong>: {{ hasExternalApp }}
         </p>
+        <p><strong>HA properties.narrow</strong>: {{ haNarrow }}</p>
+        <p><strong>HA properties.route</strong>: {{ haRoute }}</p>
         <p>
           <strong>last "mobile-sidebar-open" event</strong>:
           {{ lastMobileSidebarEvent || "never" }}
@@ -69,6 +71,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { haState } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
 import { House } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref } from "vue";
@@ -79,12 +82,19 @@ const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 
-// Simple environment diagnostics to compare Chrome vs HA companion app
+// Simple environment + HA diagnostics to compare Chrome vs HA companion app
 const userAgent = computed(() =>
   typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
 );
 const hasExternalApp = computed(
   () => typeof window !== "undefined" && "externalApp" in window,
+);
+
+const haNarrow = computed(() => haState.properties.narrow);
+const haRoute = computed(() =>
+  haState.properties.route
+    ? JSON.stringify(haState.properties.route)
+    : "null",
 );
 
 // When the bottom navigation emits "mobile-sidebar-open", track it here so it's

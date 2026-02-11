@@ -16,9 +16,23 @@ import {
 } from "@/components/ui/sidebar";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import {
+  haState,
+  toggleHAMenu,
+  toggleHAMenuVisibility,
+} from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Pencil, Settings } from "lucide-vue-next";
+import {
+  ArrowLeftToLine,
+  LogOut,
+  MoreVertical,
+  PanelLeft,
+  Pencil,
+  Settings,
+} from "lucide-vue-next";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { navigateInHA } from "@/plugins/homeassistant";
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
@@ -27,6 +41,29 @@ const displayName =
   store.currentUser?.display_name || store.currentUser?.username || "";
 const username = store.currentUser?.username || "";
 const initial = displayName ? displayName[0].toUpperCase() : "U";
+
+const kioskHeaderLabel = computed(() =>
+  haState.kioskModeEnabled
+    ? "Show HA header (disable kiosk)"
+    : "Hide HA header (enable kiosk)",
+);
+
+const handleToggleHaHeader = () => {
+  toggleHAMenuVisibility();
+};
+
+const handleToggleHaSidebar = () => {
+  // Close MA sidebar on mobile when opening HA sidebar, to avoid double menus
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
+  toggleHAMenu();
+};
+
+const handleTestHaNavigate = () => {
+  // Simple test: navigate main HA UI to Lovelace
+  navigateInHA("/lovelace");
+};
 
 const handleProfile = () => {
   setOpenMobile(false);
@@ -107,6 +144,31 @@ const handleLogout = () => {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+
+          <!-- Home Assistant / kiosk controls (only when embedded in HA ingress) -->
+          <DropdownMenuItem
+            v-if="store.isIngressSession"
+            @click="handleToggleHaHeader"
+          >
+            <ArrowLeftToLine class="size-4" />
+            {{ kioskHeaderLabel }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            v-if="store.isIngressSession"
+            @click="handleToggleHaSidebar"
+          >
+            <PanelLeft class="size-4" />
+            Toggle HA sidebar menu
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            v-if="store.isIngressSession"
+            @click="handleTestHaNavigate"
+          >
+            <PanelLeft class="size-4" />
+            Test HA navigate (to Lovelace)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator v-if="store.isIngressSession" />
+
           <DropdownMenuItem @click="handleProfile">
             <Settings class="size-4" />
             {{ $t("auth.profile") }}
