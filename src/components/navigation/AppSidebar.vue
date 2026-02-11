@@ -10,6 +10,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -31,11 +32,11 @@ const navItems = computed(() => {
     }));
 });
 
-const { isMobile, toggleSidebar, state } = useSidebar();
+const { toggleSidebar, state } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
 const handleOpenSidebar = () => {
-  if (isMobile.value) {
+  if (store.mobileLayout) {
     toggleSidebar();
   }
 };
@@ -71,8 +72,8 @@ onUnmounted(() => {
       <NavMain :items="navItems" />
     </SidebarContent>
     <SidebarFooter>
-      <NavMobile v-if="isMobile" />
-      <SidebarTrigger v-if="!isMobile" />
+      <NavMobile v-if="store.mobileLayout" />
+      <SidebarTrigger v-else />
     </SidebarFooter>
   </Sidebar>
 </template>
