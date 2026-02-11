@@ -36,8 +36,20 @@ const { toggleSidebar, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
 const handleOpenSidebar = () => {
+  // Debug: confirm the eventbus listener runs and what the sidebar thinks about "mobile"
+  console.log(
+    "[MA DEBUG] 'mobile-sidebar-open' received in AppSidebar; isMobile =",
+    isMobile.value,
+    "store.mobileLayout =",
+    store.mobileLayout,
+  );
+
   if (isMobile.value) {
     toggleSidebar();
+  } else {
+    console.log(
+      "[MA DEBUG] Not toggling sidebar because isMobile is false (desktop mode).",
+    );
   }
 };
 
@@ -61,7 +73,10 @@ onUnmounted(() => {
               alt="Music Assistant"
               class="sidebar-header-logo"
             />
-            <div v-if="!collapsed" class="sidebar-header-title">
+            <div
+              v-if="!collapsed || store.mobileLayout"
+              class="sidebar-header-title"
+            >
               Music Assistant
             </div>
           </div>
