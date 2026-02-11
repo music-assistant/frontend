@@ -188,8 +188,6 @@ export function toggleHAMenuVisibility(): void {
   } else {
     hideHAMenu();
   }
-
-  toggleHAMenu();
 }
 
 /**

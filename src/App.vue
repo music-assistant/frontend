@@ -51,6 +51,7 @@ import {
 // import {
 //   subscribeToHAProperties,
 //   unsubscribeFromHAProperties,
+//   getKioskModePreference
 // } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
@@ -200,7 +201,8 @@ const completeInitialization = async () => {
   // Enable kiosk mode when running in Home Assistant ingress
   // COMMENTED OUT - HA INTEGRATION DISABLED
   // if (store.isIngressSession && serverInfo.homeassistant_addon) {
-  //   subscribeToHAProperties({ kioskMode: true, router });
+  // const kioskPref = getKioskModePreference();
+  // subscribeToHAProperties({ kioskMode: kioskPref, router });
   // }
 
   if (api.baseUrl) {

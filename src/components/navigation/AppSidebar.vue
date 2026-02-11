@@ -32,7 +32,7 @@ const navItems = computed(() => {
     }));
 });
 
-const { toggleSidebar, state } = useSidebar();
+const { toggleSidebar, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
 
 const handleOpenSidebar = () => {
@@ -72,7 +72,7 @@ onUnmounted(() => {
       <NavMain :items="navItems" />
     </SidebarContent>
     <SidebarFooter>
-      <NavMobile v-if="store.mobileLayout" />
+      <NavMobile v-if="isMobile" />
       <SidebarTrigger v-else />
     </SidebarFooter>
   </Sidebar>

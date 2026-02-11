@@ -87,12 +87,9 @@ const isCollapsed = computed(() => state.value === "collapsed");
           <Button
             data-sidebar="trigger"
             data-slot="sidebar-trigger"
-            variant="outline"
+            variant="ghost"
             size="icon"
-            :class="[
-              'flex-shrink-0',
-              !isCollapsed && 'ml-auto',
-            ]"
+            :class="['flex-shrink-0', !isCollapsed && 'ml-auto']"
             @click="toggleSidebar"
           >
             <PanelLeft />
