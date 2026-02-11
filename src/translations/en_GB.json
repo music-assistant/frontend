@@ -283,7 +283,6 @@
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "audio": "Audio",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
             "announcements": "Announcements configuration",

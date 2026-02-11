@@ -281,7 +281,6 @@
         "default": "predeterminado",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, necesita tener configurado el proveedor {1}, ¿quiere hacerlo ahora?",
         "category": {
-            "audio": "Audio",
             "advanced": "Ajustes avanzados",
             "generic": "Ajustes",
             "announcements": "Configuración de anuncios",

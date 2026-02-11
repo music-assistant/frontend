@@ -283,7 +283,6 @@
         "default": "standaard",
         "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?",
         "category": {
-            "audio": "Audio",
             "advanced": "Geavanceerde instellingen",
             "generic": "Algemene instellingen",
             "announcements": "Configuratie van aankondigingen (announce)",
@@ -292,7 +291,11 @@
             "presets": "Presets",
             "sync_options": "Synchronisatie-\/importopties",
             "builtin_playlists": "Ingebouwde afspeellijstinstellingen",
-            "web_player": "Webspeler"
+            "web_player": "Webspeler",
+            "playback": "Afspeelinstellingen",
+            "protocol_settings": "Protocolinstellingen",
+            "protocol_output_settings": "{0} ondersteuning inschakelen",
+            "dsp": "Digitale signaalverwerking (DSP)"
         },
         "tts_pre_announce": {
             "label": "Kondig TTS-aankondigingen vooraf aan",
@@ -673,7 +676,20 @@
             "label": "Schakel de mediabediening van de browser in",
             "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
         },
-        "settings_saved": "Instellingen succesvol opgeslagen"
+        "settings_saved": "Instellingen succesvol opgeslagen",
+        "protocol_disabled_message": "Schakel dit protocol in om de instellingen te configureren",
+        "protocol_no_settings": "Dit uitvoerprotocol heeft geen aanvullende configuratie",
+        "protocol_no_settings_with_advanced": "Er zijn geen instellingen zichtbaar. Schakel geavanceerde instellingen in om meer configuratieopties te bekijken.",
+        "show_advanced_settings": "Laat geavanceerde instellingen zien",
+        "advanced": "Geavanceerd",
+        "mobile_sidebar_side": {
+            "label": "Kant van mobiele zijbalk",
+            "description": "Aan welke kant het navigatiemenu (paneel) op mobiele apparaten wordt geopend. Standaard is dit links.",
+            "options": {
+                "left": "Links",
+                "right": "Rechts"
+            }
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -1123,5 +1139,7 @@
     "collections": "Collecties",
     "narrators": "Vertellers",
     "series_plural": "Series",
-    "series_singular": "Serie"
+    "series_singular": "Serie",
+    "queue_move_end": "Verplaats naar einde",
+    "discover": "Ontdekken"
 }
