@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,17 +16,8 @@ import {
 } from "@/components/ui/sidebar";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { haState, toggleHAMenuVisibility } from "@/plugins/homeassistant";
 import { store } from "@/plugins/store";
-import {
-  ArrowLeftToLine,
-  ArrowRightFromLine,
-  LogOut,
-  MoreVertical,
-  Pencil,
-  Settings,
-} from "lucide-vue-next";
-import { computed } from "vue";
+import { LogOut, MoreVertical, Pencil, Settings } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -53,38 +43,9 @@ const handleLogout = () => {
   setOpenMobile(false);
   authManager.logout();
 };
-
-const haButtonTooltip = computed(() => {
-  return haState.kioskModeEnabled ? "Show HA menu" : "Hide HA menu";
-});
-
-const handleHAMenuToggle = () => {
-  toggleHAMenuVisibility();
-};
 </script>
 
 <template>
-  <Button
-    v-if="store.isIngressSession && isMobile"
-    size="sm"
-    variant="outline"
-    class="w-full justify-between"
-    :title="haButtonTooltip"
-    @click.stop="handleHAMenuToggle"
-  >
-    <span class="flex items-center gap-2">
-      <img
-        src="@/assets/home-assistant-logo.svg"
-        alt="Home Assistant"
-        class="h-4 w-4 shrink-0"
-      />
-      <span>{{ haButtonTooltip }}</span>
-    </span>
-    <component
-      :is="haState.kioskModeEnabled ? ArrowLeftToLine : ArrowRightFromLine"
-      class="ha-menu-arrow size-4 shrink-0"
-    />
-  </Button>
   <SidebarMenu class="w-full">
     <SidebarMenuItem class="w-full">
       <DropdownMenu>
@@ -111,13 +72,16 @@ const handleHAMenuToggle = () => {
                 {{ username }}
               </span>
             </div>
-            <MoreVertical class="ml-auto shrink-0 opacity-70" />
+            <MoreVertical
+              style="width: 1rem !important"
+              class="ml-auto shrink-0 opacity-70"
+            />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           class="z-[100001] w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           :side="isMobile ? 'bottom' : 'right'"
-          :side-offset="4"
+          :side-offset="isMobile ? 4 : 15"
           align="end"
         >
           <DropdownMenuLabel class="p-0 font-normal">
