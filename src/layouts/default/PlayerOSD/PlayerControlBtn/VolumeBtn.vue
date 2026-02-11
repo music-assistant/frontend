@@ -13,8 +13,6 @@
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp6') || !responsiveVolumeSize">
           <PlayerVolume
-            :prepend-icon="'mdi-volume-minus'"
-            :append-icon="'mdi-volume-plus'"
             :style="'margin-right: 0px; margin-left: 0px;'"
             :width="volumeSize"
             :is-powered="store.activePlayer?.powered != false"
