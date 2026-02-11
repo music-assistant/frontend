@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: "offcanvas",
 });
 
-const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+const { state, openMobile, setOpenMobile } = useSidebar();
 
 const mobileSheetSide = computed<"left" | "right">(() => {
   if (typeof localStorage === "undefined") return "left";
