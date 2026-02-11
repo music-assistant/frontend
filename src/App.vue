@@ -49,7 +49,6 @@ import {
   initializeCompanionIntegration,
 } from "./plugins/companion";
 import {
-  getKioskModePreference,
   subscribeToHAProperties,
   unsubscribeFromHAProperties,
 } from "./plugins/homeassistant";
@@ -200,8 +199,7 @@ const completeInitialization = async () => {
 
   // Enable kiosk mode when running in Home Assistant ingress
   if (store.isIngressSession && serverInfo.homeassistant_addon) {
-    const kioskPref = getKioskModePreference();
-    subscribeToHAProperties({ kioskMode: kioskPref, router });
+    subscribeToHAProperties({ kioskMode: true, router });
   }
 
   if (api.baseUrl) {
