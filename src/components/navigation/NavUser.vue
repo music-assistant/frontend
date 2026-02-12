@@ -53,10 +53,22 @@ const handleToggleHaHeader = () => {
 };
 
 const handleToggleHaSidebar = () => {
-  // Close MA sidebar on mobile when opening HA sidebar, to avoid double menus
+  // Mobile: close MA sidebar, then toggle HA sidebar (works well in kiosk)
   if (isMobile.value) {
     setOpenMobile(false);
+    toggleHAMenu();
+    return;
   }
+
+  // Desktop + kiosk enabled: first disable kiosk (show HA header),
+  // then toggle the HA sidebar so the user actually sees it.
+  if (haState.kioskModeEnabled) {
+    toggleHAMenuVisibility();
+    toggleHAMenu();
+    return;
+  }
+
+  // Desktop + kiosk disabled: just toggle the HA sidebar
   toggleHAMenu();
 };
 

@@ -92,9 +92,7 @@ const hasExternalApp = computed(
 
 const haNarrow = computed(() => haState.properties.narrow);
 const haRoute = computed(() =>
-  haState.properties.route
-    ? JSON.stringify(haState.properties.route)
-    : "null",
+  haState.properties.route ? JSON.stringify(haState.properties.route) : "null",
 );
 
 // When the bottom navigation emits "mobile-sidebar-open", track it here so it's
