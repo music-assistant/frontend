@@ -516,7 +516,7 @@
       :open="showSaveQueueDialog"
       @update:open="showSaveQueueDialog = $event"
     >
-      <DialogContent class="sm:max-w-md">
+      <DialogContent class="sm:max-w-md text-foreground">
         <DialogHeader>
           <DialogTitle>{{ $t("save_queue_as_playlist") }}</DialogTitle>
         </DialogHeader>
@@ -529,10 +529,7 @@
           />
         </div>
         <DialogFooter>
-          <UiButton
-            variant="outline"
-            @click="showSaveQueueDialog = false"
-          >
+          <UiButton variant="outline" @click="showSaveQueueDialog = false">
             {{ $t("close") }}
           </UiButton>
           <UiButton
@@ -550,7 +547,7 @@
       :open="showPlaylistCreatedDialog"
       @update:open="showPlaylistCreatedDialog = $event"
     >
-      <DialogContent class="sm:max-w-md">
+      <DialogContent class="sm:max-w-md text-foreground">
         <DialogHeader>
           <DialogTitle>{{ $t("playlist_created") }}</DialogTitle>
         </DialogHeader>
