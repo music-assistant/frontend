@@ -512,58 +512,76 @@
     </v-card>
 
     <!-- Save queue as playlist dialog -->
-    <v-dialog v-model="showSaveQueueDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("save_queue_as_playlist") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
+    <Dialog
+      :open="showSaveQueueDialog"
+      @update:open="showSaveQueueDialog = $event"
+    >
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ $t("save_queue_as_playlist") }}</DialogTitle>
+        </DialogHeader>
+        <div class="py-4">
+          <Input
             v-model="saveQueuePlaylistName"
             :placeholder="$t('new_playlist_name')"
-            variant="outlined"
-            density="comfortable"
             autofocus
-            clearable
             @keyup.enter="doSaveQueueAsPlaylist"
           />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showSaveQueueDialog = false">
+        </div>
+        <DialogFooter>
+          <UiButton
+            variant="outline"
+            @click="showSaveQueueDialog = false"
+          >
             {{ $t("close") }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
+          </UiButton>
+          <UiButton
             :disabled="!saveQueuePlaylistName"
             @click="doSaveQueueAsPlaylist"
           >
             {{ $t("settings.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </UiButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Playlist created dialog -->
-    <v-dialog v-model="showPlaylistCreatedDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("playlist_created") }}</v-card-title>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showPlaylistCreatedDialog = false">
+    <Dialog
+      :open="showPlaylistCreatedDialog"
+      @update:open="showPlaylistCreatedDialog = $event"
+    >
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ $t("playlist_created") }}</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
+          <UiButton
+            variant="outline"
+            @click="showPlaylistCreatedDialog = false"
+          >
             {{ $t("close") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="openCreatedPlaylist">
+          </UiButton>
+          <UiButton @click="openCreatedPlaylist">
             {{ $t("open_playlist") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </UiButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import Icon from "@/components/Icon.vue";
+import { Button as UiButton } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
