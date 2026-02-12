@@ -1381,8 +1381,8 @@ export class MusicAssistantApi {
           - optionValue: the option's new value
     */
     return this.playerCommand(playerId, "set_option", {
-      optionKey,
-      optionValue,
+      option_key: optionKey,
+      option_value: optionValue,
     });
   }
 
