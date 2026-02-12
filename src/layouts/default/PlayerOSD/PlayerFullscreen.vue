@@ -510,6 +510,54 @@
         </div>
       </div>
     </v-card>
+
+    <!-- Save queue as playlist dialog -->
+    <v-dialog v-model="showSaveQueueDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t("save_queue_as_playlist") }}</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="saveQueuePlaylistName"
+            :placeholder="$t('new_playlist_name')"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            clearable
+            @keyup.enter="doSaveQueueAsPlaylist"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showSaveQueueDialog = false">
+            {{ $t("close") }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :disabled="!saveQueuePlaylistName"
+            @click="doSaveQueueAsPlaylist"
+          >
+            {{ $t("settings.save") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Playlist created dialog -->
+    <v-dialog v-model="showPlaylistCreatedDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t("playlist_created") }}</v-card-title>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showPlaylistCreatedDialog = false">
+            {{ $t("close") }}
+          </v-btn>
+          <v-btn color="primary" variant="flat" @click="openCreatedPlaylist">
+            {{ $t("open_playlist") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -548,6 +596,7 @@ import {
   PlayerFeature,
   PlayerQueue,
   PlayerType,
+  Playlist,
   QueueItem,
   QueueOption,
   Track,
@@ -1242,6 +1291,53 @@ onMounted(() => {
     stopTick();
   });
 });
+
+// save queue as playlist
+const showSaveQueueDialog = ref(false);
+const showPlaylistCreatedDialog = ref(false);
+const saveQueuePlaylistName = ref("");
+const saveQueueQueueId = ref("");
+const createdPlaylist = ref<Playlist | null>(null);
+
+onMounted(() => {
+  eventbus.on("saveQueueAsPlaylist", (queueId: string) => {
+    saveQueueQueueId.value = queueId;
+    saveQueuePlaylistName.value = "";
+    showSaveQueueDialog.value = true;
+  });
+});
+
+onBeforeUnmount(() => {
+  eventbus.off("saveQueueAsPlaylist");
+});
+
+const doSaveQueueAsPlaylist = async () => {
+  if (!saveQueuePlaylistName.value) return;
+  showSaveQueueDialog.value = false;
+  try {
+    createdPlaylist.value = await api.queueCommandSaveAsPlaylist(
+      saveQueueQueueId.value,
+      saveQueuePlaylistName.value,
+    );
+    showPlaylistCreatedDialog.value = true;
+  } catch (e) {
+    alert(e);
+  }
+};
+
+const openCreatedPlaylist = () => {
+  showPlaylistCreatedDialog.value = false;
+  store.showFullscreenPlayer = false;
+  if (createdPlaylist.value) {
+    router.push({
+      name: "playlist",
+      params: {
+        itemId: createdPlaylist.value.item_id,
+        provider: createdPlaylist.value.provider,
+      },
+    });
+  }
+};
 
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
