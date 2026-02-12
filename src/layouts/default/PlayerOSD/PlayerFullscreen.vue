@@ -522,9 +522,14 @@
         </DialogHeader>
         <div class="py-4">
           <Input
-            v-model="saveQueuePlaylistName"
+            :model-value="saveQueuePlaylistName"
             :placeholder="$t('new_playlist_name')"
             autofocus
+            @input="
+              (e: Event) => {
+                saveQueuePlaylistName = (e.target as HTMLInputElement).value;
+              }
+            "
             @keyup.enter="doSaveQueueAsPlaylist"
           />
         </div>
