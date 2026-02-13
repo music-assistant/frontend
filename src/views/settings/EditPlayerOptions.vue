@@ -25,6 +25,10 @@
       />
     </div>
   </div>
+  <div v-for="option in playerOptionsSelect" :key="option.key">
+    {{ option.key }}
+    {{ option.value }}
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -38,57 +42,88 @@ import {
 import { onBeforeUnmount, computed, ref, Ref } from "vue";
 import Slider from "@/components/ui/slider/Slider.vue";
 
-// global refs
-// non read_only and...
-// boolean
-const playerOptionsSwitch = ref<PlayerOption[]>([]);
-// float/ integer
-const playerOptionsNumber = ref<PlayerOption[]>([]);
-// string
-const playerOptionsText = ref<PlayerOption[]>([]);
-// options
-const playerOptionsSelect = ref<PlayerOption[]>([]);
-// read_only
-const playerOptionsSensor = ref<PlayerOption[]>([]);
-
 // props
 const props = defineProps<{
   playerId?: string;
 }>();
 
-const getPlayerOptionsArray = (option: PlayerOption) => {
-  let array: Ref<PlayerOption[]> | null = null;
-  if (option.read_only) {
-    array = playerOptionsSensor;
-  } else {
+// global refs
+const playerOptions = ref<PlayerOption[]>([]);
+
+// computed properties
+// helper function
+const getOptions = (
+  type: PlayerOptionType[],
+  readOnly: boolean,
+  hasOptions: boolean = false,
+) => {
+  let array: PlayerOption[] = [];
+  playerOptions.value.forEach((option) => {
     if (option.options && option.options.length > 0) {
-      array = playerOptionsSelect;
-    } else {
-      switch (option.type) {
-        case PlayerOptionType.BOOLEAN:
-          array = playerOptionsSwitch;
-          break;
-        case PlayerOptionType.INTEGER || PlayerOptionType.FLOAT:
-          array = playerOptionsNumber;
-          break;
-        case PlayerOptionType.STRING:
-          array = playerOptionsText;
-          break;
+      if (
+        hasOptions &&
+        option.read_only === readOnly &&
+        type.includes(option.type)
+      ) {
+        // has suboptions
+        array.push(option);
       }
+    } else if (
+      !hasOptions &&
+      option.read_only === readOnly &&
+      type.includes(option.type)
+    ) {
+      // no sub options
+      array.push(option);
     }
-  }
+  });
+  // sort them to make sure, that we always have the options in the same order.
+  array = array.sort((a, b) => b.key.localeCompare(a.key));
   return array;
 };
 
+const playerOptionsSwitch = computed(() => {
+  return getOptions([PlayerOptionType.BOOLEAN], false);
+});
+
+const playerOptionsNumber = computed(() => {
+  return getOptions([PlayerOptionType.INTEGER, PlayerOptionType.FLOAT], false);
+});
+
+const playerOptionsText = computed(() => {
+  return getOptions([PlayerOptionType.STRING], false);
+});
+
+const playerOptionsSelect = computed(() => {
+  return getOptions(
+    [
+      PlayerOptionType.BOOLEAN,
+      PlayerOptionType.INTEGER,
+      PlayerOptionType.FLOAT,
+      PlayerOptionType.STRING,
+    ],
+    false,
+    true,
+  );
+});
+
+const playerOptionsSensor = computed(() => {
+  return getOptions(
+    [
+      PlayerOptionType.BOOLEAN,
+      PlayerOptionType.INTEGER,
+      PlayerOptionType.FLOAT,
+      PlayerOptionType.STRING,
+    ],
+    true,
+  );
+});
+
+// Full load on entry
 const loadOptionsOnEntry = async () => {
   if (!props.playerId) return;
   const player = await api.getPlayer(props.playerId);
-  player.options.forEach((option) => {
-    let array = getPlayerOptionsArray(option);
-    if (array != null) {
-      array.value.push(option);
-    }
-  });
+  playerOptions.value = player.options;
 };
 loadOptionsOnEntry();
 
@@ -98,18 +133,15 @@ const unsub = api.subscribe(
   // data: [old , new ]
   (evt: { data: [PlayerOption[], PlayerOption[]] }) => {
     evt.data[1].forEach((updatedOption) => {
-      let array = getPlayerOptionsArray(updatedOption);
-      // update array
-      if (array == null) return;
-      const optionIndex = array.value.findIndex(
+      const optionIndex = playerOptions.value.findIndex(
         (prevOption) => prevOption.key === updatedOption.key,
       );
       if (optionIndex === -1) {
         // option not yet present
-        array.value.push(updatedOption);
+        playerOptions.value.push(updatedOption);
         return;
       }
-      array.value[optionIndex] = updatedOption;
+      playerOptions.value[optionIndex] = updatedOption;
     });
   },
   props.playerId,
