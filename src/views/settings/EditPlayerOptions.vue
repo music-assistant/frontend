@@ -8,8 +8,22 @@
       color="primary"
       hide-details
       class="status-switch"
-      @update:model-value="toggleSwitch(option.key, !option.value)"
+      @update:model-value="(value) => uiSetPlayerOption(option.key, value)"
     />
+  </div>
+  <div v-for="option in playerOptionsNumber" :key="option.key">
+    <div v-if="typeof option.value === 'number'">
+      {{ option.key }}
+      {{ option.value }}
+      <Slider
+        :model-value="[option.value]"
+        class="w-56"
+        :step="option.step"
+        :min="option.min_value"
+        :max="option.max_value"
+        @update:model-value="(value) => uiSetPlayerOption(option.key, value)"
+      />
+    </div>
   </div>
 </template>
 
@@ -22,6 +36,7 @@ import {
   PlayerOptionValueType,
 } from "@/plugins/api/interfaces";
 import { onBeforeUnmount, computed, ref, Ref } from "vue";
+import Slider from "@/components/ui/slider/Slider.vue";
 
 // global refs
 // non read_only and...
@@ -103,11 +118,13 @@ onBeforeUnmount(unsub);
 
 // ui methods
 
-const toggleSwitch = async (
+const uiSetPlayerOption = async (
   key: string,
-  value: PlayerOptionValueType | null,
+  value: PlayerOptionValueType | PlayerOptionValueType[] | null | undefined,
 ) => {
-  if (!props.playerId || value === null) return;
+  if (!props.playerId || value === null || value == undefined) return;
+  // we only have single numbers
+  if (Array.isArray(value)) value = value[0];
   try {
     await api.playerCommandSetOption(props.playerId, key, value);
   } catch (error) {
