@@ -1366,7 +1366,9 @@ export class MusicAssistantApi {
           - playerId: playerId of the player to handle the command.
           - soundMode: selected sound mode
     */
-    return this.playerCommand(playerId, "select_sound_mode", { soundMode });
+    return this.playerCommand(playerId, "select_sound_mode", {
+      sound_mode: soundMode,
+    });
   }
 
   public playerCommandSetOption(
