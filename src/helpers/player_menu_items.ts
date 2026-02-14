@@ -253,20 +253,6 @@ export const getPlayerMenuItems = (
       icon: "mdi-cog-outline",
     });
 
-    // add shortcut to player options
-    if (player.options.length > 0) {
-      menuItems.push({
-        label: "open_player_options",
-        labelArgs: [],
-        action: () => {
-          store.showFullscreenPlayer = false;
-          store.showPlayersMenu = false;
-          router.push(`/settings/editplayer/${player.player_id}/options`);
-        },
-        icon: "mdi-tune",
-      });
-    }
-
     // add shortcut to dsp settings
     if (player.type !== PlayerType.GROUP) {
       menuItems.push({
@@ -278,6 +264,20 @@ export const getPlayerMenuItems = (
           router.push(`/settings/editplayer/${player.player_id}/dsp`);
         },
         icon: "mdi-equalizer",
+      });
+    }
+
+    // add shortcut to player options
+    if (player.options.length > 0) {
+      menuItems.push({
+        label: "player_options.open",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}/options`);
+        },
+        icon: "mdi-tune",
       });
     }
   }

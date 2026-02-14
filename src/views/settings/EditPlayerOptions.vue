@@ -1,45 +1,46 @@
 <template>
-  <section class="edit-player-options"></section>
-
-  <div v-if="props.playerId">
-    <!-- Settable options -->
-    <v-container v-if="playerOptionsSettable.length > 0" class="d-flex">
-      <v-card
-        class="mx-auto my-8"
-        elevation="2"
-        min-width="100%"
-        :title="$t('player_options.settable')"
-      >
-        <div style="padding: 0px 20px 20px 20px">
-          <div v-for="option in playerOptionsSettable" :key="option.key">
-            <PlayerOptionField
-              :player-option="option"
-              :player-id="props.playerId"
-            />
+  <!-- Header -->
+  <v-container>
+    <div v-if="props.playerId">
+      <!-- Settable options -->
+      <div v-if="playerOptionsSettable.length > 0">
+        <v-card
+          class="mx-auto my-8"
+          elevation="2"
+          min-width="100%"
+          :title="$t('player_options.settable', [playerName])"
+        >
+          <div style="padding: 0px 20px 20px 20px">
+            <div v-for="option in playerOptionsSettable" :key="option.key">
+              <PlayerOptionField
+                :player-option="option"
+                :player-id="props.playerId"
+              />
+            </div>
           </div>
-        </div>
-      </v-card>
-    </v-container>
+        </v-card>
+      </div>
 
-    <!-- Read-only options -->
-    <v-container v-if="playerOptionsReadOnly.length > 0" class="d-flex">
-      <v-card
-        class="mx-auto my-8"
-        elevation="2"
-        min-width="100%"
-        :title="$t('player_options.read_only')"
-      >
-        <div style="padding: 0px 20px 20px 20px">
-          <div v-for="option in playerOptionsReadOnly" :key="option.key">
-            <PlayerOptionField
-              :player-option="option"
-              :player-id="props.playerId"
-            />
+      <!-- Read-only options -->
+      <div v-if="playerOptionsReadOnly.length > 0">
+        <v-card
+          class="mx-auto my-8"
+          elevation="2"
+          min-width="100%"
+          :title="$t('player_options.read_only', [playerName])"
+        >
+          <div style="padding: 0px 20px 20px 20px">
+            <div v-for="option in playerOptionsReadOnly" :key="option.key">
+              <PlayerOptionField
+                :player-option="option"
+                :player-id="props.playerId"
+              />
+            </div>
           </div>
-        </div>
-      </v-card>
-    </v-container>
-  </div>
+        </v-card>
+      </div>
+    </div>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -61,6 +62,7 @@ const props = defineProps<{
 }>();
 
 // global refs
+const playerName = ref<string>();
 const playerOptions = ref<PlayerOption[]>([]);
 const playerOptionsSettable = computed(() => {
   return playerOptions.value.filter((x) => !x.read_only);
@@ -75,6 +77,7 @@ watch(
   async (val) => {
     if (val) {
       const player = await api.getPlayer(val);
+      playerName.value = player.name;
 
       // sort for more consistency in UI experience
       let arrBool: PlayerOption[] = [];
