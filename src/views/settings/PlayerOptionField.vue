@@ -31,10 +31,11 @@
       playerOption.max_value &&
       playerOption.step
     "
-    style="padding-top: 15px"
   >
+    <div style="padding-bottom: 25px">
+      {{ getTranslatedLabel() }}
+    </div>
     <v-slider
-      :label="getTranslatedLabel()"
       :model-value="playerOption.value as number"
       :min="playerOption.min_value"
       :max="playerOption.max_value"
