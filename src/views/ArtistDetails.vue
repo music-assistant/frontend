@@ -54,7 +54,7 @@
     <br />
     <!-- media images -->
     <MediaItemImages
-      v-if="itemDetails?.provider == 'library' && itemDetails?.metadata?.images"
+      v-if="itemDetails?.provider == 'library' && itemDetails?.metadata?.images && authManager.isAdmin()"
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
     />
@@ -71,6 +71,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import { api } from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import {
   EventMessage,
   EventType,
