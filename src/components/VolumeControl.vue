@@ -74,7 +74,9 @@
             )
           "
           @click.stop
-          @update:model-value="mainDisplayVolume = $event"
+          @update:model-value="
+            api.playerCommandGroupVolume(player.player_id, $event)
+          "
           @update:local-value="mainDisplayVolume = $event"
         />
       </template>
