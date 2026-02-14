@@ -212,7 +212,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSoundModes
         .map((s) => {
           return {
-            label: s.translation_key || s.name,
+            label: $t(s.translation_key || s.name, s.name),
             labelArgs: [],
             disabled: s.id == player.active_sound_mode,
             selected: s.id == player.active_sound_mode,
