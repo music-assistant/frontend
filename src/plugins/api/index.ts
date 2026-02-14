@@ -13,6 +13,7 @@ import {
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
+  type Genre,
   type MassEvent,
   type MediaItemType,
   type Player,
@@ -27,6 +28,7 @@ import {
   type Track,
   type User,
   AlbumType,
+  GenreAlias,
   Audiobook,
   AuthProvider,
   ConfigEntry,
@@ -436,6 +438,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -444,6 +447,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre_ids,
     });
   }
 
@@ -535,6 +539,12 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/count", { favorite_only });
   }
 
+  public getLibraryGenresCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/genres/count", { favorite_only });
+  }
+
   /**
    * Get Artists listing from the server.
    * @param favorite - Filter by favorite status
@@ -554,6 +564,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_artists_only?: boolean,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -563,6 +574,7 @@ export class MusicAssistantApi {
       order_by,
       album_artists_only,
       provider,
+      genre_ids,
     });
   }
 
@@ -621,6 +633,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -630,6 +643,7 @@ export class MusicAssistantApi {
       order_by,
       album_types,
       provider,
+      genre_ids,
     });
   }
 
@@ -682,6 +696,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -690,6 +705,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre_ids,
     });
   }
 
@@ -762,6 +778,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -770,6 +787,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre_ids,
     });
   }
 
@@ -811,6 +829,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -819,6 +838,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre_ids,
     });
   }
 
@@ -860,6 +880,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre_ids?: number | number[],
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -868,6 +889,144 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre_ids,
+    });
+  }
+
+  /**
+   * Get Genres listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of genres
+   */
+  public getLibraryGenres(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+    provider?: string | string[],
+    genre_ids?: number | number[],
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+      provider,
+      genre_ids,
+    });
+  }
+
+  public getGenre(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/get", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public addGenreToLibrary(
+    item: Partial<Genre>,
+    overwrite_existing = false,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/add", {
+      item,
+      overwrite_existing,
+    });
+  }
+
+  public removeGenreFromLibrary(item_id: string): Promise<void> {
+    return this.sendCommand("music/genres/remove", {
+      item_id,
+    });
+  }
+
+  public restoreGenreDefaults(fullRestore = false): Promise<Genre[]> {
+    return this.sendCommand("music/genres/restore_defaults", {
+      full_restore: fullRestore,
+    });
+  }
+
+  public getLibraryAliases(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+  ): Promise<GenreAlias[]> {
+    return this.sendCommand("music/aliases/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+    });
+  }
+
+  public addAliasToLibrary(
+    item: Partial<GenreAlias>,
+    overwrite_existing = false,
+  ): Promise<GenreAlias> {
+    return this.sendCommand("music/aliases/add", {
+      item,
+      overwrite_existing,
+    });
+  }
+
+  public removeAliasFromLibrary(item_id: string): Promise<void> {
+    return this.sendCommand("music/aliases/remove", {
+      item_id,
+    });
+  }
+
+  public addAliasToGenre(genre_id: string, alias_id: string): Promise<void> {
+    return this.sendCommand("music/genres/add_alias_mapping", {
+      genre_id,
+      alias_id,
+    });
+  }
+
+  public removeAliasFromGenre(
+    genre_id: string,
+    alias_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/remove_alias_mapping", {
+      genre_id,
+      alias_id,
+    });
+  }
+
+  public promoteAliasToGenre(alias_id: string): Promise<Genre> {
+    return this.sendCommand("music/aliases/promote_to_genre", {
+      alias_id,
+    });
+  }
+
+  public async getGenreOverviewRows(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<RecommendationFolder[]> {
+    return this.sendCommand("music/genres/overview", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getGenreRadioBaseTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 

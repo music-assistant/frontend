@@ -311,7 +311,26 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- delete genre button (admin only) -->
+              <Trash2
+                v-if="
+                  item.media_type === MediaType.GENRE &&
+                  item.provider === 'library' &&
+                  isAdmin
+                "
+                :size="24"
+                class="cursor-pointer"
+                :title="$t('delete_genre')"
+                @click="deleteGenre"
+              />
             </div>
+          </div>
+          <div
+            v-if="$slots['after-play']"
+            class="info-header-after-play"
+            style="margin-left: 14px; padding-bottom: 10px"
+          >
+            <slot name="after-play"></slot>
           </div>
           <!-- Description/metadata -->
           <v-card-subtitle
@@ -341,6 +360,8 @@
               style="margin-right: 5px; margin-bottom: 5px"
               small
               outlined
+              class="cursor-pointer"
+              @click="openGenreFromTag(tag)"
             >
               {{ tag }}
             </v-chip>
@@ -348,6 +369,50 @@
         </div>
       </v-layout>
     </v-card>
+    <!-- delete genre confirmation dialog (step 1) -->
+    <v-dialog v-model="showDeleteGenreDialog" max-width="520">
+      <v-card>
+        <Toolbar :title="$t('delete_genre')" />
+        <v-divider />
+        <v-card-text>
+          <p>{{ $t("confirm_delete_genre") }}</p>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="outlined" @click="showDeleteGenreDialog = false">
+              {{ $t("cancel") }}
+            </v-btn>
+            <v-btn
+              color="error"
+              variant="flat"
+              @click="showDeleteGenreConfirmStep2"
+            >
+              {{ $t("delete") }}
+            </v-btn>
+          </v-card-actions>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- delete genre confirmation dialog (step 2) -->
+    <v-dialog v-model="showDeleteGenreDialog2" max-width="520">
+      <v-card>
+        <Toolbar :title="$t('delete_genre')" />
+        <v-divider />
+        <v-card-text>
+          <p>{{ $t("confirm_delete_genre_2") }}</p>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="outlined" @click="showDeleteGenreDialog2 = false">
+              {{ $t("cancel") }}
+            </v-btn>
+            <v-btn color="error" variant="flat" @click="confirmDeleteGenre">
+              {{ $t("delete") }}
+            </v-btn>
+          </v-card-actions>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
@@ -370,6 +435,8 @@ import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getImageThumbForItem,
+  getGenreDisplayName,
+  handleMediaItemClick,
   handlePlayBtnClick,
   markdownToHtml,
   parseBool,
@@ -383,14 +450,17 @@ import { api } from "@/plugins/api";
 import type {
   Album,
   Artist,
+  Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { authManager } from "@/plugins/auth";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft } from "lucide-vue-next";
+import { ArrowLeft, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
@@ -413,6 +483,20 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
+const { t, te } = useI18n();
+
+const headerTitle = computed(() => {
+  if (!compProps.item) return "";
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
+});
 
 watch(
   () => compProps.item,
@@ -451,6 +535,71 @@ const artistClick = function (item: Artist | ItemMapping) {
       provider: item.provider,
     },
   });
+};
+
+const openGenreFromTag = async function (tag: string) {
+  const search = tag?.trim();
+  if (!search) return;
+  try {
+    const matches = await api.getLibraryGenres(
+      undefined,
+      search,
+      25,
+      0,
+      "name",
+      "library",
+      undefined,
+    );
+    const exact = matches.find(
+      (genre) => genre.name.toLowerCase() === search.toLowerCase(),
+    );
+    if (exact) {
+      handleMediaItemClick(exact, 0, 0);
+      return;
+    }
+
+    const aliases = await api.getLibraryAliases(
+      undefined,
+      search,
+      25,
+      0,
+      "name",
+    );
+    const alias = aliases.find(
+      (item) => item.name.toLowerCase() === search.toLowerCase(),
+    );
+    if (!alias) return;
+
+    let parent = matches.find((genre) =>
+      (genre.genre_aliases || []).some(
+        (mapped) =>
+          mapped.item_id === alias.item_id ||
+          mapped.name.toLowerCase() === alias.name.toLowerCase(),
+      ),
+    );
+    if (!parent) {
+      const fallback = await api.getLibraryGenres(
+        undefined,
+        alias.name,
+        50,
+        0,
+        "name",
+        "library",
+        undefined,
+      );
+      parent = fallback.find((genre) =>
+        (genre.genre_aliases || []).some(
+          (mapped) =>
+            mapped.item_id === alias.item_id ||
+            mapped.name.toLowerCase() === alias.name.toLowerCase(),
+        ),
+      );
+    }
+    if (!parent) return;
+    handleMediaItemClick(parent, 0, 0);
+  } catch {
+    return;
+  }
 };
 
 const backButtonClick = function () {
@@ -518,6 +667,27 @@ const artistLogo = computed(() => {
   if (compProps.item.media_type != MediaType.ARTIST) return undefined;
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
+
+const isAdmin = computed(() => authManager.isAdmin());
+
+const showDeleteGenreDialog = ref(false);
+const showDeleteGenreDialog2 = ref(false);
+
+const deleteGenre = () => {
+  showDeleteGenreDialog.value = true;
+};
+
+const showDeleteGenreConfirmStep2 = () => {
+  showDeleteGenreDialog.value = false;
+  showDeleteGenreDialog2.value = true;
+};
+
+const confirmDeleteGenre = () => {
+  if (!compProps.item) return;
+  api.removeGenreFromLibrary(compProps.item.item_id);
+  showDeleteGenreDialog2.value = false;
+  router.back();
+};
 </script>
 
 <style scoped>

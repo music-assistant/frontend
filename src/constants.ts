@@ -8,6 +8,7 @@ export const DEFAULT_MENU_ITEMS = [
   "audiobooks",
   "podcasts",
   "radios",
+  "genres",
   "browse",
   "settings",
 ];

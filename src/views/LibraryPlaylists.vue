@@ -67,6 +67,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
   );
 };
 
