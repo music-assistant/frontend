@@ -50,7 +50,13 @@
           @click.stop="handlePlayerMuteToggle(player)"
         >
           <component
-            :is="getVolumeIconComponent(player, mainDisplayVolume)"
+            :is="
+              getVolumeIconComponent(
+                player,
+                mainDisplayVolume,
+                isGroupMuted(player),
+              )
+            "
             :size="22"
           />
         </Button>
@@ -63,7 +69,7 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            player.volume_muted ||
+            isGroupMuted(player) ||
             player.volume_control == PLAYER_CONTROL_NONE
           "
           :model-value="
@@ -75,7 +81,9 @@
           "
           @click.stop
           @update:model-value="
-            api.playerCommandGroupVolume(player.player_id, $event)
+            player.group_members.length > 0
+              ? api.playerCommandGroupVolume(player.player_id, $event)
+              : api.playerCommandVolumeSet(player.player_id, $event)
           "
           @update:local-value="mainDisplayVolume = $event"
         />
@@ -197,7 +205,6 @@
               :disabled="
                 !childPlayer.available ||
                 childPlayer.powered == false ||
-                childPlayer.volume_muted ||
                 childPlayer.volume_control == PLAYER_CONTROL_NONE
               "
               :allow-wheel="allowWheel"
@@ -265,6 +272,20 @@ defineEmits<{
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
+
+const isGroupMuted = function (player: Player): boolean {
+  if (!player.group_members.length) {
+    return !!player.volume_muted;
+  }
+  // For group players, only show muted if ALL members are muted
+  for (const memberId of player.group_members) {
+    const member = api?.players[memberId];
+    if (member && member.available && !member.volume_muted) {
+      return false;
+    }
+  }
+  return true;
+};
 
 const mainDisplayVolume = ref(
   Math.round(

@@ -143,9 +143,25 @@ const displayVolume = ref(
 );
 
 // computed
+const isGroupMuted = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  if (!player.group_members.length) {
+    return !!player.volume_muted;
+  }
+  // For group players, only show muted if ALL members are muted
+  for (const memberId of player.group_members) {
+    const member = api?.players[memberId];
+    if (member && member.available && !member.volume_muted) {
+      return false;
+    }
+  }
+  return true;
+});
+
 const volumeIconComponent = computed(() => {
   if (!store.activePlayer) return Volume2;
-  if (store.activePlayer.volume_muted) {
+  if (isGroupMuted.value) {
     return VolumeX;
   }
   const volume = displayVolume.value;
