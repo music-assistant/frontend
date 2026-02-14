@@ -105,6 +105,8 @@ export enum MediaType {
   AUDIOBOOK = "audiobook",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  GENRE = "genre",
+  GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -320,6 +322,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS = "library_radios",
   LIBRARY_PODCASTS = "library_podcasts",
   LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_GENRES = "library_genres",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -331,6 +334,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
   LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
   LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
+  LIBRARY_GENRES_EDIT = "library_genres_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
@@ -687,6 +691,15 @@ export interface PodcastEpisode extends MediaItem {
   resume_position_ms?: number;
 }
 
+export interface Genre extends MediaItem {
+  genre_aliases: GenreAlias[] | null;
+}
+
+export interface GenreAlias extends MediaItem {
+  media_items: MediaItemType[] | null;
+  genres?: Genre[]; // Optional field containing parent genres for this alias
+}
+
 export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
@@ -705,6 +718,8 @@ export type MediaItemType =
   | Audiobook
   | Podcast
   | PodcastEpisode
+  | Genre
+  | GenreAlias
   | BrowseFolder;
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
@@ -718,6 +733,7 @@ export interface SearchResults {
   radio: Radio[];
   podcasts: Podcast[];
   audiobooks: Audiobook[];
+  genres: Genre[];
 }
 
 export interface AudioFormat {

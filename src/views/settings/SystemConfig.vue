@@ -92,6 +92,13 @@ const extraSystemEntries = [
     icon: "mdi-text-box-search",
     route: "/settings/serverlogs",
   },
+  {
+    domain: "genre_management",
+    name: "settings.genre_management",
+    description: "settings.genre_management_description",
+    icon: "mdi-tag-multiple",
+    route: "/settings/genremanagement",
+  },
 ];
 
 // Computed properties

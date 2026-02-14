@@ -79,7 +79,7 @@
             <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
           </span>
           <span v-else :class="{ 'is-playing': isPlaying }">{{
-            item.name
+            displayName
           }}</span>
           <span
             v-if="'version' in item && item.version"
@@ -128,6 +128,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
+  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -139,6 +140,8 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 
@@ -163,6 +166,19 @@ const compProps = withDefaults(defineProps<Props>(), {
   showProviderOnCover: false,
   isAvailable: true,
   parentItem: undefined,
+});
+
+const { t, te } = useI18n();
+const displayName = computed(() => {
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
 });
 
 // emits
