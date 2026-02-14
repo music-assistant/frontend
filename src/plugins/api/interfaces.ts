@@ -654,7 +654,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem { }
+export interface Artist extends MediaItem {}
 
 export interface Album extends MediaItem {
   year?: number;
@@ -676,7 +676,7 @@ export interface Playlist extends MediaItem {
   is_editable: boolean;
 }
 
-export interface Radio extends MediaItem { }
+export interface Radio extends MediaItem {}
 
 export interface Audiobook extends MediaItem {
   publisher: string;
