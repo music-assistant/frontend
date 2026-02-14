@@ -1,11 +1,44 @@
 <template>
   <section class="edit-player-options"></section>
 
-  <!-- Settable options -->
   <div v-if="props.playerId">
-    <div v-for="option in playerOptions" :key="option.key">
-      <PlayerOptionField :player-option="option" :player-id="props.playerId" />
-    </div>
+    <!-- Settable options -->
+    <v-container v-if="playerOptionsSettable.length > 0" class="d-flex">
+      <v-card
+        class="mx-auto my-8"
+        elevation="2"
+        min-width="100%"
+        :title="$t('player_options.settable')"
+      >
+        <div style="padding: 0px 20px 20px 20px">
+          <div v-for="option in playerOptionsSettable" :key="option.key">
+            <PlayerOptionField
+              :player-option="option"
+              :player-id="props.playerId"
+            />
+          </div>
+        </div>
+      </v-card>
+    </v-container>
+
+    <!-- Read-only options -->
+    <v-container v-if="playerOptionsReadOnly.length > 0" class="d-flex">
+      <v-card
+        class="mx-auto my-8"
+        elevation="2"
+        min-width="100%"
+        :title="$t('player_options.read_only')"
+      >
+        <div style="padding: 0px 20px 20px 20px">
+          <div v-for="option in playerOptionsReadOnly" :key="option.key">
+            <PlayerOptionField
+              :player-option="option"
+              :player-id="props.playerId"
+            />
+          </div>
+        </div>
+      </v-card>
+    </v-container>
   </div>
 </template>
 
@@ -17,10 +50,10 @@ import {
   PlayerOptionType,
   PlayerOptionValueType,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, computed, ref, Ref } from "vue";
+import { onBeforeUnmount, computed, ref, watch, Ref } from "vue";
 import Slider from "@/components/ui/slider/Slider.vue";
 import PlayerOptionField from "./PlayerOptionField.vue";
-import { watch } from "vue";
+import { $t } from "@/plugins/i18n";
 
 // props
 const props = defineProps<{
@@ -29,6 +62,12 @@ const props = defineProps<{
 
 // global refs
 const playerOptions = ref<PlayerOption[]>([]);
+const playerOptionsSettable = computed(() => {
+  return playerOptions.value.filter((x) => !x.read_only);
+});
+const playerOptionsReadOnly = computed(() => {
+  return playerOptions.value.filter((x) => x.read_only);
+});
 
 // Full load on entry
 watch(

@@ -57,6 +57,10 @@
     "open_player_options": "Open player options",
     "other_versions": "Other versions",
     "perform_action": "Perform action on {0} item(s)",
+    "player_options": {
+        "settable": "Settable player options",
+        "read_only": "Read-only player options"
+    },
     "play": "Play",
     "play_album_from": "Play Album from here",
     "play_next": "Play Next",

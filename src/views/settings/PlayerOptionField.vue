@@ -1,23 +1,24 @@
 <template>
-  <div class="player-option-field"></div>
-
-  <!-- read only, simply show value -->
-  <div v-if="playerOption.read_only">
-    <v-label>{{ getTranslatedLabel() }} </v-label>
-    <v-label>{{ playerOption.value }} </v-label>
+  <!-- drop down for multiple options -->
+  <div v-if="playerOption.options && playerOption.options.length > 0">
+    <v-select
+      :model-value="playerOption.value"
+      :items="translatedOptions"
+      :label="getTranslatedLabel()"
+      variant="outlined"
+      :readonly="playerOption.read_only"
+      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
+    />
   </div>
 
   <!-- toggle for boolean values -->
-  <div
-    v-else-if="playerOption.type == PlayerOptionType.BOOLEAN"
-    class="po-toggle"
-  >
-    <v-label>{{ getTranslatedLabel() }} </v-label>
+  <div v-else-if="playerOption.type == PlayerOptionType.BOOLEAN">
     <v-switch
+      :label="getTranslatedLabel()"
       :model-value="playerOption.value"
-      @update:model-value="
-        (value) => uiSetPlayerOption(playerOption.key, value)
-      "
+      :readonly="playerOption.read_only"
+      hide-details
+      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
     />
   </div>
 
@@ -30,72 +31,65 @@
       playerOption.max_value &&
       playerOption.step
     "
+    style="padding-top: 15px"
   >
-    <v-label>{{ getTranslatedLabel() }} </v-label>
-    <div>
-      <v-slider
-        :model-value="playerOption.value as number"
-        :min="playerOption.min_value"
-        :max="playerOption.max_value"
-        :step="playerOption.step"
-        show-ticks="always"
-        @update:model-value="
-          (value) => uiSetPlayerOption(playerOption.key, value)
-        "
-      >
-        <template #append>
-          <v-text-field
-            v-model="playerOption.value as number"
-            density="compact"
-            style="width: 80px"
-            type="number"
-            variant="outlined"
-            hide-details
-          />
-        </template>
-      </v-slider>
-    </div>
+    <v-slider
+      :label="getTranslatedLabel()"
+      :model-value="playerOption.value as number"
+      :min="playerOption.min_value"
+      :max="playerOption.max_value"
+      :step="playerOption.step"
+      thumb-label="always"
+      :thumb-size="20"
+      show-ticks="always"
+      :tick-size="4"
+      :readonly="playerOption.read_only"
+      @end="uiSetPlayerOption(playerOption.key, $event)"
+    >
+      <template #prepend>
+        <v-label :text="playerOption.min_value as unknown as string" />
+      </template>
+      <template #append>
+        <v-label :text="playerOption.max_value as unknown as string" />
+      </template>
+    </v-slider>
   </div>
 
   <!-- text field for int/ float where some of the above are missing -->
-  <v-text-field
+  <div
     v-else-if="
       playerOption.type == PlayerOptionType.INTEGER ||
       playerOption.type == PlayerOptionType.FLOAT
     "
-    :model-value="playerOption.value"
-    :label="getTranslatedLabel()"
-    :clearable="false"
-    :min="playerOption.min_value"
-    :max="playerOption.max_value"
-    :step="playerOption.step"
-    type="number"
-    variant="outlined"
-    density="comfortable"
-    @update:model-value="(value) => uiSetPlayerOption(playerOption.key, value)"
-  />
+  >
+    <v-text-field
+      :model-value="playerOption.value"
+      :label="getTranslatedLabel()"
+      :clearable="false"
+      :min="playerOption.min_value"
+      :max="playerOption.max_value"
+      :step="playerOption.step"
+      type="number"
+      variant="outlined"
+      density="comfortable"
+      :readonly="playerOption.read_only"
+      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
+    />
+  </div>
 
   <!-- text field for string -->
-  <v-text-field
-    v-else-if="playerOption.type == PlayerOptionType.STRING"
-    :model-value="playerOption.value"
-    :label="getTranslatedLabel()"
-    :clearable="false"
-    type="string"
-    variant="outlined"
-    density="comfortable"
-    @update:model-value="(value) => uiSetPlayerOption(playerOption.key, value)"
-  />
-
-  <!-- drop down for multiple options -->
-  <v-select
-    v-else-if="playerOption.options && playerOption.options.length > 0"
-    :model-value="playerOption.value"
-    :items="translatedOptions"
-    :label="getTranslatedLabel()"
-    variant="outlined"
-    @update:model-value="(value) => uiSetPlayerOption(playerOption.key, value)"
-  />
+  <div v-else-if="playerOption.type == PlayerOptionType.STRING">
+    <v-text-field
+      :model-value="playerOption.value"
+      :label="getTranslatedLabel()"
+      :clearable="false"
+      type="string"
+      variant="outlined"
+      density="comfortable"
+      :readonly="playerOption.read_only"
+      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -107,12 +101,14 @@ import {
 } from "@/plugins/api/interfaces";
 import { PlayerOptionType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   playerOption: PlayerOption;
   playerId: string;
 }>();
+
+const isThumbHidden = ref(true);
 
 const uiSetPlayerOption = async (
   key: string,
@@ -181,3 +177,19 @@ const translatedOptions = computed(() => {
   return options;
 });
 </script>
+<style>
+.optionGrid {
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: auto auto;
+  .firstColumn {
+    grid-column: 1;
+  }
+  .secondColumn {
+    grid-column: 2;
+  }
+  .spanColumn {
+    grid-column: 1/3;
+  }
+}
+</style>
