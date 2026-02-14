@@ -1,5 +1,7 @@
 <template>
   <section class="edit-player-options"></section>
+
+  <!-- Settable options -->
   <div v-if="props.playerId">
     <div v-for="option in playerOptions" :key="option.key">
       <PlayerOptionField :player-option="option" :player-id="props.playerId" />
@@ -18,6 +20,7 @@ import {
 import { onBeforeUnmount, computed, ref, Ref } from "vue";
 import Slider from "@/components/ui/slider/Slider.vue";
 import PlayerOptionField from "./PlayerOptionField.vue";
+import { watch } from "vue";
 
 // props
 const props = defineProps<{
@@ -28,12 +31,46 @@ const props = defineProps<{
 const playerOptions = ref<PlayerOption[]>([]);
 
 // Full load on entry
-const loadOptionsOnEntry = async () => {
-  if (!props.playerId) return;
-  const player = await api.getPlayer(props.playerId);
-  playerOptions.value = player.options;
-};
-loadOptionsOnEntry();
+watch(
+  () => props.playerId,
+  async (val) => {
+    if (val) {
+      const player = await api.getPlayer(val);
+
+      // sort for more consistency in UI experience
+      let arrBool: PlayerOption[] = [];
+      let arrNumber: PlayerOption[] = [];
+      let arrString: PlayerOption[] = [];
+      let arrSelect: PlayerOption[] = [];
+      let arrSensor: PlayerOption[] = [];
+
+      player.options.forEach((option) => {
+        if (option.read_only) {
+          arrSensor.push(option);
+        } else if (option.options && option.options.length > 0) {
+          arrSelect.push(option);
+        } else if (option.type == PlayerOptionType.STRING) {
+          arrString.push(option);
+        } else if (option.type == PlayerOptionType.BOOLEAN) {
+          arrBool.push(option);
+        } else {
+          arrNumber.push(option);
+        }
+      });
+
+      let arrConcat: PlayerOption[] = [];
+
+      playerOptions.value = arrConcat.concat(
+        arrBool.sort((a, b) => a.key.localeCompare(b.key)),
+        arrNumber.sort((a, b) => a.key.localeCompare(b.key)),
+        arrString.sort((a, b) => a.key.localeCompare(b.key)),
+        arrSelect.sort((a, b) => a.key.localeCompare(b.key)),
+        arrSensor.sort((a, b) => a.key.localeCompare(b.key)),
+      );
+    }
+  },
+  { immediate: true },
+);
 
 // subscribe to option updates
 const unsub = api.subscribe(

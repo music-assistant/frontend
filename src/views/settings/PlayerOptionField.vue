@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  <!-- text field for int/ float without a range -->
+  <!-- text field for int/ float where some of the above are missing -->
   <v-text-field
     v-else-if="
       playerOption.type == PlayerOptionType.INTEGER ||
@@ -66,6 +66,9 @@
     :model-value="playerOption.value"
     :label="getTranslatedLabel()"
     :clearable="false"
+    :min="playerOption.min_value"
+    :max="playerOption.max_value"
+    :step="playerOption.step"
     type="number"
     variant="outlined"
     density="comfortable"
@@ -121,7 +124,7 @@ const uiSetPlayerOption = async (
   try {
     await api.playerCommandSetOption(props.playerId, key, value);
   } catch (error) {
-    console.error("Error toggling option:", key);
+    console.error("Error setting option:", key, value);
   }
 };
 
