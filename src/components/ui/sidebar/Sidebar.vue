@@ -4,6 +4,7 @@ import SheetDescription from "@/components/ui/sheet/SheetDescription.vue";
 import SheetHeader from "@/components/ui/sheet/SheetHeader.vue";
 import SheetTitle from "@/components/ui/sheet/SheetTitle.vue";
 import { cn } from "@/lib/utils";
+import { store } from "@/plugins/store";
 import { computed } from "vue";
 import type { SidebarProps } from ".";
 import { SIDEBAR_WIDTH_MOBILE, useSidebar } from "./utils";
@@ -18,7 +19,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: "offcanvas",
 });
 
-const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+const { state, openMobile, setOpenMobile } = useSidebar();
 
 const mobileSheetSide = computed<"left" | "right">(() => {
   if (typeof localStorage === "undefined") return "left";
@@ -44,7 +45,7 @@ const mobileSheetSide = computed<"left" | "right">(() => {
   </div>
 
   <Sheet
-    v-else-if="isMobile"
+    v-else-if="store.mobileLayout"
     :open="openMobile"
     v-bind="$attrs"
     @update:open="setOpenMobile"

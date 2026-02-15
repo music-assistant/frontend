@@ -107,6 +107,7 @@ const handleLogout = () => {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuSeparator v-if="store.isIngressSession" />
           <DropdownMenuItem @click="handleProfile">
             <Settings class="size-4" />
             {{ $t("auth.profile") }}

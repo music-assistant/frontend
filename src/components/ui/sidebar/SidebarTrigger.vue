@@ -6,9 +6,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// import { toggleHAMenu } from "@/plugins/homeassistant";
-// import { store } from "@/plugins/store";
-import { PanelLeft } from "lucide-vue-next";
+import { toggleHAMenu } from "@/plugins/homeassistant";
+import { store } from "@/plugins/store";
+import { ArrowRightToLine, PanelLeft } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
 
@@ -20,14 +20,9 @@ const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
 
-// const showHaButton = computed(() => store.isIngressSession);
-
-// const handleHAMenuToggle = () => {
-//   if (isMobile.value) {
-//     setOpenMobile(false);
-//   }
-//   toggleHAMenu();
-// };
+const handleToggleHaSidebar = () => {
+  toggleHAMenu();
+};
 </script>
 
 <template>
@@ -41,47 +36,33 @@ const isCollapsed = computed(() => state.value === "collapsed");
   >
     <div
       :class="[
-        'flex w-full min-w-0 items-center gap-1 px-0',
-        isCollapsed ? 'flex-col' : 'flex-row',
+        'flex min-w-0 items-center gap-1 px-0',
+        isCollapsed ? 'flex-col' : 'flex-row ml-auto',
       ]"
     >
-      <!-- HA BUTTON COMMENTED OUT -->
-      <!-- <Tooltip v-if="showHaButton">
+      <Tooltip v-if="store.isIngressSession">
         <TooltipTrigger as-child>
           <Button
-            v-if="showHaButton"
-            variant="outline"
+            variant="ghost"
             :size="isCollapsed ? 'icon' : 'default'"
-            :class="[
-              isCollapsed && 'order-first',
-              !isCollapsed && 'min-w-0 flex-1',
-            ]"
-            @click="handleHAMenuToggle"
+            :class="[isCollapsed ? 'order-first' : 'flex-shrink-0']"
+            @click="handleToggleHaSidebar"
           >
-            <template v-if="isCollapsed">
-              <img
-                src="@/assets/home-assistant-logo.svg"
-                alt="Home Assistant"
-                class="h-4 w-4 shrink-0"
-              />
-            </template>
-            <template v-else>
-              <span class="flex min-w-0 items-center gap-2">
-                <img
-                  src="@/assets/home-assistant-logo.svg"
-                  alt="Home Assistant"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="min-w-0">HA Menu</span>
-              </span>
-              <ArrowLeftToLine class="ha-menu-arrow ml-auto size-4 shrink-0" />
-            </template>
+            <img
+              src="@/assets/home-assistant-logo.svg"
+              alt="Home Assistant"
+              class="h-4 w-4 shrink-0"
+            />
+            <ArrowRightToLine
+              v-if="!isCollapsed"
+              class="ha-menu-arrow ml-auto size-4 shrink-0"
+            />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          HA Menu
+          Toggle Home Assistant Menu
         </TooltipContent>
-      </Tooltip> -->
+      </Tooltip>
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
@@ -89,7 +70,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
             data-slot="sidebar-trigger"
             variant="ghost"
             size="icon"
-            :class="['flex-shrink-0', !isCollapsed && 'ml-auto']"
+            class="flex-shrink-0"
             @click="toggleSidebar"
           >
             <PanelLeft />
