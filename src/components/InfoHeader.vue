@@ -522,7 +522,16 @@ const artistLogo = computed(() => {
 
 <style scoped>
 .selectable {
+  -webkit-user-select: text;
+  /* Safari */
+  -khtml-user-select: text;
+  /* Konqueror HTML */
+  -moz-user-select: text;
+  /* Old versions of Firefox */
+  -ms-user-select: text;
+  /* Internet Explorer/Edge */
   user-select: text;
+  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
 .background-image {
