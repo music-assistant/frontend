@@ -86,7 +86,9 @@
           />
           <v-card-title v-else>
             <MarqueeText :sync="marqueeSync">
-              {{ item.name }}
+              <div class="selectable">
+                {{ item.name }}
+              </div>
             </MarqueeText>
           </v-card-title>
 
@@ -519,6 +521,10 @@ const artistLogo = computed(() => {
 </script>
 
 <style scoped>
+.selectable {
+  user-select: text;
+}
+
 .background-image {
   position: absolute;
 }
