@@ -265,6 +265,11 @@ watch(
 </script>
 
 <style scoped>
+.selectable {
+  user-select: text;
+  color: blue;
+}
+
 .container {
   position: relative;
   overflow: hidden;
