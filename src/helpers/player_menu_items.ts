@@ -12,6 +12,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 
@@ -170,6 +171,17 @@ export const getPlayerMenuItems = (
         api.queueCommandClear(playerQueue!.queue_id);
       },
       icon: "mdi-cancel",
+    });
+  }
+  // add 'save queue as playlist' menu item
+  if (playerQueue?.items) {
+    menuItems.push({
+      label: "save_queue_as_playlist",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("saveQueueAsPlaylist", playerQueue!.queue_id);
+      },
+      icon: "mdi-playlist-plus",
     });
   }
 
