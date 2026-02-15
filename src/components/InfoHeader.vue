@@ -88,6 +88,7 @@
             <MarqueeText :sync="marqueeSync">
               {{ item.name }}
             </MarqueeText>
+            <div class="selector">Div is selectable!</div>
           </v-card-title>
 
           <!-- other details -->
@@ -519,6 +520,10 @@ const artistLogo = computed(() => {
 </script>
 
 <style scoped>
+* {
+  user-select: text;
+}
+
 .background-image {
   position: absolute;
 }
