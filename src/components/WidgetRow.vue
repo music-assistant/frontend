@@ -6,7 +6,12 @@
   >
     <v-toolbar class="header" color="transparent">
       <template #title>
-        <span class="mr-3">{{ widgetRow.title }}</span>
+        <span
+          class="mr-3"
+          :class="{ 'clickable-title': showActionIcon && widgetRow.action }"
+          @click="showActionIcon && handleActionIconClick()"
+          >{{ widgetRow.title }}</span
+        >
         <v-chip
           v-if="widgetRow.subtitle && getBreakpointValue('bp6')"
           inline
@@ -150,6 +155,15 @@ const handleActionIconClick = () => {
   margin-inline-start: 0px;
   font-size: x-large;
   font-weight: bold;
+}
+
+.clickable-title {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.clickable-title:hover {
+  opacity: 0.7;
 }
 
 .carousel-wrapper {

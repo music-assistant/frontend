@@ -19,6 +19,81 @@
 
     <!-- Sections as expansion panels (matching EditConfig style) -->
     <v-expansion-panels v-model="activePanels" multiple class="config-panels">
+      <!-- Background Scanner -->
+      <v-expansion-panel value="scanner" class="config-panel">
+        <v-expansion-panel-title class="config-panel-title">
+          <v-icon icon="mdi-radar" class="mr-3" size="20" />
+          <span class="panel-title-text">
+            {{ $t("settings.background_scanner") }}
+          </span>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div class="config-panel-content">
+            <p class="text-body-2 text-medium-emphasis mb-4">
+              {{ $t("settings.background_scanner_description") }}
+            </p>
+            <div class="stats-row">
+              <span class="text-medium-emphasis">{{
+                $t("settings.scanner_status")
+              }}</span>
+              <span class="font-weight-bold">
+                <v-icon
+                  :icon="
+                    scannerStatus?.running
+                      ? 'mdi-loading mdi-spin'
+                      : 'mdi-circle'
+                  "
+                  :color="scannerStatus?.running ? 'primary' : 'success'"
+                  size="12"
+                  class="mr-1"
+                />
+                {{
+                  scannerStatus?.running
+                    ? $t("settings.scanner_running")
+                    : $t("settings.scanner_idle")
+                }}
+              </span>
+            </div>
+            <div class="stats-row">
+              <span class="text-medium-emphasis">{{
+                $t("settings.last_scan")
+              }}</span>
+              <span class="font-weight-bold">{{ lastScanDisplay }}</span>
+            </div>
+            <div class="stats-row">
+              <span class="text-medium-emphasis">{{
+                $t("settings.next_scan")
+              }}</span>
+              <span class="font-weight-bold">{{ nextScanDisplay }}</span>
+            </div>
+            <div class="stats-row">
+              <span class="text-medium-emphasis">{{
+                $t("settings.batch_size")
+              }}</span>
+              <span class="font-weight-bold">{{
+                scannerStatus
+                  ? $t("settings.batch_size_value", [
+                      scannerStatus.batch_size,
+                      scannerStatus.batch_size * 3,
+                    ])
+                  : "..."
+              }}</span>
+            </div>
+            <v-btn
+              class="mt-4"
+              variant="outlined"
+              color="primary"
+              prepend-icon="mdi-refresh"
+              :loading="scanTriggering"
+              :disabled="scanTriggering || scannerStatus?.running"
+              @click="triggerScan"
+            >
+              {{ $t("settings.scan_now") }}
+            </v-btn>
+          </div>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+
       <!-- Genre Statistics -->
       <v-expansion-panel value="statistics" class="config-panel">
         <v-expansion-panel-title class="config-panel-title">
@@ -183,14 +258,16 @@
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";
-import { onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+
+const SCANNER_POLL_INTERVAL_MS = 30000;
 
 const { t } = useI18n();
 const router = useRouter();
 
-const activePanels = ref(["statistics", "restore", "fullrestore"]);
+const activePanels = ref(["scanner", "statistics", "restore", "fullrestore"]);
 const genreCount = ref<number | undefined>(undefined);
 const restoreInProgress = ref(false);
 const fullRestoreInProgress = ref(false);
@@ -199,6 +276,68 @@ const showFullRestoreDialog = ref(false);
 const showFullRestoreDialog2 = ref(false);
 const showResult = ref(false);
 const resultMessage = ref("");
+
+// Scanner state
+const scannerStatus = ref<{
+  running: boolean;
+  last_scan_time: number;
+  last_scan_ago_seconds: number | null;
+  next_scan_in_seconds: number;
+  batch_size: number;
+} | null>(null);
+const scanTriggering = ref(false);
+let scannerPollInterval: ReturnType<typeof setInterval> | null = null;
+
+const formatRelativeTime = (seconds: number): string => {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
+const lastScanDisplay = computed(() => {
+  if (!scannerStatus.value) return "...";
+  if (
+    scannerStatus.value.last_scan_ago_seconds === null ||
+    !scannerStatus.value.last_scan_time
+  ) {
+    return t("settings.scan_never");
+  }
+  return formatRelativeTime(scannerStatus.value.last_scan_ago_seconds) + " ago";
+});
+
+const nextScanDisplay = computed(() => {
+  if (!scannerStatus.value) return "...";
+  if (scannerStatus.value.running) return t("settings.scanner_running");
+  return formatRelativeTime(scannerStatus.value.next_scan_in_seconds);
+});
+
+const loadScannerStatus = async () => {
+  try {
+    scannerStatus.value = await api.getGenreScannerStatus();
+  } catch (error) {
+    console.error("Failed to fetch scanner status:", error);
+  }
+};
+
+const triggerScan = async () => {
+  scanTriggering.value = true;
+  try {
+    const result = await api.triggerGenreScan();
+    if (result.status === "already_running") {
+      resultMessage.value = t("settings.scan_already_running");
+    } else {
+      resultMessage.value = t("settings.scan_triggered");
+    }
+    showResult.value = true;
+    await loadScannerStatus();
+  } catch (error) {
+    console.error("Failed to trigger genre scan:", error);
+  } finally {
+    scanTriggering.value = false;
+  }
+};
 
 const loadStats = async () => {
   genreCount.value = await api.getLibraryGenresCount();
@@ -245,6 +384,18 @@ const fullRestore = async () => {
 
 onMounted(() => {
   loadStats();
+  loadScannerStatus();
+  scannerPollInterval = setInterval(
+    loadScannerStatus,
+    SCANNER_POLL_INTERVAL_MS,
+  );
+});
+
+onBeforeUnmount(() => {
+  if (scannerPollInterval) {
+    clearInterval(scannerPollInterval);
+    scannerPollInterval = null;
+  }
 });
 </script>
 

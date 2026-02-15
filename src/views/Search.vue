@@ -193,7 +193,38 @@ const loadSearchResults = async function (
   const limit = store.globalSearchType ? 50 : 8;
   const mediaTypes = filter ? [filter] : undefined;
   if (searchTerm) {
-    searchResult.value = await api.search(searchTerm, mediaTypes, limit);
+    if (filter === MediaType.GENRE) {
+      // Genre-only search: use library search directly
+      const genres = await api.getLibraryGenres(
+        undefined,
+        searchTerm,
+        limit,
+        0,
+        "name",
+      );
+      searchResult.value = {
+        artists: [],
+        albums: [],
+        tracks: [],
+        playlists: [],
+        radio: [],
+        podcasts: [],
+        audiobooks: [],
+        genres,
+      };
+    } else {
+      // Standard search + supplement with genre results
+      const [results, genres] = await Promise.all([
+        api.search(searchTerm, mediaTypes, limit),
+        !filter
+          ? api.getLibraryGenres(undefined, searchTerm, limit, 0, "name")
+          : Promise.resolve([]),
+      ]);
+      searchResult.value = {
+        ...results,
+        genres: results.genres?.length ? results.genres : genres,
+      };
+    }
   } else {
     searchResult.value = undefined;
   }

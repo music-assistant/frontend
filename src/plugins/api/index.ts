@@ -955,6 +955,24 @@ export class MusicAssistantApi {
     });
   }
 
+  public getGenreScannerStatus(): Promise<{
+    running: boolean;
+    last_scan_time: number;
+    last_scan_ago_seconds: number | null;
+    next_scan_in_seconds: number;
+    batch_size: number;
+  }> {
+    return this.sendCommand("music/genres/scanner_status");
+  }
+
+  public triggerGenreScan(): Promise<{
+    status: "triggered" | "already_running";
+    message: string;
+    last_scan: number;
+  }> {
+    return this.sendCommand("music/genres/scan_mappings");
+  }
+
   public getLibraryAliases(
     favorite?: boolean,
     search?: string,
