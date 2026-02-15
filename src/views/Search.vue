@@ -29,6 +29,7 @@
             MediaType.PODCAST,
             MediaType.AUDIOBOOK,
             MediaType.RADIO,
+            MediaType.GENRE,
           ]"
           :key="item"
           :text="$t(item ? item + 's' : 'searchtype_all')"
@@ -110,6 +111,15 @@
           }"
           :show-provider-on-cover="true"
         />
+        <WidgetRow
+          v-if="searchResult && !loading"
+          :widget-row="{
+            title: $t('genres'),
+            icon: Tag,
+            items: searchResult.genres,
+          }"
+          :show-provider-on-cover="true"
+        />
       </div>
       <!-- tracks-only searchresult -->
       <div v-else-if="!loading">
@@ -146,7 +156,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Search } from "lucide-vue-next";
+import { Search, Tag } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // local refs
@@ -183,7 +193,38 @@ const loadSearchResults = async function (
   const limit = store.globalSearchType ? 50 : 8;
   const mediaTypes = filter ? [filter] : undefined;
   if (searchTerm) {
-    searchResult.value = await api.search(searchTerm, mediaTypes, limit);
+    if (filter === MediaType.GENRE) {
+      // Genre-only search: use library search directly
+      const genres = await api.getLibraryGenres(
+        undefined,
+        searchTerm,
+        limit,
+        0,
+        "name",
+      );
+      searchResult.value = {
+        artists: [],
+        albums: [],
+        tracks: [],
+        playlists: [],
+        radio: [],
+        podcasts: [],
+        audiobooks: [],
+        genres,
+      };
+    } else {
+      // Standard search + supplement with genre results
+      const [results, genres] = await Promise.all([
+        api.search(searchTerm, mediaTypes, limit),
+        !filter
+          ? api.getLibraryGenres(undefined, searchTerm, limit, 0, "name")
+          : Promise.resolve([]),
+      ]);
+      searchResult.value = {
+        ...results,
+        genres: results.genres?.length ? results.genres : genres,
+      };
+    }
   } else {
     searchResult.value = undefined;
   }
@@ -231,6 +272,7 @@ const filteredItems = function (mediaType: MediaType) {
   if (mediaType == MediaType.PODCAST) return searchResult.value.podcasts;
   if (mediaType == MediaType.AUDIOBOOK) return searchResult.value.audiobooks;
   if (mediaType == MediaType.RADIO) return searchResult.value.radio;
+  if (mediaType == MediaType.GENRE) return searchResult.value.genres;
   return [];
 };
 </script>

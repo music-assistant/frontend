@@ -48,6 +48,7 @@ interface Store {
   libraryRadiosCount?: number;
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
+  libraryGenresCount?: number;
   isTouchscreen: boolean;
   playerTipShown: boolean;
   playActionInProgress: boolean;
@@ -108,6 +109,7 @@ export const store: Store = reactive({
   libraryTracksCount: undefined,
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
+  libraryGenresCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playerTipShown: false,
