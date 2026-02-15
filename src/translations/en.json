@@ -437,7 +437,7 @@
             "label": "Fixed\/fallback gain adjustment for radio",
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "add_group_player_desc": "For a group player created for the {0} provider, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronized.",
+        "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
