@@ -431,16 +431,13 @@ const loadOverviewRows = async () => {
           icon: iconMap[folder.media_type],
           action: () => {
             if (!itemDetails.value) return;
-            const genreId = Number(itemDetails.value.item_id);
-            const query = {
-              genre_id: Number.isNaN(genreId)
-                ? itemDetails.value.item_id
-                : genreId,
-            };
-            router.push({
-              name: routeMap[folder.media_type],
-              query,
-            });
+            const routeName = folderIdToRoute[folder.item_id];
+            if (routeName) {
+              router.push({
+                name: routeName,
+                query: { genre_ids: itemDetails.value.item_id },
+              });
+            }
           },
         };
       });
@@ -702,20 +699,13 @@ const iconMap: Record<MediaType, string | Component> = {
   [MediaType.UNKNOWN]: "mdi-help-circle-outline",
 };
 
-// Route mapping for different media types
-const routeMap: Record<MediaType, string> = {
-  [MediaType.TRACK]: "tracks",
-  [MediaType.ALBUM]: "albums",
-  [MediaType.ARTIST]: "artists",
-  [MediaType.PLAYLIST]: "playlists",
-  [MediaType.RADIO]: "radios",
-  [MediaType.AUDIOBOOK]: "audiobooks",
-  [MediaType.PODCAST]: "podcasts",
-  [MediaType.GENRE]: "genres",
-  [MediaType.GENRE_ALIAS]: "genres",
-  [MediaType.PODCAST_EPISODE]: "podcasts",
-  [MediaType.FOLDER]: "browse",
-  [MediaType.UNKNOWN]: "home",
+// Map recommendation folder item_ids to library route names
+const folderIdToRoute: Record<string, string> = {
+  genre_artist: "artists",
+  genre_album: "albums",
+  genre_track: "tracks",
+  genre_playlist: "playlists",
+  genre_radio: "radios",
 };
 </script>
 
