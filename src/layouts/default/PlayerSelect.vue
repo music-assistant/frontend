@@ -53,9 +53,7 @@
           :show-sub-players="
             showSubPlayers && player.player_id == store.activePlayerId
           "
-          :show-sync-controls="
-            player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-          "
+          :show-sync-controls="true"
           :allow-power-control="true"
           @click="playerClicked(player)"
           @toggle-expand="toggleGroupExpand"
