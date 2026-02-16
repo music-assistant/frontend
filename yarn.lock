@@ -2252,44 +2252,44 @@
   resolved "https://registry.yarnpkg.com/@tanstack/devtools-event-client/-/devtools-event-client-0.4.0.tgz#7c586e5bf4bc18999f8a19d0fa53657e4646e2a5"
   integrity sha512-RPfGuk2bDZgcu9bAJodvO2lnZeHuz4/71HjZ0bGb/SPg8+lyTA+RLSKQvo7fSmPSi8/vcH3aKQ8EM9ywf1olaw==
 
-"@tanstack/form-core@1.28.0":
-  version "1.28.0"
-  resolved "https://registry.yarnpkg.com/@tanstack/form-core/-/form-core-1.28.0.tgz#5edf443e0737d351d83c6c4b07b26982f2721602"
-  integrity sha512-MX3YveB6SKHAJ2yUwp+Ca/PCguub8bVEnLcLUbFLwdkSRMkP0lMGdaZl+F0JuEgZw56c6iFoRyfILhS7OQpydA==
+"@tanstack/form-core@1.28.3":
+  version "1.28.3"
+  resolved "https://registry.yarnpkg.com/@tanstack/form-core/-/form-core-1.28.3.tgz#8f2f63b9671b57bc4b4ac4eae49be15b57b79a9e"
+  integrity sha512-DBhnu1d5VfACAYOAZJO8tsEUHjWczZMJY8v/YrtAJNWpwvL/3ogDuz8e6yUB2m/iVTNq6K8yrnVN2nrX0/BX/w==
   dependencies:
     "@tanstack/devtools-event-client" "^0.4.0"
     "@tanstack/pacer-lite" "^0.1.1"
-    "@tanstack/store" "^0.7.7"
+    "@tanstack/store" "^0.8.1"
 
 "@tanstack/pacer-lite@^0.1.1":
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/@tanstack/pacer-lite/-/pacer-lite-0.1.1.tgz#431d3b0ac871280e8326fdbf156bb171d9bb0aa3"
   integrity sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==
 
-"@tanstack/store@0.7.7", "@tanstack/store@^0.7.7":
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/@tanstack/store/-/store-0.7.7.tgz#2c8b1d8c094f3614ae4e0483253239abd0e14488"
-  integrity sha512-xa6pTan1bcaqYDS9BDpSiS63qa6EoDkPN9RsRaxHuDdVDNntzq3xNwR5YKTU/V3SkSyC9T4YVOPh2zRQN0nhIQ==
+"@tanstack/store@0.8.1", "@tanstack/store@^0.8.1":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/store/-/store-0.8.1.tgz#2a323df1824b399201913b98616513b29bfca1c3"
+  integrity sha512-PtOisLjUZPz5VyPRSCGjNOlwTvabdTBQ2K80DpVL1chGVr35WRxfeavAPdNq6pm/t7F8GhoR2qtmkkqtCEtHYw==
 
 "@tanstack/virtual-core@3.13.13":
   version "3.13.13"
   resolved "https://registry.yarnpkg.com/@tanstack/virtual-core/-/virtual-core-3.13.13.tgz#1e55efe82730e60f4d68b1e2bc956bd3d94f307b"
   integrity sha512-uQFoSdKKf5S8k51W5t7b2qpfkyIbdHMzAn+AMQvHPxKUPeo1SsGaA4JRISQT87jm28b7z8OEqPcg1IOZagQHcA==
 
-"@tanstack/vue-form@^1.28.0":
-  version "1.28.0"
-  resolved "https://registry.yarnpkg.com/@tanstack/vue-form/-/vue-form-1.28.0.tgz#69717eab4e601a6bf3a46e09d5e8344e628cf97c"
-  integrity sha512-UBO9DLFHrOyxDRQ0qLd789vgaKRECsNOYupW+ATjmqnOOV6l7JzTjCnjc35GVjIAgYyiZ1un4bPw1qyFM2G1OQ==
+"@tanstack/vue-form@^1.28.3":
+  version "1.28.3"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-form/-/vue-form-1.28.3.tgz#53fa3c89a326fd2506e16b1ef2edeea0658c1038"
+  integrity sha512-WHs9oBmMLvp5RIqa33mSLYgEM9nbG6UlwXEXWyG8S25gn8gOgcaLpPoE7kvqlT+nyPbZhPAjJXBsn7Uzsd8xvA==
   dependencies:
-    "@tanstack/form-core" "1.28.0"
-    "@tanstack/vue-store" "^0.7.7"
+    "@tanstack/form-core" "1.28.3"
+    "@tanstack/vue-store" "^0.8.1"
 
-"@tanstack/vue-store@^0.7.7":
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/@tanstack/vue-store/-/vue-store-0.7.7.tgz#5fa8351492988b8e215176a64cef26455b6e237c"
-  integrity sha512-6iv1Odmreff6TgEjQN11xoddsCnpn+/ul7MZ2DadHT3/RSY1YdoFafK8lCa889MEFi/5K0zAhf8psIkgTrRa9A==
+"@tanstack/vue-store@^0.8.1":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-store/-/vue-store-0.8.1.tgz#99b8e2db2753042caae0de7c9531b521f64c38fe"
+  integrity sha512-37rNptEo86+2Jm2kTLvgVtboRRwHkksjxCKCrdl73eeZIU0jU34ZMP/ayd5+bCCo6epdbrqcb13gjUBSGp4Blg==
   dependencies:
-    "@tanstack/store" "0.7.7"
+    "@tanstack/store" "0.8.1"
     vue-demi "^0.14.10"
 
 "@tanstack/vue-virtual@^3.12.0":
