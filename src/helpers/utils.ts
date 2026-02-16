@@ -115,6 +115,17 @@ export const isColorDark = function (hexColor: string) {
   return luma < 128;
 };
 
+export const formatAliasName = (name: string) =>
+  name ? name.replace(/(^|\s)\S/g, (match) => match.toUpperCase()) : "";
+
+export const formatRelativeTime = (seconds: number): string => {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
 export const kebabize = (str: string) => {
   return str
     .split("")

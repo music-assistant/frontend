@@ -1319,7 +1319,6 @@ const getFilteredItems = function (
     result = [...items];
   }
 
-  // result = filterItemsByGenre(result, params.genre);
   // sort
   if (params.sortBy == "name") {
     result.sort((a, b) =>

@@ -1,9 +1,10 @@
 <template>
-  <v-dialog v-model="model" transition="dialog-bottom-transition">
-    <v-card>
-      <Toolbar :icon="Tag" :title="dialogTitle" />
-      <v-divider />
-      <div class="dialog-body">
+  <Dialog v-model:open="model">
+    <DialogContent class="sm:max-w-[520px]">
+      <DialogHeader>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+      </DialogHeader>
+      <div class="flex flex-col gap-4">
         <v-text-field
           v-model="name"
           variant="outlined"
@@ -23,33 +24,33 @@
           :label="$t('description')"
           :disabled="loading"
         />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="outlined" @click="model = false">
-            {{ $t("cancel") }}
-          </v-btn>
-          <v-btn
-            variant="flat"
-            color="primary"
-            :disabled="loading || !name"
-            @click="save"
-          >
-            {{ $t("save") }}
-          </v-btn>
-        </v-card-actions>
       </div>
-    </v-card>
-  </v-dialog>
+      <DialogFooter>
+        <Button variant="outline" @click="model = false">
+          {{ $t("cancel") }}
+        </Button>
+        <Button :disabled="loading || !name" @click="save">
+          {{ $t("save") }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import api from "@/plugins/api";
 import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Tag } from "lucide-vue-next";
 
 export interface Props {
   type: MediaType.GENRE | MediaType.GENRE_ALIAS;
@@ -83,12 +84,12 @@ const save = async () => {
   if (!name.value) return;
   loading.value = true;
   const item: Record<string, any> = {
-    item_id: "0", // Use "0" for new items (will be replaced by actual DB ID)
-    provider: "library", // Always "library" for user-created genres/aliases
+    item_id: "0",
+    provider: "library",
     name: name.value,
-    sort_name: sortName.value || name.value, // Defaults to name if not provided
-    provider_mappings: [], // Required empty set for new items
-    favorite: false, // Default to false
+    sort_name: sortName.value || name.value,
+    provider_mappings: [],
+    favorite: false,
   };
   if (description.value) {
     item.metadata = { description: description.value };
@@ -105,9 +106,3 @@ const save = async () => {
   }
 };
 </script>
-
-<style scoped>
-.dialog-body {
-  padding: 15px;
-}
-</style>

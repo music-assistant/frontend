@@ -179,88 +179,82 @@
     </v-expansion-panels>
 
     <!-- Restore Missing Defaults confirmation -->
-    <v-dialog v-model="showRestoreDialog" max-width="520">
-      <v-card>
-        <Toolbar :title="$t('settings.restore_missing_defaults')" />
-        <v-divider />
-        <v-card-text>
-          <p>{{ $t("settings.confirm_restore_defaults") }}</p>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="outlined" @click="showRestoreDialog = false">
-              {{ $t("cancel") }}
-            </v-btn>
-            <v-btn
-              color="primary"
-              variant="flat"
-              :loading="restoreInProgress"
-              @click="restoreDefaults"
-            >
-              {{ $t("settings.restore_missing_defaults") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <Dialog v-model:open="showRestoreDialog">
+      <DialogContent class="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>{{
+            $t("settings.restore_missing_defaults")
+          }}</DialogTitle>
+        </DialogHeader>
+        <p>{{ $t("settings.confirm_restore_defaults") }}</p>
+        <DialogFooter>
+          <Button variant="outline" @click="showRestoreDialog = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button :disabled="restoreInProgress" @click="restoreDefaults">
+            {{ $t("settings.restore_missing_defaults") }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Full Restore confirmation (step 1) -->
-    <v-dialog v-model="showFullRestoreDialog" max-width="520">
-      <v-card>
-        <Toolbar :title="$t('settings.full_restore_genres')" />
-        <v-divider />
-        <v-card-text>
-          <p>{{ $t("settings.confirm_full_restore") }}</p>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="outlined" @click="showFullRestoreDialog = false">
-              {{ $t("cancel") }}
-            </v-btn>
-            <v-btn color="error" variant="flat" @click="showFullRestoreStep2">
-              {{ $t("delete") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <Dialog v-model:open="showFullRestoreDialog">
+      <DialogContent class="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
+        </DialogHeader>
+        <p>{{ $t("settings.confirm_full_restore") }}</p>
+        <DialogFooter>
+          <Button variant="outline" @click="showFullRestoreDialog = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button variant="destructive" @click="showFullRestoreStep2">
+            {{ $t("delete") }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Full Restore confirmation (step 2) -->
-    <v-dialog v-model="showFullRestoreDialog2" max-width="520">
-      <v-card>
-        <Toolbar :title="$t('settings.full_restore_genres')" />
-        <v-divider />
-        <v-card-text>
-          <p>{{ $t("settings.confirm_full_restore_2") }}</p>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="outlined" @click="showFullRestoreDialog2 = false">
-              {{ $t("cancel") }}
-            </v-btn>
-            <v-btn
-              color="error"
-              variant="flat"
-              :loading="fullRestoreInProgress"
-              @click="fullRestore"
-            >
-              {{ $t("delete") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-
-    <!-- Result snackbar -->
-    <v-snackbar v-model="showResult" :timeout="5000" color="success">
-      {{ resultMessage }}
-    </v-snackbar>
+    <Dialog v-model:open="showFullRestoreDialog2">
+      <DialogContent class="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
+        </DialogHeader>
+        <p>{{ $t("settings.confirm_full_restore_2") }}</p>
+        <DialogFooter>
+          <Button variant="outline" @click="showFullRestoreDialog2 = false">
+            {{ $t("cancel") }}
+          </Button>
+          <Button
+            variant="destructive"
+            :disabled="fullRestoreInProgress"
+            @click="fullRestore"
+          >
+            {{ $t("delete") }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { formatRelativeTime } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
 const SCANNER_POLL_INTERVAL_MS = 30000;
 
@@ -274,8 +268,6 @@ const fullRestoreInProgress = ref(false);
 const showRestoreDialog = ref(false);
 const showFullRestoreDialog = ref(false);
 const showFullRestoreDialog2 = ref(false);
-const showResult = ref(false);
-const resultMessage = ref("");
 
 // Scanner state
 const scannerStatus = ref<{
@@ -287,14 +279,6 @@ const scannerStatus = ref<{
 } | null>(null);
 const scanTriggering = ref(false);
 let scannerPollInterval: ReturnType<typeof setInterval> | null = null;
-
-const formatRelativeTime = (seconds: number): string => {
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-};
 
 const lastScanDisplay = computed(() => {
   if (!scannerStatus.value) return "...";
@@ -317,7 +301,7 @@ const loadScannerStatus = async () => {
   try {
     scannerStatus.value = await api.getGenreScannerStatus();
   } catch (error) {
-    console.error("Failed to fetch scanner status:", error);
+    toast.error(t("settings.scanner_status_failed"));
   }
 };
 
@@ -326,14 +310,13 @@ const triggerScan = async () => {
   try {
     const result = await api.triggerGenreScan();
     if (result.status === "already_running") {
-      resultMessage.value = t("settings.scan_already_running");
+      toast.info(t("settings.scan_already_running"));
     } else {
-      resultMessage.value = t("settings.scan_triggered");
+      toast.success(t("settings.scan_triggered"));
     }
-    showResult.value = true;
     await loadScannerStatus();
   } catch (error) {
-    console.error("Failed to trigger genre scan:", error);
+    toast.error(t("settings.scan_trigger_failed"));
   } finally {
     scanTriggering.value = false;
   }
@@ -349,14 +332,13 @@ const restoreDefaults = async () => {
     const restored = await api.restoreGenreDefaults(false);
     showRestoreDialog.value = false;
     if (restored.length === 0) {
-      resultMessage.value = t("settings.restore_all_present");
+      toast.info(t("settings.restore_all_present"));
     } else {
-      resultMessage.value = t("settings.restore_success", [restored.length]);
+      toast.success(t("settings.restore_success", [restored.length]));
     }
-    showResult.value = true;
     await loadStats();
   } catch (error) {
-    console.error("Failed to restore genre defaults:", error);
+    toast.error(t("settings.restore_defaults_failed"));
   } finally {
     restoreInProgress.value = false;
   }
@@ -372,11 +354,10 @@ const fullRestore = async () => {
   try {
     const restored = await api.restoreGenreDefaults(true);
     showFullRestoreDialog2.value = false;
-    resultMessage.value = t("settings.full_restore_success", [restored.length]);
-    showResult.value = true;
+    toast.success(t("settings.full_restore_success", [restored.length]));
     await loadStats();
   } catch (error) {
-    console.error("Failed to perform full genre restore:", error);
+    toast.error(t("settings.full_restore_failed"));
   } finally {
     fullRestoreInProgress.value = false;
   }
