@@ -49,10 +49,8 @@ import {
   EventType,
   PlayerOption,
   PlayerOptionType,
-  PlayerOptionValueType,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, computed, ref, watch, Ref } from "vue";
-import Slider from "@/components/ui/slider/Slider.vue";
+import { onBeforeUnmount, computed, ref, watch } from "vue";
 import PlayerOptionField from "./PlayerOptionField.vue";
 import { $t } from "@/plugins/i18n";
 
@@ -91,24 +89,22 @@ watch(
           arrSensor.push(option);
         } else if (option.options && option.options.length > 0) {
           arrSelect.push(option);
-        } else if (option.type == PlayerOptionType.STRING) {
+        } else if (option.type === PlayerOptionType.STRING) {
           arrString.push(option);
-        } else if (option.type == PlayerOptionType.BOOLEAN) {
+        } else if (option.type === PlayerOptionType.BOOLEAN) {
           arrBool.push(option);
         } else {
           arrNumber.push(option);
         }
       });
 
-      let arrConcat: PlayerOption[] = [];
-
-      playerOptions.value = arrConcat.concat(
+      playerOptions.value = [
         arrBool.sort((a, b) => a.key.localeCompare(b.key)),
         arrNumber.sort((a, b) => a.key.localeCompare(b.key)),
         arrString.sort((a, b) => a.key.localeCompare(b.key)),
         arrSelect.sort((a, b) => a.key.localeCompare(b.key)),
         arrSensor.sort((a, b) => a.key.localeCompare(b.key)),
-      );
+      ].flat();
     }
   },
   { immediate: true },

@@ -214,8 +214,8 @@ export const getPlayerMenuItems = (
           return {
             label: $t(s.translation_key || s.name, s.name),
             labelArgs: [],
-            disabled: s.id == player.active_sound_mode,
-            selected: s.id == player.active_sound_mode,
+            disabled: s.id === player.active_sound_mode,
+            selected: s.id === player.active_sound_mode,
             action: () => {
               api.playerCommandSelectSoundMode(player.player_id, s.id);
             },

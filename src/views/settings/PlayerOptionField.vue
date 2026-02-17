@@ -12,7 +12,7 @@
   </div>
 
   <!-- toggle for boolean values -->
-  <div v-else-if="playerOption.type == PlayerOptionType.BOOLEAN">
+  <div v-else-if="playerOption.type === PlayerOptionType.BOOLEAN">
     <v-switch
       :label="getTranslatedLabel()"
       :model-value="playerOption.value"
@@ -25,8 +25,8 @@
   <!-- slider for int/ float with min/max -->
   <div
     v-else-if="
-      (playerOption.type == PlayerOptionType.INTEGER ||
-        playerOption.type == PlayerOptionType.FLOAT) &&
+      (playerOption.type === PlayerOptionType.INTEGER ||
+        playerOption.type === PlayerOptionType.FLOAT) &&
       playerOption.min_value &&
       playerOption.max_value &&
       playerOption.step
@@ -59,8 +59,8 @@
   <!-- text field for int/ float where some of the above are missing -->
   <div
     v-else-if="
-      playerOption.type == PlayerOptionType.INTEGER ||
-      playerOption.type == PlayerOptionType.FLOAT
+      playerOption.type === PlayerOptionType.INTEGER ||
+      playerOption.type === PlayerOptionType.FLOAT
     "
   >
     <v-text-field
@@ -79,7 +79,7 @@
   </div>
 
   <!-- text field for string -->
-  <div v-else-if="playerOption.type == PlayerOptionType.STRING">
+  <div v-else-if="playerOption.type === PlayerOptionType.STRING">
     <v-text-field
       :model-value="playerOption.value"
       :label="getTranslatedLabel()"
@@ -95,33 +95,28 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import {
-  PlayerOption,
-  PlayerOptionEntry,
-  PlayerOptionValueType,
-} from "@/plugins/api/interfaces";
+import { PlayerOption, PlayerOptionValueType } from "@/plugins/api/interfaces";
 import { PlayerOptionType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed, ref } from "vue";
+import { computed } from "vue";
+import { toast } from "vue-sonner";
 
 const props = defineProps<{
   playerOption: PlayerOption;
   playerId: string;
 }>();
 
-const isThumbHidden = ref(true);
-
 const uiSetPlayerOption = async (
   key: string,
   value: PlayerOptionValueType | PlayerOptionValueType[] | null | undefined,
 ) => {
-  if (!props.playerId || value === null || value == undefined) return;
+  if (!props.playerId || value === null || value === undefined) return;
   // we only have single numbers
   if (Array.isArray(value)) value = value[0];
   try {
     await api.playerCommandSetOption(props.playerId, key, value);
   } catch (error) {
-    console.error("Error setting option:", key, value);
+    toast.error(`Error while setting player option: ${key} ${value}`);
   }
 };
 
@@ -178,19 +173,3 @@ const translatedOptions = computed(() => {
   return options;
 });
 </script>
-<style>
-.optionGrid {
-  display: grid;
-  grid-gap: 10px;
-  grid-template-columns: auto auto;
-  .firstColumn {
-    grid-column: 1;
-  }
-  .secondColumn {
-    grid-column: 2;
-  }
-  .spanColumn {
-    grid-column: 1/3;
-  }
-}
-</style>
