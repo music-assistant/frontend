@@ -35,7 +35,6 @@
         "volume_normalization_fixed_gain_radio": {
             "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
-        "add_group_player_desc": "For a group player created for the {0} provider, a syncgroup will be automatically created, meaning that if you play to this Player Group, the member players will be automatically synchronised.",
         "power_control": {
             "description": "Define\/override the power control behaviour for this player.\nIt allows you for example to redirect the power on\/off commands to a different appliance, or use a fake power control if your player does not support power on\/off commands but you like to have a dedicated state for a player not in use."
         },

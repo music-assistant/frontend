@@ -406,7 +406,6 @@
             "label": "Vaste\/fallback versterkingsaanpassing voor radio",
             "description": "Vaste\/fallback versterkingscorrectie om toe te passen op een radiostream (afhankelijk van de instelling 'Volumenormalisatiemethode').\n\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt wanneer de volumenormalisatiemethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
         },
-        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \n\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \n\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. ",
         "dynamic_members": {
             "label": "Dynamische groepsleden",
             "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
@@ -689,7 +688,8 @@
                 "left": "Links",
                 "right": "Rechts"
             }
-        }
+        },
+        "add_group_player_desc_sync": "Maak een permanente SyncGroep met spelers die compatibel zijn met synchronisatie. Als je op deze Spelersgroep speelt, worden de aangesloten spelers automatisch gesynchroniseerd."
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",

@@ -393,7 +393,6 @@
             "label": "Fix\/tartalék erősítés-beállítás a rádióhoz",
             "description": "Rögzített\/tartalék erősítéskorrekció a rádiófolyamra (a \"Hangerő normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheted a hangerőt, negatív értékkel csökkentheted azt.\n\nEz a beállítás akkor használható, ha a hangerő normalizálási módszer a 'Fix erősítés korrekció' vagy a 'Tartalék erősítéskorrekció' beállításra van állítva."
         },
-        "add_group_player_desc": "A natív csoportosítást\/szinkronizálást biztosító lejátszószolgáltatók\/ökoszisztémák esetében automatikusan létrejön egy szinkronizált csoport, ami azt jelenti, hogy ha a lejátszás ezen a lejátszócsoporton történik, a taglejátszók automatikusan szinkronizálódnak. \n\nA csoportosítást nem támogató lejátszók\/ökoszisztémák esetében, vagy abban az esetben, ha különböző ökoszisztémákból származó lejátszókat szeretnél csoportosítani, használhatod az Univerzális csoport típust, amely ugyanazt a hangot fogja szétosztani az összes taglejátszóra (de nem szinkronizálva). \n\nVedd figyelembe, hogy egyes szolgáltatók támogatják a csoportosítást, de a csoportosításhoz a natív alkalmazást kell használnod. Ilyenek például a Google Cast alapú lejátszók, ahol csak a Google Home alkalmazáson belül hozhatsz létre Google Cast csoportokat.",
         "dynamic_members": {
             "label": "Dinamikus csoporttagok",
             "description": "Lehetővé teszi a tagok számára, hogy (ideiglenesen) dinamikusan csatlakozzanak a csoporthoz vagy kilépjenek belőle, így a csoport nagyjából ugyanúgy működik, mint a lejátszók kézi szinkronizálása. A fő különbség az, hogy a csoportos lejátszó megtartja a lejátszási listát."
@@ -442,7 +441,8 @@
                 "parametric_eq": "Parametrikus EQ",
                 "tone_control": "Hangszínszabályzó"
             }
-        }
+        },
+        "players_count": "{0}{1} lejátszó"
     },
     "show_info": "Infó megjelenítése",
     "show_select_boxes": "Kijelölőmezők megjelenítése",

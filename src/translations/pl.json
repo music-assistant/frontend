@@ -402,7 +402,6 @@
             "label": "Regulacja stałego\/zaspasowego wzmocnienia dla radia",
             "description": "Stała\/zapasowa korekta wzmocnienia do zastosowania w strumieniu radiowym (zależy od ustawienia „Metoda normalizacji głośności\").\nUżyj wartości dodatniej, aby zwiększyć głośność, wartości ujemnej, aby zmniejszyć głośność.\n\nTo ustawienie jest używane, gdy metoda normalizacji głośności jest ustawiona na „Stała korekta wzmocnienia\" lub „Zapasowa korekta wzmocnienia\"."
         },
-        "add_group_player_desc": "Dla odtwarzacza grupowego utworzonego dla dostawcy {0} , syncgroup zostanie automatycznie utworzona, co oznacza, że jeśli odtwarzasz do tej Grupy Odtwarzaczy, odtwarzacze będący członkami zostaną automatycznie zsynchronizowani.",
         "dynamic_members": {
             "label": "Członkowie grupy dynamicznej",
             "description": "Pozwól członkom dynamicznie (tymczasowo) dołączać do grupy\/opuszczać ją, dzięki czemu grupa zachowuje się mniej więcej tak samo jak ręczne synchronizowanie odtwarzaczy, z tą główną różnicą, że odtwarzacz grupowy będzie przechowywał kolejkę."

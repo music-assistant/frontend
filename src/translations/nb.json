@@ -388,7 +388,6 @@
                 "fallback_dynamic": "Bruk dynamisk som reserveløsning"
             }
         },
-        "add_group_player_desc": "For en gruppespiller som er opprettet for {0} leverandør, vil en synkroniseringsgruppe automatisk bli opprettet, noe som betyr at hvis du spiller til denne spillergruppen, vil medlemene automatisk bli synkronisert.",
         "dynamic_members": {
             "label": "Dynamiske gruppemedlemmer",
             "description": "Tillat spillere å bli med i eller forlate gruppen dynamisk. Gruppespilleren beholder alltid køen."
