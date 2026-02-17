@@ -54,7 +54,11 @@
     <br />
     <!-- media images -->
     <MediaItemImages
-      v-if="itemDetails?.provider == 'library' && itemDetails?.metadata?.images && authManager.isAdmin()"
+      v-if="
+        itemDetails?.provider == 'library' &&
+        itemDetails?.metadata?.images &&
+        authManager.isAdmin()
+      "
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
     />
