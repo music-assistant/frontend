@@ -56,4 +56,31 @@ Output format:
 - List specific comments for each file/line that needs attention
 - Don't list things that are already perfect
 - In the end, summarize with an overall assessment (approve, request changes, or comment) and list of changes suggested, if any.
-- Example output:
+
+Example output:
+```
+## File: src/components/InfoHeader.vue
+
+**Line 89-91**: Consider extracting the selectable wrapper into a reusable component if this pattern is used elsewhere.
+
+**Line 524-535**: The CSS vendor prefixes are good for compatibility. Consider removing `-khtml-user-select` as Konqueror is no longer maintained.
+
+## File: src/composables/userPreferences.ts
+
+**Line 45**: Missing error handling for API call failure. Consider adding try-catch or error handling.
+
+**Line 78**: Type assertion could be more specific. Consider using a type guard instead of `as`.
+
+## Overall Assessment: Request Changes
+
+**Critical Issues:**
+- [CRITICAL] Missing error handling in userPreferences.ts line 45 could cause unhandled exceptions
+
+**Problems:**
+- [PROBLEM] File src/components/InfoHeader.vue exceeds 300 lines (554 lines). Consider extracting sub-components or composables.
+
+**Suggestions:**
+- [SUGGESTION] Remove outdated `-khtml-user-select` vendor prefix in InfoHeader.vue
+- [SUGGESTION] Extract selectable text wrapper into reusable component if pattern repeats
+- [SUGGESTION] Add unit tests for userPreferences composable error scenarios
+```
