@@ -46,8 +46,11 @@
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="
-            webPlayer.player_id === player.player_id ||
-            store.companionPlayerId === player.player_id
+            player.output_protocols?.filter(
+              (x) =>
+                x.output_protocol_id == webPlayer.player_id ||
+                x.output_protocol_id == store.companionPlayerId,
+            ).length !== 0
           "
           style="margin-bottom: 3px"
         >

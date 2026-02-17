@@ -701,7 +701,14 @@ export const playerVisible = function (
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  if (player.hide_in_ui && player.player_id != webPlayer.player_id) {
+  if (
+    player.hide_in_ui &&
+    player.output_protocols?.filter(
+      (x) =>
+        x.output_protocol_id === webPlayer.player_id ||
+        x.output_protocol_id === store.companionPlayerId,
+    ).length === 0
+  ) {
     return false;
   }
   if (player.synced_to && !allowGroupChilds) {
