@@ -402,7 +402,6 @@
             "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
             "description": "Fiksna\/rezervna korekcija pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). Koristite pozitivnu vrednost da povećate jačinu, negativnu da je smanjite. \n\nOvo podešavanje se koristi kada je metod normalizacije jačine zvuka postavljen na „Fiksna korekcija pojačanja“ ili „Rezervna korekcija pojačanja“."
         },
-        "add_group_player_desc": "Kada se kreira grupni plejer za {0} provajdera, automatski će biti formirana sinhronizovana grupa, što znači da će svi članovi te grupe biti sinhronizovani kada pustite muziku na toj grupi plejera.",
         "dynamic_members": {
             "label": "Članovi dinamičke grupe",
             "description": "Dozvolite članovima da se (privremeno) pridruže\/napuste grupu dinamički, tako da se grupa ponaša približno isto kao ručno sinhronizovanje plejera, sa glavnom razlikom da grupni plejer drži red reprodukcije."

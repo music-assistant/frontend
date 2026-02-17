@@ -406,7 +406,6 @@
             "label": "Fast\/reservförstärkningsjustering för radio",
             "description": "Fast\/reservförstärkningskorrigering som ska tillämpas på en radioström (beror på inställningen 'Volymnormaliseringsmetod').\nAnvänd ett positivt värde för att öka volymen, ett negativt värde för att minska volymen.\n\nDenna inställning används när volymnormaliseringsmetoden är inställd på 'Fastförstärkningskorrigering' eller 'Reservförstärkningskorrigering'."
         },
-        "add_group_player_desc": "För en gruppspelare skapad för {0} leverantören skapas en synkgrupp automatiskt, vilket innebär att om du spelar i den här spelargruppen synkroniseras medlemsspelarna automatiskt.",
         "dynamic_members": {
             "label": "Dynamiska gruppmedlemmar",
             "description": "Tillåt medlemmar att (tillfälligt) gå med i\/lämna gruppen dynamiskt, så att gruppen mer eller mindre beter sig på samma sätt som att manuellt synkronisera spelare tillsammans, med den största skillnaden att gruppspelaren kommer att hålla kön."
@@ -689,7 +688,8 @@
                 "left": "Vänster",
                 "right": "Höger"
             }
-        }
+        },
+        "add_group_player_desc_sync": "Skapa en permanent Synkroniseringsgrupp med spelare som är synkroniseringskompatibla. När du spelar i den här spelargruppen synkroniseras spelarna automatiskt."
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
