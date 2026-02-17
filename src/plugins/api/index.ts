@@ -1384,10 +1384,25 @@ export class MusicAssistantApi {
         - playerId: player_id of the playergroup to handle the command.
         - newVolume: volume level (0..100) to set on the player.
     */
+    newVolume = Math.max(0, Math.min(100, newVolume));
     this.playerCommand(playerId, "group_volume", {
       volume_level: newVolume,
     });
+    // Optimistically update group volume and child player volumes
+    const oldGroupVolume = this.players[playerId].group_volume;
     this.players[playerId].group_volume = newVolume;
+    const delta = newVolume - oldGroupVolume;
+    if (delta !== 0 && this.players[playerId].group_members) {
+      for (const childId of this.players[playerId].group_members) {
+        if (childId in this.players) {
+          const childVolume = this.players[childId].volume_level || 0;
+          this.players[childId].volume_level = Math.max(
+            0,
+            Math.min(100, Math.round(childVolume + delta)),
+          );
+        }
+      }
+    }
   }
   public playerCommandGroupVolumeUp(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_up");
