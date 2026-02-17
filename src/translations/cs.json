@@ -393,7 +393,6 @@
             "label": "Pevné\/záložní korekce zesílení pro rádio",
             "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání rádia (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
         },
-        "add_group_player_desc": "U poskytovatelů přehrávačů\/ekosystémů, které poskytují nativní seskupování\/synchronizaci, se automaticky vytvoří synchronizační skupina, což znamená, že pokud přehráváte na této skupině přehrávačů, budou členské přehrávače automaticky synchronizovány. \n\nU přehrávačů\/ekosystémů, které seskupování nepodporují, nebo v případě, že chcete seskupit přehrávače z různých ekosystémů, můžete použít typ skupiny Universal, který bude distribuovat stejný zvuk do všech členských přehrávačů (ale ne synchronizovaně). \n\nPoznámka: někteří poskytovatelé seskupování podporují, ale k provedení seskupení je třeba použít nativní aplikaci. Příkladem jsou přehrávače založené na službě Google Cast, kde lze skupiny Google Cast vytvářet pouze v aplikaci Google Home.",
         "dsp": {
             "types": {
                 "parametric_eq": "Parametrický ekvalizér"
