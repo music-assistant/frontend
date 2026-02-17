@@ -318,7 +318,7 @@
                   item.provider === 'library' &&
                   isAdmin
                 "
-                :size="24"
+                :size="22"
                 class="cursor-pointer"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
@@ -369,49 +369,11 @@
         </div>
       </v-layout>
     </v-card>
-    <!-- delete genre confirmation dialog (step 1) -->
-    <v-dialog v-model="showDeleteGenreDialog" max-width="520">
-      <v-card>
-        <Toolbar :title="$t('delete_genre')" />
-        <v-divider />
-        <v-card-text>
-          <p>{{ $t("confirm_delete_genre") }}</p>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="outlined" @click="showDeleteGenreDialog = false">
-              {{ $t("cancel") }}
-            </v-btn>
-            <v-btn
-              color="error"
-              variant="flat"
-              @click="showDeleteGenreConfirmStep2"
-            >
-              {{ $t("delete") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-
-    <!-- delete genre confirmation dialog (step 2) -->
-    <v-dialog v-model="showDeleteGenreDialog2" max-width="520">
-      <v-card>
-        <Toolbar :title="$t('delete_genre')" />
-        <v-divider />
-        <v-card-text>
-          <p>{{ $t("confirm_delete_genre_2") }}</p>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="outlined" @click="showDeleteGenreDialog2 = false">
-              {{ $t("cancel") }}
-            </v-btn>
-            <v-btn color="error" variant="flat" @click="confirmDeleteGenre">
-              {{ $t("delete") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <!-- delete genre confirmation dialog -->
+    <DeleteGenreDialog
+      v-model="showDeleteGenreDialog"
+      @confirm="confirmDeleteGenre"
+    />
 
     <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
@@ -434,8 +396,8 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
-  getImageThumbForItem,
   getGenreDisplayName,
+  getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
   markdownToHtml,
@@ -450,19 +412,19 @@ import { api } from "@/plugins/api";
 import type {
   Album,
   Artist,
-  Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
-import { store } from "@/plugins/store";
 import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { ArrowLeft, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
+import DeleteGenreDialog from "./genre/DeleteGenreDialog.vue";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
@@ -671,21 +633,15 @@ const artistLogo = computed(() => {
 const isAdmin = computed(() => authManager.isAdmin());
 
 const showDeleteGenreDialog = ref(false);
-const showDeleteGenreDialog2 = ref(false);
 
 const deleteGenre = () => {
   showDeleteGenreDialog.value = true;
 };
 
-const showDeleteGenreConfirmStep2 = () => {
-  showDeleteGenreDialog.value = false;
-  showDeleteGenreDialog2.value = true;
-};
-
 const confirmDeleteGenre = () => {
   if (!compProps.item) return;
   api.removeGenreFromLibrary(compProps.item.item_id);
-  showDeleteGenreDialog2.value = false;
+  showDeleteGenreDialog.value = false;
   router.back();
 };
 </script>

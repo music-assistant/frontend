@@ -10,7 +10,7 @@
           {{ $t("cancel") }}
         </Button>
         <Button :disabled="!newAliasName || loading" @click="createAndLink">
-          {{ $t("add_alias") }}
+          {{ $t("add") }}
         </Button>
       </DialogFooter>
     </DialogContent>
