@@ -402,7 +402,6 @@
             "label": "Fiksuotas\/atsarginis radijo stiprinimo reguliavimas",
             "description": "Fiksuotas\/atsarginis stiprinimo korekcijos metodas, taikomas radijo srautui (priklauso nuo nustatymo 'Garsumo normalizavimo metodas'). \n Naudokite teigiamą reikšmę, norėdami padidinti garsumą, neigiamą reikšmę, norėdami jį sumažinti. \n \n Šis nustatymas naudojamas, kai garsumo normalizavimo metodas nustatytas kaip 'Fiksuotas stiprinimo korekcijos metodas' arba 'Atsarginis stiprinimo korekcijos metodas'."
         },
-        "add_group_player_desc": "Grupės grotuvui, sukurtam {0} teikėjo, sinchronizavimo grupė bus sukurta automatiškai, o tai reiškia, kad jei grosite šioje grotuvų grupėje, jos nariai bus automatiškai sinchronizuoti.",
         "dynamic_members": {
             "label": "Dinaminės grupės nariai",
             "description": "Leisti nariams (laikinai) dinamiškai prisijungti prie grupės \/ iš jos išeiti, kad grupė veiktų daugmaž taip pat, kaip rankiniu būdu sinchronizuojant grotuvus, o pagrindinis skirtumas yra tas, kad grupės grotuvai laikys eilę."
