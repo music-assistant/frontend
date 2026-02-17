@@ -1,21 +1,6 @@
 <template>
   <section class="genre-management">
-    <!-- Header card -->
-    <v-card class="header-card mb-4" elevation="0">
-      <div class="header-content">
-        <div class="header-icon">
-          <v-icon size="32" color="primary">mdi-tag-multiple</v-icon>
-        </div>
-        <div class="header-info">
-          <h2 class="header-title">
-            {{ $t("settings.genre_management") }}
-          </h2>
-          <p class="header-description">
-            {{ $t("settings.genre_management_description") }}
-          </p>
-        </div>
-      </div>
-    </v-card>
+    <GenreManagementHeader />
 
     <!-- Sections as expansion panels (matching EditConfig style) -->
     <v-expansion-panels v-model="activePanels" multiple class="config-panels">
@@ -28,69 +13,11 @@
           </span>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="config-panel-content">
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              {{ $t("settings.background_scanner_description") }}
-            </p>
-            <div class="stats-row">
-              <span class="text-medium-emphasis">{{
-                $t("settings.scanner_status")
-              }}</span>
-              <span class="font-weight-bold">
-                <v-icon
-                  :icon="
-                    scannerStatus?.running
-                      ? 'mdi-loading mdi-spin'
-                      : 'mdi-circle'
-                  "
-                  :color="scannerStatus?.running ? 'primary' : 'success'"
-                  size="12"
-                  class="mr-1"
-                />
-                {{
-                  scannerStatus?.running
-                    ? $t("settings.scanner_running")
-                    : $t("settings.scanner_idle")
-                }}
-              </span>
-            </div>
-            <div class="stats-row">
-              <span class="text-medium-emphasis">{{
-                $t("settings.last_scan")
-              }}</span>
-              <span class="font-weight-bold">{{ lastScanDisplay }}</span>
-            </div>
-            <div class="stats-row">
-              <span class="text-medium-emphasis">{{
-                $t("settings.next_scan")
-              }}</span>
-              <span class="font-weight-bold">{{ nextScanDisplay }}</span>
-            </div>
-            <div class="stats-row">
-              <span class="text-medium-emphasis">{{
-                $t("settings.batch_size")
-              }}</span>
-              <span class="font-weight-bold">{{
-                scannerStatus
-                  ? $t("settings.batch_size_value", [
-                      scannerStatus.batch_size,
-                      scannerStatus.batch_size * 3,
-                    ])
-                  : "..."
-              }}</span>
-            </div>
-            <v-btn
-              class="mt-4"
-              variant="outlined"
-              color="primary"
-              prepend-icon="mdi-refresh"
-              :loading="scanTriggering"
-              :disabled="scanTriggering || scannerStatus?.running"
-              @click="triggerScan"
-            >
-              {{ $t("settings.scan_now") }}
-            </v-btn>
-          </div>
+          <GenreScannerPanel
+            :status="scannerStatus"
+            :triggering="scanTriggering"
+            @trigger="triggerScan"
+          />
         </v-expansion-panel-text>
       </v-expansion-panel>
 
@@ -103,23 +30,10 @@
           </span>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="config-panel-content">
-            <div class="stats-row">
-              <span class="text-medium-emphasis">{{
-                $t("settings.total_genres")
-              }}</span>
-              <span class="font-weight-bold">{{ genreCount ?? "..." }}</span>
-            </div>
-            <v-btn
-              class="mt-4"
-              variant="outlined"
-              color="primary"
-              prepend-icon="mdi-tag-multiple"
-              @click="router.push({ name: 'genres' })"
-            >
-              {{ $t("settings.view_all_genres") }}
-            </v-btn>
-          </div>
+          <GenreStatsPanel
+            :count="genreCount"
+            @view-genres="router.push({ name: 'genres' })"
+          />
         </v-expansion-panel-text>
       </v-expansion-panel>
 
@@ -132,21 +46,13 @@
           </span>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="config-panel-content">
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              {{ $t("settings.restore_missing_defaults_description") }}
-            </p>
-            <v-btn
-              variant="outlined"
-              color="primary"
-              prepend-icon="mdi-refresh"
-              :loading="restoreInProgress"
-              :disabled="restoreInProgress || fullRestoreInProgress"
-              @click="showRestoreDialog = true"
-            >
-              {{ $t("settings.restore_missing_defaults") }}
-            </v-btn>
-          </div>
+          <GenreRestorePanel
+            :description="$t('settings.restore_missing_defaults_description')"
+            :button-text="$t('settings.restore_missing_defaults')"
+            :loading="restoreInProgress || fullRestoreInProgress"
+            icon="mdi-refresh"
+            @restore="showRestoreDialog = true"
+          />
         </v-expansion-panel-text>
       </v-expansion-panel>
 
@@ -159,99 +65,39 @@
           </span>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="config-panel-content">
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              {{ $t("settings.full_restore_genres_description") }}
-            </p>
-            <v-btn
-              variant="outlined"
-              color="error"
-              prepend-icon="mdi-alert"
-              :loading="fullRestoreInProgress"
-              :disabled="restoreInProgress || fullRestoreInProgress"
-              @click="showFullRestoreDialog = true"
-            >
-              {{ $t("settings.full_restore_genres") }}
-            </v-btn>
-          </div>
+          <GenreRestorePanel
+            :description="$t('settings.full_restore_genres_description')"
+            :button-text="$t('settings.full_restore_genres')"
+            :loading="restoreInProgress || fullRestoreInProgress"
+            icon="mdi-alert"
+            destructive
+            @restore="showFullRestoreDialog = true"
+          />
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
 
-    <!-- Restore Missing Defaults confirmation -->
-    <Dialog v-model:open="showRestoreDialog">
-      <DialogContent class="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{{
-            $t("settings.restore_missing_defaults")
-          }}</DialogTitle>
-        </DialogHeader>
-        <p>{{ $t("settings.confirm_restore_defaults") }}</p>
-        <DialogFooter>
-          <Button variant="outline" @click="showRestoreDialog = false">
-            {{ $t("cancel") }}
-          </Button>
-          <Button :disabled="restoreInProgress" @click="restoreDefaults">
-            {{ $t("settings.restore_missing_defaults") }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Full Restore confirmation (step 1) -->
-    <Dialog v-model:open="showFullRestoreDialog">
-      <DialogContent class="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
-        </DialogHeader>
-        <p>{{ $t("settings.confirm_full_restore") }}</p>
-        <DialogFooter>
-          <Button variant="outline" @click="showFullRestoreDialog = false">
-            {{ $t("cancel") }}
-          </Button>
-          <Button variant="destructive" @click="showFullRestoreStep2">
-            {{ $t("delete") }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Full Restore confirmation (step 2) -->
-    <Dialog v-model:open="showFullRestoreDialog2">
-      <DialogContent class="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
-        </DialogHeader>
-        <p>{{ $t("settings.confirm_full_restore_2") }}</p>
-        <DialogFooter>
-          <Button variant="outline" @click="showFullRestoreDialog2 = false">
-            {{ $t("cancel") }}
-          </Button>
-          <Button
-            variant="destructive"
-            :disabled="fullRestoreInProgress"
-            @click="fullRestore"
-          >
-            {{ $t("delete") }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <GenreRestoreDialogs
+      v-model:show-restore-dialog="showRestoreDialog"
+      v-model:show-full-restore-dialog="showFullRestoreDialog"
+      v-model:show-full-restore-dialog2="showFullRestoreDialog2"
+      :restore-in-progress="restoreInProgress"
+      :full-restore-in-progress="fullRestoreInProgress"
+      @restore="restoreDefaults"
+      @full-restore-step2="showFullRestoreStep2"
+      @full-restore="fullRestore"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { formatRelativeTime } from "@/helpers/utils";
+import GenreManagementHeader from "@/components/genre/GenreManagementHeader.vue";
+import GenreRestoreDialogs from "@/components/genre/GenreRestoreDialogs.vue";
+import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
+import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
+import GenreStatsPanel from "@/components/genre/GenreStatsPanel.vue";
 import { api } from "@/plugins/api";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -279,23 +125,6 @@ const scannerStatus = ref<{
 } | null>(null);
 const scanTriggering = ref(false);
 let scannerPollInterval: ReturnType<typeof setInterval> | null = null;
-
-const lastScanDisplay = computed(() => {
-  if (!scannerStatus.value) return "...";
-  if (
-    scannerStatus.value.last_scan_ago_seconds === null ||
-    !scannerStatus.value.last_scan_time
-  ) {
-    return t("settings.scan_never");
-  }
-  return formatRelativeTime(scannerStatus.value.last_scan_ago_seconds) + " ago";
-});
-
-const nextScanDisplay = computed(() => {
-  if (!scannerStatus.value) return "...";
-  if (scannerStatus.value.running) return t("settings.scanner_running");
-  return formatRelativeTime(scannerStatus.value.next_scan_in_seconds);
-});
 
 const loadScannerStatus = async () => {
   try {
@@ -385,47 +214,6 @@ onBeforeUnmount(() => {
   padding: 16px;
 }
 
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
 .config-panels {
   margin-top: 16px;
 }
@@ -459,24 +247,5 @@ onBeforeUnmount(() => {
 
 .config-panel :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
-}
-
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 </style>
