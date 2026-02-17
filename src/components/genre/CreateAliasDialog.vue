@@ -62,6 +62,7 @@ const createAndLink = async () => {
       true,
     );
     await api.addAliasToGenre(props.genreItemId, created.item_id);
+    toast.success(t("alias_added_successfully"));
     newAliasName.value = "";
     model.value = false;
     emit("created");

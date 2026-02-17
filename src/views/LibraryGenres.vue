@@ -17,26 +17,17 @@
     :show-provider-filter="true"
     :extra-menu-items="extraMenuItems"
   />
-  <AddGenreAliasDialog
-    v-model="showAddGenreDialog"
-    :type="MediaType.GENRE"
-    @success="handleGenreAdded"
-  />
-  <AddGenreAliasDialog
-    v-model="showAddAliasDialog"
-    :type="MediaType.GENRE_ALIAS"
-    @success="handleGenreAdded"
-  />
+  <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
 </template>
 
 <script setup lang="ts">
-import AddGenreAliasDialog from "@/components/AddGenreAliasDialog.vue";
+import AddGenreDialog from "@/components/AddGenreDialog.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Plus, Tag, Tags } from "lucide-vue-next";
+import { Plus, Tag } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -46,7 +37,6 @@ defineOptions({
 const updateAvailable = ref(false);
 const total = ref(store.libraryGenresCount);
 const showAddGenreDialog = ref(false);
-const showAddAliasDialog = ref(false);
 const refreshKey = ref(0);
 const restoreState = ref(true);
 
@@ -71,14 +61,6 @@ const extraMenuItems = computed(() => {
         showAddGenreDialog.value = true;
       },
       icon: Plus,
-    },
-    {
-      label: "add_alias",
-      labelArgs: [],
-      action: () => {
-        showAddAliasDialog.value = true;
-      },
-      icon: Tags,
     },
   ];
 });

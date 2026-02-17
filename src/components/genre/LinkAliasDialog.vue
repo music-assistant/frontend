@@ -108,6 +108,7 @@ const linkAlias = async () => {
   loading.value = true;
   try {
     await api.addAliasToGenre(props.genreItemId, selectedAlias.value.item_id);
+    toast.success(t("alias_linked_successfully"));
     selectedAlias.value = null;
     aliasSearch.value = "";
     model.value = false;

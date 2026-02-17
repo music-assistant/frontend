@@ -128,6 +128,7 @@
     "link": "Link",
     "link_alias": "Link alias",
     "link_alias_failed": "Failed to link alias",
+    "alias_linked_successfully": "Alias linked successfully",
     "mapped_aliases": "Mapped Aliases",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",

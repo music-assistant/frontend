@@ -2,9 +2,9 @@
   <Dialog v-model:open="model">
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
-        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+        <DialogTitle>{{ $t("add_genre") }}</DialogTitle>
       </DialogHeader>
-      <form id="form-add-genre-alias" @submit.prevent="form.handleSubmit">
+      <form id="form-add-genre" @submit.prevent="form.handleSubmit">
         <FieldGroup>
           <form.Field name="name">
             <template #default="{ field }">
@@ -88,7 +88,7 @@
         </Button>
         <Button
           type="submit"
-          form="form-add-genre-alias"
+          form="form-add-genre"
           :disabled="loading"
           :loading="loading"
         >
@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 import { useForm } from "@tanstack/vue-form";
-import { computed, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
@@ -115,7 +115,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -124,36 +123,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { addGenreAliasSchema } from "@/lib/forms/genre";
 import api from "@/plugins/api";
-import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
-export interface Props {
-  type: MediaType.GENRE | MediaType.GENRE_ALIAS;
-}
-
-const props = defineProps<Props>();
 const model = defineModel<boolean>();
 const emit = defineEmits<{
   success: [];
 }>();
 const loading = ref(false);
 const { t } = useI18n();
-
-const dialogTitle = computed(() =>
-  props.type === MediaType.GENRE ? t("add_genre") : t("add_alias"),
-);
-
-const successMessage = computed(() =>
-  props.type === MediaType.GENRE
-    ? t("genre_added_successfully")
-    : t("alias_added_successfully"),
-);
-
-const errorMessage = computed(() =>
-  props.type === MediaType.GENRE
-    ? t("genre_add_failed")
-    : t("alias_add_failed"),
-);
 
 const form = useForm({
   defaultValues: {
@@ -181,18 +158,13 @@ const form = useForm({
     }
 
     try {
-      if (props.type === MediaType.GENRE) {
-        await api.addGenreToLibrary(item, true);
-      } else {
-        await api.addAliasToLibrary(item, true);
-      }
-
-      toast.success(successMessage.value);
+      await api.addGenreToLibrary(item, true);
+      toast.success(t("genre_added_successfully"));
       form.reset();
       emit("success");
       model.value = false;
     } catch (error) {
-      toast.error(errorMessage.value);
+      toast.error(t("genre_add_failed"));
     } finally {
       loading.value = false;
     }
