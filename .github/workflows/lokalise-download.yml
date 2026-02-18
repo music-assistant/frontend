@@ -13,7 +13,7 @@ jobs:
         env: 
           VAR_LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_RO_API_TOKEN }}
           VAR_LOKALISE_PROJECT_ID: ${{ secrets.LOKALISE_PROJECT_ID }}
-          VAR_LANGUAGES: zh_CN,cs,da,nl,en_au,en_GB,fr,de,el_GR,hu_HU,it,ko_KR,lt_LT,nb,pl,pt_BR,pt_PT,ru_RU,sl_SI,sr,sr_Latn,es,sv_SE,uk_UA
+          VAR_LANGUAGES: zh_CN,cs,da,nl,en_au,en_GB,fr,de,el_GR,hu_HU,it,ko_KR,lt_LT,lv_LV,nb,pl,pt_BR,pt_PT,ru_RU,sl_SI,sr,sr_Latn,es,sv_SE,uk_UA
         run: |
             ./bin/lokalise2 --token ${{ env.VAR_LOKALISE_API_TOKEN }} --project-id ${{ env.VAR_LOKALISE_PROJECT_ID }} file download --filter-langs ${{ env.VAR_LANGUAGES }} --format json --export-empty-as skip --export-sort first_added --placeholder-format printf --plural-format array --indentation 4sp --directory-prefix src/translations --replace-breaks=false
       - name: Create Pull Request
