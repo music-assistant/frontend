@@ -839,12 +839,15 @@ export const getContextMenuItems = async function (
     }
   }
 
-  // remove from playlist (playlist tracks and radio items)
+  // remove from playlist (playlist tracks, radio, podcast, podcast episode, and audiobook items)
   if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
     const playlist = parentItem as Playlist;
     if (
       (items[0].media_type === MediaType.TRACK ||
-        items[0].media_type === MediaType.RADIO) &&
+        items[0].media_type === MediaType.RADIO ||
+        items[0].media_type === MediaType.PODCAST ||
+        items[0].media_type === MediaType.PODCAST_EPISODE ||
+        items[0].media_type === MediaType.AUDIOBOOK) &&
       playlist.is_editable
     ) {
       contextMenuItems.push({
@@ -860,11 +863,14 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks, albums, and radios)
+  // add to playlist action (tracks, albums, radios, podcasts, podcast episodes, and audiobooks)
   if (
     items[0].media_type === MediaType.TRACK ||
     items[0].media_type === MediaType.ALBUM ||
-    items[0].media_type === MediaType.RADIO
+    items[0].media_type === MediaType.RADIO ||
+    items[0].media_type === MediaType.PODCAST ||
+    items[0].media_type === MediaType.PODCAST_EPISODE ||
+    items[0].media_type === MediaType.AUDIOBOOK
   ) {
     contextMenuItems.push({
       label: "add_playlist",
