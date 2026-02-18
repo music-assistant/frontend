@@ -144,7 +144,6 @@ const fetchPlaylists = async function () {
   // Check if we're adding radio/podcast/audiobook items - these can only be added to builtin playlists
   const isAddingBuiltinOnly =
     refItem?.media_type === MediaType.RADIO ||
-    refItem?.media_type === MediaType.PODCAST ||
     refItem?.media_type === MediaType.PODCAST_EPISODE ||
     refItem?.media_type === MediaType.AUDIOBOOK;
 
