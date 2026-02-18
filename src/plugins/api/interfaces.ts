@@ -695,9 +695,11 @@ export interface Genre extends MediaItem {
   genre_aliases: GenreAlias[] | null;
 }
 
-export interface GenreAlias extends MediaItem {
-  media_items: MediaItemType[] | null;
-  genres?: Genre[]; // Optional field containing parent genres for this alias
+export interface GenreAlias {
+  item_id: string;
+  name: string;
+  genres?: Genre[] | null;
+  media_items?: MediaItemType[] | null;
 }
 
 export interface BrowseFolder extends MediaItem {
@@ -719,7 +721,6 @@ export type MediaItemType =
   | Podcast
   | PodcastEpisode
   | Genre
-  | GenreAlias
   | BrowseFolder;
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;

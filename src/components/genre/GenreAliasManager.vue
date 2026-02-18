@@ -7,14 +7,11 @@
     />
     <v-divider />
     <v-list v-if="aliasSectionExpanded">
-      <ListItem v-for="alias in aliases" :key="alias.uri">
+      <ListItem v-for="alias in aliases" :key="alias.item_id">
         <template #prepend>
           <Tags :size="20" />
         </template>
         <template #title>{{ formatAliasName(alias.name) }}</template>
-        <template #subtitle>
-          <span style="opacity: 0.6">{{ alias.uri }}</span>
-        </template>
         <template #append>
           <Button
             v-if="canPromoteAlias(alias)"

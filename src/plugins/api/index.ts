@@ -438,7 +438,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -447,7 +447,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -564,7 +564,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_artists_only?: boolean,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -574,7 +574,7 @@ export class MusicAssistantApi {
       order_by,
       album_artists_only,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -633,7 +633,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -643,7 +643,7 @@ export class MusicAssistantApi {
       order_by,
       album_types,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -696,7 +696,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -705,7 +705,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -778,7 +778,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -787,7 +787,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -829,7 +829,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -838,7 +838,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -880,7 +880,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -889,7 +889,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -910,7 +910,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
-    genre_ids?: number | number[],
+    genre?: number | number[],
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", {
       favorite,
@@ -919,7 +919,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
-      genre_ids,
+      genre,
     });
   }
 
@@ -990,7 +990,7 @@ export class MusicAssistantApi {
   }
 
   public addAliasToLibrary(
-    item: Partial<GenreAlias>,
+    item: Pick<GenreAlias, "item_id" | "name">,
     overwrite_existing = false,
   ): Promise<GenreAlias> {
     return this.sendCommand("music/aliases/add", {

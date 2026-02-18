@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/plugins/api";
-import { GenreAlias } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -51,15 +50,8 @@ const createAndLink = async () => {
   loading.value = true;
   try {
     const created = await api.addAliasToLibrary(
-      {
-        item_id: "0",
-        provider: "library",
-        name: newAliasName.value,
-        sort_name: newAliasName.value,
-        provider_mappings: [],
-        favorite: false,
-      } as Partial<GenreAlias> as GenreAlias,
-      true,
+      { item_id: "0", name: newAliasName.value },
+      false,
     );
     await api.addAliasToGenre(props.genreItemId, created.item_id);
     toast.success(t("alias_added_successfully"));
