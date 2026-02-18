@@ -1403,13 +1403,6 @@ export class MusicAssistantApi {
       muted,
     });
   }
-  public playerCommandGroupMuteToggle(playerId: string): Promise<void> {
-    return this.playerCommandGroupVolumeMute(
-      playerId,
-      !this.players[playerId].volume_muted,
-    );
-  }
-
   public async createPlayerGroup(
     provider: string,
     name: string,

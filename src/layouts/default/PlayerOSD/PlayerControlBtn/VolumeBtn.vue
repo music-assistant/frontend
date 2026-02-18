@@ -107,6 +107,7 @@
 import Button from "@/components/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import api from "@/plugins/api";
+import { isGroupMuted } from "@/plugins/api/helpers";
 import { PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
@@ -143,25 +144,10 @@ const displayVolume = ref(
 );
 
 // computed
-const isGroupMuted = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  if (!player.group_members.length) {
-    return !!player.volume_muted;
-  }
-  // For group players, only show muted if ALL members are muted
-  for (const memberId of player.group_members) {
-    const member = api?.players[memberId];
-    if (member && member.available && !member.volume_muted) {
-      return false;
-    }
-  }
-  return true;
-});
-
 const volumeIconComponent = computed(() => {
-  if (!store.activePlayer) return Volume2;
-  if (isGroupMuted.value) {
+  const player = store.activePlayer;
+  if (!player) return Volume2;
+  if (isGroupMuted(player)) {
     return VolumeX;
   }
   const volume = displayVolume.value;

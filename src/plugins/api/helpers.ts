@@ -173,9 +173,23 @@ interface NavigatorUAData {
   mobile: boolean;
 }
 
+export const isGroupMuted = function (player: Player): boolean {
+  if (!player.group_members.length) {
+    return !!player.volume_muted;
+  }
+  // For group players, only show muted if ALL members are muted
+  for (const memberId of player.group_members) {
+    const member = api?.players[memberId];
+    if (member && member.available && !member.volume_muted) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const handlePlayerMuteToggle = function (player: Player) {
   if (player.group_members.length > 0) {
-    api.playerCommandGroupMuteToggle(player.player_id);
+    api.playerCommandGroupVolumeMute(player.player_id, !isGroupMuted(player));
   } else {
     api.playerCommandMuteToggle(player.player_id);
   }

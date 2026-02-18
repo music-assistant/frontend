@@ -248,7 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 import { getVolumeIconComponent } from "@/helpers/utils";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
+import { handlePlayerMuteToggle, isGroupMuted } from "@/plugins/api/helpers";
 
 export interface Props {
   player: Player;
@@ -272,20 +272,6 @@ defineEmits<{
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
-
-const isGroupMuted = function (player: Player): boolean {
-  if (!player.group_members.length) {
-    return !!player.volume_muted;
-  }
-  // For group players, only show muted if ALL members are muted
-  for (const memberId of player.group_members) {
-    const member = api?.players[memberId];
-    if (member && member.available && !member.volume_muted) {
-      return false;
-    }
-  }
-  return true;
-};
 
 const mainDisplayVolume = ref(
   Math.round(
