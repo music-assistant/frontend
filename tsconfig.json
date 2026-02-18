@@ -15,8 +15,6 @@
         "experimentalDecorators": true,
         "sourceMap": true,
         "noEmit": true,
-        "noUnsedParameters": true,
-        "noUnusedLocals": true,
         "types": ["vuetify", "node"],
         "forceConsistentCasingInFileNames": true,
         "paths": {
