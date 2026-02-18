@@ -51,11 +51,7 @@
         >
           <component
             :is="
-              getVolumeIconComponent(
-                player,
-                mainDisplayVolume,
-                isGroupMuted(player),
-              )
+              getVolumeIconComponent(player, mainDisplayVolume)
             "
             :size="22"
           />

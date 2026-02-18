@@ -26,7 +26,7 @@ import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isGroupMuted, itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
@@ -883,7 +883,7 @@ export const getVolumeIconComponent = function (
   displayVolume?: number,
   isMuted?: boolean,
 ) {
-  if (isMuted ?? player.volume_muted) {
+  if (isMuted ?? isGroupMuted(player)) {
     return VolumeX;
   }
 
