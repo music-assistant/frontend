@@ -7,40 +7,30 @@
     />
     <v-divider />
     <v-list v-if="aliasSectionExpanded">
-      <ListItem v-for="alias in aliases" :key="alias.item_id">
+      <ListItem v-for="alias in aliases" :key="alias">
         <template #prepend>
           <Tags :size="20" />
         </template>
-        <template #title>{{ formatAliasName(alias.name) }}</template>
+        <template #title>{{ formatAliasName(alias) }}</template>
         <template #append>
           <Button
             v-if="canPromoteAlias(alias)"
             variant="ghost"
             size="icon-sm"
             :title="$t('promote_alias')"
-            :disabled="unlinkInProgress"
+            :disabled="operationInProgress"
             @click="confirmPromoteAlias(alias)"
           >
             <ArrowUpFromLine :size="20" />
           </Button>
           <Button
-            v-if="canDeleteAlias(alias)"
             variant="ghost"
             size="icon-sm"
-            :title="$t('delete_alias')"
-            :disabled="unlinkInProgress"
-            @click="confirmDeleteAlias(alias)"
+            :title="$t('remove_alias')"
+            :disabled="operationInProgress"
+            @click="confirmRemoveAlias(alias)"
           >
             <Trash2 :size="20" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            :title="$t('unlink_alias')"
-            :disabled="unlinkInProgress"
-            @click="unlinkAlias(alias)"
-          >
-            <Unlink :size="20" />
           </Button>
         </template>
       </ListItem>
@@ -50,7 +40,7 @@
   <LinkAliasDialog
     v-model="showLinkDialog"
     :genre-item-id="genre.item_id"
-    :linked-alias-ids="linkedAliasIds"
+    :current-aliases="genre.genre_aliases || []"
     @linked="emit('reload')"
   />
 
@@ -60,41 +50,36 @@
     @created="emit('reload')"
   />
 
-  <DeleteAliasDialog
-    v-model="showDeleteDialog"
-    :alias="aliasToDelete"
-    @deleted="emit('reload')"
+  <RemoveAliasDialog
+    v-model="showRemoveDialog"
+    :alias="aliasToRemove"
+    :genre-item-id="genre.item_id"
+    @removed="emit('reload')"
   />
 
-  <PromoteAliasDialog v-model="showPromoteDialog" :alias="aliasToPromote" />
-
-  <AliasPopoverDialog
-    v-model="showPopover"
-    :chips="linkedGenreChips"
-    :genre-uri="genre.uri"
+  <PromoteAliasDialog
+    v-model="showPromoteDialog"
+    :alias="aliasToPromote"
+    :genre-item-id="genre.item_id"
   />
 </template>
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
-import AliasPopoverDialog from "@/components/genre/AliasPopoverDialog.vue";
 import CreateAliasDialog from "@/components/genre/CreateAliasDialog.vue";
-import DeleteAliasDialog from "@/components/genre/DeleteAliasDialog.vue";
 import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
+import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import { formatAliasName } from "@/helpers/utils";
-import { api } from "@/plugins/api";
-import { Genre, GenreAlias } from "@/plugins/api/interfaces";
+import { Genre } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vue-sonner";
 import {
   Tags,
   Plus,
-  Unlink,
   Link,
   Trash2,
   ArrowUpFromLine,
@@ -113,50 +98,28 @@ const emit = defineEmits<{ reload: [] }>();
 const { t } = useI18n();
 
 const aliasSectionExpanded = ref(false);
-const unlinkInProgress = ref(false);
+const operationInProgress = ref(false);
 const showLinkDialog = ref(false);
 const showCreateDialog = ref(false);
-const showDeleteDialog = ref(false);
+const showRemoveDialog = ref(false);
 const showPromoteDialog = ref(false);
-const showPopover = ref(false);
-const aliasToDelete = ref<GenreAlias | null>(null);
-const aliasToPromote = ref<GenreAlias | null>(null);
+const aliasToRemove = ref<string | null>(null);
+const aliasToPromote = ref<string | null>(null);
 
-const isSelfAlias = (alias: GenreAlias): boolean => {
-  return props.existingGenreNames.has(alias.name.toLowerCase());
+const canPromoteAlias = (alias: string): boolean => {
+  return !props.existingGenreNames.has(alias.toLowerCase());
 };
-
-const canPromoteAlias = (alias: GenreAlias): boolean => !isSelfAlias(alias);
-const canDeleteAlias = (alias: GenreAlias): boolean => !isSelfAlias(alias);
 
 const aliases = computed(() => {
   const genreName = props.genre.name?.toLowerCase();
   return (props.genre.genre_aliases || [])
-    .filter((alias) => alias.name.toLowerCase() !== genreName)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter((alias) => alias.toLowerCase() !== genreName)
+    .sort((a, b) => a.localeCompare(b));
 });
-
-const linkedAliasIds = computed(() =>
-  aliases.value.map((alias) => alias.item_id),
-);
 
 const mappedAliasesTitle = computed(
   () => `${t("mapped_aliases")} (${aliases.value.length})`,
 );
-
-const linkedGenreChips = computed(() => {
-  const chips = aliases.value.map((alias) => ({
-    key: alias.item_id,
-    aliasId: alias.item_id,
-    label: alias.name,
-  }));
-  const seen = new Set<string>();
-  return chips.filter((chip) => {
-    if (!chip.key || seen.has(chip.key)) return false;
-    seen.add(chip.key);
-    return true;
-  });
-});
 
 const aliasToolbarMenuItems = computed<ToolBarMenuItem[]>(() => [
   {
@@ -181,28 +144,14 @@ const aliasToolbarMenuItems = computed<ToolBarMenuItem[]>(() => [
   },
 ]);
 
-const confirmDeleteAlias = (alias: GenreAlias) => {
-  aliasToDelete.value = alias;
-  showDeleteDialog.value = true;
+const confirmRemoveAlias = (alias: string) => {
+  aliasToRemove.value = alias;
+  showRemoveDialog.value = true;
 };
 
-const confirmPromoteAlias = (alias: GenreAlias) => {
+const confirmPromoteAlias = (alias: string) => {
   aliasToPromote.value = alias;
   showPromoteDialog.value = true;
-};
-
-const unlinkAlias = async (alias: GenreAlias) => {
-  if (unlinkInProgress.value) return;
-
-  unlinkInProgress.value = true;
-  try {
-    await api.removeAliasFromGenre(props.genre.item_id, alias.item_id);
-    emit("reload");
-  } catch (error) {
-    toast.error(t("unlink_alias_failed"));
-  } finally {
-    unlinkInProgress.value = false;
-  }
 };
 
 const toggleAliasSection = () => {

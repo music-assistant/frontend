@@ -692,14 +692,7 @@ export interface PodcastEpisode extends MediaItem {
 }
 
 export interface Genre extends MediaItem {
-  genre_aliases: GenreAlias[] | null;
-}
-
-export interface GenreAlias {
-  item_id: string;
-  name: string;
-  genres?: Genre[] | null;
-  media_items?: MediaItemType[] | null;
+  genre_aliases: string[] | null;
 }
 
 export interface BrowseFolder extends MediaItem {

@@ -500,7 +500,7 @@ const artistClick = function (item: Artist | ItemMapping) {
 };
 
 const openGenreFromTag = async function (tag: string) {
-  const search = tag?.trim();
+  const search = tag?.trim().toLowerCase();
   if (!search) return;
   try {
     const matches = await api.getLibraryGenres(
@@ -512,53 +512,21 @@ const openGenreFromTag = async function (tag: string) {
       "library",
       undefined,
     );
-    const exact = matches.find(
-      (genre) => genre.name.toLowerCase() === search.toLowerCase(),
-    );
+    // Check for exact genre name match
+    const exact = matches.find((genre) => genre.name.toLowerCase() === search);
     if (exact) {
       handleMediaItemClick(exact, 0, 0);
       return;
     }
-
-    const aliases = await api.getLibraryAliases(
-      undefined,
-      search,
-      25,
-      0,
-      "name",
-    );
-    const alias = aliases.find(
-      (item) => item.name.toLowerCase() === search.toLowerCase(),
-    );
-    if (!alias) return;
-
-    let parent = matches.find((genre) =>
+    // Check if any genre has this as an alias
+    const parent = matches.find((genre) =>
       (genre.genre_aliases || []).some(
-        (mapped) =>
-          mapped.item_id === alias.item_id ||
-          mapped.name.toLowerCase() === alias.name.toLowerCase(),
+        (alias) => alias.toLowerCase() === search,
       ),
     );
-    if (!parent) {
-      const fallback = await api.getLibraryGenres(
-        undefined,
-        alias.name,
-        50,
-        0,
-        "name",
-        "library",
-        undefined,
-      );
-      parent = fallback.find((genre) =>
-        (genre.genre_aliases || []).some(
-          (mapped) =>
-            mapped.item_id === alias.item_id ||
-            mapped.name.toLowerCase() === alias.name.toLowerCase(),
-        ),
-      );
+    if (parent) {
+      handleMediaItemClick(parent, 0, 0);
     }
-    if (!parent) return;
-    handleMediaItemClick(parent, 0, 0);
   } catch {
     return;
   }

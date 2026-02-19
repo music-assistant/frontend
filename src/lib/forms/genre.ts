@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const addGenreAliasSchema = (t: (key: string) => string) =>
+export const addGenreSchema = (t: (key: string) => string) =>
   z.object({
     name: z
       .string()

@@ -28,7 +28,6 @@ import {
   type Track,
   type User,
   AlbumType,
-  GenreAlias,
   Audiobook,
   AuthProvider,
   ConfigEntry,
@@ -959,8 +958,7 @@ export class MusicAssistantApi {
     running: boolean;
     last_scan_time: number;
     last_scan_ago_seconds: number | null;
-    next_scan_in_seconds: number;
-    batch_size: number;
+    last_scan_mapped: number | null;
   }> {
     return this.sendCommand("music/genres/scanner_status");
   }
@@ -973,58 +971,24 @@ export class MusicAssistantApi {
     return this.sendCommand("music/genres/scan_mappings");
   }
 
-  public getLibraryAliases(
-    favorite?: boolean,
-    search?: string,
-    limit?: number,
-    offset?: number,
-    order_by?: string,
-  ): Promise<GenreAlias[]> {
-    return this.sendCommand("music/aliases/library_items", {
-      favorite,
-      search,
-      limit,
-      offset,
-      order_by,
-    });
-  }
-
-  public addAliasToLibrary(
-    item: Pick<GenreAlias, "item_id" | "name">,
-    overwrite_existing = false,
-  ): Promise<GenreAlias> {
-    return this.sendCommand("music/aliases/add", {
-      item,
-      overwrite_existing,
-    });
-  }
-
-  public removeAliasFromLibrary(item_id: string): Promise<void> {
-    return this.sendCommand("music/aliases/remove", {
-      item_id,
-    });
-  }
-
-  public addAliasToGenre(genre_id: string, alias_id: string): Promise<void> {
-    return this.sendCommand("music/genres/add_alias_mapping", {
+  public addGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/add_alias", {
       genre_id,
-      alias_id,
+      alias,
     });
   }
 
-  public removeAliasFromGenre(
-    genre_id: string,
-    alias_id: string,
-  ): Promise<void> {
-    return this.sendCommand("music/genres/remove_alias_mapping", {
+  public removeGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_alias", {
       genre_id,
-      alias_id,
+      alias,
     });
   }
 
-  public promoteAliasToGenre(alias_id: string): Promise<Genre> {
-    return this.sendCommand("music/aliases/promote_to_genre", {
-      alias_id,
+  public promoteGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/promote_alias", {
+      genre_id,
+      alias,
     });
   }
 

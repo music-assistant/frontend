@@ -120,8 +120,7 @@ const scannerStatus = ref<{
   running: boolean;
   last_scan_time: number;
   last_scan_ago_seconds: number | null;
-  next_scan_in_seconds: number;
-  batch_size: number;
+  last_scan_mapped: number | null;
 } | null>(null);
 const scanTriggering = ref(false);
 let scannerPollInterval: ReturnType<typeof setInterval> | null = null;

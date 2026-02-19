@@ -4,7 +4,7 @@
       <DialogHeader>
         <DialogTitle>{{ $t("promote_alias") }}</DialogTitle>
       </DialogHeader>
-      <p>{{ $t("confirm_promote_alias", [alias?.name || ""]) }}</p>
+      <p>{{ $t("confirm_promote_alias", [alias || ""]) }}</p>
       <DialogFooter>
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
@@ -27,14 +27,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
-import { GenreAlias } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 interface Props {
-  alias: GenreAlias | null;
+  alias: string | null;
+  genreItemId: string;
 }
 
 const props = defineProps<Props>();
@@ -49,7 +49,10 @@ const promoteAlias = async () => {
 
   loading.value = true;
   try {
-    const newGenre = await api.promoteAliasToGenre(props.alias.item_id);
+    const newGenre = await api.promoteGenreAlias(
+      props.genreItemId,
+      props.alias,
+    );
     model.value = false;
     router.push({
       name: "genre",

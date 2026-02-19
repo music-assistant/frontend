@@ -12,8 +12,8 @@
         v-model="selectedAlias"
         v-model:search="aliasSearch"
         :items="availableAliases"
-        :item-title="(alias: GenreAlias) => formatAliasName(alias.name)"
-        return-object
+        :item-title="(alias: string) => formatAliasName(alias)"
+        :item-value="(alias: string) => alias"
         clearable
         hide-details
         :label="$t('link_alias')"
@@ -43,7 +43,6 @@ import {
 } from "@/components/ui/dialog";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { GenreAlias } from "@/plugins/api/interfaces";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -53,7 +52,7 @@ const SEARCH_RESULT_LIMIT = 25;
 
 interface Props {
   genreItemId: string;
-  linkedAliasIds: string[];
+  currentAliases: string[];
 }
 
 const props = defineProps<Props>();
@@ -64,13 +63,13 @@ const { t } = useI18n();
 const aliasSearch = ref("");
 const aliasLoading = ref(false);
 const loading = ref(false);
-const aliasOptions = ref<GenreAlias[]>([]);
-const selectedAlias = ref<GenreAlias | null>(null);
+const aliasOptions = ref<string[]>([]);
+const selectedAlias = ref<string | null>(null);
 const searchThrottle = ref<number | undefined>();
 
 const availableAliases = computed(() => {
-  const linkedIds = new Set(props.linkedAliasIds);
-  return aliasOptions.value.filter((alias) => !linkedIds.has(alias.item_id));
+  const current = new Set(props.currentAliases.map((a) => a.toLowerCase()));
+  return aliasOptions.value.filter((a) => !current.has(a.toLowerCase()));
 });
 
 watch(
@@ -84,13 +83,20 @@ watch(
       }
       aliasLoading.value = true;
       try {
-        aliasOptions.value = await api.getLibraryAliases(
+        const genres = await api.getLibraryGenres(
           undefined,
           aliasSearch.value,
           SEARCH_RESULT_LIMIT,
           0,
           "name",
         );
+        const allAliases = new Set<string>();
+        for (const genre of genres) {
+          for (const alias of genre.genre_aliases || []) {
+            allAliases.add(alias);
+          }
+        }
+        aliasOptions.value = [...allAliases].sort((a, b) => a.localeCompare(b));
       } finally {
         aliasLoading.value = false;
       }
@@ -107,7 +113,7 @@ const linkAlias = async () => {
 
   loading.value = true;
   try {
-    await api.addAliasToGenre(props.genreItemId, selectedAlias.value.item_id);
+    await api.addGenreAlias(props.genreItemId, selectedAlias.value);
     toast.success(t("alias_linked_successfully"));
     selectedAlias.value = null;
     aliasSearch.value = "";

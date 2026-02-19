@@ -121,7 +121,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { addGenreAliasSchema } from "@/lib/forms/genre";
+import { addGenreSchema } from "@/lib/forms/genre";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 
@@ -139,7 +139,7 @@ const form = useForm({
     description: "",
   },
   validators: {
-    onSubmit: addGenreAliasSchema(t) as any,
+    onSubmit: addGenreSchema(t) as any,
   },
   onSubmit: async ({ value }) => {
     loading.value = true;

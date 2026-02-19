@@ -26,18 +26,11 @@
       <span class="font-weight-bold">{{ lastScanDisplay }}</span>
     </div>
     <div class="stats-row">
-      <span class="text-medium-emphasis">{{ $t("settings.next_scan") }}</span>
-      <span class="font-weight-bold">{{ nextScanDisplay }}</span>
-    </div>
-    <div class="stats-row">
-      <span class="text-medium-emphasis">{{ $t("settings.batch_size") }}</span>
+      <span class="text-medium-emphasis">{{
+        $t("settings.last_scan_mapped")
+      }}</span>
       <span class="font-weight-bold">{{
-        status
-          ? $t("settings.batch_size_value", [
-              status.batch_size,
-              status.batch_size * 3,
-            ])
-          : "..."
+        status?.last_scan_mapped != null ? status.last_scan_mapped : "..."
       }}</span>
     </div>
     <v-btn
@@ -63,8 +56,7 @@ interface ScannerStatus {
   running: boolean;
   last_scan_time: number;
   last_scan_ago_seconds: number | null;
-  next_scan_in_seconds: number;
-  batch_size: number;
+  last_scan_mapped: number | null;
 }
 
 interface Props {
@@ -86,12 +78,6 @@ const lastScanDisplay = computed(() => {
     return t("settings.scan_never");
   }
   return formatRelativeTime(props.status.last_scan_ago_seconds) + " ago";
-});
-
-const nextScanDisplay = computed(() => {
-  if (!props.status) return "...";
-  if (props.status.running) return t("settings.scanner_running");
-  return formatRelativeTime(props.status.next_scan_in_seconds);
 });
 </script>
 

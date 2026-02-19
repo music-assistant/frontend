@@ -9,7 +9,7 @@
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
         </Button>
-        <Button :disabled="!newAliasName || loading" @click="createAndLink">
+        <Button :disabled="!newAliasName || loading" @click="addAlias">
           {{ $t("add") }}
         </Button>
       </DialogFooter>
@@ -44,16 +44,12 @@ const { t } = useI18n();
 const newAliasName = ref("");
 const loading = ref(false);
 
-const createAndLink = async () => {
+const addAlias = async () => {
   if (!newAliasName.value || loading.value) return;
 
   loading.value = true;
   try {
-    const created = await api.addAliasToLibrary(
-      { item_id: "0", name: newAliasName.value },
-      false,
-    );
-    await api.addAliasToGenre(props.genreItemId, created.item_id);
+    await api.addGenreAlias(props.genreItemId, newAliasName.value);
     toast.success(t("alias_added_successfully"));
     newAliasName.value = "";
     model.value = false;

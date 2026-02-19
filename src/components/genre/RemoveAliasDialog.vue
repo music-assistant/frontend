@@ -2,22 +2,15 @@
   <Dialog v-model:open="model">
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
-        <DialogTitle>{{ $t("delete_alias") }}</DialogTitle>
+        <DialogTitle>{{ $t("remove_alias") }}</DialogTitle>
       </DialogHeader>
-      <p>
-        {{
-          $t("confirm_delete_alias", [
-            alias?.name || "",
-            (alias?.genres || []).length,
-          ])
-        }}
-      </p>
+      <p>{{ $t("confirm_remove_alias", [alias || ""]) }}</p>
       <DialogFooter>
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
         </Button>
-        <Button variant="destructive" :disabled="loading" @click="deleteAlias">
-          {{ $t("delete") }}
+        <Button variant="destructive" :disabled="loading" @click="removeAlias">
+          {{ $t("remove") }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -34,32 +27,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
-import { GenreAlias } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 interface Props {
-  alias: GenreAlias | null;
+  alias: string | null;
+  genreItemId: string;
 }
 
 const props = defineProps<Props>();
 const model = defineModel<boolean>();
-const emit = defineEmits<{ deleted: [] }>();
+const emit = defineEmits<{ removed: [] }>();
 
 const { t } = useI18n();
 const loading = ref(false);
 
-const deleteAlias = async () => {
+const removeAlias = async () => {
   if (!props.alias || loading.value) return;
 
   loading.value = true;
   try {
-    await api.removeAliasFromLibrary(props.alias.item_id);
+    await api.removeGenreAlias(props.genreItemId, props.alias);
     model.value = false;
-    emit("deleted");
+    emit("removed");
   } catch (error) {
-    toast.error(t("delete_alias_failed"));
+    toast.error(t("remove_alias_failed"));
   } finally {
     loading.value = false;
   }

@@ -69,8 +69,7 @@ const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
 
-  // Always fetch genres
-  const genres = await api.getLibraryGenres(
+  return await api.getLibraryGenres(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
@@ -79,34 +78,6 @@ const loadItems = async function (params: LoadDataParams) {
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
   );
-
-  // If searching, also fetch aliases and include their parent genres in results
-  // The genres field is always populated on library_items responses
-  if (params.search) {
-    const aliases = await api.getLibraryAliases(
-      params.favoritesOnly || undefined,
-      params.search,
-      params.limit,
-      params.offset,
-      params.sortBy,
-    );
-
-    // Extract parent genres from aliases (genres field is pre-populated)
-    const parentGenresFromAliases = aliases
-      .filter((alias) => alias.genres && alias.genres.length > 0)
-      .flatMap((alias) => alias.genres || []);
-
-    // Remove duplicates (genres already in the main results)
-    const genreUris = new Set(genres.map((g) => g.uri));
-    const uniqueParentGenres = parentGenresFromAliases.filter(
-      (genre) => !genreUris.has(genre.uri),
-    );
-
-    // Combine genres with unique parent genres from aliases
-    return [...genres, ...uniqueParentGenres];
-  }
-
-  return genres;
 };
 
 const setTotals = async function (params: LoadDataParams) {
