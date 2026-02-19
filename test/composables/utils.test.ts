@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeClasses } from "./utils";
+import { mergeClasses } from "@/composables/utils";
 
 describe("mergeClasses", () => {
   it("merges valid class strings", () => {

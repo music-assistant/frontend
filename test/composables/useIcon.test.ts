@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useIcon, type IconProps } from "./useIcon";
+import { useIcon, type IconProps } from "@/composables/useIcon";
 
 describe("useIcon", () => {
   it("returns default props for default variant", () => {
