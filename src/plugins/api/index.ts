@@ -2312,8 +2312,6 @@ export class MusicAssistantApi {
   public async fetchState() {
     // fetch full initial state
     for (const player of await this.getPlayers()) {
-      // ignore unavailable players in the initial state
-      if (!player.available) continue;
       this.players[player.player_id] = player;
     }
     for (const queue of await this.getPlayerQueues()) {

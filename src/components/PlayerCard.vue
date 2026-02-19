@@ -44,16 +44,7 @@
       <!-- playername -->
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
-        <div
-          v-if="
-            player.output_protocols?.filter(
-              (x) =>
-                x.output_protocol_id == webPlayer.player_id ||
-                x.output_protocol_id == store.companionPlayerId,
-            ).length !== 0
-          "
-          style="margin-bottom: 3px"
-        >
+        <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
           <span>{{
             getPlayerName(player, store.deviceType == "phone" ? 10 : 16)
           }}</span>
@@ -231,6 +222,7 @@ import {
   getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
+  isBuiltinPlayer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
