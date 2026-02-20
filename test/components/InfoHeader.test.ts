@@ -17,7 +17,7 @@ const vuetify = createVuetify({
 const mediaItem = {
   name: "Media Item Name",
   metadata: {},
-  provider: ""
+  provider: "",
 } as MediaItemType;
 
 it("Name of media item is displayed on InfoHeader", () => {
