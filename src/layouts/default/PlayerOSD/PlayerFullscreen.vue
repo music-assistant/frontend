@@ -433,6 +433,10 @@
             class="media-controls-item"
             max-height="35px"
           />
+          <PlaybackSpeedBtn
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+          />
           <QueueBtn
             v-if="store.activePlayerQueue"
             class="media-controls-item"
@@ -534,6 +538,7 @@ import {
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import PlaybackSpeedBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlaybackSpeedBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";

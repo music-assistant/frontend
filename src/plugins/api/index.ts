@@ -1203,6 +1203,10 @@ export class MusicAssistantApi {
       !this.queues[queueId].dont_stop_the_music_enabled,
     );
   }
+  public queueCommandSetPlaybackSpeed(queueId: string, speed: number) {
+    // Set the playback speed for the queue (1.0 = normal, 1.5 = 1.5x, etc.)
+    this.playerQueueCommand(queueId, "set_playback_speed", { speed });
+  }
   public playerQueueCommand(
     queue_id: string,
     command: string,

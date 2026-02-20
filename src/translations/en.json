@@ -709,6 +709,7 @@
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
+    "playback_speed": "Playback speed",
     "shuffle": "Shuffle",
     "sort": {
         "duration": "Duration",
