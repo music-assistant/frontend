@@ -346,24 +346,24 @@
 
           <!-- genres/tags -->
           <div
-            v-if="item && item.metadata.genres"
+            v-if="mappedGenres.length"
             class="justify-center"
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(
+              v-for="genre of mappedGenres.slice(
                 0,
                 $vuetify.display.mobile ? 15 : 25,
               )"
-              :key="tag"
+              :key="genre.item_id"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
               small
               outlined
               class="cursor-pointer"
-              @click="openGenreFromTag(tag)"
+              @click="handleMediaItemClick(genre, 0, 0)"
             >
-              {{ tag }}
+              {{ getGenreDisplayName(genre.name, genre.translation_key, t, te) }}
             </v-chip>
           </div>
         </div>
@@ -412,6 +412,7 @@ import { api } from "@/plugins/api";
 import type {
   Album,
   Artist,
+  Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
@@ -439,6 +440,7 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 useDisplay();
 const menuItems = ref<ContextMenuItem[]>([]);
+const mappedGenres = ref<Genre[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
@@ -470,9 +472,23 @@ watch(
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
       menuItems.value = await getContextMenuItems([val], val);
+      // Load mapped genres for non-genre media items
+      if (val.media_type !== MediaType.GENRE) {
+        api
+          .getGenresForMediaItem(val.media_type, val.item_id)
+          .then((genres) => {
+            mappedGenres.value = genres;
+          })
+          .catch(() => {
+            mappedGenres.value = [];
+          });
+      } else {
+        mappedGenres.value = [];
+      }
     } else {
       fanartImage.value = imgGradient;
       menuItems.value = [];
+      mappedGenres.value = [];
     }
   },
   { immediate: true },
@@ -497,39 +513,6 @@ const artistClick = function (item: Artist | ItemMapping) {
       provider: item.provider,
     },
   });
-};
-
-const openGenreFromTag = async function (tag: string) {
-  const search = tag?.trim().toLowerCase();
-  if (!search) return;
-  try {
-    const matches = await api.getLibraryGenres(
-      undefined,
-      search,
-      25,
-      0,
-      "name",
-      "library",
-      undefined,
-    );
-    // Check for exact genre name match
-    const exact = matches.find((genre) => genre.name.toLowerCase() === search);
-    if (exact) {
-      handleMediaItemClick(exact, 0, 0);
-      return;
-    }
-    // Check if any genre has this as an alias
-    const parent = matches.find((genre) =>
-      (genre.genre_aliases || []).some(
-        (alias) => alias.toLowerCase() === search,
-      ),
-    );
-    if (parent) {
-      handleMediaItemClick(parent, 0, 0);
-    }
-  } catch {
-    return;
-  }
 };
 
 const backButtonClick = function () {

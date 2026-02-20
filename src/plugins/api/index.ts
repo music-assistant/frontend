@@ -992,6 +992,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getGenresForMediaItem(
+    media_type: string,
+    media_id: string,
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/genres_for_media_item", {
+      media_type,
+      media_id,
+    });
+  }
+
   public async getGenreOverviewRows(
     item_id: string,
     provider_instance_id_or_domain: string,
