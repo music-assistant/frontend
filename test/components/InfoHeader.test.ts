@@ -21,16 +21,20 @@ const mediaItem = {
 
 const mockRoutes = [
   {
-    path: '/',
+    path: "/",
     component: {
-      template: '',
-    }
-  }
+      template: "",
+    },
+  },
 ];
 
-const router = createRouter({
+/**
+ * Creating mock Vue router will satisfy the warning:
+ * "[Vue warn]: injection "Symbol(router)" not found."
+ */
+const mockRouter = createRouter({
   routes: mockRoutes,
-  history: createWebHistory()
+  history: createWebHistory(),
 });
 
 it("Name of media item is displayed on InfoHeader", () => {
@@ -44,19 +48,19 @@ it("Name of media item is displayed on InfoHeader", () => {
       },
       mocks: {
         $t: vi.fn(() => {}),
-        // $route: vi.fn(() => {}),
-        // $router: {
-        //   push: vi.fn(() => {}),
-        //   back: vi.fn(() => {}),
-        //   currentRoute: {
-        //     value: {
-        //       name: ""
-        //     }
-        //   }
-        // },
-        // useRouter: vi.fn(() => {}),
+        route: vi.fn(() => {}),
+        router: {
+          push: vi.fn(() => {}),
+          back: vi.fn(() => {}),
+          currentRoute: {
+            value: {
+              name: ""
+            }
+          }
+        },
+        useRouter: vi.fn(() => {}),
       },
-      plugins: [vuetify, router],
+      plugins: [vuetify, mockRouter],
     },
   });
 
