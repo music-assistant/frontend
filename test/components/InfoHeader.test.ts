@@ -54,9 +54,9 @@ it("Name of media item is displayed on InfoHeader", () => {
           back: vi.fn(() => {}),
           currentRoute: {
             value: {
-              name: ""
-            }
-          }
+              name: "",
+            },
+          },
         },
         useRouter: vi.fn(() => {}),
       },
