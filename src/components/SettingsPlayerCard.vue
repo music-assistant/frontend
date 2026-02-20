@@ -45,24 +45,6 @@
               protocol.protocol_domain
             }}
           </v-chip>
-          <v-chip
-            v-if="outputProtocols.length === 0"
-            size="x-small"
-            variant="tonal"
-            class="protocol-chip"
-          >
-            <template #prepend>
-              <ProviderIcon
-                :domain="providerDomain"
-                :size="14"
-                class="chip-icon"
-              />
-            </template>
-            {{
-              api.getProviderManifest(providerDomain)?.name ||
-              props.playerConfig.provider
-            }}
-          </v-chip>
         </div>
         <div class="status-icons">
           <v-icon
@@ -129,10 +111,7 @@ const playerName = computed(() => {
 
 const outputProtocols = computed(() => {
   // Return only non-native protocols (ones with a protocol_domain)
-  return (
-    player.value?.output_protocols?.filter((p) => p.protocol_domain !== null) ||
-    []
-  );
+  return player.value?.output_protocols || [];
 });
 
 const handleClick = () => {
