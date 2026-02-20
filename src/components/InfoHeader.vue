@@ -363,7 +363,9 @@
               class="cursor-pointer"
               @click="handleMediaItemClick(genre, 0, 0)"
             >
-              {{ getGenreDisplayName(genre.name, genre.translation_key, t, te) }}
+              {{
+                getGenreDisplayName(genre.name, genre.translation_key, t, te)
+              }}
             </v-chip>
           </div>
         </div>
