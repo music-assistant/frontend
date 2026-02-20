@@ -1,23 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 
 import InfoHeader from "@/components/InfoHeader.vue";
-import { MediaItemType, Playlist } from "@/plugins/api/interfaces";
+import { MediaItemType } from "@/plugins/api/interfaces";
+
+const router = vi.fn(() => {});
 
 const vuetify = createVuetify({
   components,
   directives,
 });
 
-// global.ResizeObserver = require("resize-observer-polyfill");
-
-const playlist: Playlist = {
-  owner: "Playlist Owner",
-  is_editable: false,
-} as Playlist;
+const mediaItem = {
+  name: "Media Item Title",
+} as MediaItemType;
 
 it("displays message", () => {
   const wrapper = mount(
@@ -30,7 +29,7 @@ it("displays message", () => {
     },
     {
       props: {
-        item: playlist,
+        item: mediaItem,
       },
       global: {
         components: {
@@ -40,5 +39,7 @@ it("displays message", () => {
       },
     },
   );
+
+  // expect(wrapper.text()).toContain("Media Item Title");
   return;
 });
