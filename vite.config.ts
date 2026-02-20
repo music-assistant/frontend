@@ -105,12 +105,4 @@ export default defineConfig({
       },
     },
   },
-  // https://vuetifyjs.com/en/getting-started/unit-testing/#using-vite
-  test: {
-    server: {
-      deps: {
-        inline: ["vuetify"],
-      },
-    },
-  },
 });

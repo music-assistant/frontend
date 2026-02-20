@@ -10,6 +10,12 @@ export default mergeConfig(
       globals: true,
       css: false,
       setupFiles: [],
+      // https://vuetifyjs.com/en/getting-started/unit-testing/#using-vite
+      server: {
+        deps: {
+          inline: ["vuetify"],
+        },
+      },
     },
   }),
 );
