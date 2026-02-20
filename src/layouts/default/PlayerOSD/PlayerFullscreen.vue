@@ -435,6 +435,7 @@
           />
           <PlaybackSpeedBtn
             :player-queue="store.activePlayerQueue"
+            :active-color="sliderColor"
             class="media-controls-item"
           />
           <QueueBtn
