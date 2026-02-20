@@ -415,11 +415,27 @@
             class="media-controls-item"
             max-height="45px"
           />
+          <SkipBackBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
+          />
           <PlayBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="70px"
+          />
+          <SkipForwardBtn
+            v-if="isAudiobookOrPodcast"
+            :player-queue="store.activePlayerQueue"
+            :cur-queue-item="store.curQueueItem"
+            :skip-amount="skipAmount"
+            class="media-controls-item"
+            max-height="45px"
           />
           <NextBtn
             :player="store.activePlayer"
@@ -553,6 +569,10 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import SkipForwardBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipForwardBtn.vue";
+import SkipBackBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBackBtn.vue";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -569,8 +589,6 @@ import {
 } from "vue";
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
-import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import { getSourceName } from "@/plugins/api/helpers";
 import computeElapsedTime from "@/helpers/elapsed";
@@ -726,6 +744,23 @@ watch(
     }
   },
 );
+
+// Check if current media is audiobook or podcast
+const isAudiobookOrPodcast = computed(() => {
+  const mediaType = store.curQueueItem?.media_item?.media_type;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
+});
+
+// Get configured skip amount from settings
+const skipAmount = computed(() => {
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
+  );
+});
 
 const titleFontSize = computed(() => {
   switch (name.value) {
