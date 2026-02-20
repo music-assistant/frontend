@@ -15,18 +15,13 @@ const vuetify = createVuetify({
 });
 
 const mediaItem = {
-  name: "Media Item Title",
+  name: "Media Item Name",
+  metadata: {
+  },
 } as MediaItemType;
 
-it("displays message", () => {
-  const wrapper = mount(
-    {
-      template: `
-      <v-layout>
-        <InfoHeader/>
-      </v-layout>
-      `,
-    },
+it("Name of media item is displayed on InfoHeader", () => {
+  const wrapper = mount(InfoHeader,
     {
       props: {
         item: mediaItem,
@@ -35,11 +30,15 @@ it("displays message", () => {
         components: {
           InfoHeader,
         },
+        mocks: {
+          $t: vi.fn(() => {}),
+          router: vi.fn(() => {}),
+        },
         plugins: [vuetify],
       },
     },
   );
 
-  // expect(wrapper.text()).toContain("Media Item Title");
+  expect(wrapper.text()).toContain("Media Item Name");
   return;
 });
