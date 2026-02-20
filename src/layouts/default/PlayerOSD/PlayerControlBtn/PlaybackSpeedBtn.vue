@@ -10,9 +10,7 @@
         variant="icon"
         :title="$t('playback_speed')"
         :disabled="!playerQueue.active || playerQueue.items === 0"
-        :style="
-          currentSpeed !== 1.0 ? { color: 'rgb(var(--v-theme-primary))' } : {}
-        "
+        :style="currentSpeed !== 1.0 ? { color: activeColor } : {}"
       >
         <span class="speed-label">{{ formatSpeed(currentSpeed) }}</span>
       </Button>
@@ -44,10 +42,12 @@ const SPEED_PRESETS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
+  activeColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isVisible: true,
+  activeColor: "rgb(var(--v-theme-primary))",
 });
 
 const currentSpeed = computed<number>(() => {
