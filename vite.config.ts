@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import webfontDownload from "vite-plugin-webfont-dl";
@@ -102,6 +102,14 @@ export default defineConfig({
             if (id.includes("qrcode")) return "qrcode";
           }
         },
+      },
+    },
+  },
+  // https://vuetifyjs.com/en/getting-started/unit-testing/#using-vite
+  test: {
+    server: {
+      deps: {
+        inline: ["vuetify"],
       },
     },
   },
