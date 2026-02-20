@@ -44,15 +44,20 @@
 </template>
 
 <script setup lang="ts">
+import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Home, Menu, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
-import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
 const router = useRouter();
 
 const handleMenuClick = () => {
+  // Debug: track when the bottom navigation "Menu" button is used
+  // This should fire in both Chrome and the HA companion app
+  console.log(
+    "[MA DEBUG] Emitting 'mobile-sidebar-open' from BottomNavigation",
+  );
   eventbus.emit("mobile-sidebar-open");
 };
 
