@@ -16,28 +16,26 @@ const vuetify = createVuetify({
 
 const mediaItem = {
   name: "Media Item Name",
-  metadata: {
-  },
+  metadata: {},
+  provider: ""
 } as MediaItemType;
 
 it("Name of media item is displayed on InfoHeader", () => {
-  const wrapper = mount(InfoHeader,
-    {
-      props: {
-        item: mediaItem,
-      },
-      global: {
-        components: {
-          InfoHeader,
-        },
-        mocks: {
-          $t: vi.fn(() => {}),
-          router: vi.fn(() => {}),
-        },
-        plugins: [vuetify],
-      },
+  const wrapper = mount(InfoHeader, {
+    props: {
+      item: mediaItem,
     },
-  );
+    global: {
+      components: {
+        InfoHeader,
+      },
+      mocks: {
+        $t: vi.fn(() => {}),
+        router: vi.fn(() => {}),
+      },
+      plugins: [vuetify],
+    },
+  });
 
   expect(wrapper.text()).toContain("Media Item Name");
   return;
