@@ -815,6 +815,7 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  extra_attributes?: Record<string, string | number | boolean>;
 }
 
 // player
