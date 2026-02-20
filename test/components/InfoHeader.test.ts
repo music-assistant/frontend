@@ -1,13 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createVuetify } from "vuetify";
+import { createRouter, createWebHistory } from "vue-router";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 
 import InfoHeader from "@/components/InfoHeader.vue";
 import { MediaItemType } from "@/plugins/api/interfaces";
-
-const router = vi.fn(() => {});
 
 const vuetify = createVuetify({
   components,
@@ -20,6 +19,20 @@ const mediaItem = {
   provider: "",
 } as MediaItemType;
 
+const mockRoutes = [
+  {
+    path: '/',
+    component: {
+      template: '',
+    }
+  }
+];
+
+const router = createRouter({
+  routes: mockRoutes,
+  history: createWebHistory()
+});
+
 it("Name of media item is displayed on InfoHeader", () => {
   const wrapper = mount(InfoHeader, {
     props: {
@@ -31,9 +44,19 @@ it("Name of media item is displayed on InfoHeader", () => {
       },
       mocks: {
         $t: vi.fn(() => {}),
-        router: vi.fn(() => {}),
+        // $route: vi.fn(() => {}),
+        // $router: {
+        //   push: vi.fn(() => {}),
+        //   back: vi.fn(() => {}),
+        //   currentRoute: {
+        //     value: {
+        //       name: ""
+        //     }
+        //   }
+        // },
+        // useRouter: vi.fn(() => {}),
       },
-      plugins: [vuetify],
+      plugins: [vuetify, router],
     },
   });
 
