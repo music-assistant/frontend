@@ -134,7 +134,7 @@ export const getPlayerMenuItems = (
   }
 
   // add 'transfer queue' menu item
-  if (playerQueue?.items) {
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
@@ -163,7 +163,7 @@ export const getPlayerMenuItems = (
     });
   }
   // add 'clear queue' menu item
-  if (playerQueue?.items) {
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
       labelArgs: [],
@@ -174,12 +174,12 @@ export const getPlayerMenuItems = (
     });
   }
   // add 'save queue as playlist' menu item
-  if (playerQueue?.items) {
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "save_queue_as_playlist",
       labelArgs: [],
       action: () => {
-        eventbus.emit("saveQueueAsPlaylist", playerQueue!.queue_id);
+        eventbus.emit("createPlaylist", { queueId: playerQueue!.queue_id });
       },
       icon: "mdi-playlist-plus",
     });

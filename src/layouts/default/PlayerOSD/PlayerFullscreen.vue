@@ -510,80 +510,12 @@
         </div>
       </div>
     </v-card>
-
-    <!-- Save queue as playlist dialog -->
-    <Dialog
-      :open="showSaveQueueDialog"
-      @update:open="showSaveQueueDialog = $event"
-    >
-      <DialogContent class="sm:max-w-md text-foreground">
-        <DialogHeader>
-          <DialogTitle>{{ $t("save_queue_as_playlist") }}</DialogTitle>
-        </DialogHeader>
-        <div class="py-4">
-          <Input
-            :model-value="saveQueuePlaylistName"
-            :placeholder="$t('new_playlist_name')"
-            autofocus
-            @input="
-              (e: Event) => {
-                saveQueuePlaylistName = (e.target as HTMLInputElement).value;
-              }
-            "
-            @keyup.enter="doSaveQueueAsPlaylist"
-          />
-        </div>
-        <DialogFooter>
-          <UiButton variant="outline" @click="showSaveQueueDialog = false">
-            {{ $t("close") }}
-          </UiButton>
-          <UiButton
-            :disabled="!saveQueuePlaylistName"
-            @click="doSaveQueueAsPlaylist"
-          >
-            {{ $t("settings.save") }}
-          </UiButton>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Playlist created dialog -->
-    <Dialog
-      :open="showPlaylistCreatedDialog"
-      @update:open="showPlaylistCreatedDialog = $event"
-    >
-      <DialogContent class="sm:max-w-md text-foreground">
-        <DialogHeader>
-          <DialogTitle>{{ $t("playlist_created") }}</DialogTitle>
-        </DialogHeader>
-        <DialogFooter>
-          <UiButton
-            variant="outline"
-            @click="showPlaylistCreatedDialog = false"
-          >
-            {{ $t("close") }}
-          </UiButton>
-          <UiButton @click="openCreatedPlaylist">
-            {{ $t("open_playlist") }}
-          </UiButton>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import Icon from "@/components/Icon.vue";
-import { Button as UiButton } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
@@ -616,7 +548,6 @@ import {
   PlayerFeature,
   PlayerQueue,
   PlayerType,
-  Playlist,
   QueueItem,
   QueueOption,
   Track,
@@ -1311,53 +1242,6 @@ onMounted(() => {
     stopTick();
   });
 });
-
-// save queue as playlist
-const showSaveQueueDialog = ref(false);
-const showPlaylistCreatedDialog = ref(false);
-const saveQueuePlaylistName = ref("");
-const saveQueueQueueId = ref("");
-const createdPlaylist = ref<Playlist | null>(null);
-
-onMounted(() => {
-  eventbus.on("saveQueueAsPlaylist", (queueId: string) => {
-    saveQueueQueueId.value = queueId;
-    saveQueuePlaylistName.value = "";
-    showSaveQueueDialog.value = true;
-  });
-});
-
-onBeforeUnmount(() => {
-  eventbus.off("saveQueueAsPlaylist");
-});
-
-const doSaveQueueAsPlaylist = async () => {
-  if (!saveQueuePlaylistName.value) return;
-  showSaveQueueDialog.value = false;
-  try {
-    createdPlaylist.value = await api.queueCommandSaveAsPlaylist(
-      saveQueueQueueId.value,
-      saveQueuePlaylistName.value,
-    );
-    showPlaylistCreatedDialog.value = true;
-  } catch (e) {
-    alert(e);
-  }
-};
-
-const openCreatedPlaylist = () => {
-  showPlaylistCreatedDialog.value = false;
-  store.showFullscreenPlayer = false;
-  if (createdPlaylist.value) {
-    router.push({
-      name: "playlist",
-      params: {
-        itemId: createdPlaylist.value.item_id,
-        provider: createdPlaylist.value.provider,
-      },
-    });
-  }
-};
 
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
