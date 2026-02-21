@@ -71,3 +71,14 @@ it("Name of media item is displayed on InfoHeader", () => {
   expect(wrapper.text()).toContain("Media Item Name");
   return;
 });
+
+it("Name of media item is highlighted", async () => {
+  const selectable = wrapper.find(".selectable");
+
+  expect(selectable.exists()).toBe(true);
+  expect(selectable.text()).toContain("Media Item Name");
+
+  await selectable.trigger("click");
+  await selectable.trigger("click");
+  return;
+});
