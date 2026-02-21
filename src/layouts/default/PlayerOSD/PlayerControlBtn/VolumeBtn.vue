@@ -148,7 +148,11 @@ const displayVolume = ref(
 const volumeIconComponent = computed(() => {
   const player = store.activePlayer;
   if (!player) return Volume2;
-  return getVolumeIconComponent(player, displayVolume.value, isGroupMuted(player));
+  return getVolumeIconComponent(
+    player,
+    displayVolume.value,
+    isGroupMuted(player),
+  );
 });
 </script>
 
