@@ -1,5 +1,5 @@
-import { expect, it, vi } from "vitest";
-import { mount } from "@vue/test-utils";
+import { expect, it, vi, beforeEach } from "vitest";
+import { mount, VueWrapper } from "@vue/test-utils";
 import { createVuetify } from "vuetify";
 import { createRouter, createWebHistory } from "vue-router";
 import * as components from "vuetify/components";
@@ -37,8 +37,10 @@ const mockRouter = createRouter({
   history: createWebHistory(),
 });
 
-it("Name of media item is displayed on InfoHeader", () => {
-  const wrapper = mount(InfoHeader, {
+let wrapper: VueWrapper;
+
+beforeEach(() => {
+  wrapper = mount(InfoHeader, {
     props: {
       item: mediaItem,
     },
@@ -63,7 +65,9 @@ it("Name of media item is displayed on InfoHeader", () => {
       plugins: [vuetify, mockRouter],
     },
   });
+});
 
+it("Name of media item is displayed on InfoHeader", () => {
   expect(wrapper.text()).toContain("Media Item Name");
   return;
 });
