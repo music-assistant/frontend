@@ -65,20 +65,13 @@ beforeEach(() => {
       plugins: [vuetify, mockRouter],
     },
   });
-});
-
-it("Name of media item is displayed on InfoHeader", () => {
-  expect(wrapper.text()).toContain("Media Item Name");
   return;
 });
 
-it("Name of media item is highlighted", async () => {
+it("Name of media item is displayed on InfoHeader", () => {
   const selectable = wrapper.find(".selectable");
 
   expect(selectable.exists()).toBe(true);
-  expect(selectable.text()).toContain("Media Item Name");
-
-  await selectable.trigger("click");
-  await selectable.trigger("click");
+  expect(selectable.text()).equals("Media Item Name");
   return;
 });
