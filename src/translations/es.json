@@ -384,7 +384,6 @@
                 "fallback_dynamic": "Retroceder a dinamico"
             }
         },
-        "add_group_player_desc": "Para los proveedores\/ecosistemas de reproductores que proporcionan agrupación\/sincronización nativa, se creará automáticamente un grupo de sincronizado, lo que significa que si reproduce en este grupo de reproductores, los reproductores miembros se sincronizarán automáticamente. \n\nPara los reproductores\/ecosistemas que no admiten la agrupación, o en caso de que desee agrupar reproductores de distintos ecosistemas, puede utilizar el tipo de grupo Universal, que distribuirá el mismo audio a todos los reproductores miembros (pero no de forma sincronizada). \n\nTenga en cuenta que algunos proveedores admiten la agrupación, pero debe utilizar la aplicación nativa para realizarla. Un ejemplo son los reproductores basados en Google Cast, en los que solo se pueden crear grupos de Google Cast dentro de la aplicación Google Home. ",
         "dsp": {
             "channels": {
                 "FL": "Izquierda"

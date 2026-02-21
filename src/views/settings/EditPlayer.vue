@@ -317,7 +317,7 @@ const enablePlayer = function () {
   api
     .savePlayerConfig(props.playerId!, { enabled: true })
     .then(() => {
-      router.push({ name: "playersettings" });
+      router.back();
     })
     .finally(() => {
       loading.value = false;
@@ -328,7 +328,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   delete values["dsp_settings"]; // delete the injected dsp_settings since its UI only
   values["enabled"] = config.value!.enabled;
   api.savePlayerConfig(props.playerId!, values);
-  router.push({ name: "playersettings" });
+  router.back();
 };
 
 const onImmediateApply = async function (

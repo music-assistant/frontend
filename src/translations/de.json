@@ -406,7 +406,6 @@
             "label": "Feste\/Fallback Gain-Anpassung für Radio",
             "description": "Feste\/Fallback Gain-Korrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung „Lautstärkenormalisierungsmethode“ ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist."
         },
-        "add_group_player_desc": "Für ein Gruppen-Wiedergabegerät, das für den Anbieter {0} erstellt wurde, wird automatisch eine Syncgroup erstellt, d.h., wenn du zu dieser Wiedergabegeräte-Gruppe spielst, werden die Wiedergabegeräte der Mitglieder automatisch synchronisiert.",
         "dynamic_members": {
             "label": "Dynamische Gruppenmitglieder",
             "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten\/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält"

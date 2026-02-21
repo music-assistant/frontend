@@ -695,20 +695,35 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+export const isBuiltinPlayer = function (player: Player): boolean {
+  return (
+    player.player_id === webPlayer.player_id ||
+    player.player_id === store.companionPlayerId ||
+    player.output_protocols?.filter(
+      (x) =>
+        x.output_protocol_id === webPlayer.player_id ||
+        x.output_protocol_id === store.companionPlayerId,
+    ).length > 0
+  );
+};
+
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
-  if (player.hide_in_ui && player.player_id != webPlayer.player_id) {
-    return false;
-  }
   if (player.synced_to && !allowGroupChilds) {
     return false;
   }
   if (player.active_group && !allowGroupChilds) return false;
   if (!player.available) {
+    return false;
+  }
+  if (isBuiltinPlayer(player)) {
+    return true;
+  }
+  if (player.hide_in_ui) {
     return false;
   }
   if (

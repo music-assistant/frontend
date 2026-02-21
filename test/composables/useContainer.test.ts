@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useContainer, type ContainerProps } from "./useContainer";
+import { useContainer, type ContainerProps } from "@/composables/useContainer";
 
 describe("useContainer", () => {
   it("returns default props for default variant", () => {

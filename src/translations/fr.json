@@ -285,13 +285,16 @@
         "category": {
             "advanced": "Paramètres avancés",
             "generic": "Paramètres génériques",
-            "announcements": "Configuration des annonces",
+            "announcements": "Paramètres des annonces",
             "airplay": "Paramètres spécifiques à AirPlay",
             "player_controls": "Contrôles du lecteur",
             "presets": "Préréglages",
             "sync_options": "Options de synchronisation\/importation",
             "builtin_playlists": "Paramètres de liste de lecture intégrés",
-            "web_player": "Lecteur Web"
+            "web_player": "Lecteur Web",
+            "playback": "Paramètres de lecture",
+            "protocol_settings": "Paramètres du protocole",
+            "dsp": "Traitement numérique du signal (DSP)"
         },
         "tts_pre_announce": {
             "label": "Pré-annoncer les annonces TTS",
@@ -402,7 +405,6 @@
             "label": "Ajustement du gain fixe\/repli pour la radio",
             "description": "Correction de gain fixe\/repli à appliquer à un flux radio (dépend du paramètre 'Méthode de normalisation du volume'). Utilisez une valeur positive pour augmenter le volume, une valeur négative pour diminuer le volume.\n\nCe paramètre est utilisé lorsque la méthode de normalisation du volume est définie sur 'Correction de gain fixe' ou 'Repli vers correction de gain'."
         },
-        "add_group_player_desc": "Pour un groupe de lecteurs créé pour le fournisseur {0}, un syncgroup sera automatiquement créé, ce qui signifie que si vous jouez avec ce groupe de lecteurs, les lecteurs membres seront automatiquement synchronisés.",
         "dynamic_members": {
             "label": "Membres dynamiques du groupe",
             "description": "Permettez aux membres de rejoindre\/quitter (temporairement) le groupe de manière dynamique, de sorte que le groupe se comporte plus ou moins de la même manière que la synchronisation manuelle des lecteurs, la principale différence étant que le joueur du groupe maintiendra la file d’attente."
@@ -663,7 +665,29 @@
         "provider_requires_attention": "Ce fournisseur requiert une attention particulière",
         "provider_requires_attention_detail": "Un ou plusieurs fournisseurs requièrent votre attention. Veuillez vérifier les paramètres des fournisseurs.",
         "reconfigure": "Reconfigurer",
-        "fix_now": "Corriger maintenant"
+        "fix_now": "Corriger maintenant",
+        "web_player_enabled": {
+            "label": "Activer le lecteur Web intégré (Sendspin)",
+            "description": "Autoriser la lecture sur cet appareil\/navigateur à l'aide du lecteur Web Sendspin intégré."
+        },
+        "enable_browser_controls": {
+            "label": "Activer les commandes multimédias du navigateur",
+            "description": "Permettre le contrôle de la lecture à l'aide des commandes multimédias intégrées au navigateur (par exemple, les touches multimédias de votre clavier)."
+        },
+        "settings_saved": "Paramètres enregistrés avec succès",
+        "protocol_disabled_message": "Activez ce protocole pour configurer ses paramètres",
+        "protocol_no_settings": "Ce protocole de sortie ne nécessite aucune configuration supplémentaire.",
+        "protocol_no_settings_with_advanced": "Aucun paramètre visible. Activez les paramètres avancés pour afficher plus d'options de configuration.",
+        "show_advanced_settings": "Afficher les paramètres avancés",
+        "advanced": "Avancé",
+        "mobile_sidebar_side": {
+            "label": "Coté du menu latéral",
+            "description": "Le côté à partir duquel le menu de navigation s'ouvre sur mobile. La valeur par défaut est la gauche.",
+            "options": {
+                "left": "Gauche",
+                "right": "Droite"
+            }
+        }
     },
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -1014,6 +1038,9 @@
         "subtitle": "Connectez-vous à votre serveur musical",
         "auto_connecting": "Recherche de votre serveur...",
         "sign_in_to_continue": "Connectez-vous pour continuer",
+        "complete_in_browser": "Finaliser la connexion dans votre navigateur",
+        "establishing_connection": "Établissement de la connexion...",
+        "local_server": "Serveur local",
         "remote_server": "Distant",
         "server_address": "Adresse du serveur",
         "server_address_placeholder": "http:\/\/192.168.1.100:8095",
@@ -1040,6 +1067,8 @@
         "authenticating": "Authentification en cours...",
         "checking_local": "Vérification du serveur local...",
         "finding_server": "Recherche de votre serveur...",
+        "establishing_secure": "Établissement d'une connexion sécurisée...",
+        "complete_sign_in": "Finaliser la connexion",
         "oauth_waiting_message": "Une fenêtre de navigateur s'est ouverte. Veuillez vous connecter avec Home Assistant, puis revenez ici.",
         "waiting_for_auth": "En attente d'authentification...",
         "connection_failed": "Échec de la connexion",
@@ -1081,6 +1110,8 @@
         "error_server_not_found": "Serveur introuvable. Assurez-vous que votre serveur Music Assistant est en cours d'exécution et que l'accès à distance est activé.",
         "login_with_ha": "Se connecter avec Home Assistant",
         "or": "ou",
+        "subtitle_oauth": "Finaliser la connexion dans votre navigateur",
+        "oauth_waiting_title": "Finaliser la connexion",
         "oauth_waiting_message": "Une fenêtre de navigateur s'est ouverte. Veuillez vous connecter avec Home Assistant, puis revenez ici.",
         "oauth_waiting_hint": "En attente d'authentification...",
         "error_oauth_failed": "Échec de l'authentification auprès de Home Assistant."
@@ -1106,5 +1137,6 @@
     "collections": "Collections",
     "narrators": "Narrateurs",
     "series_plural": "Séries",
-    "series_singular": "Série"
+    "series_singular": "Série",
+    "queue_move_end": "Déplacer à la fin"
 }

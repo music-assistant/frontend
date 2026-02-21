@@ -86,7 +86,9 @@
           />
           <v-card-title v-else>
             <MarqueeText :sync="marqueeSync">
-              {{ item.name }}
+              <div class="selectable">
+                {{ item.name }}
+              </div>
             </MarqueeText>
           </v-card-title>
 
@@ -519,6 +521,19 @@ const artistLogo = computed(() => {
 </script>
 
 <style scoped>
+.selectable {
+  -webkit-user-select: text;
+  /* Safari */
+  -khtml-user-select: text;
+  /* Konqueror HTML */
+  -moz-user-select: text;
+  /* Old versions of Firefox */
+  -ms-user-select: text;
+  /* Internet Explorer/Edge */
+  user-select: text;
+  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
 .background-image {
   position: absolute;
 }

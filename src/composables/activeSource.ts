@@ -14,10 +14,9 @@ export function useActiveSource(
   const activeSource = computed((): PlayerSource | undefined => {
     const playerObj =
       typeof player === "object" && "value" in player ? player.value : player;
-    if (!playerObj?.active_source || !playerObj?.source_list) return undefined;
-    return playerObj.source_list.find(
-      (source) => source.id === playerObj.active_source,
-    );
+    if (!playerObj?.source_list) return undefined;
+    const activeSourceId = playerObj.active_source || playerObj.player_id;
+    return playerObj.source_list.find((source) => source.id === activeSourceId);
   });
 
   return { activeSource };
