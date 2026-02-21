@@ -177,14 +177,19 @@ export const isGroupMuted = function (player: Player): boolean {
   if (!player.group_members.length) {
     return !!player.volume_muted;
   }
-  // For group players, only show muted if ALL members are muted
+  // For group players, only show muted if ALL mute-capable members are muted.
+  // Members with volume_muted == null/undefined don't support mute and are skipped.
+  let hasMuteCapableMembers = false;
   for (const memberId of player.group_members) {
     const member = api?.players[memberId];
-    if (member && member.available && !member.volume_muted) {
+    if (!member || !member.available) continue;
+    if (member.volume_muted == null) continue;
+    hasMuteCapableMembers = true;
+    if (!member.volume_muted) {
       return false;
     }
   }
-  return true;
+  return hasMuteCapableMembers;
 };
 
 export const handlePlayerMuteToggle = function (player: Player) {

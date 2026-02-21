@@ -45,13 +45,18 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            player.mute_control == PLAYER_CONTROL_NONE
+            (player.group_members.length === 0 &&
+              player.mute_control == PLAYER_CONTROL_NONE)
           "
           @click.stop="handlePlayerMuteToggle(player)"
         >
           <component
             :is="
-              getVolumeIconComponent(player, mainDisplayVolume)
+              getVolumeIconComponent(
+                player,
+                mainDisplayVolume,
+                isGroupMuted(player),
+              )
             "
             :size="22"
           />
@@ -187,6 +192,7 @@
                   getVolumeIconComponent(
                     childPlayer,
                     childDisplayVolumes[childPlayer.player_id],
+                    !!childPlayer.volume_muted,
                   )
                 "
                 :size="22"

@@ -111,6 +111,7 @@ import { PlayerFeature } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { getVolumeIconComponent } from "@/helpers/utils";
+import { isGroupMuted } from "@/plugins/api/helpers";
 import { Volume2 } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
@@ -147,7 +148,7 @@ const displayVolume = ref(
 const volumeIconComponent = computed(() => {
   const player = store.activePlayer;
   if (!player) return Volume2;
-  return getVolumeIconComponent(player, displayVolume.value);
+  return getVolumeIconComponent(player, displayVolume.value, isGroupMuted(player));
 });
 </script>
 
