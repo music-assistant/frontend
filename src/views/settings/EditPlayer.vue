@@ -276,6 +276,17 @@ const config_entries = computed(() => {
       category: "dsp",
     });
   }
+  // add player options should they exist
+  if (player && player.options.length > 0) {
+    entries.push({
+      key: "player_options",
+      type: ConfigEntryType.OPTIONS,
+      label: "",
+      default_value: "",
+      required: false,
+      category: "options",
+    });
+  }
   return entries;
 });
 
