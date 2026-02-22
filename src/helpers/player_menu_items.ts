@@ -161,6 +161,27 @@ export const getPlayerMenuItems = (
         ),
     });
   }
+  // add playback speed submenu
+  if (playerQueue) {
+    const currentSpeed =
+      typeof playerQueue.extra_attributes?.playback_speed === "number"
+        ? (playerQueue.extra_attributes.playback_speed as number)
+        : 1.0;
+    menuItems.push({
+      label: "playback_speed",
+      labelArgs: [],
+      icon: "mdi-speedometer",
+      subItems: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) => ({
+        label: speed === 1.0 ? "1×" : `${speed}×`,
+        labelArgs: [],
+        selected: Math.abs(currentSpeed - speed) < 0.01,
+        action: () => {
+          api.queueCommandSetPlaybackSpeed(playerQueue!.queue_id, speed);
+        },
+      })),
+    });
+  }
+
   // add 'clear queue' menu item
   if (playerQueue?.items) {
     menuItems.push({

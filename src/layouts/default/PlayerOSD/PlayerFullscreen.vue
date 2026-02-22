@@ -436,6 +436,7 @@
           <PlaybackSpeedBtn
             :player-queue="store.activePlayerQueue"
             :active-color="sliderColor"
+            :is-visible="isSpeechContent"
             class="media-controls-item"
           />
           <QueueBtn
@@ -773,6 +774,15 @@ const subTitleFontSize = computed(() => {
 
 const showExpandedPlayerSelectButton = computed(() => {
   return vuetify.display.height.value > 800;
+});
+
+const isSpeechContent = computed(() => {
+  const mediaType = store.activePlayerQueue?.current_item?.media_item?.media_type;
+  return (
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE ||
+    mediaType === MediaType.AUDIOBOOK
+  );
 });
 
 // methods
