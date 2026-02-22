@@ -12,6 +12,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 
@@ -133,7 +134,7 @@ export const getPlayerMenuItems = (
   }
 
   // add 'transfer queue' menu item
-  if (playerQueue?.items) {
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
@@ -162,7 +163,7 @@ export const getPlayerMenuItems = (
     });
   }
   // add 'clear queue' menu item
-  if (playerQueue?.items) {
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
       labelArgs: [],
@@ -170,6 +171,17 @@ export const getPlayerMenuItems = (
         api.queueCommandClear(playerQueue!.queue_id);
       },
       icon: "mdi-cancel",
+    });
+  }
+  // add 'save queue as playlist' menu item
+  if (playerQueue?.items && playerQueue.items > 0) {
+    menuItems.push({
+      label: "save_queue_as_playlist",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("createPlaylist", { queueId: playerQueue!.queue_id });
+      },
+      icon: "mdi-playlist-plus",
     });
   }
 

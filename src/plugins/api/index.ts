@@ -1228,6 +1228,16 @@ export class MusicAssistantApi {
       auto_play: autoPlay,
     });
   }
+  public queueCommandSaveAsPlaylist(
+    queueId: string,
+    name: string,
+  ): Promise<Playlist> {
+    // Save the current queue items as a new playlist.
+    return this.sendCommand("player_queues/save_as_playlist", {
+      queue_id: queueId,
+      name,
+    });
+  }
 
   // Player related functions/commands
 
