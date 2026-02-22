@@ -317,6 +317,8 @@
             "playback": "Playback settings",
             "advanced": "Advanced settings",
             "generic": "Generic settings",
+            "preferences": "Preferences",
+            "display_settings": "Display",
             "announcements": "Announcements settings",
             "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
@@ -401,6 +403,10 @@
                 "it": "Italian",
                 "el_GR": "Greek"
             }
+        },
+        "startup_view": {
+            "label": "Startup view",
+            "description": "Select which view to display when Music Assistant starts."
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",

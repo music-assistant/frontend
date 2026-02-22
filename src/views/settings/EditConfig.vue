@@ -519,12 +519,21 @@ const panels = computed(() => {
   const allCategories = new Set(
     entries
       .value!.map((x) => x.category)
-      .filter((x) => !["generic", "advanced", "protocol_general"].includes(x)),
+      .filter(
+        (x) =>
+          ![
+            "preferences",
+            "display_settings",
+            "generic",
+            "advanced",
+            "protocol_general",
+          ].includes(x),
+      ),
   );
-  // ensure generic is always first
+  // ensure preferences, display_settings, and generic are always first
   // advanced category is deprecated - advanced settings are now distributed across categories
   // protocol_general is handled separately in the protocol section
-  return ["generic", ...allCategories];
+  return ["preferences", "display_settings", "generic", ...allCategories];
 });
 
 const regularPanels = computed(() => {

@@ -12,7 +12,11 @@ const routes = [
     children: [
       {
         path: "",
-        redirect: "/home",
+        redirect: () => {
+          const startupView =
+            store.currentUser?.preferences?.startup_view || "home";
+          return `/${startupView}`;
+        },
       },
       {
         path: "/home",

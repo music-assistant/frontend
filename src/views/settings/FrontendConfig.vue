@@ -52,6 +52,8 @@ import { useColorMode } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { store } from "@/plugins/store";
 import { companionMode, isCompanionApp } from "@/plugins/companion";
 
 // global refs
@@ -61,6 +63,8 @@ const loading = ref(false);
 const mode = useColorMode();
 
 onMounted(() => {
+  // TODO: Remove localStorage fallbacks below once migration period is over
+  // (theme, language, menu_items moved from localStorage to user preferences)
   const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
@@ -82,8 +86,8 @@ onMounted(() => {
         { title: "light", value: "light" },
       ],
       multi_value: false,
-      category: "generic",
-      value: storedTheme,
+      category: "preferences",
+      value: store.currentUser?.preferences?.theme || storedTheme,
     },
     {
       key: "language",
@@ -98,8 +102,32 @@ onMounted(() => {
         }),
       ],
       multi_value: false,
-      category: "generic",
-      value: localStorage.getItem("frontend.settings.language"),
+      category: "preferences",
+      value:
+        store.currentUser?.preferences?.language ||
+        localStorage.getItem("frontend.settings.language"),
+    },
+    {
+      key: "startup_view",
+      type: ConfigEntryType.STRING,
+      label: "startup_view",
+      default_value: "home",
+      required: false,
+      options: [
+        { title: $t("home"), value: "home" },
+        { title: $t("search"), value: "search" },
+        { title: $t("artists"), value: "artists" },
+        { title: $t("albums"), value: "albums" },
+        { title: $t("tracks"), value: "tracks" },
+        { title: $t("playlists"), value: "playlists" },
+        { title: $t("audiobooks"), value: "audiobooks" },
+        { title: $t("podcasts"), value: "podcasts" },
+        { title: $t("radios"), value: "radios" },
+        { title: $t("browse"), value: "browse" },
+      ],
+      multi_value: false,
+      category: "preferences",
+      value: store.currentUser?.preferences?.startup_view || "home",
     },
     {
       key: "menu_items",
@@ -121,8 +149,8 @@ onMounted(() => {
         { title: $t("settings.settings"), value: "settings" },
       ],
       multi_value: true,
-      category: "generic",
-      value: enabledMenuItems,
+      category: "preferences",
+      value: store.currentUser?.preferences?.menu_items || enabledMenuItems,
     },
     {
       key: "enable_browser_controls",
@@ -144,7 +172,7 @@ onMounted(() => {
       default_value: false,
       required: false,
       multi_value: false,
-      category: "generic",
+      category: "display_settings",
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
@@ -222,24 +250,48 @@ onMounted(() => {
 });
 
 // methods
-const saveValues = function (values: Record<string, ConfigValueType>) {
-  for (const key in values) {
-    const storageKey = `frontend.settings.${key}`;
-    const value = values[key];
-    if (value != null) {
-      localStorage.setItem(storageKey, value.toString());
+const saveValues = async function (values: Record<string, ConfigValueType>) {
+  const { setPreference } = useUserPreferences();
+  loading.value = true;
 
-      if (key === "theme") {
-        mode.value = value.toString() as "light" | "dark" | "auto";
+  let hasPerUserChanges = false;
+
+  try {
+    for (const key in values) {
+      const entry = config.value.find((e) => e.key === key);
+      if (!entry) continue;
+
+      if (entry.category === "preferences") {
+        // Save to backend via user preferences
+        await setPreference(key, values[key]);
+        hasPerUserChanges = true;
+      } else {
+        // Save to localStorage (display_settings and web_player settings)
+        const storageKey = `frontend.settings.${key}`;
+        const value = values[key];
+        if (value != null) {
+          localStorage.setItem(storageKey, value.toString());
+          if (key === "theme") {
+            mode.value = value.toString() as "light" | "dark" | "auto";
+          }
+        } else {
+          localStorage.removeItem(storageKey);
+        }
       }
-    } else {
-      localStorage.removeItem(storageKey);
     }
+
+    // Reload if any per-user settings changed
+    if (hasPerUserChanges) {
+      router.push({ name: "home" }).then(() => {
+        window.location.reload();
+      });
+    } else {
+      router.push({ name: "home" });
+    }
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    loading.value = false;
   }
-  router.push({ name: "home" }).then(() => {
-    // enforce refresh
-    window.location.reload();
-  });
 };
 
 const onSubmit = function (values: Record<string, ConfigValueType>) {
