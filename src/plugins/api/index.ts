@@ -1405,7 +1405,14 @@ export class MusicAssistantApi {
   public playerCommandGroupVolumeDown(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_down");
   }
-
+  public playerCommandGroupVolumeMute(
+    playerId: string,
+    muted: boolean,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_mute", {
+      muted,
+    });
+  }
   public async createPlayerGroup(
     provider: string,
     name: string,

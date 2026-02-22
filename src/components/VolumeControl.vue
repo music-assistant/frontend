@@ -45,12 +45,19 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            player.mute_control == PLAYER_CONTROL_NONE
+            (player.group_members.length === 0 &&
+              player.mute_control == PLAYER_CONTROL_NONE)
           "
           @click.stop="handlePlayerMuteToggle(player)"
         >
           <component
-            :is="getVolumeIconComponent(player, mainDisplayVolume)"
+            :is="
+              getVolumeIconComponent(
+                player,
+                mainDisplayVolume,
+                isGroupMuted(player),
+              )
+            "
             :size="22"
           />
         </Button>
@@ -63,7 +70,7 @@
           :disabled="
             !player.available ||
             player.powered == false ||
-            player.volume_muted ||
+            isGroupMuted(player) ||
             player.volume_control == PLAYER_CONTROL_NONE
           "
           :model-value="
@@ -75,7 +82,9 @@
           "
           @click.stop
           @update:model-value="
-            api.playerCommandGroupVolume(player.player_id, $event)
+            player.group_members.length > 0
+              ? api.playerCommandGroupVolume(player.player_id, $event)
+              : api.playerCommandVolumeSet(player.player_id, $event)
           "
           @update:local-value="mainDisplayVolume = $event"
         />
@@ -183,6 +192,7 @@
                   getVolumeIconComponent(
                     childPlayer,
                     childDisplayVolumes[childPlayer.player_id],
+                    !!childPlayer.volume_muted,
                   )
                 "
                 :size="22"
@@ -197,7 +207,6 @@
               :disabled="
                 !childPlayer.available ||
                 childPlayer.powered == false ||
-                childPlayer.volume_muted ||
                 childPlayer.volume_control == PLAYER_CONTROL_NONE
               "
               :allow-wheel="allowWheel"
@@ -241,7 +250,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 import { getVolumeIconComponent } from "@/helpers/utils";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
+import { handlePlayerMuteToggle, isGroupMuted } from "@/plugins/api/helpers";
 
 export interface Props {
   player: Player;

@@ -1,13 +1,7 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import {
-  MediaItemType,
-  ItemMapping,
-  MediaType,
-  Player,
-  PlayerFeature,
-} from "./interfaces";
+import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
@@ -179,18 +173,28 @@ interface NavigatorUAData {
   mobile: boolean;
 }
 
+export const isGroupMuted = function (player: Player): boolean {
+  if (!player.group_members.length) {
+    return !!player.volume_muted;
+  }
+  // For group players, only show muted if ALL mute-capable members are muted.
+  // Members with volume_muted == null/undefined don't support mute and are skipped.
+  let hasMuteCapableMembers = false;
+  for (const memberId of player.group_members) {
+    const member = api?.players[memberId];
+    if (!member || !member.available) continue;
+    if (member.volume_muted == null) continue;
+    hasMuteCapableMembers = true;
+    if (!member.volume_muted) {
+      return false;
+    }
+  }
+  return hasMuteCapableMembers;
+};
+
 export const handlePlayerMuteToggle = function (player: Player) {
   if (player.group_members.length > 0) {
-    // TODO: revisit this when api/server supports group mute toggle
-    const muted = !player.volume_muted;
-    for (const memberId of player.group_members) {
-      const childPlayer = api.players[memberId];
-      if (!childPlayer) continue;
-      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
-        continue;
-      }
-      api.playerCommandVolumeMute(memberId, muted);
-    }
+    api.playerCommandGroupVolumeMute(player.player_id, !isGroupMuted(player));
   } else {
     api.playerCommandMuteToggle(player.player_id);
   }
