@@ -384,6 +384,7 @@ onMounted(async () => {
   store.libraryTracksCount = await api.getLibraryTracksCount();
   store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
   store.libraryRadiosCount = await api.getLibraryRadiosCount();
+  store.libraryGenresCount = await api.getLibraryGenresCount();
 });
 </script>
 

@@ -30,7 +30,7 @@
         <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
       </span>
       <span v-else :class="{ 'is-playing': isPlaying }">
-        {{ item.name }}
+        {{ displayName }}
         <span v-if="'version' in item && item.version"
           >({{ item.version }})</span
         >
@@ -233,6 +233,7 @@ import {
   formatDuration,
   getArtistsString,
   getBrowseFolderName,
+  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -276,7 +277,19 @@ export interface Props {
 }
 
 // global refs
-const { t } = useI18n();
+const { t, te } = useI18n();
+
+const displayName = computed(() => {
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
+});
 
 const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,

@@ -199,6 +199,29 @@ const routes = [
         ],
       },
       {
+        path: "/genres",
+        children: [
+          {
+            path: "",
+            name: "genres",
+            component: () =>
+              import(
+                /* webpackChunkName: "genres" */ "@/views/LibraryGenres.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "genre",
+            component: () =>
+              import(
+                /* webpackChunkName: "genre" */ "@/views/GenreDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -290,6 +313,16 @@ const routes = [
             component: () =>
               import(
                 /* webpackChunkName: "serverlogs" */ "@/views/settings/ServerLogs.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: "genremanagement",
+            name: "genremanagement",
+            component: () =>
+              import(
+                /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },

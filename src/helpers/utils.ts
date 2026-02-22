@@ -115,6 +115,17 @@ export const isColorDark = function (hexColor: string) {
   return luma < 128;
 };
 
+export const formatAliasName = (name: string) =>
+  name ? name.replace(/(^|\s)\S/g, (match) => match.toUpperCase()) : "";
+
+export const formatRelativeTime = (seconds: number): string => {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
 export const kebabize = (str: string) => {
   return str
     .split("")
@@ -124,6 +135,41 @@ export const kebabize = (str: string) => {
         : letter;
     })
     .join("");
+};
+
+const toSentenceCase = function (str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+const genreKeyFromName = function (name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+};
+
+export const getGenreDisplayName = function (
+  name: string,
+  translationKey: string | undefined,
+  t: (key: string) => string,
+  te: (key: string) => boolean,
+): string {
+  // First try the translation key as-is (in case backend sends full key like 'genre_names.afrobeats')
+  if (translationKey && te(translationKey)) return t(translationKey);
+
+  // Then try with genre_names prefix (in case backend sends just the key name like 'afrobeats')
+  if (translationKey) {
+    const keyWithPrefix = `genre_names.${translationKey}`;
+    if (te(keyWithPrefix)) return t(keyWithPrefix);
+  }
+
+  // Fallback: generate key from name
+  const key = `genre_names.${genreKeyFromName(name)}`;
+  if (te(key)) return t(key);
+
+  // No translation found - apply sentence case for user-created/promoted genres
+  return toSentenceCase(name);
 };
 
 export const getArtistsString = function (
@@ -176,7 +222,8 @@ export const getStreamingProviderMappings = function (
   itemDetails: MediaItemType,
 ) {
   const result: ProviderMapping[] = [];
-  for (const provider_mapping of itemDetails?.provider_mappings || []) {
+  if (!itemDetails || !("provider_mappings" in itemDetails)) return result;
+  for (const provider_mapping of itemDetails.provider_mappings || []) {
     if (provider_mapping.provider_domain.startsWith("filesystem")) continue;
     if (provider_mapping.provider_domain == "plex") continue;
     if (

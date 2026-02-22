@@ -128,7 +128,11 @@ const fetchPlaylists = async function () {
   // get all (editable) playlists that are suitable as target
   playlists.value = [];
   createPlaylistProviders.value = [];
-  const playlistResults = await api.getLibraryPlaylists();
+  const playlistResults = await api.getLibraryPlaylists(
+    undefined,
+    undefined,
+    undefined,
+  );
   let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
 
   if (!refItem) return;

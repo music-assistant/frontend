@@ -65,6 +65,13 @@ onMounted(() => {
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
+  const enabledMenuItemsSet = new Set(enabledMenuItems);
+  for (const defaultItem of DEFAULT_MENU_ITEMS) {
+    if (!enabledMenuItemsSet.has(defaultItem)) {
+      enabledMenuItems.push(defaultItem);
+      enabledMenuItemsSet.add(defaultItem);
+    }
+  }
 
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
   mode.value = storedTheme as "light" | "dark" | "auto";
@@ -117,6 +124,7 @@ onMounted(() => {
         { title: $t("audiobooks"), value: "audiobooks" },
         { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },
+        { title: $t("genres"), value: "genres" },
         { title: $t("browse"), value: "browse" },
         { title: $t("settings.settings"), value: "settings" },
       ],
