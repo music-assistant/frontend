@@ -326,7 +326,8 @@
             "web_player": "Web Player",
             "protocol_settings": "Protocol Settings",
             "protocol_output_settings": "Enable {0} support",
-            "dsp": "Digital Signal Processing (DSP)"
+            "dsp": "Digital Signal Processing (DSP)",
+            "audiobooks_podcasts": "Audiobooks & Podcasts"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -705,7 +706,11 @@
         "onboarding_add_player": "Add Players",
         "onboarding_footer": "You can always add more providers later from this settings page.",
         "remote_access_qr_code": "QR Code",
-        "remote_access_qr_code_description": "Scan with your phone camera to connect instantly."
+        "remote_access_qr_code_description": "Scan with your phone camera to connect instantly.",
+        "audiobook_skip_seconds": {
+            "label": "Audiobook\/Podcast skip amount",
+            "description": "Number of seconds to skip forward or backward when using skip controls during audiobook or podcast playback."
+        }
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -838,6 +843,8 @@
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
     "open_dsp_settings": "Open DSP settings",
+    "skip_forward_seconds": "Skip forward {0} seconds",
+    "skip_backward_seconds": "Skip backward {0} seconds",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",

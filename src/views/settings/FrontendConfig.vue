@@ -164,6 +164,25 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
     },
+    {
+      key: "audiobook_skip_seconds",
+      type: ConfigEntryType.INTEGER,
+      label: "audiobook_skip_seconds",
+      default_value: 30,
+      required: false,
+      options: [
+        { title: "10", value: 10 },
+        { title: "15", value: 15 },
+        { title: "30", value: 30 },
+        { title: "60", value: 60 },
+      ],
+      multi_value: false,
+      category: "audiobooks_podcasts",
+      value: parseInt(
+        localStorage.getItem("frontend.settings.audiobook_skip_seconds") ||
+          "30",
+      ),
+    },
   ];
 
   // Add web player settings (if not running in companion mode)

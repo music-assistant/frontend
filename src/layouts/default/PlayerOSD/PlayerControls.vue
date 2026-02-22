@@ -23,6 +23,15 @@
         :icon="visibleComponents.previous.icon"
       />
     </div>
+    <!-- skip back button for audiobooks/podcasts -->
+    <div v-if="isAudiobookOrPodcast" class="player-controls-elements">
+      <SkipBackBtn
+        :player-queue="store.activePlayerQueue"
+        :cur-queue-item="store.curQueueItem"
+        :skip-amount="skipAmount"
+        class="media-controls-item"
+      />
+    </div>
     <!-- play/pause button -->
     <div v-if="visibleComponents && visibleComponents.play?.isVisible">
       <PlayBtn
@@ -31,6 +40,15 @@
         class="media-controls-item"
         icon-style="circle"
         :icon="visibleComponents.play.icon"
+      />
+    </div>
+    <!-- skip forward button for audiobooks/podcasts -->
+    <div v-if="isAudiobookOrPodcast" class="player-controls-elements">
+      <SkipForwardBtn
+        :player-queue="store.activePlayerQueue"
+        :cur-queue-item="store.curQueueItem"
+        :skip-amount="skipAmount"
+        class="media-controls-item"
       />
     </div>
     <!-- next button -->
@@ -69,6 +87,10 @@ import NextBtn from "./PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "./PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "./PlayerControlBtn/PreviousBtn.vue";
 import ShuffleBtn from "./PlayerControlBtn/ShuffleBtn.vue";
+import SkipForwardBtn from "./PlayerControlBtn/SkipForwardBtn.vue";
+import SkipBackBtn from "./PlayerControlBtn/SkipBackBtn.vue";
+import { MediaType } from "@/plugins/api/interfaces";
+import { computed } from "vue";
 
 // properties
 export interface Props {
@@ -104,6 +126,23 @@ withDefaults(defineProps<Props>(), {
     previous: { isVisible: true },
     next: { isVisible: true },
   }),
+});
+
+// Check if current media is audiobook or podcast
+const isAudiobookOrPodcast = computed(() => {
+  const mediaType = store.curQueueItem?.media_item?.media_type;
+  return (
+    mediaType === MediaType.AUDIOBOOK ||
+    mediaType === MediaType.PODCAST ||
+    mediaType === MediaType.PODCAST_EPISODE
+  );
+});
+
+// Get configured skip amount from settings
+const skipAmount = computed(() => {
+  return parseInt(
+    localStorage.getItem("frontend.settings.audiobook_skip_seconds") || "30",
+  );
 });
 </script>
 
