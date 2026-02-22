@@ -9,7 +9,7 @@ import {
   rgbToHex,
   sleep,
   truncateString,
-} from "./utils";
+} from "@/helpers/utils";
 
 vi.mock("@/plugins/api", () => ({
   api: {

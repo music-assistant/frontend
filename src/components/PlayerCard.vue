@@ -44,16 +44,7 @@
       <!-- playername -->
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
-        <div
-          v-if="
-            player.output_protocols?.filter(
-              (x) =>
-                x.output_protocol_id == webPlayer.player_id ||
-                x.output_protocol_id == store.companionPlayerId,
-            ).length !== 0
-          "
-          style="margin-bottom: 3px"
-        >
+        <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
           <span>{{
             getPlayerName(player, store.deviceType == "phone" ? 10 : 16)
           }}</span>
@@ -125,11 +116,7 @@
       <template #append>
         <!-- play/pause button -->
         <Button
-          v-if="
-            player.playback_state == PlaybackState.PAUSED ||
-            player.playback_state == PlaybackState.PLAYING ||
-            playerQueue?.items
-          "
+          v-if="canPlayPause"
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
@@ -225,12 +212,14 @@ import {
 } from "@/components/QualityDetailsBtn.vue";
 import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
+import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getColorPalette,
   getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
+  isBuiltinPlayer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -246,7 +235,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { webPlayer } from "@/plugins/web_player";
 import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, ref, toRef, watch } from "vue";
 
 // properties
 export interface Props {
@@ -259,6 +248,7 @@ export interface Props {
 }
 
 const compProps = defineProps<Props>();
+const { activeSource } = useActiveSource(toRef(compProps, "player"));
 
 // emits
 defineEmits<{
@@ -291,6 +281,13 @@ const openPlayerMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
+
+const canPlayPause = computed(() => {
+  if (activeSource.value) {
+    return activeSource.value.can_play_pause;
+  }
+  return false;
+});
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({

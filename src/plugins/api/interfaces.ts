@@ -902,12 +902,12 @@ export interface Player {
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
-  output_protocols?: OutputProtocol[];
+  output_protocols: OutputProtocol[];
 
   // active_output_protocol: which output protocol is currently being used for playback
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
-  active_output_protocol?: string | null;
+  active_output_protocol: string | null;
 }
 
 // provider

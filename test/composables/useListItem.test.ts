@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useListItem, type ListItemProps } from "./useListItem";
+import { useListItem, type ListItemProps } from "@/composables/useListItem";
 
 describe("useListItem", () => {
   it("returns default props for default variant", () => {
