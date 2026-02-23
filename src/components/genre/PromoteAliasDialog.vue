@@ -64,6 +64,7 @@ const promoteAlias = async () => {
   } catch (error) {
     toast.error(t("promote_alias_failed"));
   } finally {
+    toast.success(t("promote_alias_successfully"));
     loading.value = false;
   }
 };

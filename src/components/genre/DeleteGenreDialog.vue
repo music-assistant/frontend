@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { toast } from "vue-sonner";
 
 const model = defineModel<boolean>();
 const emit = defineEmits<{
@@ -59,7 +60,7 @@ const handleConfirm = () => {
   } else {
     loading.value = true;
     emit("confirm");
-    // Reset will happen when dialog closes
+    toast.success(t("genre_deleted"));
   }
 };
 
