@@ -30,7 +30,7 @@
         "color": "5.0.3",
         "colorthief": "2.6.0",
         "happy-dom": "^20.5.3",
-        "lucide-vue-next": "^0.564.0",
+        "lucide-vue-next": "^0.575.0",
         "marked": "^17.0.2",
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
