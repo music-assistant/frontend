@@ -153,7 +153,10 @@
         </v-list-item>
         <!-- mute btn + volume slider + volume level text-->
         <v-list-item
-          v-if="player.group_members.includes(childPlayer.player_id)"
+          v-if="
+            player.group_members.includes(childPlayer.player_id) &&
+            childPlayer.volume_control != PLAYER_CONTROL_NONE
+          "
           class="volumesliderrow"
           :link="false"
           :style="

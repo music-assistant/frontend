@@ -13,7 +13,13 @@ export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
-  if ("provider_mappings" in item) {
+  if (
+    (item.media_type == MediaType.GENRE ||
+      item.media_type == MediaType.GENRE_ALIAS) &&
+    item.provider == "library"
+  )
+    return true;
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
     for (const x of item.provider_mappings) {
       if (x.available && api.providers[x.provider_instance]?.available)
         return true;

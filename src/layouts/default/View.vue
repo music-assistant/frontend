@@ -16,6 +16,7 @@
             <component :is="Component" />
           </router-view>
           <add-to-playlist-dialog />
+          <create-playlist-dialog />
           <item-context-menu />
         </div>
       </SidebarInset>
@@ -28,6 +29,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 </script>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useButton, type ButtonProps } from "./useButton";
+import { useButton, type ButtonProps } from "@/composables/useButton";
 
 describe("useButton", () => {
   it("returns default props for default variant", () => {

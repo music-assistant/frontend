@@ -6,7 +6,12 @@
   >
     <v-toolbar class="header" color="transparent">
       <template #title>
-        <span class="mr-3">{{ widgetRow.title }}</span>
+        <span
+          class="mr-3"
+          :class="{ 'clickable-title': showActionIcon && widgetRow.action }"
+          @click="showActionIcon && handleActionIconClick()"
+          >{{ widgetRow.title }}</span
+        >
         <v-chip
           v-if="widgetRow.subtitle && getBreakpointValue('bp6')"
           inline
@@ -55,6 +60,20 @@
             "
           />
         </div>
+        <v-btn
+          v-else-if="showActionIcon && widgetRow.icon"
+          :icon="
+            typeof widgetRow.icon === 'string' ? widgetRow.icon : undefined
+          "
+          variant="text"
+          @click="handleActionIconClick"
+        >
+          <component
+            :is="widgetRow.icon"
+            v-if="typeof widgetRow.icon !== 'string'"
+            class="w-[22px] h-[22px]"
+          />
+        </v-btn>
         <provider-icon
           v-else-if="widgetRow.provider"
           :domain="widgetRow.provider"
@@ -97,6 +116,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import ProviderIcon from "./ProviderIcon.vue";
+import type { Component } from "vue";
 
 export interface WidgetRowSettings {
   position: number;
@@ -105,7 +125,8 @@ export interface WidgetRowSettings {
 
 export interface WidgetRow {
   title: string;
-  icon?: string;
+  icon?: string | Component;
+  action?: () => void;
   uri?: string;
   items: MediaItemTypeOrItemMapping[];
   subtitle?: string;
@@ -117,11 +138,16 @@ interface Props {
   widgetRow: WidgetRow;
   editMode?: boolean;
   showProviderOnCover?: boolean;
+  showActionIcon?: boolean;
 }
 
 const emit = defineEmits(["update:settings"]);
 
-const { widgetRow, showProviderOnCover } = defineProps<Props>();
+const { widgetRow, showProviderOnCover, showActionIcon } = defineProps<Props>();
+
+const handleActionIconClick = () => {
+  widgetRow.action && widgetRow.action();
+};
 </script>
 
 <style scoped>
@@ -129,6 +155,15 @@ const { widgetRow, showProviderOnCover } = defineProps<Props>();
   margin-inline-start: 0px;
   font-size: x-large;
   font-weight: bold;
+}
+
+.clickable-title {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.clickable-title:hover {
+  opacity: 0.7;
 }
 
 .carousel-wrapper {

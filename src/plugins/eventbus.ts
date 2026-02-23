@@ -16,9 +16,15 @@ export type ContextMenuDialogEvent = {
   showPlayMenuHeader?: boolean;
 };
 
+export type CreatePlaylistEvent = {
+  queueId?: string;
+  providerId?: string;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
+  createPlaylist: CreatePlaylistEvent;
   clearSelection: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
