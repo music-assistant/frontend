@@ -71,7 +71,7 @@
         "eslint-plugin-vue": "9.33.0",
         "https-localhost": "4.7.1",
         "husky": "^9.1.7",
-        "jsdom": "^28.0.0",
+        "jsdom": "^28.1.0",
         "material-design-icons-iconfont": "6.7.0",
         "nanoid": "5.1.6",
         "prettier": "3.8.1",
