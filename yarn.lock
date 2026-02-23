@@ -1580,10 +1580,10 @@
   dependencies:
     "@swc/helpers" "^0.5.0"
 
-"@intlify/bundle-utils@11.0.3":
-  version "11.0.3"
-  resolved "https://registry.yarnpkg.com/@intlify/bundle-utils/-/bundle-utils-11.0.3.tgz#9a48299e6d6a90d50dab5bd615c09cb4a3eb5421"
-  integrity sha512-dURCDz1rQXwAb1+Hv4NDit6aZSRaAt4zUYBPEeaDCe3FSs8dMtdF6kEvgd9JwsYFSTAHcvbTs2CqwBjjt9Ltsw==
+"@intlify/bundle-utils@11.0.7":
+  version "11.0.7"
+  resolved "https://registry.yarnpkg.com/@intlify/bundle-utils/-/bundle-utils-11.0.7.tgz#d0d06b66dc9f56402afc694d197c0e3e06ef0855"
+  integrity sha512-fEO3CJGPymxieGh8BHox7d6stgajDQae7wgpH6YYw7WX+cdW6jTTXyljZqz7OV3JcwlS9M9UHSoO+YwiO56IhA==
   dependencies:
     "@intlify/message-compiler" "^11.1.12"
     "@intlify/shared" "^11.1.12"
@@ -1650,13 +1650,13 @@
   resolved "https://registry.yarnpkg.com/@intlify/shared/-/shared-11.2.8.tgz#30815afda2acd859cefdbb97cf59e7f819f32611"
   integrity sha512-l6e4NZyUgv8VyXXH4DbuucFOBmxLF56C/mqh2tvApbzl2Hrhi1aTDcuv5TKdxzfHYmpO3UB0Cz04fgDT9vszfw==
 
-"@intlify/unplugin-vue-i18n@11.0.3":
-  version "11.0.3"
-  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-11.0.3.tgz#522d324ded6c30d060559f6481bf4c5243928949"
-  integrity sha512-iQuik0nXfdVZ5ab+IEyBFEuvMQ213zfbUpBXaEdHPk8DV+qB2CT/SdFuDhfUDRRBZc/e0qoLlfmc9urhnRYVWw==
+"@intlify/unplugin-vue-i18n@11.0.7":
+  version "11.0.7"
+  resolved "https://registry.yarnpkg.com/@intlify/unplugin-vue-i18n/-/unplugin-vue-i18n-11.0.7.tgz#b97bb690b29cfe9f268760a86745ae40c6e7f02e"
+  integrity sha512-wswKprS1D8VfnxxVhKxug5wa3MbDSOcCoXOBjnzhMK+6NfP6h6UI8pFqSBIvcW8nPDuzweTc0Sk3PeBCcubfoQ==
   dependencies:
     "@eslint-community/eslint-utils" "^4.4.0"
-    "@intlify/bundle-utils" "11.0.3"
+    "@intlify/bundle-utils" "11.0.7"
     "@intlify/shared" "^11.1.12"
     "@intlify/vue-i18n-extensions" "^8.0.0"
     "@rollup/pluginutils" "^5.1.0"
