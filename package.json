@@ -20,7 +20,7 @@
         "@mdi/js": "7.4.47",
         "@music-assistant/sendspin-js": "2.0.0",
         "@scure/base": "^2.0.0",
-        "@tabler/icons-vue": "^3.36.1",
+        "@tabler/icons-vue": "^3.37.1",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/vue-form": "^1.28.3",
         "@types/qrcode": "^1.5.6",

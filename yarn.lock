@@ -2128,10 +2128,10 @@
   dependencies:
     tslib "^2.8.0"
 
-"@tabler/icons-vue@^3.36.1":
-  version "3.36.1"
-  resolved "https://registry.yarnpkg.com/@tabler/icons-vue/-/icons-vue-3.36.1.tgz#3b062c98bcd9a11034c0979a54115603f86cf8f1"
-  integrity sha512-ssIu0KSmGFKvvoC5PJhSYAj/J2kTEbIVIix0528zdRKfN6yohUlQt014tGnDDdJ/MyyG/xRXsKD1U6dyQY8rrg==
+"@tabler/icons-vue@^3.37.1":
+  version "3.37.1"
+  resolved "https://registry.yarnpkg.com/@tabler/icons-vue/-/icons-vue-3.37.1.tgz#1df65670a8cb7e589100ec8f60b492584ad43a4d"
+  integrity sha512-iLO8Gl2ry77C4JHFxLzVGuF505M+HHgEx+u1IyKPFdgVY3ebBCP76go/62qVHNeIIGwsw8cErKi0aQjanlTCqQ==
   dependencies:
     "@tabler/icons" ""
 
