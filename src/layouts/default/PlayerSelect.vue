@@ -264,11 +264,6 @@ watch(
     if (newVal) {
       // Calculate sort order when menu opens
       calculateSortOrder();
-      nextTick(() => {
-        if (allPlayersExpanded.value === 0) {
-          playerSearchInput.value?.focus?.();
-        }
-      });
     } else {
       // Save preferences and reset state when menu closes
       playerSearchQuery.value = "";
