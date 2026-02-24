@@ -1,7 +1,9 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import { authManager } from "./auth";
+import { watch } from "vue";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
+import { api, ConnectionState } from "./api";
 
 const routes = [
   // Guest view uses minimal layout without navigation/player controls
@@ -213,6 +215,29 @@ const routes = [
         ],
       },
       {
+        path: "/genres",
+        children: [
+          {
+            path: "",
+            name: "genres",
+            component: () =>
+              import(
+                /* webpackChunkName: "genres" */ "@/views/LibraryGenres.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "genre",
+            component: () =>
+              import(
+                /* webpackChunkName: "genre" */ "@/views/GenreDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
         path: "/party",
         name: "party",
         component: () =>
@@ -324,6 +349,16 @@ const routes = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "genremanagement",
+            name: "genremanagement",
+            component: () =>
+              import(
+                /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "addprovider/:domain",
             name: "addproviderdetails",
             component: () =>
@@ -419,7 +454,7 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes and guest mode restrictions
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const currentUser = store.currentUser;
 
   // If party mode guest is trying to navigate away from /guest, redirect back to guest
@@ -434,6 +469,25 @@ router.beforeEach((to, _from, next) => {
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
   if (requiresAdmin) {
+    // Wait for API to be initialized before checking admin access
+    // This ensures store.currentUser is set before we check permissions
+    if (api.state.value !== ConnectionState.INITIALIZED) {
+      // Wait for initialization to complete
+      await new Promise<void>((resolve) => {
+        const unwatch = watch(
+          () => api.state.value,
+          (newState) => {
+            if (newState === ConnectionState.INITIALIZED) {
+              unwatch();
+              resolve();
+            }
+          },
+          { immediate: true },
+        );
+      });
+    }
+
+    const currentUser = store.currentUser;
     console.debug(
       "Admin route check:",
       to.path,

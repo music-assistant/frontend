@@ -65,6 +65,13 @@ onMounted(() => {
   const enabledMenuItems: string[] = storedMenuConf
     ? storedMenuConf.split(",")
     : DEFAULT_MENU_ITEMS;
+  const enabledMenuItemsSet = new Set(enabledMenuItems);
+  for (const defaultItem of DEFAULT_MENU_ITEMS) {
+    if (!enabledMenuItemsSet.has(defaultItem)) {
+      enabledMenuItems.push(defaultItem);
+      enabledMenuItemsSet.add(defaultItem);
+    }
+  }
 
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
   mode.value = storedTheme as "light" | "dark" | "auto";
@@ -117,6 +124,7 @@ onMounted(() => {
         { title: $t("audiobooks"), value: "audiobooks" },
         { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },
+        { title: $t("genres"), value: "genres" },
         { title: $t("browse"), value: "browse" },
         { title: $t("settings.settings"), value: "settings" },
       ],
@@ -148,6 +156,21 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
+    },
+    {
+      key: "mobile_sidebar_side",
+      type: ConfigEntryType.STRING,
+      label: "mobile_sidebar_side",
+      default_value: "left",
+      required: false,
+      options: [
+        { title: "Left", value: "left" },
+        { title: "Right", value: "right" },
+      ],
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
     },
   ];
 

@@ -14,16 +14,11 @@
 
     <template #title>
       <slot name="title">
-        <div v-if="store.mobileLayout && home" class="mobile-brand">
-          <img
-            src="@/assets/icon.svg"
-            alt="Music Assistant"
-            class="mobile-brand-logo"
-          />
-          <span class="mobile-brand-text">Music Assistant</span>
-        </div>
-        <button v-else-if="title" @click="emit('titleClicked')">
-          {{ title }}
+        <button
+          v-if="title || (store.mobileLayout && home)"
+          @click="emit('titleClicked')"
+        >
+          {{ title || (home ? $t("home") : "") }}
         </button>
       </slot>
     </template>
@@ -261,18 +256,9 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 }
 
 /* Mobile branding on the left */
-.mobile-brand {
+.toolbar-prepend {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-.mobile-brand-logo {
-  height: 30px;
-  width: 30px;
-}
-.mobile-brand-text {
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  gap: 0.5rem;
 }
 </style>

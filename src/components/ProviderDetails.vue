@@ -133,18 +133,19 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   MediaType,
   ProviderMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { computed, reactive, ref } from "vue";
-import { copyToClipboard } from "@/helpers/utils";
-import { toast } from "vuetify-sonner";
-import { useI18n } from "vue-i18n";
 import { eventbus } from "@/plugins/eventbus";
+import { computed, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { toast } from "vue-sonner";
 
 export interface Props {
   itemDetails: MediaItemType;
@@ -239,7 +240,10 @@ const onMenu = function (evt: Event, providerMapping: ProviderMapping) {
     });
   }
   // remove mapping option (only for streaming provider mapping)
-  if (api.providers[providerMapping.provider_instance]?.is_streaming_provider) {
+  if (
+    authManager.isAdmin() &&
+    api.providers[providerMapping.provider_instance]?.is_streaming_provider
+  ) {
     menuItems.push({
       label: t("remove_provider_mapping"),
       icon: "mdi-delete",
@@ -286,7 +290,8 @@ const toolbarMenuItems = computed(() => {
       disabled: mappingSearchInProgress.value,
       hide:
         props.itemDetails.provider != "library" ||
-        !api.hasStreamingProviders.value,
+        !api.hasStreamingProviders.value ||
+        !authManager.isAdmin(),
     },
     // toggle expand
     {

@@ -283,7 +283,6 @@
         "default": "standaard",
         "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?",
         "category": {
-            "audio": "Audio",
             "advanced": "Geavanceerde instellingen",
             "generic": "Algemene instellingen",
             "announcements": "Configuratie van aankondigingen (announce)",
@@ -292,7 +291,11 @@
             "presets": "Presets",
             "sync_options": "Synchronisatie-\/importopties",
             "builtin_playlists": "Ingebouwde afspeellijstinstellingen",
-            "web_player": "Webspeler"
+            "web_player": "Webspeler",
+            "playback": "Afspeelinstellingen",
+            "protocol_settings": "Protocolinstellingen",
+            "protocol_output_settings": "{0} ondersteuning inschakelen",
+            "dsp": "Digitale signaalverwerking (DSP)"
         },
         "tts_pre_announce": {
             "label": "Kondig TTS-aankondigingen vooraf aan",
@@ -364,7 +367,8 @@
                 "hu_HU": "Hongaars",
                 "it": "Italiaans",
                 "el_GR": "Grieks",
-                "lt_LT": "Litouws"
+                "lt_LT": "Litouws",
+                "lv_LV": "Lets"
             }
         },
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
@@ -403,7 +407,6 @@
             "label": "Vaste\/fallback versterkingsaanpassing voor radio",
             "description": "Vaste\/fallback versterkingscorrectie om toe te passen op een radiostream (afhankelijk van de instelling 'Volumenormalisatiemethode').\n\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt wanneer de volumenormalisatiemethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
         },
-        "add_group_player_desc": "Voor spelerproviders\/ecosystemen die native groepering\/synchronisatie bieden, wordt er automatisch een syncgroup aangemaakt. Dit betekent dat als u naar deze spelergroep speelt, de spelers van de leden automatisch worden gesynchroniseerd. \n\nVoor spelers\/ecosystemen die geen groepering ondersteunen, of als u spelers van verschillende ecosystemen wilt groeperen, kunt u het type Universal Group gebruiken. Dit type distribueert dezelfde audio naar alle spelers van de leden (maar niet synchroon). \n\nHoud er rekening mee dat sommige providers wel groepering ondersteunen, maar dat u de native app moet gebruiken om de groepering uit te voeren. Een voorbeeld zijn op Google Cast gebaseerde spelers, waarbij u alleen Google Cast-groepen kunt maken in de Google Home-app. ",
         "dynamic_members": {
             "label": "Dynamische groepsleden",
             "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
@@ -673,7 +676,21 @@
             "label": "Schakel de mediabediening van de browser in",
             "description": "Sta afspeelbediening toe met de ingebouwde media bedieningselementen van de browser (bijvoorbeeld de mediatoetsen op je toetsenbord)."
         },
-        "settings_saved": "Instellingen succesvol opgeslagen"
+        "settings_saved": "Instellingen succesvol opgeslagen",
+        "protocol_disabled_message": "Schakel dit protocol in om de instellingen te configureren",
+        "protocol_no_settings": "Dit uitvoerprotocol heeft geen aanvullende configuratie",
+        "protocol_no_settings_with_advanced": "Er zijn geen instellingen zichtbaar. Schakel geavanceerde instellingen in om meer configuratieopties te bekijken.",
+        "show_advanced_settings": "Laat geavanceerde instellingen zien",
+        "advanced": "Geavanceerd",
+        "mobile_sidebar_side": {
+            "label": "Kant van mobiele zijbalk",
+            "description": "Aan welke kant het navigatiemenu (paneel) op mobiele apparaten wordt geopend. Standaard is dit links.",
+            "options": {
+                "left": "Links",
+                "right": "Rechts"
+            }
+        },
+        "add_group_player_desc_sync": "Maak een permanente SyncGroep met spelers die compatibel zijn met synchronisatie. Als je op deze Spelersgroep speelt, worden de aangesloten spelers automatisch gesynchroniseerd."
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -1123,5 +1140,10 @@
     "collections": "Collecties",
     "narrators": "Vertellers",
     "series_plural": "Series",
-    "series_singular": "Serie"
+    "series_singular": "Serie",
+    "queue_move_end": "Verplaats naar einde",
+    "discover": "Ontdekken",
+    "save_queue_as_playlist": "Sla wachtrij op als afspeellijst",
+    "playlist_created": "Afspeellijst gemaakt",
+    "open_playlist": "Afspeellijst openen"
 }

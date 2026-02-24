@@ -14,6 +14,11 @@
           "
         />
         <v-card-subtitle
+          v-else-if="providerDetails?.domain === 'sync_group'"
+          style="white-space: break-spaces"
+          v-html="markdownToHtml($t('settings.add_group_player_desc_sync'))"
+        />
+        <v-card-subtitle
           v-else
           style="white-space: break-spaces"
           v-html="
@@ -87,7 +92,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { markdownToHtml } from "@/helpers/utils";
-import { PlayerType } from "@/plugins/api/interfaces";
+import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
 // global refs
 const router = useRouter();
@@ -108,12 +113,30 @@ const providerDetails = computed(() => {
 });
 
 const syncPlayers = computed(() => {
+  if (props.provider === "universal_group") {
+    // for universal groups, show all available non-group players, regardless of provider
+    return Object.values(api.players).filter(
+      (x) => x.available && x.type != PlayerType.GROUP,
+    );
+  }
+  if (props.provider === "sync_group") {
+    // for sync groups, show all available non-group players that are sync compatible with the provider
+    return Object.values(api.players).filter(
+      (x) =>
+        x.available &&
+        x.type != PlayerType.GROUP &&
+        x.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+        x.can_group_with.length > 0 &&
+        (members.value.length == 0 ||
+          members.value.includes(x.player_id) ||
+          members.value.some((m) => x.can_group_with.includes(m))),
+    );
+  }
   return Object.values(api.players).filter(
     (x) =>
       x.available &&
       x.type != PlayerType.GROUP &&
-      (x.provider == providerDetails.value?.instance_id ||
-        props.provider === "universal_group"),
+      x.provider == providerDetails.value?.instance_id,
   );
 });
 

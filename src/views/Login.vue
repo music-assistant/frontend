@@ -1825,6 +1825,9 @@ onMounted(() => {
   color: var(--fg);
   opacity: 0;
   animation: fadeIn 0.3s ease-in forwards;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @keyframes fadeIn {

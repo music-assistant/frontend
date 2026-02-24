@@ -1,5 +1,5 @@
 <template>
-  <VSonner position="bottom-right" />
+  <Toaster rich-colors />
 
   <!-- Login screen (when not authenticated) -->
   <Login
@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { EventType, ProviderType, UserRole } from "@/plugins/api/interfaces";
@@ -40,23 +41,22 @@ import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
-import { VSonner } from "vuetify-sonner";
-import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import {
-  getKioskModePreference,
-  subscribeToHAProperties,
-  unsubscribeFromHAProperties,
-} from "./plugins/homeassistant";
+  companionMode,
+  initializeCompanionIntegration,
+} from "./plugins/companion";
+// import {
+//   subscribeToHAProperties,
+//   unsubscribeFromHAProperties,
+//   getKioskModePreference
+// } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
-import {
-  initializeCompanionIntegration,
-  companionMode,
-} from "./plugins/companion";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
@@ -196,14 +196,16 @@ const completeInitialization = async () => {
     return;
   }
   authManager.setCurrentUser(userInfo);
+  store.currentUser = userInfo;
   store.serverInfo = serverInfo;
   store.currentUser = userInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
-  if (store.isIngressSession && serverInfo.homeassistant_addon) {
-    const kioskPref = getKioskModePreference();
-    subscribeToHAProperties({ kioskMode: kioskPref, router });
-  }
+  // COMMENTED OUT - HA INTEGRATION DISABLED
+  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
+  // const kioskPref = getKioskModePreference();
+  // subscribeToHAProperties({ kioskMode: kioskPref, router });
+  // }
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
@@ -225,6 +227,7 @@ const completeInitialization = async () => {
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+    store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
     console.debug("[App] Guest user - skipping full state fetch");
   }
@@ -289,6 +292,8 @@ const completeInitialization = async () => {
     // Party mode guests should always be redirected to the guest view
     router.push("/guest");
   }
+  // Don't push to any route here - let the router handle navigation naturally
+  // from the URL hash. The router config already redirects "/" to "/home"
   api.state.value = ConnectionState.INITIALIZED;
 
   // Initialize companion app integration
@@ -402,6 +407,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  unsubscribeFromHAProperties();
+  // unsubscribeFromHAProperties();
 });
 </script>

@@ -13,7 +13,17 @@
         z-index: 999;
       `"
     ></div>
-    <BottomNavigation v-if="store.mobileLayout" :height="bottomNavHeight" />
+  
+  <!-- bottom navigation for mobile layout -->
+  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
+  <BottomNavigation
+    v-if="store.mobileLayout"
+    app
+    :style="
+      store.isInPWAMode ? 'padding-bottom: 10px;height: 70px;' : 'height: 60px;'
+    "
+  />
+
     <v-footer
       app
       color="default"
@@ -22,7 +32,8 @@
           ? 'mediacontrols-player-float'
           : 'mediacontrols-player-default'
       }`"
-    >
+      :style="store.isInPWAMode ? 'margin-bottom: 10px;' : ''"
+  >
       <Player :use-floating-player="store.mobileLayout" />
     </v-footer>
   </template>
@@ -77,9 +88,9 @@ const bottomNavHeight = computed(() => {
 .mediacontrols-player-float {
   display: flex;
   flex-direction: column;
-  margin: 10px;
-  margin-bottom: 5px;
-  width: calc(100% - 20px) !important;
+  margin: 5px;
+  margin-bottom: 0px;
+  width: calc(100% - 10px) !important;
   border-radius: 10px !important;
 }
 
@@ -102,5 +113,8 @@ const bottomNavHeight = computed(() => {
 
 .v-bottom-navigation--active {
   box-shadow: none;
+}
+.v-footer {
+  z-index: 1200 !important;
 }
 </style>

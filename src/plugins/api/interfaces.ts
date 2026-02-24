@@ -105,6 +105,8 @@ export enum MediaType {
   AUDIOBOOK = "audiobook",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  GENRE = "genre",
+  GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -320,6 +322,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS = "library_radios",
   LIBRARY_PODCASTS = "library_podcasts",
   LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_GENRES = "library_genres",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -331,6 +334,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
   LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
   LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
+  LIBRARY_GENRES_EDIT = "library_genres_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
@@ -608,6 +612,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
+  release_date?: string;
   cache_checksum?: string;
   chapters?: MediaItemChapter[];
 }
@@ -637,6 +642,7 @@ export interface MediaItem extends _MediaItemBase {
 export interface ItemMapping extends _MediaItemBase {
   available: boolean;
   image?: MediaItemImage;
+  year?: number;
 }
 
 export interface Artist extends MediaItem {}
@@ -685,6 +691,10 @@ export interface PodcastEpisode extends MediaItem {
   resume_position_ms?: number;
 }
 
+export interface Genre extends MediaItem {
+  genre_aliases: string[] | null;
+}
+
 export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
@@ -703,6 +713,7 @@ export type MediaItemType =
   | Audiobook
   | Podcast
   | PodcastEpisode
+  | Genre
   | BrowseFolder;
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
@@ -716,6 +727,7 @@ export interface SearchResults {
   radio: Radio[];
   podcasts: Podcast[];
   audiobooks: Audiobook[];
+  genres: Genre[];
 }
 
 export interface AudioFormat {
@@ -905,12 +917,12 @@ export interface Player {
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
-  output_protocols?: OutputProtocol[];
+  output_protocols: OutputProtocol[];
 
   // active_output_protocol: which output protocol is currently being used for playback
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
-  active_output_protocol?: string | null;
+  active_output_protocol: string | null;
 }
 
 // provider

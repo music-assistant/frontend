@@ -41,14 +41,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import { useRouter } from "vue-router";
-import { useI18n } from "vue-i18n";
 import { api } from "@/plugins/api";
-import { CoreConfig, ConfigValueType } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
+import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import { nanoid } from "nanoid";
-import { toast } from "vuetify-sonner";
+import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
+import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();

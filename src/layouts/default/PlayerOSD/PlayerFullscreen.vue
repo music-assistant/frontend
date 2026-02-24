@@ -900,6 +900,10 @@ const onTitleClick = async function () {
         undefined, // favorite
         searchTerm, // search
         5, // limit - get a few results to find best match
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {
@@ -974,6 +978,10 @@ const onAlbumClick = async function () {
         undefined, // favorite
         currentMedia.album, // search
         5, // limit - get a few results to find best match
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {
@@ -1054,6 +1062,10 @@ const onArtistClick = async function () {
         undefined, // favorite
         currentMedia.artist, // search
         5, // limit
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {
@@ -1132,6 +1144,15 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
       disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
     },
     {
+      label: "queue_move_end",
+      labelArgs: [],
+      action: () => {
+        queueCommand(item, "end");
+      },
+      icon: "mdi-arrow-collapse-down",
+      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
+    },
+    {
       label: "queue_delete",
       labelArgs: [],
       action: () => {
@@ -1187,6 +1208,11 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
     );
   } else if (command == "down") {
     api.queueCommandMoveDown(
+      store.activePlayerQueue?.queue_id,
+      item.queue_item_id,
+    );
+  } else if (command == "end") {
+    api.queueCommandMoveItemEnd(
       store.activePlayerQueue?.queue_id,
       item.queue_item_id,
     );

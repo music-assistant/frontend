@@ -89,27 +89,6 @@
                     protocol.protocol_domain
                   }}
                 </v-chip>
-                <v-chip
-                  v-if="getOutputProtocols(item.player_id).length === 0"
-                  size="x-small"
-                  variant="tonal"
-                  class="protocol-chip"
-                >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="
-                        api.getProvider(item.provider)?.domain || item.provider
-                      "
-                      :size="14"
-                      class="chip-icon"
-                    />
-                  </template>
-                  {{
-                    api.getProviderManifest(
-                      api.getProvider(item.provider)?.domain || item.provider,
-                    )?.name || item.provider
-                  }}
-                </v-chip>
               </span>
             </div>
           </template>
@@ -260,12 +239,9 @@ const playerCanBeDeleted = function (playerId: string) {
   const player = api.players[playerId];
   if (!player) return true;
   if (player.type === PlayerType.GROUP) {
-    return (
-      player.player_id.startsWith(SYNCGROUP_PREFIX) ||
-      api
-        .getProvider(player.provider)
-        ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER)
-    );
+    return api
+      .getProvider(player.provider)
+      ?.supported_features.includes(ProviderFeature.REMOVE_GROUP_PLAYER);
   }
   return api
     .getProvider(player.provider)
@@ -288,11 +264,7 @@ const getPlayerName = function (playerConfig: PlayerConfig) {
 
 const getOutputProtocols = function (playerId: string) {
   // Return only non-native protocols (ones with a protocol_domain)
-  return (
-    api.players[playerId]?.output_protocols?.filter(
-      (p) => p.protocol_domain !== null,
-    ) || []
-  );
+  return api.players[playerId]?.output_protocols || [];
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {

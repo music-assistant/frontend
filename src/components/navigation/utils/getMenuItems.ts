@@ -10,9 +10,13 @@ import {
   Music2,
   PartyPopper,
   Podcast,
+  Compass,
   Radio,
   Search,
   Settings,
+  LayoutGrid,
+  Sparkles,
+  Tag,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -118,6 +122,15 @@ export const getMenuItems = function () {
         path: "/radios",
         isLibraryNode: true,
         hidden: store.libraryRadiosCount === 0,
+      });
+    }
+    if (enabledMenuItemStr === "genres") {
+      items.push({
+        label: "genres",
+        icon: Tag,
+        path: "/genres",
+        isLibraryNode: true,
+        hidden: store.libraryGenresCount === 0,
       });
     }
     if (enabledMenuItemStr === "browse") {
