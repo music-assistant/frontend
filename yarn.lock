@@ -3027,6 +3027,11 @@
   resolved "https://registry.yarnpkg.com/@vueuse/metadata/-/metadata-10.11.1.tgz#209db7bb5915aa172a87510b6de2ca01cadbd2a7"
   integrity sha512-IGa5FXd003Ug1qAZmyE8wF3sJ81xGLSqTqtQ6jaVfkeZ4i5kS2mwQF61yhVqojRnenVew5PldLyRgvdl4YYuSw==
 
+"@vueuse/metadata@14.2.0":
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/@vueuse/metadata/-/metadata-14.2.0.tgz#990be3368ee24acf4e8daf47db396f913dc9e939"
+  integrity sha512-i3axTGjU8b13FtyR4Keeama+43iD+BwX9C2TmzBVKqjSHArF03hjkp2SBZ1m72Jk2UtrX0aYCugBq2R1fhkuAQ==
+
 "@vueuse/metadata@14.2.1":
   version "14.2.1"
   resolved "https://registry.yarnpkg.com/@vueuse/metadata/-/metadata-14.2.1.tgz#bd3338a565c2f651b9d18ac0f8825aa6077ee461"
@@ -3038,6 +3043,11 @@
   integrity sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==
   dependencies:
     vue-demi ">=0.14.8"
+
+"@vueuse/shared@14.2.0":
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/@vueuse/shared/-/shared-14.2.0.tgz#a03c496adf2aa1dc96cfa44ba64b51fe8a7e82c0"
+  integrity sha512-Z0bmluZTlAXgUcJ4uAFaML16JcD8V0QG00Db3quR642I99JXIDRa2MI2LGxiLVhcBjVnL1jOzIvT5TT2lqJlkA==
 
 "@vueuse/shared@14.2.1", "@vueuse/shared@^14.1.0":
   version "14.2.1"

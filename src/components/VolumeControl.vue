@@ -233,9 +233,14 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import { getPlayerName, truncateString } from "@/helpers/utils";
+import {
+  getPlayerName,
+  getVolumeIconComponent,
+  truncateString,
+} from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
+import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
 import {
   Player,
   PLAYER_CONTROL_NONE,
@@ -243,8 +248,6 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
-import { getVolumeIconComponent } from "@/helpers/utils";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
 
 export interface Props {
   player: Player;
@@ -423,7 +426,7 @@ const syncCheckBoxChange = async function (
 .volumecaption {
   width: 34px;
   text-align: right;
-  margin-right: -20px;
+  margin-right: -15px;
 }
 
 .expandbtn {
