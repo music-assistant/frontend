@@ -872,6 +872,10 @@ const onTitleClick = async function () {
         undefined, // favorite
         searchTerm, // search
         5, // limit - get a few results to find best match
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {
@@ -946,6 +950,10 @@ const onAlbumClick = async function () {
         undefined, // favorite
         currentMedia.album, // search
         5, // limit - get a few results to find best match
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {
@@ -1026,6 +1034,10 @@ const onArtistClick = async function () {
         undefined, // favorite
         currentMedia.artist, // search
         5, // limit
+        undefined,
+        undefined,
+        undefined,
+        undefined, // genre_ids
       );
 
       if (results.length > 0) {

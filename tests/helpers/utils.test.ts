@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  formatAliasName,
   formatDuration,
+  formatRelativeTime,
   getContrastingTextColor,
+  getGenreDisplayName,
   hexToRgb,
   kebabize,
   numberRange,
@@ -178,6 +181,92 @@ describe("color utilities", () => {
       expect(getContrastingTextColor("#fff")).toBe("#000000");
       expect(getContrastingTextColor("#000")).toBe("#FFFFFF");
     });
+  });
+});
+
+describe("formatAliasName", () => {
+  it("capitalizes the first letter of each word", () => {
+    expect(formatAliasName("hip hop")).toBe("Hip Hop");
+    expect(formatAliasName("classic rock")).toBe("Classic Rock");
+  });
+
+  it("handles single words", () => {
+    expect(formatAliasName("jazz")).toBe("Jazz");
+    expect(formatAliasName("rock")).toBe("Rock");
+  });
+
+  it("handles already capitalized strings", () => {
+    expect(formatAliasName("Jazz")).toBe("Jazz");
+    expect(formatAliasName("Hip Hop")).toBe("Hip Hop");
+  });
+
+  it("handles empty and falsy values", () => {
+    expect(formatAliasName("")).toBe("");
+    expect(formatAliasName(null as any)).toBe("");
+    expect(formatAliasName(undefined as any)).toBe("");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  it("formats seconds", () => {
+    expect(formatRelativeTime(0)).toBe("0s");
+    expect(formatRelativeTime(30)).toBe("30s");
+    expect(formatRelativeTime(59)).toBe("59s");
+  });
+
+  it("formats minutes", () => {
+    expect(formatRelativeTime(60)).toBe("1m");
+    expect(formatRelativeTime(90)).toBe("1m");
+    expect(formatRelativeTime(3599)).toBe("59m");
+  });
+
+  it("formats hours", () => {
+    expect(formatRelativeTime(3600)).toBe("1h");
+    expect(formatRelativeTime(3660)).toBe("1h 1m");
+    expect(formatRelativeTime(7200)).toBe("2h");
+    expect(formatRelativeTime(7380)).toBe("2h 3m");
+  });
+});
+
+describe("getGenreDisplayName", () => {
+  const mockT = (key: string) => {
+    const translations: Record<string, string> = {
+      "genre_names.rock": "Rock",
+      "genre_names.hip_hop": "Hip Hop",
+      full_key: "Full Key Translation",
+    };
+    return translations[key] || key;
+  };
+
+  const mockTe = (key: string) => {
+    const known = ["genre_names.rock", "genre_names.hip_hop", "full_key"];
+    return known.includes(key);
+  };
+
+  it("uses translation_key directly if it resolves", () => {
+    expect(getGenreDisplayName("rock", "full_key", mockT, mockTe)).toBe(
+      "Full Key Translation",
+    );
+  });
+
+  it("uses translation_key with genre_names prefix", () => {
+    expect(getGenreDisplayName("rock", "rock", mockT, mockTe)).toBe("Rock");
+  });
+
+  it("generates key from name as fallback", () => {
+    expect(getGenreDisplayName("hip hop", undefined, mockT, mockTe)).toBe(
+      "Hip Hop",
+    );
+  });
+
+  it("applies sentence case when no translation found", () => {
+    expect(
+      getGenreDisplayName("my custom genre", undefined, mockT, mockTe),
+    ).toBe("My custom genre");
+  });
+
+  it("handles empty name", () => {
+    expect(getGenreDisplayName("", undefined, mockT, mockTe)).toBe("");
   });
 });
 

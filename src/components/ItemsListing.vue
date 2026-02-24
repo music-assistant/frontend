@@ -245,7 +245,7 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -255,6 +255,7 @@ export interface LoadDataParams {
   limit: number;
   sortBy: string;
   search: string;
+  genreIds?: number | number[];
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
@@ -331,6 +332,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // global refs
 const router = useRouter();
+const route = useRoute();
 const { t } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
@@ -342,6 +344,7 @@ const params = ref<LoadDataParams>({
   sortBy: "name",
   search: "",
   libraryOnly: false,
+  genreIds: undefined,
 });
 const viewMode = ref("list");
 const showSearch = ref(false);
@@ -358,6 +361,32 @@ const initialDataReceived = ref(false);
 const tempHide = ref(false);
 
 // methods
+const applyQueryGenreFilter = function () {
+  const queryGenre = route.query.genre_id ?? route.query.genre_ids;
+  const parsedIds: number[] = [];
+  const parseValue = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    for (const part of trimmed.split(",")) {
+      const parsed = Number(part.trim());
+      if (!Number.isNaN(parsed)) parsedIds.push(parsed);
+    }
+  };
+
+  if (Array.isArray(queryGenre)) {
+    for (const value of queryGenre) {
+      if (typeof value !== "string") continue;
+      parseValue(value);
+    }
+  } else if (typeof queryGenre === "string") {
+    parseValue(queryGenre);
+  }
+  const nextGenreIds = parsedIds.length === 0 ? undefined : parsedIds;
+  const changed =
+    JSON.stringify(params.value.genreIds) !== JSON.stringify(nextGenreIds);
+  params.value.genreIds = nextGenreIds;
+  return changed;
+};
 const closeSearch = function () {
   params.value.search = "";
   showSearch.value = false;
@@ -586,6 +615,8 @@ const redirectSearch = function () {
     store.globalSearchType = MediaType.PODCAST;
   } else if (props.itemtype == "radios") {
     store.globalSearchType = MediaType.RADIO;
+  } else if (props.itemtype == "genres") {
+    store.globalSearchType = MediaType.GENRE;
   }
   router.push({ name: "search" });
 };
@@ -635,6 +666,7 @@ const isLibraryItem = computed(() => {
     "audiobooks",
     "podcasts",
     "radios",
+    "genres",
   ];
 
   return libraryItemTypes.includes(props.itemtype);
@@ -654,6 +686,7 @@ const musicProviders = computed(() => {
     radios: ProviderFeature.LIBRARY_RADIOS,
     podcasts: ProviderFeature.LIBRARY_PODCASTS,
     audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
+    genres: ProviderFeature.LIBRARY_GENRES,
   };
 
   const requiredFeatures = featureMap[props.itemtype];
@@ -1122,7 +1155,6 @@ watch(
   () => props.parentItem,
   () => {
     if (loading.value == true) return;
-    console.log("parent item changed", props.refreshOnParentUpdate);
     if (props.refreshOnParentUpdate) {
       loadData(true);
     } else {
@@ -1169,9 +1201,15 @@ onMounted(async () => {
       }
     });
     loading.value = false;
+    if (applyQueryGenreFilter()) {
+      loadData(true, undefined, true);
+    }
   } else {
+    applyQueryGenreFilter();
     loadData(true);
   }
+
+  applyQueryGenreFilter();
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", () => {
@@ -1215,6 +1253,16 @@ onMounted(async () => {
     unsub();
   });
 });
+
+watch(
+  () => route.query,
+  () => {
+    if (applyQueryGenreFilter()) {
+      loadData(true, undefined, true);
+    }
+  },
+  { deep: true },
+);
 
 export interface StoredState {
   path: string;
@@ -1270,6 +1318,7 @@ const getFilteredItems = function (
   } else {
     result = [...items];
   }
+
   // sort
   if (params.sortBy == "name") {
     result.sort((a, b) =>
@@ -1343,7 +1392,11 @@ const getFilteredItems = function (
     result.sort((a, b) => ((b as Album).year || 0) - ((a as Album).year || 0));
   }
   if (params.sortBy == "recent") {
-    result.sort((a, b) => (b.timestamp_added || 0) - (a.timestamp_added || 0));
+    result.sort((a, b) => {
+      const aTimestamp = "timestamp_added" in a ? a.timestamp_added : 0;
+      const bTimestamp = "timestamp_added" in b ? b.timestamp_added : 0;
+      return bTimestamp - aTimestamp;
+    });
   }
 
   if (params.sortBy == "duration") {

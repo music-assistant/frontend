@@ -291,7 +291,9 @@
             "presets": "预设",
             "sync_options": "同步\/导入选项",
             "builtin_playlists": "内置播放列表设置",
-            "web_player": "网页播放器"
+            "web_player": "网页播放器",
+            "protocol_settings": "协议设置",
+            "protocol_output_settings": "启用 {0} 支持"
         },
         "tts_pre_announce": {
             "label": "预告TTS宣告",
@@ -363,7 +365,8 @@
                 "hu_HU": "匈牙利语",
                 "it": "意大利语",
                 "el_GR": "希腊语",
-                "lt_LT": "立陶宛语"
+                "lt_LT": "立陶宛语",
+                "lv_LV": "拉脱维亚语"
             }
         },
         "no_music_providers": "未配置音乐提供者",
@@ -662,7 +665,13 @@
         "provider_requires_attention": "该服务提供程序需要关注",
         "provider_requires_attention_detail": "一个或多个提供程序需要注意。请检查提供程序的设置。",
         "reconfigure": "重新配置",
-        "fix_now": "立即修复"
+        "fix_now": "立即修复",
+        "web_player_enabled": {
+            "label": "启用内置（Sendspin）网页播放器"
+        },
+        "settings_saved": "设置已保存",
+        "show_advanced_settings": "显示高级设置",
+        "advanced": "高级"
     },
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
@@ -879,7 +888,9 @@
         "new_releases_for_you": "为您提供的新版本",
         "recent_favorite_tracks": "最近收藏的歌曲",
         "favorite_playlists": "收藏的播放列表",
-        "favorite_radio_stations": "收藏的电台"
+        "favorite_radio_stations": "收藏的电台",
+        "recommended": "推荐",
+        "library": "媒体库"
     },
     "homescreen_edit_enable": "编辑主屏幕",
     "homescreen_edit_disable": "退出主屏幕编辑模式",
@@ -1094,5 +1105,6 @@
         "click_to_change": "点击下方更改输出设备"
     },
     "more_options": "更多选项",
-    "edit": "编辑"
+    "edit": "编辑",
+    "authors": "作者"
 }

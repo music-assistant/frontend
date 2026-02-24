@@ -311,7 +311,26 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- delete genre button (admin only) -->
+              <Trash2
+                v-if="
+                  item.media_type === MediaType.GENRE &&
+                  item.provider === 'library' &&
+                  isAdmin
+                "
+                :size="22"
+                class="cursor-pointer"
+                :title="$t('delete_genre')"
+                @click="deleteGenre"
+              />
             </div>
+          </div>
+          <div
+            v-if="$slots['after-play']"
+            class="info-header-after-play"
+            style="margin-left: 14px; padding-bottom: 10px"
+          >
+            <slot name="after-play"></slot>
           </div>
           <!-- Description/metadata -->
           <v-card-subtitle
@@ -327,27 +346,37 @@
 
           <!-- genres/tags -->
           <div
-            v-if="item && item.metadata.genres"
+            v-if="mappedGenres.length"
             class="justify-center"
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(
+              v-for="genre of mappedGenres.slice(
                 0,
                 $vuetify.display.mobile ? 15 : 25,
               )"
-              :key="tag"
+              :key="genre.item_id"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
               small
               outlined
+              class="cursor-pointer"
+              @click="handleMediaItemClick(genre, 0, 0)"
             >
-              {{ tag }}
+              {{
+                getGenreDisplayName(genre.name, genre.translation_key, t, te)
+              }}
             </v-chip>
           </div>
         </div>
       </v-layout>
     </v-card>
+    <!-- delete genre confirmation dialog -->
+    <DeleteGenreDialog
+      v-model="showDeleteGenreDialog"
+      @confirm="confirmDeleteGenre"
+    />
+
     <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
@@ -369,7 +398,9 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getGenreDisplayName,
   getImageThumbForItem,
+  handleMediaItemClick,
   handlePlayBtnClick,
   markdownToHtml,
   parseBool,
@@ -383,16 +414,20 @@ import { api } from "@/plugins/api";
 import type {
   Album,
   Artist,
+  Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft } from "lucide-vue-next";
+import { ArrowLeft, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
+import DeleteGenreDialog from "./genre/DeleteGenreDialog.vue";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
@@ -407,12 +442,27 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 useDisplay();
 const menuItems = ref<ContextMenuItem[]>([]);
+const mappedGenres = ref<Genre[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
+const { t, te } = useI18n();
+
+const headerTitle = computed(() => {
+  if (!compProps.item) return "";
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
+});
 
 watch(
   () => compProps.item,
@@ -424,9 +474,23 @@ watch(
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
       menuItems.value = await getContextMenuItems([val], val);
+      // Load mapped genres for non-genre media items
+      if (val.media_type !== MediaType.GENRE) {
+        api
+          .getGenresForMediaItem(val.media_type, val.item_id)
+          .then((genres) => {
+            mappedGenres.value = genres;
+          })
+          .catch(() => {
+            mappedGenres.value = [];
+          });
+      } else {
+        mappedGenres.value = [];
+      }
     } else {
       fanartImage.value = imgGradient;
       menuItems.value = [];
+      mappedGenres.value = [];
     }
   },
   { immediate: true },
@@ -518,6 +582,21 @@ const artistLogo = computed(() => {
   if (compProps.item.media_type != MediaType.ARTIST) return undefined;
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
+
+const isAdmin = computed(() => authManager.isAdmin());
+
+const showDeleteGenreDialog = ref(false);
+
+const deleteGenre = () => {
+  showDeleteGenreDialog.value = true;
+};
+
+const confirmDeleteGenre = () => {
+  if (!compProps.item) return;
+  api.removeGenreFromLibrary(compProps.item.item_id);
+  showDeleteGenreDialog.value = false;
+  router.back();
+};
 </script>
 
 <style scoped>

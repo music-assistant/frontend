@@ -128,7 +128,11 @@ const fetchPlaylists = async function () {
   // get all (editable) playlists that are suitable as target
   playlists.value = [];
   createPlaylistProviders.value = [];
-  const playlistResults = await api.getLibraryPlaylists();
+  const playlistResults = await api.getLibraryPlaylists(
+    undefined,
+    undefined,
+    undefined,
+  );
   let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
 
   if (!refItem) return;
@@ -141,8 +145,11 @@ const fetchPlaylists = async function () {
     );
   }
 
-  // Check if we're adding radio items - radio can only be added to builtin playlists
-  const isAddingRadio = refItem?.media_type === MediaType.RADIO;
+  // Check if we're adding radio/podcast/audiobook items - these can only be added to builtin playlists
+  const isAddingBuiltinOnly =
+    refItem?.media_type === MediaType.RADIO ||
+    refItem?.media_type === MediaType.PODCAST_EPISODE ||
+    refItem?.media_type === MediaType.AUDIOBOOK;
 
   for (const playlist of playlistResults) {
     // skip unavailable playlists
@@ -160,8 +167,8 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // For radio items, only show builtin playlists
-    if (isAddingRadio) {
+    // For radio/podcast/audiobook items, only show builtin playlists
+    if (isAddingBuiltinOnly) {
       if (playListProvider && playListProvider.domain == "builtin") {
         playlists.value.push(playlist);
       }
@@ -189,8 +196,8 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // For radio items, only allow builtin provider
-    if (isAddingRadio) {
+    // For radio/podcast/audiobook items, only allow builtin provider
+    if (isAddingBuiltinOnly) {
       if (provider.domain == "builtin") {
         createPlaylistProviders.value.push(provider.instance_id);
       }

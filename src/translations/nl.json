@@ -367,7 +367,8 @@
                 "hu_HU": "Hongaars",
                 "it": "Italiaans",
                 "el_GR": "Grieks",
-                "lt_LT": "Litouws"
+                "lt_LT": "Litouws",
+                "lv_LV": "Lets"
             }
         },
         "no_music_providers": "Geen muziekaanbieders geconfigureerd",
@@ -1141,5 +1142,8 @@
     "series_plural": "Series",
     "series_singular": "Serie",
     "queue_move_end": "Verplaats naar einde",
-    "discover": "Ontdekken"
+    "discover": "Ontdekken",
+    "save_queue_as_playlist": "Sla wachtrij op als afspeellijst",
+    "playlist_created": "Afspeellijst gemaakt",
+    "open_playlist": "Afspeellijst openen"
 }

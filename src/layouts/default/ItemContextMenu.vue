@@ -266,7 +266,7 @@ export interface ContextMenuItem {
 
 export const showContextMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItem,
+  parentItem?: MediaItemType,
   posX = 0,
   posY = 0,
   includePlayMenuItems = false,
@@ -340,7 +340,7 @@ const queueOptionLabelMap = {
 
 export const showPlayMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItem,
+  parentItem?: MediaItemType,
   posX = 0,
   posY = 0,
 ) {
@@ -361,7 +361,7 @@ export const showPlayMenuForMediaItem = async function (
 
 export const getPlayMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItem,
+  parentItem?: MediaItemType,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
@@ -569,7 +569,7 @@ export const getPlayMenuItems = async function (
 
 export const getContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItem,
+  parentItem?: MediaItemType,
 ) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
@@ -586,6 +586,7 @@ export const getContextMenuItems = async function (
       MediaType.ALBUM,
       MediaType.ARTIST,
       MediaType.AUDIOBOOK,
+      MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.TRACK,
@@ -687,6 +688,7 @@ export const getContextMenuItems = async function (
       MediaType.ALBUM,
       MediaType.ARTIST,
       MediaType.AUDIOBOOK,
+      MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
@@ -709,6 +711,7 @@ export const getContextMenuItems = async function (
       MediaType.ALBUM,
       MediaType.ARTIST,
       MediaType.AUDIOBOOK,
+      MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
@@ -754,7 +757,6 @@ export const getContextMenuItems = async function (
       icon: "mdi-bookshelf",
     });
   }
-
   // Favorites handling - supports mixed states like played/unplayed
   if (items.length > 0 && items.every((item) => "favorite" in item)) {
     const favoritableItems = items.filter(
@@ -763,6 +765,7 @@ export const getContextMenuItems = async function (
           MediaType.ALBUM,
           MediaType.ARTIST,
           MediaType.AUDIOBOOK,
+          MediaType.GENRE,
           MediaType.PLAYLIST,
           MediaType.PODCAST,
           MediaType.RADIO,
@@ -839,12 +842,14 @@ export const getContextMenuItems = async function (
     }
   }
 
-  // remove from playlist (playlist tracks and radio items)
+  // remove from playlist (playlist tracks, radio, podcast, podcast episode, and audiobook items)
   if (parentItem && parentItem.media_type === MediaType.PLAYLIST) {
     const playlist = parentItem as Playlist;
     if (
-      (items[0].media_type === MediaType.TRACK ||
-        items[0].media_type === MediaType.RADIO) &&
+      (firstItem.media_type === MediaType.TRACK ||
+        firstItem.media_type === MediaType.RADIO ||
+        firstItem.media_type === MediaType.PODCAST_EPISODE ||
+        firstItem.media_type === MediaType.AUDIOBOOK) &&
       playlist.is_editable
     ) {
       contextMenuItems.push({
@@ -860,11 +865,13 @@ export const getContextMenuItems = async function (
       });
     }
   }
-  // add to playlist action (tracks, albums, and radios)
+  // add to playlist action (tracks, albums, radios, podcasts, podcast episodes, and audiobooks)
   if (
-    items[0].media_type === MediaType.TRACK ||
-    items[0].media_type === MediaType.ALBUM ||
-    items[0].media_type === MediaType.RADIO
+    firstItem.media_type === MediaType.TRACK ||
+    firstItem.media_type === MediaType.ALBUM ||
+    firstItem.media_type === MediaType.RADIO ||
+    firstItem.media_type === MediaType.PODCAST_EPISODE ||
+    firstItem.media_type === MediaType.AUDIOBOOK
   ) {
     contextMenuItems.push({
       label: "add_playlist",

@@ -65,7 +65,7 @@
     },
     "players": "Plejeri",
     "playlist": "Plejlista",
-    "playlist_tracks": "Numere sa liste pesama",
+    "playlist_tracks": "Numere sa plejliste",
     "playlists": "Plejliste",
     "provider_details": "Detalji o provajderu",
     "queue": "Red za reprodukciju",
@@ -138,7 +138,7 @@
         "artists_in_library": "Izvođači u biblioteci",
         "albums_in_library": "Albumi u biblioteci",
         "tracks_in_library": "Numere u biblioteci",
-        "playlists_in_library": "Liste u biblioteci",
+        "playlists_in_library": "Plejliste u biblioteci",
         "radio_in_library": "Radio u biblioteci",
         "server_logging": "Evidencija servera",
         "download_log": "Preuzmite logove",
@@ -259,7 +259,7 @@
             }
         },
         "default_enqueue_action_playlist": {
-            "label": "Podrazumevana opcija redosleda za stavke liste za reprodukciju.",
+            "label": "Podrazumevana opcija redosleda za stavke na plejlisti.",
             "description": "Definišite podrazumevanu radnju u redu za ovaj tip medija (ako niste naveli radnju).",
             "options": {
                 "play": "Pustite numere sa liste za reprodukciju sada i zadržite preostale stavke u redu za reprodukciju.",
@@ -285,13 +285,17 @@
         "category": {
             "advanced": "Napredna podešavanja",
             "generic": "Generička podešavanja",
-            "announcements": "Konfiguracija objava",
+            "announcements": "Podešavanja objava",
             "airplay": "Airplay specifična podešavanja",
             "player_controls": "Kontrole plejera",
             "presets": "Unapred podešena podešavanja",
             "sync_options": "Opcije sinhronizacije\/uvoza",
-            "builtin_playlists": "Ugrađena podešavanja liste pesama",
-            "web_player": "Web plejer"
+            "builtin_playlists": "Ugrađena podešavanja plejliste",
+            "web_player": "Web plejer",
+            "playback": "Podešavanja reprodukcije",
+            "protocol_settings": "Podešavanja protokola",
+            "protocol_output_settings": "Omogući {0} podršku",
+            "dsp": "Digitalna obrada signala (DSP)"
         },
         "tts_pre_announce": {
             "label": "Prethodno najavite TTS objave",
@@ -363,7 +367,8 @@
                 "hu_HU": "Mađarski",
                 "it": "Italijanski",
                 "el_GR": "Grčki",
-                "lt_LT": "Litvanski"
+                "lt_LT": "Litvanski",
+                "lv_LV": "letonski"
             }
         },
         "no_music_providers": "Nijedan muzički provajder nije konfigurisan",
@@ -536,7 +541,7 @@
         "system_description": "Konfigurišite podešavanja Music Assistant servera i osnovne module",
         "system": "Sistem",
         "view_documentation": "Pregled dokumentacije",
-        "about": "Informacije",
+        "about": "O nama",
         "about_description": "Informacije o verziji, zasluge i još mnogo toga",
         "system_logging": "Dnevnik servera",
         "system_logging_description": "Pregled i preuzimanje dnevnika servera radi otklanjanja problema",
@@ -546,11 +551,11 @@
         "library_stats": "Statistika biblioteke",
         "links": "Linkovi",
         "changelog": "Dnevnik izmena",
-        "feature_requests": "Zahtevi za funkcionalnosti",
+        "feature_requests": "Zahtevi za nove funkcionalnosti",
         "bug_reports": "Izveštaji o greškama",
         "discussion_forums": "Forumi za diskusiju",
         "license": "Licenca",
-        "open_home_foundation": "Open Home Foundacija",
+        "open_home_foundation": "Open Home Fondacija",
         "proud_part_of": "Ponosni deo",
         "core_module": {
             "cache": {
@@ -570,7 +575,7 @@
                 "description": "Konfiguracija osnovnog modula za upravljanje plejerom"
             },
             "player_queues": {
-                "name": "Redovi plejera",
+                "name": "Redovi za reprodukciju plejera",
                 "description": "Konfiguracija osnovnog modula za upravljanje redom reprodukcije plejera"
             },
             "remote_access": {
@@ -590,14 +595,14 @@
         "remote_access_description": "Bezbedan pristup Music Assistant‑u sa bilo kog mesta",
         "remote_access_title": "Bezbedan udaljeni pristup",
         "remote_access_explanation_intro": "Udaljeni pristup omogućava sigurno povezivanje sa vašim Music Assistant serverom, gde god da se nalazite.",
-        "remote_access_explanation_ha_cloud": "Za optimalno iskustvo i stabilan rad potrebna je Home Assistant Cloud pretplata.",
+        "remote_access_explanation_ha_cloud": "Za najbolje iskustvo i pouzdanost, potrebna je Home Assistant Cloud pretplata.",
         "remote_access_feature_webrtc": "Bazirano na WebRTC tehnologiji za direktne veze između uređaja",
         "remote_access_feature_encrypted": "Šifrovano od kraja do kraja – vaši podaci ostaju privatni",
-        "remote_access_feature_no_port_forwarding": "Nije potrebno prosleđivanje portova niti VPN",
+        "remote_access_feature_no_port_forwarding": "Nije potrebno prosleđivanje portova ili VPN",
         "remote_access_mode_optimized": "Optimizovani režim (HA Cloud)",
         "remote_access_mode_basic": "Pokrenuto u osnovnom režimu",
         "remote_access_mode_optimized_description": "Korišćenje STUN\/TURN servera iz Home Assistant Cloud-a za optimalne performanse. Radi pouzdano u svim mrežnim konfiguracijama.",
-        "remote_access_mode_basic_description": "Javni STUN serveri – može biti problem u složenim mrežama. Pređite na HA Cloud za najbolje iskustvo.",
+        "remote_access_mode_basic_description": "Korišćenje javnih STUN servera. Ovo možda neće funkcionisati u složenim mrežnim podešavanjima. Nadogradite se na Home Assistant Cloud za najbolje iskustvo.",
         "remote_access_upgrade_to_optimized": "Nadogradi na Home Assistant Cloud",
         "remote_access_status": "Status udaljenog pristupa",
         "remote_access_enabled": "Udaljeni pristup je omogućen",
@@ -607,10 +612,10 @@
         "remote_access_your_id": "Vaš ID za udaljeni pristup",
         "remote_access_id_explanation": "Koristite ovaj jedinstveni ID da se povežete na svoj Music Assistant server sa udaljenih uređaja:",
         "remote_access_copy_id": "Kopiraj ID za udaljeni pristup",
-        "remote_access_id_copied": "Kako koristiti udaljeni pristup!",
+        "remote_access_id_copied": "ID udaljenog uređaja kopiran u međuspremnik!",
         "remote_access_how_to_use": "Kako koristiti udaljeni pristup",
         "remote_access_step_1": "Idi na",
-        "remote_access_step_2": "Unesite Remote Access ID na zahtev",
+        "remote_access_step_2": "Unesite svoj ID za udaljeni pristup kada se to zatraži",
         "remote_access_step_3": "Poveži se i uživaj u svojoj muzici bilo gde!",
         "remote_access_technical_details": "Tehnički detalji",
         "remote_access_connection_flow": "Dijagram toka veze",
@@ -618,19 +623,19 @@
         "remote_access_protocol": "Protokol povezivanja",
         "remote_access_encryption": "Šifrovanje",
         "remote_access_error_loading": "Nije uspelo učitavanje informacija o udaljenom pristupu",
-        "remote_access_error_toggle": "Nije uspelo prebacivanje daljinskog pristupa",
+        "remote_access_error_toggle": "Uključivanje\/isključivanje daljinskog pristupa nije uspelo",
         "remote_access_error_copy": "Neuspešno kopiranje udaljenog ID‑a",
         "remote_access_enabled_success": "Udaljeni pristup je omogućen",
         "remote_access_disabled_success": "Udaljeni pristup je onemogućen",
-        "remote_access_signaling_server_description": "Signalizacioni server u oblaku, koji hostuje Open Home Foundacija.",
-        "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
+        "remote_access_signaling_server_description": "Signalizacioni server u oblaku, koji hostuje Open Home fondacija.",
+        "remote_access_protocol_basic": "WebRTC sa javnim STUN serverima (možda neće raditi u složenim mrežnim podešavanjima).",
         "remote_access_protocol_optimized": "WebRTC sa optimizovanim STUN\/TURN serverima iz Home Assistant Cloud‑a (radi u svim mrežnim okruženjima).",
         "remote_access_encryption_description": "Šifrovanje od kraja do kraja pomoću DTLS‑SRTP protokola obezbeđuje da tvoji podaci ostanu privatni i sigurni.",
         "frontend": "Korisnički interfejs",
-        "players_count": "{0} plejer{1}",
+        "players_count": "{0} plejer {1}",
         "one_player": "1 plejer",
         "view_players": "Prikaži plejere",
-        "players_total": "{0} ukupno plejer{1}",
+        "players_total": "{0} ukupno plejer {1}",
         "api_docs": "API dokumentacija",
         "no_group_providers": "Trenutno nema dostupnih provajdera koji podržavaju kreiranje grupa.",
         "sendspin_sync_delay": {
@@ -643,9 +648,9 @@
         },
         "provider_codeowners": "Ovaj provajder je doprinos zajednice i održava ga…",
         "provider_credits": "Omogućeno od strane",
-        "onboarding_subtitle": "Hajde da počnemo povezivanjem vaših muzičkih izvora i audio uređaja.",
+        "onboarding_subtitle": "Hajde da počnemo tako što ćemo povezati vaše muzičke izvore i audio uređaje.",
         "onboarding_music_title": "Muzika",
-        "onboarding_music_desc": "Povežite svoje streaming servise kao što su Spotify, Tidal ili vaša lokalna muzička biblioteka.",
+        "onboarding_music_desc": "Povežite svoje streaming servise kao što su Spotify, Tidal ili vašu lokalnu muzičku biblioteku.",
         "onboarding_add_music": "Dodaj muziku",
         "onboarding_player_title": "Plejeri",
         "onboarding_player_desc": "Povežite svoje zvučnike i uređaje kao što su Sonos, Chromecast ili AirPlay.",
@@ -669,9 +674,23 @@
         },
         "enable_browser_controls": {
             "label": "Omogući medijske kontrole u pregledaču",
-            "description": "Dozvoli kontrolu reprodukcije pomoću ugrađenih medija kontrola u pregledaču (npr. medija tasteri na tastaturi)."
+            "description": "Dozvolite kontrolu reprodukcije pomoću ugrađenih medijskih kontrola pregledača (npr. medijskih tastera na vašoj tastaturi)."
         },
-        "settings_saved": "Podešavanja su uspešno sačuvana"
+        "settings_saved": "Podešavanja su uspešno sačuvana",
+        "protocol_disabled_message": "Omogućite ovaj protokol da biste konfigurisali njegova podešavanja",
+        "protocol_no_settings": "Ovaj izlazni protokol nema nikakvu dodatnu konfiguraciju",
+        "protocol_no_settings_with_advanced": "Nema vidljivih podešavanja. Omogućite napredna podešavanja da biste videli više opcija konfiguracije.",
+        "show_advanced_settings": "Prikaži napredna podešavanja",
+        "advanced": "Napredno",
+        "mobile_sidebar_side": {
+            "label": "Bočna traka za mobilne uređaje",
+            "description": "Sa koje strane se otvara meni za navigaciju (tabela) na mobilnom uređaju. Podrazumevana je leva strana.",
+            "options": {
+                "left": "Levo",
+                "right": "Desno"
+            }
+        },
+        "add_group_player_desc_sync": "Kreirajte trajnu SyncGroup sa plejeriima koji su kompatibilni za sinhronizaciju. Kada reprodukujete na ovu grupu plejera, plejeri članovi će biti automatski sinhronizovani."
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži okvire za izbor",
@@ -889,7 +908,7 @@
         "recent_favorite_tracks": "Nedavno dodate numere u omiljene",
         "favorite_playlists": "Omiljene plejliste",
         "favorite_radio_stations": "Omiljene radio stanice",
-        "listen_again": "Preslušaj ponovo",
+        "listen_again": "Slušaj ponovo",
         "in_progress_series": "Nastavi seriju...",
         "recommended": "Preporučeno",
         "recently_added": "Nedavno dodato",
@@ -908,7 +927,7 @@
     "radiobrowser_by_votes": "Po glasovima",
     "radiobrowser_by_clicks": "Po kliku",
     "radiobrowser_by_language": "Po jeziku",
-    "optional": "Opcionalno",
+    "optional": "Opciono",
     "created": "Kreirano",
     "last_used": "Poslednje korišćeno",
     "create": "Kreiraj",
@@ -1067,7 +1086,7 @@
         "qr_camera_error": "Nije moguće pristupiti kameri. Proverite dozvole."
     },
     "remote": {
-        "connect_title": "Povežite se sa svojim serverom",
+        "connect_title": "Poveži se sa svojim serverom",
         "subtitle": "Pristupite svom kućnom serveru sa bilo kog mesta",
         "subtitle_login": "Prijavite se da biste pristupili svojoj muzici",
         "remote_id": "Udaljeni ID",
@@ -1096,7 +1115,7 @@
         "or": "ili",
         "subtitle_oauth": "Dovršite prijavu u pregledaču",
         "oauth_waiting_title": "Dovršite prijavu",
-        "oauth_waiting_message": "Otvoren je prozor pregledača. Molimo prijavite se na Home Assistant, a zatim se vratite ovde.",
+        "oauth_waiting_message": "Otvoren je prozor pregledača. Prijavite se na Home Assistant, a zatim se vratite ovde.",
         "oauth_waiting_hint": "Čekanje na autentifikaciju...",
         "error_oauth_failed": "Nije uspela autentifikacija sa Home Assistant‑om."
     },
@@ -1121,5 +1140,13 @@
     "collections": "Kolekcije",
     "narrators": "Naratori",
     "series_plural": "Serije",
-    "series_singular": "Serije"
+    "series_singular": "Serije",
+    "queue_move_end": "Pomeri na kraj",
+    "discover": "Otkrij",
+    "save_queue_as_playlist": "Sačuvaj red za reprodukciju kao plejlistu",
+    "playlist_created": "Plejlista je napravljena",
+    "open_playlist": "Otvori plejlistu",
+    "add": "Dodaj",
+    "add_alias": "Dodaj alias",
+    "add_genre": "Dodaj žanr"
 }
