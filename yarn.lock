@@ -1829,13 +1829,6 @@
   resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
   integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
 
-"@music-assistant/sendspin-js@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@music-assistant/sendspin-js/-/sendspin-js-2.0.0.tgz#23eb9bfb9f420ae22273fef0009a171924198710"
-  integrity sha512-yx9czSCUx5E95rXJJ5qtfShr3E6rcLm+c/Iv/sCWmaDHtAyxYrOnWnbqaQvpWydnQfaUKORo7PQaMXC1YeQr3w==
-  dependencies:
-    opus-encdec "^0.1.1"
-
 "@napi-rs/wasm-runtime@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@napi-rs/wasm-runtime/-/wasm-runtime-1.1.1.tgz#c3705ab549d176b8dc5172723d6156c3dc426af2"
@@ -2132,6 +2125,13 @@
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-2.0.0.tgz#ba6371fddf92c2727e88ad6ab485db6e624f9a98"
   integrity sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==
+
+"@sendspin/sendspin-js@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@sendspin/sendspin-js/-/sendspin-js-2.0.1.tgz#9212dae65dc239ce5e60cd0712d96ee84fc75622"
+  integrity sha512-Q9kIwcjVuU+6VZ8vPhqBB5Ijfw47Ec03XI3Z8qj6cWId7IEb9Sywe1dtjHUKsdHaRZ5M27l/X2MErCg867ydYQ==
+  dependencies:
+    opus-encdec "^0.1.1"
 
 "@surma/rollup-plugin-off-main-thread@^2.2.3":
   version "2.2.3"
@@ -3010,8 +3010,8 @@
   integrity sha512-tpjzVl7KCQNVd/qcaCE9XbejL38V6KJAEq/tVXj7mDPtl6JtzmUdnXelSS+ULRkkrDgzYVK7EerQJvd2jR794Q==
   dependencies:
     "@types/web-bluetooth" "^0.0.21"
-    "@vueuse/metadata" "14.2.1"
-    "@vueuse/shared" "14.2.1"
+    "@vueuse/metadata" "14.2.0"
+    "@vueuse/shared" "14.2.0"
 
 "@vueuse/core@^14.2.0":
   version "14.2.1"
@@ -3032,11 +3032,6 @@
   resolved "https://registry.yarnpkg.com/@vueuse/metadata/-/metadata-14.2.1.tgz#bd3338a565c2f651b9d18ac0f8825aa6077ee461"
   integrity sha512-1ButlVtj5Sb/HDtIy1HFr1VqCP4G6Ypqt5MAo0lCgjokrk2mvQKsK2uuy0vqu/Ks+sHfuHo0B9Y9jn9xKdjZsw==
 
-"@vueuse/metadata@14.2.1":
-  version "14.2.1"
-  resolved "https://registry.yarnpkg.com/@vueuse/metadata/-/metadata-14.2.1.tgz#bd3338a565c2f651b9d18ac0f8825aa6077ee461"
-  integrity sha512-1ButlVtj5Sb/HDtIy1HFr1VqCP4G6Ypqt5MAo0lCgjokrk2mvQKsK2uuy0vqu/Ks+sHfuHo0B9Y9jn9xKdjZsw==
-
 "@vueuse/shared@10.11.1":
   version "10.11.1"
   resolved "https://registry.yarnpkg.com/@vueuse/shared/-/shared-10.11.1.tgz#62b84e3118ae6e1f3ff38f4fbe71b0c5d0f10938"
@@ -3045,11 +3040,6 @@
     vue-demi ">=0.14.8"
 
 "@vueuse/shared@14.2.1", "@vueuse/shared@^14.1.0":
-  version "14.2.1"
-  resolved "https://registry.yarnpkg.com/@vueuse/shared/-/shared-14.2.1.tgz#829a271147937f6b105bb1422d3171e6142f47ba"
-  integrity sha512-shTJncjV9JTI4oVNyF1FQonetYAiTBd+Qj7cY89SWbXSkx7gyhrgtEdF2ZAVWS1S3SHlaROO6F2IesJxQEkZBw==
-
-"@vueuse/shared@14.2.1":
   version "14.2.1"
   resolved "https://registry.yarnpkg.com/@vueuse/shared/-/shared-14.2.1.tgz#829a271147937f6b105bb1422d3171e6142f47ba"
   integrity sha512-shTJncjV9JTI4oVNyF1FQonetYAiTBd+Qj7cY89SWbXSkx7gyhrgtEdF2ZAVWS1S3SHlaROO6F2IesJxQEkZBw==
