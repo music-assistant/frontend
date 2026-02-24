@@ -299,9 +299,7 @@
                     </template>
                     <template #append>
                       <span
-                        v-if="
-                          item.extra_attributes?.party_mode_guest === true
-                        "
+                        v-if="item.extra_attributes?.party_mode_guest === true"
                         class="guest-request-badge"
                         :style="{
                           '--badge-color':

@@ -53,21 +53,22 @@
           <span class="menuButton">{{ $t("players") }}</span>
         </v-btn>
       </template>
-      </ActivePlayerPopover>
+    </ActivePlayerPopover>
 
-      <v-list>
-        <v-list-item
-          v-for="menuItem of menuItems.filter((x) => x.isLibraryNode && !x.hidden)"
-          :key="menuItem.label"
-          :title="$t(menuItem.label)"
-          :to="menuItem.path"
-        >
-          <template #prepend>
-            <component :is="menuItem.icon" class="w-5 h-5 mr-3" />
-          </template>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+    <v-list>
+      <v-list-item
+        v-for="menuItem of menuItems.filter(
+          (x) => x.isLibraryNode && !x.hidden,
+        )"
+        :key="menuItem.label"
+        :title="$t(menuItem.label)"
+        :to="menuItem.path"
+      >
+        <template #prepend>
+          <component :is="menuItem.icon" class="w-5 h-5 mr-3" />
+        </template>
+      </v-list-item>
+    </v-list>
   </v-bottom-navigation>
 </template>
 
@@ -75,8 +76,10 @@
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Home, Menu, Speaker } from "lucide-vue-next";
-import { computed, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
+import { computed } from "vue";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
+import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
 export interface Props {

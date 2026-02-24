@@ -13,16 +13,15 @@
         z-index: 999;
       `"
     ></div>
-  
-  <!-- bottom navigation for mobile layout -->
-  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation
-    v-if="store.mobileLayout"
-    app
-    :style="
-      store.isInPWAMode ? 'padding-bottom: 10px;height: 70px;' : 'height: 60px;'
-    "
-  />
+
+    <!-- bottom navigation for mobile layout -->
+    <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
+    <BottomNavigation
+      v-if="store.mobileLayout"
+      app
+      :height="store.isInPWAMode ? 70 : 60"
+      :padding="store.isInPWAMode ? 10 : 0"
+    />
 
     <v-footer
       app
@@ -33,7 +32,7 @@
           : 'mediacontrols-player-default'
       }`"
       :style="store.isInPWAMode ? 'margin-bottom: 10px;' : ''"
-  >
+    >
       <Player :use-floating-player="store.mobileLayout" />
     </v-footer>
   </template>
@@ -73,14 +72,6 @@ watch(
 // Hide footer when on party view and controls are disabled
 const hideFooter = computed(() => {
   return route.path === "/party" && !partyModeShowControls.value;
-});
-
-const bottomNavHeight = computed(() => {
-  if (store.isInPWAMode) {
-    // for iOS standalone we need extra padding at the bottom due to the apphandle
-    return 100;
-  }
-  return 80;
 });
 </script>
 
