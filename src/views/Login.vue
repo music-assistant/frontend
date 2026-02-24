@@ -680,7 +680,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       access_token?: string;
       user?: { user_id: string; username: string; role: string };
       error?: string;
-    }>("auth/code", { code: code.toUpperCase() });
+    }>("auth/join_code/exchange", { code: code.toUpperCase() });
 
     if (!result.success || !result.access_token) {
       console.error("[Login] Guest code exchange failed:", result.error);
