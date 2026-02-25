@@ -172,6 +172,25 @@ export const getGenreDisplayName = function (
   return toSentenceCase(name);
 };
 
+export const getGenreDescription = function (
+  name: string,
+  translationKey: string | undefined,
+  t: (key: string) => string,
+  te: (key: string) => boolean,
+): string {
+  // First try the translation key with genre_descriptions prefix
+  if (translationKey) {
+    const keyWithPrefix = `genre_descriptions.${translationKey}`;
+    if (te(keyWithPrefix)) return t(keyWithPrefix);
+  }
+
+  // Fallback: generate key from name
+  const key = `genre_descriptions.${genreKeyFromName(name)}`;
+  if (te(key)) return t(key);
+
+  return "";
+};
+
 export const getArtistsString = function (
   artists: Array<Artist | ItemMapping>,
   size?: number,

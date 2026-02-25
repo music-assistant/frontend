@@ -322,7 +322,7 @@
                   isAdmin
                 "
                 :size="22"
-                class="cursor-pointer"
+                class="cursor-pointer -ml-1"
                 :title="$t('merge_into')"
                 @click="mergeGenre"
               />
@@ -334,7 +334,7 @@
                   isAdmin
                 "
                 :size="22"
-                class="cursor-pointer"
+                class="cursor-pointer ml-2"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
               />
@@ -407,6 +407,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getGenreDescription,
   getGenreDisplayName,
   getImageThumbForItem,
   handleMediaItemClick,
@@ -562,6 +563,13 @@ const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
+  } else if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDescription(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
   } else if ("artists" in compProps.item) {
