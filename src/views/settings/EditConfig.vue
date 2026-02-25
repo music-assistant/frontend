@@ -486,6 +486,7 @@ import { $t } from "@/plugins/i18n";
 import { HelpCircle } from "lucide-vue-next";
 import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -493,7 +494,7 @@ const showUnsavedDialog = ref(false);
 const allowNavigation = ref(false);
 
 export interface Props {
-  configEntries: ConfigEntry[];
+  configEntries: ConfigEntryUI[];
   disabled: boolean;
 }
 
@@ -504,14 +505,14 @@ const emit = defineEmits<{
 }>();
 
 // global refs
-const entries = ref<ConfigEntry[]>();
+const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<VNodeRef>();
 const activePanel = ref<string[]>([]);
 const activeProtocolPanel = ref<string | undefined>(undefined);
 const showPasswordValues = ref(false);
 const showAdvancedSettings = ref(false);
-const showHelpInfo = ref<ConfigEntry>();
+const showHelpInfo = ref<ConfigEntryUI>();
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
 
@@ -573,7 +574,8 @@ const hasUnsavedChanges = computed(() => {
       entry.type == ConfigEntryType.DIVIDER ||
       entry.type == ConfigEntryType.LABEL ||
       entry.type == ConfigEntryType.ALERT ||
-      entry.type == ConfigEntryType.ACTION
+      entry.type == ConfigEntryType.ACTION ||
+      isInjected(entry)
     ) {
       continue;
     }
@@ -611,7 +613,7 @@ const getProtocolDomain = function (category: string): string | undefined {
 
 const getProtocolEnabledEntry = function (
   category: string,
-): ConfigEntry | undefined {
+): ConfigEntryUI | undefined {
   if (!isProtocolCategory(category) || !entries.value) return undefined;
 
   // Look for an entry in this category with a key ending in "||protocol||enabled"
@@ -700,7 +702,7 @@ const action = async function (action: string) {
   emit("action", action, getCurrentValues());
 };
 
-const onValueUpdate = function (entry: ConfigEntry, value: ConfigValueType) {
+const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
   // If immediate_apply is set, emit the value change immediately
   if (entry.immediate_apply) {
@@ -777,11 +779,11 @@ const isNullOrUndefined = function (value: unknown) {
   return value === null || value === undefined;
 };
 
-const isVisible = function (entry: ConfigEntry) {
+const isVisible = function (entry: ConfigEntryUI) {
   return !entry.hidden;
 };
 
-const isDisabled = function (entry: ConfigEntry) {
+const isDisabled = function (entry: ConfigEntryUI) {
   if (!isNullOrUndefined(entry.depends_on)) {
     const dependentEntry = entries.value?.find(
       (x) => x.key == entry.depends_on,
@@ -804,7 +806,7 @@ const isDisabled = function (entry: ConfigEntry) {
 };
 
 const visibleEntriesByCategory = computed(() => {
-  const result: Record<string, ConfigEntry[]> = {};
+  const result: Record<string, ConfigEntryUI[]> = {};
   if (!entries.value) return result;
 
   for (const entry of entries.value) {
@@ -835,7 +837,7 @@ const getCategoryTranslation = function (category: string) {
   const entriesInCategory = entriesForCategory(category);
 
   // For protocol categories with no visible entries, check all entries (including enabled entry)
-  let entryWithTranslation: ConfigEntry | undefined = entriesInCategory[0];
+  let entryWithTranslation: ConfigEntryUI | undefined = entriesInCategory[0];
   if (!entryWithTranslation && isProtocolCategory(category) && entries.value) {
     entryWithTranslation = entries.value.find((e) => e.category === category);
   }
@@ -864,6 +866,7 @@ const getCurrentValues = function () {
   // Note: entries.value contains the same object references as props.configEntries
   // (pushed in the watch), so user modifications via the form update both
   for (const entry of props.configEntries!) {
+    if (isInjected(entry)) continue;
     let value = entry.value;
     // filter out undefined values
     if (value == undefined) value = null;
@@ -906,7 +909,7 @@ const getCategoryIcon = function (category: string): string {
   return iconMap[category] || "mdi-cog-outline";
 };
 
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntry) {
+const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   // overly complicated way to determine we have a description for the entry
   // in either the translations (by entry key), on the entry itself as fallback
   // OR it has a help link

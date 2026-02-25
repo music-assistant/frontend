@@ -9,12 +9,9 @@ import {
   ListMusic,
   Music2,
   Podcast,
-  Compass,
   Radio,
   Search,
   Settings,
-  LayoutGrid,
-  Sparkles,
   Tag,
 } from "lucide-vue-next";
 import { Component } from "vue";

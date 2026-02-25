@@ -84,7 +84,6 @@ export class MusicAssistantApi {
     {},
   );
   public syncTasks = ref<SyncTask[]>([]);
-  public fetchesInProgress = ref<string[]>([]);
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -911,6 +910,7 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
+    hide_empty?: boolean,
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", {
       favorite,
@@ -920,6 +920,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      hide_empty,
     });
   }
 
@@ -1000,6 +1001,16 @@ export class MusicAssistantApi {
     return this.sendCommand("music/genres/genres_for_media_item", {
       media_type,
       media_id,
+    });
+  }
+
+  public mergeGenres(
+    genre_ids: string[],
+    target_genre_id: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/merge", {
+      genre_ids,
+      target_genre_id,
     });
   }
 
@@ -1956,6 +1967,9 @@ export class MusicAssistantApi {
       delete this.queues[msg.object_id!];
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
+    } else if (msg.event == EventType.CORE_STATE_UPDATED) {
+      // Update serverInfo with the new server state
+      this.serverInfo.value = msg.data as ServerInfoMessage;
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
       // Clear and repopulate the existing reactive object to preserve reactivity
       Object.keys(this.providers).forEach((key) => delete this.providers[key]);
@@ -2011,10 +2025,6 @@ export class MusicAssistantApi {
     }
 
     this.commands.delete(msg.message_id);
-    this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
-      (x) => x != msg.message_id,
-    );
-
     if ("error_code" in msg) {
       resultPromise.reject(msg.details || msg.error_code);
     } else {
@@ -2458,7 +2468,6 @@ export class MusicAssistantApi {
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, { resolve, reject });
-      this.fetchesInProgress.value.push(cmdId);
       this._sendCommand(command, args, cmdId);
     });
   }

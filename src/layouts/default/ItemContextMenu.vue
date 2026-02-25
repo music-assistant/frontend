@@ -16,7 +16,7 @@
       }
     "
   >
-    <v-card min-width="300">
+    <v-card min-width="300" max-height="450" style="overflow-y: auto">
       <v-list density="compact" slim tile>
         <!-- play menu header -->
         <v-list-item
@@ -236,7 +236,6 @@ import {
   Album,
   BrowseFolder,
   EventType,
-  MediaItem,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -247,6 +246,7 @@ import {
   QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 
 import type { Component } from "vue";
@@ -981,6 +981,46 @@ export const getContextMenuItems = async function (
         });
       },
       icon: "mdi-link",
+    });
+  }
+  // merge genres (admin only, all items must be library genres)
+  if (
+    items.every(
+      (i) => i.media_type === MediaType.GENRE && i.provider === "library",
+    ) &&
+    authManager.isAdmin()
+  ) {
+    contextMenuItems.push({
+      label: "merge_into",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("mergeGenreDialog", {
+          genreIds: items.map((i) => i.item_id),
+          genreNames: items.map((i) => i.name),
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-merge",
+    });
+  }
+  // delete genre(s) (admin only, all items must be library genres)
+  if (
+    items.every(
+      (i) => i.media_type === MediaType.GENRE && i.provider === "library",
+    ) &&
+    authManager.isAdmin()
+  ) {
+    contextMenuItems.push({
+      label: "delete_genre",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("deleteGenreDialog", {
+          genreIds: items.map((i) => i.item_id),
+          navigateBack: items.length === 1 && items[0] === parentItem,
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-delete",
     });
   }
   return contextMenuItems;

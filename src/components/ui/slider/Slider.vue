@@ -9,8 +9,8 @@ import {
   SliderTrack,
   useForwardPropsEmits,
 } from "reka-ui";
-import { computed } from "vue";
 import type { HTMLAttributes } from "vue";
+import { computed } from "vue";
 
 const props = defineProps<
   SliderRootProps & { class?: HTMLAttributes["class"] }
@@ -53,7 +53,7 @@ const forwarded = computed(() => ({
       v-for="(_, key) in modelValue"
       :key="key"
       data-slot="slider-thumb"
-      class="grid place-items-center bg-transparent size-[24px] shrink-0 rounded-full transition-[color,box-shadow] focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 before:block before:size-[10px] before:rounded-full before:bg-[_rgb(var(--v-theme-surface-variant))] before:shadow-[0_1px_3px_rgba(0,0,0,0.35)] hover:before:shadow-[0_0_0_5px_rgba(var(--v-theme-surface-variant),0.05)]"
+      class="grid place-items-center bg-transparent size-[32px] shrink-0 rounded-full transition-[color,box-shadow] focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 before:block before:size-[10px] before:rounded-full before:bg-[_rgb(var(--v-theme-surface-variant))] before:shadow-[0_1px_3px_rgba(0,0,0,0.35)] hover:before:shadow-[0_0_0_5px_rgba(var(--v-theme-surface-variant),0.05)]"
     />
   </SliderRoot>
 </template>

@@ -217,6 +217,7 @@
         icon
         variant="text"
         size="small"
+        :disabled="disablePlayButton"
         @click.stop="onPlayClick"
       >
         <v-icon size="24">mdi-play-circle-outline</v-icon>
@@ -273,6 +274,7 @@ export interface Props {
   showCheckboxes?: boolean;
   showDetails?: boolean;
   showPlayButton?: boolean;
+  disablePlayButton?: boolean;
   parentItem?: MediaItemType;
 }
 
@@ -302,6 +304,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showDuration: true,
   showCheckboxes: false,
   showPlayButton: undefined,
+  disablePlayButton: false,
   isDisabled: false,
   isAvailable: true,
   parentItem: undefined,

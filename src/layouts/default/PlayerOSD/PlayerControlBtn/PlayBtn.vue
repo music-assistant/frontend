@@ -3,10 +3,18 @@
   <Icon
     v-if="isVisible && player"
     v-bind="icon"
-    :disabled="!canPlayPause"
+    class="play-btn-icon"
+    :disabled="!canPlayPause || isLoading"
     :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
     variant="button"
     @click="api.playerCommandPlayPause(player.player_id)"
+  />
+  <v-progress-circular
+    v-if="isVisible && player && isLoading"
+    class="play-btn-spinner"
+    indeterminate
+    :size="46"
+    :width="2"
   />
 </template>
 
@@ -63,4 +71,26 @@ const baseIcon = computed(() => {
   }
   return "mdi-play";
 });
+
+const isLoading = computed(() => {
+  if (!compProps.player) return false;
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
+});
 </script>
+
+<style>
+.play-btn-icon {
+  position: relative;
+}
+
+.play-btn-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+</style>

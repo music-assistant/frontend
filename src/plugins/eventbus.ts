@@ -21,10 +21,22 @@ export type CreatePlaylistEvent = {
   providerId?: string;
 };
 
+export type MergeGenreDialogEvent = {
+  genreIds: string[];
+  genreNames: string[];
+};
+
+export type DeleteGenreDialogEvent = {
+  genreIds: string[];
+  navigateBack?: boolean;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
   createPlaylist: CreatePlaylistEvent;
+  mergeGenreDialog: MergeGenreDialogEvent;
+  deleteGenreDialog: DeleteGenreDialogEvent;
   clearSelection: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;

@@ -10,6 +10,7 @@
     :title="$t('albums')"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :show-genre-filter="true"
     :icon="Disc3"
     :restore-state="true"
     :total="total"

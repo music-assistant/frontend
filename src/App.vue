@@ -33,6 +33,8 @@
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
+import { CoreState, EventType } from "@/plugins/api/interfaces";
+import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
@@ -183,7 +185,14 @@ const handleLocalConnect = async (serverAddress: string) => {
   isConnected.value = true;
 };
 
+let initializationCompleted = false;
+
 const completeInitialization = async () => {
+  // Guard against multiple initializations
+  if (initializationCompleted) {
+    return;
+  }
+
   const serverInfo = api.serverInfo.value;
   if (!serverInfo) {
     console.error("[App] No server info received");
@@ -262,11 +271,52 @@ const completeInitialization = async () => {
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/home"
   api.state.value = ConnectionState.INITIALIZED;
+  initializationCompleted = true;
 
   // Initialize companion app integration
   if (api.baseUrl) {
     initializeCompanionIntegration(api.baseUrl);
   }
+
+  // Helper function to show server state notifications
+  let startingToastId: string | number | undefined;
+  const showServerStateToast = (status: CoreState | undefined) => {
+    // Dismiss the starting toast if server is now running
+    if (status === CoreState.RUNNING && startingToastId) {
+      toast.dismiss(startingToastId);
+      startingToastId = undefined;
+      return;
+    }
+
+    if (status && status !== CoreState.RUNNING) {
+      const { t } = i18n.global;
+      if (status === CoreState.STARTING) {
+        // Dismiss any existing starting toast before showing a new one
+        if (startingToastId) {
+          toast.dismiss(startingToastId);
+        }
+        startingToastId = toast.info(t("server_state.starting"), {
+          duration: Infinity,
+        });
+      } else if (status === CoreState.STOPPING) {
+        toast.warning(t("server_state.stopping"), { duration: 5000 });
+      } else if (status === CoreState.STOPPED) {
+        toast.warning(t("server_state.stopped"), { duration: 5000 });
+      }
+    }
+  };
+
+  // Check initial server state
+  const initialStatus = api.serverInfo.value?.status;
+  showServerStateToast(initialStatus);
+
+  // Subscribe to core state updates to show notifications
+  api.subscribe(
+    EventType.CORE_STATE_UPDATED,
+    (event: { data: { status: CoreState } }) => {
+      showServerStateToast(event.data?.status);
+    },
+  );
 };
 
 onMounted(async () => {
@@ -300,6 +350,9 @@ onMounted(async () => {
         newState === ConnectionState.CONNECTED &&
         oldState === ConnectionState.RECONNECTING
       ) {
+        // Reset initialization flag to allow re-initialization after reconnection
+        initializationCompleted = false;
+
         const { authManager } = await import("@/plugins/auth");
         // Check if we're in Ingress mode by examining the URL path
         const isIngressMode =

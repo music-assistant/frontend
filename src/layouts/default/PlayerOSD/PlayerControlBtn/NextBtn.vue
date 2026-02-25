@@ -3,7 +3,7 @@
   <Icon
     v-if="isVisible && player"
     v-bind="icon"
-    :disabled="!canNext"
+    :disabled="!canNext || isLoading"
     icon="mdi-skip-next-outline"
     variant="button"
     @click="api.playerCommandNext(player.player_id)"
@@ -55,5 +55,12 @@ const canNext = computed(() => {
   }
   // Fall back to queue or player capabilities
   return queueHasNext.value || playerHasNext.value;
+});
+
+const isLoading = computed(() => {
+  if (!compProps.player) return false;
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
 });
 </script>

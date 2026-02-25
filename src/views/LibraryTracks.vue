@@ -11,6 +11,7 @@
     :update-available="updateAvailable"
     :title="$t('tracks')"
     :show-search-button="true"
+    :show-genre-filter="true"
     :allow-key-hooks="true"
     :extra-menu-items="[
       {

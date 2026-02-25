@@ -45,9 +45,7 @@
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
         <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
-          <span>{{
-            getPlayerName(player, store.deviceType == "phone" ? 10 : 16)
-          }}</span>
+          <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
           <v-chip density="compact" size="small" class="ml-2" outlined>
             <v-icon
@@ -55,9 +53,10 @@
               :icon="
                 store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
               "
-              style="margin-right: 6px"
             />
-            {{ $t("this_device") }}
+            <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
+              $t("this_device")
+            }}</span>
           </v-chip>
         </div>
         <!-- regular player -->
@@ -120,13 +119,27 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :disabled="
+            api.queues[player.player_id]?.extra_attributes
+              ?.play_action_in_progress === true
+          "
           @click.stop="
             api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
+          <v-progress-circular
+            v-if="
+              api.queues[player.player_id]?.extra_attributes
+                ?.play_action_in_progress === true
+            "
+            indeterminate
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            :width="2"
+          />
           <component
             :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
+            v-else
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
@@ -334,6 +347,14 @@ watch(
   min-height: 60px;
 }
 
+.panel-item-details :deep(.v-list-item__spacer) {
+  width: 10px;
+}
+
+.player-media-thumb {
+  margin-right: 0px;
+}
+
 .volumesliderrow {
   margin-top: 0px;
   padding-top: 0px;
@@ -354,10 +375,6 @@ watch(
 }
 .volumesliderrow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
-}
-
-.player-media-thumb {
-  margin-right: 10px;
 }
 
 .media-thumb {

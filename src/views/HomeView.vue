@@ -1,7 +1,6 @@
 <template>
   <div>
     <Toolbar
-      :show-loading="true"
       :home="true"
       :icon="House"
       color="background"
