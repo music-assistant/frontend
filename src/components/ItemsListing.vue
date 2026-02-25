@@ -744,10 +744,9 @@ const currentCount = computed(() => {
   return props.total ?? allItems.value.length;
 });
 
-const inlineSearchCountLabel = computed(() => {
-  const n = currentCount.value;
-  return `${n} ${n === 1 ? "item" : "items"}`;
-});
+const inlineSearchCountLabel = computed(() =>
+  t("items_total", [currentCount.value]),
+);
 
 const isSearchActive = computed(() => {
   var searchActive = false;
@@ -1357,7 +1356,7 @@ const loadGenreOptions = async () => {
     const genres = await api.getLibraryGenres(
       undefined,
       undefined,
-      500,
+      150,
       0,
       "name",
     );
@@ -1397,7 +1396,6 @@ onMounted(async () => {
     loadData(true);
   }
 
-  applyQueryGenreFilter();
   syncSelectedGenresFromParams();
   await loadGenreOptions();
 
