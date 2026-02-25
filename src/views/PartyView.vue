@@ -1,7 +1,11 @@
 <template>
-  <div class="party-view" :style="backgroundStyle">
-    <!-- Dark overlay when using album art background for better text readability -->
-    <div v-if="useAlbumArtBackground" class="background-overlay"></div>
+  <div class="party-view" :style="gradientBackgroundStyle">
+    <!-- Blurred album art background: separate element so the browser can cache the texture -->
+    <div
+      v-if="useAlbumArtBackground && albumArtUrl"
+      class="background-image"
+      :style="{ backgroundImage: `url(${albumArtUrl})` }"
+    ></div>
     <div class="party-content">
       <!-- QR Code -->
       <div class="qr-section">
@@ -254,44 +258,36 @@ watch(
   { immediate: true },
 );
 
-const backgroundStyle = computed(() => {
-  // If album art background is enabled, use the image directly
-  if (useAlbumArtBackground.value && store.curQueueItem?.image) {
-    const imageUrl = getMediaItemImageUrl(store.curQueueItem.image);
-    if (imageUrl) {
-      return {
-        backgroundImage: `url(${imageUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        transition: "background 0.8s ease-in-out",
-      };
-    }
+// Album art URL for the blurred background element
+const albumArtUrl = computed(() => {
+  if (!store.curQueueItem?.image) return "";
+  return getMediaItemImageUrl(store.curQueueItem.image) || "";
+});
+
+// Gradient background style (used when album art is disabled, or as fallback)
+const gradientBackgroundStyle = computed(() => {
+  // When using album art, the .background-image element handles visuals
+  if (useAlbumArtBackground.value && albumArtUrl.value) {
+    return {};
   }
 
-  // Otherwise use color gradient (default behavior)
   const LIGHT_TEXT_COLOR = Color("white");
   const DARK_TEXT_COLOR = Color("black");
   const MIN_CONTRAST = 5;
   const ADJUSTMENT_INCREMENT = 0.05;
 
-  // Determine the base color from palette or fallback to theme default
   const coverImageColorCode = theme.current.value.dark
     ? colorPalette.value.darkColor || "#1a1a1a"
     : colorPalette.value.lightColor || "#f5f5f5";
 
-  // Start with the original cover color as background
   let bgColor = Color(coverImageColorCode);
 
-  // Calculate contrast with white and black
   const lightContrast = LIGHT_TEXT_COLOR.contrast(bgColor);
   const darkContrast = DARK_TEXT_COLOR.contrast(bgColor);
 
-  // Choose the color with higher contrast as starting value
   const isLight = lightContrast >= darkContrast;
   let contrast = Math.max(lightContrast, darkContrast);
 
-  // If the best contrast still doesn't meet requirements, adjust background
   if (contrast < MIN_CONTRAST) {
     let adjustment = ADJUSTMENT_INCREMENT;
 
@@ -309,7 +305,6 @@ const backgroundStyle = computed(() => {
     }
   }
 
-  // Apply gradient for visual interest
   return {
     background: `linear-gradient(135deg, ${bgColor.hex()} 0%, ${bgColor.darken(0.2).hex()} 100%)`,
     transition: "background 0.8s ease-in-out",
@@ -434,15 +429,18 @@ watch(
   justify-content: center;
 }
 
-.background-overlay {
+.background-image {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2vw);
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(2vw) brightness(0.5);
   z-index: 0;
+  transition: background-image 0.8s ease-in-out;
 }
 
 .party-content {
