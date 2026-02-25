@@ -709,6 +709,7 @@
         "total_genres": "Total Genres",
         "view_all_genres": "View All Genres",
         "background_scanner": "Background Scanner",
+        "error_loading_genres": "Error loading genres",
         "background_scanner_description": "Automatically maps tracks, albums, and artists to genres.",
         "scanner_status": "Scanner Status",
         "scanner_running": "Running...",

@@ -248,7 +248,8 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -287,6 +288,7 @@ export interface Props {
   title?: string;
   hideOnEmpty?: boolean;
   showLibraryOnlyFilter?: boolean;
+  showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
@@ -325,6 +327,7 @@ const props = withDefaults(defineProps<Props>(), {
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
+  showGenreFilter: false,
   showHideEmptyFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
@@ -365,6 +368,7 @@ const expanded = ref(true);
 const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
+const genreOptions = ref<{ label: string; value: number }[]>([]);
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -480,6 +484,44 @@ const toggleHideEmptyFilter = function () {
     params.value.hideEmptyFilter,
   );
   loadData(undefined, undefined, true);
+};
+
+const toggleGenreFilter = function (genreId: number) {
+  // normalize current ids to an array
+  const current = params.value.genreIds;
+  let ids: number[] = [];
+  if (Array.isArray(current)) {
+    ids = [...current];
+  } else if (typeof current === "number") {
+    ids = [current];
+  }
+
+  if (ids.includes(genreId)) {
+    ids = ids.filter((id) => id !== genreId);
+  } else {
+    ids.push(genreId);
+  }
+
+  if (ids.length === 0) {
+    params.value.genreIds = undefined;
+  } else if (ids.length === 1) {
+    params.value.genreIds = ids[0];
+  } else {
+    params.value.genreIds = ids;
+  }
+
+  // keep URL in sync so back/refresh preserves filters
+  const query = { ...route.query };
+  if (ids.length) {
+    query.genre_ids = ids.join(",");
+  } else {
+    delete query.genre_ids;
+    delete query.genre_id;
+  }
+  router.replace({ query });
+
+  // reload with updated filters
+  loadData(true, undefined, true);
 };
 
 const isSelected = function (item: MediaItemTypeOrItemMapping) {
@@ -795,6 +837,32 @@ const menuItems = computed(() => {
       action: toggleLibraryOnlyFilter,
       active: params.value.libraryOnly,
       overflowAllowed: true,
+    });
+  }
+
+  // genre filter
+  if (props.showGenreFilter === true && genreOptions.value.length > 0) {
+    const current = params.value.genreIds;
+    const activeIds = Array.isArray(current)
+      ? current
+      : typeof current === "number"
+        ? [current]
+        : [];
+    items.push({
+      label: "tooltip.filter_genre",
+      icon: "mdi-tag-outline",
+      disabled: loading.value,
+      active: activeIds.length > 0,
+      closeOnContentClick: false,
+      overflowAllowed: true,
+      subItems: genreOptions.value.map((genre) => {
+        const selected = activeIds.includes(genre.value);
+        return {
+          label: genre.label,
+          selected,
+          action: () => toggleGenreFilter(genre.value),
+        };
+      }),
     });
   }
 
@@ -1227,6 +1295,27 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+const loadGenreOptions = async () => {
+  if (!props.showGenreFilter) return;
+
+  try {
+    const genres = await api.getLibraryGenres(
+      undefined,
+      undefined,
+      100,
+      0,
+      "name",
+    );
+
+    genreOptions.value = genres.map((genre) => ({
+      label: genre.name,
+      value: Number(genre.item_id),
+    }));
+  } catch {
+    toast.error(t("error_loading_genres"));
+  }
+};
+
 onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
@@ -1254,7 +1343,7 @@ onMounted(async () => {
     loadData(true);
   }
 
-  applyQueryGenreFilter();
+  await loadGenreOptions();
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", () => {

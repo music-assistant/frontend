@@ -16,7 +16,7 @@
       }
     "
   >
-    <v-card min-width="300">
+    <v-card min-width="300" max-height="450">
       <v-list density="compact" slim tile>
         <!-- play menu header -->
         <v-list-item
@@ -236,7 +236,6 @@ import {
   Album,
   BrowseFolder,
   EventType,
-  MediaItem,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
