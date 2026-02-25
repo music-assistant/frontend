@@ -117,20 +117,11 @@ watch(qrCanvas, (canvas) => {
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    // Fetch guest URL from backend (returns {url, code, expires_at} or empty values if disabled)
-    const result = (await api.sendCommand("party_mode/url")) as {
-      url: string;
-      code: string;
-      expires_at: string | null;
-    };
+    const url = (await api.sendCommand("party_mode/url")) as string | null;
 
-    // Update guest access enabled state based on whether we got a URL
-    // Ensure url is a string before calling .trim()
-    const url = typeof result?.url === "string" ? result.url : "";
-    guestAccessEnabled.value = !!(url && url.trim() !== "");
+    guestAccessEnabled.value = !!url;
 
-    // Always update qrCodeUrl to ensure UI reflects backend state
-    if (!guestAccessEnabled.value) {
+    if (!url) {
       qrCodeUrl.value = "";
       return;
     }
