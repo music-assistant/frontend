@@ -6,12 +6,23 @@
   >
     <v-toolbar class="header" color="transparent">
       <template #title>
-        <span
-          class="mr-3"
-          :class="{ 'clickable-title': showActionIcon && widgetRow.action }"
-          @click="showActionIcon && handleActionIconClick()"
-          >{{ widgetRow.title }}</span
-        >
+        <div class="flex items-center group">
+          <span
+            class="mr-3"
+            :class="{
+              'cursor-pointer group-hover:opacity-70':
+                showActionIcon && widgetRow.action,
+            }"
+            @click="showActionIcon && handleActionIconClick()"
+            >{{ widgetRow.title }}</span
+          >
+          <SquareArrowRightEnter
+            v-if="showActionIcon && widgetRow.action"
+            :size="18"
+            class="cursor-pointer group-hover:opacity-70"
+            @click="handleActionIconClick"
+          />
+        </div>
         <v-chip
           v-if="widgetRow.subtitle && getBreakpointValue('bp6')"
           inline
@@ -115,8 +126,9 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import ProviderIcon from "./ProviderIcon.vue";
+import { SquareArrowRightEnter } from "lucide-vue-next";
 import type { Component } from "vue";
+import ProviderIcon from "./ProviderIcon.vue";
 
 export interface WidgetRowSettings {
   position: number;
@@ -155,15 +167,6 @@ const handleActionIconClick = () => {
   margin-inline-start: 0px;
   font-size: x-large;
   font-weight: bold;
-}
-
-.clickable-title {
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.clickable-title:hover {
-  opacity: 0.7;
 }
 
 .carousel-wrapper {

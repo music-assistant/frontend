@@ -11,7 +11,7 @@
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
-    :show-search-button="true"
+    :inline-search="true"
     :extra-menu-items="extraMenuItems"
     :icon="ListMusic"
     :restore-state="true"

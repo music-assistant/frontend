@@ -9,7 +9,7 @@
     :update-available="updateAvailable"
     :title="$t('albums')"
     :allow-key-hooks="true"
-    :show-search-button="true"
+    :inline-search="true"
     :icon="Disc3"
     :restore-state="true"
     :total="total"

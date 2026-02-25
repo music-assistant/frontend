@@ -5,7 +5,7 @@
     <Toolbar
       :icon="icon"
       :title="title"
-      :count="params.search ? pagedItems.length : total || allItems.length"
+      :count="currentCount"
       color="transparent"
       :menu-items="menuItems"
       @title-clicked="toggleExpand"
@@ -17,8 +17,33 @@
 
     <v-divider />
 
+    <!-- inline search (always visible, replaces toolbar icon) -->
+    <div v-if="inlineSearch" class="inline-search-wrapper">
+      <div class="inline-search-row">
+        <InputGroup class="inline-search-field">
+          <InputGroupInput
+            v-model="params.search"
+            :placeholder="$t('search')"
+          />
+          <InputGroupAddon>
+            <Search class="w-4 h-4 opacity-50" />
+          </InputGroupAddon>
+        </InputGroup>
+        <div v-if="showGenreFilter" class="inline-search-filters">
+          <FacetedFilter
+            v-model="selectedGenreIds"
+            :title="$t('genres')"
+            :options="genreOptions"
+          />
+        </div>
+      </div>
+      <div class="inline-search-count">
+        {{ inlineSearchCountLabel }}
+      </div>
+    </div>
+
     <v-text-field
-      v-if="showSearchInput"
+      v-else-if="showSearchInput"
       id="searchInput"
       v-model="params.search"
       clearable
@@ -207,9 +232,15 @@
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
@@ -235,6 +266,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Search } from "lucide-vue-next";
 import {
   computed,
   nextTick,
@@ -245,7 +277,7 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -298,6 +330,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
+  inlineSearch?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -328,6 +361,7 @@ const props = withDefaults(defineProps<Props>(), {
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
+  inlineSearch: false,
 });
 
 // global refs
@@ -359,8 +393,26 @@ const expanded = ref(true);
 const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
+const selectedGenreIds = ref<string[]>([]);
+const genreOptions = ref<{ label: string; value: string }[]>([]);
+const updatingRouteFromGenres = ref(false);
+const updatingGenresFromRoute = ref(false);
 
 // methods
+const syncSelectedGenresFromParams = function () {
+  updatingGenresFromRoute.value = true;
+  const ids = params.value.genreIds;
+  if (!ids || (Array.isArray(ids) && ids.length === 0)) {
+    selectedGenreIds.value = [];
+  } else {
+    const arr = Array.isArray(ids) ? ids : [ids];
+    selectedGenreIds.value = arr
+      .map((id) => Number(id))
+      .filter((id) => !Number.isNaN(id))
+      .map((id) => id.toString());
+  }
+  updatingGenresFromRoute.value = false;
+};
 const applyQueryGenreFilter = function () {
   const queryGenre = route.query.genre_id ?? route.query.genre_ids;
   const parsedIds: number[] = [];
@@ -645,6 +697,41 @@ const loadAllItems = async function () {
 };
 
 // computed properties
+const hasActiveFilters = computed(() => {
+  return Boolean(
+    params.value.search ||
+    params.value.favoritesOnly ||
+    params.value.albumArtistsFilter ||
+    params.value.libraryOnly ||
+    (params.value.albumType && params.value.albumType.length) ||
+    (params.value.provider && params.value.provider.length) ||
+    params.value.genreIds,
+  );
+});
+
+const currentCount = computed(() => {
+  // For server-side paged listings, rely on total when available and no filters,
+  // otherwise fall back to the number of loaded items.
+  if (props.loadPagedData != null) {
+    if (hasActiveFilters.value || props.total === undefined) {
+      return pagedItems.value.length;
+    }
+    return props.total ?? pagedItems.value.length;
+  }
+
+  // For local listings, use total when provided and no filters; otherwise use
+  // the currently filtered item length.
+  if (hasActiveFilters.value || props.total === undefined) {
+    return pagedItems.value.length;
+  }
+  return props.total ?? allItems.value.length;
+});
+
+const inlineSearchCountLabel = computed(() => {
+  const n = currentCount.value;
+  return `${n} ${n === 1 ? "item" : "items"}`;
+});
+
 const isSearchActive = computed(() => {
   var searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
@@ -720,6 +807,11 @@ const musicProviders = computed(() => {
       value: provider.instance_id,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const showGenreFilter = computed(() => {
+  const genreSupportedTypes = ["artists", "albums", "tracks", "playlists"];
+  return genreSupportedTypes.includes(props.itemtype);
 });
 
 watchEffect(() => {
@@ -884,7 +976,7 @@ const menuItems = computed(() => {
   }
 
   // toggle search
-  if (props.showSearchButton !== false) {
+  if (props.showSearchButton !== false && !props.inlineSearch) {
     items.push({
       label: isSearchActive.value
         ? "tooltip.search_filter_active"
@@ -1165,6 +1257,38 @@ watch(
   { deep: true },
 );
 watch(
+  selectedGenreIds,
+  (newVal) => {
+    if (updatingGenresFromRoute.value) return;
+
+    const numericIds = newVal
+      .map((id) => Number(id))
+      .filter((id) => !Number.isNaN(id));
+
+    if (!numericIds.length) {
+      params.value.genreIds = undefined;
+    } else if (numericIds.length === 1) {
+      params.value.genreIds = numericIds[0];
+    } else {
+      params.value.genreIds = numericIds;
+    }
+
+    updatingRouteFromGenres.value = true;
+    const query = { ...route.query };
+    if (numericIds.length) {
+      query.genre_ids = numericIds.join(",");
+    } else {
+      delete query.genre_ids;
+      delete query.genre_id;
+    }
+    router.replace({ query });
+    updatingRouteFromGenres.value = false;
+
+    loadData(true, undefined, true);
+  },
+  { deep: true },
+);
+watch(
   () => props.limit,
   (newVal) => {
     params.value.limit = newVal;
@@ -1181,6 +1305,25 @@ watch(
 
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
+const loadGenreOptions = async () => {
+  if (!showGenreFilter.value || genreOptions.value.length > 0) return;
+  try {
+    const genres = await api.getLibraryGenres(
+      undefined,
+      undefined,
+      500,
+      0,
+      "name",
+    );
+    genreOptions.value = genres.map((genre) => ({
+      label: genre.name,
+      value: String(genre.item_id),
+    }));
+  } catch {
+    // ignore genre load errors
+  }
+};
 
 onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
@@ -1210,6 +1353,8 @@ onMounted(async () => {
   }
 
   applyQueryGenreFilter();
+  syncSelectedGenresFromParams();
+  await loadGenreOptions();
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", () => {
@@ -1259,6 +1404,9 @@ watch(
   () => {
     if (applyQueryGenreFilter()) {
       loadData(true, undefined, true);
+    }
+    if (!updatingRouteFromGenres.value) {
+      syncSelectedGenresFromParams();
     }
   },
   { deep: true },
@@ -1452,6 +1600,34 @@ const selectAll = async function () {
 </script>
 
 <style scoped>
+.inline-search-wrapper {
+  padding: 12px 16px 0;
+}
+
+.inline-search-count {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  padding: 6px 4px 0;
+  font-weight: 500;
+}
+
+.inline-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-search-field {
+  flex: 1 1 auto;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.inline-search-filters {
+  flex-shrink: 0;
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;

@@ -9,7 +9,7 @@
     :update-available="updateAvailable"
     :title="$t('artists')"
     :allow-key-hooks="true"
-    :show-search-button="true"
+    :inline-search="true"
     :sort-keys="sortKeys"
     :icon="ArtistIcon"
     :restore-state="true"
