@@ -243,7 +243,22 @@ const routes = [
         component: () =>
           import(/* webpackChunkName: "party" */ "@/views/PartyView.vue"),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
-        beforeEnter: (_to: any, _from: any, next: any) => {
+        beforeEnter: async (_to: any, _from: any, next: any) => {
+          // Wait for API initialization before checking plugin status
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
           // Only allow access if party mode plugin is enabled
           if (!store.enabledPlugins.has("party_mode")) {
             next({ name: "home" });
