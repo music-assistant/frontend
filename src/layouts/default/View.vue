@@ -17,9 +17,13 @@
           </router-view>
           <add-to-playlist-dialog />
           <create-playlist-dialog />
+          <merge-genre-dialog />
+          <delete-genre-dialog />
+          <link-genre-dialog />
           <item-context-menu />
         </div>
       </SidebarInset>
+      <PlayerSelect />
     </SidebarProvider>
   </v-main>
 </template>
@@ -28,6 +32,10 @@
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
+import PlayerSelect from "./PlayerSelect.vue";
+import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
+import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
+import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
@@ -37,6 +45,7 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .main-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-left: 0 !important;

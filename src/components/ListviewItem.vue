@@ -8,8 +8,7 @@
     @menu.stop="onMenu"
   >
     <template #prepend>
-      <!-- NOTE TO SELF: Checkboxes are displayed in the HTML element below .-->
-      <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
+      <div v-if="showCheckboxes" class="checkbox">
         <v-checkbox
           :model-value="isSelected"
           @click.stop
@@ -18,7 +17,15 @@
               if (x != null) emit('select', item, x);
             }
           "
-        />
+        >
+          <template #label>
+            <ListviewitemTitle
+              :display-name="displayName"
+              :item="item"
+              :show-checkboxes="showCheckboxes"
+            />
+          </template>
+        </v-checkbox>
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
@@ -26,36 +33,12 @@
     </template>
 
     <!-- title -->
-    <template #title>
-      <span v-if="item.media_type == MediaType.FOLDER">
-        <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
-      </span>
-      <!-- NOTE TO SELF: This HTML element shows the name of a genre. -->
-      <span v-else :class="{ 'is-playing': isPlaying }">
-        {{ displayName }}
-        <span v-if="'version' in item && item.version"
-          >({{ item.version }})</span
-        >
-        <span
-          v-if="
-            item.media_type == MediaType.TRACK && item.metadata?.release_date
-          "
-        >
-          ({{ new Date(item.metadata.release_date).getFullYear() }})</span
-        >
-      </span>
-      <!-- explicit icon -->
-      <v-tooltip v-if="item && item.metadata" location="bottom">
-        <template #activator="{ props }">
-          <v-icon
-            v-if="parseBool(item.metadata.explicit || false)"
-            v-bind="props"
-            icon="mdi-alpha-e-box"
-            width="35"
-          />
-        </template>
-        <span>{{ $t("tooltip.explicit") }}</span>
-      </v-tooltip>
+    <template v-if="!showCheckboxes" #title>
+      <ListviewitemTitle
+        :display-name="displayName"
+        :item="item"
+        :show-checkboxes="showCheckboxes"
+      />
     </template>
 
     <!-- subtitle -->
@@ -219,6 +202,7 @@
         icon
         variant="text"
         size="small"
+        :disabled="disablePlayButton"
         @click.stop="onPlayClick"
       >
         <v-icon size="24">mdi-play-circle-outline</v-icon>
@@ -257,6 +241,8 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
+import ListviewitemTitle from "./ListviewItemTitle.vue";
+
 // properties
 export interface Props {
   item: MediaItemType;
@@ -275,6 +261,7 @@ export interface Props {
   showCheckboxes?: boolean;
   showDetails?: boolean;
   showPlayButton?: boolean;
+  disablePlayButton?: boolean;
   parentItem?: MediaItemType;
 }
 
@@ -304,6 +291,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showDuration: true,
   showCheckboxes: false,
   showPlayButton: undefined,
+  disablePlayButton: false,
   isDisabled: false,
   isAvailable: true,
   parentItem: undefined,

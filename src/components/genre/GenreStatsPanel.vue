@@ -10,7 +10,7 @@
       class="mt-4"
       variant="outlined"
       color="primary"
-      prepend-icon="mdi-tag-multiple"
+      prepend-icon="mdi-compass-outline"
       @click="$emit('view-genres')"
     >
       {{ $t("settings.view_all_genres") }}

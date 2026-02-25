@@ -22,6 +22,6 @@ export interface Props {
 defineProps<Props>();
 
 function openPlayersMenu() {
-  store.showPlayersMenu = true;
+  store.showPlayersMenu = !store.showPlayersMenu;
 }
 </script>

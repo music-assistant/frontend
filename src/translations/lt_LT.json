@@ -36,7 +36,7 @@
     "external_source_active": "Išorinis šaltinis aktyvus: {0}",
     "goto_album": "Eiti į albumą {0}",
     "goto_artist": "Eiti pas atlikėją {0}",
-    "home": "Pagrindinis",
+    "discover": "Atraskite",
     "items_selected": "{0} pasirinktas(-i) elementas(-ai)",
     "items_total": "{0} iš viso prekių",
     "library": "Biblioteka",

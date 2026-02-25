@@ -36,7 +36,7 @@
     "external_source_active": "Externe Quelle aktiv: {0}",
     "goto_album": "Zum Album {0}",
     "goto_artist": "Zum Künstler {0}",
-    "home": "Startseite",
+    "discover": "Entdecken",
     "items_selected": "{0} Einträge ausgewählt",
     "items_total": "{0} Einträge",
     "library": "Bibliothek",
@@ -1139,6 +1139,5 @@
     "narrators": "Erzähler",
     "series_plural": "Serien",
     "series_singular": "Serien",
-    "queue_move_end": "Zum Ende bewegen",
-    "discover": "Entdecken"
+    "queue_move_end": "Zum Ende bewegen"
 }

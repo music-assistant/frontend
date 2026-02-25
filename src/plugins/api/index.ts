@@ -24,6 +24,7 @@ import {
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
+  type PlayerOptionValueType,
   type SyncTask,
   type Track,
   type User,
@@ -909,6 +910,7 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
+    hide_empty?: boolean,
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", {
       favorite,
@@ -918,6 +920,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      hide_empty,
     });
   }
 
@@ -996,6 +999,28 @@ export class MusicAssistantApi {
     media_id: string,
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/genres_for_media_item", {
+      media_type,
+      media_id,
+    });
+  }
+
+  public mergeGenres(
+    genre_ids: string[],
+    target_genre_id: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/merge", {
+      genre_ids,
+      target_genre_id,
+    });
+  }
+
+  public addGenreMediaMapping(
+    genre_id: string,
+    media_type: string,
+    media_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/add_media_mapping", {
+      genre_id,
       media_type,
       media_id,
     });
@@ -1516,6 +1541,37 @@ export class MusicAssistantApi {
     return this.playerCommand(playerId, "ungroup");
   }
 
+  public playerCommandSelectSoundMode(
+    playerId: string,
+    soundMode: string,
+  ): Promise<void> {
+    /*
+      Handle SELECT_SOUND_MODE on given player
+          - playerId: playerId of the player to handle the command.
+          - soundMode: selected sound mode
+    */
+    return this.playerCommand(playerId, "select_sound_mode", {
+      sound_mode: soundMode,
+    });
+  }
+
+  public playerCommandSetOption(
+    playerId: string,
+    optionKey: string,
+    optionValue: PlayerOptionValueType,
+  ): Promise<void> {
+    /*
+      Handle SET_OPTION on given player
+          - playerId: playerId of the player to handle the command.
+          - optionKey: the option's key
+          - optionValue: the option's new value
+    */
+    return this.playerCommand(playerId, "set_option", {
+      option_key: optionKey,
+      option_value: optionValue,
+    });
+  }
+
   public playerCommand(
     player_id: string,
     command: string,
@@ -1554,6 +1610,15 @@ export class MusicAssistantApi {
   }
   public playerCommandGroupVolumeDown(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_down");
+  }
+
+  public playerCommandGroupVolumeMute(
+    playerId: string,
+    muted: boolean,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_mute", {
+      muted,
+    });
   }
 
   public async createPlayerGroup(
@@ -1923,6 +1988,9 @@ export class MusicAssistantApi {
       delete this.queues[msg.object_id!];
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
+    } else if (msg.event == EventType.CORE_STATE_UPDATED) {
+      // Update serverInfo with the new server state
+      this.serverInfo.value = msg.data as ServerInfoMessage;
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
       // Clear and repopulate the existing reactive object to preserve reactivity
       Object.keys(this.providers).forEach((key) => delete this.providers[key]);

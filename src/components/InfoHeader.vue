@@ -86,7 +86,7 @@
           <v-card-title v-else>
             <MarqueeText :sync="marqueeSync">
               <div class="selectable">
-                {{ item.name }}
+                {{ headerTitle }}
               </div>
             </MarqueeText>
           </v-card-title>
@@ -284,7 +284,11 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :loading="store.playActionInProgress"
+              :loading="
+                store.activePlayerQueue &&
+                store.activePlayerQueue.extra_attributes
+                  ?.play_action_in_progress === true
+              "
               :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
@@ -310,6 +314,18 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- merge genre button (admin only) -->
+              <Merge
+                v-if="
+                  item.media_type === MediaType.GENRE &&
+                  item.provider === 'library' &&
+                  isAdmin
+                "
+                :size="22"
+                class="cursor-pointer -ml-1"
+                :title="$t('merge_into')"
+                @click="mergeGenre"
+              />
               <!-- delete genre button (admin only) -->
               <Trash2
                 v-if="
@@ -318,7 +334,7 @@
                   isAdmin
                 "
                 :size="22"
-                class="cursor-pointer"
+                class="cursor-pointer ml-2"
                 :title="$t('delete_genre')"
                 @click="deleteGenre"
               />
@@ -370,12 +386,6 @@
         </div>
       </v-layout>
     </v-card>
-    <!-- delete genre confirmation dialog -->
-    <DeleteGenreDialog
-      v-model="showDeleteGenreDialog"
-      @confirm="confirmDeleteGenre"
-    />
-
     <v-dialog v-model="showFullInfo" max-width="975" width="auto">
       <v-card>
         <!-- eslint-disable vue/no-v-html -->
@@ -397,6 +407,7 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getGenreDescription,
   getGenreDisplayName,
   getImageThumbForItem,
   handleMediaItemClick,
@@ -419,14 +430,14 @@ import type {
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Trash2 } from "lucide-vue-next";
+import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
-import DeleteGenreDialog from "./genre/DeleteGenreDialog.vue";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
@@ -533,7 +544,7 @@ const backButtonClick = function () {
     }
   }
   router.push({
-    name: "home",
+    name: "discover",
   });
 };
 
@@ -552,6 +563,13 @@ const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
+  } else if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDescription(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
   } else if ("artists" in compProps.item) {
@@ -584,17 +602,20 @@ const artistLogo = computed(() => {
 
 const isAdmin = computed(() => authManager.isAdmin());
 
-const showDeleteGenreDialog = ref(false);
-
-const deleteGenre = () => {
-  showDeleteGenreDialog.value = true;
+const mergeGenre = () => {
+  if (!compProps.item) return;
+  eventbus.emit("mergeGenreDialog", {
+    genreIds: [compProps.item.item_id],
+    genreNames: [compProps.item.name],
+  });
 };
 
-const confirmDeleteGenre = () => {
+const deleteGenre = () => {
   if (!compProps.item) return;
-  api.removeGenreFromLibrary(compProps.item.item_id);
-  showDeleteGenreDialog.value = false;
-  router.back();
+  eventbus.emit("deleteGenreDialog", {
+    genreIds: [compProps.item.item_id],
+    navigateBack: true,
+  });
 };
 </script>
 

@@ -96,7 +96,7 @@ const extraSystemEntries = [
     domain: "genre_management",
     name: "settings.genre_management",
     description: "settings.genre_management_description",
-    icon: "mdi-tag-multiple",
+    icon: "mdi-compass-outline",
     route: "/settings/genremanagement",
   },
 ];

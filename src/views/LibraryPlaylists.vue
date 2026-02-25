@@ -12,6 +12,7 @@
     :title="$t('playlists')"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :show-genre-filter="true"
     :extra-menu-items="extraMenuItems"
     :icon="ListMusic"
     :restore-state="true"

@@ -1,8 +1,10 @@
-import { createRouter, createWebHashHistory } from "vue-router";
 import { watch } from "vue";
-import { notifyHARouteChange } from "./homeassistant";
-import { store } from "./store";
+import { createRouter, createWebHashHistory } from "vue-router";
+import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
+import { notifyHARouteChange } from "./homeassistant";
+import { i18n } from "./i18n";
+import { store } from "./store";
 
 const routes = [
   // All routes go through default layout - authentication is handled by server redirect
@@ -12,13 +14,20 @@ const routes = [
     children: [
       {
         path: "",
-        redirect: "/home",
+        redirect: "/discover",
       },
       {
+        // "/home" has now been renamed to "/discover". This
+        // redirect is to help avoid blank page loads for anyone who
+        // has bookmarked the old /home url.
         path: "/home",
-        name: "home",
+        redirect: "/discover",
+      },
+      {
+        path: "/discover",
+        name: "discover",
         component: () =>
-          import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
+          import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
         path: "/search",
@@ -358,6 +367,16 @@ const routes = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "editplayer/:playerId/options",
+            name: "editplayeroptions",
+            component: () =>
+              import(
+                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: false },
+          },
+          {
             path: "editplayer/:playerId/dsp",
             name: "editplayerdsp",
             component: () =>
@@ -401,7 +420,7 @@ const router = createRouter({
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
 // on the server (likely due to a new deployment with different hashes).
-// In this case, we reload the page to get the fresh assets.
+// In this case, we show a toast to let the user know that a new version of the frontend is available.
 router.onError((error, to) => {
   // Check if this is a chunk loading error
   const isChunkLoadError =
@@ -411,14 +430,25 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
-    console.warn(
-      "Chunk loading failed, likely due to app update. Reloading page...",
-      error,
-    );
-    // Use location.href to do a full reload to the intended route
-    // This ensures we get fresh HTML and assets from the server
-    window.location.href =
+    console.warn("Chunk loading failed, likely due to app update.", error);
+    const { t } = i18n.global;
+    const targetHref =
       window.location.origin + window.location.pathname + "#" + to.fullPath;
+
+    toast.info(t("chunk_load_error"), {
+      duration: 5000,
+      action: {
+        label: t("refresh"),
+        onClick: () => {
+          window.location.href = targetHref;
+        },
+      },
+      actionButtonStyle: {
+        background: "transparent",
+        border: "1px solid currentColor",
+        color: "inherit",
+      },
+    });
   }
 });
 
@@ -458,7 +488,7 @@ router.beforeEach(async (to, _from, next) => {
 
     if (!currentUser || currentUser.role !== "admin") {
       console.warn("Admin access required for", to.path);
-      next({ name: "home" });
+      next({ name: "discover" });
       return;
     }
   }

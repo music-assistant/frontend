@@ -39,6 +39,8 @@
           :class="{
             'player-disabled': !item.enabled,
             'player-unavailable': !api.players[item.player_id]?.available,
+            'player-needs-setup':
+              item.enabled && api.players[item.player_id]?.needs_setup,
           }"
           @click="editPlayer(item.player_id, item.provider)"
           @menu="(evt) => onMenu(evt, item)"
@@ -61,7 +63,17 @@
 
           <template #subtitle>
             <div class="player-meta">
-              <span class="provider-name">
+              <!-- Player needs setup warning -->
+              <div
+                v-if="item.enabled && api.players[item.player_id]?.needs_setup"
+                class="player-warning-inline"
+              >
+                <v-icon icon="mdi-alert-circle" size="16" color="warning" />
+                <span class="player-warning-text">{{
+                  $t("settings.player_needs_setup")
+                }}</span>
+              </div>
+              <span v-else class="provider-name">
                 {{
                   api.players[item.player_id]?.device_info
                     ? `${api.players[item.player_id].device_info.manufacturer} / ${api.players[item.player_id].device_info.model}`
@@ -101,6 +113,13 @@
                 size="20"
                 color="grey"
                 :title="$t('settings.player_disabled')"
+              />
+              <v-icon
+                v-else-if="api.players[item.player_id]?.needs_setup"
+                icon="mdi-alert-circle"
+                size="20"
+                color="warning"
+                :title="$t('settings.player_needs_setup')"
               />
               <v-icon
                 v-else-if="!api.players[item.player_id]?.available"
@@ -570,5 +589,21 @@ watch(
 
 .player-unavailable {
   opacity: 0.7;
+}
+
+.player-needs-setup {
+  border-left: 3px solid rgb(var(--v-theme-warning));
+}
+
+.player-warning-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(var(--v-theme-warning));
+}
+
+.player-warning-text {
+  font-size: 13px;
+  font-weight: 500;
 }
 </style>

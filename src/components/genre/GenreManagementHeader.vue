@@ -2,7 +2,7 @@
   <v-card class="header-card mb-4" elevation="0">
     <div class="header-content">
       <div class="header-icon">
-        <v-icon size="32" color="primary">mdi-tag-multiple</v-icon>
+        <v-icon size="32" color="primary">mdi-compass-outline</v-icon>
       </div>
       <div class="header-info">
         <h2 class="header-title">

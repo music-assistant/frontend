@@ -112,6 +112,7 @@
         icon="mdi-play"
         color="primary"
         fab
+        :disabled="disablePlayButton"
         :style="`position: absolute; right: 15px; bottom: ${showActions ? 90 : 35}px; opacity: 0.8`"
         @click.stop="onPlayClick"
       />
@@ -207,6 +208,7 @@ export interface Props {
   showTrackNumber?: boolean;
   isAvailable?: boolean;
   isPlaying?: boolean;
+  disablePlayButton?: boolean;
   parentItem?: MediaItemType;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -216,6 +218,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: false,
   showMediaType: false,
   isAvailable: true,
+  disablePlayButton: false,
   parentItem: undefined,
 });
 

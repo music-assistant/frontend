@@ -16,42 +16,29 @@
       }
     "
   >
-    <v-card min-width="300">
+    <v-card min-width="300" max-height="450" style="overflow-y: auto">
       <v-list density="compact" slim tile>
         <!-- play menu header -->
-        <v-list-item
-          v-if="showPlayMenuHeader"
-          link
-          append-icon="mdi-chevron-right"
-          @click.stop="playMenuHeaderClicked"
-        >
-          <template #prepend>
-            <div
-              class="icon-thumb"
-              style="
-                margin-left: -8px;
-                width: 50px;
-                height: 50px;
-                margin-right: 0px;
-              "
-            >
+        <div v-if="showPlayMenuHeader" class="menurow">
+          <v-list-item
+            link
+            append-icon="mdi-chevron-right"
+            :title="$t('play_on')"
+            :subtitle="store.activePlayer?.name || $t('no_player')"
+            style="padding-left: 25px"
+            @click.stop="playMenuHeaderClicked"
+          >
+            <template #prepend>
               <v-icon
-                size="35"
+                size="40"
+                style="margin-left: -8px"
                 :icon="
                   store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
                 "
-                style="display: table-cell; opacity: 0.8"
               />
-            </div>
-          </template>
-          <template #title>
-            <v-list-item
-              :title="$t('play_on')"
-              density="compact"
-              :subtitle="store.activePlayer?.name || $t('no_player')"
-            />
-          </template>
-        </v-list-item>
+            </template>
+          </v-list-item>
+        </div>
         <v-divider
           v-if="showPlayMenuHeader"
           style="margin-top: 5px; margin-bottom: 5px"
@@ -236,7 +223,6 @@ import {
   Album,
   BrowseFolder,
   EventType,
-  MediaItem,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -247,6 +233,7 @@ import {
   QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 
 import type { Component } from "vue";
@@ -981,6 +968,64 @@ export const getContextMenuItems = async function (
         });
       },
       icon: "mdi-link",
+    });
+  }
+  // link to genre (library items only, non-genre)
+  if (
+    items.every(
+      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+    )
+  ) {
+    contextMenuItems.push({
+      label: "link_to_genre",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("linkGenreDialog", {
+          items: items as MediaItemType[],
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-compass-outline",
+    });
+  }
+  // merge genres (admin only, all items must be library genres)
+  if (
+    items.every(
+      (i) => i.media_type === MediaType.GENRE && i.provider === "library",
+    ) &&
+    authManager.isAdmin()
+  ) {
+    contextMenuItems.push({
+      label: "merge_into",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("mergeGenreDialog", {
+          genreIds: items.map((i) => i.item_id),
+          genreNames: items.map((i) => i.name),
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-merge",
+    });
+  }
+  // delete genre(s) (admin only, all items must be library genres)
+  if (
+    items.every(
+      (i) => i.media_type === MediaType.GENRE && i.provider === "library",
+    ) &&
+    authManager.isAdmin()
+  ) {
+    contextMenuItems.push({
+      label: "delete_genre",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("deleteGenreDialog", {
+          genreIds: items.map((i) => i.item_id),
+          navigateBack: items.length === 1 && items[0] === parentItem,
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-delete",
     });
   }
   return contextMenuItems;

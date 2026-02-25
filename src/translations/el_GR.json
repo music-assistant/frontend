@@ -36,7 +36,7 @@
     "external_source_active": "Εξωτερική πηγή ενεργή: {0}",
     "goto_album": "Μετάβαση στο άλμπουμ {0}",
     "goto_artist": "Μετάβαση στον καλλιτέχνη {0}",
-    "home": "Αρχική σελίδα",
+    "discover": "Ανακαλύψτε",
     "items_selected": "Επιλέχθηκαν {0} στοιχεία",
     "items_total": "Συνολικά αντικείμενα {0}",
     "library": "Βιβλιοθήκη",
@@ -1139,6 +1139,5 @@
     "narrators": "Αφηγητές",
     "series_plural": "Σειρές",
     "series_singular": "Σειρά",
-    "queue_move_end": "Μετακίνηση στο τέλος",
-    "discover": "Ανακαλύψτε"
+    "queue_move_end": "Μετακίνηση στο τέλος"
 }

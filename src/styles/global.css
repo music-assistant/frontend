@@ -208,6 +208,13 @@ html {
   font-weight: 800;
 }
 
+.checkbox {
+  position: relative;
+  height: 1em;
+  margin-top: 1.4em;
+  align-content: center;
+}
+
 /* iOS Safari 15 scroll momentum */
 .scroll-container,
 .v-list,

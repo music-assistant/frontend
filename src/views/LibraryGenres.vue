@@ -11,10 +11,11 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="sortKeys"
-    :icon="Tag"
+    :icon="Compass"
     :restore-state="restoreState"
     :total="total"
     :show-provider-filter="true"
+    :show-hide-empty-filter="true"
     :extra-menu-items="extraMenuItems"
   />
   <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
@@ -27,7 +28,7 @@ import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Plus, Tag } from "lucide-vue-next";
+import { Compass, Plus } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -77,6 +78,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.hideEmptyFilter ?? true,
   );
 };
 
@@ -117,8 +119,12 @@ const triggerRefresh = async () => {
 };
 
 onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_ADDED,
+  const unsub = api.subscribe_multi(
+    [
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+    ],
     (evt: EventMessage) => {
       if (evt.object_id?.startsWith("library://genre")) {
         triggerRefresh();

@@ -9,13 +9,10 @@ import {
   ListMusic,
   Music2,
   Podcast,
-  Compass,
   Radio,
   Search,
   Settings,
-  LayoutGrid,
-  Sparkles,
-  Tag,
+  Compass,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -25,21 +22,25 @@ export interface MenuItem {
   path: string;
   isLibraryNode: boolean;
   hidden?: boolean;
+  disabled?: boolean;
 }
 
 export const getMenuItems = function () {
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
-  const enabledItems: string[] = storedMenuConf
-    ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
   const items: MenuItem[] = [];
-  // we loop through the enabled items list so we can respect the order
-  for (const enabledMenuItemStr of enabledItems) {
-    if (enabledMenuItemStr === "home") {
+  // we loop through DEFAULT_MENU_ITEMS to respect default order;
+  // new items added to DEFAULT_MENU_ITEMS automatically appear unless explicitly disabled
+  for (const enabledMenuItemStr of DEFAULT_MENU_ITEMS) {
+    if (
+      localStorage.getItem(
+        `frontend.settings.menu_item_${enabledMenuItemStr}_enabled`,
+      ) === "false"
+    )
+      continue;
+    if (enabledMenuItemStr === "discover") {
       items.push({
-        label: "home",
+        label: "discover",
         icon: House,
-        path: "/home",
+        path: "/discover",
         isLibraryNode: false,
       });
     }
@@ -57,7 +58,6 @@ export const getMenuItems = function () {
         icon: ArtistIcon,
         path: "/artists",
         isLibraryNode: true,
-        hidden: store.libraryArtistsCount === 0,
       });
     }
     if (enabledMenuItemStr === "albums") {
@@ -66,7 +66,6 @@ export const getMenuItems = function () {
         icon: Disc3,
         path: "/albums",
         isLibraryNode: true,
-        hidden: store.libraryAlbumsCount === 0,
       });
     }
     if (enabledMenuItemStr === "tracks") {
@@ -75,7 +74,6 @@ export const getMenuItems = function () {
         icon: Music2,
         path: "/tracks",
         isLibraryNode: true,
-        hidden: store.libraryTracksCount === 0,
       });
     }
     if (enabledMenuItemStr === "playlists") {
@@ -84,7 +82,6 @@ export const getMenuItems = function () {
         icon: ListMusic,
         path: "/playlists",
         isLibraryNode: true,
-        hidden: store.libraryPlaylistsCount === 0,
       });
     }
     if (enabledMenuItemStr === "audiobooks") {
@@ -93,7 +90,7 @@ export const getMenuItems = function () {
         icon: BookAudio,
         path: "/audiobooks",
         isLibraryNode: true,
-        hidden: store.libraryAudiobooksCount === 0,
+        disabled: store.libraryAudiobooksCount === 0,
       });
     }
     if (enabledMenuItemStr === "podcasts") {
@@ -102,7 +99,7 @@ export const getMenuItems = function () {
         icon: Podcast,
         path: "/podcasts",
         isLibraryNode: true,
-        hidden: store.libraryPodcastsCount === 0,
+        disabled: store.libraryPodcastsCount === 0,
       });
     }
     if (enabledMenuItemStr === "radios") {
@@ -111,16 +108,14 @@ export const getMenuItems = function () {
         icon: Radio,
         path: "/radios",
         isLibraryNode: true,
-        hidden: store.libraryRadiosCount === 0,
       });
     }
     if (enabledMenuItemStr === "genres") {
       items.push({
         label: "genres",
-        icon: Tag,
+        icon: Compass,
         path: "/genres",
         isLibraryNode: true,
-        hidden: store.libraryGenresCount === 0,
       });
     }
     if (enabledMenuItemStr === "browse") {

@@ -10,6 +10,7 @@
     :title="$t('artists')"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :show-genre-filter="true"
     :sort-keys="sortKeys"
     :icon="ArtistIcon"
     :restore-state="true"
@@ -19,11 +20,11 @@
 </template>
 
 <script setup lang="ts">
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

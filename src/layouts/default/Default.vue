@@ -2,7 +2,6 @@
   <v-app>
     <MainView v-if="store.frameless" />
     <template v-else>
-      <PlayerSelect />
       <MainView />
       <Footer />
     </template>
@@ -13,10 +12,9 @@
 <script lang="ts" setup>
 import MainView from "./View.vue";
 import Footer from "./Footer.vue";
-import PlayerSelect from "./PlayerSelect.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
 import { store } from "@/plugins/store";
-import { toRefs, watch, ref } from "vue";
+import { watch } from "vue";
 import api from "@/plugins/api";
 import { useRoute } from "vue-router";
 

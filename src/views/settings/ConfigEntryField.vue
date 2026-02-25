@@ -48,10 +48,7 @@
     </v-btn>
 
     <!-- DSP Config Button -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.DSP_SETTINGS"
-      class="dsp-config"
-    >
+    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
       <span class="dsp-status">
         {{
           confEntry.value
@@ -59,8 +56,22 @@
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn variant="outlined" @click="$emit('openDsp')">
+      <v-btn
+        variant="outlined"
+        :disabled="isFieldDisabled"
+        @click="$emit('openDsp')"
+      >
         {{ $t("open_dsp_settings") }}
+      </v-btn>
+    </div>
+
+    <!-- Player Options Button -->
+    <div
+      v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
+      class="dsp-config"
+    >
+      <v-btn variant="outlined" @click="$emit('openOptions')">
+        {{ $t("player_options.open") }}
       </v-btn>
     </div>
 
@@ -270,11 +281,12 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
+import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 const props = defineProps<{
-  confEntry: ConfigEntry;
+  confEntry: ConfigEntryUI;
   showPasswordValues: boolean;
   disabled?: boolean;
 }>();
@@ -287,6 +299,7 @@ const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
   (e: "openDsp"): void;
+  (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
 }>();
 

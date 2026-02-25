@@ -268,6 +268,15 @@ export enum PlayerType {
   STEREO_PAIR = "stereo_pair",
 }
 
+export enum PlayerOptionType {
+  BOOLEAN = "boolean",
+  INTEGER = "integer",
+  FLOAT = "float",
+  STRING = "string",
+}
+
+export type PlayerOptionValueType = number | string | boolean;
+
 export enum PlayerFeature {
   POWER = "power",
   VOLUME_SET = "volume_set",
@@ -280,6 +289,8 @@ export enum PlayerFeature {
   PLAY_ANNOUNCEMENT = "play_announcement",
   ENQUEUE = "enqueue",
   SELECT_SOURCE = "select_source",
+  SELECT_SOUND_MODE = "select_sound_mode",
+  OPTIONS = "options",
 }
 
 export enum EventType {
@@ -292,7 +303,7 @@ export enum EventType {
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
   QUEUE_TIME_UPDATED = "queue_time_updated",
   QUEUE_SETTINGS_UPDATED = "queue_settings_updated",
-  SHUTDOWN = "application_shutdown",
+  CORE_STATE_UPDATED = "core_state_updated",
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
@@ -300,6 +311,7 @@ export enum EventType {
   PROVIDERS_UPDATED = "providers_updated",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
+  PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
@@ -372,6 +384,7 @@ export enum ConfigEntryType {
 
   // Only used in the frontend
   DSP_SETTINGS = "dsp_settings",
+  OPTIONS = "options",
 }
 
 export enum VolumeNormalizationMode {
@@ -391,6 +404,13 @@ export enum IdentifierType {
   UUID = "uuid", // Universal unique identifier
   IP_ADDRESS = "ip_address", // Less reliable (DHCP) but useful for fallback
   UNKNOWN = "unknown",
+}
+
+export enum CoreState {
+  STARTING = "starting",
+  RUNNING = "running",
+  STOPPING = "stopping",
+  STOPPED = "stopped",
 }
 
 //// api
@@ -438,6 +458,8 @@ export interface ServerInfoMessage {
   base_url: string;
   homeassistant_addon: boolean;
   onboard_done: boolean;
+  name?: string;
+  status?: CoreState;
 }
 
 export type MessageType =
@@ -825,6 +847,10 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  // extra_attributes: additional attributes for this player_queue to store/forward
+  // additional data that is not part of the standard model
+  // must be serializable types only
+  extra_attributes?: Record<string, any>;
 }
 
 // player
@@ -878,6 +904,39 @@ export interface PlayerSource {
   can_next_previous: boolean;
 }
 
+export interface PlayerSoundMode {
+  id: string;
+  name: string;
+  passive: boolean;
+  translation_key?: string;
+}
+
+export interface PlayerOptionEntry {
+  key: string;
+  name: string;
+  type: PlayerOptionType;
+
+  value: PlayerOptionValueType;
+}
+
+export interface PlayerOption {
+  key: string;
+  name: string;
+  type: PlayerOptionType;
+
+  translation_key?: string;
+  translation_params?: string[];
+
+  value: PlayerOptionValueType;
+  read_only: boolean;
+
+  min_value?: number;
+  max_value?: number;
+  step?: number;
+
+  options?: PlayerOptionEntry[];
+}
+
 export interface Player {
   player_id: string;
   provider: string;
@@ -900,15 +959,20 @@ export interface Player {
   static_group_members: string[];
   active_source?: string;
   source_list: PlayerSource[];
+  active_sound_mode?: string;
+  sound_mode_list: PlayerSoundMode[];
+  options: PlayerOption[];
   active_group?: string;
   synced_to?: string;
 
-  group_volume: number;
+  group_volume: number | null;
+  group_volume_muted: boolean | null;
   hide_in_ui: boolean;
   icon: string;
   power_control: string;
   volume_control: string;
   mute_control: string;
+  needs_setup: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs

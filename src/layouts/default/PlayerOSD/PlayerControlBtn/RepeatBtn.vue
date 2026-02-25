@@ -2,8 +2,8 @@
   <!-- repeat button -->
   <Icon
     v-if="isVisible && playerQueue"
-    v-bind="icon"
-    :disabled="!playerQueue.active || playerQueue.items == 0"
+    v-bind="{ ...icon, ...$attrs }"
+    :disabled="!playerQueue.active || playerQueue.items == 0 || isLoading"
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.repeat_mode == RepeatMode.OFF, null],
@@ -34,10 +34,12 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
+import { computed } from "vue";
 
 // properties
 export interface Props {
@@ -45,8 +47,14 @@ export interface Props {
   isVisible?: boolean;
   icon?: IconProps;
 }
-withDefaults(defineProps<Props>(), {
+const compProps = withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
+});
+
+const isLoading = computed(() => {
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
 });
 </script>
