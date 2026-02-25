@@ -608,7 +608,7 @@ const getProtocolDomain = function (category: string): string | undefined {
 
 const getProtocolEnabledEntry = function (
   category: string,
-): ConfigEntry | undefined {
+): ConfigEntryUI | undefined {
   if (!isProtocolCategory(category) || !entries.value) return undefined;
 
   // Look for an entry in this category with a key ending in "||protocol||enabled"
@@ -828,7 +828,7 @@ const getCategoryTranslation = function (category: string) {
   const entriesInCategory = entriesForCategory(category);
 
   // For protocol categories with no visible entries, check all entries (including enabled entry)
-  let entryWithTranslation: ConfigEntry | undefined = entriesInCategory[0];
+  let entryWithTranslation: ConfigEntryUI | undefined = entriesInCategory[0];
   if (!entryWithTranslation && isProtocolCategory(category) && entries.value) {
     entryWithTranslation = entries.value.find((e) => e.category === category);
   }
