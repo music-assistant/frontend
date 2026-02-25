@@ -54,7 +54,6 @@ export const getMenuItems = function () {
         icon: ArtistIcon,
         path: "/artists",
         isLibraryNode: true,
-        hidden: store.libraryArtistsCount === 0,
       });
     }
     if (enabledMenuItemStr === "albums") {
@@ -63,7 +62,6 @@ export const getMenuItems = function () {
         icon: Disc3,
         path: "/albums",
         isLibraryNode: true,
-        hidden: store.libraryAlbumsCount === 0,
       });
     }
     if (enabledMenuItemStr === "tracks") {
@@ -72,7 +70,6 @@ export const getMenuItems = function () {
         icon: Music2,
         path: "/tracks",
         isLibraryNode: true,
-        hidden: store.libraryTracksCount === 0,
       });
     }
     if (enabledMenuItemStr === "playlists") {
@@ -81,7 +78,6 @@ export const getMenuItems = function () {
         icon: ListMusic,
         path: "/playlists",
         isLibraryNode: true,
-        hidden: store.libraryPlaylistsCount === 0,
       });
     }
     if (enabledMenuItemStr === "audiobooks") {
@@ -108,7 +104,6 @@ export const getMenuItems = function () {
         icon: Radio,
         path: "/radios",
         isLibraryNode: true,
-        hidden: store.libraryRadiosCount === 0,
       });
     }
     if (enabledMenuItemStr === "genres") {
@@ -117,7 +112,6 @@ export const getMenuItems = function () {
         icon: Tag,
         path: "/genres",
         isLibraryNode: true,
-        hidden: store.libraryGenresCount === 0,
       });
     }
     if (enabledMenuItemStr === "browse") {
