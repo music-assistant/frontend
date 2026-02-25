@@ -504,8 +504,6 @@ const toggleGenreFilter = function (genreId: number) {
 
   if (ids.length === 0) {
     params.value.genreIds = undefined;
-  } else if (ids.length === 1) {
-    params.value.genreIds = ids[0];
   } else {
     params.value.genreIds = ids;
   }
