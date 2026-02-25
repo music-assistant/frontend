@@ -16,7 +16,7 @@
       }
     "
   >
-    <v-card min-width="300" max-height="450">
+    <v-card min-width="300" max-height="450" style="overflow-y: auto">
       <v-list density="compact" slim tile>
         <!-- play menu header -->
         <v-list-item
