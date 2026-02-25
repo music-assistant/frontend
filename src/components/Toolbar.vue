@@ -27,12 +27,6 @@
       <slot name="append"></slot>
     </template>
     <template v-else-if="menuItems?.length" #append>
-      <v-progress-circular
-        v-if="showLoading && api.syncTasks.value.length > 0"
-        color="primary"
-        indeterminate
-        :title="$t('tooltip.loading')"
-      />
       <v-btn
         v-for="menuItem of menuItems.filter(
           (x) =>
@@ -131,16 +125,6 @@
         </v-menu>
       </div>
     </template>
-    <template v-else-if="showLoading" #append>
-      <v-progress-circular
-        v-if="
-          api.fetchesInProgress.value.length > 0 ||
-          api.syncTasks.value.length > 0
-        "
-        color="primary"
-        indeterminate
-      />
-    </template>
   </v-toolbar>
 </template>
 
@@ -193,7 +177,6 @@ interface Props {
   title?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
-  showLoading?: boolean;
   home?: boolean;
   iconAction?: () => void;
 }
@@ -204,7 +187,6 @@ withDefaults(defineProps<Props>(), {
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
-  showLoading: undefined,
   iconAction: undefined,
 });
 

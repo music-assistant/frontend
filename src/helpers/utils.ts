@@ -796,7 +796,6 @@ export const handlePlayBtnClick = function (
 ) {
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
-    store.playActionInProgress = true;
     if (
       item.media_type == MediaType.TRACK &&
       parentItem?.media_type == MediaType.PLAYLIST &&
@@ -805,15 +804,12 @@ export const handlePlayBtnClick = function (
         store.activePlayerQueue.state != PlaybackState.PLAYING)
     ) {
       // special case: playing a track from a playlist - play playlist from here
-      api.playMedia(parentItem.uri, undefined, false, item.item_id).then(() => {
-        store.playActionInProgress = false;
-      });
+      api.playMedia(parentItem.uri, undefined, false, item.item_id);
+
       return;
     }
     // else: play the item directly
-    api.playMedia(item).then(() => {
-      store.playActionInProgress = false;
-    });
+    api.playMedia(item).then(() => {});
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);

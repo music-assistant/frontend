@@ -119,6 +119,7 @@
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -139,6 +140,7 @@
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -168,6 +170,7 @@
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :show-details="itemtype.includes('versions')"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -291,6 +294,7 @@ export interface LoadDataParams {
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
+  hideEmptyFilter?: boolean;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
@@ -315,6 +319,7 @@ export interface Props {
   title?: string;
   hideOnEmpty?: boolean;
   showLibraryOnlyFilter?: boolean;
+  showHideEmptyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
@@ -353,6 +358,7 @@ const props = withDefaults(defineProps<Props>(), {
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
+  showHideEmptyFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
@@ -513,6 +519,17 @@ const toggleAlbumArtistsFilter = function () {
     props.itemtype,
     "albumArtistsFilter",
     params.value.albumArtistsFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const toggleHideEmptyFilter = function () {
+  params.value.hideEmptyFilter = !params.value.hideEmptyFilter;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "hideEmptyFilter",
+    params.value.hideEmptyFilter,
   );
   loadData(undefined, undefined, true);
 };
@@ -759,6 +776,13 @@ const isLibraryItem = computed(() => {
   return libraryItemTypes.includes(props.itemtype);
 });
 
+const isPlayActionInProgress = computed(() => {
+  if (!store.activePlayerQueue) return false;
+  return (
+    store.activePlayerQueue.extra_attributes?.play_action_in_progress === true
+  );
+});
+
 const musicProviders = computed(() => {
   // Map itemtype to required ProviderFeature(s)
   const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
@@ -886,6 +910,21 @@ const menuItems = computed(() => {
         : "mdi-account-music-outline",
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
+    });
+  }
+
+  // has media mappings filter (hide empty genres)
+  if (props.showHideEmptyFilter === true) {
+    items.push({
+      label: params.value.hideEmptyFilter
+        ? "tooltip.show_empty_genres"
+        : "tooltip.hide_empty_genres",
+      icon: params.value.hideEmptyFilter
+        ? "mdi-tag-check"
+        : "mdi-tag-check-outline",
+      action: toggleHideEmptyFilter,
+      active: params.value.hideEmptyFilter,
       overflowAllowed: true,
     });
   }
@@ -1150,6 +1189,12 @@ const restoreSettings = async function () {
     prefs.albumArtistsFilter !== undefined
   ) {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
+  }
+
+  // get stored/default hideEmptyFilter for this itemtype (default: on)
+  if (props.showHideEmptyFilter) {
+    params.value.hideEmptyFilter =
+      prefs.hideEmptyFilter !== undefined ? prefs.hideEmptyFilter : true;
   }
 
   // get stored/default expand property for this itemtype

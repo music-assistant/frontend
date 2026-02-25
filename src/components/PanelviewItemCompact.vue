@@ -62,6 +62,7 @@
             icon="mdi-play"
             color="white"
             fab
+            :disabled="disablePlayButton"
             style="opacity: 0.6; font-size: 20px"
             @click.stop="onPlayClick"
           />
@@ -155,6 +156,7 @@ export interface Props {
   showProviderOnCover?: boolean;
   isAvailable?: boolean;
   isPlaying?: boolean;
+  disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   disabled?: boolean;
 }
@@ -165,6 +167,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   permanentOverlay: false,
   showProviderOnCover: false,
   isAvailable: true,
+  disablePlayButton: false,
   parentItem: undefined,
 });
 
