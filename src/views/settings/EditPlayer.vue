@@ -245,7 +245,7 @@ const config_entries = computed(() => {
       injected: true,
       key: "dsp_settings",
       type: UI_ENTRY_TYPE.DSP_SETTINGS_LINK,
-      category: "audio",
+      category: "dsp",
       label: "",
       required: false,
       read_only: false,
