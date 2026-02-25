@@ -512,10 +512,12 @@ const toggleGenreFilter = function (genreId: number) {
   const query = { ...route.query };
   if (ids.length) {
     query.genre_ids = ids.join(",");
-  } else {
-    delete query.genre_ids;
-    delete query.genre_id;
   }
+  // Always remove legacy single-genre param so we have a single source of truth
+  if (!ids.length) {
+    delete query.genre_ids;
+  }
+  delete query.genre_id;
   router.replace({ query });
 
   // reload with updated filters
