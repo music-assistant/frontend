@@ -1480,14 +1480,6 @@ const connectToRemote = async () => {
     const currentUrlParams = new URLSearchParams(window.location.search);
     const joinCodeFromUrl = currentUrlParams.get("join");
 
-    console.info(
-      "[Login/connectToRemote] Checking for join code:",
-      "\n  window.location.search:",
-      window.location.search,
-      "\n  joinCodeFromUrl:",
-      joinCodeFromUrl,
-    );
-
     if (joinCodeFromUrl) {
       connectionStatusMessage.value = t(
         "login.joining_party",
