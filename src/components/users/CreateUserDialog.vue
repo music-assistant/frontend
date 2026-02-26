@@ -292,6 +292,7 @@ const handleFormSubmit = async () => {
 const roleOptions = computed(() => [
   { label: t("auth.admin_role"), value: "admin" },
   { label: t("auth.user_role"), value: "user" },
+  { label: t("auth.guest_role"), value: "guest" },
 ]);
 
 const playerOptions = computed(() => {
