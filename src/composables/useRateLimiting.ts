@@ -72,6 +72,9 @@ export function useRateLimiting() {
       if (tokensToAdd > 0) {
         bucket.tokens = Math.min(maxTokens, bucket.tokens + tokensToAdd);
         bucket.lastRefill = now;
+      } else {
+        // Always clamp to maxTokens in case config changed since last save
+        bucket.tokens = Math.min(maxTokens, bucket.tokens);
       }
 
       return bucket;

@@ -1,4 +1,5 @@
 import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSearch, mockGetArtistTracks, mockSortByRelevance } = vi.hoisted(
@@ -94,7 +95,10 @@ describe("useGuestSearch", () => {
 
     await performSearch();
 
-    expect(showSnackbar).toHaveBeenCalledWith("Search failed", "error");
+    expect(showSnackbar).toHaveBeenCalledWith(
+      $t("guest.search_failed"),
+      "error",
+    );
     expect(searching.value).toBe(false);
     expect(hasSearched.value).toBe(true);
   });
@@ -174,7 +178,7 @@ describe("useGuestSearch", () => {
     expect(selectedArtist.value).toBeNull();
     expect(artistTracks.value).toEqual([]);
     expect(showSnackbar).toHaveBeenCalledWith(
-      "Failed to load artist tracks",
+      $t("guest.load_artist_tracks_failed"),
       "error",
     );
   });

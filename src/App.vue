@@ -210,14 +210,12 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  // For guest users, skip fetching library counts and state (they don't have permission)
-  // Just set them to initialized state so they can access the guest view
-  const isGuestRole = userInfo.role === UserRole.GUEST;
-  // Party mode guests are identified by JWT claims (decoded by authManager)
+  // For party mode guests, skip fetching library counts and state
+  // (they have a restricted UI and don't need full library data)
   const isPartyModeGuest = authManager.isPartyModeGuest();
 
-  if (!isGuestRole) {
-    // Full initialization for non-guest users
+  if (!isPartyModeGuest) {
+    // Full initialization for regular and non-party guest users
     await api.fetchState();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
@@ -228,7 +226,7 @@ const completeInitialization = async () => {
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
-    console.debug("[App] Guest user - skipping full state fetch");
+    console.debug("[App] Party mode guest - skipping full state fetch");
   }
 
   // Check if party mode plugin is enabled

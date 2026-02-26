@@ -52,28 +52,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { useTheme } from "vuetify";
-import { useRoute } from "vue-router";
-import Color from "color";
-import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import PartyModeQR from "@/components/PartyModeQR.vue";
-import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
+import PartyTrackCard from "@/components/PartyTrackCard.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
-import api from "@/plugins/api";
-import { store } from "@/plugins/store";
-import {
-  EventType,
-  EventMessage,
-  PartyModeConfig,
-  PlaybackState,
-  QueueItem,
-} from "@/plugins/api/interfaces";
 import {
   ImageColorPalette,
   getColorPalette,
   getMediaItemImageUrl,
+  parseBool,
 } from "@/helpers/utils";
+import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
+import api from "@/plugins/api";
+import {
+  EventMessage,
+  EventType,
+  PartyModeConfig,
+  PlaybackState,
+  QueueItem,
+} from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
+import Color from "color";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useTheme } from "vuetify";
 
 const theme = useTheme();
 const route = useRoute();
@@ -87,8 +88,11 @@ const boostBadgeColor = ref("");
 // Check if album art background is enabled - prioritize query parameter over config
 const useAlbumArtBackground = computed(() => {
   // Query parameter takes precedence for manual override
-  if (route.query.albumArtBackground !== undefined) {
-    return !!route.query.albumArtBackground;
+  const param = route.query.albumArtBackground;
+
+  if (param !== undefined) {
+    const raw = Array.isArray(param) ? param[0] : param;
+    return parseBool(raw);
   }
   // Otherwise use config value
   return albumArtBackgroundEnabled.value;

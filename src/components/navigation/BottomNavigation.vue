@@ -1,7 +1,7 @@
 <template>
   <v-bottom-navigation
     app
-    height="60"
+    :height="height"
     bg-color="default"
     grow
     role="navigation"
@@ -83,9 +83,9 @@ import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
 export interface Props {
-  height: number;
+  height?: number;
 }
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const handleMenuClick = computed(() => () => {
   eventbus.emit("mobile-sidebar-open");

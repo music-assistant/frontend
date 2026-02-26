@@ -49,6 +49,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 
 export interface Props {
   queueItem?: QueueItem;
@@ -86,8 +87,8 @@ const badgeColor = computed(() => {
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
-  if (isBoost.value) return "Boost";
-  return "Request";
+  if (isBoost.value) return $t("guest.boost");
+  return $t("guest.request");
 });
 
 // Computed track name - prefer media_item.name for proper track title

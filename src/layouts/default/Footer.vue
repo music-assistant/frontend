@@ -39,17 +39,17 @@
 </template>
 
 <script setup lang="ts">
-import Player from "./PlayerOSD/Player.vue";
+import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import api from "@/plugins/api";
+import Player from "./PlayerOSD/Player.vue";
 
 const route = useRoute();
 
 // Party mode config for show_player_controls setting
-const partyModeShowControls = ref(false);
+const partyModeShowControls = ref<boolean | undefined>(undefined);
 
 // Fetch party mode config when entering party route
 watch(
@@ -69,9 +69,9 @@ watch(
   { immediate: true },
 );
 
-// Hide footer when on party view and controls are disabled
+// Hide footer when on party view and controls are explicitly disabled
 const hideFooter = computed(() => {
-  return route.path === "/party" && !partyModeShowControls.value;
+  return route.path === "/party" && partyModeShowControls.value === false;
 });
 </script>
 
