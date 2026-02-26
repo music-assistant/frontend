@@ -14,7 +14,7 @@
 import audio from "@/assets/almost_silent.mp3";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
-import { PlaybackState } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onMounted, ref, watch } from "vue";
 
@@ -106,7 +106,20 @@ const seekHandler = function (
   if (evt.action === "seekto" && evt.seekTime) {
     to = evt.seekTime;
   } else if (evt.action === "seekforward" || evt.action === "seekbackward") {
-    const offset = evt.seekOffset || 10;
+    // Use configurable skip amount for audiobooks/podcasts, fallback to 10 seconds for music
+    const mediaType = store.curQueueItem?.media_item?.media_type;
+    const isAudiobookOrPodcast =
+      mediaType === MediaType.AUDIOBOOK ||
+      mediaType === MediaType.PODCAST ||
+      mediaType === MediaType.PODCAST_EPISODE;
+    const defaultSkipAmount = isAudiobookOrPodcast
+      ? parseInt(
+          localStorage.getItem("frontend.settings.audiobook_skip_seconds") ||
+            "30",
+        )
+      : 10;
+
+    const offset = evt.seekOffset || defaultSkipAmount;
     const elapsed_time =
       lastSeekPos != null ? lastSeekPos : store.activePlayerQueue?.elapsed_time;
     if (elapsed_time == null) return;
