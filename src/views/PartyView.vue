@@ -208,10 +208,8 @@ const fetchQueueItems = async (force = false) => {
         (item) => item?.queue_item_id === newItem?.queue_item_id,
       );
       if (existing) {
-        // Update extra_attributes from new data (needed for guest badge display)
-        if (newItem.extra_attributes) {
-          existing.extra_attributes = newItem.extra_attributes;
-        }
+        // Merge all new fields into the existing object to keep data fresh
+        Object.assign(existing, newItem);
         merged.push(existing);
       } else {
         merged.push(newItem);
