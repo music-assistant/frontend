@@ -22,6 +22,7 @@ export interface MenuItem {
   path: string;
   isLibraryNode: boolean;
   hidden?: boolean;
+  disabled?: boolean;
 }
 
 export const getMenuItems = function () {
@@ -86,7 +87,7 @@ export const getMenuItems = function () {
         icon: BookAudio,
         path: "/audiobooks",
         isLibraryNode: true,
-        hidden: store.libraryAudiobooksCount === 0,
+        disabled: store.libraryAudiobooksCount === 0,
       });
     }
     if (enabledMenuItemStr === "podcasts") {
@@ -95,7 +96,7 @@ export const getMenuItems = function () {
         icon: Podcast,
         path: "/podcasts",
         isLibraryNode: true,
-        hidden: store.libraryPodcastsCount === 0,
+        disabled: store.libraryPodcastsCount === 0,
       });
     }
     if (enabledMenuItemStr === "radios") {
