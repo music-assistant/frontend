@@ -983,8 +983,12 @@ export const getContextMenuItems = async function (
       icon: "mdi-link",
     });
   }
-  // link to genre (any non-genre media item)
-  if (firstItem.media_type !== MediaType.GENRE) {
+  // link to genre (library items only, non-genre)
+  if (
+    items.every(
+      (i) => i.media_type !== MediaType.GENRE && i.provider === "library",
+    )
+  ) {
     contextMenuItems.push({
       label: "link_to_genre",
       labelArgs: [],
