@@ -34,7 +34,11 @@
 import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { EventType, ProviderType, UserRole } from "@/plugins/api/interfaces";
+import {
+  EventType as ApiEventType,
+  ProviderType,
+  UserRole,
+} from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -210,8 +214,6 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  // For party mode guests, skip fetching library counts and state
-  // (they have a restricted UI and don't need full library data)
   const isPartyModeGuest = authManager.isPartyModeGuest();
 
   if (!isPartyModeGuest) {
@@ -386,7 +388,7 @@ onMounted(async () => {
   }
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
-  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+  api.subscribe(ApiEventType.PROVIDERS_UPDATED, async () => {
     try {
       const partyModeProviders = await api.getProviderConfigs(
         ProviderType.PLUGIN,
