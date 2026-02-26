@@ -2,15 +2,24 @@
   <!-- play/pause button: disabled if no content -->
   <Icon
     v-if="isVisible && player"
-    v-bind="icon"
-    :disabled="!canPlayPause"
+    v-bind="{ ...icon, ...$attrs }"
+    class="play-btn-icon"
+    :disabled="!canPlayPause || isLoading"
     :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
     variant="button"
     @click="api.playerCommandPlayPause(player.player_id)"
   />
+  <v-progress-circular
+    v-if="isVisible && player && isLoading"
+    class="play-btn-spinner"
+    indeterminate
+    :size="compProps.spinnerSize"
+    :width="2"
+  />
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -25,6 +34,7 @@ export interface Props {
   withCircle?: boolean;
   icon?: IconProps;
   iconStyle?: string;
+  spinnerSize?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
@@ -32,6 +42,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   withCircle: true,
   icon: undefined,
   iconStyle: "circle",
+  spinnerSize: 46,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
@@ -63,4 +74,26 @@ const baseIcon = computed(() => {
   }
   return "mdi-play";
 });
+
+const isLoading = computed(() => {
+  if (!compProps.player) return false;
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
+});
 </script>
+
+<style>
+.play-btn-icon {
+  position: relative;
+}
+
+.play-btn-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+</style>

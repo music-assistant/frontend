@@ -61,18 +61,11 @@ const loading = ref(false);
 const mode = useColorMode();
 
 onMounted(() => {
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
-  const enabledMenuItems: string[] = storedMenuConf
-    ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
-  const enabledMenuItemsSet = new Set(enabledMenuItems);
-  for (const defaultItem of DEFAULT_MENU_ITEMS) {
-    if (!enabledMenuItemsSet.has(defaultItem)) {
-      enabledMenuItems.push(defaultItem);
-      enabledMenuItemsSet.add(defaultItem);
-    }
-  }
-
+  const enabledMenuItems = DEFAULT_MENU_ITEMS.filter(
+    (item) =>
+      localStorage.getItem(`frontend.settings.menu_item_${item}_enabled`) !==
+      "false",
+  );
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
   mode.value = storedTheme as "light" | "dark" | "auto";
 
@@ -235,7 +228,27 @@ const saveValues = function (values: Record<string, ConfigValueType>) {
     const storageKey = `frontend.settings.${key}`;
     const value = values[key];
     if (value != null) {
-      localStorage.setItem(storageKey, value.toString());
+      if (key === "menu_items") {
+        const selectedItems = Array.isArray(value)
+          ? (value as string[])
+          : String(value).split(",");
+        for (const item of DEFAULT_MENU_ITEMS) {
+          if (selectedItems.includes(item)) {
+            localStorage.removeItem(
+              `frontend.settings.menu_item_${item}_enabled`,
+            );
+          } else {
+            localStorage.setItem(
+              `frontend.settings.menu_item_${item}_enabled`,
+              "false",
+            );
+          }
+        }
+        // clean up old single-key format
+        localStorage.removeItem(storageKey);
+      } else {
+        localStorage.setItem(storageKey, value.toString());
+      }
 
       if (key === "theme") {
         mode.value = value.toString() as "light" | "dark" | "auto";

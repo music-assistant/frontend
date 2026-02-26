@@ -729,7 +729,8 @@
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
         "filter_provider": "Filter by music provider",
-        "in_provider_library": "This item is in the provider's library"
+        "in_provider_library": "This item is in the provider's library",
+        "filter_genre": "Filter by genre"
     },
     "topresult": "Top result",
     "track": "Track",

@@ -15,6 +15,7 @@
     :restore-state="restoreState"
     :total="total"
     :show-provider-filter="true"
+    :show-hide-empty-filter="true"
     :extra-menu-items="extraMenuItems"
   />
   <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
@@ -77,6 +78,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.hideEmptyFilter ?? true,
   );
 };
 
@@ -117,8 +119,12 @@ const triggerRefresh = async () => {
 };
 
 onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_ADDED,
+  const unsub = api.subscribe_multi(
+    [
+      EventType.MEDIA_ITEM_ADDED,
+      EventType.MEDIA_ITEM_UPDATED,
+      EventType.MEDIA_ITEM_DELETED,
+    ],
     (evt: EventMessage) => {
       if (evt.object_id?.startsWith("library://genre")) {
         triggerRefresh();

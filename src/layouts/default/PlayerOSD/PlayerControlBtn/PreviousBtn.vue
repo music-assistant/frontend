@@ -2,8 +2,8 @@
   <!-- prev button -->
   <Icon
     v-if="isVisible && player"
-    v-bind="icon"
-    :disabled="!canPrevious"
+    v-bind="{ ...icon, ...$attrs }"
+    :disabled="!canPrevious || isLoading"
     icon="mdi-skip-previous-outline"
     variant="button"
     @click="api.playerCommandPrevious(player.player_id)"
@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
@@ -55,5 +56,12 @@ const canPrevious = computed(() => {
   }
   // Fall back to queue or player capabilities
   return queueHasPrevious.value || playerHasPrevious.value;
+});
+
+const isLoading = computed(() => {
+  if (!compProps.player) return false;
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
 });
 </script>

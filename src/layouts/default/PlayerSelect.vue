@@ -123,7 +123,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { PlaybackState, Player, PlayerFeature } from "@/plugins/api/interfaces";
+import { Player, PlayerFeature } from "@/plugins/api/interfaces";
 
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -133,7 +133,6 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
 const recentlySelectedPlayerIds = ref<string[]>([]);
-const playerSortOrder = ref<string[]>([]);
 const allPlayersExpanded = ref<number | undefined>(undefined);
 const playerSearchQuery = ref("");
 const playerSearchInput = ref<InstanceType<typeof InputGroupInput> | null>(
@@ -165,54 +164,6 @@ if (recentPlayersPref.value) {
   recentlySelectedPlayerIds.value = recentPlayersPref.value;
 }
 
-// Calculate priority score for a player
-const getPlayerPriority = (player: Player): number => {
-  let score = 0;
-
-  // Playing or paused = 2 points
-  if (
-    player.playback_state === PlaybackState.PLAYING ||
-    player.playback_state === PlaybackState.PAUSED
-  ) {
-    score += 2;
-  }
-
-  // "This device" web/companion player = 2 points
-  if (
-    player.player_id === webPlayer.player_id ||
-    player.player_id === store.companionPlayerId
-  ) {
-    score += 2;
-  }
-
-  // Has current_media = 1 point
-  if (player.current_media) {
-    score += 1;
-  }
-
-  // Recently selected: 3 points for most recent, 2 for second, 1 for third
-  const recentIndex = recentlySelectedPlayerIds.value.indexOf(player.player_id);
-  if (recentIndex !== -1) {
-    score += MAX_RECENT_PLAYERS - recentIndex;
-  }
-
-  return score;
-};
-
-// Calculate sort order once when menu opens (snapshot of priorities)
-const calculateSortOrder = () => {
-  const players = Object.values(api.players).filter((x) => playerVisible(x));
-  const sorted = players.sort((a, b) => {
-    const priorityA = getPlayerPriority(a);
-    const priorityB = getPlayerPriority(b);
-    if (priorityB !== priorityA) {
-      return priorityB - priorityA;
-    }
-    return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
-  });
-  playerSortOrder.value = sorted.map((p) => p.player_id);
-};
-
 // computed properties
 const allPlayers = computed(() => {
   return Object.values(api.players)
@@ -232,39 +183,28 @@ const filteredPlayers = computed(() => {
   return allPlayers.value.filter((p) => !preferredIds.includes(p.player_id));
 });
 
-// Show search box when there are more than 8 players
-const showPlayerSearch = computed(() => allPlayers.value.length > 8);
-
-// Preferred players shown at top (playing, active, recently selected, web player)
+// Preferred players shown at top (last 3 recently selected players)
 const preferredPlayers = computed(() => {
   const players = Object.values(api.players).filter((x) => playerVisible(x));
   if (players.length <= 3) {
-    // If 3 or fewer players, show all as preferred
-    return players.sort((a, b) => {
-      const indexA = playerSortOrder.value.indexOf(a.player_id);
-      const indexB = playerSortOrder.value.indexOf(b.player_id);
-      return indexA - indexB;
-    });
+    // If 3 or fewer players, show all sorted alphabetically
+    return players.sort((a, b) =>
+      a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1,
+    );
   }
-  // Filter to only players with priority > 0, then sort by frozen order, limit to top 3
-  const preferred = players.filter((p) => getPlayerPriority(p) > 0);
-  return preferred
-    .sort((a, b) => {
-      const indexA = playerSortOrder.value.indexOf(a.player_id);
-      const indexB = playerSortOrder.value.indexOf(b.player_id);
-      return indexA - indexB;
-    })
-    .slice(0, 3);
+  // Show only recently selected players that still exist
+  const recentPlayers = recentlySelectedPlayerIds.value
+    .map((id) => players.find((p) => p.player_id === id))
+    .filter((p): p is Player => p !== undefined)
+    .slice(0, MAX_RECENT_PLAYERS);
+  return recentPlayers;
 });
 
 //watchers
 watch(
   () => store.showPlayersMenu,
   (newVal) => {
-    if (newVal) {
-      // Calculate sort order when menu opens
-      calculateSortOrder();
-    } else {
+    if (!newVal) {
       // Save preferences and reset state when menu closes
       playerSearchQuery.value = "";
       if (store.activePlayerId) {

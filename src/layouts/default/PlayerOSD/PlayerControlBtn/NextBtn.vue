@@ -2,8 +2,8 @@
   <!-- next button -->
   <Icon
     v-if="isVisible && player"
-    v-bind="icon"
-    :disabled="!canNext"
+    v-bind="{ ...icon, ...$attrs }"
+    :disabled="!canNext || isLoading"
     icon="mdi-skip-next-outline"
     variant="button"
     @click="api.playerCommandNext(player.player_id)"
@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
@@ -55,5 +56,12 @@ const canNext = computed(() => {
   }
   // Fall back to queue or player capabilities
   return queueHasNext.value || playerHasNext.value;
+});
+
+const isLoading = computed(() => {
+  if (!compProps.player) return false;
+  return (
+    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
 });
 </script>

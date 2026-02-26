@@ -24,7 +24,10 @@
       />
     </div>
     <!-- play/pause button -->
-    <div v-if="visibleComponents && visibleComponents.play?.isVisible">
+    <div
+      v-if="visibleComponents && visibleComponents.play?.isVisible"
+      class="play-btn-wrapper"
+    >
       <PlayBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
@@ -118,5 +121,11 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.play-btn-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

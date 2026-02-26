@@ -51,7 +51,6 @@ interface Store {
   libraryGenresCount?: number;
   isTouchscreen: boolean;
   playerTipShown: boolean;
-  playActionInProgress: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
   mobileLayout: boolean;
@@ -115,7 +114,6 @@ export const store: Store = reactive({
   isTouchscreen: isTouchscreenDevice(),
   playMenuShown: false,
   playerTipShown: false,
-  playActionInProgress: false,
   deviceType: DEVICE_TYPE,
   mobileLayout: computed(() => {
     const isMobileDevice = getBreakpointValue({ breakpoint: "tablet" });

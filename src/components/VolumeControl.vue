@@ -99,14 +99,14 @@
       v-if="
         showSubPlayers &&
         (player.group_members.length > 0 || showSyncControls) &&
-        getVolumePlayers(player).length > 0
+        getChildPlayers(player).length > 0
       "
       @click.stop
     >
       <v-divider style="margin-top: 10px; margin-bottom: 15px" />
 
       <div
-        v-for="childPlayer in getVolumePlayers(player)"
+        v-for="childPlayer in getChildPlayers(player)"
         :key="childPlayer.player_id"
       >
         <!-- player icon + player name + optional sync checkbox-->
@@ -152,6 +152,7 @@
           </template>
         </v-list-item>
         <!-- mute btn + volume slider + volume level text-->
+        <!-- only show if the child player is part of the group and has volume control -->
         <v-list-item
           v-if="
             player.group_members.includes(childPlayer.player_id) &&
@@ -280,15 +281,14 @@ const mainDisplayVolume = ref(
   ),
 );
 
-const getVolumePlayers = function (player: Player) {
+const getChildPlayers = function (player: Player) {
   const items: Player[] = [];
   // always include group_childs
   for (const groupChildId of player.group_members) {
-    const volumeChild = api?.players[groupChildId];
-    if (!volumeChild) continue;
-    if (volumeChild.volume_control == PLAYER_CONTROL_NONE) continue;
-    if (volumeChild && volumeChild.available && !items.includes(volumeChild)) {
-      items.push(volumeChild);
+    const groupChild = api?.players[groupChildId];
+    if (!groupChild) continue;
+    if (groupChild && groupChild.available && !items.includes(groupChild)) {
+      items.push(groupChild);
     }
   }
   // when groupcontrols are enabled, show all groupable players
@@ -326,11 +326,8 @@ const getVolumePlayers = function (player: Player) {
       }
     }
   }
-  // Sort: selected (in group) first, then by name
+  // Sort: by name
   items.sort((a, b) => {
-    const aSelected = player.group_members.includes(a.player_id);
-    const bSelected = player.group_members.includes(b.player_id);
-    if (aSelected !== bSelected) return aSelected ? -1 : 1;
     return a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1;
   });
   return items;

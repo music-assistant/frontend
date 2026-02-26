@@ -10,12 +10,9 @@ import {
   Music2,
   PartyPopper,
   Podcast,
-  Compass,
   Radio,
   Search,
   Settings,
-  LayoutGrid,
-  Sparkles,
   Tag,
 } from "lucide-vue-next";
 import { Component } from "vue";
@@ -29,13 +26,16 @@ export interface MenuItem {
 }
 
 export const getMenuItems = function () {
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
-  const enabledItems: string[] = storedMenuConf
-    ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
   const items: MenuItem[] = [];
-  // we loop through the enabled items list so we can respect the order
-  for (const enabledMenuItemStr of enabledItems) {
+  // we loop through DEFAULT_MENU_ITEMS to respect default order;
+  // new items added to DEFAULT_MENU_ITEMS automatically appear unless explicitly disabled
+  for (const enabledMenuItemStr of DEFAULT_MENU_ITEMS) {
+    if (
+      localStorage.getItem(
+        `frontend.settings.menu_item_${enabledMenuItemStr}_enabled`,
+      ) === "false"
+    )
+      continue;
     if (enabledMenuItemStr === "home") {
       items.push({
         label: "home",

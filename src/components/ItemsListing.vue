@@ -94,6 +94,7 @@
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -114,6 +115,7 @@
               :show-checkboxes="showCheckboxes"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -143,6 +145,7 @@
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :show-details="itemtype.includes('versions')"
+              :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
               @select="onSelect"
             />
@@ -245,7 +248,8 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -259,6 +263,7 @@ export interface LoadDataParams {
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
+  hideEmptyFilter?: boolean;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
@@ -283,6 +288,8 @@ export interface Props {
   title?: string;
   hideOnEmpty?: boolean;
   showLibraryOnlyFilter?: boolean;
+  showGenreFilter?: boolean;
+  showHideEmptyFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
@@ -320,6 +327,8 @@ const props = withDefaults(defineProps<Props>(), {
   infiniteScroll: true,
   title: undefined,
   showLibraryOnlyFilter: false,
+  showGenreFilter: false,
+  showHideEmptyFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
@@ -359,6 +368,7 @@ const expanded = ref(true);
 const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
+const genreOptions = ref<{ label: string; value: number }[]>([]);
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -463,6 +473,55 @@ const toggleAlbumArtistsFilter = function () {
     params.value.albumArtistsFilter,
   );
   loadData(undefined, undefined, true);
+};
+
+const toggleHideEmptyFilter = function () {
+  params.value.hideEmptyFilter = !params.value.hideEmptyFilter;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "hideEmptyFilter",
+    params.value.hideEmptyFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const toggleGenreFilter = function (genreId: number) {
+  // normalize current ids to an array
+  const current = params.value.genreIds;
+  let ids: number[] = [];
+  if (Array.isArray(current)) {
+    ids = [...current];
+  } else if (typeof current === "number") {
+    ids = [current];
+  }
+
+  if (ids.includes(genreId)) {
+    ids = ids.filter((id) => id !== genreId);
+  } else {
+    ids.push(genreId);
+  }
+
+  if (ids.length === 0) {
+    params.value.genreIds = undefined;
+  } else {
+    params.value.genreIds = ids;
+  }
+
+  // keep URL in sync so back/refresh preserves filters
+  const query = { ...route.query };
+  if (ids.length) {
+    query.genre_ids = ids.join(",");
+  }
+  // Always remove legacy single-genre param so we have a single source of truth
+  if (!ids.length) {
+    delete query.genre_ids;
+  }
+  delete query.genre_id;
+  router.replace({ query });
+
+  // reload with updated filters
+  loadData(true, undefined, true);
 };
 
 const isSelected = function (item: MediaItemTypeOrItemMapping) {
@@ -672,6 +731,13 @@ const isLibraryItem = computed(() => {
   return libraryItemTypes.includes(props.itemtype);
 });
 
+const isPlayActionInProgress = computed(() => {
+  if (!store.activePlayerQueue) return false;
+  return (
+    store.activePlayerQueue.extra_attributes?.play_action_in_progress === true
+  );
+});
+
 const musicProviders = computed(() => {
   // Map itemtype to required ProviderFeature(s)
   const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
@@ -774,6 +840,32 @@ const menuItems = computed(() => {
     });
   }
 
+  // genre filter
+  if (props.showGenreFilter === true && genreOptions.value.length > 0) {
+    const current = params.value.genreIds;
+    const activeIds = Array.isArray(current)
+      ? current
+      : typeof current === "number"
+        ? [current]
+        : [];
+    items.push({
+      label: "tooltip.filter_genre",
+      icon: "mdi-tag-outline",
+      disabled: loading.value,
+      active: activeIds.length > 0,
+      closeOnContentClick: false,
+      overflowAllowed: true,
+      subItems: genreOptions.value.map((genre) => {
+        const selected = activeIds.includes(genre.value);
+        return {
+          label: genre.label,
+          selected,
+          action: () => toggleGenreFilter(genre.value),
+        };
+      }),
+    });
+  }
+
   // favorites only filter
   if (props.showFavoritesOnlyFilter === true) {
     items.push({
@@ -794,6 +886,21 @@ const menuItems = computed(() => {
         : "mdi-account-music-outline",
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
+    });
+  }
+
+  // has media mappings filter (hide empty genres)
+  if (props.showHideEmptyFilter === true) {
+    items.push({
+      label: params.value.hideEmptyFilter
+        ? "tooltip.show_empty_genres"
+        : "tooltip.hide_empty_genres",
+      icon: params.value.hideEmptyFilter
+        ? "mdi-tag-check"
+        : "mdi-tag-check-outline",
+      action: toggleHideEmptyFilter,
+      active: params.value.hideEmptyFilter,
       overflowAllowed: true,
     });
   }
@@ -1060,6 +1167,12 @@ const restoreSettings = async function () {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
+  // get stored/default hideEmptyFilter for this itemtype (default: on)
+  if (props.showHideEmptyFilter) {
+    params.value.hideEmptyFilter =
+      prefs.hideEmptyFilter !== undefined ? prefs.hideEmptyFilter : true;
+  }
+
   // get stored/default expand property for this itemtype
   if (props.allowCollapse !== false && prefs.expand !== undefined) {
     expanded.value = prefs.expand;
@@ -1182,6 +1295,33 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+const loadGenreOptions = async () => {
+  if (!props.showGenreFilter) return;
+
+  try {
+    const genres = await api.getLibraryGenres(
+      undefined,
+      undefined,
+      100,
+      0,
+      "name",
+    );
+
+    genreOptions.value = genres.map((genre) => ({
+      label: genre.name,
+      value: Number(genre.item_id),
+    }));
+  } catch {
+    toast.error(t("error_loading_genres"));
+  }
+};
+
+let _unsubscribeMediaEvents: (() => void) | undefined;
+onBeforeUnmount(() => {
+  eventbus.off("clearSelection");
+  _unsubscribeMediaEvents?.();
+});
+
 onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
@@ -1209,7 +1349,7 @@ onMounted(async () => {
     loadData(true);
   }
 
-  applyQueryGenreFilter();
+  await loadGenreOptions();
 
   // Listen for selection clearing events
   eventbus.on("clearSelection", () => {
@@ -1218,7 +1358,7 @@ onMounted(async () => {
   });
 
   // signal if/when items get played/updated/removed
-  const unsub = api.subscribe_multi(
+  _unsubscribeMediaEvents = api.subscribe_multi(
     [
       EventType.MEDIA_ITEM_UPDATED,
       EventType.MEDIA_ITEM_DELETED,
@@ -1248,10 +1388,6 @@ onMounted(async () => {
       }
     },
   );
-  onBeforeUnmount(() => {
-    eventbus.off("clearSelection");
-    unsub();
-  });
 });
 
 watch(
