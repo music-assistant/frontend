@@ -198,7 +198,6 @@ const completeInitialization = async () => {
   authManager.setCurrentUser(userInfo);
   store.currentUser = userInfo;
   store.serverInfo = serverInfo;
-  store.currentUser = userInfo;
 
   // Enable kiosk mode when running in Home Assistant ingress
   // COMMENTED OUT - HA INTEGRATION DISABLED
