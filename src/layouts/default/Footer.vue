@@ -20,7 +20,7 @@
       v-if="store.mobileLayout"
       app
       :height="store.isInPWAMode ? 70 : 60"
-      :padding="store.isInPWAMode ? 10 : 0"
+      :style="store.isInPWAMode ? 'padding-bottom: 10px;' : ''"
     />
 
     <v-footer
