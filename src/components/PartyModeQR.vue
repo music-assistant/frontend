@@ -30,11 +30,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
-import QRCode from "qrcode";
 import api from "@/plugins/api";
-import { $t } from "@/plugins/i18n";
 import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import QRCode from "qrcode";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
