@@ -1013,6 +1013,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public addGenreMediaMapping(
+    genre_id: string,
+    media_type: string,
+    media_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/add_media_mapping", {
+      genre_id,
+      media_type,
+      media_id,
+    });
+  }
+
   public async getGenreOverviewRows(
     item_id: string,
     provider_instance_id_or_domain: string,

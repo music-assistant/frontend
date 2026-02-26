@@ -983,6 +983,20 @@ export const getContextMenuItems = async function (
       icon: "mdi-link",
     });
   }
+  // link to genre (any non-genre media item)
+  if (firstItem.media_type !== MediaType.GENRE) {
+    contextMenuItems.push({
+      label: "link_to_genre",
+      labelArgs: [],
+      action: () => {
+        eventbus.emit("linkGenreDialog", {
+          items: items as MediaItemType[],
+        });
+        eventbus.emit("clearSelection");
+      },
+      icon: "mdi-tag-plus",
+    });
+  }
   // merge genres (admin only, all items must be library genres)
   if (
     items.every(
