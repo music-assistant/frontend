@@ -228,8 +228,14 @@ const fetchQueueItems = async (force = false) => {
 // Dynamic background
 const img = new Image();
 img.crossOrigin = "Anonymous";
-img.addEventListener("load", function () {
+const handleImageLoad = () => {
   colorPalette.value = getColorPalette(img);
+};
+img.addEventListener("load", handleImageLoad);
+
+onBeforeUnmount(() => {
+  img.removeEventListener("load", handleImageLoad);
+  img.src = "";
 });
 
 watch(
