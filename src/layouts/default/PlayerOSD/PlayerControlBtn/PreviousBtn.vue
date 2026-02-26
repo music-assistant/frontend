@@ -2,7 +2,7 @@
   <!-- prev button -->
   <Icon
     v-if="isVisible && player"
-    v-bind="icon"
+    v-bind="{ ...icon, ...$attrs }"
     :disabled="!canPrevious || isLoading"
     icon="mdi-skip-previous-outline"
     variant="button"
@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";

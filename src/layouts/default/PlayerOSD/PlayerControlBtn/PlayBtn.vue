@@ -2,7 +2,7 @@
   <!-- play/pause button: disabled if no content -->
   <Icon
     v-if="isVisible && player"
-    v-bind="icon"
+    v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
     :disabled="!canPlayPause || isLoading"
     :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
@@ -13,12 +13,13 @@
     v-if="isVisible && player && isLoading"
     class="play-btn-spinner"
     indeterminate
-    :size="46"
+    :size="compProps.spinnerSize"
     :width="2"
   />
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -33,6 +34,7 @@ export interface Props {
   withCircle?: boolean;
   icon?: IconProps;
   iconStyle?: string;
+  spinnerSize?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
@@ -40,6 +42,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   withCircle: true,
   icon: undefined,
   iconStyle: "circle",
+  spinnerSize: 46,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));

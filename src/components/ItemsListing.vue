@@ -1316,6 +1316,12 @@ const loadGenreOptions = async () => {
   }
 };
 
+let _unsubscribeMediaEvents: (() => void) | undefined;
+onBeforeUnmount(() => {
+  eventbus.off("clearSelection");
+  _unsubscribeMediaEvents?.();
+});
+
 onMounted(async () => {
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
@@ -1352,7 +1358,7 @@ onMounted(async () => {
   });
 
   // signal if/when items get played/updated/removed
-  const unsub = api.subscribe_multi(
+  _unsubscribeMediaEvents = api.subscribe_multi(
     [
       EventType.MEDIA_ITEM_UPDATED,
       EventType.MEDIA_ITEM_DELETED,
@@ -1382,10 +1388,6 @@ onMounted(async () => {
       }
     },
   );
-  onBeforeUnmount(() => {
-    eventbus.off("clearSelection");
-    unsub();
-  });
 });
 
 watch(

@@ -415,12 +415,15 @@
             class="media-controls-item"
             max-height="45px"
           />
-          <PlayBtn
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="70px"
-          />
+          <div class="play-btn-wrapper">
+            <PlayBtn
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              class="media-controls-item"
+              :icon="{ staticWidth: '70px', staticHeight: '70px' }"
+              :spinner-size="73"
+            />
+          </div>
           <NextBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"

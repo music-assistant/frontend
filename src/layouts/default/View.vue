@@ -19,6 +19,7 @@
           <create-playlist-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
+          <link-genre-dialog />
           <item-context-menu />
         </div>
       </SidebarInset>
@@ -31,6 +32,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
+import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";

@@ -31,12 +31,17 @@ export type DeleteGenreDialogEvent = {
   navigateBack?: boolean;
 };
 
+export type LinkGenreDialogEvent = {
+  items: MediaItemType[];
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
   createPlaylist: CreatePlaylistEvent;
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
+  linkGenreDialog: LinkGenreDialogEvent;
   clearSelection: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
