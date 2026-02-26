@@ -7,8 +7,8 @@ import { api, ConnectionState } from "./api";
 
 const routes = [
   // Guest view uses minimal layout without navigation/player controls
-  // Guest authentication is handled by Login.vue via the ?code= query parameter
-  // which exchanges the short code for a JWT before navigating here
+  // Guest authentication is handled by Login.vue via the ?join= query parameter
+  // which exchanges the short join code for a JWT before navigating here
   {
     path: "/guest",
     component: () => import("@/layouts/GuestLayout.vue"),
