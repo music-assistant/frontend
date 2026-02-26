@@ -49,7 +49,12 @@ export class AuthManager {
       if (parts.length !== 3) return null;
       // Base64url decode the payload (middle part)
       const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-      const decoded = JSON.parse(atob(payload));
+      // Add padding so length is a multiple of 4 (required by atob)
+      let padded = payload;
+      while (padded.length % 4 !== 0) {
+        padded += "=";
+      }
+      const decoded = JSON.parse(atob(padded));
       return decoded as JWTClaims;
     } catch {
       return null;
