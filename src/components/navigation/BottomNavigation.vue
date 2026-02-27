@@ -1,7 +1,7 @@
 <template>
   <v-bottom-navigation
     app
-    :height="height"
+    height="60"
     bg-color="default"
     grow
     role="navigation"
@@ -14,20 +14,6 @@
     >
       <Menu class="w-5 h-5" />
       <span class="menuButton">Menu</span>
-    </v-btn>
-
-    <v-btn
-      v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode && !x.hidden)"
-      :key="menuItem.label"
-      :to="menuItem.path"
-      :aria-label="$t(menuItem.label)"
-      tabindex="0"
-      variant="text"
-      active-color="fg"
-      base-color="grey"
-    >
-      <component :is="menuItem.icon" class="w-6 h-6" />
-      <span class="menuButton">{{ $t(menuItem.label) }}</span>
     </v-btn>
 
     <v-btn
@@ -54,21 +40,6 @@
         </v-btn>
       </template>
     </ActivePlayerPopover>
-
-    <v-list>
-      <v-list-item
-        v-for="menuItem of menuItems.filter(
-          (x) => x.isLibraryNode && !x.hidden,
-        )"
-        :key="menuItem.label"
-        :title="$t(menuItem.label)"
-        :to="menuItem.path"
-      >
-        <template #prepend>
-          <component :is="menuItem.icon" class="w-5 h-5 mr-3" />
-        </template>
-      </v-list-item>
-    </v-list>
   </v-bottom-navigation>
 </template>
 
@@ -77,21 +48,13 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Home, Menu, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
-import { computed } from "vue";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
-import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
-export interface Props {
-  height?: number;
-}
-const props = defineProps<Props>();
 
-const handleMenuClick = computed(() => () => {
+const handleMenuClick = () => {
   eventbus.emit("mobile-sidebar-open");
-});
-
-const menuItems = computed(() => getMenuItems());
+};
 
 const handleDiscoverClick = () => {
   router.push({ name: "home" });
