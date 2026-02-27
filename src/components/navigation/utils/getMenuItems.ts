@@ -12,7 +12,7 @@ import {
   Radio,
   Search,
   Settings,
-  Tag,
+  Compass,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -113,7 +113,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "genres") {
       items.push({
         label: "genres",
-        icon: Tag,
+        icon: Compass,
         path: "/genres",
         isLibraryNode: true,
       });

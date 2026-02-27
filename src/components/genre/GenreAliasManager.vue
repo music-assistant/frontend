@@ -9,7 +9,7 @@
     <v-list v-if="aliasSectionExpanded">
       <ListItem v-for="alias in aliases" :key="alias">
         <template #prepend>
-          <Tags :size="20" />
+          <Route :size="20" />
         </template>
         <template #title>{{ formatAliasName(alias) }}</template>
         <template #append>
@@ -78,7 +78,7 @@ import { Genre } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
-  Tags,
+  Route,
   Plus,
   Link,
   Trash2,

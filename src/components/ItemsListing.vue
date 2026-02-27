@@ -850,7 +850,7 @@ const menuItems = computed(() => {
         : [];
     items.push({
       label: "tooltip.filter_genre",
-      icon: "mdi-tag-outline",
+      icon: "mdi-compass-outline",
       disabled: loading.value,
       active: activeIds.length > 0,
       closeOnContentClick: false,
@@ -897,8 +897,8 @@ const menuItems = computed(() => {
         ? "tooltip.show_empty_genres"
         : "tooltip.hide_empty_genres",
       icon: params.value.hideEmptyFilter
-        ? "mdi-tag-check"
-        : "mdi-tag-check-outline",
+        ? "mdi-compass"
+        : "mdi-compass-outline",
       action: toggleHideEmptyFilter,
       active: params.value.hideEmptyFilter,
       overflowAllowed: true,

@@ -115,7 +115,7 @@
           v-if="searchResult && !loading"
           :widget-row="{
             title: $t('genres'),
-            icon: Tag,
+            icon: Compass,
             items: searchResult.genres,
           }"
           :show-provider-on-cover="true"
@@ -156,7 +156,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Search, Tag } from "lucide-vue-next";
+import { Compass, Search } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 // local refs
