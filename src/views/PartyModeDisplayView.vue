@@ -1,5 +1,8 @@
 <template>
-  <div class="party-view" :style="gradientBackgroundStyle">
+  <div
+    :class="['party-view', { 'party-view--no-footer': !showPlayerControls }]"
+    :style="gradientBackgroundStyle"
+  >
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
       v-if="useAlbumArtBackground && albumArtUrl"
@@ -38,30 +41,18 @@
         </TransitionGroup>
       </div>
     </div>
-
-    <!-- Player Controls (optional, hidden by default for frameless mode) -->
-    <div v-if="showPlayerControls" class="party-player-controls">
-      <PlayerControls />
-      <VolumeControl
-        v-if="store.activePlayer"
-        :player="store.activePlayer"
-        class="party-volume"
-      />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
 import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
-import VolumeControl from "@/components/VolumeControl.vue";
 import {
   ImageColorPalette,
   getColorPalette,
   getMediaItemImageUrl,
   parseBool,
 } from "@/helpers/utils";
-import PlayerControls from "@/layouts/default/PlayerOSD/PlayerControls.vue";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -81,7 +72,7 @@ const theme = useTheme();
 const route = useRoute();
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
-const showPlayerControlsEnabled = ref(false); // Default to false (frameless)
+const showPlayerControls = ref(false); // Whether footer player controls are shown
 // Badge colors (hex values from config, loaded from party_mode/config)
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
@@ -97,11 +88,6 @@ const useAlbumArtBackground = computed(() => {
   }
   // Otherwise use config value
   return albumArtBackgroundEnabled.value;
-});
-
-// Check if player controls should be shown (from party mode config)
-const showPlayerControls = computed(() => {
-  return showPlayerControlsEnabled.value;
 });
 
 const isPlaying = computed(
@@ -368,7 +354,7 @@ onMounted(async () => {
         albumArtBackgroundEnabled.value = config.album_art_background;
       }
       if (config.show_player_controls !== undefined) {
-        showPlayerControlsEnabled.value = config.show_player_controls;
+        showPlayerControls.value = config.show_player_controls;
       }
       // Badge colors (always set from config)
       requestBadgeColor.value = config.request_badge_color || "#2196F3";
@@ -625,47 +611,17 @@ watch(
     font-size: 0.875rem;
   }
 }
-
-/* Player Controls (when enabled) */
-.party-player-controls {
-  position: absolute;
-  bottom: 2vw;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.party-volume {
-  width: 150px;
-}
-
-@media (max-width: 768px) {
-  .party-player-controls {
-    bottom: 1rem;
-    padding: 0.75rem 1.5rem;
-    gap: 1rem;
-  }
-
-  .party-volume {
-    width: 100px;
-  }
-}
 </style>
 
 <style>
 /* Global styles to ensure party view fills its container properly */
 .content-section:has(.party-view) {
   overflow: hidden !important;
-  padding-bottom: 0 !important;
   display: flex;
   flex-direction: column;
+}
+
+.content-section:has(.party-view--no-footer) {
+  padding-bottom: 0 !important;
 }
 </style>
