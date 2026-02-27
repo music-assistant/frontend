@@ -1273,7 +1273,10 @@ const fetchBadgeColors = async () => {
 };
 
 onMounted(() => {
-  fetchBadgeColors();
+  // Only fetch badge colors if party_mode provider is loaded
+  if (Object.values(api.providers).some((p) => p.domain === "party_mode")) {
+    fetchBadgeColors();
+  }
 });
 
 // listen for item updates to refresh items when that happens
