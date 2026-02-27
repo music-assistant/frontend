@@ -138,9 +138,7 @@ describe("useRateLimiting", () => {
     expect(rateLimiting.nextTokenCountdown.value.length).toBeGreaterThan(0);
 
     expect(typeof rateLimiting.addQueueTokenCountdown.value).toBe("string");
-    expect(
-      rateLimiting.addQueueTokenCountdown.value.length,
-    ).toBeGreaterThan(0);
+    expect(rateLimiting.addQueueTokenCountdown.value.length).toBeGreaterThan(0);
 
     expect(typeof rateLimiting.skipTokenCountdown.value).toBe("string");
     expect(rateLimiting.skipTokenCountdown.value.length).toBeGreaterThan(0);
