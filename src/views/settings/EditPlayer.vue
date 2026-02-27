@@ -288,6 +288,7 @@ const config_entries = computed(() => {
       default_value: "",
       required: false,
       category: "options",
+      injected: true,
     });
   }
   return entries;
