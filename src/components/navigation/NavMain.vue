@@ -17,6 +17,7 @@ interface NavItem {
   title: string;
   url: string;
   icon?: Component;
+  disabled?: boolean;
 }
 
 const props = defineProps<{
@@ -42,16 +43,18 @@ const handleClick = () => {
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
           <SidebarMenuButton
-            :as="RouterLinkComponent"
-            v-bind="{ to: item.url }"
+            :as="item.disabled ? 'button' : RouterLinkComponent"
+            v-bind="item.disabled ? {} : { to: item.url }"
             :is-active="isActive(item.url)"
             :tooltip="item.title"
-            :class="
+            :disabled="item.disabled"
+            :class="[
               isActive(item.url)
                 ? 'no-underline font-bold text-sm'
-                : 'no-underline font-medium text-sm'
-            "
-            @click="handleClick"
+                : 'no-underline font-medium text-sm',
+              item.disabled ? 'opacity-50 cursor-not-allowed' : '',
+            ]"
+            @click="item.disabled ? undefined : handleClick"
           >
             <component
               :is="item.icon"

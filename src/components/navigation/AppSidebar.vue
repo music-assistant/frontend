@@ -26,6 +26,7 @@ const navItems = computed(() => {
       title: t(item.label),
       url: item.path,
       icon: item.icon,
+      disabled: item.disabled,
     }));
 });
 
