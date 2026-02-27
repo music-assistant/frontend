@@ -19,7 +19,7 @@
           v-if="!store.curQueueItem && !visibleItems.length"
           class="empty-state"
         >
-          <v-icon size="120" icon="mdi-music-off" class="empty-icon" />
+          <Music :size="120" class="empty-icon" />
           <h2 class="empty-title">{{ $t("party.nothing_playing") }}</h2>
           <p class="empty-message">{{ $t("party.get_started") }}</p>
         </div>
@@ -72,6 +72,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Color from "color";
+import { Music } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";

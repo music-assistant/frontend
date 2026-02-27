@@ -35,9 +35,8 @@
       class="guest-badge"
       :style="{ '--badge-color': badgeColor }"
     >
-      <v-icon size="small">{{
-        isBoost ? "mdi-rocket-launch" : "mdi-account-music"
-      }}</v-icon>
+      <Rocket v-if="isBoost" :size="16" />
+      <UserRound v-else :size="16" />
       <span v-if="position === 'current'">{{ badgeText }}</span>
     </div>
   </div>
@@ -50,6 +49,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { Rocket, UserRound } from "lucide-vue-next";
 
 export interface Props {
   queueItem?: QueueItem;

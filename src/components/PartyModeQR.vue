@@ -1,10 +1,10 @@
 <template>
   <div ref="qrContainer" class="qr-container">
     <div v-if="loading" class="qr-loading">
-      <v-progress-circular indeterminate />
+      <Spinner class="size-12" />
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
-      <v-icon size="64" icon="mdi-qrcode-off" />
+      <QrCode :size="64" />
       <p>{{ $t("party.guest_access_disabled") }}</p>
       <p class="qr-hint">{{ $t("party.enable_in_settings") }}</p>
     </div>
@@ -22,7 +22,7 @@
       </p>
     </div>
     <div v-else class="qr-error">
-      <v-icon size="64" icon="mdi-alert-circle-outline" />
+      <AlertCircle :size="64" />
       <p>{{ $t("party.qr_failed") }}</p>
       <p class="qr-hint">{{ $t("party.check_network") }}</p>
     </div>
@@ -30,9 +30,11 @@
 </template>
 
 <script setup lang="ts">
+import { Spinner } from "@/components/ui/spinner";
 import api from "@/plugins/api";
 import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { AlertCircle, QrCode } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 

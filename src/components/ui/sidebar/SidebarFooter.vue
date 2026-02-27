@@ -2,14 +2,17 @@
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
 import { computed } from "vue";
+import { useRoute } from "vue-router";
 import { useSidebar } from "./utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
+const route = useRoute();
 const { isMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
+const isPartyRoute = computed(() => route.path === "/party");
 </script>
 
 <template>
@@ -22,8 +25,12 @@ const isCollapsed = computed(() => state.value === "collapsed");
         isMobile
           ? 'p-2'
           : isCollapsed
-            ? 'pl-[1px] pt-2 pb-26'
-            : 'px-3 pt-2 pb-26',
+            ? isPartyRoute
+              ? 'pl-[1px] pt-2'
+              : 'pl-[1px] pt-2 pb-26'
+            : isPartyRoute
+              ? 'px-3 pt-2'
+              : 'px-3 pt-2 pb-26',
         props.class,
       )
     "
