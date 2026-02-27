@@ -17,7 +17,9 @@ const routes = [
         path: "",
         name: "guest",
         component: () =>
-          import(/* webpackChunkName: "guest" */ "@/views/GuestView.vue"),
+          import(
+            /* webpackChunkName: "guest" */ "@/views/PartyModeGuestView.vue"
+          ),
       },
     ],
   },
@@ -241,7 +243,9 @@ const routes = [
         path: "/party",
         name: "party",
         component: () =>
-          import(/* webpackChunkName: "party" */ "@/views/PartyView.vue"),
+          import(
+            /* webpackChunkName: "party" */ "@/views/PartyModeDisplayView.vue"
+          ),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
         beforeEnter: async (_to: any, _from: any, next: any) => {
           // Wait for API initialization before checking plugin status

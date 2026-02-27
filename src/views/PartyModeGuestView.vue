@@ -1,0 +1,546 @@
+<template>
+  <div class="guest-view">
+    <!-- Search Section -->
+    <PartyModeSearchBar
+      v-model:search-query="searchQuery"
+      v-model:search-filter="searchFilter"
+      :searching="searching"
+      :has-searched="hasSearched"
+      @search="performSearch"
+      @clear="clearSearch"
+    />
+
+    <!-- Artist Tracks View (when drilling into an artist) -->
+    <div v-if="selectedArtist" class="results-section">
+      <div class="section-header">
+        <v-btn
+          variant="text"
+          color="primary"
+          class="back-btn"
+          @click="clearArtistSelection"
+        >
+          <v-icon start>mdi-arrow-left</v-icon>
+          {{ $t("back") }}
+        </v-btn>
+        <h2 class="section-title artist-title">
+          {{ selectedArtist.name }}
+        </h2>
+        <div v-if="rateLimitingEnabled" class="tokens-row">
+          <PartyModeTokensBadge
+            v-if="boostEnabled"
+            :tokens="boostTokens"
+            :max-tokens="BOOST_MAX_TOKENS"
+            :countdown="nextTokenCountdown"
+            :label="$t('guest.boost_available')"
+            :color="boostBadgeColor"
+            icon="mdi-rocket-launch"
+          />
+          <PartyModeTokensBadge
+            v-if="addQueueEnabled"
+            :tokens="addQueueTokens"
+            :max-tokens="ADD_QUEUE_MAX_TOKENS"
+            :countdown="addQueueTokenCountdown"
+            :label="$t('guest.add_available')"
+            :color="requestBadgeColor"
+            icon="mdi-playlist-plus"
+          />
+        </div>
+      </div>
+      <!-- Loading state -->
+      <div v-if="loadingArtistTracks" class="loading-state">
+        <v-progress-circular indeterminate color="primary" size="48" />
+        <p>{{ $t("guest.loading_tracks") }}</p>
+      </div>
+      <!-- Artist tracks list -->
+      <div v-else-if="artistTracks.length > 0" class="results-list">
+        <PartyModeResultItem
+          v-for="track in artistTracks"
+          :key="`track-${track.item_id}`"
+          :item="track"
+          :boost-enabled="boostEnabled"
+          :add-queue-enabled="addQueueEnabled"
+          :rate-limiting-enabled="rateLimitingEnabled"
+          :boost-tokens="boostTokens"
+          :add-queue-tokens="addQueueTokens"
+          :boost-badge-color="boostBadgeColor"
+          :request-badge-color="requestBadgeColor"
+          :adding-items="addingItems"
+          @add-to-queue="addToQueue"
+        />
+      </div>
+      <!-- Empty state for no tracks -->
+      <div v-else class="empty-state">
+        <v-icon size="64" color="grey">mdi-music-off</v-icon>
+        <p>{{ $t("guest.no_tracks_for_artist") }}</p>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div v-else-if="searchResults.length > 0" class="results-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          {{ $t("guest.search_results_count", [searchResults.length]) }}
+        </h2>
+        <div v-if="rateLimitingEnabled" class="tokens-row">
+          <PartyModeTokensBadge
+            v-if="boostEnabled"
+            :tokens="boostTokens"
+            :max-tokens="BOOST_MAX_TOKENS"
+            :countdown="nextTokenCountdown"
+            :label="$t('guest.boost_available')"
+            :color="boostBadgeColor"
+            icon="mdi-rocket-launch"
+          />
+          <PartyModeTokensBadge
+            v-if="addQueueEnabled"
+            :tokens="addQueueTokens"
+            :max-tokens="ADD_QUEUE_MAX_TOKENS"
+            :countdown="addQueueTokenCountdown"
+            :label="$t('guest.add_available')"
+            :color="requestBadgeColor"
+            icon="mdi-playlist-plus"
+          />
+        </div>
+      </div>
+      <div ref="resultsListRef" class="results-list" @scroll="handleScroll">
+        <PartyModeResultItem
+          v-for="item in displayedResults"
+          :key="`${item.media_type}-${item.item_id}`"
+          :item="item"
+          :boost-enabled="boostEnabled"
+          :add-queue-enabled="addQueueEnabled"
+          :rate-limiting-enabled="rateLimitingEnabled"
+          :boost-tokens="boostTokens"
+          :add-queue-tokens="addQueueTokens"
+          :boost-badge-color="boostBadgeColor"
+          :request-badge-color="requestBadgeColor"
+          :adding-items="addingItems"
+          @add-to-queue="addToQueue"
+          @select-artist="selectArtist"
+        />
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      v-else-if="
+        !searching &&
+        hasSearched &&
+        searchResults.length === 0 &&
+        !selectedArtist
+      "
+      class="empty-state"
+    >
+      <v-icon size="64" color="grey">mdi-magnify</v-icon>
+      <p>{{ $t("guest.no_results_for", [searchQuery]) }}</p>
+      <p class="empty-hint">{{ $t("guest.try_different_search") }}</p>
+    </div>
+
+    <!-- Current Queue Section -->
+    <PartyModeQueueSection
+      v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
+      ref="queueSectionRef"
+      :queue-items="queueItems"
+      :queue-fetch-offset="queueFetchOffset"
+      :current-queue-index="currentQueueIndex"
+      :is-playing="isPlaying"
+      :loading-more-queue-items="loadingMoreQueueItems"
+      :skip-song-enabled="skipSongEnabled"
+      :rate-limiting-enabled="rateLimitingEnabled"
+      :skip-song-tokens="skipSongTokens"
+      :skipping-song="skippingSong"
+      :skip-token-countdown="skipTokenCountdown"
+      :boost-badge-color="boostBadgeColor"
+      :request-badge-color="requestBadgeColor"
+      @skip="skipCurrentSong"
+      @queue-scroll="handleQueueScroll"
+    />
+
+    <!-- Snackbar for feedback -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+      {{ snackbar.message }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar.show = false">
+          {{ $t("close") }}
+        </v-btn>
+      </template>
+    </v-snackbar>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import api from "@/plugins/api";
+import { store } from "@/plugins/store";
+import {
+  type Artist,
+  type PartyModeConfig,
+  PlaybackState,
+  type Track,
+} from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { useRateLimiting } from "@/composables/useRateLimiting";
+import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestSearch } from "@/composables/useGuestSearch";
+import PartyModeSearchBar from "@/components/party-mode/PartyModeSearchBar.vue";
+import PartyModeResultItem from "@/components/party-mode/PartyModeResultItem.vue";
+import PartyModeQueueSection from "@/components/party-mode/PartyModeQueueSection.vue";
+import PartyModeTokensBadge from "@/components/party-mode/PartyModeTokensBadge.vue";
+
+// --- Snackbar ---
+const snackbar = ref({
+  show: false,
+  message: "",
+  color: "success",
+});
+
+const showSnackbar = (message: string, color: string = "success") => {
+  snackbar.value = { show: true, message, color };
+};
+
+const isPlaying = computed(
+  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+);
+
+// --- Composables ---
+const rateLimit = useRateLimiting();
+const {
+  rateLimitingEnabled,
+  boostEnabled,
+  addQueueEnabled,
+  skipSongEnabled,
+  requestBadgeColor,
+  boostBadgeColor,
+  boostTokens,
+  addQueueTokens,
+  skipSongTokens,
+  BOOST_MAX_TOKENS,
+  ADD_QUEUE_MAX_TOKENS,
+  nextTokenCountdown,
+  addQueueTokenCountdown,
+  skipTokenCountdown,
+  consumeBoostToken,
+  consumeAddQueueToken,
+  consumeSkipSongToken,
+  getTimeUntilNextToken,
+  getTimeUntilNextAddQueueToken,
+  getTimeUntilNextSkipToken,
+} = rateLimit;
+
+const queue = useGuestQueue();
+const {
+  queueItems,
+  queueFetchOffset,
+  loadingMoreQueueItems,
+  partyModeQueueId,
+  currentQueueIndex,
+  fetchQueueItems,
+  handleQueueScroll,
+} = queue;
+
+const search = useGuestSearch({
+  showSnackbar: (msg, color) => showSnackbar(msg, color),
+});
+const {
+  searchQuery,
+  searchResults,
+  searching,
+  hasSearched,
+  searchFilter,
+  selectedArtist,
+  artistTracks,
+  loadingArtistTracks,
+  displayedResults,
+  resultsListRef,
+  performSearch,
+  clearSearch,
+  selectArtist,
+  clearArtistSelection,
+  handleScroll,
+} = search;
+
+// --- Template-specific state ---
+const addingItems = ref(new Set<string>());
+const skippingSong = ref(false);
+const queueSectionRef = ref<InstanceType<typeof PartyModeQueueSection> | null>(
+  null,
+);
+
+// Sync the queue section's listRef to the composable's queueListRef for auto-scroll
+watch(
+  () => queueSectionRef.value?.listRef,
+  (el) => {
+    queue.queueListRef.value = el ?? null;
+  },
+);
+
+// --- Back button handler ---
+const handleBack = (event: PopStateEvent) => {
+  if (selectedArtist.value) {
+    event.preventDefault();
+    clearArtistSelection();
+    history.pushState(null, "", location.href);
+    return;
+  }
+  if (searchQuery.value || searchResults.value.length > 0) {
+    event.preventDefault();
+    clearSearch();
+    history.pushState(null, "", location.href);
+  }
+};
+
+// --- Action glue (bridges rate limiting + API + snackbar) ---
+const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
+  if (position === "next" && !boostEnabled.value) {
+    showSnackbar($t("guest.boost_disabled"), "warning");
+    return;
+  }
+  if (position === "end" && !addQueueEnabled.value) {
+    showSnackbar($t("guest.add_queue_disabled"), "warning");
+    return;
+  }
+
+  if (rateLimitingEnabled.value) {
+    if (position === "next") {
+      if (!consumeBoostToken()) {
+        const minutesUntilNext = getTimeUntilNextToken();
+        showSnackbar(
+          $t("guest.boost_limit_reached", [minutesUntilNext]),
+          "warning",
+        );
+        return;
+      }
+    } else {
+      if (!consumeAddQueueToken()) {
+        const minutesUntilNext = getTimeUntilNextAddQueueToken();
+        showSnackbar(
+          $t("guest.add_queue_limit_reached", [minutesUntilNext]),
+          "warning",
+        );
+        return;
+      }
+    }
+  }
+
+  const key = `${item.media_type}-${item.item_id}-${position}`;
+  addingItems.value.add(key);
+
+  try {
+    const result = (await api.sendCommand("party_mode/add_to_queue", {
+      uri: item.uri,
+      boost: position === "next",
+    })) as { success: boolean; boosted: boolean; started_playback: boolean };
+
+    if (!result.success) {
+      throw new Error("Server rejected the request");
+    }
+
+    const message =
+      position === "next"
+        ? $t("guest.item_boosted", [item.name])
+        : $t("guest.item_added_to_queue", [item.name]);
+    showSnackbar(message, "success");
+  } catch (error) {
+    console.error("Failed to add to queue:", error);
+    showSnackbar($t("guest.add_to_queue_failed"), "error");
+  } finally {
+    addingItems.value.delete(key);
+  }
+};
+
+const skipCurrentSong = async () => {
+  if (!skipSongEnabled.value) {
+    showSnackbar($t("guest.skip_disabled"), "warning");
+    return;
+  }
+
+  if (rateLimitingEnabled.value) {
+    if (!consumeSkipSongToken()) {
+      const minutesUntilNext = getTimeUntilNextSkipToken();
+      showSnackbar(
+        $t("guest.skip_limit_reached", [minutesUntilNext]),
+        "warning",
+      );
+      return;
+    }
+  }
+
+  skippingSong.value = true;
+  try {
+    const result = (await api.sendCommand("party_mode/skip")) as {
+      success: boolean;
+    };
+
+    if (!result.success) {
+      throw new Error("Server rejected the request");
+    }
+
+    showSnackbar($t("guest.song_skipped"), "success");
+  } catch (error) {
+    console.error("Failed to skip song:", error);
+    showSnackbar($t("guest.skip_failed"), "error");
+  } finally {
+    skippingSong.value = false;
+  }
+};
+
+// --- Lifecycle ---
+let cleanupCountdown: (() => void) | null = null;
+let cleanupQueueEvents: (() => void) | null = null;
+
+const fetchAndApplyConfig = async () => {
+  try {
+    const config = (await api.sendCommand(
+      "party_mode/config",
+    )) as PartyModeConfig;
+    if (config) {
+      rateLimit.configure(config);
+    }
+  } catch (error) {
+    console.error("Failed to fetch party mode config:", error);
+  }
+};
+
+onMounted(async () => {
+  await fetchAndApplyConfig();
+
+  history.pushState(null, "", location.href);
+  window.addEventListener("popstate", handleBack);
+
+  cleanupCountdown = rateLimit.startCountdown();
+
+  try {
+    partyModeQueueId.value = await api.sendCommand("party_mode/player");
+  } catch (error) {
+    console.error("Failed to fetch party mode player:", error);
+  }
+
+  fetchQueueItems();
+  cleanupQueueEvents = queue.subscribeToEvents();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("popstate", handleBack);
+  cleanupQueueEvents?.();
+  cleanupCountdown?.();
+  search.cleanup();
+});
+</script>
+
+<style scoped>
+.guest-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+  flex: 1;
+}
+
+.tokens-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.results-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.results-section .section-header {
+  flex-shrink: 0;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.5rem;
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.artist-title {
+  flex: 1;
+  text-align: center;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  opacity: 0.7;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  opacity: 0.6;
+}
+
+.empty-state p {
+  font-size: 1.125rem;
+  margin-top: 1rem;
+}
+
+.empty-hint {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .guest-view {
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .results-list {
+    gap: 0.5rem;
+    padding-right: 0.25rem;
+  }
+}
+</style>

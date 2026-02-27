@@ -44,6 +44,7 @@ export function useRateLimiting() {
 
   // Countdown displays
   const nextTokenCountdown = ref<string>("");
+  const addQueueTokenCountdown = ref<string>("");
   const skipTokenCountdown = ref<string>("");
 
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
@@ -149,6 +150,24 @@ export function useRateLimiting() {
       const timeUntilNext =
         BOOST_REFILL_RATE.value - (timeSinceRefill % BOOST_REFILL_RATE.value);
       nextTokenCountdown.value = formatCountdown(timeUntilNext);
+    }
+
+    // Update Add Queue tokens
+    const addQueueBucket = loadTokenBucket(
+      ADD_QUEUE_STORAGE_KEY,
+      ADD_QUEUE_MAX_TOKENS.value,
+      ADD_QUEUE_REFILL_RATE.value,
+    );
+    addQueueTokens.value = addQueueBucket.tokens;
+
+    if (addQueueBucket.tokens >= ADD_QUEUE_MAX_TOKENS.value) {
+      addQueueTokenCountdown.value = "";
+    } else {
+      const timeSinceRefill = Date.now() - addQueueBucket.lastRefill;
+      const timeUntilNext =
+        ADD_QUEUE_REFILL_RATE.value -
+        (timeSinceRefill % ADD_QUEUE_REFILL_RATE.value);
+      addQueueTokenCountdown.value = formatCountdown(timeUntilNext);
     }
 
     // Update Skip Song tokens
@@ -294,6 +313,7 @@ export function useRateLimiting() {
     ADD_QUEUE_MAX_TOKENS,
     SKIP_SONG_MAX_TOKENS,
     nextTokenCountdown,
+    addQueueTokenCountdown,
     skipTokenCountdown,
     // Actions
     consumeBoostToken,

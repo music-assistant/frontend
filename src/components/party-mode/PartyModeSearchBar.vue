@@ -1,0 +1,125 @@
+<template>
+  <div class="search-section">
+    <v-text-field
+      :model-value="searchQuery"
+      :placeholder="$t('guest.search_placeholder')"
+      prepend-inner-icon="mdi-magnify"
+      variant="outlined"
+      density="comfortable"
+      clearable
+      autofocus
+      hide-details
+      inputmode="search"
+      enterkeyhint="search"
+      class="search-input"
+      @update:model-value="$emit('update:searchQuery', $event)"
+      @keyup.enter="$emit('search')"
+      @click:clear="$emit('clear')"
+    />
+    <v-btn
+      color="primary"
+      size="large"
+      :loading="searching"
+      :disabled="!searchQuery || searchQuery.length < 2"
+      class="search-btn"
+      @click="$emit('search')"
+    >
+      {{ $t("search") }}
+    </v-btn>
+  </div>
+
+  <!-- Search Filter Chips -->
+  <div v-if="hasSearched || searchQuery.length >= 2" class="filter-section">
+    <v-chip-group
+      :model-value="searchFilter"
+      mandatory
+      selected-class="filter-active"
+      @update:model-value="$emit('update:searchFilter', $event)"
+    >
+      <v-chip value="all" variant="outlined" size="small" class="filter-chip">
+        {{ $t("searchtype_all") }}
+      </v-chip>
+      <v-chip value="track" variant="outlined" size="small" class="filter-chip">
+        <v-icon start size="small">mdi-music-note</v-icon>
+        {{ $t("guest.filter_songs") }}
+      </v-chip>
+      <v-chip
+        value="artist"
+        variant="outlined"
+        size="small"
+        class="filter-chip"
+      >
+        <v-icon start size="small">mdi-account-music</v-icon>
+        {{ $t("artists") }}
+      </v-chip>
+    </v-chip-group>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { $t } from "@/plugins/i18n";
+
+defineProps<{
+  searchQuery: string;
+  searching: boolean;
+  hasSearched: boolean;
+  searchFilter: string;
+}>();
+
+defineEmits<{
+  "update:searchQuery": [value: string];
+  "update:searchFilter": [value: string];
+  search: [];
+  clear: [];
+}>();
+</script>
+
+<style scoped>
+.search-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.search-btn {
+  min-width: 120px;
+}
+
+.filter-section {
+  display: flex;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.filter-chip {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-active {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+@media (max-width: 768px) {
+  .search-section {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-section {
+    margin-bottom: 0.75rem;
+  }
+
+  .filter-chip {
+    font-size: 0.75rem;
+  }
+}
+</style>

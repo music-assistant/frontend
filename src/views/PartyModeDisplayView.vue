@@ -52,8 +52,8 @@
 </template>
 
 <script setup lang="ts">
-import PartyModeQR from "@/components/PartyModeQR.vue";
-import PartyTrackCard from "@/components/PartyTrackCard.vue";
+import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
+import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import {
   ImageColorPalette,

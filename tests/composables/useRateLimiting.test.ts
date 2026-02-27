@@ -112,6 +112,13 @@ describe("useRateLimiting", () => {
       }),
     );
     localStorage.setItem(
+      ADD_QUEUE_STORAGE_KEY,
+      JSON.stringify({
+        tokens: 0,
+        lastRefill: now,
+      }),
+    );
+    localStorage.setItem(
       SKIP_SONG_STORAGE_KEY,
       JSON.stringify({
         tokens: 0,
@@ -124,13 +131,30 @@ describe("useRateLimiting", () => {
     const cleanup = rateLimiting.startCountdown();
 
     expect(rateLimiting.boostTokens.value).toBe(0);
+    expect(rateLimiting.addQueueTokens.value).toBe(0);
     expect(rateLimiting.skipSongTokens.value).toBe(0);
 
     expect(typeof rateLimiting.nextTokenCountdown.value).toBe("string");
     expect(rateLimiting.nextTokenCountdown.value.length).toBeGreaterThan(0);
 
+    expect(typeof rateLimiting.addQueueTokenCountdown.value).toBe("string");
+    expect(
+      rateLimiting.addQueueTokenCountdown.value.length,
+    ).toBeGreaterThan(0);
+
     expect(typeof rateLimiting.skipTokenCountdown.value).toBe("string");
     expect(rateLimiting.skipTokenCountdown.value.length).toBeGreaterThan(0);
+
+    cleanup();
+  });
+
+  it("clears addQueueTokenCountdown when tokens are full", () => {
+    const rateLimiting = useRateLimiting();
+
+    const cleanup = rateLimiting.startCountdown();
+
+    expect(rateLimiting.addQueueTokens.value).toBe(10);
+    expect(rateLimiting.addQueueTokenCountdown.value).toBe("");
 
     cleanup();
   });
