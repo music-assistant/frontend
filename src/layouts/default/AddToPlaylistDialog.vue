@@ -145,12 +145,6 @@ const fetchPlaylists = async function () {
     );
   }
 
-  // Check if we're adding radio/podcast/audiobook items - these can only be added to builtin playlists
-  const isAddingBuiltinOnly =
-    refItem?.media_type === MediaType.RADIO ||
-    refItem?.media_type === MediaType.PODCAST_EPISODE ||
-    refItem?.media_type === MediaType.AUDIOBOOK;
-
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
@@ -167,28 +161,35 @@ const fetchPlaylists = async function () {
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // For radio/podcast/audiobook items, only show builtin playlists
-    if (isAddingBuiltinOnly) {
-      if (playListProvider && playListProvider.domain == "builtin") {
-        playlists.value.push(playlist);
-      }
-    } else {
-      // either the refItem has a provider match or builtin provider or streaming provider
-      if (
-        playListProvider &&
-        (playListProvider.domain == "builtin" ||
-          playListProvider.is_streaming_provider ||
-          refItem?.provider_mappings.filter(
-            (x) => x.provider_instance == playListProvider.instance_id,
-          ).length)
-      ) {
-        playlists.value.push(playlist);
-      }
+    // either the refItem has a provider match or builtin provider or streaming provider
+    if (
+      playListProvider &&
+      (playListProvider.domain == "builtin" ||
+        playListProvider.is_streaming_provider ||
+        refItem?.provider_mappings.filter(
+          (x) => x.provider_instance == playListProvider.instance_id,
+        ).length)
+    ) {
+      playlists.value.push(playlist);
     }
   }
   // determine which providers may be used to create a new playlist
   for (const provider of Object.values(api.providers)) {
-    if (!provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE))
+    if (
+      !provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_TRACKS,
+      ) &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+      ) &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+      ) &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_RADIOS,
+      )
+    )
       continue;
     if (
       !provider.supported_features.includes(
@@ -196,22 +197,15 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // For radio/podcast/audiobook items, only allow builtin provider
-    if (isAddingBuiltinOnly) {
-      if (provider.domain == "builtin") {
-        createPlaylistProviders.value.push(provider.instance_id);
-      }
-    } else {
-      // either the refItem has a provider match or builtin provider
-      if (
-        provider.domain == "builtin" ||
-        provider.is_streaming_provider ||
-        refItem?.provider_mappings.filter(
-          (x) => x.provider_instance == provider.instance_id,
-        ).length
-      ) {
-        createPlaylistProviders.value.push(provider.instance_id);
-      }
+    // either the refItem has a provider match or builtin provider
+    if (
+      provider.domain == "builtin" ||
+      provider.is_streaming_provider ||
+      refItem?.provider_mappings.filter(
+        (x) => x.provider_instance == provider.instance_id,
+      ).length
+    ) {
+      createPlaylistProviders.value.push(provider.instance_id);
     }
   }
 };

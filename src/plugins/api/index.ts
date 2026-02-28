@@ -752,10 +752,12 @@ export class MusicAssistantApi {
   public createPlaylist(
     name: string,
     provider_instance_or_domain?: string,
+    media_types?: MediaType[],
   ): Promise<Playlist> {
     return this.sendCommand("music/playlists/create_playlist", {
       name,
       provider_instance_or_domain,
+      media_types,
     });
   }
 

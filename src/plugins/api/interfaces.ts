@@ -340,6 +340,11 @@ export enum ProviderFeature {
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
   PLAYLIST_CREATE = "playlist_create",
+  PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
+  PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",
+  PLAYLIST_CREATE_PODCAST_EPISODES = "playlist_create_podcast_episodes",
+  PLAYLIST_CREATE_RADIOS = "playlist_create_radios",
+  PLAYLIST_CREATE_MIXED = "playlist_create_mixed",
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
@@ -651,7 +656,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem { }
 
 export interface Album extends MediaItem {
   year?: number;
@@ -671,9 +676,10 @@ export interface Track extends MediaItem {
 export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
+  supported_mediatypes: MediaType[];
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem { }
 
 export interface Audiobook extends MediaItem {
   publisher: string;
