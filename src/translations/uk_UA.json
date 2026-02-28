@@ -36,7 +36,7 @@
     "external_source_active": "Активне зовнішнє джерело: {0}",
     "goto_album": "Перейти до альбому {0}",
     "goto_artist": "Перейти до виконавця {0}",
-    "home": "Головна",
+    "discover": "Відкрий для себе",
     "items_selected": "Вибрано елементів: {0}",
     "items_total": "Усього елементів: {0}",
     "library": "Бібліотека",
@@ -1140,6 +1140,5 @@
     "narrators": "Оповідачі",
     "series_plural": "Серіали",
     "series_singular": "Серіал",
-    "queue_move_end": "Перемістити в кінець",
-    "discover": "Відкрийте для себе"
+    "queue_move_end": "Перемістити в кінець"
 }

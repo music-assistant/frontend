@@ -15,11 +15,11 @@
     <template #title>
       <slot name="title">
         <button
-          v-if="title || (store.mobileLayout && home)"
+          v-if="title || (store.mobileLayout && isDiscoverPage)"
           @click="emit('titleClicked')"
         >
-          {{ title || (home ? $t("home") : "") }}
-        </button>
+        {{ title || (isDiscoverPage ? $t("discover") : "") }}
+      </button>
       </slot>
     </template>
 
@@ -177,7 +177,7 @@ interface Props {
   title?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
-  home?: boolean;
+  isDiscoverPage?: boolean;
   iconAction?: () => void;
 }
 withDefaults(defineProps<Props>(), {

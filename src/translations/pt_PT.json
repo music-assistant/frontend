@@ -36,7 +36,7 @@
     "external_source_active": "Fonte externa ativa: {0}",
     "goto_album": "Ir para o álbum {0}",
     "goto_artist": "Ir para o artista {0}",
-    "home": "Início",
+    "discover": "Descobrir",
     "items_selected": "{0} item(s) selecionado(s)",
     "items_total": "{0} total de item(s)",
     "library": "Biblioteca",
@@ -1139,6 +1139,5 @@
     "narrators": "Narradores",
     "series_plural": "Séries",
     "series_singular": "Série",
-    "queue_move_end": "Mover para o fim",
-    "discover": "Descobrir"
+    "queue_move_end": "Mover para o fim"
 }

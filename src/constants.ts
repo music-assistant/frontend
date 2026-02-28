@@ -1,5 +1,5 @@
 export const DEFAULT_MENU_ITEMS = [
-  "home",
+  "discover",
   "search",
   "artists",
   "albums",

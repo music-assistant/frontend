@@ -108,7 +108,7 @@ onMounted(() => {
       default_value: DEFAULT_MENU_ITEMS,
       required: false,
       options: [
-        { title: $t("home"), value: "home" },
+        { title: $t("discover"), value: "discover" },
         { title: $t("search"), value: "search" },
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
@@ -257,7 +257,7 @@ const saveValues = function (values: Record<string, ConfigValueType>) {
       localStorage.removeItem(storageKey);
     }
   }
-  router.push({ name: "home" }).then(() => {
+  router.push({ name: "discover" }).then(() => {
     // enforce refresh
     window.location.reload();
   });
