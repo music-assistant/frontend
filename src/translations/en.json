@@ -244,7 +244,7 @@
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
-    "playlist_create_media_types": "Provider {0} supports these media types:",
+    "playlist_create_media_types": "The {0} provider supports these media types:",
     "playlist_mix_allowed": "These media types can be mixed.",
     "playlist_mix_not_allowed": "This provider does not support mixing media types in playlists. Please select for which media type you would like to create a playlist:",
     "provider_details": "Provider details",

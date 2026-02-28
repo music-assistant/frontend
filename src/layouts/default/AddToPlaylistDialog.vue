@@ -157,6 +157,10 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
+    if (!playlist.supported_mediatypes.includes(refItem.media_type)) {
+      // target playlist doesn't support media type
+      continue;
+    }
 
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
@@ -175,17 +179,31 @@ const fetchPlaylists = async function () {
   }
   // determine which providers may be used to create a new playlist
   for (const provider of Object.values(api.providers)) {
+    // filter suitable create provider base on media_type
     if (
+      refItem.media_type == MediaType.TRACK &&
       !provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_TRACKS,
-      ) &&
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.AUDIOBOOK &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
-      ) &&
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.PODCAST_EPISODE &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
-      ) &&
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.RADIO &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_RADIOS,
       )
@@ -219,9 +237,53 @@ const addToPlaylist = async function (value: MediaItemType) {
   toast.info($t("background_task_added"));
 };
 const newPlaylist = async function (provId: string) {
+  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+  if (!refItem) return;
+  let provider = api.getProvider(provId);
+  if (!provider) return;
   const name = prompt($t("new_playlist_name"));
   if (!name) return;
-  const newPlaylist = await api.createPlaylist(name, provId);
+
+  let supportedMediaTypes: MediaType[] = [];
+  if (
+    provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_MIXED)
+  ) {
+    // if the provider supports mixed playlists, we always create a playlist for all
+    // supported media types
+    if (
+      provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_TRACKS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.TRACK);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.AUDIOBOOK);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+      )
+    )
+      supportedMediaTypes.push(MediaType.PODCAST_EPISODE);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_RADIOS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.RADIO);
+  } else {
+    // otherwise the playlist must support the mediatype of the selected item
+    supportedMediaTypes = [refItem.media_type];
+  }
+  const newPlaylist = await api.createPlaylist(
+    name,
+    provId,
+    supportedMediaTypes,
+  );
   addToPlaylist(newPlaylist);
 };
 
