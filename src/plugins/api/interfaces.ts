@@ -1044,7 +1044,6 @@ export interface User {
   preferences: Record<string, any>;
   provider_filter: string[];
   player_filter: string[];
-  // Note: Session-specific claims like provider_name are in the JWT token.
   // Use authManager.isPartyModeGuest() to check for party mode sessions.
 }
 

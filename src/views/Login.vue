@@ -687,7 +687,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    // Store the JWT token for auto-login and decode claims (including provider_name)
+    // Store the JWT token for auto-login and decode claims
     localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
     authManager.setToken(result.access_token);
 

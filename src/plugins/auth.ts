@@ -23,7 +23,6 @@ interface JWTClaims {
   provider_filter: string[];
   token_name: string;
   is_long_lived: boolean;
-  provider_name?: string; // "party_mode" for party mode guests
 }
 
 export class AuthManager {
@@ -121,29 +120,12 @@ export class AuthManager {
   }
 
   /**
-   * Get the provider name from JWT claims.
-   * This identifies which provider created the session (e.g., "party_mode").
-   * Returns undefined for regular login sessions.
-   */
-  getProviderName(): string | undefined {
-    return this.claims?.provider_name;
-  }
-
-  /**
-   * Check if this session was created by a specific provider.
-   * Useful for providers that need to restrict UI access.
-   */
-  isProviderGuest(providerName: string): boolean {
-    return this.claims?.provider_name === providerName;
-  }
-
-  /**
    * Check if this is a party mode guest session.
    * Party mode guests authenticate via QR code/join code and have
    * restricted UI access (only the guest view).
    */
   isPartyModeGuest(): boolean {
-    return this.isProviderGuest("party_mode");
+    return this.claims?.username === "party_guest";
   }
 
   /**
