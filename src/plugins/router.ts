@@ -365,6 +365,16 @@ const routes = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "editplayer/:playerId/options",
+            name: "editplayeroptions",
+            component: () =>
+              import(
+                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOptions.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: false },
+          },
+          {
             path: "editplayer/:playerId/dsp",
             name: "editplayerdsp",
             component: () =>

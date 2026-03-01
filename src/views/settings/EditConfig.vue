@@ -32,6 +32,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -101,6 +102,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -168,6 +170,7 @@
                 conf_entry.value = conf_entry.action ? null : conf_entry.key;
               "
               @open-dsp="openDspConfig"
+              @open-options="openPlayerOptions"
             />
             <v-chip
               v-if="conf_entry.advanced"
@@ -282,6 +285,7 @@
                       : conf_entry.key;
                   "
                   @open-dsp="openDspConfig"
+                  @open-options="openPlayerOptions"
                 />
                 <v-chip
                   v-if="conf_entry.advanced"
@@ -348,6 +352,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -714,6 +719,10 @@ const openLink = function (url: string) {
 
 const openDspConfig = function () {
   router.push(`${router.currentRoute.value.path}/dsp`);
+};
+
+const openPlayerOptions = function () {
+  router.push(`${router.currentRoute.value.path}/options`);
 };
 
 const resetToDefaults = function () {

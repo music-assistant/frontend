@@ -217,6 +217,11 @@
     "on": "On",
     "other_versions": "Other versions",
     "perform_action": "Perform action on {0} item(s)",
+    "player_options": {
+        "open": "Open player options",
+        "settable": "Settable player options for player {0}",
+        "read_only": "Read-only player options for player {0}"
+    },
     "play": "Play",
     "play_album_from": "Play Album from here",
     "play_next": "Play Next",
@@ -496,7 +501,8 @@
             "web_player": "Web Player",
             "protocol_settings": "Output Protocol(s)",
             "protocol_output_settings": "Enable {0} support",
-            "dsp": "Digital Signal Processing (DSP)"
+            "dsp": "Digital Signal Processing (DSP)",
+            "options": "Player options"
         },
         "tts_pre_announce": {
             "label": "Pre-announce TTS announcements",
@@ -1106,6 +1112,7 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
+    "select_sound_mode": "Select sound mode",
     "in_progress_items": "Continue listening...",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
