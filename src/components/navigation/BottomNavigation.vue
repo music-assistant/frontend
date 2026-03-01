@@ -17,7 +17,7 @@
     </v-btn>
 
     <v-btn
-      :aria-label='$t("discover")'
+      :aria-label="$t('discover')"
       tabindex="0"
       variant="text"
       active-color="fg"

@@ -55,7 +55,7 @@ const handleClick = () => {
               item.disabled ? 'opacity-50 cursor-not-allowed' : '',
             ]"
             @click="handleClick"
-            >
+          >
             <component
               :is="item.icon"
               v-if="item.icon"

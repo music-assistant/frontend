@@ -15,9 +15,9 @@ const routes = [
         redirect: "/discover",
       },
       {
-        // "/home" has now been renamed to "/discover". This 
-        // redirect is to help avoid blank page loads for anyone who 
-        // has bookmarked the old /home url.  
+        // "/home" has now been renamed to "/discover". This
+        // redirect is to help avoid blank page loads for anyone who
+        // has bookmarked the old /home url.
         path: "/home",
         redirect: "/discover",
       },

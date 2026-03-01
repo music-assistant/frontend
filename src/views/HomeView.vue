@@ -1,10 +1,10 @@
 <template>
   <div>
     <Toolbar
-      :isDiscoverPage="true"
+      :is-discover-page="true"
       :icon="House"
       color="background"
-      :title='$t("discover")'
+      :title="$t('discover')"
     />
 
     <!-- Provider error warning banner -->

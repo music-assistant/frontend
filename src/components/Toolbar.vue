@@ -18,8 +18,8 @@
           v-if="title || (store.mobileLayout && isDiscoverPage)"
           @click="emit('titleClicked')"
         >
-        {{ title || (isDiscoverPage ? $t("discover") : "") }}
-      </button>
+          {{ title || (isDiscoverPage ? $t("discover") : "") }}
+        </button>
       </slot>
     </template>
 
