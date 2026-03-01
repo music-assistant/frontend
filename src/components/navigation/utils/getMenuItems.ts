@@ -39,9 +39,8 @@ export const getMenuItems = function () {
     // Fallback to per-item localStorage keys (main branch approach)
     enabledItems = DEFAULT_MENU_ITEMS.filter(
       (item) =>
-        localStorage.getItem(
-          `frontend.settings.menu_item_${item}_enabled`,
-        ) !== "false",
+        localStorage.getItem(`frontend.settings.menu_item_${item}_enabled`) !==
+        "false",
     );
   }
 
