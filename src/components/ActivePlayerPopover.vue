@@ -1,7 +1,7 @@
 <template>
   <Popover v-model:open="showTip">
     <PopoverTrigger as-child>
-      <slot name="trigger" :on-click="handleClick"></slot>
+      <slot name="trigger"></slot>
     </PopoverTrigger>
     <PopoverContent
       side="top"
@@ -11,6 +11,7 @@
       @pointer-down-outside="dismissTip"
       @escape-key-down="dismissTip"
       @focus-outside="dismissTip"
+      @click="dismissTip"
     >
       <div class="tip-content">
         <div class="tip-label">
@@ -36,19 +37,20 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
 import { PlaybackState } from "@/plugins/api/interfaces";
 
 export interface Props {
   autoShow?: boolean;
   align?: "start" | "center" | "end";
   arrowOffset?: string;
+  childElementId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   autoShow: false,
   align: "center",
   arrowOffset: undefined,
+  childElementId: undefined,
 });
 
 const emit = defineEmits<{
@@ -56,7 +58,7 @@ const emit = defineEmits<{
 }>();
 
 const showTip = ref(false);
-let tipWasShown = false;
+
 let autoDismissTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const isPlaying = computed(() => {
@@ -68,77 +70,56 @@ const isPlaying = computed(() => {
 
 const arrowStyle = computed(() => {
   if (!props.arrowOffset) return {};
-  return { right: props.arrowOffset };
+  return { left: props.arrowOffset };
 });
 
 const shouldShowTip = computed(() => {
   if (!props.autoShow) return false;
-  if (tipWasShown || store.playerTipShown) return false;
+  if (store.playerTipShown) return false;
   if (!store.activePlayer) return false;
-  if (store.activePlayerId === webPlayer.player_id) return false;
   if (store.showPlayersMenu) return false;
   return true;
 });
 
-function dismissTip() {
-  showTip.value = false;
-  tipWasShown = true;
-  store.playerTipShown = true;
+function showPopover(openDelay: number = 1000, dismissTimeout: number = 3000) {
+  if (!shouldShowTip.value) return;
+
+  setTimeout(() => {
+    showTip.value = true;
+
+    autoDismissTimeout = setTimeout(() => {
+      dismissTip();
+    }, dismissTimeout);
+  }, openDelay);
+}
+
+function clearAutoDismissTimeout() {
   if (autoDismissTimeout) {
     clearTimeout(autoDismissTimeout);
     autoDismissTimeout = null;
   }
 }
 
-function handleClick() {
-  dismissTip();
-  emit("click");
-}
+function dismissTip() {
+  showTip.value = false;
+  store.playerTipShown = true;
 
-function handleGlobalClick() {
-  if (showTip.value) {
-    dismissTip();
+  clearAutoDismissTimeout();
+
+  // Prevents the child element from gaining focus after the popover closes.
+  if (props.childElementId) {
+    setTimeout(() => {
+      document.getElementById(props.childElementId!)?.blur();
+    }, 250);
   }
 }
 
 onMounted(() => {
-  if (store.playerTipShown) {
-    tipWasShown = true;
-    return;
-  }
-
-  if (!props.autoShow) return;
-
-  // Don't show if players menu is already open
-  if (store.showPlayersMenu) {
-    tipWasShown = true;
-    store.playerTipShown = true;
-    return;
-  }
-
-  setTimeout(() => {
-    // Double-check conditions right before showing
-    if (
-      shouldShowTip.value &&
-      !store.playerTipShown &&
-      !store.showPlayersMenu
-    ) {
-      showTip.value = true;
-      document.addEventListener("click", handleGlobalClick, { capture: true });
-      // Auto-dismiss after 2.5 seconds
-      autoDismissTimeout = setTimeout(() => {
-        dismissTip();
-      }, 2500);
-    }
-  }, 1000);
+  showPopover();
 });
 
 onUnmounted(() => {
-  document.removeEventListener("click", handleGlobalClick, { capture: true });
-  if (autoDismissTimeout) {
-    clearTimeout(autoDismissTimeout);
-    autoDismissTimeout = null;
-  }
+  clearAutoDismissTimeout();
 });
 
 watch(
@@ -146,14 +127,12 @@ watch(
   (newVal) => {
     if (newVal && showTip.value) {
       showTip.value = false;
-      tipWasShown = true;
     }
   },
 );
 
 watch(showTip, (newVal, oldVal) => {
   if (oldVal && !newVal) {
-    tipWasShown = true;
     store.playerTipShown = true;
   }
 });
@@ -212,20 +191,52 @@ watch(
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
   border-top: 8px solid rgb(var(--v-theme-primary));
-}
-
-/* Arrow positioning based on alignment */
-.player-tip-center .tip-arrow {
-  left: 50%;
   transform: translateX(-50%);
 }
 
-.player-tip-end .tip-arrow {
-  right: 55px;
+/* Arrow positioning based on alignment */
+.player-tip-start .tip-arrow {
+  left: 24px;
 }
 
-.player-tip-start .tip-arrow {
-  left: 30px;
+.player-tip-center .tip-arrow {
+  left: 50%;
+}
+
+@media screen and (max-width: 313px) {
+  .player-tip-end .tip-arrow {
+    left: 176px;
+  }
+}
+
+@media screen and (min-width: 312px) and (max-width: 411px) {
+  .player-tip-end .tip-arrow {
+    left: 167px;
+  }
+}
+
+@media screen and (min-width: 410px) and (max-width: 511px) {
+  .player-tip-end .tip-arrow {
+    left: 154px;
+  }
+}
+
+@media screen and (min-width: 510px) and (max-width: 621px) {
+  .player-tip-end .tip-arrow {
+    left: 141px;
+  }
+}
+
+@media screen and (min-width: 620px) and (max-width: 770px) {
+  .player-tip-end .tip-arrow {
+    left: 128px;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .player-tip-end .tip-arrow {
+    left: 188px;
+  }
 }
 
 .player-tip .tip-arrow::after {

@@ -22,7 +22,7 @@
           >
             <v-img
               class="media-thumb"
-              size="60"
+              size="45"
               :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
@@ -395,14 +395,14 @@ watch(
 }
 
 .media-thumb {
-  width: 55px;
-  height: 55px;
+  width: 45px;
+  height: 45px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 .icon-thumb {
-  width: 55px;
-  height: 55px;
+  width: 45px;
+  height: 45px;
   margin-top: 5px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);

@@ -18,7 +18,9 @@
     v-if="store.mobileLayout"
     app
     :style="
-      store.isInPWAMode ? 'padding-bottom: 10px;height: 70px;' : 'height: 60px;'
+      store.isInPWAMode && !store.isIngressSession
+        ? 'padding-bottom: 10px;height: 70px;'
+        : 'height: 60px;'
     "
   />
 
@@ -30,7 +32,9 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="store.isInPWAMode ? 'margin-bottom: 10px;' : ''"
+    :style="
+      store.isInPWAMode && !store.isIngressSession ? 'margin-bottom: 10px;' : ''
+    "
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
