@@ -1,120 +1,113 @@
 <template>
-  <!-- players side menu -->
-  <v-overlay v-model="store.showPlayersMenu" />
-  <v-navigation-drawer
-    v-if="store.showPlayersMenu"
-    v-model="store.showPlayersMenu"
-    location="right"
-    app
-    clipped
-    temporary
-    :width="460"
-    style="z-index: 99999"
-    z-index="99999"
-    color="background"
+  <!-- Overlay scrim (used when panel overlays content instead of being inline) -->
+  <Transition name="player-scrim">
+    <div
+      v-if="!useInlinePanel && store.showPlayersMenu"
+      class="player-panel-scrim"
+      @click="store.showPlayersMenu = false"
+    ></div>
+  </Transition>
+
+  <!-- Inline spacer: only on wide screens, transitions width to push main content -->
+  <div
+    v-if="useInlinePanel"
+    class="player-panel-spacer"
+    :class="{ 'player-panel-spacer--open': store.showPlayersMenu }"
+  ></div>
+
+  <!-- Panel: fixed position, slides in via transform -->
+  <div
+    class="player-panel"
+    :class="{
+      'player-panel--open': store.showPlayersMenu,
+      'player-panel--overlay': !useInlinePanel,
+    }"
   >
-    <!-- heading with Players as title - fixed at top -->
-    <template #prepend>
-      <v-card-title
-        class="title"
-        style="padding-top: 20px; padding-bottom: 20px"
-      >
-        <b>{{ $t("players") }}</b>
-        <div style="float: right">
-          <!-- settings button (admin only) -->
-          <Button
-            v-if="authManager.isAdmin()"
-            variant="icon"
-            :to="{ name: 'playersettings' }"
-            @click="onPlayerSettingsClick"
-          >
-            <v-icon size="24">mdi-cog</v-icon>
-          </Button>
-          <!-- close button -->
-          <Button variant="icon" @click="store.showPlayersMenu = false">
-            <v-icon size="24">mdi-close</v-icon>
-          </Button>
-        </div>
-      </v-card-title>
-      <v-divider />
-    </template>
+    <div class="player-panel-inner">
+      <!-- header -->
+      <div class="player-header">
+        <Speaker class="player-header-icon" />
+        <span class="player-header-title">{{ $t("players") }}</span>
+      </div>
 
-    <!-- scrollable content -->
-    <div class="player-content">
-      <!-- preferred/active players on top -->
-      <v-list flat style="margin: 0px 10px; padding: 0">
-        <PlayerCard
-          v-for="player in preferredPlayers"
-          :id="player.player_id"
-          :key="player.player_id"
-          style="margin: 10px 0px"
-          :player="player"
-          :show-volume-control="true"
-          :show-menu-button="true"
-          :show-sub-players="
-            showSubPlayers && player.player_id == store.activePlayerId
-          "
-          :show-sync-controls="true"
-          :allow-power-control="true"
-          @click="playerClicked(player)"
-          @toggle-expand="toggleGroupExpand"
-        />
-      </v-list>
+      <!-- scrollable content -->
+      <div class="player-content">
+        <!-- preferred/active players on top -->
+        <v-list flat style="margin: 0px 10px; padding: 0">
+          <PlayerCard
+            v-for="player in preferredPlayers"
+            :id="player.player_id"
+            :key="player.player_id"
+            style="margin: 10px 0px"
+            :player="player"
+            :show-volume-control="true"
+            :show-menu-button="true"
+            :show-sub-players="
+              showSubPlayers && player.player_id == store.activePlayerId
+            "
+            :show-sync-controls="true"
+            :allow-power-control="true"
+            @click="playerClicked(player)"
+            @toggle-expand="toggleGroupExpand"
+          />
+        </v-list>
 
-      <!-- collapsible section with all players (only shown if more than 3 players) -->
-      <v-expansion-panels
-        v-if="allPlayers.length > 3"
-        v-model="allPlayersExpanded"
-        variant="accordion"
-        flat
-        class="expansion"
-      >
-        <v-expansion-panel style="padding: 0">
-          <v-expansion-panel-title>
-            <h3>{{ $t("all_players") }}</h3>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text style="padding: 0">
-            <div style="margin: 0 8px 24px 8px">
-              <InputGroup>
-                <InputGroupInput
-                  ref="playerSearchInput"
-                  v-model="playerSearchQuery"
-                  :placeholder="$t('search')"
+        <!-- collapsible section with all players (only shown if more than 3 players) -->
+        <v-expansion-panels
+          v-if="allPlayers.length > 3"
+          v-model="allPlayersExpanded"
+          variant="accordion"
+          flat
+          class="expansion"
+        >
+          <v-expansion-panel style="padding: 0">
+            <v-expansion-panel-title>
+              <h3>{{ $t("all_players") }}</h3>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text style="padding: 0">
+              <div style="margin: 0 8px 24px 8px">
+                <InputGroup>
+                  <InputGroupInput
+                    ref="playerSearchInput"
+                    v-model="playerSearchQuery"
+                    :placeholder="$t('search')"
+                  />
+                  <InputGroupAddon>
+                    <Search />
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+              <v-list flat style="margin: -20px 3px 5px 3px">
+                <PlayerCard
+                  v-for="player in filteredPlayers"
+                  :id="player.player_id"
+                  :key="player.player_id"
+                  style="margin: 5px 0px"
+                  :player="player"
+                  :show-volume-control="true"
+                  :show-menu-button="true"
+                  :show-sub-players="
+                    showSubPlayers && player.player_id == store.activePlayerId
+                  "
+                  :show-sync-controls="
+                    player.supported_features.includes(
+                      PlayerFeature.SET_MEMBERS,
+                    )
+                  "
+                  :allow-power-control="true"
+                  @click="playerClicked(player)"
+                  @toggle-expand="toggleGroupExpand"
                 />
-                <InputGroupAddon>
-                  <Search />
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
-            <v-list flat style="margin: -20px 3px 5px 3px">
-              <PlayerCard
-                v-for="player in filteredPlayers"
-                :id="player.player_id"
-                :key="player.player_id"
-                style="margin: 5px 0px"
-                :player="player"
-                :show-volume-control="true"
-                :show-menu-button="true"
-                :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
-                "
-                :show-sync-controls="
-                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-                "
-                :allow-power-control="true"
-                @click="playerClicked(player)"
-                @toggle-expand="toggleGroupExpand"
-              />
-            </v-list>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+              </v-list>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </div>
     </div>
-  </v-navigation-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import {
   InputGroup,
@@ -125,12 +118,18 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Player, PlayerFeature } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 
-import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Search } from "lucide-vue-next";
+import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+
+// Wide screens (>=1100px): inline sidebar that pushes content.
+// Narrower screens & mobile: overlay panel with scrim.
+const useInlinePanel = computed(
+  () => !store.mobileLayout && getBreakpointValue("bp7"),
+);
 
 const showSubPlayers = ref(false);
 const recentlySelectedPlayerIds = ref<string[]>([]);
@@ -277,11 +276,6 @@ function toggleGroupExpand(player: Player) {
   }
 }
 
-function onPlayerSettingsClick() {
-  store.showPlayersMenu = false;
-  store.showFullscreenPlayer = false;
-}
-
 onMounted(() => {
   checkDefaultPlayer();
 });
@@ -324,18 +318,132 @@ const selectDefaultPlayer = function () {
 </script>
 
 <style scoped>
-.title {
-  font-family: "JetBrains Mono Medium";
-  font-size: x-large;
+/*
+ * Desktop spacer: transparent div in the flex layout.
+ * Smoothly transitions width to push main content, just like AppSidebar.
+ */
+.player-panel-spacer {
+  width: 0;
+  flex-shrink: 0;
+  transition: width 0.2s ease-linear;
+}
+
+.player-panel-spacer--open {
+  width: 400px;
+}
+
+/*
+ * Panel: fixed position, slides via GPU-accelerated transform.
+ * Content is never clipped — the spacer handles the layout shift separately.
+ */
+.player-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 400px;
+  z-index: 10;
+  transform: translateX(100%);
+  transition: transform 0.2s ease-linear;
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
+  border-left: 1px solid rgba(var(--v-border-color), 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.player-panel--open {
+  transform: translateX(0);
+}
+
+/*
+ * Overlay mode: narrower screens & mobile. Higher z-index, covers content.
+ * On mobile (mobileLayout) it's 85vw; on mid-width desktops it stays 400px.
+ */
+.player-panel--overlay {
+  z-index: 99999;
+  border-left: none;
+}
+
+@media (max-width: 799px) {
+  .player-panel--overlay {
+    width: 90vw;
+  }
+}
+
+/* Inner wrapper */
+.player-panel-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile scrim/overlay */
+.player-panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.player-scrim-enter-active,
+.player-scrim-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.player-scrim-enter-from,
+.player-scrim-leave-to {
+  opacity: 0;
+}
+
+/* Header */
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+  padding-bottom: 8px;
+  padding-left: 16px;
+  flex-shrink: 0;
+}
+
+.player-header-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   opacity: 0.7;
 }
+
+.player-header-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Scrollable content */
 .player-content {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 100px;
 }
+
+/* Force Vuetify children to inherit the panel background */
+.player-content :deep(.v-list),
+.player-content :deep(.v-expansion-panels),
+.player-content :deep(.v-expansion-panel),
+.player-content :deep(.v-expansion-panel-title),
+.player-content :deep(.v-expansion-panel-text) {
+  background: transparent !important;
+}
+
 .expansion :deep(.v-expansion-panel-title) {
   padding: 10px 16px;
 }
+
 .expansion :deep(.v-expansion-panel-text__wrapper) {
   padding: 10px 5px;
 }

@@ -63,7 +63,7 @@
       "
       @click.stop
     >
-      <v-divider style="margin-top: 10px; margin-bottom: 15px" />
+      <v-divider style="margin-top: 4px; margin-bottom: 4px" />
 
       <div
         v-for="childPlayer in getChildPlayers(player)"
@@ -130,7 +130,7 @@
             width="100%"
           />
         </div>
-        <div style="height: 14px"></div>
+        <div style="height: 2px"></div>
       </div>
     </div>
   </v-list>

@@ -23,6 +23,7 @@
           <item-context-menu />
         </div>
       </SidebarInset>
+      <PlayerSelect />
     </SidebarProvider>
   </v-main>
 </template>
@@ -31,6 +32,7 @@
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { store } from "@/plugins/store";
+import PlayerSelect from "./PlayerSelect.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";

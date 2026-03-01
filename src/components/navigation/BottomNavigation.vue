@@ -103,7 +103,7 @@ const handleSearchClick = () => {
 };
 
 const handlePlayersClick = () => {
-  store.showPlayersMenu = true;
+  store.showPlayersMenu = !store.showPlayersMenu;
 };
 </script>
 
