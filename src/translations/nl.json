@@ -36,7 +36,7 @@
     "external_source_active": "Externe bron actief: {0}",
     "goto_album": "Ga naar album {0}",
     "goto_artist": "Ga naar artiest {0}",
-    "home": "Home",
+    "discover": "Ontdekken",
     "items_selected": "{0} item(s) geselecteerd",
     "items_total": "{0} item(s) totaal",
     "library": "Bibliotheek",
@@ -1142,7 +1142,6 @@
     "series_plural": "Series",
     "series_singular": "Serie",
     "queue_move_end": "Verplaats naar einde",
-    "discover": "Ontdekken",
     "save_queue_as_playlist": "Sla wachtrij op als afspeellijst",
     "playlist_created": "Afspeellijst gemaakt",
     "open_playlist": "Afspeellijst openen"

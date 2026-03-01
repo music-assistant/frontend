@@ -57,7 +57,7 @@ const handleMenuClick = () => {
 };
 
 const handleDiscoverClick = () => {
-  router.push({ name: "home" });
+  router.push({ name: "discover" });
 };
 
 const handlePlayersClick = () => {

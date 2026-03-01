@@ -998,7 +998,7 @@ export const getContextMenuItems = async function (
         });
         eventbus.emit("clearSelection");
       },
-      icon: "mdi-tag-plus",
+      icon: "mdi-compass-outline",
     });
   }
   // merge genres (admin only, all items must be library genres)

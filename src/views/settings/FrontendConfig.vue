@@ -112,10 +112,10 @@ onMounted(() => {
       key: "startup_view",
       type: ConfigEntryType.STRING,
       label: "startup_view",
-      default_value: "home",
+      default_value: "discover",
       required: false,
       options: [
-        { title: $t("home"), value: "home" },
+        { title: $t("discover"), value: "discover" },
         { title: $t("search"), value: "search" },
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
@@ -128,7 +128,7 @@ onMounted(() => {
       ],
       multi_value: false,
       category: "preferences",
-      value: store.currentUser?.preferences?.startup_view || "home",
+      value: store.currentUser?.preferences?.startup_view || "discover",
     },
     {
       key: "menu_items",
@@ -137,7 +137,7 @@ onMounted(() => {
       default_value: DEFAULT_MENU_ITEMS,
       required: false,
       options: [
-        { title: $t("home"), value: "home" },
+        { title: $t("discover"), value: "discover" },
         { title: $t("search"), value: "search" },
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
@@ -284,11 +284,11 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
 
     // Reload if any per-user settings changed
     if (hasPerUserChanges) {
-      router.push({ name: "home" }).then(() => {
+      router.push({ name: "discover" }).then(() => {
         window.location.reload();
       });
     } else {
-      router.push({ name: "home" });
+      router.push({ name: "discover" });
     }
   } catch (error) {
     console.error("Failed to save settings:", error);
