@@ -232,15 +232,42 @@ const hasGroupPopout = computed(
     props.enablePopout && useGroupVolume.value && childPlayers.value.length > 0,
 );
 
+const POPOUT_MIN_WIDTH = 300;
+const POPOUT_MARGIN = 8;
+
 const updatePopoutPosition = () => {
   if (!wrapperRef.value) return;
   const rect = wrapperRef.value.getBoundingClientRect();
-  popoutStyle.value = {
-    position: "fixed",
-    bottom: `${window.innerHeight - rect.top + 6}px`,
-    left: `${rect.left}px`,
-    width: `${rect.width}px`,
-  };
+  const bottom = `${window.innerHeight - rect.top + 6}px`;
+
+  if (store.mobileLayout) {
+    // Full width with padding on mobile
+    popoutStyle.value = {
+      position: "fixed",
+      bottom,
+      left: `${POPOUT_MARGIN}px`,
+      right: `${POPOUT_MARGIN}px`,
+    };
+  } else {
+    // Desktop: use wrapper width but at least POPOUT_MIN_WIDTH, centered
+    // on the wrapper, clamped to viewport edges
+    const popoutWidth = Math.max(rect.width, POPOUT_MIN_WIDTH);
+    const wrapperCenter = rect.left + rect.width / 2;
+    let left = wrapperCenter - popoutWidth / 2;
+
+    // Clamp to viewport edges
+    if (left < POPOUT_MARGIN) left = POPOUT_MARGIN;
+    if (left + popoutWidth > window.innerWidth - POPOUT_MARGIN) {
+      left = window.innerWidth - POPOUT_MARGIN - popoutWidth;
+    }
+
+    popoutStyle.value = {
+      position: "fixed",
+      bottom,
+      left: `${left}px`,
+      width: `${popoutWidth}px`,
+    };
+  }
 };
 
 const toggleGroupPopout = () => {
@@ -698,9 +725,8 @@ watch(
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 9998;
+  z-index: 10000;
   background: transparent;
-  /* Ensure the backdrop is above all other content but below the popout */
 }
 
 .group-popout {
@@ -711,7 +737,7 @@ watch(
   box-shadow:
     0 -4px 16px rgba(0, 0, 0, 0.15),
     0 -1px 4px rgba(0, 0, 0, 0.08);
-  z-index: 9999;
+  z-index: 10001;
 }
 
 .group-popout-row {
