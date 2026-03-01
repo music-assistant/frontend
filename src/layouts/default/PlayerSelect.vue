@@ -26,6 +26,7 @@
             v-if="authManager.isAdmin()"
             variant="icon"
             :to="{ name: 'playersettings' }"
+            @click="onPlayerSettingsClick"
           >
             <v-icon size="24">mdi-cog</v-icon>
           </Button>
@@ -274,6 +275,11 @@ function toggleGroupExpand(player: Player) {
       }
     });
   }
+}
+
+function onPlayerSettingsClick() {
+  store.showPlayersMenu = false
+  store.showFullscreenPlayer = false;
 }
 
 onMounted(() => {
