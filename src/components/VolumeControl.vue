@@ -41,6 +41,7 @@
         :allow-wheel="allowWheel"
         :show-volume-level="!canExpand"
         :prefer-group-volume="true"
+        :enable-popout="false"
         width="100%"
         @click.stop
       />

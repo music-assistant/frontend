@@ -1,6 +1,6 @@
 <template>
   <!-- Non-mobile: background gradient and player bar -->
-  <template v-if="!mobile">
+  <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
     <div class="mediacontrols">
       <div class="mediacontrols-left">
@@ -112,7 +112,11 @@
       </div>
     </div>
     <div v-if="store.activePlayer" class="volume-slider">
-      <PlayerVolume :player="store.activePlayer" width="100%" />
+      <PlayerVolume
+        :player="store.activePlayer"
+        width="100%"
+        :prefer-group-volume="true"
+      />
     </div>
   </div>
 </template>
@@ -132,7 +136,6 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { useDisplay } from "vuetify";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -143,9 +146,6 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
-
-// Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
-const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({

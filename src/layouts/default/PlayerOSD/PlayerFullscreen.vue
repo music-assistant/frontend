@@ -454,6 +454,7 @@
             width="100%"
             :color="sliderColor"
             :allow-wheel="true"
+            :prefer-group-volume="true"
           />
         </div>
 

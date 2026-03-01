@@ -11,23 +11,24 @@
   </ActivePlayerPopover>
   <QueueBtn
     v-if="queue && queue.isVisible"
-    :color="player.color"
+    :color="queue.color"
     style="padding-left: 15px; padding-right: 20px"
   />
-  <VolumeBtn
-    v-if="volume && volume.isVisible"
-    :color="volume.color"
-    :volume-size="volume.volumeSize"
-    :responsive-volume-size="volume.responsiveVolumeSize"
+  <PlayerVolume
+    v-if="volume && volume.isVisible && store.activePlayer"
+    :player="store.activePlayer"
+    :width="volume.volumeSize || '150px'"
+    :allow-wheel="true"
+    :prefer-group-volume="true"
   />
 </template>
 
 <script setup lang="ts">
-import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
-import VolumeBtn from "./PlayerControlBtn/VolumeBtn.vue";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
+import PlayerVolume from "./PlayerVolume.vue";
+import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 
 // properties
 export interface Props {
@@ -49,7 +50,7 @@ export interface Props {
   };
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   queue: () => ({ isVisible: true, showQueueDialog: false }),
   player: () => ({ isVisible: true }),
   volume: () => ({

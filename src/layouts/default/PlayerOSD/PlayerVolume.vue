@@ -1,68 +1,111 @@
 <template>
-  <div
-    ref="sliderContainerRef"
-    class="player-volume-container"
-    :class="{
-      disabled: isDisabled,
-      muted: isMuted,
-      'not-powered': player.powered == false,
-    }"
-    :style="{ width: width }"
-    @wheel.prevent="onWheel"
-    @touchstart="onTouchStart"
-    @touchmove="onTouchMove"
-    @touchend="onTouchEnd"
-    @touchcancel="onTouchCancel"
-  >
-    <!-- Prepend slot override (used by VolumeBtn for menu activator) -->
-    <div
-      v-if="$slots.prepend"
-      class="volume-prepend"
-      @touchstart.stop
-      @touchend.stop
-    >
-      <slot name="prepend"></slot>
-    </div>
+  <div ref="wrapperRef" class="player-volume-wrapper">
+    <!-- Sonos-style group volume popout (teleported to body to escape overflow clipping) -->
+    <Teleport to="body">
+      <!-- Invisible backdrop: catches all clicks/taps outside the popout and stops propagation -->
+      <Transition name="popout-backdrop">
+        <div
+          v-if="showGroupPopout"
+          class="group-popout-backdrop"
+          @click.stop.prevent="closeGroupPopout"
+          @touchstart.stop.prevent="closeGroupPopout"
+          @mousedown.stop.prevent
+          @touchmove.stop.prevent
+          @touchend.stop.prevent
+        />
+      </Transition>
+      <Transition name="popout">
+        <div
+          v-if="showGroupPopout"
+          ref="popoutRef"
+          class="group-popout"
+          :style="popoutStyle"
+          @click.stop
+          @touchstart.stop
+          @touchmove.stop
+          @touchend.stop
+        >
+          <!-- Drag handle for swipe-down-to-dismiss -->
+          <div
+            class="group-popout-drag-handle"
+            @touchstart.stop="onDragHandleTouchStart"
+            @touchmove.stop="onDragHandleTouchMove"
+            @touchend.stop="onDragHandleTouchEnd"
+            @touchcancel.stop="onDragHandleTouchCancel"
+          >
+            <div class="group-popout-drag-handle-pill" />
+          </div>
+          <div
+            v-for="child in childPlayers"
+            :key="child.player_id"
+            class="group-popout-row"
+          >
+            <div class="group-popout-label">
+              {{ truncateString(child.name, 20) }}
+            </div>
+            <PlayerVolume :player="child" width="100%" />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
-    <!-- Mute button with dynamic volume icon (default) -->
-    <div v-else class="volume-prepend" @touchstart.stop @touchend.stop>
-      <button
-        class="volume-icon-btn"
-        :disabled="muteDisabled"
-        @click.stop="onMuteToggle"
+    <!-- Main volume slider -->
+    <div
+      ref="sliderContainerRef"
+      class="player-volume-container"
+      :class="{
+        disabled: isDisabled,
+        muted: isMuted,
+        'not-powered': player.powered == false,
+      }"
+      :style="{ width: width }"
+      @click="onSliderClick"
+      @wheel.prevent="onWheel"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @touchcancel="onTouchCancel"
+    >
+      <!-- Mute button with dynamic volume icon -->
+      <div class="volume-prepend" @touchstart.stop @touchend.stop>
+        <button
+          class="volume-icon-btn"
+          :disabled="muteDisabled"
+          @click.stop="onMuteToggle"
+        >
+          <component :is="volumeIconComponent" :size="iconSize" />
+        </button>
+      </div>
+
+      <Slider
+        :model-value="[displayValue]"
+        :disabled="isSliderDisabled"
+        :min="0"
+        :max="100"
+        :step="step"
+        class="volume-slider"
+        :class="cn('w-full', props.class)"
+        @update:model-value="onSliderUpdate"
+      />
+
+      <!-- Volume level display -->
+      <div
+        v-if="showVolumeLevel"
+        class="volume-append"
+        @touchstart.stop
+        @touchend.stop
       >
-        <component :is="volumeIconComponent" :size="iconSize" />
-      </button>
-    </div>
-
-    <Slider
-      :model-value="[displayValue]"
-      :disabled="isSliderDisabled"
-      :min="0"
-      :max="100"
-      :step="step"
-      class="volume-slider"
-      :class="cn('w-full', props.class)"
-      @update:model-value="onSliderUpdate"
-    />
-
-    <!-- Volume level display -->
-    <div
-      v-if="showVolumeLevel"
-      class="volume-append"
-      @touchstart.stop
-      @touchend.stop
-    >
-      <span class="volume-level-text">
-        {{ Math.round(displayValue) }}
-      </span>
+        <span class="volume-level-text">
+          {{ Math.round(displayValue) }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Slider } from "@/components/ui/slider";
-import { getVolumeIconComponent } from "@/helpers/utils";
+import { getVolumeIconComponent, truncateString } from "@/helpers/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/plugins/api";
 import {
@@ -81,7 +124,10 @@ export interface Props {
   /** Size of the volume icon */
   iconSize?: number;
   disabled?: boolean;
+  /** When true and the player has group members, use group volume and enable popout on tap */
   preferGroupVolume?: boolean;
+  /** Enable the Sonos-style group popout (set false when parent already shows child players) */
+  enablePopout?: boolean;
   width?: string;
   step?: number;
   allowWheel?: boolean;
@@ -94,6 +140,7 @@ const props = withDefaults(defineProps<Props>(), {
   iconSize: 22,
   disabled: false,
   preferGroupVolume: false,
+  enablePopout: true,
   width: "100%",
   step: 2,
   allowWheel: false,
@@ -155,6 +202,113 @@ const volumeIconComponent = computed(() => {
   return getVolumeIconComponent(props.player, displayValue.value);
 });
 
+// --- Group popout ---
+
+const showGroupPopout = ref(false);
+const wrapperRef = ref<HTMLElement | null>(null);
+const popoutRef = ref<HTMLElement | null>(null);
+const popoutStyle = ref<Record<string, string>>({});
+let lastPopoutToggleTime = 0;
+
+const childPlayers = computed(() => {
+  if (!isGroup.value) return [];
+  const items: Player[] = [];
+  for (const childId of props.player.group_members) {
+    const child = api?.players[childId];
+    if (
+      child &&
+      child.available &&
+      child.volume_control != PLAYER_CONTROL_NONE
+    ) {
+      items.push(child);
+    }
+  }
+  items.sort((a, b) => (a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1));
+  return items;
+});
+
+const hasGroupPopout = computed(
+  () =>
+    props.enablePopout && useGroupVolume.value && childPlayers.value.length > 0,
+);
+
+const updatePopoutPosition = () => {
+  if (!wrapperRef.value) return;
+  const rect = wrapperRef.value.getBoundingClientRect();
+  popoutStyle.value = {
+    position: "fixed",
+    bottom: `${window.innerHeight - rect.top + 6}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+  };
+};
+
+const toggleGroupPopout = () => {
+  if (!showGroupPopout.value) {
+    updatePopoutPosition();
+  }
+  showGroupPopout.value = !showGroupPopout.value;
+  lastPopoutToggleTime = Date.now();
+};
+
+const closeGroupPopout = () => {
+  // Guard against synthesized click: browser fires click ~300ms after
+  // the touchend that opened the popout, hitting the newly-appeared backdrop
+  if (Date.now() - lastPopoutToggleTime < 500) return;
+  showGroupPopout.value = false;
+  lastPopoutToggleTime = Date.now();
+};
+
+// --- Drag handle for swipe-down-to-dismiss ---
+
+const dragHandleStartY = ref(0);
+const dragHandleDeltaY = ref(0);
+const isDragHandleDragging = ref(false);
+
+const onDragHandleTouchStart = (event: TouchEvent) => {
+  const touch = event.touches[0];
+  dragHandleStartY.value = touch.clientY;
+  dragHandleDeltaY.value = 0;
+  isDragHandleDragging.value = true;
+};
+
+const onDragHandleTouchMove = (event: TouchEvent) => {
+  if (!isDragHandleDragging.value) return;
+  const touch = event.touches[0];
+  dragHandleDeltaY.value = touch.clientY - dragHandleStartY.value;
+
+  // Only allow downward drag — apply transform to the popout
+  if (popoutRef.value && dragHandleDeltaY.value > 0) {
+    popoutRef.value.style.transform = `translateY(${dragHandleDeltaY.value}px)`;
+    popoutRef.value.style.transition = "none";
+  }
+};
+
+const onDragHandleTouchEnd = () => {
+  isDragHandleDragging.value = false;
+
+  // If dragged down more than 50px, dismiss the popout
+  if (dragHandleDeltaY.value > 50) {
+    closeGroupPopout();
+  }
+
+  // Reset transform
+  if (popoutRef.value) {
+    popoutRef.value.style.transform = "";
+    popoutRef.value.style.transition = "";
+  }
+  dragHandleDeltaY.value = 0;
+};
+
+const onDragHandleTouchCancel = () => {
+  isDragHandleDragging.value = false;
+  if (popoutRef.value) {
+    popoutRef.value.style.transform = "";
+    popoutRef.value.style.transition = "";
+  }
+  dragHandleDeltaY.value = 0;
+};
+
 // --- Slider state ---
 
 const sliderContainerRef = ref<HTMLElement | null>(null);
@@ -199,8 +353,6 @@ const startDragging = () => {
 };
 
 const stopDragging = () => {
-  // Brief delay before re-enabling server sync so the server has time
-  // to process the final value and we don't snap back momentarily.
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
   dragEndTimeout = setTimeout(() => {
     isDragging.value = false;
@@ -336,23 +488,25 @@ const onTouchEnd = (event: TouchEvent) => {
   const isTap = !isDrag.value;
 
   if (isTap) {
-    // Tap before/after handle: use server volume up/down commands.
-    // No optimistic display update — let the server state flow through.
-    // Compare tap position to the actual thumb element in screen coordinates
-    // to avoid coordinate mismatch between container and slider track.
-    const touch = event.changedTouches[0];
-    const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
-    if (thumb) {
-      const thumbRect = thumb.getBoundingClientRect();
-      const thumbCenter = thumbRect.left + thumbRect.width / 2;
-      if (touch.clientX > thumbCenter) {
-        volumeUp();
-      } else {
-        volumeDown();
+    // Group player with popout: toggle the popout on tap
+    if (hasGroupPopout.value) {
+      toggleGroupPopout();
+    } else {
+      // Single player: tap before/after handle for volume up/down
+      const touch = event.changedTouches[0];
+      const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
+      if (thumb) {
+        const thumbRect = thumb.getBoundingClientRect();
+        const thumbCenter = thumbRect.left + thumbRect.width / 2;
+        if (touch.clientX > thumbCenter) {
+          volumeUp();
+        } else {
+          volumeDown();
+        }
       }
     }
   } else {
-    // Drag end: send the final absolute value to the server.
+    // Drag end: send the final absolute value to the server
     const touch = event.changedTouches[0];
     const finalValue = clamp(
       roundToStep(getPercentageFromX(touch.clientX)),
@@ -388,7 +542,6 @@ const onTouchCancel = () => {
 const onWheel = (event: WheelEvent) => {
   if (!props.allowWheel || isSliderDisabled.value) return;
 
-  // Use server volume up/down commands — no optimistic display update.
   if (event.deltaY < 0) {
     volumeUp();
   } else {
@@ -422,6 +575,15 @@ const onSliderUpdate = (values: number[] | undefined) => {
   }, SLIDER_UPDATE_DEBOUNCE_MS);
 };
 
+// Desktop: click on slider area toggles popout for group players
+const onSliderClick = () => {
+  // Only toggle for group players; skip if touch-driven, mid-drag,
+  // or within 500ms of a touch-driven toggle (prevents synthesized click)
+  if (!hasGroupPopout.value || isTouching.value || isDragging.value) return;
+  if (Date.now() - lastPopoutToggleTime < 500) return;
+  toggleGroupPopout();
+};
+
 // Sync server volume to display when not actively dragging
 watch(
   currentVolume,
@@ -438,6 +600,11 @@ watch(
 </script>
 
 <style scoped>
+.player-volume-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .player-volume-container {
   position: relative;
   display: flex;
@@ -513,9 +680,115 @@ watch(
   opacity: 0.8;
 }
 
+/* --- Group volume popout styles are in the unscoped style block below --- */
+
 @media (pointer: coarse) {
-  .volume-slider {
+  .volume-slider,
+  .volume-slider :deep(*) {
     pointer-events: none;
   }
+}
+</style>
+
+<!-- Unscoped styles for the teleported popout -->
+<style>
+.group-popout-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  background: transparent;
+  /* Ensure the backdrop is above all other content but below the popout */
+}
+
+.group-popout {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), 0.12);
+  border-radius: 12px;
+  padding: 8px 18px 16px 18px;
+  box-shadow:
+    0 -4px 16px rgba(0, 0, 0, 0.15),
+    0 -1px 4px rgba(0, 0, 0, 0.08);
+  z-index: 9999;
+}
+
+.group-popout-row {
+  margin-bottom: 8px;
+}
+
+.group-popout-row:last-child {
+  margin-bottom: 0;
+}
+
+.group-popout-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.85;
+  padding-left: 2px;
+  margin-bottom: -2px;
+}
+
+/* Drag handle for swipe-down-to-dismiss (touch only) */
+.group-popout-drag-handle {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0 10px 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .group-popout-drag-handle {
+    display: flex;
+  }
+}
+
+.group-popout-drag-handle-pill {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(var(--v-border-color), 0.3);
+  transition: background 0.15s ease;
+}
+
+.group-popout-drag-handle:active .group-popout-drag-handle-pill {
+  background: rgba(var(--v-border-color), 0.5);
+}
+
+/* Popout animation */
+.popout-enter-active,
+.popout-leave-active {
+  transition: all 0.2s ease;
+}
+
+.popout-enter-from,
+.popout-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.popout-enter-to,
+.popout-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Backdrop animation */
+.popout-backdrop-enter-active,
+.popout-backdrop-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.popout-backdrop-enter-from,
+.popout-backdrop-leave-to {
+  opacity: 0;
+}
+
+.popout-backdrop-enter-to,
+.popout-backdrop-leave-from {
+  opacity: 1;
 }
 </style>
