@@ -15,12 +15,17 @@
     @touchcancel="onTouchCancel"
   >
     <!-- Prepend slot override (used by VolumeBtn for menu activator) -->
-    <div v-if="$slots.prepend" class="volume-prepend">
+    <div
+      v-if="$slots.prepend"
+      class="volume-prepend"
+      @touchstart.stop
+      @touchend.stop
+    >
       <slot name="prepend"></slot>
     </div>
 
     <!-- Mute button with dynamic volume icon (default) -->
-    <div v-else class="volume-prepend">
+    <div v-else class="volume-prepend" @touchstart.stop @touchend.stop>
       <button
         class="volume-icon-btn"
         :disabled="muteDisabled"
@@ -42,7 +47,12 @@
     />
 
     <!-- Volume level display -->
-    <div v-if="showVolumeLevel" class="volume-append">
+    <div
+      v-if="showVolumeLevel"
+      class="volume-append"
+      @touchstart.stop
+      @touchend.stop
+    >
       <span class="volume-level-text">
         {{ Math.round(displayValue) }}
       </span>
@@ -101,9 +111,11 @@ const isGroup = computed(
   () => props.player && props.player.group_members.length > 0,
 );
 
-const playerVolume = computed(() => {
+const useGroupVolume = computed(() => isGroup.value && props.preferGroupVolume);
+
+const currentVolume = computed(() => {
   return Math.round(
-    isGroup.value && props.preferGroupVolume
+    useGroupVolume.value
       ? (props.player.group_volume ?? 0)
       : (props.player.volume_level ?? 0),
   );
@@ -125,7 +137,7 @@ const isMuted = computed(() => {
 const isSliderDisabled = computed(() => isDisabled.value || isMuted.value);
 
 const muteDisabled = computed(() => {
-  if (isGroup.value && props.preferGroupVolume) {
+  if (useGroupVolume.value) {
     return (
       !props.player.available ||
       props.player.powered == false ||
@@ -143,11 +155,12 @@ const volumeIconComponent = computed(() => {
   return getVolumeIconComponent(props.player, displayValue.value);
 });
 
-// --- Slider state and mechanics ---
+// --- Slider state ---
 
 const sliderContainerRef = ref<HTMLElement | null>(null);
-const displayValue = ref(playerVolume.value);
+const displayValue = ref(currentVolume.value);
 
+// Touch tracking
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 const touchStartValue = ref(0);
@@ -157,35 +170,16 @@ const touchMoveCount = ref(0);
 const maxMovement = ref(0);
 const isTouching = ref(false);
 
-const isBlocking = ref(false);
-let blockingTimeout: ReturnType<typeof setTimeout> | null = null;
+// Dragging state: blocks server sync only while actively dragging the slider
+const isDragging = ref(false);
+let dragEndTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const startBlocking = () => {
-  isBlocking.value = true;
-  if (blockingTimeout) {
-    clearTimeout(blockingTimeout);
-  }
-  blockingTimeout = setTimeout(() => {
-    isBlocking.value = false;
-    blockingTimeout = null;
-  }, 5000);
-};
-
-const stopBlocking = () => {
-  isBlocking.value = false;
-  if (blockingTimeout) {
-    clearTimeout(blockingTimeout);
-    blockingTimeout = null;
-  }
-};
+let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 
 onUnmounted(() => {
-  if (blockingTimeout) {
-    clearTimeout(blockingTimeout);
-  }
-  if (sliderUpdateDebounceTimeout) {
-    clearTimeout(sliderUpdateDebounceTimeout);
-  }
+  if (dragEndTimeout) clearTimeout(dragEndTimeout);
+  if (sliderUpdateDebounceTimeout) clearTimeout(sliderUpdateDebounceTimeout);
 });
 
 const clamp = (value: number, min: number, max: number) =>
@@ -194,19 +188,55 @@ const clamp = (value: number, min: number, max: number) =>
 const roundToStep = (value: number) =>
   Math.round(value / props.step) * props.step;
 
+// --- Drag helpers ---
+
+const startDragging = () => {
+  isDragging.value = true;
+  if (dragEndTimeout) {
+    clearTimeout(dragEndTimeout);
+    dragEndTimeout = null;
+  }
+};
+
+const stopDragging = () => {
+  // Brief delay before re-enabling server sync so the server has time
+  // to process the final value and we don't snap back momentarily.
+  if (dragEndTimeout) clearTimeout(dragEndTimeout);
+  dragEndTimeout = setTimeout(() => {
+    isDragging.value = false;
+    dragEndTimeout = null;
+  }, 500);
+};
+
 // --- Volume API calls ---
 
 const setVolume = (value: number) => {
-  if (isGroup.value && props.preferGroupVolume) {
+  if (useGroupVolume.value) {
     api.playerCommandGroupVolume(props.player.player_id, value);
   } else {
     api.playerCommandVolumeSet(props.player.player_id, value);
   }
 };
 
+const volumeUp = () => {
+  if (useGroupVolume.value) {
+    api.playerCommandGroupVolumeUp(props.player.player_id);
+  } else {
+    api.playerCommandVolumeUp(props.player.player_id);
+  }
+};
+
+const volumeDown = () => {
+  if (useGroupVolume.value) {
+    api.playerCommandGroupVolumeDown(props.player.player_id);
+  } else {
+    api.playerCommandVolumeDown(props.player.player_id);
+  }
+};
+
 const onMuteToggle = () => {
   if (muteDisabled.value) return;
-  if (props.preferGroupVolume && props.player.group_members.length > 0) {
+  if (useGroupVolume.value) {
     api.playerCommandGroupVolumeMute(
       props.player.player_id,
       !props.player.group_volume_muted,
@@ -216,33 +246,13 @@ const onMuteToggle = () => {
   }
 };
 
-// --- Value emission ---
-
-const emitValue = (value: number, isFinal: boolean = false) => {
-  if (isSliderDisabled.value) return;
-
-  const clampedValue = clamp(roundToStep(value), 0, 100);
-
-  if (isFinal) {
-    startBlocking();
-  }
-
-  displayValue.value = clampedValue;
-  emit("update:local-value", clampedValue);
-
-  if (isFinal) {
-    setVolume(clampedValue);
-  }
-};
+// --- Helpers ---
 
 const vibrate = (duration: number = 10) => {
   if (store.isTouchscreen && "vibrate" in navigator && navigator.vibrate) {
     navigator.vibrate(duration);
   }
 };
-
-let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-const SLIDER_UPDATE_DEBOUNCE_MS = 100;
 
 const getPercentageFromX = (clientX: number): number => {
   if (!sliderContainerRef.value) return displayValue.value;
@@ -253,6 +263,8 @@ const getPercentageFromX = (clientX: number): number => {
 
   return clamp(roundToStep(percentage), 0, 100);
 };
+
+// --- Touch handlers ---
 
 const onTouchStart = (event: TouchEvent) => {
   if (isSliderDisabled.value) return;
@@ -267,7 +279,6 @@ const onTouchStart = (event: TouchEvent) => {
   touchMoveCount.value = 0;
   maxMovement.value = 0;
 
-  startBlocking();
   vibrate();
 };
 
@@ -288,12 +299,12 @@ const onTouchMove = (event: TouchEvent) => {
       isScrolling.value = true;
       displayValue.value = touchStartValue.value;
       emit("update:local-value", touchStartValue.value);
-      stopBlocking();
       return;
     }
 
     if (absDeltaX > 8) {
       isDrag.value = true;
+      startDragging();
       event.preventDefault();
     }
   }
@@ -325,18 +336,33 @@ const onTouchEnd = (event: TouchEvent) => {
   const isTap = !isDrag.value;
 
   if (isTap) {
+    // Tap before/after handle: use server volume up/down commands.
+    // No optimistic display update — let the server state flow through.
+    // Compare tap position to the actual thumb element in screen coordinates
+    // to avoid coordinate mismatch between container and slider track.
     const touch = event.changedTouches[0];
-    const tapPercentage = getPercentageFromX(touch.clientX);
-
-    const delta =
-      tapPercentage > touchStartValue.value ? props.step : -props.step;
-    const newValue = clamp(touchStartValue.value + delta, 0, 100);
-
-    emitValue(newValue, true);
+    const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
+    if (thumb) {
+      const thumbRect = thumb.getBoundingClientRect();
+      const thumbCenter = thumbRect.left + thumbRect.width / 2;
+      if (touch.clientX > thumbCenter) {
+        volumeUp();
+      } else {
+        volumeDown();
+      }
+    }
   } else {
+    // Drag end: send the final absolute value to the server.
     const touch = event.changedTouches[0];
-    const finalValue = getPercentageFromX(touch.clientX);
-    emitValue(finalValue, true);
+    const finalValue = clamp(
+      roundToStep(getPercentageFromX(touch.clientX)),
+      0,
+      100,
+    );
+    displayValue.value = finalValue;
+    emit("update:local-value", finalValue);
+    setVolume(finalValue);
+    stopDragging();
   }
 
   isDrag.value = false;
@@ -351,18 +377,23 @@ const onTouchCancel = () => {
   touchMoveCount.value = 0;
   maxMovement.value = 0;
   displayValue.value = touchStartValue.value;
-  stopBlocking();
+  isDragging.value = false;
+  if (dragEndTimeout) {
+    clearTimeout(dragEndTimeout);
+    dragEndTimeout = null;
+  }
   isTouching.value = false;
 };
 
 const onWheel = (event: WheelEvent) => {
   if (!props.allowWheel || isSliderDisabled.value) return;
 
-  const delta = event.deltaY < 0 ? props.step : -props.step;
-  const newValue = clamp(displayValue.value + delta, 0, 100);
-
-  startBlocking();
-  emitValue(newValue, true);
+  // Use server volume up/down commands — no optimistic display update.
+  if (event.deltaY < 0) {
+    volumeUp();
+  } else {
+    volumeDown();
+  }
 };
 
 const onSliderUpdate = (values: number[] | undefined) => {
@@ -375,6 +406,7 @@ const onSliderUpdate = (values: number[] | undefined) => {
     return;
 
   const newValue = values[0] ?? displayValue.value;
+  startDragging();
   displayValue.value = newValue;
   emit("update:local-value", newValue);
 
@@ -386,16 +418,15 @@ const onSliderUpdate = (values: number[] | undefined) => {
   sliderUpdateDebounceTimeout = setTimeout(() => {
     setVolume(newValue);
     sliderUpdateDebounceTimeout = null;
+    stopDragging();
   }, SLIDER_UPDATE_DEBOUNCE_MS);
 };
 
-// Watch for external value changes from server
+// Sync server volume to display when not actively dragging
 watch(
-  () => playerVolume.value,
+  currentVolume,
   (val: number) => {
-    if (isBlocking.value) {
-      return;
-    }
+    if (isDragging.value) return;
 
     if (Math.abs(displayValue.value - val) > 0.5) {
       displayValue.value = val;

@@ -1,13 +1,7 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import {
-  MediaItemType,
-  ItemMapping,
-  MediaType,
-  Player,
-  PlayerFeature,
-} from "./interfaces";
+import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
