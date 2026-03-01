@@ -62,6 +62,7 @@
             icon="mdi-play"
             color="white"
             fab
+            :disabled="disablePlayButton"
             style="opacity: 0.6; font-size: 20px"
             @click.stop="onPlayClick"
           />
@@ -79,7 +80,7 @@
             <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
           </span>
           <span v-else :class="{ 'is-playing': isPlaying }">{{
-            item.name
+            displayName
           }}</span>
           <span
             v-if="'version' in item && item.version"
@@ -128,6 +129,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
+  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -139,6 +141,8 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 
@@ -152,6 +156,7 @@ export interface Props {
   showProviderOnCover?: boolean;
   isAvailable?: boolean;
   isPlaying?: boolean;
+  disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   disabled?: boolean;
 }
@@ -162,7 +167,21 @@ const compProps = withDefaults(defineProps<Props>(), {
   permanentOverlay: false,
   showProviderOnCover: false,
   isAvailable: true,
+  disablePlayButton: false,
   parentItem: undefined,
+});
+
+const { t, te } = useI18n();
+const displayName = computed(() => {
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
 });
 
 // emits

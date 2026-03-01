@@ -39,7 +39,7 @@ import { api } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vuetify-sonner";
+import { toast } from "vue-sonner";
 
 const { t } = useI18n();
 

@@ -377,6 +377,7 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 40px;
   touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
@@ -439,13 +440,5 @@ watch(
   .volume-slider {
     pointer-events: none;
   }
-}
-
-.player-volume-container :deep([data-slot="slider-track"]) {
-  background-color: rgba(var(--v-theme-on-surface), 0.15) !important;
-}
-
-.v-theme--dark .player-volume-container :deep([data-slot="slider-track"]) {
-  background-color: rgba(var(--v-theme-on-surface), 0.2) !important;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <VSonner position="bottom-right" />
+  <Toaster rich-colors />
 
   <!-- Login screen (when not authenticated) -->
   <Login
@@ -31,7 +31,10 @@
 </template>
 
 <script setup lang="ts">
+import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
+import { CoreState, EventType } from "@/plugins/api/interfaces";
+import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
@@ -39,23 +42,22 @@ import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
-import { VSonner } from "vuetify-sonner";
-import "vuetify-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import {
-  getKioskModePreference,
-  subscribeToHAProperties,
-  unsubscribeFromHAProperties,
-} from "./plugins/homeassistant";
+  companionMode,
+  initializeCompanionIntegration,
+} from "./plugins/companion";
+// import {
+//   subscribeToHAProperties,
+//   unsubscribeFromHAProperties,
+//   getKioskModePreference
+// } from "./plugins/homeassistant";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
-import {
-  initializeCompanionIntegration,
-  companionMode,
-} from "./plugins/companion";
 import { webPlayer, WebPlayerMode } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -188,6 +190,8 @@ const handleLocalConnect = async (serverAddress: string) => {
   isConnected.value = true;
 };
 
+let initializationCompleted = false;
+
 // TODO: Remove this migration code in v2.9 release
 // Added in: current version
 // Can be removed: v2.9
@@ -222,6 +226,11 @@ async function migrateLocalStorageToUserPreferences() {
 }
 
 const completeInitialization = async () => {
+  // Guard against multiple initializations
+  if (initializationCompleted) {
+    return;
+  }
+
   const serverInfo = api.serverInfo.value;
   if (!serverInfo) {
     console.error("[App] No server info received");
@@ -233,6 +242,7 @@ const completeInitialization = async () => {
     return;
   }
   authManager.setCurrentUser(userInfo);
+  store.currentUser = userInfo;
   store.serverInfo = serverInfo;
 
   // TODO: Remove this migration code in v2.9 release
@@ -240,10 +250,11 @@ const completeInitialization = async () => {
   await migrateLocalStorageToUserPreferences();
 
   // Enable kiosk mode when running in Home Assistant ingress
-  if (store.isIngressSession && serverInfo.homeassistant_addon) {
-    const kioskPref = getKioskModePreference();
-    subscribeToHAProperties({ kioskMode: kioskPref, router });
-  }
+  // COMMENTED OUT - HA INTEGRATION DISABLED
+  // if (store.isIngressSession && serverInfo.homeassistant_addon) {
+  // const kioskPref = getKioskModePreference();
+  // subscribeToHAProperties({ kioskMode: kioskPref, router });
+  // }
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
@@ -257,6 +268,7 @@ const completeInitialization = async () => {
   store.libraryTracksCount = await api.getLibraryTracksCount();
   store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
   store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+  store.libraryGenresCount = await api.getLibraryGenresCount();
 
   // Enable Sendspin if available and not explicitly disabled
   // Sendspin works over WebRTC DataChannel which requires signaling via the API server
@@ -298,12 +310,55 @@ const completeInitialization = async () => {
     store.isOnboarding = true;
     router.push("/settings/providers");
   }
+  // Don't push to any route here - let the router handle navigation naturally
+  // from the URL hash. The router config already redirects "/" to "/home"
   api.state.value = ConnectionState.INITIALIZED;
+  initializationCompleted = true;
 
   // Initialize companion app integration
   if (api.baseUrl) {
     initializeCompanionIntegration(api.baseUrl);
   }
+
+  // Helper function to show server state notifications
+  let startingToastId: string | number | undefined;
+  const showServerStateToast = (status: CoreState | undefined) => {
+    // Dismiss the starting toast if server is now running
+    if (status === CoreState.RUNNING && startingToastId) {
+      toast.dismiss(startingToastId);
+      startingToastId = undefined;
+      return;
+    }
+
+    if (status && status !== CoreState.RUNNING) {
+      const { t } = i18n.global;
+      if (status === CoreState.STARTING) {
+        // Dismiss any existing starting toast before showing a new one
+        if (startingToastId) {
+          toast.dismiss(startingToastId);
+        }
+        startingToastId = toast.info(t("server_state.starting"), {
+          duration: Infinity,
+        });
+      } else if (status === CoreState.STOPPING) {
+        toast.warning(t("server_state.stopping"), { duration: 5000 });
+      } else if (status === CoreState.STOPPED) {
+        toast.warning(t("server_state.stopped"), { duration: 5000 });
+      }
+    }
+  };
+
+  // Check initial server state
+  const initialStatus = api.serverInfo.value?.status;
+  showServerStateToast(initialStatus);
+
+  // Subscribe to core state updates to show notifications
+  api.subscribe(
+    EventType.CORE_STATE_UPDATED,
+    (event: { data: { status: CoreState } }) => {
+      showServerStateToast(event.data?.status);
+    },
+  );
 };
 
 onMounted(async () => {
@@ -354,6 +409,9 @@ onMounted(async () => {
         newState === ConnectionState.CONNECTED &&
         oldState === ConnectionState.RECONNECTING
       ) {
+        // Reset initialization flag to allow re-initialization after reconnection
+        initializationCompleted = false;
+
         const { authManager } = await import("@/plugins/auth");
         // Check if we're in Ingress mode by examining the URL path
         const isIngressMode =
@@ -411,6 +469,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  unsubscribeFromHAProperties();
+  // unsubscribeFromHAProperties();
 });
 </script>

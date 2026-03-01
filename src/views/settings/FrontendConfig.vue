@@ -63,13 +63,14 @@ const loading = ref(false);
 const mode = useColorMode();
 
 onMounted(() => {
-  // TODO: Remove localStorage fallbacks below once migration period is over
-  // (theme, language, menu_items moved from localStorage to user preferences)
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
-  const enabledMenuItems: string[] = storedMenuConf
-    ? storedMenuConf.split(",")
-    : DEFAULT_MENU_ITEMS;
-
+  // TODO: Remove localStorage fallback once migration period is over
+  // (menu_items moved from localStorage to user preferences)
+  // Fall back to per-item localStorage keys during migration
+  const enabledMenuItems = DEFAULT_MENU_ITEMS.filter(
+    (item) =>
+      localStorage.getItem(`frontend.settings.menu_item_${item}_enabled`) !==
+      "false",
+  );
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
   mode.value = storedTheme as "light" | "dark" | "auto";
 
@@ -145,6 +146,7 @@ onMounted(() => {
         { title: $t("audiobooks"), value: "audiobooks" },
         { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },
+        { title: $t("genres"), value: "genres" },
         { title: $t("browse"), value: "browse" },
         { title: $t("settings.settings"), value: "settings" },
       ],
@@ -176,6 +178,21 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
+    },
+    {
+      key: "mobile_sidebar_side",
+      type: ConfigEntryType.STRING,
+      label: "mobile_sidebar_side",
+      default_value: "left",
+      required: false,
+      options: [
+        { title: "Left", value: "left" },
+        { title: "Right", value: "right" },
+      ],
+      multi_value: false,
+      category: "generic",
+      value:
+        localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
     },
   ];
 

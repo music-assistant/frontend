@@ -1,7 +1,7 @@
 <template>
   <Icon
     v-if="isVisible"
-    v-bind="icon"
+    v-bind="{ ...icon, ...$attrs }"
     :disabled="
       !store.activePlayerId ||
       (store.showFullscreenPlayer &&
@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { store } from "@/plugins/store";

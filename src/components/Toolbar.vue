@@ -14,16 +14,11 @@
 
     <template #title>
       <slot name="title">
-        <div v-if="store.mobileLayout && home" class="mobile-brand">
-          <img
-            src="@/assets/icon.svg"
-            alt="Music Assistant"
-            class="mobile-brand-logo"
-          />
-          <span class="mobile-brand-text">Music Assistant</span>
-        </div>
-        <button v-else-if="title" @click="emit('titleClicked')">
-          {{ title }}
+        <button
+          v-if="title || (store.mobileLayout && home)"
+          @click="emit('titleClicked')"
+        >
+          {{ title || (home ? $t("home") : "") }}
         </button>
       </slot>
     </template>
@@ -32,12 +27,6 @@
       <slot name="append"></slot>
     </template>
     <template v-else-if="menuItems?.length" #append>
-      <v-progress-circular
-        v-if="showLoading && api.syncTasks.value.length > 0"
-        color="primary"
-        indeterminate
-        :title="$t('tooltip.loading')"
-      />
       <v-btn
         v-for="menuItem of menuItems.filter(
           (x) =>
@@ -136,16 +125,6 @@
         </v-menu>
       </div>
     </template>
-    <template v-else-if="showLoading" #append>
-      <v-progress-circular
-        v-if="
-          api.fetchesInProgress.value.length > 0 ||
-          api.syncTasks.value.length > 0
-        "
-        color="primary"
-        indeterminate
-      />
-    </template>
   </v-toolbar>
 </template>
 
@@ -198,7 +177,6 @@ interface Props {
   title?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
-  showLoading?: boolean;
   home?: boolean;
   iconAction?: () => void;
 }
@@ -209,7 +187,6 @@ withDefaults(defineProps<Props>(), {
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
-  showLoading: undefined,
   iconAction: undefined,
 });
 
@@ -261,18 +238,9 @@ export interface ToolBarMenuItem extends ContextMenuItem {
 }
 
 /* Mobile branding on the left */
-.mobile-brand {
+.toolbar-prepend {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-.mobile-brand-logo {
-  height: 30px;
-  width: 30px;
-}
-.mobile-brand-text {
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  gap: 0.5rem;
 }
 </style>

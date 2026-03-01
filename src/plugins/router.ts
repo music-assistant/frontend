@@ -1,6 +1,8 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import { watch } from "vue";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
+import { api, ConnectionState } from "./api";
 
 const routes = [
   // All routes go through default layout - authentication is handled by server redirect
@@ -201,6 +203,29 @@ const routes = [
         ],
       },
       {
+        path: "/genres",
+        children: [
+          {
+            path: "",
+            name: "genres",
+            component: () =>
+              import(
+                /* webpackChunkName: "genres" */ "@/views/LibraryGenres.vue"
+              ),
+            props: true,
+          },
+          {
+            path: ":provider/:itemId",
+            name: "genre",
+            component: () =>
+              import(
+                /* webpackChunkName: "genre" */ "@/views/GenreDetails.vue"
+              ),
+            props: true,
+          },
+        ],
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -292,6 +317,16 @@ const routes = [
             component: () =>
               import(
                 /* webpackChunkName: "serverlogs" */ "@/views/settings/ServerLogs.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: "genremanagement",
+            name: "genremanagement",
+            component: () =>
+              import(
+                /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },
@@ -392,11 +427,29 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // Check admin-only routes - check all matched routes for requiresAdmin meta
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
   if (requiresAdmin) {
+    // Wait for API to be initialized before checking admin access
+    // This ensures store.currentUser is set before we check permissions
+    if (api.state.value !== ConnectionState.INITIALIZED) {
+      // Wait for initialization to complete
+      await new Promise<void>((resolve) => {
+        const unwatch = watch(
+          () => api.state.value,
+          (newState) => {
+            if (newState === ConnectionState.INITIALIZED) {
+              unwatch();
+              resolve();
+            }
+          },
+          { immediate: true },
+        );
+      });
+    }
+
     const currentUser = store.currentUser;
     console.debug(
       "Admin route check:",

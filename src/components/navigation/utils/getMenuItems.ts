@@ -12,6 +12,7 @@ import {
   Radio,
   Search,
   Settings,
+  Tag,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -25,8 +26,8 @@ export interface MenuItem {
 
 export const getMenuItems = function () {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
+  // Check user preferences first, then fall back to per-item localStorage keys
   const userMenuItems = store.currentUser?.preferences?.menu_items;
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
 
   let enabledItems: string[];
   if (userMenuItems) {
@@ -34,15 +35,18 @@ export const getMenuItems = function () {
     enabledItems = Array.isArray(userMenuItems)
       ? userMenuItems
       : userMenuItems.split(",");
-  } else if (storedMenuConf) {
-    // Fallback to localStorage during migration
-    enabledItems = storedMenuConf.split(",");
   } else {
-    // Final fallback to defaults
-    enabledItems = DEFAULT_MENU_ITEMS;
+    // Fallback to per-item localStorage keys (main branch approach)
+    enabledItems = DEFAULT_MENU_ITEMS.filter(
+      (item) =>
+        localStorage.getItem(
+          `frontend.settings.menu_item_${item}_enabled`,
+        ) !== "false",
+    );
   }
+
   const items: MenuItem[] = [];
-  // we loop through the enabled items list so we can respect the order
+  // we loop through enabledItems to respect user's selection
   for (const enabledMenuItemStr of enabledItems) {
     if (enabledMenuItemStr === "home") {
       items.push({
@@ -121,6 +125,15 @@ export const getMenuItems = function () {
         path: "/radios",
         isLibraryNode: true,
         hidden: store.libraryRadiosCount === 0,
+      });
+    }
+    if (enabledMenuItemStr === "genres") {
+      items.push({
+        label: "genres",
+        icon: Tag,
+        path: "/genres",
+        isLibraryNode: true,
+        hidden: store.libraryGenresCount === 0,
       });
     }
     if (enabledMenuItemStr === "browse") {

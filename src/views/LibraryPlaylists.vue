@@ -12,6 +12,7 @@
     :title="$t('playlists')"
     :allow-key-hooks="true"
     :show-search-button="true"
+    :show-genre-filter="true"
     :extra-menu-items="extraMenuItems"
     :icon="ListMusic"
     :restore-state="true"
@@ -29,16 +30,15 @@ import {
   EventType,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { ListMusic } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
 
 defineOptions({
   name: "Playlists",
 });
 
-const { t } = useI18n();
 const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
@@ -68,6 +68,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
   );
 };
 
@@ -129,12 +130,7 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
-const newPlaylist = async function (provId: string) {
-  const name = prompt(t("new_playlist_name"));
-  if (!name) return;
-  await api
-    .createPlaylist(name, provId)
-    .then(() => location.reload())
-    .catch((e) => alert(e));
+const newPlaylist = function (provId: string) {
+  eventbus.emit("createPlaylist", { providerId: provId });
 };
 </script>

@@ -1,13 +1,25 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
+import {
+  MediaItemType,
+  ItemMapping,
+  MediaType,
+  Player,
+  PlayerFeature,
+} from "./interfaces";
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
-  if ("provider_mappings" in item) {
+  if (
+    (item.media_type == MediaType.GENRE ||
+      item.media_type == MediaType.GENRE_ALIAS) &&
+    item.provider == "library"
+  )
+    return true;
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
     for (const x of item.provider_mappings) {
       if (x.available && api.providers[x.provider_instance]?.available)
         return true;
@@ -172,3 +184,20 @@ interface NavigatorUAData {
   platform: string;
   mobile: boolean;
 }
+
+export const handlePlayerMuteToggle = function (player: Player) {
+  if (player.group_members.length > 0) {
+    // TODO: revisit this when api/server supports group mute toggle
+    const muted = !player.volume_muted;
+    for (const memberId of player.group_members) {
+      const childPlayer = api.players[memberId];
+      if (!childPlayer) continue;
+      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
+        continue;
+      }
+      api.playerCommandVolumeMute(memberId, muted);
+    }
+  } else {
+    api.playerCommandMuteToggle(player.player_id);
+  }
+};

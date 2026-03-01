@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Toolbar :icon="Settings" :show-loading="true">
+    <Toolbar :icon="Settings">
       <template #title>
         <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
       </template>
@@ -440,7 +440,8 @@ const activeTab = computed(() => {
   if (
     name.includes("system") ||
     name.includes("core") ||
-    name.includes("serverlog")
+    name.includes("serverlog") ||
+    name === "genremanagement"
   ) {
     return "system";
   }
@@ -577,6 +578,12 @@ const breadcrumbItems = computed(() => {
     .with("serverlogs", () => {
       items.push({
         title: t("settings.server_logging"),
+        disabled: true,
+      });
+    })
+    .with("genremanagement", () => {
+      items.push({
+        title: t("settings.genre_management"),
         disabled: true,
       });
     })

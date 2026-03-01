@@ -11,6 +11,7 @@
     :update-available="updateAvailable"
     :title="$t('tracks')"
     :show-search-button="true"
+    :show-genre-filter="true"
     :allow-key-hooks="true"
     :extra-menu-items="[
       {
@@ -87,6 +88,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.offset,
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
   );
 };
 

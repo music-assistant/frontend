@@ -1,88 +1,67 @@
 <template>
   <v-bottom-navigation
-    :height="height"
+    app
+    height="60"
     bg-color="default"
     grow
     role="navigation"
   >
     <v-btn
-      v-if="store.isIngressSession"
-      aria-label="Home Assistant"
+      aria-label="Menu"
       tabindex="0"
       variant="text"
-      base-color="grey"
-      @click="handleHAButtonClick"
+      @click="handleMenuClick"
     >
-      <img
-        src="@/assets/home-assistant-logo.svg"
-        alt="Home Assistant"
-        class="w-6 h-6"
-      />
-      <span class="menuButton">HA</span>
+      <Menu class="w-5 h-5" />
+      <span class="menuButton">Menu</span>
     </v-btn>
 
     <v-btn
-      v-for="menuItem of menuItems.filter((x) => !x.isLibraryNode)"
-      :key="menuItem.label"
-      :to="menuItem.path"
-      :aria-label="$t(menuItem.label)"
+      :aria-label="$t('discover')"
       tabindex="0"
       variant="text"
       active-color="fg"
-      base-color="grey"
+      @click="handleDiscoverClick"
     >
-      <component :is="menuItem.icon" class="w-6 h-6" />
-      <span class="menuButton">{{ $t(menuItem.label) }}</span>
+      <Home class="w-5 h-5" />
+      <span class="menuButton">{{ $t("discover") }}</span>
     </v-btn>
 
-    <v-menu>
-      <template #activator="{ props }">
+    <ActivePlayerPopover auto-show align="end" @click="handlePlayersClick">
+      <template #trigger="{ onClick }">
         <v-btn
-          v-bind="props"
-          aria-haspopup="true"
-          :aria-expanded="isLibraryOpen.toString()"
-          aria-label="Open library menu"
-          base-color="grey"
+          :aria-label="$t('players')"
+          tabindex="0"
+          variant="text"
+          @click="onClick"
         >
-          <LibraryIcon class="w-6 h-6" />
-          <span class="menuButton">{{ $t("library") }}</span>
+          <Speaker class="w-5 h-5" />
+          <span class="menuButton">{{ $t("players") }}</span>
         </v-btn>
       </template>
-
-      <v-list>
-        <v-list-item
-          v-for="menuItem of menuItems.filter((x) => x.isLibraryNode)"
-          :key="menuItem.label"
-          :title="$t(menuItem.label)"
-          :to="menuItem.path"
-        >
-          <template #prepend>
-            <component :is="menuItem.icon" class="w-5 h-5 mr-3" />
-          </template>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+    </ActivePlayerPopover>
   </v-bottom-navigation>
 </template>
 
 <script setup lang="ts">
-import { toggleHAMenu } from "@/plugins/homeassistant";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LibraryIcon } from "lucide-vue-next";
-import { ref } from "vue";
-import { getMenuItems } from "./utils/getMenuItems";
+import { Home, Menu, Speaker } from "lucide-vue-next";
+import { useRouter } from "vue-router";
+import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
-export interface Props {
-  height: number;
-}
-defineProps<Props>();
+const router = useRouter();
 
-const menuItems = getMenuItems();
+const handleMenuClick = () => {
+  eventbus.emit("mobile-sidebar-open");
+};
 
-const isLibraryOpen = ref(false);
+const handleDiscoverClick = () => {
+  router.push({ name: "home" });
+};
 
-const handleHAButtonClick = () => {
-  toggleHAMenu();
+const handlePlayersClick = () => {
+  store.showPlayersMenu = true;
 };
 </script>
 

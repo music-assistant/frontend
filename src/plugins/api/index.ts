@@ -2,10 +2,10 @@ import { store } from "../store";
 /* eslint-disable no-constant-condition */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, reactive, ref } from "vue";
-import { toast } from "vuetify-sonner";
-import { getDeviceName } from "./helpers";
+import { toast } from "vue-sonner";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
+import { getDeviceName } from "./helpers";
 import {
   type Album,
   type Artist,
@@ -13,6 +13,7 @@ import {
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
+  type Genre,
   type MassEvent,
   type MediaItemType,
   type Player,
@@ -82,7 +83,6 @@ export class MusicAssistantApi {
     {},
   );
   public syncTasks = ref<SyncTask[]>([]);
-  public fetchesInProgress = ref<string[]>([]);
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -436,6 +436,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -444,6 +445,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre,
     });
   }
 
@@ -535,6 +537,12 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/count", { favorite_only });
   }
 
+  public getLibraryGenresCount(
+    favorite_only: boolean = false,
+  ): Promise<number> {
+    return this.sendCommand("music/genres/count", { favorite_only });
+  }
+
   /**
    * Get Artists listing from the server.
    * @param favorite - Filter by favorite status
@@ -554,6 +562,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_artists_only?: boolean,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -563,6 +572,7 @@ export class MusicAssistantApi {
       order_by,
       album_artists_only,
       provider,
+      genre,
     });
   }
 
@@ -621,6 +631,7 @@ export class MusicAssistantApi {
     order_by?: string,
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -630,6 +641,7 @@ export class MusicAssistantApi {
       order_by,
       album_types,
       provider,
+      genre,
     });
   }
 
@@ -682,6 +694,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -690,6 +703,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre,
     });
   }
 
@@ -707,7 +721,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
     force_refresh?: boolean,
-  ): Promise<(Track | Radio)[]> {
+  ): Promise<(Track | Radio | PodcastEpisode | Audiobook)[]> {
     return this.sendCommand("music/playlists/playlist_tracks", {
       item_id,
       provider_instance_id_or_domain,
@@ -762,6 +776,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -770,6 +785,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre,
     });
   }
 
@@ -811,6 +827,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -819,6 +836,7 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre,
     });
   }
 
@@ -860,6 +878,7 @@ export class MusicAssistantApi {
     offset?: number,
     order_by?: string,
     provider?: string | string[],
+    genre?: number | number[],
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -868,6 +887,161 @@ export class MusicAssistantApi {
       offset,
       order_by,
       provider,
+      genre,
+    });
+  }
+
+  /**
+   * Get Genres listing from the server.
+   * @param favorite - Filter by favorite status
+   * @param search - Filter by search query
+   * @param limit - Maximum number of items to return
+   * @param offset - Number of items to skip
+   * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
+   * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @returns Promise resolving to array of genres
+   */
+  public getLibraryGenres(
+    favorite?: boolean,
+    search?: string,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
+    provider?: string | string[],
+    genre?: number | number[],
+    hide_empty?: boolean,
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/library_items", {
+      favorite,
+      search,
+      limit,
+      offset,
+      order_by,
+      provider,
+      genre,
+      hide_empty,
+    });
+  }
+
+  public getGenre(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/get", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public addGenreToLibrary(
+    item: Partial<Genre>,
+    overwrite_existing = false,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/add", {
+      item,
+      overwrite_existing,
+    });
+  }
+
+  public removeGenreFromLibrary(item_id: string): Promise<void> {
+    return this.sendCommand("music/genres/remove", {
+      item_id,
+    });
+  }
+
+  public restoreGenreDefaults(fullRestore = false): Promise<Genre[]> {
+    return this.sendCommand("music/genres/restore_defaults", {
+      full_restore: fullRestore,
+    });
+  }
+
+  public getGenreScannerStatus(): Promise<{
+    running: boolean;
+    last_scan_time: number;
+    last_scan_ago_seconds: number | null;
+    last_scan_mapped: number | null;
+  }> {
+    return this.sendCommand("music/genres/scanner_status");
+  }
+
+  public triggerGenreScan(): Promise<{
+    status: "triggered" | "already_running";
+    message: string;
+    last_scan: number;
+  }> {
+    return this.sendCommand("music/genres/scan_mappings");
+  }
+
+  public addGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/add_alias", {
+      genre_id,
+      alias,
+    });
+  }
+
+  public removeGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_alias", {
+      genre_id,
+      alias,
+    });
+  }
+
+  public promoteGenreAlias(genre_id: string, alias: string): Promise<Genre> {
+    return this.sendCommand("music/genres/promote_alias", {
+      genre_id,
+      alias,
+    });
+  }
+
+  public getGenresForMediaItem(
+    media_type: string,
+    media_id: string,
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/genres_for_media_item", {
+      media_type,
+      media_id,
+    });
+  }
+
+  public mergeGenres(
+    genre_ids: string[],
+    target_genre_id: string,
+  ): Promise<Genre> {
+    return this.sendCommand("music/genres/merge", {
+      genre_ids,
+      target_genre_id,
+    });
+  }
+
+  public addGenreMediaMapping(
+    genre_id: string,
+    media_type: string,
+    media_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/add_media_mapping", {
+      genre_id,
+      media_type,
+      media_id,
+    });
+  }
+
+  public async getGenreOverviewRows(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<RecommendationFolder[]> {
+    return this.sendCommand("music/genres/overview", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
+  public getGenreRadioBaseTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -1125,6 +1299,12 @@ export class MusicAssistantApi {
     // - pos_shift:  move item to top of queue as next item if 0
     this.playerQueueCommand(queueId, "move_item", { queue_item_id, pos_shift });
   }
+  public queueCommandMoveItemEnd(queueId: string, queue_item_id: string) {
+    // Move queue item to the end of the queue.
+    // - queue_id: id of the queue to process this request.
+    // - queue_item_id: the item_id of the queueitem that needs to be moved.
+    this.playerQueueCommand(queueId, "move_item_end", { queue_item_id });
+  }
   public queueCommandMoveUp(queueId: string, queue_item_id: string) {
     this.queueCommandMoveItem(queueId, queue_item_id, -1);
   }
@@ -1220,6 +1400,16 @@ export class MusicAssistantApi {
       source_queue_id: sourceQueue,
       target_queue_id: targetQueue,
       auto_play: autoPlay,
+    });
+  }
+  public queueCommandSaveAsPlaylist(
+    queueId: string,
+    name: string,
+  ): Promise<Playlist> {
+    // Save the current queue items as a new playlist.
+    return this.sendCommand("player_queues/save_as_playlist", {
+      queue_id: queueId,
+      name,
     });
   }
 
@@ -1757,6 +1947,9 @@ export class MusicAssistantApi {
       delete this.queues[msg.object_id!];
     } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
       this.syncTasks.value = msg.data as SyncTask[];
+    } else if (msg.event == EventType.CORE_STATE_UPDATED) {
+      // Update serverInfo with the new server state
+      this.serverInfo.value = msg.data as ServerInfoMessage;
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
       // Clear and repopulate the existing reactive object to preserve reactivity
       Object.keys(this.providers).forEach((key) => delete this.providers[key]);
@@ -1812,10 +2005,6 @@ export class MusicAssistantApi {
     }
 
     this.commands.delete(msg.message_id);
-    this.fetchesInProgress.value = this.fetchesInProgress.value.filter(
-      (x) => x != msg.message_id,
-    );
-
     if ("error_code" in msg) {
       resultPromise.reject(msg.details || msg.error_code);
     } else {
@@ -2259,7 +2448,6 @@ export class MusicAssistantApi {
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, { resolve, reject });
-      this.fetchesInProgress.value.push(cmdId);
       this._sendCommand(command, args, cmdId);
     });
   }
@@ -2306,8 +2494,6 @@ export class MusicAssistantApi {
   public async fetchState() {
     // fetch full initial state
     for (const player of await this.getPlayers()) {
-      // ignore unavailable players in the initial state
-      if (!player.available) continue;
       this.players[player.player_id] = player;
     }
     for (const queue of await this.getPlayerQueues()) {

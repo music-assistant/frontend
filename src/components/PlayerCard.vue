@@ -44,16 +44,8 @@
       <!-- playername -->
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
-        <div
-          v-if="
-            webPlayer.player_id === player.player_id ||
-            store.companionPlayerId === player.player_id
-          "
-          style="margin-bottom: 3px"
-        >
-          <span>{{
-            getPlayerName(player, store.deviceType == "phone" ? 10 : 16)
-          }}</span>
+        <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
+          <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
           <v-chip density="compact" size="small" class="ml-2" outlined>
             <v-icon
@@ -61,9 +53,10 @@
               :icon="
                 store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
               "
-              style="margin-right: 6px"
             />
-            {{ $t("this_device") }}
+            <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
+              $t("this_device")
+            }}</span>
           </v-chip>
         </div>
         <!-- regular player -->
@@ -122,21 +115,31 @@
       <template #append>
         <!-- play/pause button -->
         <Button
-          v-if="
-            player.playback_state == PlaybackState.PAUSED ||
-            player.playback_state == PlaybackState.PLAYING ||
-            playerQueue?.items
-          "
+          v-if="canPlayPause"
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :disabled="
+            api.queues[player.player_id]?.extra_attributes
+              ?.play_action_in_progress === true
+          "
           @click.stop="
             api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
+          <v-progress-circular
+            v-if="
+              api.queues[player.player_id]?.extra_attributes
+                ?.play_action_in_progress === true
+            "
+            indeterminate
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            :width="2"
+          />
           <component
             :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
+            v-else
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
@@ -222,12 +225,14 @@ import {
 } from "@/components/QualityDetailsBtn.vue";
 import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
+import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getColorPalette,
   getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
+  isBuiltinPlayer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -243,7 +248,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { webPlayer } from "@/plugins/web_player";
 import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, ref, toRef, watch } from "vue";
 
 // properties
 export interface Props {
@@ -256,6 +261,7 @@ export interface Props {
 }
 
 const compProps = defineProps<Props>();
+const { activeSource } = useActiveSource(toRef(compProps, "player"));
 
 // emits
 defineEmits<{
@@ -288,6 +294,13 @@ const openPlayerMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
+
+const canPlayPause = computed(() => {
+  if (activeSource.value) {
+    return activeSource.value.can_play_pause;
+  }
+  return false;
+});
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -334,6 +347,14 @@ watch(
   min-height: 60px;
 }
 
+.panel-item-details :deep(.v-list-item__spacer) {
+  width: 10px;
+}
+
+.player-media-thumb {
+  margin-right: 0px;
+}
+
 .volumesliderrow {
   margin-top: 0px;
   padding-top: 0px;
@@ -354,10 +375,6 @@ watch(
 }
 .volumesliderrow :deep(.v-expansion-panel-text__wrapper) {
   padding: 0;
-}
-
-.player-media-thumb {
-  margin-right: 10px;
 }
 
 .media-thumb {

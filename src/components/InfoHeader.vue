@@ -29,7 +29,6 @@
         style="position: absolute; z-index: 999999"
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
-        :show-loading="true"
         :icon-action="backButtonClick"
       />
       <v-layout
@@ -86,7 +85,9 @@
           />
           <v-card-title v-else>
             <MarqueeText :sync="marqueeSync">
-              {{ item.name }}
+              <div class="selectable">
+                {{ headerTitle }}
+              </div>
             </MarqueeText>
           </v-card-title>
 
@@ -110,6 +111,23 @@
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
               </v-tooltip>
+            </v-card-subtitle>
+
+            <!-- track release date -->
+            <v-card-subtitle
+              v-if="
+                item.media_type == MediaType.TRACK &&
+                item.metadata?.release_date
+              "
+              class="title d-flex"
+            >
+              <v-icon
+                style="margin-left: -3px; margin-right: 3px"
+                small
+                color="primary"
+                icon="mdi-calendar"
+              />
+              {{ new Date(item.metadata.release_date).getFullYear() }}
             </v-card-subtitle>
 
             <!-- item artists -->
@@ -139,6 +157,21 @@
                   >
                 </span>
               </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- album type and year -->
+            <v-card-subtitle
+              v-if="item.media_type == MediaType.ALBUM"
+              class="caption"
+            >
+              <span
+                v-if="'album_type' in item && item.album_type !== 'unknown'"
+              >
+                {{ $t("album_type." + item.album_type) }}
+              </span>
+              <span v-if="'year' in item && item.year">
+                • {{ item.year }}
+              </span>
             </v-card-subtitle>
 
             <!-- audiobook author(s) -->
@@ -226,6 +259,8 @@
                   style="color: secondary"
                   @click="albumClick((item as Track)?.album)"
                   >{{ item.album.name }}</a
+                ><span v-if="'year' in item.album && item.album.year">
+                  • {{ item.album.year }}</span
                 ></MarqueeText
               >
             </v-card-subtitle>
@@ -249,7 +284,11 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :loading="store.playActionInProgress"
+              :loading="
+                store.activePlayerQueue &&
+                store.activePlayerQueue.extra_attributes
+                  ?.play_action_in_progress === true
+              "
               :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
@@ -275,7 +314,38 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- merge genre button (admin only) -->
+              <Merge
+                v-if="
+                  item.media_type === MediaType.GENRE &&
+                  item.provider === 'library' &&
+                  isAdmin
+                "
+                :size="22"
+                class="cursor-pointer -ml-1"
+                :title="$t('merge_into')"
+                @click="mergeGenre"
+              />
+              <!-- delete genre button (admin only) -->
+              <Trash2
+                v-if="
+                  item.media_type === MediaType.GENRE &&
+                  item.provider === 'library' &&
+                  isAdmin
+                "
+                :size="22"
+                class="cursor-pointer ml-2"
+                :title="$t('delete_genre')"
+                @click="deleteGenre"
+              />
             </div>
+          </div>
+          <div
+            v-if="$slots['after-play']"
+            class="info-header-after-play"
+            style="margin-left: 14px; padding-bottom: 10px"
+          >
+            <slot name="after-play"></slot>
           </div>
           <!-- Description/metadata -->
           <v-card-subtitle
@@ -291,22 +361,26 @@
 
           <!-- genres/tags -->
           <div
-            v-if="item && item.metadata.genres"
+            v-if="mappedGenres.length"
             class="justify-center"
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <v-chip
-              v-for="tag of item.metadata.genres.slice(
+              v-for="genre of mappedGenres.slice(
                 0,
                 $vuetify.display.mobile ? 15 : 25,
               )"
-              :key="tag"
+              :key="genre.item_id"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
               small
               outlined
+              class="cursor-pointer"
+              @click="handleMediaItemClick(genre, 0, 0)"
             >
-              {{ tag }}
+              {{
+                getGenreDisplayName(genre.name, genre.translation_key, t, te)
+              }}
             </v-chip>
           </div>
         </div>
@@ -333,7 +407,10 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
+  getGenreDescription,
+  getGenreDisplayName,
   getImageThumbForItem,
+  handleMediaItemClick,
   handlePlayBtnClick,
   markdownToHtml,
   parseBool,
@@ -347,14 +424,18 @@ import { api } from "@/plugins/api";
 import type {
   Album,
   Artist,
+  Genre,
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft } from "lucide-vue-next";
+import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
@@ -371,12 +452,27 @@ const showFullInfo = ref(false);
 const fanartImage = ref();
 useDisplay();
 const menuItems = ref<ContextMenuItem[]>([]);
+const mappedGenres = ref<Genre[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
   .href;
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
+const { t, te } = useI18n();
+
+const headerTitle = computed(() => {
+  if (!compProps.item) return "";
+  if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDisplayName(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
+  }
+  return compProps.item.name;
+});
 
 watch(
   () => compProps.item,
@@ -388,9 +484,23 @@ watch(
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
       menuItems.value = await getContextMenuItems([val], val);
+      // Load mapped genres for non-genre media items
+      if (val.media_type !== MediaType.GENRE) {
+        api
+          .getGenresForMediaItem(val.media_type, val.item_id)
+          .then((genres) => {
+            mappedGenres.value = genres;
+          })
+          .catch(() => {
+            mappedGenres.value = [];
+          });
+      } else {
+        mappedGenres.value = [];
+      }
     } else {
       fanartImage.value = imgGradient;
       menuItems.value = [];
+      mappedGenres.value = [];
     }
   },
   { immediate: true },
@@ -453,6 +563,13 @@ const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
+  } else if (compProps.item.media_type === MediaType.GENRE) {
+    return getGenreDescription(
+      compProps.item.name,
+      compProps.item.translation_key,
+      t,
+      te,
+    );
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
   } else if ("artists" in compProps.item) {
@@ -482,9 +599,40 @@ const artistLogo = computed(() => {
   if (compProps.item.media_type != MediaType.ARTIST) return undefined;
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
+
+const isAdmin = computed(() => authManager.isAdmin());
+
+const mergeGenre = () => {
+  if (!compProps.item) return;
+  eventbus.emit("mergeGenreDialog", {
+    genreIds: [compProps.item.item_id],
+    genreNames: [compProps.item.name],
+  });
+};
+
+const deleteGenre = () => {
+  if (!compProps.item) return;
+  eventbus.emit("deleteGenreDialog", {
+    genreIds: [compProps.item.item_id],
+    navigateBack: true,
+  });
+};
 </script>
 
 <style scoped>
+.selectable {
+  -webkit-user-select: text;
+  /* Safari */
+  -khtml-user-select: text;
+  /* Konqueror HTML */
+  -moz-user-select: text;
+  /* Old versions of Firefox */
+  -ms-user-select: text;
+  /* Internet Explorer/Edge */
+  user-select: text;
+  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
 .background-image {
   position: absolute;
 }

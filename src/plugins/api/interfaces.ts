@@ -105,6 +105,8 @@ export enum MediaType {
   AUDIOBOOK = "audiobook",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  GENRE = "genre",
+  GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
   UNKNOWN = "unknown",
 }
@@ -290,7 +292,7 @@ export enum EventType {
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
   QUEUE_TIME_UPDATED = "queue_time_updated",
   QUEUE_SETTINGS_UPDATED = "queue_settings_updated",
-  SHUTDOWN = "application_shutdown",
+  CORE_STATE_UPDATED = "core_state_updated",
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
   MEDIA_ITEM_DELETED = "media_item_deleted",
@@ -320,6 +322,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS = "library_radios",
   LIBRARY_PODCASTS = "library_podcasts",
   LIBRARY_AUDIOBOOKS = "library_audiobooks",
+  LIBRARY_GENRES = "library_genres",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TOPTRACKS = "artist_toptracks",
@@ -331,6 +334,7 @@ export enum ProviderFeature {
   LIBRARY_RADIOS_EDIT = "library_radios_edit",
   LIBRARY_PODCASTS_EDIT = "library_podcasts_edit",
   LIBRARY_AUDIOBOOKS_EDIT = "library_audiobooks_edit",
+  LIBRARY_GENRES_EDIT = "library_genres_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
   // playlist-specific features
@@ -365,9 +369,6 @@ export enum ConfigEntryType {
   ACTION = "action",
   ICON = "icon",
   ALERT = "alert",
-
-  // Only used in the frontend
-  DSP_SETTINGS = "dsp_settings",
 }
 
 export enum VolumeNormalizationMode {
@@ -387,6 +388,13 @@ export enum IdentifierType {
   UUID = "uuid", // Universal unique identifier
   IP_ADDRESS = "ip_address", // Less reliable (DHCP) but useful for fallback
   UNKNOWN = "unknown",
+}
+
+export enum CoreState {
+  STARTING = "starting",
+  RUNNING = "running",
+  STOPPING = "stopping",
+  STOPPED = "stopped",
 }
 
 //// api
@@ -434,6 +442,8 @@ export interface ServerInfoMessage {
   base_url: string;
   homeassistant_addon: boolean;
   onboard_done: boolean;
+  name?: string;
+  status?: CoreState;
 }
 
 export type MessageType =
@@ -608,6 +618,7 @@ export interface MediaItemMetadata {
   preview?: string;
   replaygain?: number;
   popularity?: number;
+  release_date?: string;
   cache_checksum?: string;
   chapters?: MediaItemChapter[];
 }
@@ -637,6 +648,7 @@ export interface MediaItem extends _MediaItemBase {
 export interface ItemMapping extends _MediaItemBase {
   available: boolean;
   image?: MediaItemImage;
+  year?: number;
 }
 
 export interface Artist extends MediaItem {}
@@ -685,6 +697,10 @@ export interface PodcastEpisode extends MediaItem {
   resume_position_ms?: number;
 }
 
+export interface Genre extends MediaItem {
+  genre_aliases: string[] | null;
+}
+
 export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
@@ -703,6 +719,7 @@ export type MediaItemType =
   | Audiobook
   | Podcast
   | PodcastEpisode
+  | Genre
   | BrowseFolder;
 
 export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
@@ -716,6 +733,7 @@ export interface SearchResults {
   radio: Radio[];
   podcasts: Podcast[];
   audiobooks: Audiobook[];
+  genres: Genre[];
 }
 
 export interface AudioFormat {
@@ -813,6 +831,10 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  // extra_attributes: additional attributes for this player_queue to store/forward
+  // additional data that is not part of the standard model
+  // must be serializable types only
+  extra_attributes?: Record<string, any>;
 }
 
 // player
@@ -900,12 +922,12 @@ export interface Player {
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
-  output_protocols?: OutputProtocol[];
+  output_protocols: OutputProtocol[];
 
   // active_output_protocol: which output protocol is currently being used for playback
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
-  active_output_protocol?: string | null;
+  active_output_protocol: string | null;
 }
 
 // provider

@@ -148,7 +148,46 @@
             ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
             : api.playerCommandVolumeUp(store.activePlayerId!)
         "
-      />
+      >
+        <template #prepend>
+          <!-- mute button with dynamic volume icon -->
+          <Button
+            icon
+            style="height: 25px; width: 25px; min-width: 25px"
+            :disabled="
+              !store.activePlayer.available ||
+              store.activePlayer.powered == false ||
+              store.activePlayer.mute_control == PLAYER_CONTROL_NONE
+            "
+            @click.stop="handlePlayerMuteToggle(store.activePlayer)"
+          >
+            <component
+              :is="
+                getVolumeIconComponent(
+                  store.activePlayer,
+                  Math.round(
+                    store.activePlayer.group_members.length > 0
+                      ? store.activePlayer.group_volume
+                      : store.activePlayer.volume_level || 0,
+                  ),
+                )
+              "
+              :size="22"
+            />
+          </Button>
+        </template>
+        <template #append>
+          <div class="text-caption volumecaption">
+            {{
+              Math.round(
+                store.activePlayer.group_members.length > 0
+                  ? store.activePlayer.group_volume
+                  : store.activePlayer.volume_level || 0,
+              )
+            }}
+          </div>
+        </template>
+      </PlayerVolume>
     </div>
   </div>
 </template>
@@ -156,7 +195,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 //@ts-ignore
-
+import Button from "@/components/Button.vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -165,9 +204,15 @@ import {
   ImageColorPalette,
   getColorPalette,
   getMediaImageUrl,
+  getVolumeIconComponent,
 } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { MediaType, PlayerFeature } from "@/plugins/api/interfaces";
+import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
+import {
+  MediaType,
+  PLAYER_CONTROL_NONE,
+  PlayerFeature,
+} from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
@@ -260,6 +305,7 @@ watch(
 
   &[data-mobile="true"] {
     background-color: transparent;
+    padding: 8px 10px;
     .mediacontrols-bottom-center {
       display: none;
     }
@@ -310,8 +356,8 @@ watch(
 }
 
 .volume-slider {
-  width: calc(100% - 16px);
-  margin: -4px 8px 8px 8px;
+  width: calc(100% - 34px);
+  margin: -4px 6px 6px 14px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>
