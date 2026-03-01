@@ -30,69 +30,29 @@
         </Button>
       </template>
     </v-list-item>
-    <!-- mute btn + volume slider + volume level text (or collapse btn)-->
-    <v-list-item
+    <!-- volume slider row with integrated mute + level -->
+    <div
       v-if="showVolumeControl"
-      class="volumesliderrow"
-      :link="false"
+      class="volume-row"
       :style="player.powered == false ? 'opacity: 0.35' : 'opacity: 0.75'"
     >
-      <template #prepend>
-        <!-- mute button with dynamic volume icon -->
-        <Button
-          icon
-          style="height: 25px; width: 25px; min-width: 25px"
-          :disabled="
-            !player.available ||
-            player.powered == false ||
-            player.mute_control == PLAYER_CONTROL_NONE
-          "
-          @click.stop="handlePlayerMuteToggle(player)"
-        >
-          <component
-            :is="getVolumeIconComponent(player, mainDisplayVolume)"
-            :size="22"
-          />
-        </Button>
-      </template>
-      <template #default>
-        <PlayerVolume
-          color="secondary"
-          width="100%"
-          :is-powered="player.powered != false"
-          :disabled="
-            !player.available ||
-            player.powered == false ||
-            player.volume_muted ||
-            player.volume_control == PLAYER_CONTROL_NONE
-          "
-          :model-value="
-            Math.round(
-              player.group_members.length
-                ? (player.group_volume ?? 0)
-                : player.volume_level || 0,
-            )
-          "
-          @click.stop
-          @update:model-value="
-            api.playerCommandGroupVolume(player.player_id, $event)
-          "
-          @update:local-value="mainDisplayVolume = $event"
-        />
-      </template>
-      <template #append>
-        <v-icon
-          v-if="canExpand"
-          variant="plain"
-          :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-          class="expandbtn"
-          @click="$emit('toggle-expand', player)"
-        />
-        <div v-else class="text-caption volumecaption">
-          {{ Math.round(mainDisplayVolume) }}
-        </div>
-      </template>
-    </v-list-item>
+      <PlayerVolume
+        :player="player"
+        :allow-wheel="allowWheel"
+        :show-volume-level="!canExpand"
+        :prefer-group-volume="true"
+        :enable-popout="false"
+        width="100%"
+        @click.stop
+      />
+      <v-icon
+        v-if="canExpand"
+        variant="plain"
+        :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        class="expandbtn"
+        @click.stop="$emit('toggle-expand', player)"
+      />
+    </div>
 
     <!-- (child) volume player rows -->
     <div
@@ -124,7 +84,7 @@
             <v-icon
               :size="30"
               :icon="childPlayer.icon"
-              style="margin-left: 6px; opacity: 0.6"
+              style="opacity: 0.6; margin-left: -4px; margin-right: 7px"
             />
           </template>
           <template #default>
@@ -151,81 +111,25 @@
             />
           </template>
         </v-list-item>
-        <!-- mute btn + volume slider + volume level text-->
+        <!-- volume slider with integrated mute + level -->
         <!-- only show if the child player is part of the group and has volume control -->
-        <v-list-item
+        <div
           v-if="
             player.group_members.includes(childPlayer.player_id) &&
             childPlayer.volume_control != PLAYER_CONTROL_NONE
           "
-          class="volumesliderrow"
-          :link="false"
+          class="volume-row child-volume-row"
           :style="
             childPlayer.powered == false ? 'opacity: 0.4' : 'opacity: 0.75'
           "
           @click.stop
         >
-          <template #prepend>
-            <!-- mute button with dynamic volume icon -->
-            <Button
-              icon
-              style="
-                height: 25px;
-                margin-left: 5px;
-                width: 25px;
-                min-width: 25px;
-              "
-              :disabled="
-                !childPlayer.available ||
-                childPlayer.powered == false ||
-                childPlayer.mute_control == PLAYER_CONTROL_NONE
-              "
-              @click="api.playerCommandMuteToggle(childPlayer.player_id)"
-            >
-              <component
-                :is="
-                  getVolumeIconComponent(
-                    childPlayer,
-                    childDisplayVolumes[childPlayer.player_id],
-                  )
-                "
-                :size="22"
-              />
-            </Button>
-          </template>
-          <template #default>
-            <PlayerVolume
-              color="secondary"
-              width="100%"
-              :is-powered="childPlayer.powered != false"
-              :disabled="
-                !childPlayer.available ||
-                childPlayer.powered == false ||
-                childPlayer.volume_muted ||
-                childPlayer.volume_control == PLAYER_CONTROL_NONE
-              "
-              :allow-wheel="allowWheel"
-              :model-value="Math.round(childPlayer.volume_level || 0)"
-              @update:model-value="
-                api.playerCommandVolumeSet(childPlayer.player_id, $event)
-              "
-              @update:local-value="
-                childDisplayVolumes[childPlayer.player_id] = $event
-              "
-            />
-          </template>
-          <template #append>
-            <div class="text-caption volumecaption">
-              {{
-                Math.round(
-                  childDisplayVolumes[childPlayer.player_id] ??
-                    childPlayer.volume_level ??
-                    0,
-                )
-              }}
-            </div>
-          </template>
-        </v-list-item>
+          <PlayerVolume
+            :player="childPlayer"
+            :allow-wheel="allowWheel"
+            width="100%"
+          />
+        </div>
         <div style="height: 14px"></div>
       </div>
     </div>
@@ -234,14 +138,9 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import {
-  getPlayerName,
-  getVolumeIconComponent,
-  truncateString,
-} from "@/helpers/utils";
+import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
 import {
   Player,
   PLAYER_CONTROL_NONE,
@@ -262,7 +161,6 @@ const compProps = defineProps<Props>();
 const playersToSync = ref<string[]>([]);
 const playersToUnSync = ref<string[]>([]);
 const timeOutId = ref<NodeJS.Timeout | undefined>(undefined);
-const childDisplayVolumes = ref<Record<string, number>>({});
 
 // emits
 defineEmits<{
@@ -272,14 +170,6 @@ defineEmits<{
 const canExpand = computed(() => {
   return compProps.player.group_members.length > 0;
 });
-
-const mainDisplayVolume = ref(
-  Math.round(
-    compProps.player.group_members.length
-      ? (compProps.player.group_volume ?? 0)
-      : compProps.player.volume_level || 0,
-  ),
-);
 
 const getChildPlayers = function (player: Player) {
   const items: Player[] = [];
@@ -420,22 +310,36 @@ const syncCheckBoxChange = async function (
   height: 35px;
 }
 
-.volumecaption {
-  width: 34px;
-  text-align: right;
-  margin-right: -15px;
+.volume-row {
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  min-height: 40px;
+}
+
+.volume-row :deep(.player-volume-container) {
+  flex: 1;
+  min-width: 0;
+}
+
+.child-volume-row {
+  padding-left: 2px;
 }
 
 .expandbtn {
-  margin-right: -12px;
+  flex-shrink: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .powerbtn {
   right: 8px;
 }
 
 .volumesliderrow :deep(.v-list-item__prepend) {
-  width: 40px;
-  margin-left: -10px;
+  width: 36px;
+  margin-left: -12px;
 }
 .volumesliderrow :deep(.v-list-item__append) {
   width: 20px;
