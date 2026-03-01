@@ -12,13 +12,20 @@ const routes = [
     children: [
       {
         path: "",
-        redirect: "/home",
+        redirect: "/discover",
       },
       {
+        // "/home" has now been renamed to "/discover". This 
+        // redirect is to help avoid blank page loads for anyone who 
+        // has bookmarked the old /home url.  
         path: "/home",
-        name: "home",
+        redirect: "/discover",
+      },
+      {
+        path: "/discover",
+        name: "discover",
         component: () =>
-          import(/* webpackChunkName: "home" */ "@/views/HomeView.vue"),
+          import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
         path: "/search",
@@ -458,7 +465,7 @@ router.beforeEach(async (to, _from, next) => {
 
     if (!currentUser || currentUser.role !== "admin") {
       console.warn("Admin access required for", to.path);
-      next({ name: "home" });
+      next({ name: "discover" });
       return;
     }
   }

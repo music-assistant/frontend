@@ -17,7 +17,7 @@
     </v-btn>
 
     <v-btn
-      :aria-label="$t('discover')"
+      :aria-label='$t("discover")'
       tabindex="0"
       variant="text"
       active-color="fg"
@@ -57,7 +57,7 @@ const handleMenuClick = () => {
 };
 
 const handleDiscoverClick = () => {
-  router.push({ name: "home" });
+  router.push({ name: "discover" });
 };
 
 const handlePlayersClick = () => {

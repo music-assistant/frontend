@@ -16,6 +16,7 @@
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
+    :show-genre-filter="true"
   />
 </template>
 

@@ -25,4 +25,6 @@ export const folderIdToRoute: Record<string, string> = {
   genre_track: "tracks",
   genre_playlist: "playlists",
   genre_radio: "radios",
+  genre_podcast: "podcasts",
+  genre_audiobook: "audiobooks",
 };

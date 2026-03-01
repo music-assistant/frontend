@@ -36,7 +36,7 @@
     "external_source_active": "Aktīvs ārējais avots: {0}",
     "goto_album": "Doties uz albumu {0}",
     "goto_artist": "Doties uz izpildītāju {0}",
-    "home": "Sākums",
+    "discover": "Atklāt",
     "items_selected": "{0} atlasīts(-i) vienums(-i)",
     "items_total": "{0} kopējs vienums(-i)",
     "library": "Bibliotēka",
@@ -1140,6 +1140,5 @@
     "narrators": "Stāstītāji",
     "series_plural": "Sērijas",
     "series_singular": "Sērija",
-    "queue_move_end": "Pārvietot uz beigām",
-    "discover": "Atklāt"
+    "queue_move_end": "Pārvietot uz beigām"
 }
