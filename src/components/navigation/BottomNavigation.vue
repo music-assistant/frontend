@@ -48,9 +48,14 @@
       >
     </v-btn>
 
-    <ActivePlayerPopover auto-show align="end">
+    <ActivePlayerPopover
+      auto-show
+      align="end"
+      child-element-id="active-player-popover"
+    >
       <template #trigger>
         <v-btn
+          id="active-player-popover"
           :aria-label="$t('players')"
           tabindex="0"
           variant="text"

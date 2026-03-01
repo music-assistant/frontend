@@ -43,12 +43,14 @@ export interface Props {
   autoShow?: boolean;
   align?: "start" | "center" | "end";
   arrowOffset?: string;
+  childElementId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   autoShow: false,
   align: "center",
   arrowOffset: undefined,
+  childElementId: undefined,
 });
 
 const emit = defineEmits<{
@@ -103,6 +105,13 @@ function dismissTip() {
   store.playerTipShown = true;
 
   clearAutoDismissTimeout();
+
+  // Prevents the child element from gaining focus after the popover closes.
+  if (props.childElementId) {
+    setTimeout(() => {
+      document.getElementById(props.childElementId!)?.blur();
+    }, 250);
+  }
 }
 
 onMounted(() => {
