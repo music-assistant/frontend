@@ -2,29 +2,37 @@
   <div
     ref="sliderContainerRef"
     class="player-volume-container"
-    :class="{ disabled: disabled, 'not-powered': !isPowered }"
-    :style="{ width: width, ...(style ? parseStyle(style) : {}) }"
+    :class="{
+      disabled: isDisabled,
+      muted: isMuted,
+      'not-powered': player.powered == false,
+    }"
+    :style="{ width: width }"
     @wheel.prevent="onWheel"
     @touchstart="onTouchStart"
     @touchmove="onTouchMove"
     @touchend="onTouchEnd"
     @touchcancel="onTouchCancel"
   >
-    <div v-if="$slots.prepend || prependIcon" class="volume-prepend">
-      <slot name="prepend">
-        <button
-          v-if="prependIconComponent"
-          class="volume-icon-btn"
-          @click.stop="onPrependClick"
-        >
-          <component :is="prependIconComponent" :size="20" />
-        </button>
-      </slot>
+    <!-- Prepend slot override (used by VolumeBtn for menu activator) -->
+    <div v-if="$slots.prepend" class="volume-prepend">
+      <slot name="prepend" />
+    </div>
+
+    <!-- Mute button with dynamic volume icon (default) -->
+    <div v-else class="volume-prepend">
+      <button
+        class="volume-icon-btn"
+        :disabled="muteDisabled"
+        @click.stop="onMuteToggle"
+      >
+        <component :is="volumeIconComponent" :size="iconSize" />
+      </button>
     </div>
 
     <Slider
       :model-value="[displayValue]"
-      :disabled="disabled"
+      :disabled="isSliderDisabled"
       :min="0"
       :max="100"
       :step="step"
@@ -33,79 +41,112 @@
       @update:model-value="onSliderUpdate"
     />
 
-    <div v-if="$slots.append || appendIcon" class="volume-append">
-      <slot name="append">
-        <button
-          v-if="appendIconComponent"
-          class="volume-icon-btn"
-          @click.stop="onAppendClick"
-        >
-          <component :is="appendIconComponent" :size="20" />
-        </button>
-      </slot>
+    <!-- Volume level display -->
+    <div v-if="showVolumeLevel" class="volume-append">
+      <span class="volume-level-text">
+        {{ Math.round(displayValue) }}
+      </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Slider } from "@/components/ui/slider";
+import { getVolumeIconComponent } from "@/helpers/utils";
 import { cn } from "@/lib/utils";
+import { api } from "@/plugins/api";
+import {
+  type Player,
+  PLAYER_CONTROL_NONE,
+  PlayerFeature,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Minus, Plus } from "lucide-vue-next";
-import type { Component } from "vue";
-import { onUnmounted, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 
 export interface Props {
-  modelValue?: number;
+  /** The player to control — component handles all volume logic internally */
+  player: Player;
+  /** Show the volume level number */
+  showVolumeLevel?: boolean;
+  /** Size of the volume icon */
+  iconSize?: number;
   disabled?: boolean;
-  isPowered?: boolean;
+  preferGroupVolume?: boolean;
   width?: string;
   step?: number;
   allowWheel?: boolean;
   color?: string;
-  style?: string;
   class?: string;
-  prependIcon?: string | Component;
-  appendIcon?: string | Component;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: 0,
+  showVolumeLevel: true,
+  iconSize: 22,
   disabled: false,
-  isPowered: true,
+  preferGroupVolume: false,
   width: "100%",
   step: 2,
   allowWheel: false,
   color: "secondary",
-  style: "",
   class: "",
-  prependIcon: undefined,
-  appendIcon: undefined,
 });
 
 const emit = defineEmits<{
-  (e: "update:model-value", value: number): void;
   (e: "update:local-value", value: number): void;
-  (e: "click:prepend"): void;
-  (e: "click:append"): void;
 }>();
 
-const resolveIcon = (
-  icon: string | Component | undefined,
-): Component | undefined => {
-  if (!icon) return undefined;
-  if (typeof icon !== "string") return icon;
-  if (icon === "mdi-volume-minus" || icon === "minus") return Minus;
-  if (icon === "mdi-volume-plus" || icon === "plus") return Plus;
-  return undefined;
-};
+// --- Player-aware computed properties ---
 
-const prependIconComponent = resolveIcon(props.prependIcon);
-const appendIconComponent = resolveIcon(props.appendIcon);
+const isGroup = computed(
+  () => props.player && props.player.group_members.length > 0,
+);
 
-// Refs
+const playerVolume = computed(() => {
+  return Math.round(
+    isGroup.value && props.preferGroupVolume
+      ? (props.player.group_volume ?? 0)
+      : (props.player.volume_level ?? 0),
+  );
+});
+
+const isDisabled = computed(() => {
+  if (props.disabled) return true;
+  return (
+    !props.player.available ||
+    props.player.powered == false ||
+    !props.player.supported_features.includes(PlayerFeature.VOLUME_SET)
+  );
+});
+
+const isMuted = computed(() => {
+  return props.player.volume_muted ?? false;
+});
+
+const isSliderDisabled = computed(() => isDisabled.value || isMuted.value);
+
+const muteDisabled = computed(() => {
+  if (isGroup.value && props.preferGroupVolume) {
+    return (
+      !props.player.available ||
+      props.player.powered == false ||
+      props.player.group_volume_muted == null
+    );
+  }
+  return (
+    !props.player.available ||
+    props.player.powered == false ||
+    props.player.mute_control == PLAYER_CONTROL_NONE
+  );
+});
+
+const volumeIconComponent = computed(() => {
+  return getVolumeIconComponent(props.player, displayValue.value);
+});
+
+// --- Slider state and mechanics ---
+
 const sliderContainerRef = ref<HTMLElement | null>(null);
-const displayValue = ref(props.modelValue);
+const displayValue = ref(playerVolume.value);
 
 const touchStartX = ref(0);
 const touchStartY = ref(0);
@@ -153,22 +194,32 @@ const clamp = (value: number, min: number, max: number) =>
 const roundToStep = (value: number) =>
   Math.round(value / props.step) * props.step;
 
-const parseStyle = (styleStr: string): Record<string, string> => {
-  const styles: Record<string, string> = {};
-  styleStr.split(";").forEach((rule) => {
-    const [key, value] = rule.split(":").map((s) => s.trim());
-    if (key && value) {
-      const camelKey = key.replace(/-([a-z])/g, (_, letter) =>
-        letter.toUpperCase(),
-      );
-      styles[camelKey] = value;
-    }
-  });
-  return styles;
+// --- Volume API calls ---
+
+const setVolume = (value: number) => {
+  if (isGroup.value && props.preferGroupVolume) {
+    api.playerCommandGroupVolume(props.player.player_id, value);
+  } else {
+    api.playerCommandVolumeSet(props.player.player_id, value);
+  }
 };
 
+const onMuteToggle = () => {
+  if (muteDisabled.value) return;
+  if (props.preferGroupVolume && props.player.group_members.length > 0) {
+    api.playerCommandGroupVolumeMute(
+      props.player.player_id,
+      !props.player.group_volume_muted,
+    );
+  } else {
+    api.playerCommandMuteToggle(props.player.player_id);
+  }
+};
+
+// --- Value emission ---
+
 const emitValue = (value: number, isFinal: boolean = false) => {
-  if (props.disabled) return;
+  if (isSliderDisabled.value) return;
 
   const clampedValue = clamp(roundToStep(value), 0, 100);
 
@@ -180,7 +231,7 @@ const emitValue = (value: number, isFinal: boolean = false) => {
   emit("update:local-value", clampedValue);
 
   if (isFinal) {
-    emit("update:model-value", clampedValue);
+    setVolume(clampedValue);
   }
 };
 
@@ -204,7 +255,7 @@ const getPercentageFromX = (clientX: number): number => {
 };
 
 const onTouchStart = (event: TouchEvent) => {
-  if (props.disabled) return;
+  if (isSliderDisabled.value) return;
 
   isTouching.value = true;
   const touch = event.touches[0];
@@ -221,7 +272,7 @@ const onTouchStart = (event: TouchEvent) => {
 };
 
 const onTouchMove = (event: TouchEvent) => {
-  if (props.disabled || isScrolling.value) return;
+  if (isSliderDisabled.value || isScrolling.value) return;
 
   const touch = event.touches[0];
   const deltaX = touch.clientX - touchStartX.value;
@@ -263,7 +314,7 @@ const onTouchMove = (event: TouchEvent) => {
 };
 
 const onTouchEnd = (event: TouchEvent) => {
-  if (props.disabled) return;
+  if (isSliderDisabled.value) return;
 
   if (isScrolling.value) {
     isScrolling.value = false;
@@ -305,7 +356,7 @@ const onTouchCancel = () => {
 };
 
 const onWheel = (event: WheelEvent) => {
-  if (!props.allowWheel || props.disabled) return;
+  if (!props.allowWheel || isSliderDisabled.value) return;
 
   const delta = event.deltaY < 0 ? props.step : -props.step;
   const newValue = clamp(displayValue.value + delta, 0, 100);
@@ -315,7 +366,12 @@ const onWheel = (event: WheelEvent) => {
 };
 
 const onSliderUpdate = (values: number[] | undefined) => {
-  if (props.disabled || isScrolling.value || isTouching.value || !values)
+  if (
+    isSliderDisabled.value ||
+    isScrolling.value ||
+    isTouching.value ||
+    !values
+  )
     return;
 
   const newValue = values[0] ?? displayValue.value;
@@ -328,36 +384,15 @@ const onSliderUpdate = (values: number[] | undefined) => {
   }
 
   sliderUpdateDebounceTimeout = setTimeout(() => {
-    emit("update:model-value", newValue);
+    setVolume(newValue);
     sliderUpdateDebounceTimeout = null;
   }, SLIDER_UPDATE_DEBOUNCE_MS);
 };
 
-const onPrependClick = () => {
-  if (props.disabled) return;
-  const newValue = clamp(displayValue.value - props.step, 0, 100);
-  startBlocking();
-  displayValue.value = newValue;
-  emit("update:local-value", newValue);
-  emit("update:model-value", newValue);
-  emit("click:prepend");
-};
-
-const onAppendClick = () => {
-  if (props.disabled) return;
-  const newValue = clamp(displayValue.value + props.step, 0, 100);
-  startBlocking();
-  displayValue.value = newValue;
-  emit("update:local-value", newValue);
-  emit("update:model-value", newValue);
-  emit("click:append");
-};
-
+// Watch for external value changes from server
 watch(
-  () => props.modelValue,
-  (val: number | undefined) => {
-    if (typeof val !== "number") return;
-
+  () => playerVolume.value,
+  (val: number) => {
     if (isBlocking.value) {
       return;
     }
@@ -390,6 +425,11 @@ watch(
   pointer-events: none;
 }
 
+.player-volume-container.muted .volume-slider {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .player-volume-container.not-powered {
   opacity: 0.5;
 }
@@ -400,14 +440,13 @@ watch(
   display: flex;
   align-items: center;
   overflow: visible;
+  margin-left: 0;
+  width: 30px;
+  justify-content: center;
 }
 
 .volume-prepend {
   margin-right: 4px;
-}
-
-.volume-append {
-  margin-left: 4px;
 }
 
 .volume-icon-btn {
@@ -434,6 +473,13 @@ watch(
 .volume-icon-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.volume-level-text {
+  font-size: 0.75rem;
+  min-width: 28px;
+  text-align: center;
+  opacity: 0.8;
 }
 
 @media (pointer: coarse) {

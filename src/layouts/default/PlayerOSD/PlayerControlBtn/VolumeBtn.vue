@@ -13,37 +13,14 @@
       <template #activator="{ props: menu }">
         <div v-if="getBreakpointValue('bp6') || !responsiveVolumeSize">
           <PlayerVolume
-            :style="'margin-right: 0px; margin-left: 0px;'"
+            :player="store.activePlayer!"
+            :show-volume-level="false"
             :width="volumeSize"
-            :is-powered="store.activePlayer?.powered != false"
-            :disabled="
-              !store.activePlayer?.available ||
-              store.activePlayer?.powered == false ||
-              !store.activePlayer?.supported_features.includes(
-                PlayerFeature.VOLUME_SET,
-              )
-            "
-            :model-value="
-              store.activePlayer!.group_members.length > 0
-                ? Math.round(store.activePlayer?.group_volume || 0)
-                : Math.round(store.activePlayer?.volume_level || 0)
-            "
             :allow-wheel="true"
-            @update:model-value="
-              store.activePlayer!.group_members.length > 0
-                ? api.playerCommandGroupVolume(
-                    store.activePlayer?.player_id || '',
-                    $event,
-                  )
-                : api.playerCommandVolumeSet(
-                    store.activePlayer?.player_id || '',
-                    $event,
-                  )
-            "
-            @update:local-value="displayVolume = $event"
+            style="margin-right: 0px; margin-left: 0px"
           >
             <template #prepend>
-              <!-- select player -->
+              <!-- volume icon + number that opens the popup -->
               <Button
                 variant="icon"
                 size="48"
@@ -106,12 +83,10 @@
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
-import api from "@/plugins/api";
-import { PlayerFeature } from "@/plugins/api/interfaces";
+import { getVolumeIconComponent } from "@/helpers/utils";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import PlayerVolume from "../PlayerVolume.vue";
 
 // properties
@@ -142,20 +117,23 @@ const displayVolume = ref(
     : 0,
 );
 
+// Keep displayVolume in sync with the active player's volume
+watch(
+  () =>
+    store.activePlayer
+      ? store.activePlayer.group_members.length > 0
+        ? (store.activePlayer.group_volume ?? 0)
+        : store.activePlayer.volume_level || 0
+      : 0,
+  (val) => {
+    displayVolume.value = Math.round(val ?? 0);
+  },
+);
+
 // computed
 const volumeIconComponent = computed(() => {
-  if (!store.activePlayer) return Volume2;
-  if (store.activePlayer.volume_muted) {
-    return VolumeX;
-  }
-  const volume = displayVolume.value;
-  if (volume === 0) {
-    return Volume;
-  } else if (volume < 50) {
-    return Volume1;
-  } else {
-    return Volume2;
-  }
+  if (!store.activePlayer) return undefined;
+  return getVolumeIconComponent(store.activePlayer, displayVolume.value);
 });
 </script>
 
