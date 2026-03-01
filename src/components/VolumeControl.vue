@@ -69,7 +69,7 @@
           :model-value="
             Math.round(
               player.group_members.length
-                ? player.group_volume
+                ? (player.group_volume ?? 0)
                 : player.volume_level || 0,
             )
           "
@@ -276,7 +276,7 @@ const canExpand = computed(() => {
 const mainDisplayVolume = ref(
   Math.round(
     compProps.player.group_members.length
-      ? compProps.player.group_volume
+      ? (compProps.player.group_volume ?? 0)
       : compProps.player.volume_level || 0,
   ),
 );

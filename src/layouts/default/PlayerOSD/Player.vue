@@ -127,7 +127,7 @@
         :model-value="
           Math.round(
             store.activePlayer.group_members.length > 0
-              ? store.activePlayer.group_volume
+              ? (store.activePlayer.group_volume ?? 0)
               : store.activePlayer.volume_level || 0,
           )
         "
@@ -167,7 +167,7 @@
                   store.activePlayer,
                   Math.round(
                     store.activePlayer.group_members.length > 0
-                      ? store.activePlayer.group_volume
+                      ? (store.activePlayer.group_volume ?? 0)
                       : store.activePlayer.volume_level || 0,
                   ),
                 )
@@ -181,7 +181,7 @@
             {{
               Math.round(
                 store.activePlayer.group_members.length > 0
-                  ? store.activePlayer.group_volume
+                  ? (store.activePlayer.group_volume ?? 0)
                   : store.activePlayer.volume_level || 0,
               )
             }}
