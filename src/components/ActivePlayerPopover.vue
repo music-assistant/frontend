@@ -194,25 +194,31 @@ watch(
   left: 50%;
 }
 
-@media screen and (max-width: 361px) {
+@media screen and (max-width: 313px) {
   .player-tip-end .tip-arrow {
-    left: 155px;
+    left: 176px;
   }
 }
 
-@media screen and (min-width: 360px) and (max-width: 406px) {
+@media screen and (min-width: 312px) and (max-width: 411px) {
   .player-tip-end .tip-arrow {
-    left: 148px;
+    left: 167px;
   }
 }
 
-@media screen and (min-width: 405px) and (max-width: 471px) {
+@media screen and (min-width: 410px) and (max-width: 511px) {
   .player-tip-end .tip-arrow {
-    left: 138px;
+    left: 154px;
   }
 }
 
-@media screen and (min-width: 470px) and (max-width: 770px) {
+@media screen and (min-width: 510px) and (max-width: 621px) {
+  .player-tip-end .tip-arrow {
+    left: 141px;
+  }
+}
+
+@media screen and (min-width: 620px) and (max-width: 770px) {
   .player-tip-end .tip-arrow {
     left: 128px;
   }
