@@ -3,7 +3,6 @@
     v-if="!store.mobileLayout && player && player.isVisible"
     auto-show
     align="end"
-    arrow-offset="30px"
   >
     <template #trigger>
       <SpeakerBtn :color="player.color" />

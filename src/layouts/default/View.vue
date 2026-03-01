@@ -43,6 +43,7 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 .main-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-left: 0 !important;

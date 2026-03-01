@@ -111,7 +111,13 @@
         </div>
       </div>
     </div>
-    <div v-if="store.activePlayer" class="volume-slider">
+    <div
+      v-if="store.activePlayer"
+      :class="[
+        'volume-slider',
+        { 'volume-slider--no-safe-area': store.isIngressSession },
+      ]"
+    >
       <PlayerVolume
         :player="store.activePlayer"
         width="100%"
@@ -275,5 +281,9 @@ watch(
   width: calc(100% - 34px);
   margin: -4px 6px 6px 14px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.volume-slider--no-safe-area {
+  padding-bottom: 0 !important;
 }
 </style>

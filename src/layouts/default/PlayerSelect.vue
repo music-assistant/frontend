@@ -296,7 +296,7 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  // we prefer localStorage over user preferences to allow having a prefered
+  // we prefer localStorage over user preferences to allow having a preferred
   // player per device - especially useful in case of using the built-in web player
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
