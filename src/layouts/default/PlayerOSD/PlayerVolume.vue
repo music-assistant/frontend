@@ -45,6 +45,16 @@
             </div>
             <PlayerVolume :player="child" width="100%" />
           </div>
+          <!-- Group volume at bottom with divider -->
+          <div class="group-popout-divider" />
+          <div class="group-popout-row">
+            <PlayerVolume
+              :player="player"
+              :prefer-group-volume="true"
+              :enable-popout="false"
+              width="100%"
+            />
+          </div>
         </div>
       </Transition>
     </Teleport>
@@ -238,7 +248,8 @@ const POPOUT_MARGIN = 8;
 const updatePopoutPosition = () => {
   if (!wrapperRef.value) return;
   const rect = wrapperRef.value.getBoundingClientRect();
-  const bottom = `${window.innerHeight - rect.top + 6}px`;
+  // Align popout bottom with wrapper bottom so the group volume slider overlaps the main one
+  const bottom = `${window.innerHeight - rect.bottom}px`;
 
   if (store.mobileLayout) {
     // Full width with padding on mobile
@@ -754,6 +765,17 @@ watch(
   opacity: 0.85;
   padding-left: 2px;
   margin-bottom: -2px;
+}
+
+.group-popout-label-group {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.group-popout-divider {
+  height: 1px;
+  background: rgba(var(--v-border-color), 0.15);
+  margin: 6px 0;
 }
 
 /* Drag handle for swipe-down-to-dismiss (touch only) */
