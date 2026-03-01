@@ -46,7 +46,7 @@
             <PlayerVolume :player="child" width="100%" />
           </div>
           <!-- Group volume at bottom with divider -->
-          <div class="group-popout-divider" />
+          <div class="group-popout-divider"></div>
           <div class="group-popout-row">
             <PlayerVolume
               :player="player"
