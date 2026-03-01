@@ -1,8 +1,6 @@
 <template>
   <section>
-    <Toolbar :icon="Search" :title="$t('global_search')" />
-
-    <Container variant="default">
+    <Container variant="default" style="padding-top: 20px">
       <v-text-field
         id="searchInput"
         v-model="store.globalSearchTerm"
