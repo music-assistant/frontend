@@ -278,7 +278,7 @@ function toggleGroupExpand(player: Player) {
 }
 
 function onPlayerSettingsClick() {
-  store.showPlayersMenu = false
+  store.showPlayersMenu = false;
   store.showFullscreenPlayer = false;
 }
 

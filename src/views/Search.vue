@@ -1,8 +1,6 @@
 <template>
   <section>
-    <Toolbar :icon="Search" :title="$t('global_search')" />
-
-    <Container variant="default">
+    <Container variant="default" style="padding-top: 20px">
       <v-text-field
         id="searchInput"
         v-model="store.globalSearchTerm"
@@ -16,12 +14,14 @@
       />
 
       <v-chip-group
-        v-model="store.globalSearchType"
+        v-model="selectedSearchType"
         style="margin-top: 10px; margin-left: 10px"
+        selected-class="text-primary"
+        mandatory
       >
         <v-chip
           v-for="item in [
-            undefined,
+            SEARCH_TYPE_ALL,
             MediaType.TRACK,
             MediaType.ARTIST,
             MediaType.ALBUM,
@@ -32,8 +32,9 @@
             MediaType.GENRE,
           ]"
           :key="item"
-          :text="$t(item ? item + 's' : 'searchtype_all')"
+          :text="$t(item === SEARCH_TYPE_ALL ? 'searchtype_all' : item + 's')"
           :value="item"
+          filter
         />
       </v-chip-group>
 
@@ -157,7 +158,18 @@ import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Compass, Search } from "lucide-vue-next";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+
+const SEARCH_TYPE_ALL = "all";
+
+// computed to bridge between chip-group (needs a real value) and store (uses undefined for "all")
+const selectedSearchType = computed({
+  get: () => store.globalSearchType || SEARCH_TYPE_ALL,
+  set: (val: string) => {
+    store.globalSearchType =
+      val === SEARCH_TYPE_ALL ? undefined : (val as MediaType);
+  },
+});
 
 // local refs
 const searchHasFocus = ref(false);
@@ -180,6 +192,10 @@ watch(
 watch(
   () => store.globalSearchType,
   () => {
+    setPreference(
+      "globalSearchType",
+      store.globalSearchType || SEARCH_TYPE_ALL,
+    );
     loadSearchResults(store.globalSearchTerm, store.globalSearchType);
   },
 );
@@ -237,6 +253,14 @@ onMounted(() => {
     if (savedSearch && savedSearch !== "null") {
       store.globalSearchTerm = savedSearch;
     }
+  }
+  const savedSearchType = getPreference<string>("globalSearchType").value;
+  if (
+    savedSearchType &&
+    savedSearchType !== "null" &&
+    savedSearchType !== SEARCH_TYPE_ALL
+  ) {
+    store.globalSearchType = savedSearchType as MediaType;
   }
 });
 
