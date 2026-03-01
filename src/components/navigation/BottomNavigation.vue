@@ -48,13 +48,13 @@
       >
     </v-btn>
 
-    <ActivePlayerPopover auto-show align="end" @click="handlePlayersClick">
-      <template #trigger="{ onClick }">
+    <ActivePlayerPopover auto-show align="end">
+      <template #trigger>
         <v-btn
           :aria-label="$t('players')"
           tabindex="0"
           variant="text"
-          @click="onClick"
+          @click="handlePlayersClick"
         >
           <Speaker class="w-5 h-5" />
           <span class="menuButton">{{ $t("players") }}</span>
