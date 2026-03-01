@@ -16,7 +16,7 @@
   >
     <!-- Prepend slot override (used by VolumeBtn for menu activator) -->
     <div v-if="$slots.prepend" class="volume-prepend">
-      <slot name="prepend" />
+      <slot name="prepend"></slot>
     </div>
 
     <!-- Mute button with dynamic volume icon (default) -->
