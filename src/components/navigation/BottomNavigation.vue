@@ -27,6 +27,16 @@
       <span class="menuButton">{{ $t("discover") }}</span>
     </v-btn>
 
+    <v-btn
+      :aria-label="$t('search')"
+      tabindex="0"
+      variant="text"
+      @click="handleSearchClick"
+    >
+      <Search class="w-5 h-5" />
+      <span class="menuButton">{{ $t("search") }}</span>
+    </v-btn>
+
     <ActivePlayerPopover auto-show align="end" @click="handlePlayersClick">
       <template #trigger="{ onClick }">
         <v-btn
@@ -46,7 +56,7 @@
 <script setup lang="ts">
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Home, Menu, Speaker } from "lucide-vue-next";
+import { Home, Menu, Search, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
@@ -58,6 +68,10 @@ const handleMenuClick = () => {
 
 const handleDiscoverClick = () => {
   router.push({ name: "discover" });
+};
+
+const handleSearchClick = () => {
+  router.push({ name: "search" });
 };
 
 const handlePlayersClick = () => {
