@@ -965,12 +965,14 @@ export interface Player {
   active_group?: string;
   synced_to?: string;
 
-  group_volume: number;
+  group_volume: number | null;
+  group_volume_muted: boolean | null;
   hide_in_ui: boolean;
   icon: string;
   power_control: string;
   volume_control: string;
   mute_control: string;
+  needs_setup: boolean;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
