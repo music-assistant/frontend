@@ -12,7 +12,7 @@
           @mousedown.stop.prevent
           @touchmove.stop.prevent
           @touchend.stop.prevent
-        />
+        ></div>
       </Transition>
       <Transition name="popout">
         <div
@@ -33,7 +33,7 @@
             @touchend.stop="onDragHandleTouchEnd"
             @touchcancel.stop="onDragHandleTouchCancel"
           >
-            <div class="group-popout-drag-handle-pill" />
+            <div class="group-popout-drag-handle-pill"></div>
           </div>
           <div
             v-for="child in childPlayers"
