@@ -1,8 +1,10 @@
-import { createRouter, createWebHashHistory } from "vue-router";
 import { watch } from "vue";
-import { notifyHARouteChange } from "./homeassistant";
-import { store } from "./store";
+import { createRouter, createWebHashHistory } from "vue-router";
+import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
+import { notifyHARouteChange } from "./homeassistant";
+import { i18n } from "./i18n";
+import { store } from "./store";
 
 const routes = [
   // All routes go through default layout - authentication is handled by server redirect
@@ -428,14 +430,25 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
-    console.warn(
-      "Chunk loading failed, likely due to app update. Reloading page...",
-      error,
-    );
-    // Use location.href to do a full reload to the intended route
-    // This ensures we get fresh HTML and assets from the server
-    window.location.href =
+    console.warn("Chunk loading failed, likely due to app update.", error);
+    const { t } = i18n.global;
+    const targetHref =
       window.location.origin + window.location.pathname + "#" + to.fullPath;
+
+    toast.info(t("chunk_load_error"), {
+      duration: Infinity,
+      action: {
+        label: t("refresh"),
+        onClick: () => {
+          window.location.href = targetHref;
+        },
+      },
+      actionButtonStyle: {
+        background: "transparent",
+        border: "1px solid currentColor",
+        color: "inherit",
+      },
+    });
   }
 });
 
