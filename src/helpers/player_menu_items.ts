@@ -212,6 +212,33 @@ export const getPlayerMenuItems = (
     });
   }
 
+  // add 'select sound mode' menu item
+  const selectableSoundModes = player.sound_mode_list.filter(
+    (s) => !s.passive || s.id == player.active_sound_mode,
+  );
+  if (selectableSoundModes.length > 0) {
+    menuItems.push({
+      label: "select_sound_mode",
+      labelArgs: [],
+      icon: "mdi-music-note-eighth",
+      subItems: selectableSoundModes
+        .map((s) => {
+          return {
+            label: $t(s.translation_key || s.name, s.name),
+            labelArgs: [],
+            disabled: s.id === player.active_sound_mode,
+            selected: s.id === player.active_sound_mode,
+            action: () => {
+              api.playerCommandSelectSoundMode(player.player_id, s.id);
+            },
+          };
+        })
+        .sort((a, b) =>
+          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+        ),
+    });
+  }
+
   // add 'don't stop the music' menu item
   if (playerQueue && "dont_stop_the_music_enabled" in playerQueue) {
     menuItems.push({
@@ -249,6 +276,20 @@ export const getPlayerMenuItems = (
           router.push(`/settings/editplayer/${player.player_id}/dsp`);
         },
         icon: "mdi-equalizer",
+      });
+    }
+
+    // add shortcut to player options
+    if (player.options.length > 0) {
+      menuItems.push({
+        label: "player_options.open",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}/options`);
+        },
+        icon: "mdi-tune",
       });
     }
   }

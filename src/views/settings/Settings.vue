@@ -563,6 +563,9 @@ const breadcrumbItems = computed(() => {
     .with("editplayerdsp", () => {
       items.push({ title: "DSP", disabled: true });
     })
+    .with("editplayeroptions", () => {
+      items.push({ title: t("settings.category.options"), disabled: true });
+    })
     .with("editcore", () => {
       const domain = route.params.domain as string;
       const translated = t(`settings.core_module.${domain}.name`);

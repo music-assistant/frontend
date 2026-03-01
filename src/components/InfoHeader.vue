@@ -544,7 +544,7 @@ const backButtonClick = function () {
     }
   }
   router.push({
-    name: "home",
+    name: "discover",
   });
 };
 

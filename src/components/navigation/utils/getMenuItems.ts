@@ -37,11 +37,11 @@ export const getMenuItems = function () {
       ) === "false"
     )
       continue;
-    if (enabledMenuItemStr === "home") {
+    if (enabledMenuItemStr === "discover") {
       items.push({
-        label: "home",
+        label: "discover",
         icon: House,
-        path: "/home",
+        path: "/discover",
         isLibraryNode: false,
       });
     }

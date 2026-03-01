@@ -54,7 +54,7 @@ const handleClick = () => {
                 : 'no-underline font-medium text-sm',
               item.disabled ? 'opacity-50 cursor-not-allowed' : '',
             ]"
-            @click="item.disabled ? undefined : handleClick"
+            @click="handleClick"
           >
             <component
               :is="item.icon"
