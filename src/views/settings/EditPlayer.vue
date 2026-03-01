@@ -130,7 +130,7 @@
 
     <!-- Disabled banner -->
     <v-alert
-      v-if="!config?.enabled"
+      v-if="config && !config.enabled"
       type="warning"
       variant="tonal"
       class="mb-4"
