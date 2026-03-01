@@ -85,7 +85,16 @@ const handleDiscoverClick = () => {
 };
 
 const handleSearchClick = () => {
-  router.push({ name: "search" });
+  if (isActive("search")) {
+    const wrapper = document.getElementById("searchInput");
+    if (wrapper) {
+      const input = wrapper.querySelector("input") || wrapper;
+      (input as HTMLInputElement).focus();
+      (input as HTMLInputElement).select();
+    }
+  } else {
+    router.push({ name: "search" });
+  }
 };
 
 const handlePlayersClick = () => {
