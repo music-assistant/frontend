@@ -307,6 +307,7 @@
         "player_not_available": "This player is not (yet) available",
         "player_provider": "Provider",
         "player_settings": "Player settings",
+        "player_needs_setup": "This player requires setup",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",
         "players": "Players",

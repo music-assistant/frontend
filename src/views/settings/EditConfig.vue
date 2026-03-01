@@ -496,6 +496,7 @@ const allowNavigation = ref(false);
 export interface Props {
   configEntries: ConfigEntryUI[];
   disabled: boolean;
+  defaultExpandedProtocol?: string;
 }
 
 const emit = defineEmits<{
@@ -681,6 +682,13 @@ watch(
     // Expand all panels by default, except protocol categories which stay collapsed
     const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
     activePanel.value = expandedPanels;
+    // Auto-expand the native protocol panel if specified
+    if (
+      props.defaultExpandedProtocol &&
+      protocolPanels.value.includes(props.defaultExpandedProtocol)
+    ) {
+      activeProtocolPanel.value = props.defaultExpandedProtocol;
+    }
   },
   { immediate: true },
 );

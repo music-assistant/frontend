@@ -952,7 +952,7 @@ export const getVolumeIconComponent = function (
     displayVolume !== undefined
       ? displayVolume
       : player.group_members.length
-        ? player.group_volume
+        ? (player.group_volume ?? 0)
         : player.volume_level || 0;
 
   if (volume === 0) {

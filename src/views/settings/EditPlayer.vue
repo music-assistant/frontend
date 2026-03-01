@@ -36,21 +36,6 @@
                 <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
                 {{ config.player_id }}
               </span>
-              <span class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-puzzle</v-icon>
-                {{ api.getProviderManifest(config.provider)?.name }}
-                <a
-                  v-if="api.getProviderManifest(config.provider)?.documentation"
-                  class="docs-link"
-                  @click="
-                    openLinkInNewTab(
-                      api.getProviderManifest(config.provider)?.documentation!,
-                    )
-                  "
-                >
-                  <v-icon size="12">mdi-open-in-new</v-icon>
-                </a>
-              </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
                 <v-icon size="14" class="mr-1">mdi-information</v-icon>
                 {{ api.players[config.player_id].device_info.manufacturer }} /
@@ -91,6 +76,53 @@
                 {{ $t(`player_type.${api.players[config.player_id].type}`) }}
               </span>
             </div>
+            <div
+              v-if="api.players[config.player_id]?.output_protocols?.length"
+              class="protocol-chips"
+            >
+              <v-chip
+                v-for="protocol in api.players[config.player_id]
+                  .output_protocols"
+                :key="protocol.output_protocol_id"
+                size="x-small"
+                variant="tonal"
+                class="protocol-chip"
+                :class="{
+                  'protocol-chip--clickable': api.getProviderManifest(
+                    protocol.protocol_domain!,
+                  )?.documentation,
+                }"
+                @click="
+                  api.getProviderManifest(protocol.protocol_domain!)
+                    ?.documentation &&
+                  openLinkInNewTab(
+                    api.getProviderManifest(protocol.protocol_domain!)!
+                      .documentation!,
+                  )
+                "
+              >
+                <template #prepend>
+                  <ProviderIcon
+                    :domain="protocol.protocol_domain!"
+                    :size="14"
+                    class="chip-icon"
+                  />
+                </template>
+                {{
+                  api.getProviderManifest(protocol.protocol_domain!)?.name ||
+                  protocol.protocol_domain
+                }}
+                <v-icon
+                  v-if="
+                    api.getProviderManifest(protocol.protocol_domain!)
+                      ?.documentation
+                  "
+                  size="12"
+                  class="ml-1"
+                  >mdi-open-in-new</v-icon
+                >
+              </v-chip>
+            </div>
           </div>
         </div>
       </v-card>
@@ -117,9 +149,23 @@
       </div>
     </v-alert>
 
-    <!-- Not available banner -->
+    <!-- Needs setup banner -->
     <v-alert
       v-if="
+        config && config.enabled && api.players[config.player_id]?.needs_setup
+      "
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+    >
+      <div class="disabled-banner">
+        <span>{{ $t("settings.player_needs_setup") }}</span>
+      </div>
+    </v-alert>
+
+    <!-- Not available banner -->
+    <v-alert
+      v-else-if="
         config && config.enabled && !api.players[config.player_id]?.available
       "
       type="warning"
@@ -135,6 +181,7 @@
       v-if="config"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
+      :default-expanded-protocol="nativeProtocolCategory"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -194,10 +241,12 @@ import {
   IdentifierType,
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { watch } from "vue";
-import { openLinkInNewTab } from "@/helpers/utils";
+
 import { nanoid } from "nanoid";
 import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
+import { openLinkInNewTab } from "@/helpers/utils";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -231,6 +280,13 @@ const unsub = api.subscribe(
   },
 );
 onBeforeUnmount(unsub);
+
+// Compute the native protocol category to auto-expand its accordion panel
+const nativeProtocolCategory = computed(() => {
+  if (!config.value) return undefined;
+  const domain = api.getProviderManifest(config.value.provider)?.domain;
+  return domain ? `protocol_${domain}` : undefined;
+});
 
 // computed properties
 const config_entries = computed(() => {
@@ -472,16 +528,47 @@ const onAction = async function (
   color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
-.docs-link {
-  margin-left: 4px;
-  cursor: pointer;
-  color: rgb(var(--v-theme-primary));
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
+.protocol-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
-.docs-link:hover {
-  opacity: 1;
+.protocol-chip {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.protocol-chip--clickable {
+  cursor: pointer;
+}
+
+.protocol-chip--clickable:hover {
+  opacity: 0.85;
+}
+
+.chip-icon {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.chip-icon :deep(div) {
+  margin-left: 0 !important;
+  margin-right: 4px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper) {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.chip-icon :deep(.svg-wrapper svg) {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 @media (max-width: 600px) {
