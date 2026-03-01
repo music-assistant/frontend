@@ -420,7 +420,7 @@ const router = createRouter({
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
 // on the server (likely due to a new deployment with different hashes).
-// In this case, we reload the page to get the fresh assets.
+// In this case, we show a toast to let the user know that a new version of the frontend is available.
 router.onError((error, to) => {
   // Check if this is a chunk loading error
   const isChunkLoadError =
@@ -436,7 +436,7 @@ router.onError((error, to) => {
       window.location.origin + window.location.pathname + "#" + to.fullPath;
 
     toast.info(t("chunk_load_error"), {
-      duration: Infinity,
+      duration: 5000,
       action: {
         label: t("refresh"),
         onClick: () => {
