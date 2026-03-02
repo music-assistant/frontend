@@ -37,7 +37,7 @@
             </v-card>
           </v-menu>
 
-          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" @click="() => {store.showFullscreenPlayer = false;}" />
 
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
