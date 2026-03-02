@@ -138,4 +138,10 @@ onUnmounted(() => {
     align-items: stretch;
   }
 }
+
+@media (max-width: 575px) {
+  :deep(.container-comfortable) {
+    padding: 12px;
+  }
+}
 </style>
