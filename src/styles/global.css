@@ -209,10 +209,7 @@ html {
 }
 
 .checkbox {
-  position: relative;
-  height: 1em;
-  margin-top: 1.4em;
-  align-content: center;
+  margin-bottom: 0.1em;
 }
 
 /* iOS Safari 15 scroll momentum */

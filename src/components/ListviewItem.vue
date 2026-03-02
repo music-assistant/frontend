@@ -8,7 +8,7 @@
     @menu.stop="onMenu"
   >
     <template #prepend>
-      <div v-if="showCheckboxes" class="flex items-center space-x-2">
+      <div v-if="showCheckboxes" class="flex items-center space-x-2 checkbox">
         <Checkbox
           id="listviewitem-checkbox"
           :model-value="isSelected"
