@@ -8,19 +8,27 @@
     @menu.stop="onMenu"
   >
     <template #prepend>
-      <div v-if="showCheckboxes" class="checkbox">
-        <div class="flex items-center space-x-2">
-          <Checkbox id="listviewitem-checkbox" />
-          <label for="listviewitem-checkbox">
-            <ListviewitemTitle
-              :display-name="displayName"
-              :item="item"
-              :show-checkboxes="showCheckboxes"
-            />
-          </label>
-        </div>
-
-        <!-- <v-checkbox
+      <div v-if="showCheckboxes" class="flex items-center space-x-2">
+        <Checkbox
+          id="listviewitem-checkbox"
+          :model-value="isSelected"
+          @click.stop
+          @update:model-value="
+            (x: boolean | 'indeterminate') => {
+              if (x != 'indeterminate') emit('select', item, x);
+            }
+          "
+        />
+        <label for="listviewitem-checkbox">
+          <ListviewitemTitle
+            :display-name="displayName"
+            :item="item"
+            :show-checkboxes="showCheckboxes"
+          />
+        </label>
+      </div>
+      <!-- <div v-if="showCheckboxes" class="checkbox">
+        <v-checkbox
           :model-value="isSelected"
           @click.stop
           @update:model-value="
@@ -36,8 +44,8 @@
               :show-checkboxes="showCheckboxes"
             />
           </template>
-        </v-checkbox> -->
-      </div>
+        </v-checkbox>
+      </div> -->
       <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
       </div>
