@@ -16,7 +16,8 @@ type Breakpoints =
   | "bp8"
   | "bp9"
   | "bp10"
-  | "bp11";
+  | "bp11"
+  | "bp12";
 
 //TODO sorting
 const breakpoints: { [key in Breakpoints]: number } = {
@@ -28,10 +29,11 @@ const breakpoints: { [key in Breakpoints]: number } = {
   bp5: 800,
   bp6: 960,
   bp7: 1100,
-  bp8: 1500,
-  bp9: 1700,
-  bp10: 1900,
-  bp11: 415,
+  bp8: 1300,
+  bp9: 1500,
+  bp10: 1700,
+  bp11: 1900,
+  bp12: 415,
 };
 
 const state = reactive({ width: window.innerWidth });

@@ -125,10 +125,10 @@ import { webPlayer } from "@/plugins/web_player";
 import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
-// Wide screens (>=1100px): inline sidebar that pushes content.
+// Wide screens (bp9 >=1500px): inline sidebar that pushes content.
 // Narrower screens & mobile: overlay panel with scrim.
 const useInlinePanel = computed(
-  () => !store.mobileLayout && getBreakpointValue("bp7"),
+  () => !store.mobileLayout && getBreakpointValue("bp9"),
 );
 
 const showSubPlayers = ref(false);
@@ -362,13 +362,20 @@ const selectDefaultPlayer = function () {
  */
 .player-panel--overlay {
   z-index: 99999;
+  top: 8px;
+  bottom: 8px;
   border-left: none;
+  border-radius: 16px 0 0 16px;
+}
+
+.player-panel--overlay.player-panel--open {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 769px) {
   .player-panel--overlay {
     width: 90vw;
-    height: calc(100% - 60px);
+    height: calc(100% - 68px);
   }
 }
 
@@ -378,14 +385,32 @@ const selectDefaultPlayer = function () {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.player-panel-inner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--v-theme-surface)) 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 0 0 16px;
 }
 
 /* Mobile scrim/overlay */
 .player-panel-scrim {
   position: fixed;
   inset: 0;
-  z-index: 1100;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .player-scrim-enter-active,

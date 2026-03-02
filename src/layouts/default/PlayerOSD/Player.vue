@@ -5,7 +5,7 @@
     <div class="mediacontrols">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
-          :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
+          :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"

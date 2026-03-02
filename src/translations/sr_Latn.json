@@ -943,7 +943,7 @@
         "login": "Prijavite se",
         "logout": "Odjavite se",
         "field_required": "Ovo polje je obavezno",
-        "username_min_length": "Korisničko ime mora imati najmanje 3 znaka",
+        "username_min_length": "Korisničko ime mora imati najmanje 2 znaka",
         "username_already_exists": "Korisničko ime već postoji. Molimo izaberite drugo korisničko ime.",
         "invalid_username": "Nevažeće korisničko ime. Molimo izaberite drugo korisničko ime.",
         "password_min_length": "Lozinka mora imati najmanje 8 karaktera",

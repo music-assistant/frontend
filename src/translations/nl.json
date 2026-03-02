@@ -943,7 +943,7 @@
         "login": "Inloggen",
         "logout": "Uitloggen",
         "field_required": "Dit veld is verplicht",
-        "username_min_length": "De gebruikersnaam moet minimaal 3 tekens lang zijn",
+        "username_min_length": "De gebruikersnaam moet minimaal 2 tekens lang zijn",
         "username_already_exists": "Deze gebruikersnaam bestaat al. Kies een andere gebruikersnaam.",
         "invalid_username": "Ongeldige gebruikersnaam. Kies een andere gebruikersnaam.",
         "password_min_length": "Het wachtwoord moet minimaal 8 tekens bevatten.",
