@@ -81,4 +81,8 @@ import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 .v-footer {
   z-index: 1000 !important;
 }
+
+.v-footer.mediacontrols-player-float {
+  z-index: 2001 !important;
+}
 </style>
