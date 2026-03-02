@@ -17,7 +17,7 @@
     <template #activator="{ props }">
       <v-icon
         v-if="parseBool(item.metadata.explicit || false)"
-        class="{ 'explicit-icon-margin-left' : showCheckboxes }"
+        :class="{ 'explicit-icon-margin-left': showCheckboxes }"
         v-bind="props"
         icon="mdi-alpha-e-box"
         width="35"
@@ -60,6 +60,6 @@ const compProps = withDefaults(defineProps<Props>(), {
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.
    This adds a bit of spacing between the title and the explicit icon. */
 .explicit-icon-margin-left {
-  margin-left: 0.2em;
+  margin-left: 0.3em;
 }
 </style>
