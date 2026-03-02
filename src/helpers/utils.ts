@@ -609,72 +609,86 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp5",
+      condition: "lt",
+    })
+  ) {
+    return 2;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp5",
+      condition: "gt",
+    }) &&
+    getBreakpointValue({
+      breakpoint: "bp6",
       condition: "lt",
     })
   ) {
     return 3;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp6",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp6",
+      breakpoint: "bp7",
+      condition: "lt",
+    })
+  ) {
+    return 3;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp7",
+      condition: "gt",
+    }) &&
+    getBreakpointValue({
+      breakpoint: "bp8",
       condition: "lt",
     })
   ) {
     return 4;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp6",
+      breakpoint: "bp8",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp7",
+      breakpoint: "bp9",
       condition: "lt",
     })
   ) {
     return 5;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp7",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
-      breakpoint: "bp8",
-      condition: "lt",
-    })
-  ) {
-    return 6;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp8",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
       breakpoint: "bp9",
+      condition: "gt",
+    }) &&
+    getBreakpointValue({
+      breakpoint: "bp10",
       condition: "lt",
     })
   ) {
+    if (store.showPlayersMenu) return 4;
     return 7;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp9",
+      breakpoint: "bp10",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp10",
+      breakpoint: "bp11",
       condition: "lt",
     })
   ) {
+    if (store.showPlayersMenu) return 5;
     return 8;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp10",
+      breakpoint: "bp11",
       condition: "gt",
     })
   ) {
+    if (store.showPlayersMenu) return 6;
     return 9;
   } else {
     return 0;

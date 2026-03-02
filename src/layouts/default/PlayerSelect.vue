@@ -125,10 +125,10 @@ import { webPlayer } from "@/plugins/web_player";
 import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
-// Wide screens (>=1100px): inline sidebar that pushes content.
+// Wide screens (bp9 >=1500px): inline sidebar that pushes content.
 // Narrower screens & mobile: overlay panel with scrim.
 const useInlinePanel = computed(
-  () => !store.mobileLayout && getBreakpointValue("bp7"),
+  () => !store.mobileLayout && getBreakpointValue("bp9"),
 );
 
 const showSubPlayers = ref(false);
