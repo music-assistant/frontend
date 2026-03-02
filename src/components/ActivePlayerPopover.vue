@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
   Popover,
   PopoverContent,
@@ -82,9 +82,8 @@ const shouldShowTip = computed(() => {
 });
 
 function showPopover(openDelay: number = 1000, dismissTimeout: number = 3000) {
-  if (!shouldShowTip.value) return;
-
   setTimeout(() => {
+    if (!shouldShowTip.value) return;
     showTip.value = true;
 
     autoDismissTimeout = setTimeout(() => {
@@ -121,31 +120,6 @@ onMounted(() => {
 onUnmounted(() => {
   clearAutoDismissTimeout();
 });
-
-watch(
-  () => store.playerTipShown,
-  (newVal) => {
-    if (newVal && showTip.value) {
-      showTip.value = false;
-    }
-  },
-);
-
-watch(showTip, (newVal, oldVal) => {
-  if (oldVal && !newVal) {
-    store.playerTipShown = true;
-  }
-});
-
-// Watch for players menu opening and dismiss tip immediately
-watch(
-  () => store.showPlayersMenu,
-  (isOpen) => {
-    if (isOpen && showTip.value) {
-      dismissTip();
-    }
-  },
-);
 </script>
 
 <style>

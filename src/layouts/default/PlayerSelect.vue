@@ -246,7 +246,6 @@ watch(
 function playerClicked(player: Player, close: boolean = false) {
   if (store.activePlayerId !== player.player_id) {
     store.activePlayerId = player.player_id;
-    store.playerTipShown = true;
   }
   if (close) store.showPlayersMenu = false;
   // Scroll the player card into view (use nearest to avoid hiding header)
@@ -344,7 +343,8 @@ const selectDefaultPlayer = function () {
   width: 400px;
   z-index: 10;
   transform: translateX(100%);
-  transition: transform 0.2s ease-linear;
+  transition: transform 0.5s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-on-surface));
   border-left: 1px solid rgba(var(--v-border-color), 0.12);
@@ -365,9 +365,10 @@ const selectDefaultPlayer = function () {
   border-left: none;
 }
 
-@media (max-width: 799px) {
+@media (max-width: 769px) {
   .player-panel--overlay {
     width: 90vw;
+    height: calc(100% - 60px);
   }
 }
 
@@ -383,7 +384,7 @@ const selectDefaultPlayer = function () {
 .player-panel-scrim {
   position: fixed;
   inset: 0;
-  z-index: 99998;
+  z-index: 1100;
   background: rgba(0, 0, 0, 0.5);
 }
 
