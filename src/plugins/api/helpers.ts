@@ -1,13 +1,7 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import {
-  MediaItemType,
-  ItemMapping,
-  MediaType,
-  Player,
-  PlayerFeature,
-} from "./interfaces";
+import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
@@ -184,20 +178,3 @@ interface NavigatorUAData {
   platform: string;
   mobile: boolean;
 }
-
-export const handlePlayerMuteToggle = function (player: Player) {
-  if (player.group_members.length > 0) {
-    // TODO: revisit this when api/server supports group mute toggle
-    const muted = !player.volume_muted;
-    for (const memberId of player.group_members) {
-      const childPlayer = api.players[memberId];
-      if (!childPlayer) continue;
-      if (!childPlayer.supported_features.includes(PlayerFeature.VOLUME_MUTE)) {
-        continue;
-      }
-      api.playerCommandVolumeMute(memberId, muted);
-    }
-  } else {
-    api.playerCommandMuteToggle(player.player_id);
-  }
-};

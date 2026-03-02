@@ -15,10 +15,10 @@
     <template #title>
       <slot name="title">
         <button
-          v-if="title || (store.mobileLayout && home)"
+          v-if="title || (store.mobileLayout && isDiscoverPage)"
           @click="emit('titleClicked')"
         >
-          {{ title || (home ? $t("home") : "") }}
+          {{ title || (isDiscoverPage ? $t("discover") : "") }}
         </button>
       </slot>
     </template>
@@ -32,7 +32,7 @@
           (x) =>
             !x.hide &&
             !enforceOverflowMenu &&
-            (getBreakpointValue('bp7') || x.overflowAllowed === false),
+            (getBreakpointValue('bp8') || x.overflowAllowed === false),
         )"
         :key="menuItem.label"
         variant="text"
@@ -60,7 +60,7 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <div
         v-if="
-          (!getBreakpointValue('bp7') || enforceOverflowMenu) &&
+          (!getBreakpointValue('bp8') || enforceOverflowMenu) &&
           menuItems.filter((x) => x.hide != true && x.overflowAllowed !== false)
             .length
         "
@@ -177,7 +177,7 @@ interface Props {
   title?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
-  home?: boolean;
+  isDiscoverPage?: boolean;
   iconAction?: () => void;
 }
 withDefaults(defineProps<Props>(), {

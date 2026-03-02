@@ -32,6 +32,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -101,6 +102,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -168,6 +170,7 @@
                 conf_entry.value = conf_entry.action ? null : conf_entry.key;
               "
               @open-dsp="openDspConfig"
+              @open-options="openPlayerOptions"
             />
             <v-chip
               v-if="conf_entry.advanced"
@@ -282,6 +285,7 @@
                       : conf_entry.key;
                   "
                   @open-dsp="openDspConfig"
+                  @open-options="openPlayerOptions"
                 />
                 <v-chip
                   v-if="conf_entry.advanced"
@@ -348,6 +352,7 @@
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
+            @open-options="openPlayerOptions"
           />
           <v-chip
             v-if="conf_entry.advanced"
@@ -491,6 +496,7 @@ const allowNavigation = ref(false);
 export interface Props {
   configEntries: ConfigEntryUI[];
   disabled: boolean;
+  defaultExpandedProtocol?: string;
 }
 
 const emit = defineEmits<{
@@ -676,6 +682,13 @@ watch(
     // Expand all panels by default, except protocol categories which stay collapsed
     const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
     activePanel.value = expandedPanels;
+    // Auto-expand the native protocol panel if specified
+    if (
+      props.defaultExpandedProtocol &&
+      protocolPanels.value.includes(props.defaultExpandedProtocol)
+    ) {
+      activeProtocolPanel.value = props.defaultExpandedProtocol;
+    }
   },
   { immediate: true },
 );
@@ -714,6 +727,10 @@ const openLink = function (url: string) {
 
 const openDspConfig = function () {
   router.push(`${router.currentRoute.value.path}/dsp`);
+};
+
+const openPlayerOptions = function () {
+  router.push(`${router.currentRoute.value.path}/options`);
 };
 
 const resetToDefaults = function () {

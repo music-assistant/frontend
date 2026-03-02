@@ -1,11 +1,11 @@
 <template>
   <!-- Non-mobile: background gradient and player bar -->
-  <template v-if="!mobile">
+  <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
     <div class="mediacontrols">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
-          :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
+          :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -75,21 +75,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player mobile extended control buttons -->
-          <PlayerExtendedControls
-            :queue="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :player="{
-              isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :volume="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-          />
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
@@ -111,91 +96,24 @@
         </div>
       </div>
     </div>
-    <div v-if="store.activePlayer" class="volume-slider">
+    <div
+      v-if="store.activePlayer"
+      :class="[
+        'volume-slider',
+        { 'volume-slider--no-safe-area': store.isIngressSession },
+      ]"
+    >
       <PlayerVolume
+        :player="store.activePlayer"
         width="100%"
-        color="secondary"
-        :is-powered="store.activePlayer?.powered != false"
-        :disabled="
-          !store.activePlayer ||
-          !store.activePlayer?.available ||
-          store.activePlayer.powered == false ||
-          !store.activePlayer.supported_features.includes(
-            PlayerFeature.VOLUME_SET,
-          )
-        "
-        :model-value="
-          Math.round(
-            store.activePlayer.group_members.length > 0
-              ? store.activePlayer.group_volume
-              : store.activePlayer.volume_level || 0,
-          )
-        "
-        prepend-icon="mdi-volume-minus"
-        append-icon="mdi-volume-plus"
-        @update:model-value="
-          store.activePlayer!.group_members.length > 0
-            ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
-            : api.playerCommandVolumeSet(store.activePlayerId!, $event)
-        "
-        @click:prepend="
-          store.activePlayer!.group_members.length > 0
-            ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
-            : api.playerCommandVolumeDown(store.activePlayerId!)
-        "
-        @click:append="
-          store.activePlayer!.group_members.length > 0
-            ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
-            : api.playerCommandVolumeUp(store.activePlayerId!)
-        "
-      >
-        <template #prepend>
-          <!-- mute button with dynamic volume icon -->
-          <Button
-            icon
-            style="height: 25px; width: 25px; min-width: 25px"
-            :disabled="
-              !store.activePlayer.available ||
-              store.activePlayer.powered == false ||
-              store.activePlayer.mute_control == PLAYER_CONTROL_NONE
-            "
-            @click.stop="handlePlayerMuteToggle(store.activePlayer)"
-          >
-            <component
-              :is="
-                getVolumeIconComponent(
-                  store.activePlayer,
-                  Math.round(
-                    store.activePlayer.group_members.length > 0
-                      ? store.activePlayer.group_volume
-                      : store.activePlayer.volume_level || 0,
-                  ),
-                )
-              "
-              :size="22"
-            />
-          </Button>
-        </template>
-        <template #append>
-          <div class="text-caption volumecaption">
-            {{
-              Math.round(
-                store.activePlayer.group_members.length > 0
-                  ? store.activePlayer.group_volume
-                  : store.activePlayer.volume_level || 0,
-              )
-            }}
-          </div>
-        </template>
-      </PlayerVolume>
+        :prefer-group-volume="true"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-//@ts-ignore
-import Button from "@/components/Button.vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -204,19 +122,11 @@ import {
   ImageColorPalette,
   getColorPalette,
   getMediaImageUrl,
-  getVolumeIconComponent,
 } from "@/helpers/utils";
-import { api } from "@/plugins/api";
-import { handlePlayerMuteToggle } from "@/plugins/api/helpers";
-import {
-  MediaType,
-  PLAYER_CONTROL_NONE,
-  PlayerFeature,
-} from "@/plugins/api/interfaces";
+import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { useDisplay } from "vuetify";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -227,9 +137,6 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
-
-// Custom breakpoint for compatibility with `getBreakpointValue`. Can replace once we switch to using built-in Vuetify breakpoints
-const { mobile } = useDisplay({ mobileBreakpoint: 576 });
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -359,5 +266,9 @@ watch(
   width: calc(100% - 34px);
   margin: -4px 6px 6px 14px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.volume-slider--no-safe-area {
+  padding-bottom: 0 !important;
 }
 </style>

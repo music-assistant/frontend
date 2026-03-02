@@ -22,7 +22,7 @@
           >
             <v-img
               class="media-thumb"
-              size="60"
+              size="40"
               :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
@@ -44,7 +44,10 @@
       <!-- playername -->
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
-        <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
+        <div
+          v-if="isBuiltinPlayer(player)"
+          style="font-size: 0.85rem; line-height: 1.2"
+        >
           <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
           <v-chip density="compact" size="small" class="ml-2" outlined>
@@ -60,7 +63,7 @@
           </v-chip>
         </div>
         <!-- regular player -->
-        <div v-else>
+        <div v-else style="font-size: 0.85rem; line-height: 1.2">
           {{ getPlayerName(player, 27) }}
         </div>
       </template>
@@ -69,7 +72,12 @@
       <template #subtitle>
         <div
           v-if="player.powered != false"
-          style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
+          style="
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            line-height: 1.2;
+          "
         >
           <div v-if="player.current_media?.title">
             {{ player.current_media.title }}
@@ -81,7 +89,7 @@
       <template #default>
         <div
           class="v-list-item-subtitle"
-          style="font-size: 0.85rem; white-space: nowrap"
+          style="font-size: 0.72rem; white-space: nowrap; line-height: 1.2"
         >
           <!-- player powered off -->
           <div v-if="player.powered == false">
@@ -337,14 +345,25 @@ watch(
   width: 100%;
   margin: 0px !important;
   padding: 0px !important;
-  min-height: 72px;
+  min-height: 48px;
 }
 
 .panel-item-details :deep(.v-list-item__content) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 60px;
+  min-height: 42px;
+  gap: 0px;
+}
+
+.panel-item-details :deep(.v-list-item-title) {
+  padding: 0;
+  margin: 0;
+}
+
+.panel-item-details :deep(.v-list-item-subtitle) {
+  padding: 0;
+  margin: 0;
 }
 
 .panel-item-details :deep(.v-list-item__spacer) {
@@ -378,15 +397,15 @@ watch(
 }
 
 .media-thumb {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .icon-thumb {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
@@ -395,15 +414,15 @@ watch(
 }
 
 .media-thumb {
-  width: 55px;
-  height: 55px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 .icon-thumb {
-  width: 55px;
-  height: 55px;
-  margin-top: 5px;
+  width: 40px;
+  height: 40px;
+  margin-top: 4px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: inline-table;
@@ -413,18 +432,18 @@ watch(
   border-style: ridge;
   border-width: thin;
   border-color: rgba(var(--v-theme-on-surface), 0.12);
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-top: 3px;
+  padding-bottom: 3px;
   background-color: rgba(var(--v-theme-primary), 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
   margin-left: 0px;
   margin-right: 0px;
-  margin-top: 5px;
-  margin-bottom: 8px;
+  margin-top: 4px;
+  margin-bottom: 4px;
   height: 100%;
   width: auto;
 }

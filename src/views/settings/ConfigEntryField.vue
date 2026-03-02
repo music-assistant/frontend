@@ -65,6 +65,16 @@
       </v-btn>
     </div>
 
+    <!-- Player Options Button -->
+    <div
+      v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
+      class="dsp-config"
+    >
+      <v-btn variant="outlined" @click="$emit('openOptions')">
+        {{ $t("player_options.open") }}
+      </v-btn>
+    </div>
+
     <!-- boolean value: checkbox -->
     <v-checkbox
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
@@ -289,6 +299,7 @@ const emit = defineEmits<{
   (e: "togglePassword"): void;
   (e: "action"): void;
   (e: "openDsp"): void;
+  (e: "openOptions"): void;
   (e: "update:value", value: ConfigValueType): void;
 }>();
 

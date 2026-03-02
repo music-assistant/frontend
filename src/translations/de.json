@@ -36,7 +36,7 @@
     "external_source_active": "Externe Quelle aktiv: {0}",
     "goto_album": "Zum Album {0}",
     "goto_artist": "Zum Künstler {0}",
-    "home": "Startseite",
+    "discover": "Entdecken",
     "items_selected": "{0} Einträge ausgewählt",
     "items_total": "{0} Einträge",
     "library": "Bibliothek",
@@ -941,7 +941,7 @@
         "login": "Anmelden",
         "logout": "Abmelden",
         "field_required": "Dieses Feld ist erforderlich",
-        "username_min_length": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+        "username_min_length": "Der Benutzername muss mindestens 2 Zeichen lang sein.",
         "username_already_exists": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen Benutzernamen.",
         "invalid_username": "Ungültiger Benutzername. Bitte wähle einen anderen Benutzernamen.",
         "password_min_length": "Das Passwort muss mindestens 8 Zeichen lang sein.",
@@ -1139,6 +1139,5 @@
     "narrators": "Erzähler",
     "series_plural": "Serien",
     "series_singular": "Serien",
-    "queue_move_end": "Zum Ende bewegen",
-    "discover": "Entdecken"
+    "queue_move_end": "Zum Ende bewegen"
 }

@@ -37,7 +37,14 @@
             </v-card>
           </v-menu>
 
-          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+          <SpeakerBtn
+            v-if="!showExpandedPlayerSelectButton"
+            @click="
+              () => {
+                store.showFullscreenPlayer = false;
+              }
+            "
+          />
 
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
@@ -450,42 +457,11 @@
           style="margin-left: 5%; margin-right: 5%"
         >
           <PlayerVolume
+            :player="store.activePlayer"
             width="100%"
-            :is-powered="store.activePlayer?.powered != false"
-            :disabled="
-              !store.activePlayer ||
-              !store.activePlayer?.available ||
-              store.activePlayer.powered == false ||
-              !store.activePlayer.supported_features.includes(
-                PlayerFeature.VOLUME_SET,
-              )
-            "
-            :model-value="
-              Math.round(
-                store.activePlayer.group_members.length > 0
-                  ? store.activePlayer.group_volume
-                  : store.activePlayer.volume_level || 0,
-              )
-            "
-            prepend-icon="mdi-volume-minus"
-            append-icon="mdi-volume-plus"
             :color="sliderColor"
             :allow-wheel="true"
-            @update:model-value="
-              store.activePlayer!.group_members.length > 0
-                ? api.playerCommandGroupVolume(store.activePlayerId!, $event)
-                : api.playerCommandVolumeSet(store.activePlayerId!, $event)
-            "
-            @click:prepend="
-              store.activePlayer!.group_members.length > 0
-                ? api.playerCommandGroupVolumeDown(store.activePlayerId!)
-                : api.playerCommandVolumeDown(store.activePlayerId!)
-            "
-            @click:append="
-              store.activePlayer!.group_members.length > 0
-                ? api.playerCommandGroupVolumeUp(store.activePlayerId!)
-                : api.playerCommandVolumeUp(store.activePlayerId!)
-            "
+            :prefer-group-volume="true"
           />
         </div>
 
@@ -505,7 +481,12 @@
           <v-btn
             class="responsive-icon-holder-btn"
             variant="outlined"
-            @click="store.showPlayersMenu = true"
+            @click="
+              () => {
+                store.showPlayersMenu = true;
+                store.showFullscreenPlayer = false;
+              }
+            "
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
@@ -548,7 +529,6 @@ import {
   MediaItemType,
   MediaType,
   PlaybackState,
-  PlayerFeature,
   PlayerQueue,
   PlayerType,
   QueueItem,
@@ -1462,10 +1442,6 @@ watchEffect(() => {
 .queue-items-scroll-box {
   max-height: 100%;
   overflow-y: scroll;
-}
-
-.queue-items-scroll-box::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
 }
 
 .v-infinite-scroll--vertical {
