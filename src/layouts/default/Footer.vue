@@ -32,9 +32,14 @@
         ? 'mediacontrols-player-float'
         : 'mediacontrols-player-default'
     }`"
-    :style="
-      store.isInPWAMode && !store.isIngressSession ? 'margin-bottom: 10px;' : ''
-    "
+    :style="[
+      store.mobileLayout && store.showPlayersMenu
+        ? 'z-index: 999 !important;'
+        : '',
+      store.isInPWAMode && !store.isIngressSession
+        ? 'margin-bottom: 10px;'
+        : '',
+    ]"
   >
     <Player :use-floating-player="store.mobileLayout" />
   </v-footer>
