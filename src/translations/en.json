@@ -1184,7 +1184,7 @@
         "login": "Sign in",
         "logout": "Sign out",
         "field_required": "This field is required",
-        "username_min_length": "Username must be at least 3 characters",
+        "username_min_length": "Username must be at least 2 characters",
         "username_already_exists": "Username already exists. Please choose a different username.",
         "invalid_username": "Invalid username. Please choose a different username.",
         "password_min_length": "Password must be at least 8 characters",

@@ -940,7 +940,7 @@
         "login": "Se connecter",
         "logout": "Se déconnecter",
         "field_required": "Ce champ est obligatoire",
-        "username_min_length": "Le nom d'utilisateur doit comporter au moins 3 caractères.",
+        "username_min_length": "Le nom d'utilisateur doit comporter au moins 2 caractères.",
         "username_already_exists": "Ce nom d'utilisateur existe déjà. Veuillez choisir un autre nom d'utilisateur.",
         "invalid_username": "Nom d'utilisateur invalide. Veuillez choisir un autre nom d'utilisateur.",
         "password_min_length": "Le mot de passe doit comporter au moins 8 caractères.",

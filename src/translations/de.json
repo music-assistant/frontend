@@ -941,7 +941,7 @@
         "login": "Anmelden",
         "logout": "Abmelden",
         "field_required": "Dieses Feld ist erforderlich",
-        "username_min_length": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+        "username_min_length": "Der Benutzername muss mindestens 2 Zeichen lang sein.",
         "username_already_exists": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen Benutzernamen.",
         "invalid_username": "Ungültiger Benutzername. Bitte wähle einen anderen Benutzernamen.",
         "password_min_length": "Das Passwort muss mindestens 8 Zeichen lang sein.",

@@ -911,7 +911,7 @@
         "login": "Zaloguj się",
         "logout": "Wyloguj się",
         "field_required": "To pole jest wymagane",
-        "username_min_length": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
+        "username_min_length": "Nazwa użytkownika musi mieć co najmniej 2 znaki",
         "username_already_exists": "Nazwa użytkownika już istnieje. Wybierz inną nazwę użytkownika.",
         "invalid_username": "Nieprawidłowa nazwa użytkownika. Wybierz inną nazwę użytkownika.",
         "password_min_length": "Hasło musi mieć co najmniej 8 znaków",

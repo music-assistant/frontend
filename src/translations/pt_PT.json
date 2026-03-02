@@ -941,7 +941,7 @@
         "login": "Iniciar sessão",
         "logout": "Fechar sessão",
         "field_required": "Este campo é obrigatório",
-        "username_min_length": "O nome de utilizador deve ter pelo menos 3 caracteres",
+        "username_min_length": "O nome de utilizador deve ter pelo menos 2 caracteres",
         "username_already_exists": "O nome de utilizador já existe. Por favor, escolha um nome de utilizador diferente.",
         "invalid_username": "Nome de utilizador inválido. Escolha um nome de utilizador diferente.",
         "password_min_length": "A palavra-passe deve ter pelo menos 8 caracteres",

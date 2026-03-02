@@ -915,7 +915,7 @@
         "login": "Prisijungti",
         "logout": "Atsijungti",
         "field_required": "Šis laukas privalomas",
-        "username_min_length": "Vartotojo vardas turi būti sudarytas iš bent 3 simbolių",
+        "username_min_length": "Vartotojo vardas turi būti sudarytas iš bent 2 simbolių",
         "username_already_exists": "Vartotojo vardas jau yra. Pasirinkite kitą vartotojo vardą.",
         "invalid_username": "Neteisingas vartotojo vardas. Pasirinkite kitą vartotojo vardą.",
         "password_min_length": "Slaptažodis turi būti sudarytas iš bent 8 simbolių",

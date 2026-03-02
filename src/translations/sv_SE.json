@@ -973,7 +973,7 @@
         "login": "Logga in",
         "logout": "Logga ut",
         "field_required": "Detta fält är obligatoriskt",
-        "username_min_length": "Användarnamnet måste vara minst 3 tecken långt",
+        "username_min_length": "Användarnamnet måste vara minst 2 tecken långt",
         "username_already_exists": "Användarnamnet finns redan. Välj ett annat användarnamn.",
         "invalid_username": "Ogiltigt användarnamn. Välj ett annat användarnamn.",
         "password_min_length": "Lösenordet måste vara minst 8 tecken långt",
