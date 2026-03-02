@@ -4,74 +4,91 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <v-dialog
-    v-model="showDialog"
-    max-width="500"
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-      }
-    "
-  >
-    <v-card>
-      <v-card-title>
-        {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
-      </v-card-title>
-      <v-card-text>
-        {{ $t("playlist_create_media_types", [providerName]) }}
-        {{ playlistAllowedMediaTypesTranslated.join(", ") }}
-        <div v-if="playlistAllowMixedMediaTypes">
-          {{ $t("playlist_mix_allowed") }}
-        </div>
-        <div v-else-if="playlistAllowedMediaTypes.length > 1">
-          {{ $t("playlist_mix_not_allowed") }}
-          <v-radio-group v-model="playlistSelectedMediaType" inline>
-            <div
-              v-for="(item, index) in playlistAllowedMediaTypes"
-              :key="index"
+  <Dialog v-model:open="showDialog">
+    <DialogContent class="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle class="mb-2">
+          {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
+        </DialogTitle>
+        <DialogDescription>
+          {{ $t("playlist_create_media_types", [providerName]) }}
+          {{ playlistAllowedMediaTypesTranslated.join(", ") }}
+        </DialogDescription>
+
+        <div class="flex flex-col gap-4 mb-3">
+          <DialogDescription v-if="playlistAllowMixedMediaTypes">
+            {{ $t("playlist_mix_allowed") }}
+          </DialogDescription>
+          <div
+            v-else-if="playlistAllowedMediaTypes.length > 1"
+            class="flex flex-col gap-3"
+          >
+            <DialogDescription>{{
+              $t("playlist_mix_not_allowed")
+            }}</DialogDescription>
+
+            <RadioGroup
+              v-model="playlistSelectedMediaType"
+              class="flex flex-row flex-wrap gap-4 justify-center mt-2"
             >
-              <v-radio
-                :label="playlistAllowedMediaTypesTranslated[index]"
-                :value="item"
-              />
-            </div>
-          </v-radio-group>
+              <div
+                v-for="(item, index) in playlistAllowedMediaTypes"
+                :key="index"
+                class="flex items-center gap-2"
+              >
+                <RadioGroupItem :id="`media-type-${index}`" :value="item" />
+                <Label :for="`media-type-${index}`">
+                  {{ playlistAllowedMediaTypesTranslated[index] }}
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div class="flex flex-col gap-2 mt-3">
+            <Label for="playlist-name">{{ $t("new_playlist_name") }}</Label>
+            <Input
+              id="playlist-name"
+              ref="nameInput"
+              v-model="playlistName"
+              @keyup.enter="doSave"
+            />
+          </div>
         </div>
-        <v-text-field
-          ref="nameInput"
-          v-model="playlistName"
-          :label="$t('new_playlist_name')"
-          @keyup.enter="doSave"
-        />
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="showDialog = false">
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" @click="showDialog = false">
           {{ $t("close") }}
-        </v-btn>
-        <v-btn
-          variant="text"
-          color="primary"
-          :disabled="!playlistName"
-          @click="doSave"
-        >
+        </Button>
+        <Button :disabled="!playlistName" @click="doSave">
           {{ $t("settings.save") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import api from "@/plugins/api";
+import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { type CreatePlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 
 const showDialog = ref(false);
 const playlistName = ref("");
@@ -88,7 +105,7 @@ watch(showDialog, (open) => {
   store.dialogActive = open;
   if (open) {
     nextTick(() => {
-      nameInput.value?.focus();
+      nameInput.value?.$el?.focus();
     });
   }
 });
