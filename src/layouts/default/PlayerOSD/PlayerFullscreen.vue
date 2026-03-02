@@ -1444,10 +1444,6 @@ watchEffect(() => {
   overflow-y: scroll;
 }
 
-.queue-items-scroll-box::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
-}
-
 .v-infinite-scroll--vertical {
   overflow-y: unset;
 }

@@ -82,7 +82,7 @@
                   v-for="player in filteredPlayers"
                   :id="player.player_id"
                   :key="player.player_id"
-                  style="margin: 5px 0px"
+                  style="margin: 8px 0px"
                   :player="player"
                   :show-volume-control="true"
                   :show-menu-button="true"
