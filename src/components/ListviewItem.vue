@@ -27,25 +27,6 @@
           />
         </label>
       </div>
-      <!-- <div v-if="showCheckboxes" class="checkbox">
-        <v-checkbox
-          :model-value="isSelected"
-          @click.stop
-          @update:model-value="
-            (x: boolean | null) => {
-              if (x != null) emit('select', item, x);
-            }
-          "
-        >
-          <template #label>
-            <ListviewitemTitle
-              :display-name="displayName"
-              :item="item"
-              :show-checkboxes="showCheckboxes"
-            />
-          </template>
-        </v-checkbox>
-      </div> -->
       <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
       </div>
