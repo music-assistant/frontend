@@ -4,7 +4,7 @@
       widgetRow.settings && !widgetRow.settings.enabled ? 'disabled' : ''
     }`"
   >
-    <v-toolbar class="header" color="transparent">
+    <v-toolbar class="header" color="transparent" density="compact">
       <template #title>
         <div class="flex items-center group">
           <span
@@ -165,20 +165,36 @@ const handleActionIconClick = () => {
 <style scoped>
 .header.v-toolbar :deep(.v-toolbar-title) {
   margin-inline-start: 0px;
-  font-size: x-large;
+  font-size: large;
   font-weight: bold;
+}
+
+.header.v-toolbar {
+  padding-inline-start: 4px;
 }
 
 .carousel-wrapper {
   background-color: rgb(var(--v-theme-panel));
   padding: 10px;
-  border-radius: 5px;
+  padding-right: 0;
+  border-radius: 5px 0 0 5px;
 }
 
 .widget-row {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   margin-left: 0px;
   padding-left: 0px;
+}
+
+@media (max-width: 575px) {
+  .widget-row {
+    margin-bottom: 4px;
+  }
+
+  .carousel-wrapper {
+    padding: 6px;
+    padding-right: 0;
+  }
 }
 
 .disabled {

@@ -250,6 +250,16 @@ const onPlayClick = function (evt: PointerEvent) {
   padding: 10px;
 }
 
+@media (max-width: 575px) {
+  .v-card {
+    padding: 6px;
+  }
+
+  .panel-item-details {
+    margin-top: 6px;
+  }
+}
+
 .v-card.unavailable {
   opacity: 0.3;
 }

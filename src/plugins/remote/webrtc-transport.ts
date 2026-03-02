@@ -57,7 +57,14 @@ export class WebRTCTransport extends BaseTransport {
   private intentionalClose = false;
   private httpProxyCallbacks = new Map<
     string,
-    { resolve: (value: any) => void; reject: (error: Error) => void }
+    {
+      resolve: (value: {
+        status: number;
+        headers: Record<string, string>;
+        body: Uint8Array;
+      }) => void;
+      reject: (error: Error) => void;
+    }
   >();
   // ICE servers received from the signaling server (provided by MA server)
   private iceServers: IceServerConfig[] = [];
@@ -415,7 +422,12 @@ export class WebRTCTransport extends BaseTransport {
   /**
    * Handle HTTP proxy response from server
    */
-  private handleHttpProxyResponse(data: any): void {
+  private handleHttpProxyResponse(data: {
+    id: string;
+    status: number;
+    headers: Record<string, string>;
+    body: string;
+  }): void {
     const { id, status, headers, body } = data;
 
     const callbacks = this.httpProxyCallbacks.get(id);

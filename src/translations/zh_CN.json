@@ -36,7 +36,6 @@
     "external_source_active": "激活外部源:{0}",
     "goto_album": "跳转到唱片集{0}",
     "goto_artist": "转到歌手{0}",
-    "discover": "发现",
     "items_selected": "已选择{0}项",
     "items_total": "共{0}项",
     "library": "媒体库",
@@ -286,14 +285,14 @@
             "advanced": "高级设置",
             "generic": "常规设置",
             "announcements": "宣告配置",
-            "airplay": "Airplay特定设置",
             "player_controls": "播放器控制",
-            "presets": "预设",
             "sync_options": "同步\/导入选项",
             "builtin_playlists": "内置播放列表设置",
             "web_player": "网页播放器",
+            "playback": "播放设置",
             "protocol_settings": "协议设置",
-            "protocol_output_settings": "启用 {0} 支持"
+            "protocol_output_settings": "启用 {0} 支持",
+            "dsp": "数字信号处理（DSP）"
         },
         "tts_pre_announce": {
             "label": "预告TTS宣告",
@@ -669,9 +668,29 @@
         "web_player_enabled": {
             "label": "启用内置（Sendspin）网页播放器"
         },
+        "enable_browser_controls": {
+            "label": "启用浏览器媒体控制",
+            "description": "允许使用浏览器的内置媒体控件（如键盘上的媒体键）控制播放。"
+        },
         "settings_saved": "设置已保存",
+        "protocol_disabled_message": "启用此协议以配置其设置",
+        "protocol_no_settings": "该输出协议没有任何附加配置",
+        "protocol_no_settings_with_advanced": "未显示任何设置。启用高级设置以查看更多配置选项。",
         "show_advanced_settings": "显示高级设置",
-        "advanced": "高级"
+        "advanced": "高级",
+        "mobile_sidebar_side": {
+            "options": {
+                "left": "左",
+                "right": "右"
+            }
+        },
+        "background_scanner": "后台扫描",
+        "scanner_status": "扫描状态",
+        "scanner_running": "运行中...",
+        "scanner_idle": "闲置",
+        "last_scan": "上次扫描",
+        "scan_now": "立即扫描",
+        "scan_never": "从不"
     },
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
@@ -890,6 +909,8 @@
         "favorite_playlists": "收藏的播放列表",
         "favorite_radio_stations": "收藏的电台",
         "recommended": "推荐",
+        "recently_added": "最近添加",
+        "discover": "发现",
         "library": "媒体库"
     },
     "homescreen_edit_enable": "编辑主屏幕",
@@ -1106,5 +1127,16 @@
     },
     "more_options": "更多选项",
     "edit": "编辑",
-    "authors": "作者"
+    "authors": "作者",
+    "discover": "发现",
+    "open_playlist": "打开播放列表",
+    "add": "添加",
+    "alias": "别名",
+    "aliases": "别名",
+    "genre_names": {
+        "country": "国家\/地区",
+        "experimental": "实验"
+    },
+    "remove": "移除",
+    "remove_alias": "移除别名"
 }

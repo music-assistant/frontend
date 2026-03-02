@@ -34,7 +34,6 @@
     "external_source_active": "Внешний источник активен: {0}",
     "goto_album": "Перейти к альбому {0}",
     "goto_artist": "Перейти к исполнителю {0}",
-    "discover": "Откройте",
     "items_selected": "{0} элемент(ов) выбрано",
     "items_total": "{0} элемент(ов) всего",
     "library": "Библиотека",
@@ -284,7 +283,6 @@
             "advanced": "Расширенные настройки",
             "generic": "Общие настройки",
             "announcements": "Конфигурация объявлений",
-            "airplay": "Специфичные настройки Airplay",
             "player_controls": "Управление плеером"
         },
         "tts_pre_announce": {

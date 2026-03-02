@@ -283,16 +283,9 @@ export const showContextMenuForMediaItem = async function (
     mediaItems[0].is_playable &&
     itemIsAvailable(mediaItems[0])
   ) {
-    // Play menu items first, then context items in "More options" submenu
-    menuItems = await getPlayMenuItems(mediaItems, parentItem);
-    if (contextMenuItems.length > 0) {
-      menuItems.push({
-        label: "more_options",
-        subItems: contextMenuItems,
-        icon: "mdi-dots-horizontal",
-        labelArgs: [],
-      });
-    }
+    // Play menu items first, then context items
+    menuItems = await getPlaybackContextMenuItems(mediaItems, parentItem);
+    menuItems.push(...contextMenuItems);
   } else {
     // No play items - just show context menu items directly
     menuItems = contextMenuItems;
@@ -317,14 +310,6 @@ const queueOptionIconMap = {
   [QueueOption.PLAY]: "mdi-play-circle-outline",
 };
 
-const queueOptionLabelMap = {
-  [QueueOption.NEXT]: "play_next",
-  [QueueOption.ADD]: "add_queue",
-  [QueueOption.REPLACE]: "play_replace",
-  [QueueOption.REPLACE_NEXT]: "play_replace_next",
-  [QueueOption.PLAY]: "play_now",
-};
-
 export const showPlayMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
@@ -337,105 +322,21 @@ export const showPlayMenuForMediaItem = async function (
     ? item
     : [item];
   if (mediaItems.length == 0) return;
-
-  eventbus.emit("contextmenu", {
-    items: await getPlayMenuItems(mediaItems, parentItem),
-    posX: posX,
-    posY: posY,
-    showPlayMenuHeader: true,
-  });
-};
-
-export const getPlayMenuItems = async function (
-  items: MediaItemTypeOrItemMapping[],
-  parentItem?: MediaItemType,
-) {
-  const playMenuItems: ContextMenuItem[] = [];
-  if (items.length == 0 || !itemIsAvailable(items[0])) {
-    return playMenuItems;
-  }
-
-  const playableItems = items.filter((x) => x.is_playable);
-  if (playableItems.length == 0) return playMenuItems;
+  const playableItems = mediaItems.filter((x) => x.is_playable);
   const firstItem = playableItems[0];
 
+  let playMenuItems: ContextMenuItem[] = [];
   const defaultEnqueueOption = (await api.getCoreConfigValue(
     "player_queues",
     `default_enqueue_option_${firstItem.media_type}`,
   )) as QueueOption;
-
-  if (!store.activePlayer) return playMenuItems;
-
-  // Default/configured enqueue option at the top
-  playMenuItems.push({
-    label: queueOptionLabelMap[defaultEnqueueOption],
-    action: () => {
-      api.playMedia(
-        playableItems.map((x) => x.uri),
-        defaultEnqueueOption,
-      );
-    },
-    icon: queueOptionIconMap[defaultEnqueueOption],
-    labelArgs: [],
-    disabled: !store.activePlayer,
-  });
-
-  // Play from here...
-  if (
-    playableItems.length == 1 &&
-    parentItem &&
-    parentItem.uri != firstItem.uri
-  ) {
-    // Play from here (playlist track)
-    if (parentItem.media_type == MediaType.PLAYLIST) {
-      playMenuItems.push({
-        label: "play_playlist_from",
-        action: () => {
-          api.playMedia(
-            parentItem.uri,
-            undefined,
-            false,
-            playableItems[0].item_id,
-          );
-        },
-        icon: "mdi-play-circle-outline",
-        labelArgs: [],
-        disabled: !store.activePlayer,
-      });
-    }
-    // Play from here (album track)
-    if (parentItem.media_type == MediaType.ALBUM) {
-      playMenuItems.push({
-        label: "play_album_from",
-        action: () => {
-          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
-        },
-        icon: "mdi-play-circle-outline",
-        labelArgs: [],
-        disabled: !store.activePlayer,
-      });
-    }
-    // Play from here (podcast episode)
-    if (parentItem.media_type == MediaType.PODCAST) {
-      playMenuItems.push({
-        label: "play_from_here",
-        action: () => {
-          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
-        },
-        icon: "mdi-play-circle-outline",
-        labelArgs: [],
-        disabled: !store.activePlayer,
-      });
-    }
-  }
-
   // Start Radio
   if (radioModeSupported(firstItem)) {
     playMenuItems.push({
       label: "play_radio",
       action: () => {
         api.playMedia(
-          items.map((x) => x.uri),
+          playableItems.map((x) => x.uri),
           QueueOption.REPLACE,
           true,
         );
@@ -445,8 +346,6 @@ export const getPlayMenuItems = async function (
       disabled: !store.activePlayer,
     });
   }
-
-  // add default enqueue options
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -454,104 +353,29 @@ export const getPlayMenuItems = async function (
     QueueOption.REPLACE,
     QueueOption.REPLACE_NEXT,
   ]) {
-    if (option == defaultEnqueueOption) continue;
     playMenuItems.push({
-      label: queueOptionLabelMap[option],
+      label: $t(`queue_option.${option}`),
       action: () => {
         api.playMedia(
-          items.map((x) => x.uri),
+          playableItems.map((x) => x.uri),
           option,
         );
       },
       icon: queueOptionIconMap[option],
       labelArgs: [],
       disabled: !store.activePlayer,
+      selected: option === defaultEnqueueOption,
     });
   }
-  // Multi-select mark as played/unplayed for podcast episodes
-  if (
-    items.length > 1 &&
-    items.every(
-      (item) =>
-        item.media_type === MediaType.PODCAST_EPISODE &&
-        "fully_played" in item &&
-        "resume_position_ms" in item,
-    )
-  ) {
-    const podcastEpisodes = items as PodcastEpisode[];
 
-    // Helper functions for clearer state detection
-    const hasProgress = (item: PodcastEpisode) =>
-      (item.resume_position_ms || 0) > 0;
-    const isFullyPlayed = (item: PodcastEpisode) => item.fully_played;
-    const isUnplayed = (item: PodcastEpisode) =>
-      !item.fully_played && !hasProgress(item);
+  if (playMenuItems.length == 0) playMenuItems = [];
 
-    const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
-    const allUnplayed = podcastEpisodes.every(isUnplayed);
-
-    // If all items are fully played, show "mark unplayed" option
-    if (allFullyPlayed) {
-      playMenuItems.push({
-        label: "mark_unplayed",
-        icon: "mdi-clock-fast",
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
-          );
-        },
-      });
-    }
-    // If all items are unplayed, show "mark played" option
-    else if (allUnplayed) {
-      playMenuItems.push({
-        label: "mark_played",
-        icon: "mdi-clock-fast",
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
-          );
-        },
-      });
-    }
-    // If mixed state, show both options
-    else {
-      playMenuItems.push({
-        label: "mark_played",
-        icon: "mdi-clock-fast",
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemPlayed(item, true);
-              item.fully_played = true;
-            }),
-          );
-        },
-      });
-
-      playMenuItems.push({
-        label: "mark_unplayed",
-        icon: "mdi-clock-fast",
-        action: async () => {
-          await Promise.all(
-            podcastEpisodes.map(async (item: PodcastEpisode) => {
-              await api.markItemUnPlayed(item);
-              item.fully_played = false;
-              item.resume_position_ms = 0;
-            }),
-          );
-        },
-      });
-    }
-  }
-  return playMenuItems;
+  eventbus.emit("contextmenu", {
+    items: playMenuItems,
+    posX: posX,
+    posY: posY,
+    showPlayMenuHeader: true,
+  });
 };
 
 export const getContextMenuItems = async function (
@@ -1029,6 +853,228 @@ export const getContextMenuItems = async function (
     });
   }
   return contextMenuItems;
+};
+
+/**
+  Generates playback-related context menu items based on the given media items and their parent.
+  This includes options like "Play now", "Enqueue", "Play radio", and "Play from here" (for playlists/albums).
+*/
+export const getPlaybackContextMenuItems = async function (
+  items: MediaItemTypeOrItemMapping[],
+  parentItem?: MediaItemType,
+) {
+  const playMenuItems: ContextMenuItem[] = [];
+  if (items.length == 0 || !itemIsAvailable(items[0])) {
+    return playMenuItems;
+  }
+
+  const playableItems = items.filter((x) => x.is_playable);
+  if (playableItems.length == 0) return playMenuItems;
+  const firstItem = playableItems[0];
+
+  const defaultEnqueueOption = (await api.getCoreConfigValue(
+    "player_queues",
+    `default_enqueue_option_${firstItem.media_type}`,
+  )) as QueueOption;
+
+  if (!store.activePlayer) return playMenuItems;
+
+  // Play from here...
+  if (
+    playableItems.length == 1 &&
+    parentItem &&
+    parentItem.uri != firstItem.uri
+  ) {
+    // Play from here (playlist track)
+    if (parentItem.media_type == MediaType.PLAYLIST) {
+      playMenuItems.push({
+        label: "play_playlist_from",
+        action: () => {
+          api.playMedia(
+            parentItem.uri,
+            undefined,
+            false,
+            playableItems[0].item_id,
+          );
+        },
+        icon: "mdi-play-circle-outline",
+        labelArgs: [],
+        disabled: !store.activePlayer,
+      });
+    }
+    // Play from here (album track)
+    if (parentItem.media_type == MediaType.ALBUM) {
+      playMenuItems.push({
+        label: "play_album_from",
+        action: () => {
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+        },
+        icon: "mdi-play-circle-outline",
+        labelArgs: [],
+        disabled: !store.activePlayer,
+      });
+    }
+    // Play from here (podcast episode)
+    if (parentItem.media_type == MediaType.PODCAST) {
+      playMenuItems.push({
+        label: "play_from_here",
+        action: () => {
+          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+        },
+        icon: "mdi-play-circle-outline",
+        labelArgs: [],
+        disabled: !store.activePlayer,
+      });
+    }
+  }
+  // Default/configured enqueue option at the top (if play from here is not applicable)
+  else if (
+    [QueueOption.PLAY, QueueOption.REPLACE].includes(defaultEnqueueOption)
+  ) {
+    playMenuItems.push({
+      label: "play_now",
+      action: () => {
+        api.playMedia(
+          playableItems.map((x) => x.uri),
+          defaultEnqueueOption,
+        );
+      },
+      icon: "mdi-play-circle-outline",
+      labelArgs: [],
+      disabled: !store.activePlayer,
+    });
+  }
+
+  // Start Radio
+  if (radioModeSupported(firstItem)) {
+    playMenuItems.push({
+      label: "play_radio",
+      action: () => {
+        api.playMedia(
+          items.map((x) => x.uri),
+          QueueOption.REPLACE,
+          true,
+        );
+      },
+      icon: "mdi-radio-tower",
+      labelArgs: [],
+      disabled: !store.activePlayer,
+    });
+  }
+
+  // "Enqueue..." submenu with all enqueue options
+  const enqueueSubItems: ContextMenuItem[] = [];
+  for (const option of [
+    QueueOption.PLAY,
+    QueueOption.NEXT,
+    QueueOption.ADD,
+    QueueOption.REPLACE,
+    QueueOption.REPLACE_NEXT,
+  ]) {
+    enqueueSubItems.push({
+      label: $t(`queue_option.${option}`),
+      action: () => {
+        api.playMedia(
+          items.map((x) => x.uri),
+          option,
+        );
+      },
+      icon: queueOptionIconMap[option],
+      labelArgs: [],
+      disabled: !store.activePlayer,
+      selected: option === defaultEnqueueOption,
+    });
+  }
+  playMenuItems.push({
+    label: "enqueue",
+    subItems: enqueueSubItems,
+    icon: "mdi-playlist-music",
+    labelArgs: [],
+  });
+  // Multi-select mark as played/unplayed for podcast episodes
+  if (
+    items.length > 1 &&
+    items.every(
+      (item) =>
+        item.media_type === MediaType.PODCAST_EPISODE &&
+        "fully_played" in item &&
+        "resume_position_ms" in item,
+    )
+  ) {
+    const podcastEpisodes = items as PodcastEpisode[];
+
+    // Helper functions for clearer state detection
+    const hasProgress = (item: PodcastEpisode) =>
+      (item.resume_position_ms || 0) > 0;
+    const isFullyPlayed = (item: PodcastEpisode) => item.fully_played;
+    const isUnplayed = (item: PodcastEpisode) =>
+      !item.fully_played && !hasProgress(item);
+
+    const allFullyPlayed = podcastEpisodes.every(isFullyPlayed);
+    const allUnplayed = podcastEpisodes.every(isUnplayed);
+
+    // If all items are fully played, show "mark unplayed" option
+    if (allFullyPlayed) {
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemUnPlayed(item);
+              item.fully_played = false;
+              item.resume_position_ms = 0;
+            }),
+          );
+        },
+      });
+    }
+    // If all items are unplayed, show "mark played" option
+    else if (allUnplayed) {
+      playMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemPlayed(item, true);
+              item.fully_played = true;
+            }),
+          );
+        },
+      });
+    }
+    // If mixed state, show both options
+    else {
+      playMenuItems.push({
+        label: "mark_played",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemPlayed(item, true);
+              item.fully_played = true;
+            }),
+          );
+        },
+      });
+
+      playMenuItems.push({
+        label: "mark_unplayed",
+        icon: "mdi-clock-fast",
+        action: async () => {
+          await Promise.all(
+            podcastEpisodes.map(async (item: PodcastEpisode) => {
+              await api.markItemUnPlayed(item);
+              item.fully_played = false;
+              item.resume_position_ms = 0;
+            }),
+          );
+        },
+      });
+    }
+  }
+  return playMenuItems;
 };
 
 const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {

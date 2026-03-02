@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -134,8 +135,10 @@ const form = useForm({
       } else {
         toast.error(t("auth.password_change_failed"));
       }
-    } catch (err: any) {
-      toast.error(err.message || t("auth.password_change_failed"));
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : t("auth.password_change_failed"),
+      );
     } finally {
       changing.value = false;
     }
@@ -150,17 +153,17 @@ const canChangePassword = computed(() => {
   return newPassword === confirmPassword && confirmPassword.length > 0;
 });
 
-function isInvalid(field: any) {
+function isInvalid(field: AnyFieldApi) {
   return field.state.meta.isTouched && !field.state.meta.isValid;
 }
 
-const handleNewPasswordInput = (e: Event, field: any) => {
+const handleNewPasswordInput = (e: Event, field: AnyFieldApi) => {
   const value = (e.target as HTMLInputElement).value;
   currentNewPassword.value = value;
   field.handleChange(value);
 };
 
-const handleConfirmPasswordInput = (e: Event, field: any) => {
+const handleConfirmPasswordInput = (e: Event, field: AnyFieldApi) => {
   const value = (e.target as HTMLInputElement).value;
   currentConfirmPassword.value = value;
   field.handleChange(value);

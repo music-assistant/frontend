@@ -1,9 +1,9 @@
 <!-- eslint-disable vue/no-template-shadow -->
-<template v-if="!showCheckboxes">
-  <span v-if="item.media_type == MediaType.FOLDER">
+<template>
+  <span v-if="item.media_type == MediaType.FOLDER" class="checkbox-label">
     <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
   </span>
-  <div class="checkbox-label">
+  <span v-else :class="{ 'is-playing': isPlaying }" class="checkbox-label">
     {{ displayName }}
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
     <span
@@ -11,20 +11,26 @@
     >
       ({{ new Date(item.metadata.release_date).getFullYear() }})
     </span>
-  </div>
+  </span>
   <!-- explicit icon -->
-  <v-tooltip v-if="item && item.metadata" location="bottom">
-    <template #activator="{ props }">
-      <v-icon
-        v-if="parseBool(item.metadata.explicit || false)"
-        :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-        v-bind="props"
-        icon="mdi-alpha-e-box"
-        width="35"
-      />
-    </template>
-    <span>{{ $t("tooltip.explicit") }}</span>
-  </v-tooltip>
+  <template
+    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+  >
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <v-icon
+            :class="{ 'explicit-icon-margin-left': showCheckboxes }"
+            icon="mdi-alpha-e-box"
+            width="35"
+          />
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>{{ $t("tooltip.explicit") }}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -36,19 +42,28 @@ import {
 } from "@/plugins/api/interfaces";
 import { useI18n } from "vue-i18n";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 // properties
 export interface Props {
   displayName: string;
   item: MediaItemType;
   showCheckboxes: boolean;
+  isPlaying: boolean;
 }
 
 // global refs
 const { t } = useI18n();
 
-const compProps = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   displayName: "",
   showCheckboxes: false,
+  isPlaying: false,
 });
 </script>
 
@@ -60,6 +75,6 @@ const compProps = withDefaults(defineProps<Props>(), {
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.
    This adds a bit of spacing between the title and the explicit icon. */
 .explicit-icon-margin-left {
-  margin-left: 0.3em;
+  margin-left: 0.1em;
 }
 </style>

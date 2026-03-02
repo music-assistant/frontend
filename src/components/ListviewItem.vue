@@ -8,24 +8,25 @@
     @menu.stop="onMenu"
   >
     <template #prepend>
-      <div v-if="showCheckboxes" class="checkbox">
-        <v-checkbox
+      <div v-if="showCheckboxes" class="flex items-center space-x-2 checkbox">
+        <Checkbox
+          :id="`listviewitem-checkbox-${item.item_id}`"
           :model-value="isSelected"
           @click.stop
           @update:model-value="
-            (x: boolean | null) => {
-              if (x != null) emit('select', item, x);
+            (x: boolean | 'indeterminate') => {
+              if (x != 'indeterminate') emit('select', item, x);
             }
           "
-        >
-          <template #label>
-            <ListviewitemTitle
-              :display-name="displayName"
-              :item="item"
-              :show-checkboxes="showCheckboxes"
-            />
-          </template>
-        </v-checkbox>
+        />
+        <label :for="`listviewitem-checkbox-${item.item_id}`">
+          <ListviewItemTitle
+            :display-name="displayName"
+            :item="item"
+            :show-checkboxes="showCheckboxes"
+            :is-playing="isPlaying"
+          />
+        </label>
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
@@ -34,10 +35,11 @@
 
     <!-- title -->
     <template v-if="!showCheckboxes" #title>
-      <ListviewitemTitle
+      <ListviewItemTitle
         :display-name="displayName"
         :item="item"
         :show-checkboxes="showCheckboxes"
+        :is-playing="isPlaying"
       />
     </template>
 
@@ -77,6 +79,10 @@
           >
             <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
             {{ item.position }}
+          </v-item>
+          <!-- track duration -->
+          <v-item v-if="showDuration && 'duration' in item && item.duration">
+            <span> • [{{ formatDuration(item.duration) }}]</span>
           </v-item>
         </v-item-group>
       </div>
@@ -132,7 +138,7 @@
       />
       <!-- hi res icon -->
       <v-img
-        v-if="HiResDetails"
+        v-if="HiResDetails && getBreakpointValue('bp3')"
         :src="iconHiRes"
         width="30"
         :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
@@ -178,27 +184,9 @@
         <FavouriteButton :item="item" />
       </div>
 
-      <!-- track duration -->
-      <div
-        v-if="
-          showDuration &&
-          'duration' in item &&
-          item.duration &&
-          getBreakpointValue('bp0')
-        "
-      >
-        <div>
-          <span
-            class="text-caption"
-            style="padding-right: 10px; padding-left: 10px"
-            >{{ formatDuration(item.duration) }}</span
-          >
-        </div>
-      </div>
-
       <!-- play button -->
       <v-btn
-        v-if="item.is_playable && (showPlayButton ?? !$vuetify.display.mobile)"
+        v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
         icon
         variant="text"
         size="small"
@@ -218,19 +206,16 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
   getArtistsString,
-  getBrowseFolderName,
   getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
-  parseBool,
   truncateString,
 } from "@/helpers/utils";
 import {
   AlbumType,
   ContentType,
   MediaType,
-  type BrowseFolder,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -241,7 +226,8 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
-import ListviewitemTitle from "./ListviewItemTitle.vue";
+import ListviewItemTitle from "./ListviewItemTitle.vue";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // properties
 export interface Props {
@@ -362,6 +348,10 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.checkbox {
+  margin-bottom: 0.1em;
+}
+
 .unavailable {
   opacity: 0.3;
 }

@@ -99,7 +99,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
           @change="
             (e: Event) => {
               placeholder = placeholder.set({
-                month: Number((e?.target as any)?.value),
+                month: Number((e?.target as HTMLSelectElement)?.value),
               });
             }
           "
@@ -130,7 +130,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
           @change="
             (e: Event) => {
               placeholder = placeholder.set({
-                year: Number((e?.target as any)?.value),
+                year: Number((e?.target as HTMLSelectElement)?.value),
               });
             }
           "

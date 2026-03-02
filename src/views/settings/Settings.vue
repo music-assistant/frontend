@@ -211,7 +211,7 @@ import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRouter, type RouteLocationRaw } from "vue-router";
 
 // global refs
 const router = useRouter();
@@ -478,7 +478,7 @@ const breadcrumbItems = computed(() => {
     title: string;
     disabled: boolean;
     href?: string;
-    to?: any;
+    to?: RouteLocationRaw;
   }> = [
     {
       title: t("settings.settings"),
@@ -670,7 +670,10 @@ const documentationUrl = computed(() => {
 .setting-card {
   cursor: pointer;
   position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
@@ -727,7 +730,11 @@ const documentationUrl = computed(() => {
 
 .setting-chevron {
   opacity: 0.4;
-  transition: all 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;

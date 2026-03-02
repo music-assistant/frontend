@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 import {
   formatAliasName,
   formatDuration,
@@ -13,6 +12,7 @@ import {
   sleep,
   truncateString,
 } from "@/helpers/utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -100,8 +100,10 @@ describe("truncateString", () => {
   });
 
   it("handles null/undefined input", () => {
-    expect(truncateString(null as any, 5)).toBe("");
-    expect(truncateString(undefined as any, 5)).toBe("");
+    // @ts-expect-error testing invalid input
+    expect(truncateString(null, 5)).toBe("");
+    // @ts-expect-error testing invalid input
+    expect(truncateString(undefined, 5)).toBe("");
   });
 });
 
@@ -202,8 +204,10 @@ describe("formatAliasName", () => {
 
   it("handles empty and falsy values", () => {
     expect(formatAliasName("")).toBe("");
-    expect(formatAliasName(null as any)).toBe("");
-    expect(formatAliasName(undefined as any)).toBe("");
+    // @ts-expect-error Testing invalid input: null is not a string
+    expect(formatAliasName(null)).toBe("");
+    // @ts-expect-error Testing invalid input: undefined is not a string
+    expect(formatAliasName(undefined)).toBe("");
   });
 });
 

@@ -36,7 +36,6 @@
     "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",
     "goto_artist": "Go to artist {0}",
-    "discover": "Discover",
     "items_selected": "{0} item(s) selected",
     "items_total": "{0} total item(s)",
     "library": "Library",
@@ -286,9 +285,7 @@
             "advanced": "Advanced settings",
             "generic": "Generic settings",
             "announcements": "Announcements configuration",
-            "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
-            "presets": "Presets",
             "sync_options": "Sync\/import options",
             "builtin_playlists": "Builtin Playlist Settings",
             "web_player": "Web Player"
@@ -729,8 +726,7 @@
         "copy_uri": "Copy URI to clipboard",
         "select_all": "Select all items",
         "filter_provider": "Filter by music provider",
-        "in_provider_library": "This item is in the provider's library",
-        "filter_genre": "Filter by genre"
+        "in_provider_library": "This item is in the provider's library"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -959,6 +955,7 @@
         "role": "Role",
         "admin_role": "Administrator",
         "user_role": "User",
+        "guest_role": "Guest",
         "enabled": "Enabled",
         "disabled": "Disabled",
         "enable_user": "Enable user",

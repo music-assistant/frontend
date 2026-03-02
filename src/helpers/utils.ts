@@ -1,3 +1,4 @@
+import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
@@ -7,28 +8,26 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PlaybackState,
   Player,
   PlayerConfig,
-  PlaybackState,
   PlayerType,
   ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { api } from "@/plugins/api";
 import { marked } from "marked";
 
-import Color from "color";
-//@ts-ignore
-import ColorThief from "colorthief";
-import { store } from "@/plugins/store";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { store } from "@/plugins/store";
+import { webPlayer } from "@/plugins/web_player";
+import Color from "color";
+import { getPaletteSync } from "colorthief";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
 
 export const openLinkInNewTab = function (url: string) {
@@ -46,7 +45,6 @@ export const openLinkInNewTab = function (url: string) {
   window.open(url, "_blank");
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean | undefined | null) => {
   if (val == undefined || val == null) return false;
   if (!val) return false;
@@ -210,7 +208,10 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
-export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
+export const getBrowseFolderName = function (
+  browseItem: BrowseFolder,
+  t: (key: string) => string,
+) {
   let browseTitle = "";
   if (browseItem?.name && browseItem?.translation_key) {
     browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
@@ -531,11 +532,9 @@ export function findDarkColor(colors: RGBColor[]): string {
 }
 
 export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
-  const colorThief = new ColorThief();
-  const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
-  const colorHexPalette: string[] = colorNumberPalette.map((color) =>
-    rgbToHex(color),
-  );
+  const palette = getPaletteSync(img, { colorCount: 5 }) ?? [];
+  const colorNumberPalette: RGBColor[] = palette.map((c) => c.array());
+  const colorHexPalette: string[] = palette.map((c) => c.hex());
 
   return {
     0: colorHexPalette[0],
@@ -548,13 +547,15 @@ export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
   };
 }
 
-export function getValueFromSources(isAvailabe: any, sources: string | any[]) {
-  if (isAvailabe) {
-    return isAvailabe;
+export function getValueFromSources<T>(
+  isAvailable: T | undefined,
+  sources: [boolean, T, T?][],
+): T | undefined {
+  if (isAvailable) {
+    return isAvailable;
   }
 
-  for (const element of sources) {
-    const source = element;
+  for (const source of sources) {
     const expression = source[0];
     const valueIfTrue = source[1];
     const valueIfFalse = source[2];
@@ -609,14 +610,14 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp5",
       condition: "lt",
     })
   ) {
     return 3;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp5",
       condition: "gt",
     }) &&
     getBreakpointValue({
@@ -624,7 +625,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 4;
+    return 3;
   } else if (
     getBreakpointValue({
       breakpoint: "bp6",
@@ -635,7 +636,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 5;
+    return 4;
   } else if (
     getBreakpointValue({
       breakpoint: "bp7",
@@ -646,7 +647,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 6;
+    return 5;
   } else if (
     getBreakpointValue({
       breakpoint: "bp8",
@@ -657,7 +658,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 7;
+    return 6;
   } else if (
     getBreakpointValue({
       breakpoint: "bp9",
@@ -673,9 +674,20 @@ export const panelViewItemResponsive = function (displaySize: number) {
     getBreakpointValue({
       breakpoint: "bp10",
       condition: "gt",
+    }) &&
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "lt",
     })
   ) {
     return 9;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "gt",
+    })
+  ) {
+    return 10;
   } else {
     return 0;
   }

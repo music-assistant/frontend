@@ -1,13 +1,68 @@
 import { watch } from "vue";
 import { createRouter, createWebHashHistory } from "vue-router";
-import { toast } from "vue-sonner";
-import { api, ConnectionState } from "./api";
+import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
-import { i18n } from "./i18n";
 import { store } from "./store";
 
 const routes = [
-  // All routes go through default layout - authentication is handled by server redirect
+  // Guest view uses minimal layout without navigation/player controls
+  // Guest authentication is handled by Login.vue via the ?join= query parameter
+  // which exchanges the short join code for a JWT before navigating here
+  {
+    path: "/guest",
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "guest",
+        component: () =>
+          import(
+            /* webpackChunkName: "guest" */ "@/views/PartyModeGuestView.vue"
+          ),
+      },
+    ],
+  },
+  // Party mode display uses minimal layout (fullscreen for wall-mounted tablets)
+  // Placed at top level so it renders without navigation/player controls
+  {
+    path: "/party",
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "party",
+        component: () =>
+          import(
+            /* webpackChunkName: "party" */ "@/views/PartyModeDashboardView.vue"
+          ),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        beforeEnter: async (_to: any, _from: any, next: any) => {
+          // Wait for API initialization before checking plugin status
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          // Only allow access if party mode plugin is enabled
+          if (!store.enabledPlugins.has("party_mode")) {
+            next({ name: "discover" });
+            return;
+          }
+          next();
+        },
+      },
+    ],
+  },
+  // All other routes go through default layout with navigation/player controls
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
@@ -41,7 +96,9 @@ const routes = [
         name: "browse",
         component: () =>
           import(/* webpackChunkName: "browse" */ "@/views/BrowseView.vue"),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        props: (route: {
+          query: Record<string, string | (string | null)[] | null | undefined>;
+        }) => ({ ...route.query }),
       },
       {
         path: "/artists",
@@ -108,7 +165,13 @@ const routes = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: { params: any; query: any }) => ({
+            props: (route: {
+              params: Record<string, string | string[]>;
+              query: Record<
+                string,
+                string | (string | null)[] | null | undefined
+              >;
+            }) => ({
               ...route.params,
               ...route.query,
             }),
@@ -420,7 +483,7 @@ const router = createRouter({
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
 // on the server (likely due to a new deployment with different hashes).
-// In this case, we show a toast to let the user know that a new version of the frontend is available.
+// In this case, we reload the page to get the fresh assets.
 router.onError((error, to) => {
   // Check if this is a chunk loading error
   const isChunkLoadError =
@@ -430,53 +493,45 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
-    console.warn("Chunk loading failed, likely due to app update.", error);
-    const { t } = i18n.global;
-    const targetHref =
+    const reloadKey = "chunkReloadAttempted";
+    if (sessionStorage.getItem(reloadKey)) {
+      // Already tried reloading once this session — avoid an infinite loop.
+      // Clear the flag so a future manual navigation can try again.
+      sessionStorage.removeItem(reloadKey);
+      console.error(
+        "Chunk loading failed again after reload. Server may be unavailable.",
+        error,
+      );
+      return;
+    }
+    sessionStorage.setItem(reloadKey, "1");
+    console.warn(
+      "Chunk loading failed, likely due to app update. Reloading page...",
+      error,
+    );
+    // Use location.href to do a full reload to the intended route
+    // This ensures we get fresh HTML and assets from the server
+    window.location.href =
       window.location.origin + window.location.pathname + "#" + to.fullPath;
-
-    toast.info(t("chunk_load_error"), {
-      duration: 5000,
-      action: {
-        label: t("refresh"),
-        onClick: () => {
-          window.location.href = targetHref;
-        },
-      },
-      actionButtonStyle: {
-        background: "transparent",
-        border: "1px solid currentColor",
-        color: "inherit",
-      },
-    });
   }
 });
 
-// Navigation guard for admin-only routes
-router.beforeEach(async (to, _from, next) => {
+// Navigation guard for admin-only routes and guest mode restrictions
+router.beforeEach((to, _from, next) => {
+  const currentUser = store.currentUser;
+
+  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
+  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
+    console.debug("Party mode guest: preventing navigation to", to.path);
+    next({ name: "guest" });
+    return;
+  }
+
   // Check admin-only routes - check all matched routes for requiresAdmin meta
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
   if (requiresAdmin) {
-    // Wait for API to be initialized before checking admin access
-    // This ensures store.currentUser is set before we check permissions
-    if (api.state.value !== ConnectionState.INITIALIZED) {
-      // Wait for initialization to complete
-      await new Promise<void>((resolve) => {
-        const unwatch = watch(
-          () => api.state.value,
-          (newState) => {
-            if (newState === ConnectionState.INITIALIZED) {
-              unwatch();
-              resolve();
-            }
-          },
-          { immediate: true },
-        );
-      });
-    }
-
-    const currentUser = store.currentUser;
     console.debug(
       "Admin route check:",
       to.path,

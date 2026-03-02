@@ -53,10 +53,9 @@ export class SignalingClient {
   private ws: WebSocket | null = null;
   private config: Required<SignalingConfig>;
   private _state: SignalingState = SignalingState.DISCONNECTED;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private eventHandlers: Map<
     keyof SignalingEventHandler,
-    Set<(...args: any[]) => void>
+    Set<(...args: unknown[]) => void>
   > = new Map();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalClose = false;
@@ -228,7 +227,7 @@ export class SignalingClient {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
-    this.eventHandlers.get(event)!.add(handler);
+    this.eventHandlers.get(event)!.add(handler as (...args: unknown[]) => void);
   }
 
   off<K extends keyof SignalingEventHandler>(
@@ -237,7 +236,7 @@ export class SignalingClient {
   ): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
-      handlers.delete(handler);
+      handlers.delete(handler as (...args: unknown[]) => void);
     }
   }
 

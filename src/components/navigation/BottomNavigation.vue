@@ -20,7 +20,6 @@
       :aria-label="$t('discover')"
       tabindex="0"
       variant="text"
-      :active="isActive('discover')"
       active-color="fg"
       @click="handleDiscoverClick"
     >
@@ -32,85 +31,41 @@
       >
     </v-btn>
 
-    <v-btn
-      :aria-label="$t('search')"
-      tabindex="0"
-      variant="text"
-      :active="isActive('search')"
-      active-color="fg"
-      @click="handleSearchClick"
-    >
-      <Search class="w-5 h-5" :stroke-width="isActive('search') ? 2.5 : 2" />
-      <span
-        class="menuButton"
-        :class="{ 'menuButton--active': isActive('search') }"
-        >{{ $t("search") }}</span
-      >
-    </v-btn>
-
-    <ActivePlayerPopover
-      auto-show
-      align="end"
-      child-element-id="active-player-popover"
-    />
-
-    <v-btn
-      id="active-player-popover"
-      :aria-label="$t('players')"
-      tabindex="0"
-      variant="text"
-      @click="handlePlayersClick"
-    >
-      <Speaker class="w-5 h-5" />
-      <span class="menuButton">{{ $t("players") }}</span>
-    </v-btn>
+    <v-menu>
+      <template #activator="{ props }">
+        <v-btn
+          v-bind="props"
+          aria-haspopup="true"
+          :aria-expanded="isLibraryOpen.toString()"
+          aria-label="Open library menu"
+          base-color="grey"
+        >
+          <LibraryIcon class="w-6 h-6" />
+          <span class="menuButton">{{ $t("library") }}</span>
+        </v-btn>
+      </template>
+    </ActivePlayerPopover>
   </v-bottom-navigation>
 </template>
 
 <script setup lang="ts">
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Home, Menu, Search, Speaker } from "lucide-vue-next";
-import { useRoute, useRouter } from "vue-router";
+import { Home, Menu, Speaker } from "lucide-vue-next";
+import { useRouter } from "vue-router";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
 const router = useRouter();
-const route = useRoute();
-
-const isActive = (name: string) => route.name === name;
 
 const handleMenuClick = () => {
-  closePlayersMenu();
   eventbus.emit("mobile-sidebar-open");
 };
 
-const handleDiscoverClick = () => {
-  closePlayersMenu();
-  router.push({ name: "discover" });
+const isLibraryOpen = ref(false);
+
+const handleHAButtonClick = () => {
+  toggleHAMenu();
 };
-
-const handleSearchClick = () => {
-  closePlayersMenu();
-
-  if (isActive("search")) {
-    const wrapper = document.getElementById("searchInput");
-    if (wrapper) {
-      const input = wrapper.querySelector("input") || wrapper;
-      (input as HTMLInputElement).focus();
-      (input as HTMLInputElement).select();
-    }
-  } else {
-    router.push({ name: "search" });
-  }
-};
-
-const handlePlayersClick = () => {
-  store.showPlayersMenu = !store.showPlayersMenu;
-};
-
-function closePlayersMenu() {
-  store.showPlayersMenu = false;
-}
 </script>
 
 <style>

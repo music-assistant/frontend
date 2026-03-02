@@ -22,7 +22,7 @@
           >
             <v-img
               class="media-thumb"
-              size="45"
+              size="44"
               :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
@@ -44,7 +44,10 @@
       <!-- playername -->
       <template #title>
         <!-- special builtin player (web player or companion native player) -->
-        <div v-if="isBuiltinPlayer(player)" style="margin-bottom: 3px">
+        <div
+          v-if="isBuiltinPlayer(player)"
+          style="font-size: 0.88rem; line-height: 1.3"
+        >
           <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
           <v-chip density="compact" size="small" class="ml-2" outlined>
@@ -60,7 +63,7 @@
           </v-chip>
         </div>
         <!-- regular player -->
-        <div v-else>
+        <div v-else style="font-size: 0.88rem; line-height: 1.3">
           {{ getPlayerName(player, 27) }}
         </div>
       </template>
@@ -69,7 +72,12 @@
       <template #subtitle>
         <div
           v-if="player.powered != false"
-          style="font-size: 0.85rem; font-weight: 500; white-space: nowrap"
+          style="
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            line-height: 1.3;
+          "
         >
           <div v-if="player.current_media?.title">
             {{ player.current_media.title }}
@@ -81,7 +89,7 @@
       <template #default>
         <div
           class="v-list-item-subtitle"
-          style="font-size: 0.85rem; white-space: nowrap"
+          style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
         >
           <!-- player powered off -->
           <div v-if="player.powered == false">
@@ -113,36 +121,24 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
-        <!-- play/pause button -->
+        <!-- power button -->
         <Button
-          v-if="canPlayPause"
+          v-if="
+            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+          "
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
-          :disabled="
-            api.queues[player.player_id]?.extra_attributes
-              ?.play_action_in_progress === true
-          "
           @click.stop="
-            api.playerCommandPlayPause(player.player_id);
+            api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
-          <v-progress-circular
-            v-if="
-              api.queues[player.player_id]?.extra_attributes
-                ?.play_action_in_progress === true
-            "
-            indeterminate
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
-            :width="2"
-          />
-          <component
-            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
-            v-else
+          <Power
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
+
         <!-- group members button -->
         <Button
           v-if="
@@ -172,20 +168,33 @@
           </v-badge>
         </Button>
 
-        <!-- power button -->
+        <!-- play/pause button -->
         <Button
-          v-if="
-            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
-          "
+          v-if="canPlayPause"
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :disabled="
+            api.queues[player.player_id]?.extra_attributes
+              ?.play_action_in_progress === true
+          "
           @click.stop="
-            api.playerCommandPowerToggle(player.player_id);
+            api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
-          <Power
+          <v-progress-circular
+            v-if="
+              api.queues[player.player_id]?.extra_attributes
+                ?.play_action_in_progress === true
+            "
+            indeterminate
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            :width="2"
+          />
+          <component
+            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
+            v-else
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
@@ -337,14 +346,25 @@ watch(
   width: 100%;
   margin: 0px !important;
   padding: 0px !important;
-  min-height: 72px;
+  min-height: 58px;
 }
 
 .panel-item-details :deep(.v-list-item__content) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 60px;
+  min-height: 50px;
+  gap: 0px;
+}
+
+.panel-item-details :deep(.v-list-item-title) {
+  padding: 0;
+  margin: 0;
+}
+
+.panel-item-details :deep(.v-list-item-subtitle) {
+  padding: 0;
+  margin: 0;
 }
 
 .panel-item-details :deep(.v-list-item__spacer) {
@@ -378,15 +398,15 @@ watch(
 }
 
 .media-thumb {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .icon-thumb {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
@@ -395,15 +415,15 @@ watch(
 }
 
 .media-thumb {
-  width: 45px;
-  height: 45px;
+  width: 44px;
+  height: 44px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 .icon-thumb {
-  width: 45px;
-  height: 45px;
-  margin-top: 5px;
+  width: 44px;
+  height: 44px;
+  margin-top: 4px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: inline-table;
@@ -415,16 +435,16 @@ watch(
   border-color: rgba(var(--v-theme-on-surface), 0.12);
   padding-left: 8px;
   padding-right: 8px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   background-color: rgba(var(--v-theme-primary), 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
   margin-left: 0px;
   margin-right: 0px;
-  margin-top: 5px;
-  margin-bottom: 8px;
+  margin-top: 4px;
+  margin-bottom: 4px;
   height: 100%;
   width: auto;
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
 /// <reference types="vite/client" />
 
@@ -12,7 +11,7 @@ declare module "virtual:pwa-register/vue" {
     onRegistered?: (
       registration: ServiceWorkerRegistration | undefined,
     ) => void;
-    onRegisterError?: (error: any) => void;
+    onRegisterError?: (error: unknown) => void;
   }
 
   export function useRegisterSW(options?: RegisterSWOptions): {

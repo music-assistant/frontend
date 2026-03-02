@@ -47,6 +47,7 @@
             size="x-small"
             variant="tonal"
             class="protocol-chip"
+            :class="{ 'protocol-chip--unavailable': !protocol.available }"
           >
             <template #prepend>
               <ProviderIcon
@@ -148,7 +149,9 @@ const handleMenu = (event: Event) => {
 
 <style scoped>
 .player-card {
-  transition: all 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   cursor: pointer;
 }
 
@@ -261,6 +264,10 @@ const handleMenu = (event: Event) => {
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.3px;
+}
+
+.protocol-chip--unavailable {
+  opacity: 0.4;
 }
 
 .status-icons {

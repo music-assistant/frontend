@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { markRaw, type Component } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 const RouterLinkComponent = markRaw(RouterLink);
 
@@ -18,6 +18,7 @@ interface NavItem {
   url: string;
   icon?: Component;
   disabled?: boolean;
+  openInNewTab?: boolean;
 }
 
 const props = defineProps<{
@@ -25,12 +26,17 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
+const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
 
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
 
-const handleClick = () => {
+const handleClick = (item: NavItem, event: Event) => {
+  if (item.openInNewTab) {
+    event.preventDefault();
+    window.open(router.resolve(item.url).href, "_blank");
+  }
   if (isMobile.value) {
     setOpenMobile(false);
   }
@@ -39,12 +45,16 @@ const handleClick = () => {
 
 <template>
   <SidebarGroup>
-    <SidebarGroupContent class="flex flex-col gap-2">
+    <SidebarGroupContent class="flex flex-col gap-0.5">
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
           <SidebarMenuButton
-            :as="item.disabled ? 'button' : RouterLinkComponent"
-            v-bind="item.disabled ? {} : { to: item.url }"
+            :as="
+              item.disabled || item.openInNewTab
+                ? 'button'
+                : RouterLinkComponent
+            "
+            v-bind="item.disabled || item.openInNewTab ? {} : { to: item.url }"
             :is-active="isActive(item.url)"
             :tooltip="item.title"
             :disabled="item.disabled"
@@ -54,7 +64,7 @@ const handleClick = () => {
                 : 'no-underline font-medium text-sm',
               item.disabled ? 'opacity-50 cursor-not-allowed' : '',
             ]"
-            @click="handleClick"
+            @click="(e: Event) => handleClick(item, e)"
           >
             <component
               :is="item.icon"

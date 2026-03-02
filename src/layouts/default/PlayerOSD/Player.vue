@@ -5,7 +5,7 @@
     <div class="mediacontrols">
       <div class="mediacontrols-left">
         <PlayerTrackDetails
-          :show-quality-details-btn="getBreakpointValue('bp8') ? true : false"
+          :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
@@ -75,21 +75,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player mobile extended control buttons -->
-          <PlayerExtendedControls
-            :queue="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :player="{
-              isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :volume="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-          />
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"

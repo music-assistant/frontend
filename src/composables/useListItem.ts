@@ -26,7 +26,7 @@ export interface ListItemProps {
   lines?: "one" | "two" | "three" | false;
   subtitle?: string;
   title?: string;
-  value?: any;
+  value?: string | number | boolean | object;
   color?: string;
   rounded?: boolean | string | number;
   tag?: string;
@@ -47,7 +47,7 @@ export interface ListItemProps {
 export interface ListItemEmits {
   (e: "click", event: Event): void;
   (e: "menu", event: Event): void;
-  (e: "input", value: any): void;
+  (e: "input", value: string | number | boolean | object): void;
 }
 
 export const useListItem = (props: ListItemProps) => {

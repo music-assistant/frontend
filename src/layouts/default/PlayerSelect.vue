@@ -1,26 +1,18 @@
 <template>
-  <!-- Overlay scrim (used when panel overlays content instead of being inline) -->
+  <!-- Overlay scrim -->
   <Transition name="player-scrim">
     <div
-      v-if="!useInlinePanel && store.showPlayersMenu"
+      v-if="store.showPlayersMenu"
       class="player-panel-scrim"
       @click="store.showPlayersMenu = false"
     ></div>
   </Transition>
 
-  <!-- Inline spacer: only on wide screens, transitions width to push main content -->
-  <div
-    v-if="useInlinePanel"
-    class="player-panel-spacer"
-    :class="{ 'player-panel-spacer--open': store.showPlayersMenu }"
-  ></div>
-
   <!-- Panel: fixed position, slides in via transform -->
   <div
-    class="player-panel"
+    class="player-panel player-panel--overlay"
     :class="{
       'player-panel--open': store.showPlayersMenu,
-      'player-panel--overlay': !useInlinePanel,
     }"
   >
     <div class="player-panel-inner">
@@ -82,7 +74,7 @@
                   v-for="player in filteredPlayers"
                   :id="player.player_id"
                   :key="player.player_id"
-                  style="margin: 5px 0px"
+                  style="margin: 8px 0px"
                   :player="player"
                   :show-volume-control="true"
                   :show-menu-button="true"
@@ -118,18 +110,11 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Player, PlayerFeature } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-
-// Wide screens (>=1100px): inline sidebar that pushes content.
-// Narrower screens & mobile: overlay panel with scrim.
-const useInlinePanel = computed(
-  () => !store.mobileLayout && getBreakpointValue("bp7"),
-);
 
 const showSubPlayers = ref(false);
 const recentlySelectedPlayerIds = ref<string[]>([]);
@@ -318,22 +303,7 @@ const selectDefaultPlayer = function () {
 
 <style scoped>
 /*
- * Desktop spacer: transparent div in the flex layout.
- * Smoothly transitions width to push main content, just like AppSidebar.
- */
-.player-panel-spacer {
-  width: 0;
-  flex-shrink: 0;
-  transition: width 0.2s ease-linear;
-}
-
-.player-panel-spacer--open {
-  width: 400px;
-}
-
-/*
  * Panel: fixed position, slides via GPU-accelerated transform.
- * Content is never clipped — the spacer handles the layout shift separately.
  */
 .player-panel {
   position: fixed;
@@ -356,19 +326,24 @@ const selectDefaultPlayer = function () {
   transform: translateX(0);
 }
 
-/*
- * Overlay mode: narrower screens & mobile. Higher z-index, covers content.
- * On mobile (mobileLayout) it's 85vw; on mid-width desktops it stays 400px.
- */
+/* Overlay: higher z-index, rounded edges, shadow */
 .player-panel--overlay {
   z-index: 99999;
+  top: 0px;
+  bottom: 0px;
   border-left: none;
+  border-radius: 6px 0 0 6px;
+}
+
+.player-panel--overlay.player-panel--open {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 769px) {
   .player-panel--overlay {
     width: 90vw;
-    height: calc(100% - 60px);
+    max-width: 400px;
+    bottom: 60px;
   }
 }
 
@@ -378,14 +353,32 @@ const selectDefaultPlayer = function () {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.player-panel-inner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--v-theme-surface)) 80%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 0 0 6px;
 }
 
 /* Mobile scrim/overlay */
 .player-panel-scrim {
   position: fixed;
   inset: 0;
-  z-index: 1100;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .player-scrim-enter-active,

@@ -48,6 +48,7 @@ import {
   MediaItemType,
   ContentType,
   Artist,
+  StreamDetails,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
@@ -55,7 +56,7 @@ interface Props {
   mediaItem?: MediaItemType;
   position?: number;
   duration?: number;
-  streamDetails?: any;
+  streamDetails?: StreamDetails;
   textColor?: string;
   debugMode?: boolean;
   lyrics?: string | null;
@@ -602,7 +603,12 @@ onMounted(() => {
   padding: 10px 4px;
   font-size: 1.1em;
   opacity: 0.5;
-  transition: all 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    font-size 0.3s ease,
+    filter 0.3s ease,
+    text-shadow 0.3s ease,
+    color 0.3s ease;
   margin: 8px 0;
   filter: blur(1px); /* Blur effect for inactive lyrics */
   text-shadow: 0 0 1px var(--text-color);

@@ -61,6 +61,34 @@ html {
   /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
+/* Auto-hide scrollbars - only visible on hover */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5);
+}
+
 a {
   cursor: pointer;
 }
@@ -206,13 +234,6 @@ html {
 .is-playing {
   color: rgb(var(--v-theme-primary));
   font-weight: 800;
-}
-
-.checkbox {
-  position: relative;
-  height: 1em;
-  margin-top: 1.4em;
-  align-content: center;
 }
 
 /* iOS Safari 15 scroll momentum */

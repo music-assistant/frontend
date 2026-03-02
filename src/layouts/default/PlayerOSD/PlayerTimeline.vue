@@ -86,18 +86,36 @@ const isDragging = ref(false);
 const curTimeValue = ref(0);
 const tempTime = ref(0);
 // ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
+// rAF drives smooth 60fps slider movement; a 1s interval keeps text
+// labels up-to-date when the tab is backgrounded (rAF pauses).
 const nowTick = ref(0);
-let tickTimer: ReturnType<typeof setInterval> | null = null;
+let rafId: number | null = null;
+let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
-const startTick = (interval = 500) => {
-  if (!tickTimer)
-    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
+const startTick = () => {
+  if (rafId === null) {
+    const tick = () => {
+      const now = Date.now();
+      if (now - nowTick.value >= 64) {
+        nowTick.value = now;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+  if (fallbackTimer === null) {
+    fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
+  }
 };
 
 const stopTick = () => {
-  if (tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+  if (fallbackTimer !== null) {
+    clearInterval(fallbackTimer);
+    fallbackTimer = null;
   }
 };
 

@@ -680,8 +680,11 @@ const redirectSearch = function () {
   router.push({ name: "search" });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = async function ({ done }: { done: any }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (allItemsReceived.value) {
     done("empty");
     return;
@@ -1373,17 +1376,20 @@ onMounted(async () => {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
-          pagedItems.value[idx] = evt.data;
+          pagedItems.value[idx] = evt.data as MediaItemType;
         }
       } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
         // update item
         const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
         if (idx >= 0) {
+          const playData = evt.data as Record<string, unknown>;
           if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = evt.data["fully_played"];
+            pagedItems.value[idx].fully_played = playData[
+              "fully_played"
+            ] as boolean;
           if ("resume_position_ms" in pagedItems.value[idx])
             pagedItems.value[idx].resume_position_ms =
-              evt.data["seconds_played"] * 1000;
+              (playData["seconds_played"] as number) * 1000;
         }
       }
     },
@@ -1635,6 +1641,12 @@ const selectAll = async function () {
   width: 11.1%;
   max-width: 11.1%;
   flex-basis: 11.1%;
+  padding: 8px;
+}
+.col-10 {
+  width: 10%;
+  max-width: 10%;
+  flex-basis: 10%;
   padding: 8px;
 }
 </style>
