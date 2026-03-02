@@ -117,7 +117,9 @@ onMounted(() => {
     playlistName.value = "";
     playlistAllowedMediaTypes.value = [];
     playlistSelectedMediaType.value = MediaType.UNKNOWN;
-    let provider = api.getProvider(providerId.value);
+
+    const provider = api.getProvider(providerId.value);
+
     if (provider != undefined) {
       providerName.value = provider.name;
       if (
@@ -160,7 +162,7 @@ onMounted(() => {
         playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
       }
     } else {
-      toast.error("Unable to get provider.");
+      toast.error($t("playlist_create_provider_error"));
     }
     playlistAllowedMediaTypesTranslated.value =
       getTranslatedSupportedMediaTypes();
@@ -185,7 +187,7 @@ const doSave = async () => {
     selectedMediaTypes = playlistAllowedMediaTypes.value;
   } else {
     if (playlistSelectedMediaType.value === MediaType.UNKNOWN) {
-      toast.error("No media type selected.");
+      toast.error($t("playlist_create_no_type_selected"));
       return;
     }
     selectedMediaTypes = [playlistSelectedMediaType.value];
