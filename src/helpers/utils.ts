@@ -609,14 +609,14 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp5",
       condition: "lt",
     })
   ) {
-    return 3;
+    return 2;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp4",
+      breakpoint: "bp5",
       condition: "gt",
     }) &&
     getBreakpointValue({
@@ -635,7 +635,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 4;
+    return 3;
   } else if (
     getBreakpointValue({
       breakpoint: "bp7",
@@ -646,8 +646,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 3;
-    return 5;
+    return 4;
   } else if (
     getBreakpointValue({
       breakpoint: "bp8",
@@ -658,8 +657,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 4;
-    return 6;
+    return 5;
   } else if (
     getBreakpointValue({
       breakpoint: "bp9",
@@ -670,7 +668,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 5;
+    if (store.showPlayersMenu) return 4;
     return 7;
   } else if (
     getBreakpointValue({
@@ -682,7 +680,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 6;
+    if (store.showPlayersMenu) return 5;
     return 8;
   } else if (
     getBreakpointValue({
@@ -690,7 +688,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     })
   ) {
-    if (store.showPlayersMenu) return 7;
+    if (store.showPlayersMenu) return 6;
     return 9;
   } else {
     return 0;
