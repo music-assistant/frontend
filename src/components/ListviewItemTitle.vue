@@ -13,7 +13,23 @@
     </span>
   </div>
   <!-- explicit icon -->
-  <v-tooltip v-if="item && item.metadata" location="bottom">
+  <TooltipProvider v-if="item && item.metadata" location="bottom">
+    <Tooltip>
+      <TooltipTrigger>
+        <v-icon
+          v-if="parseBool(item.metadata.explicit || false)"
+          :class="{ 'explicit-icon-margin-left': showCheckboxes }"
+          icon="mdi-alpha-e-box"
+          width="35"
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <span>{{ $t("tooltip.explicit") }}</span>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+
+  <!-- <v-tooltip v-if="item && item.metadata" location="bottom">
     <template #activator="{ props }">
       <v-icon
         v-if="parseBool(item.metadata.explicit || false)"
@@ -24,7 +40,7 @@
       />
     </template>
     <span>{{ $t("tooltip.explicit") }}</span>
-  </v-tooltip>
+  </v-tooltip> -->
 </template>
 
 <script setup lang="ts">
@@ -35,6 +51,13 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { useI18n } from "vue-i18n";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // properties
 export interface Props {
