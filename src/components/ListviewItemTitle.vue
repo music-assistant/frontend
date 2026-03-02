@@ -13,21 +13,24 @@
     </span>
   </div>
   <!-- explicit icon -->
-  <TooltipProvider v-if="item && item.metadata" location="bottom">
-    <Tooltip>
-      <TooltipTrigger>
-        <v-icon
-          v-if="parseBool(item.metadata.explicit || false)"
-          :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-          icon="mdi-alpha-e-box"
-          width="35"
-        />
-      </TooltipTrigger>
-      <TooltipContent>
-        <span>{{ $t("tooltip.explicit") }}</span>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <template
+    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+  >
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <v-icon
+            :class="{ 'explicit-icon-margin-left': showCheckboxes }"
+            icon="mdi-alpha-e-box"
+            width="35"
+          />
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>{{ $t("tooltip.explicit") }}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </template>
 
   <!-- <v-tooltip v-if="item && item.metadata" location="bottom">
     <template #activator="{ props }">
