@@ -142,19 +142,39 @@ onUnmounted(() => {
 :deep([data-sidebar="menu-button"]) {
   margin-left: 0.5rem !important;
   margin-right: 0.5rem !important;
-  min-height: 2.5rem !important;
+  min-height: 2rem !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 :deep([data-sidebar="menu-button"] > svg) {
-  width: 2rem !important;
-  height: 2rem !important;
+  width: 1.6rem !important;
+  height: 1.6rem !important;
   margin-right: 0.5rem !important;
 }
 
 :deep([data-sidebar="menu-button"] > svg.artist-icon) {
-  width: 1.4rem !important;
-  height: 1.4rem !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
   margin-right: 0.3rem !important;
+}
+
+@media (min-height: 700px) {
+  :deep([data-sidebar="menu-button"]) {
+    min-height: 2.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  :deep([data-sidebar="menu-button"] > svg) {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  :deep([data-sidebar="menu-button"] > svg.artist-icon) {
+    width: 1.4rem !important;
+    height: 1.4rem !important;
+  }
 }
 </style>
 
