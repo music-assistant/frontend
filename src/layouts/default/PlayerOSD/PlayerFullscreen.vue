@@ -37,7 +37,7 @@
             </v-card>
           </v-menu>
 
-          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" />
+          <SpeakerBtn v-if="!showExpandedPlayerSelectButton" @click="() => {store.showFullscreenPlayer = false;}" />
 
           <Button icon @click.stop="openQueueMenu">
             <v-icon icon="mdi-dots-vertical" />
@@ -474,7 +474,7 @@
           <v-btn
             class="responsive-icon-holder-btn"
             variant="outlined"
-            @click="store.showPlayersMenu = true"
+            @click="() => {store.showPlayersMenu = true; store.showFullscreenPlayer = false}"
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
