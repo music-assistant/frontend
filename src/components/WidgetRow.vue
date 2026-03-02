@@ -172,7 +172,8 @@ const handleActionIconClick = () => {
 .carousel-wrapper {
   background-color: rgb(var(--v-theme-panel));
   padding: 10px;
-  border-radius: 5px;
+  padding-right: 0;
+  border-radius: 5px 0 0 5px;
 }
 
 .widget-row {

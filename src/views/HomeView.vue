@@ -31,7 +31,7 @@
       </div>
     </v-alert>
 
-    <Container variant="comfortable">
+    <Container variant="comfortable" class="!pr-0">
       <Suspense>
         <div>
           <HomeWidgetRows :edit-mode="editMode" />
