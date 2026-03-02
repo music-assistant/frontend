@@ -75,21 +75,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- player mobile extended control buttons -->
-          <PlayerExtendedControls
-            :queue="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :player="{
-              isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-            :volume="{
-              isVisible: false,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
-            }"
-          />
           <!-- player mobile control buttons -->
           <PlayerControls
             style="padding-right: 5px"
