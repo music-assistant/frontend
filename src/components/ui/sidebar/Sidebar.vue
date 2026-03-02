@@ -54,7 +54,7 @@ const mobileSheetSide = computed<"left" | "right">(() => {
       data-slot="sidebar"
       data-mobile="true"
       :side="mobileSheetSide"
-      class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+      class="sidebar-mobile-sheet bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
       }"
@@ -116,3 +116,10 @@ const mobileSheetSide = computed<"left" | "right">(() => {
     </div>
   </div>
 </template>
+
+<style>
+/* Mobile sidebar: stop above bottom navigation */
+.sidebar-mobile-sheet {
+  bottom: 60px !important;
+}
+</style>
