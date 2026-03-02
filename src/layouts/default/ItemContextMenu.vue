@@ -19,39 +19,26 @@
     <v-card min-width="300" max-height="450" style="overflow-y: auto">
       <v-list density="compact" slim tile>
         <!-- play menu header -->
-        <v-list-item
-          v-if="showPlayMenuHeader"
-          link
-          append-icon="mdi-chevron-right"
-          @click.stop="playMenuHeaderClicked"
-        >
-          <template #prepend>
-            <div
-              class="icon-thumb"
-              style="
-                margin-left: -8px;
-                width: 50px;
-                height: 50px;
-                margin-right: 0px;
-              "
-            >
+        <div v-if="showPlayMenuHeader" class="menurow">
+          <v-list-item
+            link
+            append-icon="mdi-chevron-right"
+            :title="$t('play_on')"
+            :subtitle="store.activePlayer?.name || $t('no_player')"
+            style="padding-left: 25px"
+            @click.stop="playMenuHeaderClicked"
+          >
+            <template #prepend>
               <v-icon
-                size="35"
+                size="40"
+                style="margin-left: -8px"
                 :icon="
                   store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
                 "
-                style="display: table-cell; opacity: 0.8"
               />
-            </div>
-          </template>
-          <template #title>
-            <v-list-item
-              :title="$t('play_on')"
-              density="compact"
-              :subtitle="store.activePlayer?.name || $t('no_player')"
-            />
-          </template>
-        </v-list-item>
+            </template>
+          </v-list-item>
+        </div>
         <v-divider
           v-if="showPlayMenuHeader"
           style="margin-top: 5px; margin-bottom: 5px"
