@@ -17,7 +17,7 @@ export const profileSettingsSchema = (t: (key: string) => string) =>
   z.object({
     username: z
       .string()
-      .min(3, t("auth.username_min_length"))
+      .min(2, t("auth.username_min_length"))
       .max(50, "Username must be at most 50 characters."),
     displayName: z
       .string()
@@ -46,7 +46,7 @@ export const createUserSchema = (t: (key: string) => string) =>
     .object({
       username: z
         .string()
-        .min(3, t("auth.username_min_length"))
+        .min(2, t("auth.username_min_length"))
         .max(50, "Username must be at most 50 characters."),
       displayName: z
         .string()
@@ -70,7 +70,7 @@ export const editUserSchema = (t: (key: string) => string) =>
     .object({
       username: z
         .string()
-        .min(3, t("auth.username_min_length"))
+        .min(2, t("auth.username_min_length"))
         .max(50, "Username must be at most 50 characters."),
       displayName: z
         .string()

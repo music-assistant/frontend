@@ -942,7 +942,7 @@
         "login": "Pieteikties",
         "logout": "Iziet",
         "field_required": "Šis lauks ir obligāts",
-        "username_min_length": "Lietotājvārdam jābūt vismaz 3 rakstzīmju garam",
+        "username_min_length": "Lietotājvārdam jābūt vismaz 2 rakstzīmju garam",
         "username_already_exists": "Lietotājvārds jau pastāv. Lūdzu izvēlies citu lietotājvārdu.",
         "invalid_username": "Nederīgs lietotājvārds. Lūdzu izvēlieties citu lietotājvārdu.",
         "password_min_length": "Parolei jābūt vismaz 8 rakstzīmju garai",

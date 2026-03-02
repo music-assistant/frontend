@@ -733,7 +733,7 @@
         "login": "Accedi",
         "logout": "Esci",
         "field_required": "Questo campo è obbligatorio",
-        "username_min_length": "Il Nome utente deve consistere in almeno 3 caratteri",
+        "username_min_length": "Il Nome utente deve consistere in almeno 2 caratteri",
         "username_already_exists": "Nome utente esiste già. Per favore scegliere un'altro nome utente.",
         "invalid_username": "Nome utente non valido. Per favore scegliere un'altro nome utente",
         "password_min_length": "La Password deve consistere in almeno 8 caratteri",
