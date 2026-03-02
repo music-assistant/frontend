@@ -624,7 +624,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 4;
+    return 3;
   } else if (
     getBreakpointValue({
       breakpoint: "bp6",
@@ -635,7 +635,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 5;
+    return 4;
   } else if (
     getBreakpointValue({
       breakpoint: "bp7",
@@ -646,7 +646,8 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 6;
+    if (store.showPlayersMenu) return 3;
+    return 5;
   } else if (
     getBreakpointValue({
       breakpoint: "bp8",
@@ -657,7 +658,8 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 7;
+    if (store.showPlayersMenu) return 4;
+    return 6;
   } else if (
     getBreakpointValue({
       breakpoint: "bp9",
@@ -668,13 +670,27 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 8;
+    if (store.showPlayersMenu) return 5;
+    return 7;
   } else if (
     getBreakpointValue({
       breakpoint: "bp10",
       condition: "gt",
+    }) &&
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "lt",
     })
   ) {
+    if (store.showPlayersMenu) return 6;
+    return 8;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "gt",
+    })
+  ) {
+    if (store.showPlayersMenu) return 7;
     return 9;
   } else {
     return 0;
