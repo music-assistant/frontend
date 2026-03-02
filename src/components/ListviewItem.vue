@@ -9,7 +9,18 @@
   >
     <template #prepend>
       <div v-if="showCheckboxes" class="checkbox">
-        <v-checkbox
+        <div class="flex items-center space-x-2">
+          <Checkbox id="listviewitem-checkbox" />
+          <label for="listviewitem-checkbox">
+            <ListviewitemTitle
+              :display-name="displayName"
+              :item="item"
+              :show-checkboxes="showCheckboxes"
+            />
+          </label>
+        </div>
+
+        <!-- <v-checkbox
           :model-value="isSelected"
           @click.stop
           @update:model-value="
@@ -25,7 +36,7 @@
               :show-checkboxes="showCheckboxes"
             />
           </template>
-        </v-checkbox>
+        </v-checkbox> -->
       </div>
       <div v-else class="media-thumb listitem-media-thumb">
         <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
@@ -218,19 +229,16 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
   getArtistsString,
-  getBrowseFolderName,
   getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
-  parseBool,
   truncateString,
 } from "@/helpers/utils";
 import {
   AlbumType,
   ContentType,
   MediaType,
-  type BrowseFolder,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -242,6 +250,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 import ListviewitemTitle from "./ListviewItemTitle.vue";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // properties
 export interface Props {
