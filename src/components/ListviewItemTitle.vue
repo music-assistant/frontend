@@ -31,19 +31,6 @@
       </Tooltip>
     </TooltipProvider>
   </template>
-
-  <!-- <v-tooltip v-if="item && item.metadata" location="bottom">
-    <template #activator="{ props }">
-      <v-icon
-        v-if="parseBool(item.metadata.explicit || false)"
-        :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-        v-bind="props"
-        icon="mdi-alpha-e-box"
-        width="35"
-      />
-    </template>
-    <span>{{ $t("tooltip.explicit") }}</span>
-  </v-tooltip> -->
 </template>
 
 <script setup lang="ts">
