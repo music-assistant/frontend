@@ -75,8 +75,10 @@ import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 
 .v-bottom-navigation--active {
   box-shadow: none;
+  z-index: 2000 !important;
 }
+
 .v-footer {
-  z-index: 1200 !important;
+  z-index: 1000 !important;
 }
 </style>

@@ -3,11 +3,11 @@
     v-if="!store.mobileLayout && player && player.isVisible"
     auto-show
     align="end"
-  >
-    <template #trigger>
-      <SpeakerBtn :color="player.color" />
-    </template>
-  </ActivePlayerPopover>
+    child-element-id="extended-controls-speaker-button"
+  />
+
+  <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
+
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="queue.color"

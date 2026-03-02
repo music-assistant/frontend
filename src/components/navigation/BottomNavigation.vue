@@ -52,20 +52,18 @@
       auto-show
       align="end"
       child-element-id="active-player-popover"
+    />
+
+    <v-btn
+      id="active-player-popover"
+      :aria-label="$t('players')"
+      tabindex="0"
+      variant="text"
+      @click="handlePlayersClick"
     >
-      <template #trigger>
-        <v-btn
-          id="active-player-popover"
-          :aria-label="$t('players')"
-          tabindex="0"
-          variant="text"
-          @click="handlePlayersClick"
-        >
-          <Speaker class="w-5 h-5" />
-          <span class="menuButton">{{ $t("players") }}</span>
-        </v-btn>
-      </template>
-    </ActivePlayerPopover>
+      <Speaker class="w-5 h-5" />
+      <span class="menuButton">{{ $t("players") }}</span>
+    </v-btn>
   </v-bottom-navigation>
 </template>
 
@@ -82,14 +80,18 @@ const route = useRoute();
 const isActive = (name: string) => route.name === name;
 
 const handleMenuClick = () => {
+  closePlayersMenu();
   eventbus.emit("mobile-sidebar-open");
 };
 
 const handleDiscoverClick = () => {
+  closePlayersMenu();
   router.push({ name: "discover" });
 };
 
 const handleSearchClick = () => {
+  closePlayersMenu();
+
   if (isActive("search")) {
     const wrapper = document.getElementById("searchInput");
     if (wrapper) {
@@ -105,6 +107,10 @@ const handleSearchClick = () => {
 const handlePlayersClick = () => {
   store.showPlayersMenu = !store.showPlayersMenu;
 };
+
+function closePlayersMenu() {
+  store.showPlayersMenu = false;
+}
 </script>
 
 <style>
