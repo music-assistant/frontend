@@ -602,7 +602,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 3;
+    return 2;
   } else if (
     getBreakpointValue({
       breakpoint: "bp1",
@@ -624,7 +624,7 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    return 4;
+    return 3;
   } else if (
     getBreakpointValue({
       breakpoint: "bp6",
