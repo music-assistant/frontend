@@ -36,7 +36,6 @@
     "external_source_active": "Fonte externa ativa: {0}",
     "goto_album": "Ir para o álbum {0}",
     "goto_artist": "Ir para o artista {0}",
-    "discover": "Descobrir",
     "items_selected": "{0} item(s) selecionado(s)",
     "items_total": "{0} total de item(s)",
     "library": "Biblioteca",
@@ -286,9 +285,7 @@
             "advanced": "Definições avançadas",
             "generic": "Configurações genéricas",
             "announcements": "Definições de anúncios",
-            "airplay": "Definições específicas do AirPlay",
             "player_controls": "Controlos do leitor",
-            "presets": "Predefinições",
             "sync_options": "Opções de sincronização\/importação",
             "builtin_playlists": "Definições de listas de reprodução incorporadas",
             "web_player": "Leitor Web",
@@ -941,7 +938,7 @@
         "login": "Iniciar sessão",
         "logout": "Fechar sessão",
         "field_required": "Este campo é obrigatório",
-        "username_min_length": "O nome de utilizador deve ter pelo menos 2 caracteres",
+        "username_min_length": "O nome de utilizador deve ter pelo menos 3 caracteres",
         "username_already_exists": "O nome de utilizador já existe. Por favor, escolha um nome de utilizador diferente.",
         "invalid_username": "Nome de utilizador inválido. Escolha um nome de utilizador diferente.",
         "password_min_length": "A palavra-passe deve ter pelo menos 8 caracteres",
@@ -1139,5 +1136,6 @@
     "narrators": "Narradores",
     "series_plural": "Séries",
     "series_singular": "Série",
-    "queue_move_end": "Mover para o fim"
+    "queue_move_end": "Mover para o fim",
+    "discover": "Descobrir"
 }
