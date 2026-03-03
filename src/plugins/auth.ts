@@ -125,7 +125,7 @@ export class AuthManager {
    * restricted UI access (only the guest view).
    */
   isPartyModeGuest(): boolean {
-    return this.claims?.username === "party_mode_system";
+    return this.claims?.username === "party_mode_guest";
   }
 
   /**
