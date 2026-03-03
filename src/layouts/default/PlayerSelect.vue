@@ -1,26 +1,18 @@
 <template>
-  <!-- Overlay scrim (used when panel overlays content instead of being inline) -->
+  <!-- Overlay scrim -->
   <Transition name="player-scrim">
     <div
-      v-if="!useInlinePanel && store.showPlayersMenu"
+      v-if="store.showPlayersMenu"
       class="player-panel-scrim"
       @click="store.showPlayersMenu = false"
     ></div>
   </Transition>
 
-  <!-- Inline spacer: only on wide screens, transitions width to push main content -->
-  <div
-    v-if="useInlinePanel"
-    class="player-panel-spacer"
-    :class="{ 'player-panel-spacer--open': store.showPlayersMenu }"
-  ></div>
-
   <!-- Panel: fixed position, slides in via transform -->
   <div
-    class="player-panel"
+    class="player-panel player-panel--overlay"
     :class="{
       'player-panel--open': store.showPlayersMenu,
-      'player-panel--overlay': !useInlinePanel,
     }"
   >
     <div class="player-panel-inner">
@@ -118,18 +110,11 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Player, PlayerFeature } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-
-// Wide screens (bp9 >=1500px): inline sidebar that pushes content.
-// Narrower screens & mobile: overlay panel with scrim.
-const useInlinePanel = computed(
-  () => !store.mobileLayout && getBreakpointValue("bp9"),
-);
 
 const showSubPlayers = ref(false);
 const recentlySelectedPlayerIds = ref<string[]>([]);
@@ -318,22 +303,7 @@ const selectDefaultPlayer = function () {
 
 <style scoped>
 /*
- * Desktop spacer: transparent div in the flex layout.
- * Smoothly transitions width to push main content, just like AppSidebar.
- */
-.player-panel-spacer {
-  width: 0;
-  flex-shrink: 0;
-  transition: width 0.2s ease-linear;
-}
-
-.player-panel-spacer--open {
-  width: 400px;
-}
-
-/*
  * Panel: fixed position, slides via GPU-accelerated transform.
- * Content is never clipped — the spacer handles the layout shift separately.
  */
 .player-panel {
   position: fixed;
@@ -356,16 +326,13 @@ const selectDefaultPlayer = function () {
   transform: translateX(0);
 }
 
-/*
- * Overlay mode: narrower screens & mobile. Higher z-index, covers content.
- * On mobile (mobileLayout) it's 85vw; on mid-width desktops it stays 400px.
- */
+/* Overlay: higher z-index, rounded edges, shadow */
 .player-panel--overlay {
   z-index: 99999;
   top: 8px;
   bottom: 8px;
   border-left: none;
-  border-radius: 16px 0 0 16px;
+  border-radius: 6px 0 0 6px;
 }
 
 .player-panel--overlay.player-panel--open {

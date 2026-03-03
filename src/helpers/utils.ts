@@ -665,7 +665,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 5;
     return 8;
   } else if (
     getBreakpointValue({
@@ -677,7 +676,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 6;
     return 9;
   } else if (
     getBreakpointValue({
@@ -685,7 +683,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     })
   ) {
-    if (store.showPlayersMenu) return 7;
     return 10;
   } else {
     return 0;
