@@ -215,6 +215,12 @@ const toolbarMenuItems = computed(() => {
   flex-basis: 11.1%;
   padding: 8px;
 }
+.col-10 {
+  width: 10%;
+  max-width: 10%;
+  flex-basis: 10%;
+  padding: 8px;
+}
 
 .v-list-item--density-compact {
   padding: 5px !important;
