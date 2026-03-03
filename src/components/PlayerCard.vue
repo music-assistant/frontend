@@ -92,9 +92,8 @@
           style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
         >
           <!-- player powered off -->
-          <div v-if="player.powered == false">
-            {{ $t("off") }}
-          </div>
+          <div v-if="player.powered == false"></div>
+
           <!-- artist + album -->
           <div
             v-else-if="
@@ -104,17 +103,15 @@
             {{ player.current_media.artist }} •
             {{ player.current_media.album }}
           </div>
+
           <!-- artist only -->
           <div v-else-if="player.current_media?.artist">
             {{ player.current_media.artist }}
           </div>
+
           <!-- album only -->
           <div v-else-if="player.current_media?.album">
             {{ player.current_media.album }}
-          </div>
-          <!-- queue empty message -->
-          <div v-else-if="playerQueue?.items == 0">
-            {{ $t("queue_empty") }}
           </div>
         </div>
       </template>
