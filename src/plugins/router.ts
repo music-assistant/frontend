@@ -428,6 +428,18 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
+    const reloadKey = "chunkReloadAttempted";
+    if (sessionStorage.getItem(reloadKey)) {
+      // Already tried reloading once this session — avoid an infinite loop.
+      // Clear the flag so a future manual navigation can try again.
+      sessionStorage.removeItem(reloadKey);
+      console.error(
+        "Chunk loading failed again after reload. Server may be unavailable.",
+        error,
+      );
+      return;
+    }
+    sessionStorage.setItem(reloadKey, "1");
     console.warn(
       "Chunk loading failed, likely due to app update. Reloading page...",
       error,
