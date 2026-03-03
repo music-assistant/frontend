@@ -329,8 +329,8 @@ const selectDefaultPlayer = function () {
 /* Overlay: higher z-index, rounded edges, shadow */
 .player-panel--overlay {
   z-index: 99999;
-  top: 8px;
-  bottom: 8px;
+  top: 0px;
+  bottom: 0px;
   border-left: none;
   border-radius: 6px 0 0 6px;
 }
@@ -342,7 +342,8 @@ const selectDefaultPlayer = function () {
 @media (max-width: 769px) {
   .player-panel--overlay {
     width: 90vw;
-    height: calc(100% - 68px);
+    max-width: 400px;
+    bottom: 60px;
   }
 }
 
@@ -361,15 +362,15 @@ const selectDefaultPlayer = function () {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 20px;
   background: linear-gradient(
     to bottom,
     transparent,
-    rgb(var(--v-theme-surface)) 70%
+    rgb(var(--v-theme-surface)) 80%
   );
   pointer-events: none;
   z-index: 1;
-  border-radius: 0 0 0 16px;
+  border-radius: 0 0 0 6px;
 }
 
 /* Mobile scrim/overlay */

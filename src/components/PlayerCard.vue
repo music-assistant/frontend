@@ -22,7 +22,7 @@
           >
             <v-img
               class="media-thumb"
-              size="40"
+              size="44"
               :src="getMediaImageUrl(player.current_media.image_url)"
             />
           </div>
@@ -46,7 +46,7 @@
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="isBuiltinPlayer(player)"
-          style="font-size: 0.85rem; line-height: 1.2"
+          style="font-size: 0.88rem; line-height: 1.3"
         >
           <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
@@ -63,7 +63,7 @@
           </v-chip>
         </div>
         <!-- regular player -->
-        <div v-else style="font-size: 0.85rem; line-height: 1.2">
+        <div v-else style="font-size: 0.88rem; line-height: 1.3">
           {{ getPlayerName(player, 27) }}
         </div>
       </template>
@@ -73,10 +73,10 @@
         <div
           v-if="player.powered != false"
           style="
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 500;
             white-space: nowrap;
-            line-height: 1.2;
+            line-height: 1.3;
           "
         >
           <div v-if="player.current_media?.title">
@@ -89,7 +89,7 @@
       <template #default>
         <div
           class="v-list-item-subtitle"
-          style="font-size: 0.72rem; white-space: nowrap; line-height: 1.2"
+          style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
         >
           <!-- player powered off -->
           <div v-if="player.powered == false">
@@ -346,14 +346,14 @@ watch(
   width: 100%;
   margin: 0px !important;
   padding: 0px !important;
-  min-height: 48px;
+  min-height: 58px;
 }
 
 .panel-item-details :deep(.v-list-item__content) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 42px;
+  min-height: 50px;
   gap: 0px;
 }
 
@@ -415,14 +415,14 @@ watch(
 }
 
 .media-thumb {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 .icon-thumb {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   margin-top: 4px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
@@ -433,10 +433,10 @@ watch(
   border-style: ridge;
   border-width: thin;
   border-color: rgba(var(--v-theme-on-surface), 0.12);
-  padding-left: 6px;
-  padding-right: 6px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   background-color: rgba(var(--v-theme-primary), 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
