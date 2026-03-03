@@ -121,36 +121,24 @@
 
       <!-- power/play/pause + menu button -->
       <template #append>
-        <!-- play/pause button -->
+        <!-- power button -->
         <Button
-          v-if="canPlayPause"
+          v-if="
+            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+          "
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
-          :disabled="
-            api.queues[player.player_id]?.extra_attributes
-              ?.play_action_in_progress === true
-          "
           @click.stop="
-            api.playerCommandPlayPause(player.player_id);
+            api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
-          <v-progress-circular
-            v-if="
-              api.queues[player.player_id]?.extra_attributes
-                ?.play_action_in_progress === true
-            "
-            indeterminate
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
-            :width="2"
-          />
-          <component
-            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
-            v-else
+          <Power
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
+
         <!-- group members button -->
         <Button
           v-if="
@@ -180,20 +168,33 @@
           </v-badge>
         </Button>
 
-        <!-- power button -->
+        <!-- play/pause button -->
         <Button
-          v-if="
-            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
-          "
+          v-if="canPlayPause"
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :disabled="
+            api.queues[player.player_id]?.extra_attributes
+              ?.play_action_in_progress === true
+          "
           @click.stop="
-            api.playerCommandPowerToggle(player.player_id);
+            api.playerCommandPlayPause(player.player_id);
             store.activePlayerId = player.player_id;
           "
         >
-          <Power
+          <v-progress-circular
+            v-if="
+              api.queues[player.player_id]?.extra_attributes
+                ?.play_action_in_progress === true
+            "
+            indeterminate
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            :width="2"
+          />
+          <component
+            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
+            v-else
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
           />
         </Button>
