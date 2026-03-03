@@ -294,13 +294,13 @@ const syncCheckBoxChange = async function (
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
-  height: 32px;
-  min-height: 32px;
+  height: 36px;
+  min-height: 36px;
 }
 
 .volumesliderrow :deep(.v-list-item__content) {
-  height: 32px;
-  min-height: 32px;
+  height: 36px;
+  min-height: 36px;
   overflow: visible !important;
   align-content: center;
 }
@@ -315,7 +315,7 @@ const syncCheckBoxChange = async function (
   align-items: center;
   padding: 0 2px;
   margin-top: 0px;
-  min-height: 28px;
+  min-height: 32px;
 }
 
 .volume-row :deep(.player-volume-container) {
