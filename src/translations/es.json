@@ -34,7 +34,6 @@
     "external_source_active": "Fuente externa activa: {0}",
     "goto_album": "Ir al álbum{0}",
     "goto_artist": "Ir al artista {0}",
-    "discover": "Descubrir",
     "items_selected": "{0} elemento(s) seleccionados",
     "items_total": "{0} elemento(s) totales",
     "library": "Biblioteca",
@@ -283,8 +282,7 @@
         "category": {
             "advanced": "Ajustes avanzados",
             "generic": "Ajustes",
-            "announcements": "Configuración de anuncios",
-            "airplay": "Ajustes específicos de Airplay"
+            "announcements": "Configuración de anuncios"
         },
         "tts_pre_announce": {
             "label": "Preanunciar anuncio TTS",
