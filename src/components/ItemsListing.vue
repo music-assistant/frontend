@@ -1637,4 +1637,10 @@ const selectAll = async function () {
   flex-basis: 11.1%;
   padding: 8px;
 }
+.col-10 {
+  width: 10%;
+  max-width: 10%;
+  flex-basis: 10%;
+  padding: 8px;
+}
 </style>

@@ -36,7 +36,6 @@
     "external_source_active": "Sorgente esterna attiva: {0}",
     "goto_album": "Vai all'album {0}",
     "goto_artist": "Vai all'artista {0}",
-    "discover": "Scopri",
     "items_selected": "{0} elemento\/i selezionato\/i",
     "items_total": "{0} elemento\/i in totale",
     "library": "Libreria",
@@ -286,7 +285,6 @@
             "advanced": "Impostazioni avanzate",
             "generic": "Impostazioni generiche",
             "announcements": "Configurazione degli annunci",
-            "airplay": "Impostazioni specifiche di Airplay",
             "player_controls": "Controlli generali",
             "sync_options": "Sincronizzazione\/importazione opzioni"
         },
@@ -423,10 +421,14 @@
                 "enable_band": "Abilita Banda",
                 "filter_types": {
                     "peak": "Picco",
+                    "low_shelf": "Filtro a scaffale basso",
+                    "high_shelf": "Filtro a scaffale alto",
                     "low_pass": "Passa Basso",
                     "high_pass": "Passa Alto",
                     "notch": "Notch"
                 },
+                "import_apo": "Importa APO\/REW preimpostazioni",
+                "export_apo": "Esporta preimpostazioni APO",
                 "preamp": "Preamplificatore",
                 "add_band_channel": "Aggiungi Banda (solo {channel})",
                 "band_channel": "Banda {index} (solo {channel}",
@@ -446,7 +448,8 @@
                 "q_factor": "Fattore Q"
             },
             "types": {
-                "parametric_eq": "EQ Parametrico"
+                "parametric_eq": "EQ Parametrico",
+                "tone_control": "Controllo del tono"
             },
             "channels_compact": {
                 "FL": "L",
@@ -681,10 +684,14 @@
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codice: {0}",
+            "bit_rate": "Bitrate: {0} kbps",
             "sample_rate": "Rate campionamento: {0} kHz",
-            "channels": "Canali: {0}"
+            "channels": "Canali: {0}",
+            "bit_depth": "Profondità di bit: {0}"
         },
         "volume_normalization": {
+            "target_level": "Livello-obiettivo: {0} LUFS",
+            "integrated_loudness": "Intensità sonora misurata (integrata): {0} LUFS",
             "integrated_album_loudness": "Album loudness: {0} LUFS",
             "applied_gain_correction": "Correzione guadagno applicata: {0} dB",
             "mode": {

@@ -4,95 +4,92 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <v-dialog
-    v-model="show"
-    fullscreen
-    transition="dialog-bottom-transition"
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-      }
-    "
-  >
-    <v-card>
-      <Toolbar
-        icon="mdi-playlist-plus"
-        :title="$t('add_playlist')"
-        :menu-items="[
-          {
-            label: 'close',
-            icon: 'mdi-close',
-            action: close,
-          },
-        ]"
-      />
+  <Sheet v-model:open="show">
+    <SheetContent side="bottom" class="h-[55vh] flex flex-col p-0">
+      <SheetHeader class="flex-row items-center gap-3 border-b px-4 py-3">
+        <ListPlus class="size-5 shrink-0 opacity-80" />
+        <SheetTitle>{{ $t("add_playlist") }}</SheetTitle>
+      </SheetHeader>
+      <SheetDescription class="sr-only">
+        {{ $t("add_playlist") }}
+      </SheetDescription>
 
-      <v-divider />
-      <br />
+      <ScrollArea class="flex-1">
+        <div class="py-2">
+          <button
+            v-for="playlist of playlists"
+            :key="playlist.item_id"
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
+            @click="addToPlaylist(playlist)"
+          >
+            <div class="shrink-0">
+              <MediaItemThumb :item="playlist" :size="50" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-medium">
+                {{ playlist.name }}
+              </div>
+              <div class="truncate text-xs text-muted-foreground">
+                {{ playlist.owner }}
+              </div>
+            </div>
+            <provider-icon
+              v-if="playlist.provider_mappings"
+              :domain="playlist.provider_mappings[0].provider_domain"
+              :size="20"
+              class="shrink-0"
+            />
+          </button>
 
-      <v-list>
-        <div v-for="playlist of playlists" :key="playlist.item_id">
-          <v-list-item @click="addToPlaylist(playlist)">
-            <template #prepend>
-              <div class="media-thumb">
-                <MediaItemThumb :item="playlist" :size="50" />
-              </div>
-            </template>
-            <template #title>
-              <div>{{ playlist.name }}</div>
-            </template>
-            <template #subtitle>
-              <div>{{ playlist.owner }}</div>
-            </template>
-            <template #append>
-              <provider-icon
-                v-if="playlist.provider_mappings"
-                :domain="playlist.provider_mappings[0].provider_domain"
-                :size="20"
-              />
-            </template>
-          </v-list-item>
-        </div>
-        <!-- a bit of spacing, followed by add playlist items-->
-        <div style="height: 30px"></div>
-        <v-divider />
-        <div style="height: 30px"></div>
-        <!-- create playlist row(s) -->
-        <div v-for="providerId of createPlaylistProviders" :key="providerId">
-          <v-list-item @click="newPlaylist(providerId)">
-            <template #prepend>
-              <div style="margin-left: -10px; padding-right: 5px">
-                <provider-icon
-                  :domain="api.providers[providerId].domain"
-                  :size="50"
-                />
-              </div>
-            </template>
-            <template #title>
-              <div>{{ $t("new_playlist") }}</div>
-            </template>
-            <template #subtitle>
-              <div>
-                {{ $t("create_playlist_on", [api.providers[providerId].name]) }}
-              </div>
-            </template>
-            <template #append>
+          <div class="py-4">
+            <Separator />
+          </div>
+
+          <button
+            v-for="providerId of createPlaylistProviders"
+            :key="providerId"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
+            @click="newPlaylist(providerId)"
+          >
+            <div class="shrink-0">
               <provider-icon
                 :domain="api.providers[providerId].domain"
-                :size="20"
+                :size="50"
               />
-            </template>
-          </v-list-item>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-medium">
+                {{ $t("new_playlist") }}
+              </div>
+              <div class="truncate text-xs text-muted-foreground">
+                {{ $t("create_playlist_on", [api.providers[providerId].name]) }}
+              </div>
+            </div>
+            <provider-icon
+              :domain="api.providers[providerId].domain"
+              :size="20"
+              class="shrink-0"
+            />
+          </button>
         </div>
-      </v-list>
-    </v-card>
-  </v-dialog>
+      </ScrollArea>
+    </SheetContent>
+  </Sheet>
 </template>
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import Toolbar from "@/components/Toolbar.vue";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import api from "@/plugins/api";
 import type {
   MediaItemType,
@@ -103,7 +100,8 @@ import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { ListPlus } from "lucide-vue-next";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const show = ref<boolean>(false);
@@ -111,6 +109,10 @@ const playlists = ref<Playlist[]>([]);
 const createPlaylistProviders = ref<string[]>([]);
 const parentItem = ref<MediaItemType>();
 const selectedItems = ref<MediaItemTypeOrItemMapping[]>([]);
+
+watch(show, (open) => {
+  store.dialogActive = open;
+});
 
 onMounted(() => {
   eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
@@ -145,12 +147,6 @@ const fetchPlaylists = async function () {
     );
   }
 
-  // Check if we're adding radio/podcast/audiobook items - these can only be added to builtin playlists
-  const isAddingBuiltinOnly =
-    refItem?.media_type === MediaType.RADIO ||
-    refItem?.media_type === MediaType.PODCAST_EPISODE ||
-    refItem?.media_type === MediaType.AUDIOBOOK;
-
   for (const playlist of playlistResults) {
     // skip unavailable playlists
     if (!playlist.provider_mappings.filter((x) => x.available).length) continue;
@@ -163,32 +159,57 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
+    if (!playlist.supported_mediatypes.includes(refItem.media_type)) {
+      // target playlist doesn't support media type
+      continue;
+    }
 
     const playListProvider =
       api.providers[playlist.provider_mappings[0].provider_instance];
 
-    // For radio/podcast/audiobook items, only show builtin playlists
-    if (isAddingBuiltinOnly) {
-      if (playListProvider && playListProvider.domain == "builtin") {
-        playlists.value.push(playlist);
-      }
-    } else {
-      // either the refItem has a provider match or builtin provider or streaming provider
-      if (
-        playListProvider &&
-        (playListProvider.domain == "builtin" ||
-          playListProvider.is_streaming_provider ||
-          refItem?.provider_mappings.filter(
-            (x) => x.provider_instance == playListProvider.instance_id,
-          ).length)
-      ) {
-        playlists.value.push(playlist);
-      }
+    // either the refItem has a provider match or builtin provider or streaming provider
+    if (
+      playListProvider &&
+      (playListProvider.domain == "builtin" ||
+        playListProvider.is_streaming_provider ||
+        refItem?.provider_mappings.filter(
+          (x) => x.provider_instance == playListProvider.instance_id,
+        ).length)
+    ) {
+      playlists.value.push(playlist);
     }
   }
   // determine which providers may be used to create a new playlist
   for (const provider of Object.values(api.providers)) {
-    if (!provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE))
+    // filter suitable create provider base on media_type
+    if (
+      refItem.media_type == MediaType.TRACK &&
+      !provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_TRACKS,
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.AUDIOBOOK &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.PODCAST_EPISODE &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+      )
+    )
+      continue;
+    if (
+      refItem.media_type == MediaType.RADIO &&
+      !provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_RADIOS,
+      )
+    )
       continue;
     if (
       !provider.supported_features.includes(
@@ -196,27 +217,20 @@ const fetchPlaylists = async function () {
       )
     )
       continue;
-    // For radio/podcast/audiobook items, only allow builtin provider
-    if (isAddingBuiltinOnly) {
-      if (provider.domain == "builtin") {
-        createPlaylistProviders.value.push(provider.instance_id);
-      }
-    } else {
-      // either the refItem has a provider match or builtin provider
-      if (
-        provider.domain == "builtin" ||
-        provider.is_streaming_provider ||
-        refItem?.provider_mappings.filter(
-          (x) => x.provider_instance == provider.instance_id,
-        ).length
-      ) {
-        createPlaylistProviders.value.push(provider.instance_id);
-      }
+    // either the refItem has a provider match or builtin provider
+    if (
+      provider.domain == "builtin" ||
+      provider.is_streaming_provider ||
+      refItem?.provider_mappings.filter(
+        (x) => x.provider_instance == provider.instance_id,
+      ).length
+    ) {
+      createPlaylistProviders.value.push(provider.instance_id);
     }
   }
 };
 const addToPlaylist = async function (value: MediaItemType) {
-  /// add item(s) to playlist
+  // add item(s) to playlist
   api.addPlaylistTracks(
     value.item_id,
     selectedItems.value.map((x) => x.uri),
@@ -225,9 +239,53 @@ const addToPlaylist = async function (value: MediaItemType) {
   toast.info($t("background_task_added"));
 };
 const newPlaylist = async function (provId: string) {
+  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+  if (!refItem) return;
+  let provider = api.getProvider(provId);
+  if (!provider) return;
   const name = prompt($t("new_playlist_name"));
   if (!name) return;
-  const newPlaylist = await api.createPlaylist(name, provId);
+
+  let supportedMediaTypes: MediaType[] = [];
+  if (
+    provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_MIXED)
+  ) {
+    // if the provider supports mixed playlists, we always create a playlist for all
+    // supported media types
+    if (
+      provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_TRACKS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.TRACK);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.AUDIOBOOK);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+      )
+    )
+      supportedMediaTypes.push(MediaType.PODCAST_EPISODE);
+    if (
+      provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_RADIOS,
+      )
+    )
+      supportedMediaTypes.push(MediaType.RADIO);
+  } else {
+    // otherwise the playlist must support the mediatype of the selected item
+    supportedMediaTypes = [refItem.media_type];
+  }
+  const newPlaylist = await api.createPlaylist(
+    name,
+    provId,
+    supportedMediaTypes,
+  );
   addToPlaylist(newPlaylist);
 };
 
@@ -235,9 +293,3 @@ const close = function () {
   show.value = false;
 };
 </script>
-
-<style scoped>
-.media-thumb {
-  padding-right: 15px;
-}
-</style>

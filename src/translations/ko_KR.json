@@ -34,7 +34,6 @@
     "external_source_active": "외부 소스 활성화: {0}",
     "goto_album": "앨범 {0} 으로 이동",
     "goto_artist": "아티스트 {0} 로 이동",
-    "discover": "발견하기",
     "items_selected": "선택한 항목 {0}개",
     "items_total": "총 항목 수 {0} 개",
     "library": "라이브러리",
@@ -283,8 +282,7 @@
         "category": {
             "advanced": "고급 설정",
             "generic": "일반 설정",
-            "announcements": "공지사항 구성",
-            "airplay": "Airplay 관련 설정"
+            "announcements": "공지사항 구성"
         },
         "tts_pre_announce": {
             "label": "사전안내 TTS 방송",

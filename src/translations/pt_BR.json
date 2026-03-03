@@ -36,7 +36,6 @@
     "external_source_active": "Fonte externa ativada: {0}",
     "goto_album": "Ir para o álbum {0}",
     "goto_artist": "Ir para o artista {0}",
-    "discover": "Descobrir",
     "items_selected": "{0} item(ns) selecionado(s)",
     "items_total": "{0} item(ns) no total",
     "library": "Biblioteca",
@@ -286,9 +285,7 @@
             "advanced": "Configurações avançadas",
             "generic": "Configurações genéricas",
             "announcements": "Configuração de anúncios",
-            "airplay": "Configurações específicas do Airplay",
             "player_controls": "Controles do reprodutor",
-            "presets": "Predefinições",
             "sync_options": "Opções de sincronização\/importação",
             "builtin_playlists": "Configurações da lista de reprodução integrada"
         },

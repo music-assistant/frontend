@@ -1,6 +1,6 @@
 <template>
   <div :class="`widget-row ${settings && !settings.enabled ? 'disabled' : ''}`">
-    <v-toolbar class="header" color="transparent">
+    <v-toolbar class="header" color="transparent" density="compact">
       <template #title>
         <span class="mr-3">{{ $t("players") }}</span>
       </template>
@@ -34,7 +34,11 @@
         releaseOnEdges: true,
       }"
     >
-      <swiper-slide v-for="player in sortedPlayers" :key="player.player_id">
+      <swiper-slide
+        v-for="player in sortedPlayers"
+        :key="player.player_id"
+        style="width: 240px"
+      >
         <PlayerCard
           :id="player.player_id"
           :key="player.player_id"
@@ -43,7 +47,6 @@
           :show-menu-button="false"
           :show-sub-players="false"
           :show-sync-controls="false"
-          style="width: 305px"
           @click="playerClicked(player)"
         />
       </swiper-slide>
@@ -97,8 +100,12 @@ function playerSortScore(player: Player) {
 <style scoped>
 .header.v-toolbar :deep(.v-toolbar-title) {
   margin-inline-start: 0px;
-  font-size: x-large;
+  font-size: large;
   font-weight: bold;
+}
+
+.header.v-toolbar {
+  padding-inline-start: 4px;
 }
 
 .widget-row {
@@ -106,6 +113,12 @@ function playerSortScore(player: Player) {
   margin-left: 0px;
   margin-right: 0px;
   padding-left: 0px;
+}
+
+@media (max-width: 575px) {
+  .widget-row {
+    margin-bottom: 4px;
+  }
 }
 
 .disabled {
@@ -138,5 +151,6 @@ function playerSortScore(player: Player) {
 
 :deep(.swiper-slide) {
   width: auto;
+  flex-shrink: 0;
 }
 </style>

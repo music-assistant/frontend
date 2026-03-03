@@ -130,7 +130,7 @@
             width="100%"
           />
         </div>
-        <div style="height: 2px"></div>
+        <div style="height: 6px"></div>
       </div>
     </div>
   </v-list>
@@ -294,13 +294,13 @@ const syncCheckBoxChange = async function (
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
-  height: 40px;
-  min-height: 40px;
+  height: 32px;
+  min-height: 32px;
 }
 
 .volumesliderrow :deep(.v-list-item__content) {
-  height: 40px;
-  min-height: 40px;
+  height: 32px;
+  min-height: 32px;
   overflow: visible !important;
   align-content: center;
 }
@@ -314,7 +314,8 @@ const syncCheckBoxChange = async function (
   display: flex;
   align-items: center;
   padding: 0 2px;
-  min-height: 40px;
+  margin-top: 0px;
+  min-height: 28px;
 }
 
 .volume-row :deep(.player-volume-container) {

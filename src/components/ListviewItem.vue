@@ -78,6 +78,10 @@
             <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
             {{ item.position }}
           </v-item>
+          <!-- track duration -->
+          <v-item v-if="showDuration && 'duration' in item && item.duration">
+            <span> • [{{ formatDuration(item.duration) }}]</span>
+          </v-item>
         </v-item-group>
       </div>
 
@@ -132,7 +136,7 @@
       />
       <!-- hi res icon -->
       <v-img
-        v-if="HiResDetails"
+        v-if="HiResDetails && getBreakpointValue('bp3')"
         :src="iconHiRes"
         width="30"
         :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
@@ -178,27 +182,9 @@
         <FavouriteButton :item="item" />
       </div>
 
-      <!-- track duration -->
-      <div
-        v-if="
-          showDuration &&
-          'duration' in item &&
-          item.duration &&
-          getBreakpointValue('bp0')
-        "
-      >
-        <div>
-          <span
-            class="text-caption"
-            style="padding-right: 10px; padding-left: 10px"
-            >{{ formatDuration(item.duration) }}</span
-          >
-        </div>
-      </div>
-
       <!-- play button -->
       <v-btn
-        v-if="item.is_playable && (showPlayButton ?? !$vuetify.display.mobile)"
+        v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
         icon
         variant="text"
         size="small"

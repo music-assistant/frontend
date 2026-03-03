@@ -1,9 +1,7 @@
 import { watch } from "vue";
 import { createRouter, createWebHashHistory } from "vue-router";
-import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
 import { notifyHARouteChange } from "./homeassistant";
-import { i18n } from "./i18n";
 import { store } from "./store";
 
 const routes = [
@@ -420,7 +418,7 @@ const router = createRouter({
 // Handle chunk loading errors (e.g., after frontend update with stale cache)
 // When a dynamic import fails with a 404, it means the chunk no longer exists
 // on the server (likely due to a new deployment with different hashes).
-// In this case, we show a toast to let the user know that a new version of the frontend is available.
+// In this case, we reload the page to get the fresh assets.
 router.onError((error, to) => {
   // Check if this is a chunk loading error
   const isChunkLoadError =
@@ -430,25 +428,26 @@ router.onError((error, to) => {
     (error.name === "TypeError" && error.message.includes("fetch"));
 
   if (isChunkLoadError) {
-    console.warn("Chunk loading failed, likely due to app update.", error);
-    const { t } = i18n.global;
-    const targetHref =
+    const reloadKey = "chunkReloadAttempted";
+    if (sessionStorage.getItem(reloadKey)) {
+      // Already tried reloading once this session — avoid an infinite loop.
+      // Clear the flag so a future manual navigation can try again.
+      sessionStorage.removeItem(reloadKey);
+      console.error(
+        "Chunk loading failed again after reload. Server may be unavailable.",
+        error,
+      );
+      return;
+    }
+    sessionStorage.setItem(reloadKey, "1");
+    console.warn(
+      "Chunk loading failed, likely due to app update. Reloading page...",
+      error,
+    );
+    // Use location.href to do a full reload to the intended route
+    // This ensures we get fresh HTML and assets from the server
+    window.location.href =
       window.location.origin + window.location.pathname + "#" + to.fullPath;
-
-    toast.info(t("chunk_load_error"), {
-      duration: 5000,
-      action: {
-        label: t("refresh"),
-        onClick: () => {
-          window.location.href = targetHref;
-        },
-      },
-      actionButtonStyle: {
-        background: "transparent",
-        border: "1px solid currentColor",
-        color: "inherit",
-      },
-    });
   }
 });
 
