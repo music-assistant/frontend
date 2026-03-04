@@ -1,8 +1,11 @@
 <template>
   <v-app>
-    <PlayerSelect />
-    <MainView />
-    <Footer />
+    <MainView v-if="store.frameless" />
+    <template v-else>
+      <PlayerSelect />
+      <MainView />
+      <Footer />
+    </template>
   </v-app>
   <reload-prompt />
 </template>
@@ -13,7 +16,7 @@ import Footer from "./Footer.vue";
 import PlayerSelect from "./PlayerSelect.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
 import { store } from "@/plugins/store";
-import { watch } from "vue";
+import { watch, ref } from "vue";
 import api from "@/plugins/api";
 import { useRoute } from "vue-router";
 
@@ -42,6 +45,15 @@ watch(
   () => route.query.showFullscreenPlayer,
   (showFullscreenPlayer) => {
     store.showFullscreenPlayer = !!showFullscreenPlayer;
+  },
+  { immediate: true },
+);
+watch(
+  () => route.query.frameless,
+  (frameless) => {
+    if (frameless) {
+      store.frameless = true;
+    }
   },
   { immediate: true },
 );
