@@ -465,10 +465,19 @@ watch(
   margin-left: 5px;
 }
 
+.player-command-btn.group-expand-btn {
+  margin-right: 3px;
+}
+
 .group-badge :deep(.v-badge__badge) {
-  font-size: 10px;
-  height: 14px;
-  min-width: 14px;
+  font-size: 13px;
+  height: 16px;
+  min-width: 16px;
   padding: 0 4px 0 4px;
+  background-color: #20272a !important;
+}
+
+.panel-item-selected .group-badge :deep(.v-badge__badge) {
+  background-color: #1c4a5e !important;
 }
 </style>
