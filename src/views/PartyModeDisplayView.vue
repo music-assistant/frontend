@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
 import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import {
   ImageColorPalette,
   getColorPalette,
@@ -57,7 +58,6 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
-  PartyModeConfig,
   PlaybackState,
   QueueItem,
 } from "@/plugins/api/interfaces";
@@ -70,10 +70,11 @@ import { useTheme } from "vuetify";
 
 const theme = useTheme();
 const route = useRoute();
+const { fetchConfig } = usePartyModeConfig();
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
-// Badge colors (hex values from config, loaded from party_mode/config)
+// Badge colors (hex values from config)
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
 
@@ -344,25 +345,18 @@ onMounted(async () => {
   // Request wake lock to keep screen on
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
-  // Fetch party mode configuration (for album art background setting)
-  try {
-    const config = (await api.sendCommand(
-      "party_mode/config",
-    )) as PartyModeConfig;
-    if (config) {
-      if (config.album_art_background !== undefined) {
-        albumArtBackgroundEnabled.value = config.album_art_background;
-      }
-      if (config.show_player_controls !== undefined) {
-        showPlayerControls.value = config.show_player_controls;
-      }
-      // Badge colors (always set from config)
-      requestBadgeColor.value = config.request_badge_color || "#2196F3";
-      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+  // Fetch party mode configuration via shared composable
+  const config = await fetchConfig();
+  if (config) {
+    if (config.album_art_background !== undefined) {
+      albumArtBackgroundEnabled.value = config.album_art_background;
     }
-  } catch (error) {
-    console.error("Failed to fetch party mode config:", error);
-    // Use defaults if fetch fails
+    if (config.show_player_controls !== undefined) {
+      showPlayerControls.value = config.show_player_controls;
+    }
+    requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
+  } else {
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
   }

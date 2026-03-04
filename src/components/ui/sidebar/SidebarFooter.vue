@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { cn } from "@/lib/utils";
-import api from "@/plugins/api";
 import type { HTMLAttributes } from "vue";
-import { computed, ref, watch } from "vue";
+import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useSidebar } from "./utils";
 
@@ -14,31 +14,22 @@ const route = useRoute();
 const { isMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
 
-// Track whether footer is hidden on party route (no player controls)
-const partyFooterHidden = ref(false);
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
 watch(
   () => route.path,
   async (path) => {
     if (path === "/party") {
-      try {
-        const config = (await api.sendCommand("party_mode/config")) as {
-          show_player_controls?: boolean;
-        };
-        partyFooterHidden.value = !(config?.show_player_controls ?? false);
-      } catch {
-        partyFooterHidden.value = true;
-      }
-    } else {
-      partyFooterHidden.value = false;
+      await fetchConfig();
     }
   },
   { immediate: true },
 );
 
-const needsBottomPadding = computed(
-  () => !(route.path === "/party" && partyFooterHidden.value),
-);
+const needsBottomPadding = computed(() => {
+  if (route.path !== "/party") return true;
+  return partyConfig.value?.show_player_controls ?? false;
+});
 </script>
 
 <template>

@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import api from "@/plugins/api";
 import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -46,6 +47,7 @@ const loading = ref(true);
 const qrSize = ref(320);
 const instructionText = ref($t("party.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
+const { fetchConfig: fetchPartyConfig, invalidate: invalidatePartyConfig } = usePartyModeConfig();
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
@@ -79,21 +81,16 @@ const checkRemoteAccessStatus = async () => {
   }
 };
 
-const fetchConfig = async () => {
-  try {
-    const config = (await api.sendCommand("party_mode/config")) as {
-      qr_show_instruction_text?: boolean;
-      qr_instruction_text?: string;
-    };
-    // Only show text if toggle is enabled
+const fetchQrConfig = async () => {
+  const config = await fetchPartyConfig();
+  if (config) {
     if (config.qr_show_instruction_text === false) {
       instructionText.value = "";
     } else {
       instructionText.value =
-        config.qr_instruction_text || $t("party.scan_to_join");
+        config.qr_instruction_text ?? $t("party.scan_to_join");
     }
-  } catch {
-    // Use default if config fetch fails
+  } else {
     instructionText.value = $t("party.scan_to_join");
   }
 };
@@ -145,7 +142,7 @@ const generateQRCode = async () => {
 };
 
 onMounted(async () => {
-  await fetchConfig();
+  await fetchQrConfig();
   await generateQRCode();
 
   // Initialize remote access status tracking
@@ -175,8 +172,9 @@ onMounted(async () => {
       (p) => p.domain === "party_mode",
     );
     if (hasPartyMode) {
-      // Refresh config and QR code to reflect any changes
-      await fetchConfig();
+      // Invalidate cache and refresh config + QR code to reflect any changes
+      invalidatePartyConfig();
+      await fetchQrConfig();
       await generateQRCode();
     } else {
       // Provider was unloaded, clear the QR code and mark as disabled

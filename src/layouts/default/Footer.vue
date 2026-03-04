@@ -40,30 +40,21 @@
 
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import api from "@/plugins/api";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { store } from "@/plugins/store";
-import { computed, ref, watch } from "vue";
+import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import Player from "./PlayerOSD/Player.vue";
 
 const route = useRoute();
-
-// Party mode config for show_player_controls setting
-const partyModeShowControls = ref<boolean | undefined>(undefined);
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
 // Fetch party mode config when entering party route
 watch(
   () => route.path,
   async (path) => {
     if (path === "/party") {
-      try {
-        const config = (await api.sendCommand("party_mode/config")) as {
-          show_player_controls?: boolean;
-        };
-        partyModeShowControls.value = config?.show_player_controls ?? false;
-      } catch {
-        partyModeShowControls.value = false;
-      }
+      await fetchConfig();
     }
   },
   { immediate: true },
@@ -71,7 +62,7 @@ watch(
 
 // Hide footer when on party view and controls are explicitly disabled
 const hideFooter = computed(() => {
-  return route.path === "/party" && partyModeShowControls.value === false;
+  return route.path === "/party" && (partyConfig.value?.show_player_controls ?? false) === false;
 });
 </script>
 

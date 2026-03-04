@@ -1169,4 +1169,6 @@ export interface PartyModeConfig {
   show_player_controls: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
+  qr_show_instruction_text: boolean;
+  qr_instruction_text: string;
 }

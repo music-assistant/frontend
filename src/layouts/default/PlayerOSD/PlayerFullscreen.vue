@@ -561,6 +561,7 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -568,7 +569,6 @@ import {
   MediaItemChapter,
   MediaItemType,
   MediaType,
-  type PartyModeConfig,
   PlaybackState,
   PlayerFeature,
   PlayerQueue,
@@ -1258,24 +1258,16 @@ const loadNextPage = async function ({ done }: { done: any }) {
 };
 
 // Fetch badge colors from party mode config
-const fetchBadgeColors = async () => {
-  try {
-    const config = (await api.sendCommand(
-      "party_mode/config",
-    )) as PartyModeConfig;
-    if (config) {
-      requestBadgeColor.value = config.request_badge_color || "#2196F3";
-      boostBadgeColor.value = config.boost_badge_color || "#FF5722";
-    }
-  } catch {
-    // Party mode not enabled or config unavailable - use defaults
-  }
-};
+const { fetchConfig: fetchPartyConfig } = usePartyModeConfig();
 
-onMounted(() => {
+onMounted(async () => {
   // Only fetch badge colors if party_mode provider is loaded
   if (Object.values(api.providers).some((p) => p.domain === "party_mode")) {
-    fetchBadgeColors();
+    const config = await fetchPartyConfig();
+    if (config) {
+      requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
+      boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
+    }
   }
 });
 

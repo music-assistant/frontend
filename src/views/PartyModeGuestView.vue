@@ -174,11 +174,11 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   type Artist,
-  type PartyModeConfig,
   PlaybackState,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import { useGuestQueue } from "@/composables/useGuestQueue";
 import { useGuestSearch } from "@/composables/useGuestSearch";
@@ -203,6 +203,7 @@ const isPlaying = computed(
 );
 
 // --- Composables ---
+const { fetchConfig } = usePartyModeConfig();
 const rateLimit = useRateLimiting();
 const {
   rateLimitingEnabled,
@@ -389,15 +390,9 @@ let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
 
 const fetchAndApplyConfig = async () => {
-  try {
-    const config = (await api.sendCommand(
-      "party_mode/config",
-    )) as PartyModeConfig;
-    if (config) {
-      rateLimit.configure(config);
-    }
-  } catch (error) {
-    console.error("Failed to fetch party mode config:", error);
+  const config = await fetchConfig();
+  if (config) {
+    rateLimit.configure(config);
   }
 };
 
