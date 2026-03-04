@@ -8,10 +8,9 @@ import api from "@/plugins/api";
 import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
 import { sortByRelevance } from "@/helpers/relevanceScoring";
 import { $t } from "@/plugins/i18n";
+import { toast } from "vue-sonner";
 
-export function useGuestSearch(options: {
-  showSnackbar: (message: string, color?: string) => void;
-}) {
+export function useGuestSearch() {
   // Search state
   const searchQuery = ref("");
   const searchResults = ref<(Track | Artist)[]>([]);
@@ -75,7 +74,7 @@ export function useGuestSearch(options: {
       displayedResultsCount.value = 10;
     } catch (error) {
       console.error("Search failed:", error);
-      options.showSnackbar($t("guest.search_failed"), "error");
+      toast.error($t("guest.search_failed"));
     } finally {
       searching.value = false;
     }
@@ -141,7 +140,7 @@ export function useGuestSearch(options: {
       artistTracks.value = tracks;
     } catch (error) {
       console.error("Failed to fetch artist tracks:", error);
-      options.showSnackbar($t("guest.load_artist_tracks_failed"), "error");
+      toast.error($t("guest.load_artist_tracks_failed"));
       selectedArtist.value = null;
     } finally {
       loadingArtistTracks.value = false;

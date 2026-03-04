@@ -2,15 +2,22 @@ import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSearch, mockGetArtistTracks, mockSortByRelevance } = vi.hoisted(
-  () => {
+const { mockSearch, mockGetArtistTracks, mockSortByRelevance, mockToast } =
+  vi.hoisted(() => {
     return {
       mockSearch: vi.fn(),
       mockGetArtistTracks: vi.fn(),
-      mockSortByRelevance: vi.fn(<T>(items: T[], _query: string): T[] => items),
+      mockSortByRelevance: vi.fn(
+        <T>(items: T[], _query: string): T[] => items,
+      ),
+      mockToast: {
+        success: vi.fn(),
+        error: vi.fn(),
+        warning: vi.fn(),
+        info: vi.fn(),
+      },
     };
-  },
-);
+  });
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -23,16 +30,21 @@ vi.mock("@/helpers/relevanceScoring", () => ({
   sortByRelevance: mockSortByRelevance,
 }));
 
+vi.mock("vue-sonner", () => ({
+  toast: mockToast,
+}));
+
 import { useGuestSearch } from "@/composables/useGuestSearch";
 
 describe("useGuestSearch", () => {
-  const showSnackbar = vi.fn();
-
   beforeEach(() => {
     mockSearch.mockReset();
     mockGetArtistTracks.mockReset();
     mockSortByRelevance.mockClear();
-    showSnackbar.mockReset();
+    mockToast.success.mockReset();
+    mockToast.error.mockReset();
+    mockToast.warning.mockReset();
+    mockToast.info.mockReset();
   });
 
   it("performs search with correct media types for 'all' filter", async () => {
@@ -47,7 +59,7 @@ describe("useGuestSearch", () => {
       searchResults,
       displayedResultsCount,
       performSearch,
-    } = useGuestSearch({ showSnackbar });
+    } = useGuestSearch();
 
     searchQuery.value = "test";
     searchFilter.value = "all";
@@ -70,7 +82,7 @@ describe("useGuestSearch", () => {
     });
 
     const { searchQuery, searchFilter, searchResults, performSearch } =
-      useGuestSearch({ showSnackbar });
+      useGuestSearch();
 
     searchQuery.value = "track search";
     searchFilter.value = "track";
@@ -89,16 +101,13 @@ describe("useGuestSearch", () => {
     mockSearch.mockRejectedValueOnce(new Error("Search failed"));
 
     const { searchQuery, performSearch, searching, hasSearched } =
-      useGuestSearch({ showSnackbar });
+      useGuestSearch();
 
     searchQuery.value = "error";
 
     await performSearch();
 
-    expect(showSnackbar).toHaveBeenCalledWith(
-      $t("guest.search_failed"),
-      "error",
-    );
+    expect(mockToast.error).toHaveBeenCalledWith($t("guest.search_failed"));
     expect(searching.value).toBe(false);
     expect(hasSearched.value).toBe(true);
   });
@@ -118,7 +127,7 @@ describe("useGuestSearch", () => {
       hasSearched,
       performSearch,
       clearSearch,
-    } = useGuestSearch({ showSnackbar });
+    } = useGuestSearch();
 
     searchQuery.value = "something";
     await performSearch();
@@ -142,7 +151,7 @@ describe("useGuestSearch", () => {
     mockGetArtistTracks.mockResolvedValueOnce(tracks);
 
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
-      useGuestSearch({ showSnackbar });
+      useGuestSearch();
 
     const artist = {
       provider_mappings: [
@@ -164,7 +173,7 @@ describe("useGuestSearch", () => {
     );
 
     const { selectedArtist, artistTracks, loadingArtistTracks, selectArtist } =
-      useGuestSearch({ showSnackbar });
+      useGuestSearch();
 
     const artist = {
       provider_mappings: [
@@ -177,9 +186,8 @@ describe("useGuestSearch", () => {
     expect(loadingArtistTracks.value).toBe(false);
     expect(selectedArtist.value).toBeNull();
     expect(artistTracks.value).toEqual([]);
-    expect(showSnackbar).toHaveBeenCalledWith(
+    expect(mockToast.error).toHaveBeenCalledWith(
       $t("guest.load_artist_tracks_failed"),
-      "error",
     );
   });
 
@@ -198,7 +206,7 @@ describe("useGuestSearch", () => {
       displayedResultsCount,
       performSearch,
       handleScroll,
-    } = useGuestSearch({ showSnackbar });
+    } = useGuestSearch();
 
     searchQuery.value = "scroll";
     await performSearch();

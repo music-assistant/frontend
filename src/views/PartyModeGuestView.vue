@@ -156,15 +156,6 @@
       @queue-scroll="handleQueueScroll"
     />
 
-    <!-- Snackbar for feedback -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
-      {{ snackbar.message }}
-      <template #actions>
-        <v-btn variant="text" @click="snackbar.show = false">
-          {{ $t("close") }}
-        </v-btn>
-      </template>
-    </v-snackbar>
   </div>
 </template>
 
@@ -178,6 +169,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { toast } from "vue-sonner";
 import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import { useGuestQueue } from "@/composables/useGuestQueue";
@@ -186,17 +178,6 @@ import PartyModeSearchBar from "@/components/party-mode/PartyModeSearchBar.vue";
 import PartyModeResultItem from "@/components/party-mode/PartyModeResultItem.vue";
 import PartyModeQueueSection from "@/components/party-mode/PartyModeQueueSection.vue";
 import PartyModeTokensBadge from "@/components/party-mode/PartyModeTokensBadge.vue";
-
-// --- Snackbar ---
-const snackbar = ref({
-  show: false,
-  message: "",
-  color: "success",
-});
-
-const showSnackbar = (message: string, color: string = "success") => {
-  snackbar.value = { show: true, message, color };
-};
 
 const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
@@ -239,9 +220,7 @@ const {
   handleQueueScroll,
 } = queue;
 
-const search = useGuestSearch({
-  showSnackbar: (msg, color) => showSnackbar(msg, color),
-});
+const search = useGuestSearch();
 const {
   searchQuery,
   searchResults,
@@ -293,11 +272,11 @@ const handleBack = (event: PopStateEvent) => {
 // --- Action glue (bridges rate limiting + API + snackbar) ---
 const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   if (position === "next" && !boostEnabled.value) {
-    showSnackbar($t("guest.boost_disabled"), "warning");
+    toast.warning($t("guest.boost_disabled"));
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
-    showSnackbar($t("guest.add_queue_disabled"), "warning");
+    toast.warning($t("guest.add_queue_disabled"));
     return;
   }
 
@@ -305,18 +284,14 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     if (position === "next") {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
-        showSnackbar(
-          $t("guest.boost_limit_reached", [minutesUntilNext]),
-          "warning",
-        );
+        toast.warning($t("guest.boost_limit_reached", [minutesUntilNext]));
         return;
       }
     } else {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        showSnackbar(
+        toast.warning(
           $t("guest.add_queue_limit_reached", [minutesUntilNext]),
-          "warning",
         );
         return;
       }
@@ -340,10 +315,10 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       position === "next"
         ? $t("guest.item_boosted", [item.name])
         : $t("guest.item_added_to_queue", [item.name]);
-    showSnackbar(message, "success");
+    toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
-    showSnackbar($t("guest.add_to_queue_failed"), "error");
+    toast.error($t("guest.add_to_queue_failed"));
   } finally {
     addingItems.value.delete(key);
   }
@@ -351,17 +326,14 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
 const skipCurrentSong = async () => {
   if (!skipSongEnabled.value) {
-    showSnackbar($t("guest.skip_disabled"), "warning");
+    toast.warning($t("guest.skip_disabled"));
     return;
   }
 
   if (rateLimitingEnabled.value) {
     if (!consumeSkipSongToken()) {
       const minutesUntilNext = getTimeUntilNextSkipToken();
-      showSnackbar(
-        $t("guest.skip_limit_reached", [minutesUntilNext]),
-        "warning",
-      );
+      toast.warning($t("guest.skip_limit_reached", [minutesUntilNext]));
       return;
     }
   }
@@ -376,10 +348,10 @@ const skipCurrentSong = async () => {
       throw new Error("Server rejected the request");
     }
 
-    showSnackbar($t("guest.song_skipped"), "success");
+    toast.success($t("guest.song_skipped"));
   } catch (error) {
     console.error("Failed to skip song:", error);
-    showSnackbar($t("guest.skip_failed"), "error");
+    toast.error($t("guest.skip_failed"));
   } finally {
     skippingSong.value = false;
   }
