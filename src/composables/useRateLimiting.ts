@@ -246,17 +246,17 @@ export function useRateLimiting() {
     boostEnabled.value = config.enable_boost ?? true;
     skipSongEnabled.value = config.enable_skip_song ?? true;
 
-    ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit || 10;
+    ADD_QUEUE_MAX_TOKENS.value = config.add_queue_limit ?? 10;
     ADD_QUEUE_REFILL_RATE.value =
-      (config.add_queue_refill_minutes || 2) * 60 * 1000;
-    BOOST_MAX_TOKENS.value = config.boost_limit || 3;
-    BOOST_REFILL_RATE.value = (config.boost_refill_minutes || 20) * 60 * 1000;
-    SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit || 1;
+      (config.add_queue_refill_minutes ?? 2) * 60 * 1000;
+    BOOST_MAX_TOKENS.value = config.boost_limit ?? 3;
+    BOOST_REFILL_RATE.value = (config.boost_refill_minutes ?? 20) * 60 * 1000;
+    SKIP_SONG_MAX_TOKENS.value = config.skip_song_limit ?? 1;
     SKIP_SONG_REFILL_RATE.value =
-      (config.skip_song_refill_minutes || 60) * 60 * 1000;
+      (config.skip_song_refill_minutes ?? 60) * 60 * 1000;
 
-    requestBadgeColor.value = config.request_badge_color || "#2196F3";
-    boostBadgeColor.value = config.boost_badge_color || "#FF5722";
+    requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
   };
 
   /**
