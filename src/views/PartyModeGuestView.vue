@@ -262,10 +262,15 @@ const goBack = () => {
     return;
   }
   clearSearch();
+  queue.scrollToCurrentItem();
 };
 
 const handleBack = (event: PopStateEvent) => {
-  if (selectedArtist.value || searchQuery.value || searchResults.value.length > 0) {
+  if (
+    selectedArtist.value ||
+    searchQuery.value ||
+    searchResults.value.length > 0
+  ) {
     event.preventDefault();
     goBack();
     history.pushState(null, "", location.href);
