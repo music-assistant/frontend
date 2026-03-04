@@ -1,7 +1,7 @@
 <template>
   <v-bottom-navigation
     app
-    height="60"
+    :height="height"
     bg-color="default"
     grow
     role="navigation"
@@ -49,6 +49,13 @@ import { store } from "@/plugins/store";
 import { Home, Menu, Speaker } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
+
+withDefaults(
+  defineProps<{
+    height?: number;
+  }>(),
+  { height: 60 },
+);
 
 const router = useRouter();
 
