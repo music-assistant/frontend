@@ -121,7 +121,9 @@
         <!-- power button -->
         <Button
           v-if="
-            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+            player.power_control != PLAYER_CONTROL_NONE &&
+            allowPowerControl &&
+            player.powered
           "
           variant="ghost-icon"
           size="icon"
