@@ -83,8 +83,18 @@ const { t } = useI18n();
 // local refs
 const coreConfigs = ref<CoreConfig[]>([]);
 
+interface SystemConfigExtraEntry {
+  domain: string;
+  route: string;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
+
 // Extra system entries that are not core modules
-const extraSystemEntries = [
+const extraSystemEntries: SystemConfigExtraEntry[] = [
   {
     domain: "logging",
     name: "settings.system_logging",
@@ -127,8 +137,8 @@ const getItemDescription = (item: CoreConfig) => {
     : api.providerManifests[item.domain].description;
 };
 
-const handleItemClick = function (item: any) {
-  if (item.route) {
+const handleItemClick = function (item: SystemConfigItem) {
+  if ("route" in item && item.route) {
     // Extra entry with custom route
     router.push(item.route);
   } else {

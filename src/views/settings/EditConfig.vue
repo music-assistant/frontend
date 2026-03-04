@@ -508,7 +508,7 @@ const emit = defineEmits<{
 // global refs
 const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
-const form = ref<VNodeRef>();
+const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const activePanel = ref<string[]>([]);
 const activeProtocolPanel = ref<string | undefined>(undefined);
 const showPasswordValues = ref(false);
@@ -695,7 +695,7 @@ watch(
 
 // methods
 const validate = async function () {
-  const { valid } = await (form.value as any).validate();
+  const { valid } = await form.value!.validate();
   return valid;
 };
 const submit = async function () {

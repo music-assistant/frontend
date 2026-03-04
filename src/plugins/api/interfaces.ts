@@ -425,7 +425,7 @@ export interface CommandMessage {
 
   message_id?: string;
   command: string;
-  args?: Record<string, any>;
+  args?: Record<string, unknown>;
 }
 
 export interface ResultMessageBase {
@@ -437,7 +437,7 @@ export interface ResultMessageBase {
 export interface SuccessResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
-  result: any;
+  result: unknown;
   partial?: boolean;
 }
 
@@ -451,7 +451,7 @@ export interface ErrorResultMessage extends ResultMessageBase {
 export interface EventMessage {
   event: EventType;
   object_id?: string; // player_id, queue_id or uri
-  data?: any; // optional data (such as the object)
+  data?: unknown; // optional data (such as the object)
 }
 export type MassEvent = EventMessage;
 
@@ -1095,7 +1095,7 @@ export interface User {
   created_at: string;
   display_name?: string;
   avatar_url?: string;
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
 }
