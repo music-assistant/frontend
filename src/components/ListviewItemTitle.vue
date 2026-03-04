@@ -11,26 +11,26 @@
     >
       ({{ new Date(item.metadata.release_date).getFullYear() }})
     </span>
+    <!-- explicit icon -->
+    <template
+      v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
+    >
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <v-icon
+              :class="{ 'explicit-icon-margin-left': showCheckboxes }"
+              icon="mdi-alpha-e-box"
+              width="35"
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <span>{{ $t("tooltip.explicit") }}</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </template>
   </div>
-  <!-- explicit icon -->
-  <template
-    v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
-  >
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger>
-          <v-icon
-            :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-            icon="mdi-alpha-e-box"
-            width="35"
-          />
-        </TooltipTrigger>
-        <TooltipContent>
-          <span>{{ $t("tooltip.explicit") }}</span>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  </template>
 </template>
 
 <script setup lang="ts">
@@ -73,6 +73,6 @@ const compProps = withDefaults(defineProps<Props>(), {
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.
    This adds a bit of spacing between the title and the explicit icon. */
 .explicit-icon-margin-left {
-  margin-left: 0.3em;
+  margin-left: 0.1em;
 }
 </style>
