@@ -129,7 +129,9 @@ const subtitle = computed(() => {
     parts.push(mediaItem.album.name);
   }
 
-  return parts.length > 0 ? parts.join(" • ") : $t("providers.party_mode.guest_page.unknown_artist");
+  return parts.length > 0
+    ? parts.join(" • ")
+    : $t("providers.party_mode.guest_page.unknown_artist");
 });
 
 const isBoosted = computed(
@@ -145,7 +147,9 @@ const badgeIcon = computed(() =>
 );
 
 const badgeLabel = computed(() =>
-  isBoosted.value ? $t("providers.party_mode.guest_page.boost") : $t("providers.party_mode.guest_page.request"),
+  isBoosted.value
+    ? $t("providers.party_mode.guest_page.boost")
+    : $t("providers.party_mode.guest_page.request"),
 );
 </script>
 

@@ -1,6 +1,8 @@
 <template>
   <div class="queue-section">
-    <h2 class="section-title">{{ $t("providers.party_mode.guest_page.current_queue") }}</h2>
+    <h2 class="section-title">
+      {{ $t("providers.party_mode.guest_page.current_queue") }}
+    </h2>
     <div
       v-if="queueItems.length > 0"
       ref="listRef"

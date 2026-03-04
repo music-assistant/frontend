@@ -298,27 +298,19 @@
                       </div>
                     </template>
                     <template #append>
-                      <span
+                      <PartyModePlayerBadge
                         v-if="item.extra_attributes?.party_mode_guest === true"
-                        class="guest-request-badge"
-                        :style="{
-                          '--badge-color':
-                            item.extra_attributes?.party_mode_boosted === true
-                              ? boostBadgeColor
-                              : requestBadgeColor,
-                        }"
-                      >
-                        <v-icon size="x-small">{{
+                        :type="
                           item.extra_attributes?.party_mode_boosted === true
-                            ? "mdi-rocket-launch"
-                            : "mdi-account-music"
-                        }}</v-icon>
-                        {{
+                            ? 'boost'
+                            : 'request'
+                        "
+                        :badge-color="
                           item.extra_attributes?.party_mode_boosted === true
-                            ? $t("providers.party_mode.boost")
-                            : $t("providers.party_mode.request")
-                        }}
-                      </span>
+                            ? boostBadgeColor
+                            : requestBadgeColor
+                        "
+                      />
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
@@ -545,6 +537,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import PartyModePlayerBadge from "@/components/party-mode/PartyModePlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";

@@ -105,7 +105,9 @@ describe("useGuestSearch", () => {
 
     await performSearch();
 
-    expect(mockToast.error).toHaveBeenCalledWith($t("providers.party_mode.guest_page.search_failed"));
+    expect(mockToast.error).toHaveBeenCalledWith(
+      $t("providers.party_mode.guest_page.search_failed"),
+    );
     expect(searching.value).toBe(false);
     expect(hasSearched.value).toBe(true);
   });

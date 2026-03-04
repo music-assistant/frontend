@@ -79,7 +79,11 @@
     <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
-          {{ $t("providers.party_mode.guest_page.search_results_count", [searchResults.length]) }}
+          {{
+            $t("providers.party_mode.guest_page.search_results_count", [
+              searchResults.length,
+            ])
+          }}
         </h2>
         <div v-if="rateLimitingEnabled" class="tokens-row">
           <PartyModeTokensBadge
@@ -132,8 +136,14 @@
       class="empty-state"
     >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
-      <p>{{ $t("providers.party_mode.guest_page.no_results_for", [searchQuery]) }}</p>
-      <p class="empty-hint">{{ $t("providers.party_mode.guest_page.try_different_search") }}</p>
+      <p>
+        {{
+          $t("providers.party_mode.guest_page.no_results_for", [searchQuery])
+        }}
+      </p>
+      <p class="empty-hint">
+        {{ $t("providers.party_mode.guest_page.try_different_search") }}
+      </p>
     </div>
 
     <!-- Current Queue Section -->
@@ -289,13 +299,21 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     if (position === "next") {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
-        toast.warning($t("providers.party_mode.guest_page.boost_limit_reached", [minutesUntilNext]));
+        toast.warning(
+          $t("providers.party_mode.guest_page.boost_limit_reached", [
+            minutesUntilNext,
+          ]),
+        );
         return;
       }
     } else {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        toast.warning($t("providers.party_mode.guest_page.add_queue_limit_reached", [minutesUntilNext]));
+        toast.warning(
+          $t("providers.party_mode.guest_page.add_queue_limit_reached", [
+            minutesUntilNext,
+          ]),
+        );
         return;
       }
     }
@@ -317,7 +335,9 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     const message =
       position === "next"
         ? $t("providers.party_mode.guest_page.item_boosted", [item.name])
-        : $t("providers.party_mode.guest_page.item_added_to_queue", [item.name]);
+        : $t("providers.party_mode.guest_page.item_added_to_queue", [
+            item.name,
+          ]);
     toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
@@ -336,7 +356,11 @@ const skipCurrentSong = async () => {
   if (rateLimitingEnabled.value) {
     if (!consumeSkipSongToken()) {
       const minutesUntilNext = getTimeUntilNextSkipToken();
-      toast.warning($t("providers.party_mode.guest_page.skip_limit_reached", [minutesUntilNext]));
+      toast.warning(
+        $t("providers.party_mode.guest_page.skip_limit_reached", [
+          minutesUntilNext,
+        ]),
+      );
       return;
     }
   }
