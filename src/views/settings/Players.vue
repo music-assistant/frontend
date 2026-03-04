@@ -88,6 +88,7 @@
                   size="x-small"
                   variant="tonal"
                   class="protocol-chip"
+                  :class="{ 'protocol-chip--unavailable': !protocol.available }"
                 >
                   <template #prepend>
                     <ProviderIcon
@@ -537,6 +538,10 @@ watch(
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.3px;
+}
+
+.protocol-chip--unavailable {
+  opacity: 0.4;
 }
 
 .chip-icon {
