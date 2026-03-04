@@ -9,7 +9,7 @@
     :style="isGuestRequest ? { '--guest-color': badgeColor } : {}"
   >
     <div :class="['track-artwork', sizeClass]">
-      <MediaItemThumb :item="queueItem" :size="artworkSize" />
+      <MediaItemThumb :item="queueItem" />
       <div
         v-if="position === 'current' && isPlaying"
         class="now-playing-overlay"
@@ -138,20 +138,6 @@ const artistName = computed(() => {
   }
 
   return parts.join(" • ");
-});
-
-const artworkSize = computed(() => {
-  switch (props.position) {
-    case "previous-2":
-    case "next-2":
-    case "previous-1":
-    case "next-1":
-      return 120;
-    case "current":
-      return 200;
-    default:
-      return 120;
-  }
 });
 
 // Size class used by both artwork and info sections
