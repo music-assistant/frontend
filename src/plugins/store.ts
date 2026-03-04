@@ -29,7 +29,7 @@ interface Store {
   isInPWAMode: boolean;
   showPlayersMenu: boolean;
   showFullscreenPlayer: boolean;
-
+  frameless: boolean;
   showQueueItems: boolean;
   apiInitialized: boolean;
   apiBaseUrl: string;
@@ -68,7 +68,7 @@ export const store: Store = reactive({
   isInPWAMode: false,
   showPlayersMenu: false,
   showFullscreenPlayer: false,
-
+  frameless: false,
   showQueueItems: false,
   apiInitialized: false,
   apiBaseUrl: "",
