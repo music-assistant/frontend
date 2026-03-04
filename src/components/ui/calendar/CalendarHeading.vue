@@ -10,7 +10,7 @@ const props = defineProps<
 >();
 
 defineSlots<{
-  default: (props: { headingValue: string }) => VNode;
+  default: (props: { headingValue: string }) => VNode | VNode[];
 }>();
 
 const delegatedProps = reactiveOmit(props, "class");
