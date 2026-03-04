@@ -110,7 +110,6 @@ defineEmits<{
 
 @media (max-width: 768px) {
   .search-section {
-    flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
