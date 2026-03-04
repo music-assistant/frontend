@@ -1,5 +1,16 @@
 <template>
   <div class="search-section">
+    <v-btn
+      v-if="showBack"
+      icon
+      variant="text"
+      size="small"
+      class="back-arrow"
+      :aria-label="$t('back')"
+      @click="$emit('back')"
+    >
+      <v-icon>mdi-arrow-left</v-icon>
+    </v-btn>
     <v-text-field
       :model-value="searchQuery"
       :placeholder="$t('guest.search_placeholder')"
@@ -64,6 +75,7 @@ defineProps<{
   searching: boolean;
   hasSearched: boolean;
   searchFilter: string;
+  showBack: boolean;
 }>();
 
 defineEmits<{
@@ -71,14 +83,20 @@ defineEmits<{
   "update:searchFilter": [value: string];
   search: [];
   clear: [];
+  back: [];
 }>();
 </script>
 
 <style scoped>
 .search-section {
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.back-arrow {
   flex-shrink: 0;
 }
 

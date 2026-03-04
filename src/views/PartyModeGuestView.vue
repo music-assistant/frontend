@@ -6,8 +6,10 @@
       v-model:search-filter="searchFilter"
       :searching="searching"
       :has-searched="hasSearched"
+      :show-back="hasSearched || !!selectedArtist"
       @search="performSearch"
       @clear="clearSearch"
+      @back="goBack"
     />
 
     <!-- Artist Tracks View (when drilling into an artist) -->
@@ -253,17 +255,19 @@ watch(
   },
 );
 
-// --- Back button handler ---
-const handleBack = (event: PopStateEvent) => {
+// --- Back navigation ---
+const goBack = () => {
   if (selectedArtist.value) {
-    event.preventDefault();
     clearArtistSelection();
-    history.pushState(null, "", location.href);
     return;
   }
-  if (searchQuery.value || searchResults.value.length > 0) {
+  clearSearch();
+};
+
+const handleBack = (event: PopStateEvent) => {
+  if (selectedArtist.value || searchQuery.value || searchResults.value.length > 0) {
     event.preventDefault();
-    clearSearch();
+    goBack();
     history.pushState(null, "", location.href);
   }
 };
