@@ -1,3 +1,4 @@
+import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
@@ -7,28 +8,26 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PlaybackState,
   Player,
   PlayerConfig,
-  PlaybackState,
   PlayerType,
   ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { api } from "@/plugins/api";
 import { marked } from "marked";
 
-import Color from "color";
-//@ts-ignore
-import ColorThief from "colorthief";
-import { store } from "@/plugins/store";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
-import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
+import { store } from "@/plugins/store";
+import { webPlayer } from "@/plugins/web_player";
+import Color from "color";
+import { getPaletteSync } from "colorthief";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
 
 export const openLinkInNewTab = function (url: string) {
@@ -531,11 +530,9 @@ export function findDarkColor(colors: RGBColor[]): string {
 }
 
 export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
-  const colorThief = new ColorThief();
-  const colorNumberPalette: RGBColor[] = colorThief.getPalette(img, 5);
-  const colorHexPalette: string[] = colorNumberPalette.map((color) =>
-    rgbToHex(color),
-  );
+  const palette = getPaletteSync(img, { colorCount: 5 }) ?? [];
+  const colorNumberPalette: RGBColor[] = palette.map((c) => c.array());
+  const colorHexPalette: string[] = palette.map((c) => c.hex());
 
   return {
     0: colorHexPalette[0],
@@ -668,7 +665,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 5;
     return 8;
   } else if (
     getBreakpointValue({
@@ -680,7 +676,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "lt",
     })
   ) {
-    if (store.showPlayersMenu) return 6;
     return 9;
   } else if (
     getBreakpointValue({
@@ -688,7 +683,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     })
   ) {
-    if (store.showPlayersMenu) return 7;
     return 10;
   } else {
     return 0;

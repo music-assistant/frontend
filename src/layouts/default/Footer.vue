@@ -14,15 +14,7 @@
 
   <!-- bottom navigation for mobile layout -->
   <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation
-    v-if="store.mobileLayout"
-    app
-    :style="
-      store.isInPWAMode && !store.isIngressSession
-        ? 'padding-bottom: 10px;height: 70px;'
-        : 'height: 60px;'
-    "
-  />
+  <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
 
   <v-footer
     app
