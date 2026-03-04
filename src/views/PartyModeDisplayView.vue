@@ -23,8 +23,8 @@
           class="empty-state"
         >
           <Music :size="120" class="empty-icon" />
-          <h2 class="empty-title">{{ $t("party.nothing_playing") }}</h2>
-          <p class="empty-message">{{ $t("party.get_started") }}</p>
+          <h2 class="empty-title">{{ $t("providers.party_mode.nothing_playing") }}</h2>
+          <p class="empty-message">{{ $t("providers.party_mode.get_started") }}</p>
         </div>
 
         <!-- Track List -->

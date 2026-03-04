@@ -59,7 +59,7 @@
         @click="$emit('skip')"
       >
         <v-icon start size="small">mdi-skip-next</v-icon>
-        {{ $t("guest.skip") }}
+        {{ $t("providers.party_mode.guest_page.skip") }}
         <span
           v-if="rateLimitingEnabled"
           class="skip-token-badge"
@@ -129,7 +129,7 @@ const subtitle = computed(() => {
     parts.push(mediaItem.album.name);
   }
 
-  return parts.length > 0 ? parts.join(" • ") : $t("guest.unknown_artist");
+  return parts.length > 0 ? parts.join(" • ") : $t("providers.party_mode.guest_page.unknown_artist");
 });
 
 const isBoosted = computed(
@@ -145,7 +145,7 @@ const badgeIcon = computed(() =>
 );
 
 const badgeLabel = computed(() =>
-  isBoosted.value ? $t("guest.boost") : $t("guest.request"),
+  isBoosted.value ? $t("providers.party_mode.guest_page.boost") : $t("providers.party_mode.guest_page.request"),
 );
 </script>
 

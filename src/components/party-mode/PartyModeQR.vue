@@ -5,8 +5,8 @@
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
       <QrCode :size="64" />
-      <p>{{ $t("party.guest_access_disabled") }}</p>
-      <p class="qr-hint">{{ $t("party.enable_in_settings") }}</p>
+      <p>{{ $t("providers.party_mode.guest_access_disabled") }}</p>
+      <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
       <a
@@ -23,8 +23,8 @@
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
-      <p>{{ $t("party.qr_failed") }}</p>
-      <p class="qr-hint">{{ $t("party.check_network") }}</p>
+      <p>{{ $t("providers.party_mode.qr_failed") }}</p>
+      <p class="qr-hint">{{ $t("providers.party_mode.check_network") }}</p>
     </div>
   </div>
 </template>
@@ -45,12 +45,10 @@ const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
-const instructionText = ref($t("party.scan_to_join"));
+const instructionText = ref($t("providers.party_mode.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
-const {
-  config: partyConfig,
-  fetchConfig: fetchPartyConfig,
-} = usePartyModeConfig();
+const { config: partyConfig, fetchConfig: fetchPartyConfig } =
+  usePartyModeConfig();
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
@@ -91,10 +89,10 @@ const fetchQrConfig = async () => {
       instructionText.value = "";
     } else {
       instructionText.value =
-        config.qr_instruction_text ?? $t("party.scan_to_join");
+        config.qr_instruction_text ?? $t("providers.party_mode.scan_to_join");
     }
   } else {
-    instructionText.value = $t("party.scan_to_join");
+    instructionText.value = $t("providers.party_mode.scan_to_join");
   }
 };
 
@@ -150,9 +148,9 @@ watch(partyConfig, (newConfig) => {
     instructionText.value =
       newConfig.qr_show_instruction_text === false
         ? ""
-        : (newConfig.qr_instruction_text ?? $t("party.scan_to_join"));
+        : (newConfig.qr_instruction_text ?? $t("providers.party_mode.scan_to_join"));
   } else {
-    instructionText.value = $t("party.scan_to_join");
+    instructionText.value = $t("providers.party_mode.scan_to_join");
   }
 });
 

@@ -13,7 +13,7 @@
     </v-btn>
     <v-text-field
       :model-value="searchQuery"
-      :placeholder="$t('guest.search_placeholder')"
+      :placeholder="$t('providers.party_mode.guest_page.search_placeholder')"
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       density="comfortable"
@@ -41,7 +41,7 @@
       </v-chip>
       <v-chip value="track" variant="outlined" size="small" class="filter-chip">
         <v-icon start size="small">mdi-music-note</v-icon>
-        {{ $t("guest.filter_songs") }}
+        {{ $t("providers.party_mode.guest_page.filter_songs") }}
       </v-chip>
       <v-chip
         value="artist"

@@ -315,8 +315,8 @@
                         }}</v-icon>
                         {{
                           item.extra_attributes?.party_mode_boosted === true
-                            ? $t("guest.boost")
-                            : $t("guest.request")
+                            ? $t("providers.party_mode.boost")
+                            : $t("providers.party_mode.request")
                         }}
                       </span>
                       <NowPlayingBadge

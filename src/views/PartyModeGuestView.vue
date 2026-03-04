@@ -31,7 +31,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('guest.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -40,7 +40,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('guest.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -49,7 +49,7 @@
       <!-- Loading state -->
       <div v-if="loadingArtistTracks" class="loading-state">
         <v-progress-circular indeterminate color="primary" size="48" />
-        <p>{{ $t("guest.loading_tracks") }}</p>
+        <p>{{ $t("providers.party_mode.guest_page.loading_tracks") }}</p>
       </div>
       <!-- Artist tracks list -->
       <div v-else-if="artistTracks.length > 0" class="results-list">
@@ -71,7 +71,7 @@
       <!-- Empty state for no tracks -->
       <div v-else class="empty-state">
         <v-icon size="64" color="grey">mdi-music-off</v-icon>
-        <p>{{ $t("guest.no_tracks_for_artist") }}</p>
+        <p>{{ $t("providers.party_mode.guest_page.no_tracks_for_artist") }}</p>
       </div>
     </div>
 
@@ -79,7 +79,7 @@
     <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
-          {{ $t("guest.search_results_count", [searchResults.length]) }}
+          {{ $t("providers.party_mode.guest_page.search_results_count", [searchResults.length]) }}
         </h2>
         <div v-if="rateLimitingEnabled" class="tokens-row">
           <PartyModeTokensBadge
@@ -87,7 +87,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('guest.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -96,7 +96,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('guest.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -132,8 +132,8 @@
       class="empty-state"
     >
       <v-icon size="64" color="grey">mdi-magnify</v-icon>
-      <p>{{ $t("guest.no_results_for", [searchQuery]) }}</p>
-      <p class="empty-hint">{{ $t("guest.try_different_search") }}</p>
+      <p>{{ $t("providers.party_mode.guest_page.no_results_for", [searchQuery]) }}</p>
+      <p class="empty-hint">{{ $t("providers.party_mode.guest_page.try_different_search") }}</p>
     </div>
 
     <!-- Current Queue Section -->
@@ -277,11 +277,11 @@ const handleBack = (event: PopStateEvent) => {
 // --- Action glue (bridges rate limiting + API + snackbar) ---
 const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   if (position === "next" && !boostEnabled.value) {
-    toast.warning($t("guest.boost_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.boost_disabled"));
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
-    toast.warning($t("guest.add_queue_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.add_queue_disabled"));
     return;
   }
 
@@ -289,13 +289,13 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     if (position === "next") {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
-        toast.warning($t("guest.boost_limit_reached", [minutesUntilNext]));
+        toast.warning($t("providers.party_mode.guest_page.boost_limit_reached", [minutesUntilNext]));
         return;
       }
     } else {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        toast.warning($t("guest.add_queue_limit_reached", [minutesUntilNext]));
+        toast.warning($t("providers.party_mode.guest_page.add_queue_limit_reached", [minutesUntilNext]));
         return;
       }
     }
@@ -316,12 +316,12 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
     const message =
       position === "next"
-        ? $t("guest.item_boosted", [item.name])
-        : $t("guest.item_added_to_queue", [item.name]);
+        ? $t("providers.party_mode.guest_page.item_boosted", [item.name])
+        : $t("providers.party_mode.guest_page.item_added_to_queue", [item.name]);
     toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
-    toast.error($t("guest.add_to_queue_failed"));
+    toast.error($t("providers.party_mode.guest_page.add_to_queue_failed"));
   } finally {
     addingItems.value.delete(key);
   }
@@ -329,14 +329,14 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
 const skipCurrentSong = async () => {
   if (!skipSongEnabled.value) {
-    toast.warning($t("guest.skip_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.skip_disabled"));
     return;
   }
 
   if (rateLimitingEnabled.value) {
     if (!consumeSkipSongToken()) {
       const minutesUntilNext = getTimeUntilNextSkipToken();
-      toast.warning($t("guest.skip_limit_reached", [minutesUntilNext]));
+      toast.warning($t("providers.party_mode.guest_page.skip_limit_reached", [minutesUntilNext]));
       return;
     }
   }
@@ -351,10 +351,10 @@ const skipCurrentSong = async () => {
       throw new Error("Server rejected the request");
     }
 
-    toast.success($t("guest.song_skipped"));
+    toast.success($t("providers.party_mode.guest_page.song_skipped"));
   } catch (error) {
     console.error("Failed to skip song:", error);
-    toast.error($t("guest.skip_failed"));
+    toast.error($t("providers.party_mode.guest_page.skip_failed"));
   } finally {
     skippingSong.value = false;
   }

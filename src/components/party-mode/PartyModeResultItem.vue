@@ -35,7 +35,7 @@
         @click="$emit('addToQueue', item, 'next')"
       >
         <v-icon start>mdi-rocket-launch</v-icon>
-        {{ $t("guest.boost") }}
+        {{ $t("providers.party_mode.guest_page.boost") }}
       </v-btn>
       <v-btn
         v-if="addQueueEnabled"
@@ -47,7 +47,7 @@
         @click="$emit('addToQueue', item, 'end')"
       >
         <v-icon start>mdi-playlist-plus</v-icon>
-        {{ $t("guest.add") }}
+        {{ $t("providers.party_mode.guest_page.add") }}
       </v-btn>
     </div>
 
@@ -60,7 +60,7 @@
         @click="$emit('selectArtist', item)"
       >
         <v-icon start>mdi-music-note-outline</v-icon>
-        {{ $t("guest.view_songs") }}
+        {{ $t("providers.party_mode.guest_page.view_songs") }}
       </v-btn>
     </div>
   </div>
@@ -103,7 +103,7 @@ const artistName = computed(() => {
   if ("artists" in props.item && props.item.artists.length > 0) {
     return props.item.artists.map((a) => a.name).join(", ");
   }
-  return $t("guest.unknown_artist");
+  return $t("providers.party_mode.guest_page.unknown_artist");
 });
 </script>
 

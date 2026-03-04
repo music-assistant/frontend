@@ -1,6 +1,6 @@
 <template>
   <div class="queue-section">
-    <h2 class="section-title">{{ $t("guest.current_queue") }}</h2>
+    <h2 class="section-title">{{ $t("providers.party_mode.guest_page.current_queue") }}</h2>
     <div
       v-if="queueItems.length > 0"
       ref="listRef"
@@ -31,7 +31,7 @@
     </div>
     <div v-else class="empty-queue">
       <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
-      <p>{{ $t("guest.queue_empty") }}</p>
+      <p>{{ $t("providers.party_mode.guest_page.queue_empty") }}</p>
     </div>
   </div>
 </template>

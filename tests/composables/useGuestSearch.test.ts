@@ -105,7 +105,7 @@ describe("useGuestSearch", () => {
 
     await performSearch();
 
-    expect(mockToast.error).toHaveBeenCalledWith($t("guest.search_failed"));
+    expect(mockToast.error).toHaveBeenCalledWith($t("providers.party_mode.guest_page.search_failed"));
     expect(searching.value).toBe(false);
     expect(hasSearched.value).toBe(true);
   });
@@ -185,7 +185,7 @@ describe("useGuestSearch", () => {
     expect(selectedArtist.value).toBeNull();
     expect(artistTracks.value).toEqual([]);
     expect(mockToast.error).toHaveBeenCalledWith(
-      $t("guest.load_artist_tracks_failed"),
+      $t("providers.party_mode.guest_page.load_artist_tracks_failed"),
     );
   });
 
