@@ -4,10 +4,8 @@
     <PartyModeSearchBar
       v-model:search-query="searchQuery"
       v-model:search-filter="searchFilter"
-      :searching="searching"
       :has-searched="hasSearched"
       :show-back="hasSearched || !!selectedArtist"
-      @search="performSearch"
       @clear="clearSearch"
       @back="goBack"
     />
@@ -233,7 +231,6 @@ const {
   loadingArtistTracks,
   displayedResults,
   resultsListRef,
-  performSearch,
   clearSearch,
   selectArtist,
   clearArtistSelection,

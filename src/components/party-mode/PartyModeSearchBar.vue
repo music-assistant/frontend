@@ -24,19 +24,8 @@
       enterkeyhint="search"
       class="search-input"
       @update:model-value="$emit('update:searchQuery', $event)"
-      @keyup.enter="$emit('search')"
       @click:clear="$emit('clear')"
     />
-    <v-btn
-      color="primary"
-      size="large"
-      :loading="searching"
-      :disabled="!searchQuery || searchQuery.length < 2"
-      class="search-btn"
-      @click="$emit('search')"
-    >
-      {{ $t("search") }}
-    </v-btn>
   </div>
 
   <!-- Search Filter Chips -->
@@ -72,7 +61,6 @@ import { $t } from "@/plugins/i18n";
 
 defineProps<{
   searchQuery: string;
-  searching: boolean;
   hasSearched: boolean;
   searchFilter: string;
   showBack: boolean;
@@ -81,7 +69,6 @@ defineProps<{
 defineEmits<{
   "update:searchQuery": [value: string];
   "update:searchFilter": [value: string];
-  search: [];
   clear: [];
   back: [];
 }>();
@@ -104,10 +91,6 @@ defineEmits<{
   flex: 1;
 }
 
-.search-btn {
-  min-width: 120px;
-}
-
 .filter-section {
   display: flex;
   margin-bottom: 1rem;
@@ -128,6 +111,7 @@ defineEmits<{
 @media (max-width: 768px) {
   .search-section {
     flex-direction: column;
+    align-items: stretch;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
   }
