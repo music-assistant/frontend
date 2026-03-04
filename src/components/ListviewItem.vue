@@ -10,7 +10,7 @@
     <template #prepend>
       <div v-if="showCheckboxes" class="flex items-center space-x-2 checkbox">
         <Checkbox
-          id="listviewitem-checkbox"
+          :id="`listviewitem-checkbox-${item.item_id}`"
           :model-value="isSelected"
           @click.stop
           @update:model-value="
@@ -19,7 +19,7 @@
             }
           "
         />
-        <label for="listviewitem-checkbox">
+        <label :for="`listviewitem-checkbox-${item.item_id}`">
           <ListviewitemTitle
             :display-name="displayName"
             :item="item"
