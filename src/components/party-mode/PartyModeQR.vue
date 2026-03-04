@@ -47,7 +47,8 @@ const loading = ref(true);
 const qrSize = ref(320);
 const instructionText = ref($t("party.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
-const { fetchConfig: fetchPartyConfig, invalidate: invalidatePartyConfig } = usePartyModeConfig();
+const { fetchConfig: fetchPartyConfig, invalidate: invalidatePartyConfig } =
+  usePartyModeConfig();
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 

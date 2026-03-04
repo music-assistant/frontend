@@ -155,7 +155,6 @@
       @skip="skipCurrentSong"
       @queue-scroll="handleQueueScroll"
     />
-
   </div>
 </template>
 
@@ -290,9 +289,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     } else {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        toast.warning(
-          $t("guest.add_queue_limit_reached", [minutesUntilNext]),
-        );
+        toast.warning($t("guest.add_queue_limit_reached", [minutesUntilNext]));
         return;
       }
     }

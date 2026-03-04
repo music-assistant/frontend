@@ -7,9 +7,7 @@ const { mockSearch, mockGetArtistTracks, mockSortByRelevance, mockToast } =
     return {
       mockSearch: vi.fn(),
       mockGetArtistTracks: vi.fn(),
-      mockSortByRelevance: vi.fn(
-        <T>(items: T[], _query: string): T[] => items,
-      ),
+      mockSortByRelevance: vi.fn(<T>(items: T[], _query: string): T[] => items),
       mockToast: {
         success: vi.fn(),
         error: vi.fn(),

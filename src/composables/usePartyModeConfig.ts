@@ -18,9 +18,7 @@ let fetchPromise: Promise<PartyModeConfig | null> | null = null;
  * Fetch party mode config, deduplicating concurrent requests.
  * Returns the cached config if already loaded, unless force is true.
  */
-async function fetchConfig(
-  force = false,
-): Promise<PartyModeConfig | null> {
+async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
   if (loaded.value && !force) {
     return config.value;
   }
