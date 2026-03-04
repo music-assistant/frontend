@@ -300,9 +300,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
         toast.warning(
-          $t("providers.party_mode.boost_limit_reached", [
-            minutesUntilNext,
-          ]),
+          $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
         );
         return;
       }
