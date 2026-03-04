@@ -16,6 +16,7 @@ import {
   type MassEvent,
   type MediaItemType,
   type Player,
+  type PlayerOptionValueType,
   type PlayerQueue,
   type Playlist,
   type ProviderInstance,
@@ -23,7 +24,6 @@ import {
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type PlayerOptionValueType,
   type SyncTask,
   type Track,
   type User,
@@ -88,11 +88,10 @@ export class MusicAssistantApi {
   });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
   private partialResult: { [msg_id: string]: Array<unknown> };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private commands: Map<
     string,
     {
-      resolve: (result?: any) => void;
+      resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
     }
   >;
@@ -232,7 +231,11 @@ export class MusicAssistantApi {
    * Handle incoming message from the transport
    */
   private handleMessage(
-    msg: ServerInfoMessage | EventMessage | SuccessResultMessage | ErrorResultMessage,
+    msg:
+      | ServerInfoMessage
+      | EventMessage
+      | SuccessResultMessage
+      | ErrorResultMessage,
   ): void {
     // Handle ServerInfo message (sent on connection and reconnection)
     if ("server_version" in msg && "server_id" in msg && !("event" in msg)) {
@@ -2040,9 +2043,7 @@ export class MusicAssistantApi {
       if (!(msg.message_id in this.partialResult)) {
         this.partialResult[msg.message_id] = [];
       }
-      this.partialResult[msg.message_id].push(
-        ...(msg.result as unknown[]),
-      );
+      this.partialResult[msg.message_id].push(...(msg.result as unknown[]));
       return;
     } else if (msg.message_id in this.partialResult) {
       // if we have partial results, append them to the final result
@@ -2496,7 +2497,10 @@ export class MusicAssistantApi {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
-      this.commands.set(cmdId, { resolve, reject });
+      this.commands.set(cmdId, {
+        resolve: resolve as (result: unknown) => void,
+        reject,
+      });
       this._sendCommand(command, args, cmdId);
     });
   }

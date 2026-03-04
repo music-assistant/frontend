@@ -28,7 +28,7 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => unknown>(
   return command(activePlayer?.player_id);
 }
 
-let interval = undefined as undefined | any;
+let interval = undefined as undefined | ReturnType<typeof setInterval>;
 
 function updateMediaState(state?: PlaybackState) {
   if (!state || !audioRef.value) return;
@@ -86,7 +86,9 @@ updateMediaState(store.activePlayer?.playback_state);
 
 // This allows for correct seeking on repeated seek forward/backward presses
 let lastSeekPos = undefined as undefined | number;
-let lastSeekPosTimeoutHandle = undefined as undefined | any;
+let lastSeekPosTimeoutHandle = undefined as
+  | undefined
+  | ReturnType<typeof setTimeout>;
 
 const lastSeekPosTimeout = function () {
   clearTimeout(lastSeekPosTimeoutHandle);

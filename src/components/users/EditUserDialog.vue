@@ -105,7 +105,7 @@
                     :disabled="isCurrentUser"
                     @update:model-value="
                       (value) => field.handleChange(value as UserRole)
-"
+                    "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
                       <SelectValue :placeholder="$t('auth.role')" />
@@ -371,8 +371,7 @@ const form = useForm({
     providerFilter: props.user?.provider_filter || [],
   },
   validators: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSubmit: editUserSchema(t) as any,
+    onSubmit: editUserSchema(t),
   },
   onSubmit: async ({ value }) => {
     if (!props.user) return;

@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 import {
   formatAliasName,
   formatDuration,
@@ -13,6 +12,7 @@ import {
   sleep,
   truncateString,
 } from "@/helpers/utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -204,8 +204,8 @@ describe("formatAliasName", () => {
 
   it("handles empty and falsy values", () => {
     expect(formatAliasName("")).toBe("");
-    expect(formatAliasName(null as any)).toBe("");
-    expect(formatAliasName(undefined as any)).toBe("");
+    expect(formatAliasName(null as unknown as string)).toBe("");
+    expect(formatAliasName(undefined as unknown as string)).toBe("");
   });
 });
 

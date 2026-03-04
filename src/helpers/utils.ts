@@ -208,7 +208,10 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
-export const getBrowseFolderName = function (browseItem: BrowseFolder, t: (key: string) => string) {
+export const getBrowseFolderName = function (
+  browseItem: BrowseFolder,
+  t: (key: string) => string,
+) {
   let browseTitle = "";
   if (browseItem?.name && browseItem?.translation_key) {
     browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
