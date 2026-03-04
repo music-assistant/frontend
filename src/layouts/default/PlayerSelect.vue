@@ -445,8 +445,12 @@ const selectDefaultPlayer = function () {
 }
 
 /* Disable focus and hover color changes */
-.player-content :deep(.v-expansion-panel-title:focus-visible > .v-expansion-panel-title__overlay),
-.player-content :deep(.v-expansion-panel-title:hover > .v-expansion-panel-title__overlay) {
+.player-content
+  :deep(
+    .v-expansion-panel-title:focus-visible > .v-expansion-panel-title__overlay
+  ),
+.player-content
+  :deep(.v-expansion-panel-title:hover > .v-expansion-panel-title__overlay) {
   opacity: 0;
 }
 
