@@ -45,7 +45,6 @@ export const openLinkInNewTab = function (url: string) {
   window.open(url, "_blank");
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const parseBool = (val: string | boolean | undefined | null) => {
   if (val == undefined || val == null) return false;
   if (!val) return false;
@@ -209,7 +208,7 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
-export const getBrowseFolderName = function (browseItem: BrowseFolder, t: any) {
+export const getBrowseFolderName = function (browseItem: BrowseFolder, t: (key: string) => string) {
   let browseTitle = "";
   if (browseItem?.name && browseItem?.translation_key) {
     browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
@@ -545,13 +544,15 @@ export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
   };
 }
 
-export function getValueFromSources(isAvailabe: any, sources: string | any[]) {
-  if (isAvailabe) {
-    return isAvailabe;
+export function getValueFromSources<T>(
+  isAvailable: T | undefined,
+  sources: [boolean, T, T?][],
+): T | undefined {
+  if (isAvailable) {
+    return isAvailable;
   }
 
-  for (const element of sources) {
-    const source = element;
+  for (const source of sources) {
     const expression = source[0];
     const valueIfTrue = source[1];
     const valueIfFalse = source[2];

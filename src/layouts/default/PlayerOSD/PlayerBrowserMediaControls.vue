@@ -20,7 +20,7 @@ import { onMounted, ref, watch } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
 
-function apiCommandWithCurrentPlayer<T extends (id: string) => any>(
+function apiCommandWithCurrentPlayer<T extends (id: string) => unknown>(
   command: T,
 ) {
   const activePlayer = store.activePlayer;

@@ -17,6 +17,7 @@ interface IconProps {
   name: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const icons: Record<string, any> = {};
 
 export default defineComponent({
@@ -39,7 +40,7 @@ export default defineComponent({
     name: {
       type: String as PropType<string>,
       required: true,
-      validator(value: any) {
+      validator(value: string) {
         return Object.prototype.hasOwnProperty.call(icons, value);
       },
     },

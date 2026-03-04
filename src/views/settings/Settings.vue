@@ -211,7 +211,7 @@ import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRouter, type RouteLocationRaw } from "vue-router";
 
 // global refs
 const router = useRouter();
@@ -478,7 +478,7 @@ const breadcrumbItems = computed(() => {
     title: string;
     disabled: boolean;
     href?: string;
-    to?: any;
+    to?: RouteLocationRaw;
   }> = [
     {
       title: t("settings.settings"),

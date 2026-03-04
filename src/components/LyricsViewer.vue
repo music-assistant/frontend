@@ -48,6 +48,7 @@ import {
   MediaItemType,
   ContentType,
   Artist,
+  StreamDetails,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
@@ -55,7 +56,7 @@ interface Props {
   mediaItem?: MediaItemType;
   position?: number;
   duration?: number;
-  streamDetails?: any;
+  streamDetails?: StreamDetails;
   textColor?: string;
   debugMode?: boolean;
   lyrics?: string | null;

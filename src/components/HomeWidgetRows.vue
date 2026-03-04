@@ -102,7 +102,7 @@ onMounted(() => {
   const unsub = api.subscribe(
     EventType.MEDIA_ITEM_PLAYED,
     async (evt: EventMessage) => {
-      if (evt.data && !evt.data.is_playing) {
+      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
         loadData();
       }
     },

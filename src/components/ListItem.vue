@@ -1,11 +1,11 @@
 <template>
   <v-list-item
-    v-hold="(v: any) => $emit('menu', v)"
+    v-hold="(v: Event) => $emit('menu', v)"
     v-bind="listItemProps"
     :class="listItemClasses"
     @click="$emit('click', $event)"
-    @click.right.prevent="(v: any) => $emit('menu', v)"
-    @input="(v: any) => $emit('input', v)"
+    @click.right.prevent="(v: Event) => $emit('menu', v)"
+    @input="(v: Event) => $emit('input', v)"
   >
     <template v-for="(_, name) in $slots" #[name]>
       <slot :name="name"></slot>
@@ -17,7 +17,7 @@
         variant="icon"
         icon="mdi-dots-vertical"
         aria-label="Show context menu"
-        @click.stop="(v: any) => $emit('menu', v)"
+        @click.stop="(v: Event) => $emit('menu', v)"
       />
     </template>
   </v-list-item>
