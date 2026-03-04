@@ -204,8 +204,10 @@ describe("formatAliasName", () => {
 
   it("handles empty and falsy values", () => {
     expect(formatAliasName("")).toBe("");
-    expect(formatAliasName(null as unknown as string)).toBe("");
-    expect(formatAliasName(undefined as unknown as string)).toBe("");
+    // @ts-expect-error Testing invalid input: null is not a string
+    expect(formatAliasName(null)).toBe("");
+    // @ts-expect-error Testing invalid input: undefined is not a string
+    expect(formatAliasName(undefined)).toBe("");
   });
 });
 
