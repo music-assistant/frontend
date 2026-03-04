@@ -236,10 +236,6 @@ html {
   font-weight: 800;
 }
 
-.checkbox {
-  margin-bottom: 0.1em;
-}
-
 /* iOS Safari 15 scroll momentum */
 .scroll-container,
 .v-list,
