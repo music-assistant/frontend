@@ -33,14 +33,9 @@
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
-import { CoreState, EventType } from "@/plugins/api/interfaces";
+import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
-import {
-  EventType as ApiEventType,
-  ProviderType,
-  UserRole,
-} from "@/plugins/api/interfaces";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -441,7 +436,7 @@ onMounted(async () => {
   }
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
-  api.subscribe(ApiEventType.PROVIDERS_UPDATED, async () => {
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     try {
       const partyModeProviders = await api.getProviderConfigs(
         ProviderType.PLUGIN,
