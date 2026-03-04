@@ -28,6 +28,7 @@ watch(
 
 const needsBottomPadding = computed(() => {
   if (route.path !== "/party") return true;
+  if (partyConfig.value === null) return true;
   return partyConfig.value?.show_player_controls ?? false;
 });
 </script>

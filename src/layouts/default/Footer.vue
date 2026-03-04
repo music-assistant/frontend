@@ -62,7 +62,11 @@ watch(
 
 // Hide footer when on party view and controls are explicitly disabled
 const hideFooter = computed(() => {
-  return route.path === "/party" && (partyConfig.value?.show_player_controls ?? false) === false;
+  return (
+    route.path === "/party" &&
+    partyConfig.value !== null &&
+    (partyConfig.value?.show_player_controls ?? false) === false
+  );
 });
 </script>
 
