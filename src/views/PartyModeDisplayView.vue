@@ -70,7 +70,7 @@ import { useTheme } from "vuetify";
 
 const theme = useTheme();
 const route = useRoute();
-const { fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
@@ -396,6 +396,21 @@ onBeforeUnmount(() => {
 
   // Unsubscribe from events
   unsubscribeFunctions.value.forEach((unsub) => unsub());
+});
+
+// React to party mode config changes (e.g., admin toggles player controls)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
+    showPlayerControls.value = newConfig.show_player_controls ?? false;
+    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+  } else {
+    albumArtBackgroundEnabled.value = true;
+    showPlayerControls.value = false;
+    requestBadgeColor.value = "#2196F3";
+    boostBadgeColor.value = "#FF5722";
+  }
 });
 
 // Watch for active player queue changes

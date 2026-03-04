@@ -1258,16 +1258,21 @@ const loadNextPage = async function ({ done }: { done: any }) {
 };
 
 // Fetch badge colors from party mode config
-const { fetchConfig: fetchPartyConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig: fetchPartyConfig } =
+  usePartyModeConfig();
+
+// React to party mode config changes (e.g., admin changes badge colors)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+  }
+});
 
 onMounted(async () => {
   // Only fetch badge colors if party_mode provider is loaded
   if (Object.values(api.providers).some((p) => p.domain === "party_mode")) {
-    const config = await fetchPartyConfig();
-    if (config) {
-      requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
-      boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
-    }
+    await fetchPartyConfig();
   }
 });
 

@@ -6,7 +6,7 @@
 
 import { ref } from "vue";
 import api from "@/plugins/api";
-import type { PartyModeConfig } from "@/plugins/api/interfaces";
+import { EventType, type PartyModeConfig } from "@/plugins/api/interfaces";
 
 const config = ref<PartyModeConfig | null>(null);
 const loading = ref(false);
@@ -59,7 +59,31 @@ function invalidate() {
   fetchPromise = null;
 }
 
+let subscribed = false;
+
+/**
+ * Subscribe to PROVIDERS_UPDATED so the shared config ref
+ * auto-refreshes whenever the party_mode provider is reloaded.
+ */
+function ensureSubscribed() {
+  if (subscribed) return;
+  subscribed = true;
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    const hasPartyMode = Object.values(api.providers).some(
+      (p) => p.domain === "party_mode",
+    );
+    if (hasPartyMode) {
+      invalidate();
+      await fetchConfig(true);
+    } else {
+      config.value = null;
+      loaded.value = true;
+    }
+  });
+}
+
 export function usePartyModeConfig() {
+  ensureSubscribed();
   return {
     config,
     loading,

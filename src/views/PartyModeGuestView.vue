@@ -183,7 +183,7 @@ const isPlaying = computed(
 );
 
 // --- Composables ---
-const { fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 const rateLimit = useRateLimiting();
 const {
   rateLimitingEnabled,
@@ -359,6 +359,13 @@ const skipCurrentSong = async () => {
     skippingSong.value = false;
   }
 };
+
+// React to party mode config changes (e.g., admin changes rate limits or badge colors)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    rateLimit.configure(newConfig);
+  }
+});
 
 // --- Lifecycle ---
 let cleanupCountdown: (() => void) | null = null;

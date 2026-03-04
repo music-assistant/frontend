@@ -47,8 +47,10 @@ const loading = ref(true);
 const qrSize = ref(320);
 const instructionText = ref($t("party.scan_to_join"));
 const lastRemoteAccessEnabled = ref<boolean | null>(null);
-const { fetchConfig: fetchPartyConfig, invalidate: invalidatePartyConfig } =
-  usePartyModeConfig();
+const {
+  config: partyConfig,
+  fetchConfig: fetchPartyConfig,
+} = usePartyModeConfig();
 let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
@@ -142,6 +144,18 @@ const generateQRCode = async () => {
   }
 };
 
+// React to config changes (e.g., admin updates QR instruction text)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    instructionText.value =
+      newConfig.qr_show_instruction_text === false
+        ? ""
+        : (newConfig.qr_instruction_text ?? $t("party.scan_to_join"));
+  } else {
+    instructionText.value = $t("party.scan_to_join");
+  }
+});
+
 onMounted(async () => {
   await fetchQrConfig();
   await generateQRCode();
@@ -163,22 +177,16 @@ onMounted(async () => {
   }
 
   // Subscribe to PROVIDERS_UPDATED to detect when party_mode or remote_access
-  // provider is reloaded. This replaces polling for remote access status changes.
+  // provider is reloaded. Config refresh is handled by the composable automatically.
   unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    // Check remote access status (replaces 2s polling)
     await checkRemoteAccessStatus();
 
-    // Check if party_mode provider exists
     const hasPartyMode = Object.values(api.providers).some(
       (p) => p.domain === "party_mode",
     );
     if (hasPartyMode) {
-      // Invalidate cache and refresh config + QR code to reflect any changes
-      invalidatePartyConfig();
-      await fetchQrConfig();
       await generateQRCode();
     } else {
-      // Provider was unloaded, clear the QR code and mark as disabled
       guestAccessEnabled.value = false;
       qrCodeUrl.value = "";
     }
