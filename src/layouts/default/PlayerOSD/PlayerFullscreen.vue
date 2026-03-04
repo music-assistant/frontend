@@ -1186,8 +1186,7 @@ const resetItems = async function () {
   tempHide.value = false;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadNextPage = async function ({ done }: { done: any }) {
+const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done("empty");
     return;

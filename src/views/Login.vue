@@ -400,9 +400,10 @@
 
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
-import type { AuthProvider } from "@/plugins/api/interfaces";
+import type { AuthProvider, ServerInfoMessage, User } from "@/plugins/api/interfaces";
+import type { ITransport } from "@/plugins/remote/transport";
 import { remoteConnectionManager } from "@/plugins/remote";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { type ComponentPublicInstance, computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
 
@@ -415,14 +416,14 @@ const STORAGE_KEY_TOKEN = "ma_access_token";
 
 // Props and emits
 const emit = defineEmits<{
-  (e: "connected", transport: any): void;
+  (e: "connected", transport: ITransport): void;
   (
     e: "authenticated",
     credentials: {
       username?: string;
       password?: string;
       token?: string;
-      user?: any;
+      user?: User;
     },
   ): void;
   (e: "local-connect", serverAddress: string): void;
@@ -1159,8 +1160,9 @@ const handleRemoteIdPaste = (index: number, event: ClipboardEvent) => {
 /**
  * Set ref for remote ID input field
  */
-const setRemoteIdRef = (index: number) => (el: any) => {
-  remoteIdRefs.value[index] = el?.$el?.querySelector("input") || el;
+const setRemoteIdRef = (index: number) => (el: Element | ComponentPublicInstance | null) => {
+  const root = el && '$el' in el ? (el.$el as HTMLElement | undefined) : el;
+  remoteIdRefs.value[index] = (root?.querySelector?.("input") || root) as HTMLInputElement | null;
 };
 
 /**
@@ -1308,8 +1310,8 @@ const fetchAuthProviders = async () => {
   try {
     // First, check if server info has auth provider hints
     const serverInfo = api.serverInfo.value;
-    if (serverInfo && (serverInfo as any).auth_providers) {
-      authProviders.value = (serverInfo as any).auth_providers;
+    if (serverInfo && "auth_providers" in serverInfo && (serverInfo as ServerInfoMessage & { auth_providers?: AuthProvider[] }).auth_providers) {
+      authProviders.value = (serverInfo as ServerInfoMessage & { auth_providers: AuthProvider[] }).auth_providers;
       console.debug(
         "[Login] Auth providers from serverInfo:",
         authProviders.value,
@@ -1347,7 +1349,7 @@ const login = async () => {
  * Handle authentication error from App.vue
  * This is called when the actual authentication fails in App.vue
  */
-const handleAuthenticationError = (error: any) => {
+const handleAuthenticationError = (error: unknown) => {
   console.error("[Login] Authentication failed:", error);
 
   // Extract error message from different error types
@@ -1356,10 +1358,10 @@ const handleAuthenticationError = (error: any) => {
     errorMessage = error.message;
   } else if (typeof error === "string") {
     errorMessage = error;
-  } else if (error && typeof error.message === "string") {
-    errorMessage = error.message;
-  } else if (error && typeof error.details === "string") {
-    errorMessage = error.details;
+  } else if (error && typeof error === "object" && "message" in error && typeof (error as Record<string, unknown>).message === "string") {
+    errorMessage = (error as Record<string, string>).message;
+  } else if (error && typeof error === "object" && "details" in error && typeof (error as Record<string, unknown>).details === "string") {
+    errorMessage = (error as Record<string, string>).details;
   } else {
     errorMessage = t(
       "login.error_login_failed",

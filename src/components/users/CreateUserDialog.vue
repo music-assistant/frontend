@@ -133,8 +133,8 @@
                   <Select
                     :model-value="field.state.value"
                     @update:model-value="
-                      (value) => field.handleChange(value as any)
-                    "
+                      (value) => field.handleChange(value as UserRole)
+"
                   >
                     <SelectTrigger :id="field.name" class="w-full">
                       <SelectValue :placeholder="$t('auth.role')" />
@@ -211,6 +211,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
@@ -324,6 +325,7 @@ const form = useForm({
     providerFilter: [] as string[],
   },
   validators: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSubmit: createUserSchema(t) as any,
   },
   onSubmit: async ({ value }) => {
@@ -355,7 +357,7 @@ const form = useForm({
   },
 });
 
-const isInvalid = (field: any) => {
+const isInvalid = (field: AnyFieldApi) => {
   return field.state.meta.errors.length > 0;
 };
 

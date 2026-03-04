@@ -119,8 +119,8 @@ const fetchLogs = async (isRefresh = false) => {
       // New data or initial load - scroll to bottom
       setTimeout(() => scrollToBottom(), 100);
     }
-  } catch (e: any) {
-    error.value = e.message || "Failed to load server logs";
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : "Failed to load server logs";
     console.error("Error loading logs:", e);
   } finally {
     loading.value = false;

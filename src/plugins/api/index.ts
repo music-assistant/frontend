@@ -1,6 +1,5 @@
 import { store } from "../store";
 /* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import type { ITransport } from "../remote/transport";
@@ -71,7 +70,7 @@ export enum ConnectionState {
 
 export class MusicAssistantApi {
   private transport?: ITransport;
-  private _throttleId?: any;
+  private _throttleId?: ReturnType<typeof setTimeout>;
   public baseUrl?: string; // HTTP base URL for image proxy etc.
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -88,12 +87,13 @@ export class MusicAssistantApi {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
-  private partialResult: { [msg_id: string]: Array<any> };
+  private partialResult: { [msg_id: string]: Array<unknown> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private commands: Map<
     string,
     {
       resolve: (result?: any) => void;
-      reject: (err: any) => void;
+      reject: (err: unknown) => void;
     }
   >;
 
@@ -231,7 +231,9 @@ export class MusicAssistantApi {
   /**
    * Handle incoming message from the transport
    */
-  private handleMessage(msg: any): void {
+  private handleMessage(
+    msg: ServerInfoMessage | EventMessage | SuccessResultMessage | ErrorResultMessage,
+  ): void {
     // Handle ServerInfo message (sent on connection and reconnection)
     if ("server_version" in msg && "server_id" in msg && !("event" in msg)) {
       this.handleServerInfoMessage(msg as ServerInfoMessage);
@@ -1383,7 +1385,7 @@ export class MusicAssistantApi {
   public playerQueueCommand(
     queue_id: string,
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ) {
     /*
       Handle (throttled) command to player
@@ -1577,7 +1579,7 @@ export class MusicAssistantApi {
   public playerCommand(
     player_id: string,
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ): Promise<void> {
     /*
       Handle command to player
@@ -2038,12 +2040,16 @@ export class MusicAssistantApi {
       if (!(msg.message_id in this.partialResult)) {
         this.partialResult[msg.message_id] = [];
       }
-      this.partialResult[msg.message_id].push(...msg.result);
+      this.partialResult[msg.message_id].push(
+        ...(msg.result as unknown[]),
+      );
       return;
     } else if (msg.message_id in this.partialResult) {
       // if we have partial results, append them to the final result
       if ("result" in msg)
-        msg.result = this.partialResult[msg.message_id].concat(msg.result);
+        msg.result = this.partialResult[msg.message_id].concat(
+          msg.result as unknown[],
+        );
       delete this.partialResult[msg.message_id];
     }
 
@@ -2293,14 +2299,14 @@ export class MusicAssistantApi {
       avatarUrl?: string;
       role?: UserRole;
       password?: string;
-      preferences?: Record<string, any>;
+      preferences?: Record<string, unknown>;
       provider_filter?: string[];
       player_filter?: string[];
     },
   ): Promise<User> {
     // Update user using unified update command
     try {
-      const args: Record<string, any> = { user_id: userId };
+      const args: Record<string, unknown> = { user_id: userId };
 
       if (updates.username) args.username = updates.username;
       if (updates.displayName) args.display_name = updates.displayName;
@@ -2485,7 +2491,7 @@ export class MusicAssistantApi {
 
   public sendCommand<Result>(
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -2497,7 +2503,7 @@ export class MusicAssistantApi {
 
   private _sendCommand(
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
     msgId?: string,
   ): void {
     // Allow commands only when fully connected

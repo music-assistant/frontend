@@ -92,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { Copy } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
@@ -140,6 +141,7 @@ const form = useForm({
     tokenName: "",
   },
   validators: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSubmit: createTokenSchema(t) as any,
   },
   onSubmit: async ({ value }) => {
@@ -155,15 +157,15 @@ const form = useForm({
       } else {
         toast.error(t("auth.token_create_failed"));
       }
-    } catch (error: any) {
-      toast.error(error.message || t("auth.token_create_failed"));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t("auth.token_create_failed"));
     } finally {
       loading.value = false;
     }
   },
 });
 
-function isInvalid(field: any) {
+function isInvalid(field: AnyFieldApi) {
   return field.state.meta.isTouched && !field.state.meta.isValid;
 }
 

@@ -32,7 +32,7 @@ export function useUserPreferences() {
       if (!store.currentUser?.preferences) {
         return defaultValue;
       }
-      const value = store.currentUser.preferences[key];
+      const value = store.currentUser.preferences[key] as T | undefined;
       return value !== undefined ? value : defaultValue;
     });
   }
@@ -41,7 +41,7 @@ export function useUserPreferences() {
    * Set a preference value in user preferences
    * Updates optimistically on the client and sends to server
    */
-  async function setPreference(key: string, value: any): Promise<void> {
+  async function setPreference(key: string, value: unknown): Promise<void> {
     if (!store.currentUser) {
       console.warn("Cannot set preference: no user logged in");
       return;
@@ -94,7 +94,7 @@ export function useUserPreferences() {
     path: string,
     itemtype: string,
     key: keyof ItemsListingPreferences,
-    value: any,
+    value: ItemsListingPreferences[keyof ItemsListingPreferences],
   ): Promise<void> {
     const storKey = `${path}.${itemtype}`;
     const prefKey = `itemsListing.${storKey}`;

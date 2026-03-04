@@ -100,8 +100,10 @@ describe("truncateString", () => {
   });
 
   it("handles null/undefined input", () => {
-    expect(truncateString(null as any, 5)).toBe("");
-    expect(truncateString(undefined as any, 5)).toBe("");
+    // @ts-expect-error testing invalid input
+    expect(truncateString(null, 5)).toBe("");
+    // @ts-expect-error testing invalid input
+    expect(truncateString(undefined, 5)).toBe("");
   });
 });
 
