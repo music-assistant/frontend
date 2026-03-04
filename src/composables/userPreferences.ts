@@ -1,6 +1,6 @@
+import { computed, ComputedRef } from "vue";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { computed, ComputedRef } from "vue";
 
 export interface ItemsListingPreferences {
   viewMode?: string;
