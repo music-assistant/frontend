@@ -856,7 +856,7 @@ export interface PlayerQueue {
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
-  extra_attributes?: Record<string, any>;
+  extra_attributes?: Record<string, unknown>;
 }
 
 // player

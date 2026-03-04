@@ -56,10 +56,9 @@ export interface ITransport {
  */
 export abstract class BaseTransport implements ITransport {
   protected _state: TransportState = TransportState.DISCONNECTED;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected eventHandlers: Map<
     keyof TransportEventMap,
-    Set<(...args: any[]) => void>
+    Set<(...args: unknown[]) => void>
   > = new Map();
 
   get state(): TransportState {
@@ -81,7 +80,7 @@ export abstract class BaseTransport implements ITransport {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
-    this.eventHandlers.get(event)!.add(handler);
+    this.eventHandlers.get(event)!.add(handler as (...args: unknown[]) => void);
   }
 
   off<K extends keyof TransportEventMap>(
@@ -90,7 +89,7 @@ export abstract class BaseTransport implements ITransport {
   ): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
-      handlers.delete(handler);
+      handlers.delete(handler as (...args: unknown[]) => void);
     }
   }
 
