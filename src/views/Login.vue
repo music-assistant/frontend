@@ -703,8 +703,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
   } catch (error) {
     console.error("[Login] Guest code authentication failed:", error);
     // Clear potentially invalid token to avoid repeated failing auto-login attempts
-    localStorage.removeItem(STORAGE_KEY_TOKEN);
-    authManager.setToken("");
+    authManager.clearAuth();
     return false;
   }
 };
