@@ -35,7 +35,7 @@
         @click="$emit('addToQueue', item, 'next')"
       >
         <v-icon start>mdi-rocket-launch</v-icon>
-        {{ $t("providers.party_mode.guest_page.boost") }}
+        {{ $t("providers.party_mode.boost") }}
       </v-btn>
       <v-btn
         v-if="addQueueEnabled"
@@ -47,7 +47,7 @@
         @click="$emit('addToQueue', item, 'end')"
       >
         <v-icon start>mdi-playlist-plus</v-icon>
-        {{ $t("providers.party_mode.guest_page.add") }}
+        {{ $t("providers.party_mode.add") }}
       </v-btn>
     </div>
 

@@ -31,7 +31,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.guest_page.boost_available')"
+            :label="$t('providers.party_mode.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -40,7 +40,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.guest_page.add_available')"
+            :label="$t('providers.party_mode.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -91,7 +91,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.guest_page.boost_available')"
+            :label="$t('providers.party_mode.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -100,7 +100,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.guest_page.add_available')"
+            :label="$t('providers.party_mode.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -287,11 +287,11 @@ const handleBack = (event: PopStateEvent) => {
 // --- Action glue (bridges rate limiting + API + snackbar) ---
 const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   if (position === "next" && !boostEnabled.value) {
-    toast.warning($t("providers.party_mode.guest_page.boost_disabled"));
+    toast.warning($t("providers.party_mode.boost_disabled"));
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
-    toast.warning($t("providers.party_mode.guest_page.add_queue_disabled"));
+    toast.warning($t("providers.party_mode.add_queue_disabled"));
     return;
   }
 
@@ -300,7 +300,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       if (!consumeBoostToken()) {
         const minutesUntilNext = getTimeUntilNextToken();
         toast.warning(
-          $t("providers.party_mode.guest_page.boost_limit_reached", [
+          $t("providers.party_mode.boost_limit_reached", [
             minutesUntilNext,
           ]),
         );
@@ -310,7 +310,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
       if (!consumeAddQueueToken()) {
         const minutesUntilNext = getTimeUntilNextAddQueueToken();
         toast.warning(
-          $t("providers.party_mode.guest_page.add_queue_limit_reached", [
+          $t("providers.party_mode.add_queue_limit_reached", [
             minutesUntilNext,
           ]),
         );
@@ -341,7 +341,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
-    toast.error($t("providers.party_mode.guest_page.add_to_queue_failed"));
+    toast.error($t("providers.party_mode.add_to_queue_failed"));
   } finally {
     addingItems.value.delete(key);
   }

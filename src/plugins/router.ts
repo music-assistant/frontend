@@ -11,7 +11,7 @@ const routes = [
   // which exchanges the short join code for a JWT before navigating here
   {
     path: "/guest",
-    component: () => import("@/layouts/GuestLayout.vue"),
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
     children: [
       {
         path: "",

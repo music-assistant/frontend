@@ -87,8 +87,8 @@ const badgeColor = computed(() => {
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
-  if (isBoost.value) return $t("providers.party_mode.guest_page.boost");
-  return $t("providers.party_mode.guest_page.request");
+  if (isBoost.value) return $t("providers.party_mode.boost");
+  return $t("providers.party_mode.request");
 });
 
 // Computed track name - prefer media_item.name for proper track title

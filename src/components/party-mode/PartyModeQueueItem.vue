@@ -148,8 +148,8 @@ const badgeIcon = computed(() =>
 
 const badgeLabel = computed(() =>
   isBoosted.value
-    ? $t("providers.party_mode.guest_page.boost")
-    : $t("providers.party_mode.guest_page.request"),
+    ? $t("providers.party_mode.boost")
+    : $t("providers.party_mode.request"),
 );
 </script>
 
