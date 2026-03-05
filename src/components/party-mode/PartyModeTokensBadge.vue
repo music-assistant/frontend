@@ -5,7 +5,7 @@
       {{ tokens }}/{{ maxTokens }}
     </span>
     <span class="token-label">{{ label }}</span>
-    <span v-if="countdown" class="token-countdown">
+    <span v-if="countdown" class="token-countdown" :style="{ color }">
       <v-icon size="x-small">mdi-clock-outline</v-icon>
       {{ countdown }}
     </span>
@@ -64,7 +64,6 @@ const badgeStyle = computed(() => {
   gap: 0.25rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-secondary));
   padding-left: 0.5rem;
   border-left: 1px solid rgba(var(--v-theme-on-surface), 0.2);
 }
