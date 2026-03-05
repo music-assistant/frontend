@@ -31,9 +31,6 @@ export interface Props {
 const props = defineProps<Props>();
 
 const silentAudioRef = ref<HTMLAudioElement>();
-const isChromiumBrowser = /(Chrome|Chromium|CriOS|Edg|OPR|Brave)/i.test(
-  navigator.userAgent,
-);
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
@@ -273,14 +270,10 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("pause", () => {
     const targetId = getTargetPlayerId();
     if (!targetId) return;
-    if (!isChromiumBrowser) {
-      api.playerCommandPause(targetId);
-      return;
-    }
 
     // workaround-alert: delay the pause command a tiny bit
     // to workaround a browser bug where pause is sent if a laptop/computer
-    // goes to standby (lid closed) on Chromium browsers.
+    // goes to standby (lid closed).
     setTimeout(() => {
       api.playerCommandPause(targetId);
     }, 250);
@@ -328,7 +321,6 @@ onMounted(() => {
       api.playerCommandSeek(targetId, newPos);
     });
   }
-
 });
 
 // Cleanup on unmount
