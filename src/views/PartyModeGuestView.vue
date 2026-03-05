@@ -533,7 +533,7 @@ onBeforeUnmount(() => {
   }
 
   .section-title {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     padding-bottom: 0.25rem;
   }
 
