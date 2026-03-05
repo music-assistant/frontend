@@ -272,7 +272,7 @@ const routes = [
           }
           // Only allow access if party mode plugin is enabled
           if (!store.enabledPlugins.has("party_mode")) {
-            next({ name: "home" });
+            next({ name: "discover" });
             return;
           }
           next();
