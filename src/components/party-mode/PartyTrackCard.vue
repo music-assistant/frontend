@@ -266,7 +266,7 @@ const sizeClass = computed(() => {
 }
 
 .now-playing-overlay :deep(.now-playing-icon .bar) {
-  background: white;
+  background: #03a9f4;
 }
 
 .track-artwork.size-small {

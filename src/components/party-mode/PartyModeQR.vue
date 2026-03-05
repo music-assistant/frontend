@@ -103,7 +103,7 @@ const renderQRToCanvas = async () => {
     width: qrSize.value,
     margin: 2,
     color: {
-      dark: "#03a9f4",
+      dark: "#FFFFFF",
       light: "#00000000",
     },
   });
