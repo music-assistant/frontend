@@ -23,6 +23,46 @@ const routes = [
       },
     ],
   },
+  // Party mode display uses minimal layout (fullscreen for wall-mounted tablets)
+  // Placed at top level so it renders without navigation/player controls
+  {
+    path: "/party",
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "party",
+        component: () =>
+          import(
+            /* webpackChunkName: "party" */ "@/views/PartyModeDisplayView.vue"
+          ),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        beforeEnter: async (_to: any, _from: any, next: any) => {
+          // Wait for API initialization before checking plugin status
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          // Only allow access if party mode plugin is enabled
+          if (!store.enabledPlugins.has("party_mode")) {
+            next({ name: "discover" });
+            return;
+          }
+          next();
+        },
+      },
+    ],
+  },
   // All other routes go through default layout with navigation/player controls
   {
     path: "/",
@@ -253,38 +293,6 @@ const routes = [
             props: true,
           },
         ],
-      },
-      {
-        path: "/party",
-        name: "party",
-        component: () =>
-          import(
-            /* webpackChunkName: "party" */ "@/views/PartyModeDisplayView.vue"
-          ),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
-        beforeEnter: async (_to: any, _from: any, next: any) => {
-          // Wait for API initialization before checking plugin status
-          if (api.state.value !== ConnectionState.INITIALIZED) {
-            await new Promise<void>((resolve) => {
-              const unwatch = watch(
-                () => api.state.value,
-                (newState) => {
-                  if (newState === ConnectionState.INITIALIZED) {
-                    unwatch();
-                    resolve();
-                  }
-                },
-                { immediate: true },
-              );
-            });
-          }
-          // Only allow access if party mode plugin is enabled
-          if (!store.enabledPlugins.has("party_mode")) {
-            next({ name: "discover" });
-            return;
-          }
-          next();
-        },
       },
       {
         path: "/settings",

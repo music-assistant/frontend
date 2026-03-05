@@ -349,6 +349,18 @@ onMounted(async () => {
   // Request wake lock to keep screen on
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  // Set active player from party mode config (needed when opened in a new tab
+  // where the Default layout's player selection logic doesn't run)
+  if (!store.activePlayerId) {
+    const partyPlayerId = await api.sendCommand<string | null>(
+      "party_mode/player",
+    );
+    if (partyPlayerId) {
+      store.activePlayerId = partyPlayerId;
+    }
+  }
+
   // Fetch party mode configuration via shared composable
   const config = await fetchConfig();
   if (config) {
@@ -429,7 +441,7 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  flex: 1;
+  height: 100dvh;
   overflow: hidden;
   position: relative;
   display: flex;

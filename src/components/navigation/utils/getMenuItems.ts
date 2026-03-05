@@ -24,6 +24,7 @@ export interface MenuItem {
   isLibraryNode: boolean;
   hidden?: boolean;
   disabled?: boolean;
+  openInNewTab?: boolean;
 }
 
 export const getMenuItems = function () {
@@ -60,6 +61,7 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party_mode"),
+        openInNewTab: true,
       });
     }
     if (enabledMenuItemStr === "artists") {
