@@ -307,42 +307,27 @@ const sizeClass = computed(() => {
 }
 
 .track-info.size-small .track-name {
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.2vw, 1.5rem);
 }
 
 .track-info.size-small .track-artist {
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 1vw, 1.25rem);
 }
 
 .track-info.size-medium .track-name {
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 1.5vw, 2rem);
 }
 
 .track-info.size-medium .track-artist {
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 1.2vw, 1.5rem);
 }
 
 .track-info.size-large .track-name {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 2.5vw, 3rem);
 }
 
 .track-info.size-large .track-artist {
-  font-size: 1.5rem;
-}
-
-@media (max-width: 1024px) {
-  .track-card {
-    gap: 1rem;
-    padding: 0.75rem;
-  }
-
-  .track-info.size-large .track-name {
-    font-size: 1.5rem;
-  }
-
-  .track-info.size-large .track-artist {
-    font-size: 1.2rem;
-  }
+  font-size: clamp(1rem, 1.8vw, 2.2rem);
 }
 
 @media (max-width: 768px) {
@@ -354,14 +339,6 @@ const sizeClass = computed(() => {
   .track-artwork.size-large {
     width: 12vh;
     height: 12vh;
-  }
-
-  .track-info.size-large .track-name {
-    font-size: 1.2rem;
-  }
-
-  .track-info.size-large .track-artist {
-    font-size: 1rem;
   }
 }
 </style>

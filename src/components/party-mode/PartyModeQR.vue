@@ -58,8 +58,8 @@ const calculateQRSize = () => {
   const containerHeight = qrContainer.value.clientHeight;
   // Use the smaller dimension, leave room for padding and instructions
   const availableSize = Math.min(containerWidth, containerHeight) - 120;
-  // Clamp between 160 and 512 for usability
-  return Math.max(160, Math.min(512, availableSize));
+  // Clamp between 160 and 1024 for usability (supports 4K displays)
+  return Math.max(160, Math.min(1024, availableSize));
 };
 
 const checkRemoteAccessStatus = async () => {
@@ -214,9 +214,9 @@ onUnmounted(() => {
 
 .qr-display {
   text-align: center;
-  padding: 2rem;
+  padding: clamp(1rem, 2vw, 3rem);
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 16px;
+  border-radius: clamp(12px, 1.2vw, 24px);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
@@ -241,8 +241,8 @@ onUnmounted(() => {
 }
 
 .qr-instructions {
-  margin-top: 1rem;
-  font-size: 0.875rem;
+  margin-top: clamp(0.5rem, 1vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.8vw, 2rem);
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   letter-spacing: 0.02em;
