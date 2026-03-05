@@ -44,38 +44,6 @@
       <span>{{ badgeLabel }}</span>
     </span>
 
-    <!-- Skip button for currently playing item -->
-    <div
-      v-if="skipSongEnabled && absoluteIndex === currentQueueIndex"
-      class="queue-item-actions"
-    >
-      <v-btn
-        color="secondary"
-        variant="flat"
-        size="small"
-        :loading="skippingSong"
-        :disabled="rateLimitingEnabled && skipSongTokens <= 0"
-        class="skip-btn"
-        @click="$emit('skip')"
-      >
-        <v-icon start size="small">mdi-skip-next</v-icon>
-        {{ $t("providers.party_mode.guest_page.skip") }}
-        <span
-          v-if="rateLimitingEnabled"
-          class="skip-token-badge"
-          :class="{ 'no-tokens': skipSongTokens <= 0 }"
-        >
-          {{ skipSongTokens }}
-        </span>
-      </v-btn>
-      <span
-        v-if="rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown"
-        class="skip-countdown"
-      >
-        <v-icon size="x-small">mdi-clock-outline</v-icon>
-        {{ skipTokenCountdown }}
-      </span>
-    </div>
   </div>
 </template>
 
@@ -93,17 +61,8 @@ const props = defineProps<{
   queueFetchOffset: number;
   currentQueueIndex: number;
   isPlaying: boolean;
-  skipSongEnabled: boolean;
-  rateLimitingEnabled: boolean;
-  skipSongTokens: number;
-  skippingSong: boolean;
-  skipTokenCountdown: string;
   boostBadgeColor: string;
   requestBadgeColor: string;
-}>();
-
-defineEmits<{
-  skip: [];
 }>();
 
 const absoluteIndex = computed(() => props.queueFetchOffset + props.index);
@@ -242,38 +201,4 @@ const badgeLabel = computed(() =>
   margin-left: auto;
 }
 
-.queue-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.skip-btn {
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0.5px;
-}
-
-.skip-token-badge {
-  margin-left: 0.5rem;
-  padding: 0.125rem 0.375rem;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.skip-token-badge.no-tokens {
-  background: rgba(255, 100, 100, 0.3);
-}
-
-.skip-countdown {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
 </style>

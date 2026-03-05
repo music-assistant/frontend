@@ -1,8 +1,38 @@
 <template>
   <div class="queue-section">
-    <h2 class="section-title">
-      {{ $t("providers.party_mode.guest_page.current_queue") }}
-    </h2>
+    <div class="section-header">
+      <h2 class="section-title">
+        {{ $t("providers.party_mode.guest_page.current_queue") }}
+      </h2>
+      <div v-if="skipSongEnabled" class="skip-area">
+        <v-btn
+          color="secondary"
+          variant="flat"
+          size="small"
+          :loading="skippingSong"
+          :disabled="rateLimitingEnabled && skipSongTokens <= 0"
+          class="skip-btn"
+          @click="$emit('skip')"
+        >
+          <v-icon start size="small">mdi-skip-next</v-icon>
+          {{ $t("providers.party_mode.guest_page.skip") }}
+          <span
+            v-if="rateLimitingEnabled"
+            class="skip-token-badge"
+            :class="{ 'no-tokens': skipSongTokens <= 0 }"
+          >
+            {{ skipSongTokens }}
+          </span>
+        </v-btn>
+        <span
+          v-if="rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown"
+          class="skip-countdown"
+        >
+          <v-icon size="x-small">mdi-clock-outline</v-icon>
+          {{ skipTokenCountdown }}
+        </span>
+      </div>
+    </div>
     <div
       v-if="queueItems.length > 0"
       ref="listRef"
@@ -17,14 +47,8 @@
         :queue-fetch-offset="queueFetchOffset"
         :current-queue-index="currentQueueIndex"
         :is-playing="isPlaying"
-        :skip-song-enabled="skipSongEnabled"
-        :rate-limiting-enabled="rateLimitingEnabled"
-        :skip-song-tokens="skipSongTokens"
-        :skipping-song="skippingSong"
-        :skip-token-countdown="skipTokenCountdown"
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
-        @skip="$emit('skip')"
       />
       <!-- Loading indicator for infinite scroll -->
       <div v-if="loadingMoreQueueItems" class="loading-more">
@@ -39,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import PartyModeQueueItem from "./PartyModeQueueItem.vue";
@@ -85,14 +109,54 @@ defineExpose({ listRef });
   overflow: hidden;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+  margin-bottom: 0.5rem;
+  flex: none;
+}
+
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
-  flex: none;
-  margin-bottom: 0.5rem;
+}
+
+.skip-area {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.skip-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.skip-token-badge {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.skip-token-badge.no-tokens {
+  background: rgba(255, 100, 100, 0.3);
+}
+
+.skip-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 .queue-list {
@@ -120,8 +184,7 @@ defineExpose({ listRef });
 
 @media (max-width: 768px) {
   .section-title {
-    font-size: 1.25rem;
-    padding-bottom: 0.25rem;
+    font-size: 1rem;
   }
 }
 </style>
