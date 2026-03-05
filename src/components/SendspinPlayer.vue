@@ -1,5 +1,4 @@
 <template>
-  <audio ref="audioRef" controls class="hidden-audio"></audio>
   <audio
     ref="silentAudioRef"
     class="hidden-audio"
@@ -31,11 +30,10 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
-const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
-
-// Detect Android for MediaSession workaround
-const isAndroid = /android/i.test(navigator.userAgent);
+const isChromiumBrowser = /(Chrome|Chromium|CriOS|Edg|OPR|Brave)/i.test(
+  navigator.userAgent,
+);
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
@@ -201,64 +199,61 @@ onMounted(() => {
     silentAudioRef.value.play().catch(() => {});
   }
 
-  // Create and initialize player
-  if (audioRef.value) {
-    const audioElement = audioRef.value;
+  const defaultSyncDelay = getSendspinDefaultSyncDelay();
+  const syncDelay = parseInt(
+    localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+      String(defaultSyncDelay),
+    10,
+  );
 
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    const syncDelay = parseInt(
-      localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-        String(defaultSyncDelay),
-      10,
-    );
+  // Output latency compensation - enabled by default
+  const storedOutputLatency = localStorage.getItem(
+    "frontend.settings.sendspin_output_latency_compensation",
+  );
+  const useOutputLatencyCompensation =
+    storedOutputLatency !== null ? storedOutputLatency === "true" : true;
 
-    // Output latency compensation - enabled by default
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    const useOutputLatencyCompensation =
-      storedOutputLatency !== null ? storedOutputLatency === "true" : true;
+  // Prepare session first, then create player with appropriate codecs
+  prepareSendspinSession()
+    .then(() => {
+      // Prefer opus for bandwidth efficiency, flac as fallback
+      // (opus requires secure context which may not be available)
+      const codecs: Codec[] = ["opus", "flac"];
 
-    // Prepare session first, then create player with appropriate codecs
-    prepareSendspinSession()
-      .then(() => {
-        // Prefer opus for bandwidth efficiency, flac as fallback
-        // (opus requires secure context which may not be available)
-        const codecs: Codec[] = ["opus", "flac"];
+      console.debug(
+        `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
+      );
+      console.debug(
+        "Sendspin: Output mode auto (desktop=direct, mobile=media-element)",
+      );
 
-        console.debug(
-          `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
-        );
-
-        // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
-        // The URL just needs to be valid and contain "/sendspin" for the interceptor
-        player = new SendspinPlayer({
-          playerId: props.playerId,
-          baseUrl: "http://sendspin.local",
-          audioElement,
-          clientName: getDeviceName(),
-          codecs,
-          syncDelay,
-          useOutputLatencyCompensation,
-          onStateChange: (state) => {
-            // Update reactive state when player state changes
-            isPlaying.value = state.isPlaying;
-            volume.value = state.volume;
-            muted.value = state.muted;
-            playerState.value = state.playerState;
-          },
-          correctionMode: correctionMode.value,
-        });
-
-        // Register callback for real-time sync delay changes from settings
-        webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
-
-        return player.connect();
-      })
-      .catch((error) => {
-        console.error("Sendspin: Failed to connect", error);
+      // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
+      // The URL just needs to be valid and contain "/sendspin" for the interceptor
+      player = new SendspinPlayer({
+        playerId: props.playerId,
+        baseUrl: "http://sendspin.local",
+        clientName: getDeviceName(),
+        codecs,
+        syncDelay,
+        useOutputLatencyCompensation,
+        onStateChange: (state) => {
+          // Update reactive state when player state changes
+          isPlaying.value = state.isPlaying;
+          volume.value = state.volume;
+          muted.value = state.muted;
+          playerState.value = state.playerState;
+        },
+        correctionMode: correctionMode.value,
       });
-  }
+
+      // Register callback for real-time sync delay changes from settings
+      webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
+
+      return player.connect();
+    })
+    .catch((error) => {
+      console.error("Sendspin: Failed to connect", error);
+    });
 
   // MediaSession setup for browser controls
   // Commands go to the player whose metadata is being shown
@@ -278,9 +273,14 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("pause", () => {
     const targetId = getTargetPlayerId();
     if (!targetId) return;
+    if (!isChromiumBrowser) {
+      api.playerCommandPause(targetId);
+      return;
+    }
+
     // workaround-alert: delay the pause command a tiny bit
     // to workaround a browser bug where pause is sent if a laptop/computer
-    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
+    // goes to standby (lid closed) on Chromium browsers.
     setTimeout(() => {
       api.playerCommandPause(targetId);
     }, 250);
@@ -329,30 +329,6 @@ onMounted(() => {
     });
   }
 
-  // Audio element event listeners for Android MediaSession
-  if (audioRef.value) {
-    // Ensure audio element doesn't pause unexpectedly
-    audioRef.value.addEventListener("pause", () => {
-      console.debug("Sendspin: Audio element paused");
-      if (isAndroid) {
-        // On Android, ALWAYS keep the silent loop playing to maintain MediaSession
-        console.debug("Sendspin: Restarting silent loop (Android workaround)");
-        if (audioRef.value) {
-          audioRef.value.play().catch((e) => {
-            console.warn("Sendspin: Failed to restart silent loop:", e);
-          });
-        }
-      } else {
-        // On iOS/Desktop with MediaStream, restart only if playing
-        if (isPlaying.value && audioRef.value) {
-          console.debug("Sendspin: Restarting audio element playback");
-          audioRef.value.play().catch((e) => {
-            console.warn("Sendspin: Failed to restart audio:", e);
-          });
-        }
-      }
-    });
-  }
 });
 
 // Cleanup on unmount
