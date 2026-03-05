@@ -55,6 +55,7 @@ import {
 //   unsubscribeFromHAProperties,
 //   getKioskModePreference
 // } from "./plugins/homeassistant";
+import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
@@ -130,7 +131,7 @@ const handleRemoteAuthenticated = async (credentials: {
   username?: string;
   password?: string;
   token?: string;
-  user?: any;
+  user?: User;
 }) => {
   try {
     const { authManager } = await import("@/plugins/auth");
@@ -169,7 +170,7 @@ const handleRemoteAuthenticated = async (credentials: {
   } catch (error) {
     console.error("[App] Authentication failed:", error);
     if (loginComponent.value) {
-      (loginComponent.value as any).handleAuthenticationError(error);
+      loginComponent.value.handleAuthenticationError(error);
     }
   }
 };

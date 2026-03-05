@@ -261,6 +261,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { Copy, Key, Monitor, Plus, Trash2 } from "lucide-vue-next";
@@ -328,14 +329,14 @@ const form = useForm({
     tokenName: "",
   },
   validators: {
-    onSubmit: createTokenSchema(t) as any,
+    onSubmit: createTokenSchema(t),
   },
   onSubmit: async () => {
     // Handled in handleCreateToken
   },
 });
 
-const isInvalid = (field: any) => {
+const isInvalid = (field: AnyFieldApi) => {
   return field.state.meta.errors.length > 0;
 };
 
@@ -362,8 +363,10 @@ const handleCreateToken = async () => {
     } else {
       toast.error(t("auth.token_create_failed"));
     }
-  } catch (error: any) {
-    toast.error(error.message || t("auth.token_create_failed"));
+  } catch (error: unknown) {
+    toast.error(
+      error instanceof Error ? error.message : t("auth.token_create_failed"),
+    );
   } finally {
     creating.value = false;
   }

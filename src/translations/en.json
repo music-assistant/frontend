@@ -11,6 +11,7 @@
     "genre_deleted": "Genre deleted successfully",
     "add_playlist": "Add to playlist...",
     "add_queue": "Add to Queue",
+    "enqueue": "Enqueue options",
     "add_url_item": "Add item from URL",
     "alias": "Alias",
     "album": "Album",
@@ -248,6 +249,11 @@
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
+    "playlist_create_media_types": "The {0} provider supports these media types:",
+    "playlist_mix_allowed": "These media types can be mixed.",
+    "playlist_mix_not_allowed": "This provider does not support mixing media types in playlists. Please select for which media type you would like to create a playlist:",
+    "playlist_create_provider_error": "Unable to get provider.",
+    "playlist_create_no_type_selected": "No media type selected.",
     "providers": {
         "party_mode": {
             "guest_page": {
@@ -307,6 +313,7 @@
     "queue_radio_enabled": "Radio mode is enabled",
     "radios": "Radio",
     "read_more": "read more",
+    "refresh": "Refresh",
     "refresh_item": "Refresh item",
     "remove": "Remove",
     "remove_alias": "Remove alias",
@@ -320,6 +327,13 @@
         "starting": "The server is starting up, some providers, players or features may not yet be available until startup is completed.",
         "stopping": "Server is shutting down...",
         "stopped": "Server has stopped"
+    },
+    "queue_option": {
+        "play": "Play now (keep queue)",
+        "next": "Play next (keep queue)",
+        "replace": "Play now (replace queue)",
+        "replace_next": "Play next (replace queue)",
+        "add": "Add to the queue"
     },
     "settings": {
         "add_new": "Add new",
@@ -1218,7 +1232,7 @@
         "login": "Sign in",
         "logout": "Sign out",
         "field_required": "This field is required",
-        "username_min_length": "Username must be at least 3 characters",
+        "username_min_length": "Username must be at least 2 characters",
         "username_already_exists": "Username already exists. Please choose a different username.",
         "invalid_username": "Invalid username. Please choose a different username.",
         "password_min_length": "Password must be at least 8 characters",

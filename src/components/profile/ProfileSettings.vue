@@ -191,6 +191,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { Camera, User } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
@@ -296,8 +297,8 @@ const form = useForm({
         }
         toast.success(t("auth.profile_updated"));
       }
-    } catch (err: any) {
-      toast.error(err.message || t("error_generic"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("error_generic"));
     } finally {
       updating.value = false;
     }
@@ -320,17 +321,17 @@ const hasChanges = computed(() => {
   );
 });
 
-function isInvalid(field: any) {
+function isInvalid(field: AnyFieldApi) {
   return field.state.meta.isTouched && !field.state.meta.isValid;
 }
 
-const handleUsernameInput = (e: Event, field: any) => {
+const handleUsernameInput = (e: Event, field: AnyFieldApi) => {
   const value = (e.target as HTMLInputElement).value;
   currentUsername.value = value;
   field.handleChange(value);
 };
 
-const handleDisplayNameInput = (e: Event, field: any) => {
+const handleDisplayNameInput = (e: Event, field: AnyFieldApi) => {
   const value = (e.target as HTMLInputElement).value;
   currentDisplayName.value = value;
   field.handleChange(value);

@@ -352,6 +352,11 @@ export enum ProviderFeature {
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
   PLAYLIST_CREATE = "playlist_create",
+  PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
+  PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",
+  PLAYLIST_CREATE_PODCAST_EPISODES = "playlist_create_podcast_episodes",
+  PLAYLIST_CREATE_RADIOS = "playlist_create_radios",
+  PLAYLIST_CREATE_MIXED = "playlist_create_mixed",
   // player provider specific features
   SYNC_PLAYERS = "sync_players",
   REMOVE_PLAYER = "remove_player",
@@ -420,7 +425,7 @@ export interface CommandMessage {
 
   message_id?: string;
   command: string;
-  args?: Record<string, any>;
+  args?: Record<string, unknown>;
 }
 
 export interface ResultMessageBase {
@@ -432,7 +437,7 @@ export interface ResultMessageBase {
 export interface SuccessResultMessage extends ResultMessageBase {
   // Message sent when a Command has been successfully executed.
 
-  result: any;
+  result: unknown;
   partial?: boolean;
 }
 
@@ -446,7 +451,7 @@ export interface ErrorResultMessage extends ResultMessageBase {
 export interface EventMessage {
   event: EventType;
   object_id?: string; // player_id, queue_id or uri
-  data?: any; // optional data (such as the object)
+  data?: unknown; // optional data (such as the object)
 }
 export type MassEvent = EventMessage;
 
@@ -687,6 +692,7 @@ export interface Track extends MediaItem {
 export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
+  supported_mediatypes: MediaType[];
 }
 
 export interface Radio extends MediaItem {}
@@ -855,7 +861,7 @@ export interface PlayerQueue {
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
-  extra_attributes?: Record<string, any>;
+  extra_attributes?: Record<string, unknown>;
 }
 
 // player
@@ -1095,7 +1101,7 @@ export interface User {
   created_at: string;
   display_name?: string;
   avatar_url?: string;
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
   // Use authManager.isPartyModeGuest() to check for party mode sessions.

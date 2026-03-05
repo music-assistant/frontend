@@ -1,6 +1,5 @@
 import { store } from "../store";
 /* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import type { ITransport } from "../remote/transport";
@@ -17,6 +16,7 @@ import {
   type MassEvent,
   type MediaItemType,
   type Player,
+  type PlayerOptionValueType,
   type PlayerQueue,
   type Playlist,
   type ProviderInstance,
@@ -24,7 +24,6 @@ import {
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type PlayerOptionValueType,
   type SyncTask,
   type Track,
   type User,
@@ -71,7 +70,7 @@ export enum ConnectionState {
 
 export class MusicAssistantApi {
   private transport?: ITransport;
-  private _throttleId?: any;
+  private _throttleId?: ReturnType<typeof setTimeout>;
   public baseUrl?: string; // HTTP base URL for image proxy etc.
   public isRemoteConnection = ref<boolean>(false);
   public state = ref<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -88,12 +87,12 @@ export class MusicAssistantApi {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
   private eventCallbacks: Array<[EventType, string, CallableFunction]>;
-  private partialResult: { [msg_id: string]: Array<any> };
+  private partialResult: { [msg_id: string]: Array<unknown> };
   private commands: Map<
     string,
     {
-      resolve: (result?: any) => void;
-      reject: (err: any) => void;
+      resolve: (result: unknown) => void;
+      reject: (err: unknown) => void;
     }
   >;
 
@@ -231,7 +230,13 @@ export class MusicAssistantApi {
   /**
    * Handle incoming message from the transport
    */
-  private handleMessage(msg: any): void {
+  private handleMessage(
+    msg:
+      | ServerInfoMessage
+      | EventMessage
+      | SuccessResultMessage
+      | ErrorResultMessage,
+  ): void {
     // Handle ServerInfo message (sent on connection and reconnection)
     if ("server_version" in msg && "server_id" in msg && !("event" in msg)) {
       this.handleServerInfoMessage(msg as ServerInfoMessage);
@@ -753,10 +758,12 @@ export class MusicAssistantApi {
   public createPlaylist(
     name: string,
     provider_instance_or_domain?: string,
+    media_types?: MediaType[],
   ): Promise<Playlist> {
     return this.sendCommand("music/playlists/create_playlist", {
       name,
       provider_instance_or_domain,
+      media_types,
     });
   }
 
@@ -1381,7 +1388,7 @@ export class MusicAssistantApi {
   public playerQueueCommand(
     queue_id: string,
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ) {
     /*
       Handle (throttled) command to player
@@ -1575,7 +1582,7 @@ export class MusicAssistantApi {
   public playerCommand(
     player_id: string,
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ): Promise<void> {
     /*
       Handle command to player
@@ -1610,6 +1617,15 @@ export class MusicAssistantApi {
   }
   public playerCommandGroupVolumeDown(playerId: string): Promise<void> {
     return this.playerCommand(playerId, "group_volume_down");
+  }
+
+  public playerCommandGroupVolumeMute(
+    playerId: string,
+    muted: boolean,
+  ): Promise<void> {
+    return this.playerCommand(playerId, "group_volume_mute", {
+      muted,
+    });
   }
 
   public async createPlayerGroup(
@@ -2027,12 +2043,14 @@ export class MusicAssistantApi {
       if (!(msg.message_id in this.partialResult)) {
         this.partialResult[msg.message_id] = [];
       }
-      this.partialResult[msg.message_id].push(...msg.result);
+      this.partialResult[msg.message_id].push(...(msg.result as unknown[]));
       return;
     } else if (msg.message_id in this.partialResult) {
       // if we have partial results, append them to the final result
       if ("result" in msg)
-        msg.result = this.partialResult[msg.message_id].concat(msg.result);
+        msg.result = this.partialResult[msg.message_id].concat(
+          msg.result as unknown[],
+        );
       delete this.partialResult[msg.message_id];
     }
 
@@ -2282,14 +2300,14 @@ export class MusicAssistantApi {
       avatarUrl?: string;
       role?: UserRole;
       password?: string;
-      preferences?: Record<string, any>;
+      preferences?: Record<string, unknown>;
       provider_filter?: string[];
       player_filter?: string[];
     },
   ): Promise<User> {
     // Update user using unified update command
     try {
-      const args: Record<string, any> = { user_id: userId };
+      const args: Record<string, unknown> = { user_id: userId };
 
       if (updates.username) args.username = updates.username;
       if (updates.displayName) args.display_name = updates.displayName;
@@ -2474,19 +2492,22 @@ export class MusicAssistantApi {
 
   public sendCommand<Result>(
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
-      this.commands.set(cmdId, { resolve, reject });
+      this.commands.set(cmdId, {
+        resolve: resolve as (result: unknown) => void,
+        reject,
+      });
       this._sendCommand(command, args, cmdId);
     });
   }
 
   private _sendCommand(
     command: string,
-    args?: Record<string, any>,
+    args?: Record<string, unknown>,
     msgId?: string,
   ): void {
     // Allow commands only when fully connected

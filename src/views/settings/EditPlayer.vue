@@ -91,6 +91,7 @@
                   'protocol-chip--clickable': api.getProviderManifest(
                     protocol.protocol_domain!,
                   )?.documentation,
+                  'protocol-chip--unavailable': !protocol.available,
                 }"
                 @click="
                   api.getProviderManifest(protocol.protocol_domain!)
@@ -130,7 +131,7 @@
 
     <!-- Disabled banner -->
     <v-alert
-      v-if="!config?.enabled"
+      v-if="config && !config.enabled"
       type="warning"
       variant="tonal"
       class="mb-4"
@@ -547,6 +548,10 @@ const onAction = async function (
 
 .protocol-chip--clickable:hover {
   opacity: 0.85;
+}
+
+.protocol-chip--unavailable {
+  opacity: 0.4;
 }
 
 .chip-icon {

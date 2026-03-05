@@ -104,7 +104,7 @@
                     :model-value="field.state.value"
                     :disabled="isCurrentUser"
                     @update:model-value="
-                      (value) => field.handleChange(value as any)
+                      (value) => field.handleChange(value as UserRole)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -248,6 +248,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
@@ -371,7 +372,7 @@ const form = useForm({
     providerFilter: props.user?.provider_filter || [],
   },
   validators: {
-    onSubmit: editUserSchema(t) as any,
+    onSubmit: editUserSchema(t),
   },
   onSubmit: async ({ value }) => {
     if (!props.user) return;
@@ -433,7 +434,7 @@ const form = useForm({
   },
 });
 
-const isInvalid = (field: any) => {
+const isInvalid = (field: AnyFieldApi) => {
   return field.state.meta.errors.length > 0;
 };
 

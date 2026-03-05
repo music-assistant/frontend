@@ -1,119 +1,105 @@
 <template>
-  <!-- players side menu -->
-  <v-overlay v-model="store.showPlayersMenu" />
-  <v-navigation-drawer
-    v-if="store.showPlayersMenu"
-    v-model="store.showPlayersMenu"
-    location="right"
-    app
-    clipped
-    temporary
-    :width="460"
-    style="z-index: 99999"
-    z-index="99999"
-    color="background"
+  <!-- Overlay scrim -->
+  <Transition name="player-scrim">
+    <div
+      v-if="store.showPlayersMenu"
+      class="player-panel-scrim"
+      @click="store.showPlayersMenu = false"
+    ></div>
+  </Transition>
+
+  <!-- Panel: fixed position, slides in via transform -->
+  <div
+    class="player-panel player-panel--overlay"
+    :class="{
+      'player-panel--open': store.showPlayersMenu,
+    }"
   >
-    <!-- heading with Players as title - fixed at top -->
-    <template #prepend>
-      <v-card-title
-        class="title"
-        style="padding-top: 20px; padding-bottom: 20px"
-      >
-        <b>{{ $t("players") }}</b>
-        <div style="float: right">
-          <!-- settings button (admin only) -->
-          <Button
-            v-if="authManager.isAdmin()"
-            variant="icon"
-            :to="{ name: 'playersettings' }"
-          >
-            <v-icon size="24">mdi-cog</v-icon>
-          </Button>
-          <!-- close button -->
-          <Button variant="icon" @click="store.showPlayersMenu = false">
-            <v-icon size="24">mdi-close</v-icon>
-          </Button>
-        </div>
-      </v-card-title>
-      <v-divider />
-    </template>
+    <div class="player-panel-inner">
+      <!-- header -->
+      <div class="player-header">
+        <Speaker class="player-header-icon" />
+        <span class="player-header-title">{{ $t("players") }}</span>
+      </div>
 
-    <!-- scrollable content -->
-    <div class="player-content">
-      <!-- preferred/active players on top -->
-      <v-list flat style="margin: 0px 10px; padding: 0">
-        <PlayerCard
-          v-for="player in preferredPlayers"
-          :id="player.player_id"
-          :key="player.player_id"
-          style="margin: 10px 0px"
-          :player="player"
-          :show-volume-control="true"
-          :show-menu-button="true"
-          :show-sub-players="
-            showSubPlayers && player.player_id == store.activePlayerId
-          "
-          :show-sync-controls="true"
-          :allow-power-control="true"
-          @click="playerClicked(player)"
-          @toggle-expand="toggleGroupExpand"
-        />
-      </v-list>
+      <!-- scrollable content -->
+      <div class="player-content">
+        <!-- preferred/active players on top -->
+        <v-list flat style="margin: 0px 10px; padding: 0">
+          <PlayerCard
+            v-for="player in preferredPlayers"
+            :id="player.player_id"
+            :key="player.player_id"
+            style="margin: 10px 0px"
+            :player="player"
+            :show-volume-control="true"
+            :show-menu-button="true"
+            :show-sub-players="
+              showSubPlayers && player.player_id == store.activePlayerId
+            "
+            :show-sync-controls="true"
+            :allow-power-control="true"
+            @click="playerClicked(player)"
+            @toggle-expand="toggleGroupExpand"
+          />
+        </v-list>
 
-      <!-- collapsible section with all players (only shown if more than 3 players) -->
-      <v-expansion-panels
-        v-if="allPlayers.length > 3"
-        v-model="allPlayersExpanded"
-        variant="accordion"
-        flat
-        class="expansion"
-      >
-        <v-expansion-panel style="padding: 0">
-          <v-expansion-panel-title>
-            <h3>{{ $t("all_players") }}</h3>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text style="padding: 0">
-            <div style="margin: 0 8px 24px 8px">
-              <InputGroup>
-                <InputGroupInput
-                  ref="playerSearchInput"
-                  v-model="playerSearchQuery"
-                  :placeholder="$t('search')"
+        <!-- collapsible section with all players (only shown if more than 3 players) -->
+        <v-expansion-panels
+          v-if="allPlayers.length > 3"
+          v-model="allPlayersExpanded"
+          variant="accordion"
+          flat
+          class="expansion"
+        >
+          <v-expansion-panel style="padding: 0">
+            <v-expansion-panel-title>
+              <h3>{{ $t("all_players") }}</h3>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text style="padding: 0">
+              <div style="margin: 0 8px 24px 8px">
+                <InputGroup>
+                  <InputGroupInput
+                    ref="playerSearchInput"
+                    v-model="playerSearchQuery"
+                    :placeholder="$t('search')"
+                  />
+                  <InputGroupAddon>
+                    <Search />
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+              <v-list flat style="margin: -20px 3px 5px 3px">
+                <PlayerCard
+                  v-for="player in filteredPlayers"
+                  :id="player.player_id"
+                  :key="player.player_id"
+                  style="margin: 8px 0px"
+                  :player="player"
+                  :show-volume-control="true"
+                  :show-menu-button="true"
+                  :show-sub-players="
+                    showSubPlayers && player.player_id == store.activePlayerId
+                  "
+                  :show-sync-controls="
+                    player.supported_features.includes(
+                      PlayerFeature.SET_MEMBERS,
+                    )
+                  "
+                  :allow-power-control="true"
+                  @click="playerClicked(player)"
+                  @toggle-expand="toggleGroupExpand"
                 />
-                <InputGroupAddon>
-                  <Search />
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
-            <v-list flat style="margin: -20px 3px 5px 3px">
-              <PlayerCard
-                v-for="player in filteredPlayers"
-                :id="player.player_id"
-                :key="player.player_id"
-                style="margin: 5px 0px"
-                :player="player"
-                :show-volume-control="true"
-                :show-menu-button="true"
-                :show-sub-players="
-                  showSubPlayers && player.player_id == store.activePlayerId
-                "
-                :show-sync-controls="
-                  player.supported_features.includes(PlayerFeature.SET_MEMBERS)
-                "
-                :allow-power-control="true"
-                @click="playerClicked(player)"
-                @toggle-expand="toggleGroupExpand"
-              />
-            </v-list>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+              </v-list>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </div>
     </div>
-  </v-navigation-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import {
   InputGroup,
@@ -125,10 +111,9 @@ import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Player, PlayerFeature } from "@/plugins/api/interfaces";
 
-import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Search } from "lucide-vue-next";
+import { Search, Speaker } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
@@ -246,7 +231,6 @@ watch(
 function playerClicked(player: Player, close: boolean = false) {
   if (store.activePlayerId !== player.player_id) {
     store.activePlayerId = player.player_id;
-    store.playerTipShown = true;
   }
   if (close) store.showPlayersMenu = false;
   // Scroll the player card into view (use nearest to avoid hiding header)
@@ -290,7 +274,7 @@ const checkDefaultPlayer = function () {
 
 const selectDefaultPlayer = function () {
   // check if we have a player stored that was last used
-  // we prefer localStorage over user preferences to allow having a prefered
+  // we prefer localStorage over user preferences to allow having a preferred
   // player per device - especially useful in case of using the built-in web player
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
@@ -318,18 +302,142 @@ const selectDefaultPlayer = function () {
 </script>
 
 <style scoped>
-.title {
-  font-family: "JetBrains Mono Medium";
-  font-size: x-large;
+/*
+ * Panel: fixed position, slides via GPU-accelerated transform.
+ */
+.player-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 400px;
+  z-index: 10;
+  transform: translateX(100%);
+  transition: transform 0.5s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
+  border-left: 1px solid rgba(var(--v-border-color), 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.player-panel--open {
+  transform: translateX(0);
+}
+
+/* Overlay: higher z-index, rounded edges, shadow */
+.player-panel--overlay {
+  z-index: 99999;
+  top: 0px;
+  bottom: 0px;
+  border-left: none;
+  border-radius: 6px 0 0 6px;
+}
+
+.player-panel--overlay.player-panel--open {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 769px) {
+  .player-panel--overlay {
+    width: 90vw;
+    max-width: 400px;
+    bottom: 60px;
+  }
+}
+
+/* Inner wrapper */
+.player-panel-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.player-panel-inner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--v-theme-surface)) 80%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 0 0 6px;
+}
+
+/* Mobile scrim/overlay */
+.player-panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.player-scrim-enter-active,
+.player-scrim-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.player-scrim-enter-from,
+.player-scrim-leave-to {
+  opacity: 0;
+}
+
+/* Header */
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+  padding-bottom: 8px;
+  padding-left: 16px;
+  flex-shrink: 0;
+}
+
+.player-header-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   opacity: 0.7;
 }
+
+.player-header-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Scrollable content */
 .player-content {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 100px;
 }
+
+/* Force Vuetify children to inherit the panel background */
+.player-content :deep(.v-list),
+.player-content :deep(.v-expansion-panels),
+.player-content :deep(.v-expansion-panel),
+.player-content :deep(.v-expansion-panel-title),
+.player-content :deep(.v-expansion-panel-text) {
+  background: transparent !important;
+}
+
 .expansion :deep(.v-expansion-panel-title) {
   padding: 10px 16px;
 }
+
 .expansion :deep(.v-expansion-panel-text__wrapper) {
   padding: 10px 5px;
 }

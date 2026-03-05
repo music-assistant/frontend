@@ -93,7 +93,15 @@ onMounted(() => {
   for (const prov of Object.values(api.providers).filter(
     (x) =>
       x.available &&
-      x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE),
+      (x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
+        x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_TRACKS) ||
+        x.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+        ) ||
+        x.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+        ) ||
+        x.supported_features.includes(ProviderFeature.PLAYLIST_CREATE_RADIOS)),
   )) {
     playListCreateItems.push({
       label: "create_playlist_on",

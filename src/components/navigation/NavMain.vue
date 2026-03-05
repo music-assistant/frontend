@@ -39,7 +39,7 @@ const handleClick = () => {
 
 <template>
   <SidebarGroup>
-    <SidebarGroupContent class="flex flex-col gap-2">
+    <SidebarGroupContent class="flex flex-col gap-0.5">
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
           <SidebarMenuButton

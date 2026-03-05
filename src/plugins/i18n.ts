@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createI18n } from "vue-i18n";
 
 /*
@@ -21,4 +20,4 @@ const i18n = createI18n({
 // @ts-ignore
 const $t = i18n.global.t;
 
-export { i18n, $t };
+export { $t, i18n };

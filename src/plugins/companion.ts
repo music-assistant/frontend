@@ -23,6 +23,19 @@ import { PlaybackState, Player, PlayerSource } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { ref, watch } from "vue";
 
+declare global {
+  interface Window {
+    __TAURI__?: {
+      core?: { invoke: CompanionInvoke };
+      invoke?: CompanionInvoke;
+    };
+    __COMPANION__?: {
+      invoke?: CompanionInvoke;
+    };
+    __COMPANION_PLAYER_COMMAND__?: (command: string) => Promise<void>;
+  }
+}
+
 /**
  * Check if running in a companion app
  * Detects either Tauri context (__TAURI__) or custom companion context (__COMPANION__)
@@ -60,16 +73,14 @@ const getCompanionInvoke = (): CompanionInvoke | null => {
   if (typeof window === "undefined") return null;
 
   // Tauri companion app
-  if ("__TAURI__" in window) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tauri = (window as any).__TAURI__;
+  if (window.__TAURI__) {
+    const tauri = window.__TAURI__;
     return tauri?.core?.invoke || tauri?.invoke || null;
   }
 
   // Other companion app frameworks
-  if ("__COMPANION__" in window) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const companion = (window as any).__COMPANION__;
+  if (window.__COMPANION__) {
+    const companion = window.__COMPANION__;
     return companion?.invoke || null;
   }
 
@@ -297,8 +308,7 @@ const registerPlayerCommandHandler = (): void => {
   if (typeof window === "undefined") return;
 
   // Expose the handler as a global function that Rust can call via eval
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).__COMPANION_PLAYER_COMMAND__ = handlePlayerCommand;
+  window.__COMPANION_PLAYER_COMMAND__ = handlePlayerCommand;
   console.log("[Companion] Registered player command handler");
 };
 
@@ -308,8 +318,7 @@ const registerPlayerCommandHandler = (): void => {
 const unregisterPlayerCommandHandler = (): void => {
   if (typeof window === "undefined") return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (window as any).__COMPANION_PLAYER_COMMAND__;
+  delete window.__COMPANION_PLAYER_COMMAND__;
 };
 
 /**
