@@ -6,7 +6,7 @@
       </h2>
       <div v-if="skipSongEnabled" class="skip-area">
         <v-btn
-          color="secondary"
+          color="primary"
           variant="flat"
           size="small"
           :loading="skippingSong"
