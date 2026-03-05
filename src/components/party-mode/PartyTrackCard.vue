@@ -10,12 +10,13 @@
   >
     <div :class="['track-artwork', sizeClass]">
       <MediaItemThumb :item="queueItem" />
-      <div
+      <!-- Removed this now-playing badge due to poor performance. May add back later if we can optimize it. -->
+      <!-- <div
         v-if="position === 'current' && isPlaying"
         class="now-playing-overlay"
       >
         <NowPlayingBadge :show-badge="false" />
-      </div>
+      </div> -->
     </div>
     <div :class="['track-info', sizeClass]">
       <div class="track-name">
