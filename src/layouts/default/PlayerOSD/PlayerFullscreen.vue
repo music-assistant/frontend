@@ -1205,7 +1205,11 @@ const resetItems = async function () {
   tempHide.value = false;
 };
 
-const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done("empty");
     return;

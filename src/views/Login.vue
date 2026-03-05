@@ -400,11 +400,22 @@
 
 <script setup lang="ts">
 import { api, ConnectionState } from "@/plugins/api";
-import type { AuthProvider, ServerInfoMessage, User } from "@/plugins/api/interfaces";
+import type {
+  AuthProvider,
+  ServerInfoMessage,
+  User,
+} from "@/plugins/api/interfaces";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
-import { type ComponentPublicInstance, computed, nextTick, onMounted, ref, watch } from "vue";
+import {
+  type ComponentPublicInstance,
+  computed,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
 
@@ -1348,10 +1359,12 @@ const handleRemoteIdPaste = (index: number, event: ClipboardEvent) => {
 /**
  * Set ref for remote ID input field
  */
-const setRemoteIdRef = (index: number) => (el: Element | ComponentPublicInstance | null) => {
-  const root = el && '$el' in el ? (el.$el as HTMLElement | undefined) : el;
-  remoteIdRefs.value[index] = (root?.querySelector?.("input") || root) as HTMLInputElement | null;
-};
+const setRemoteIdRef =
+  (index: number) => (el: Element | ComponentPublicInstance | null) => {
+    const root = el && "$el" in el ? (el.$el as HTMLElement | undefined) : el;
+    remoteIdRefs.value[index] = (root?.querySelector?.("input") ||
+      root) as HTMLInputElement | null;
+  };
 
 /**
  * Set remote ID from a full string (e.g., from localStorage)
@@ -1530,8 +1543,15 @@ const fetchAuthProviders = async () => {
   try {
     // First, check if server info has auth provider hints
     const serverInfo = api.serverInfo.value;
-    if (serverInfo && "auth_providers" in serverInfo && (serverInfo as ServerInfoMessage & { auth_providers?: AuthProvider[] }).auth_providers) {
-      authProviders.value = (serverInfo as ServerInfoMessage & { auth_providers: AuthProvider[] }).auth_providers;
+    if (
+      serverInfo &&
+      "auth_providers" in serverInfo &&
+      (serverInfo as ServerInfoMessage & { auth_providers?: AuthProvider[] })
+        .auth_providers
+    ) {
+      authProviders.value = (
+        serverInfo as ServerInfoMessage & { auth_providers: AuthProvider[] }
+      ).auth_providers;
       console.debug(
         "[Login] Auth providers from serverInfo:",
         authProviders.value,
@@ -1573,9 +1593,19 @@ const handleAuthenticationError = (error: unknown) => {
     errorMessage = error.message;
   } else if (typeof error === "string") {
     errorMessage = error;
-  } else if (error && typeof error === "object" && "message" in error && typeof (error as Record<string, unknown>).message === "string") {
+  } else if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as Record<string, unknown>).message === "string"
+  ) {
     errorMessage = (error as Record<string, string>).message;
-  } else if (error && typeof error === "object" && "details" in error && typeof (error as Record<string, unknown>).details === "string") {
+  } else if (
+    error &&
+    typeof error === "object" &&
+    "details" in error &&
+    typeof (error as Record<string, unknown>).details === "string"
+  ) {
     errorMessage = (error as Record<string, string>).details;
   } else {
     errorMessage = t(

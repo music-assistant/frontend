@@ -57,7 +57,9 @@ const routes = [
         name: "browse",
         component: () =>
           import(/* webpackChunkName: "browse" */ "@/views/BrowseView.vue"),
-        props: (route: { query: Record<string, string | (string | null)[] | null | undefined> }) => ({ ...route.query }),
+        props: (route: {
+          query: Record<string, string | (string | null)[] | null | undefined>;
+        }) => ({ ...route.query }),
       },
       {
         path: "/artists",
@@ -124,7 +126,13 @@ const routes = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: { params: Record<string, string | string[]>; query: Record<string, string | (string | null)[] | null | undefined> }) => ({
+            props: (route: {
+              params: Record<string, string | string[]>;
+              query: Record<
+                string,
+                string | (string | null)[] | null | undefined
+              >;
+            }) => ({
               ...route.params,
               ...route.query,
             }),

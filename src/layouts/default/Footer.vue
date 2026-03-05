@@ -1,3 +1,5 @@
+import { store } from '@/plugins/store';
+
 <template>
   <!-- Hide footer entirely when on party view with controls disabled -->
   <template v-if="!hideFooter">
@@ -14,29 +16,30 @@
       `"
     ></div>
 
-  <!-- bottom navigation for mobile layout -->
-  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
+    <!-- bottom navigation for mobile layout -->
+    <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
+    <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
 
-  <v-footer
-    app
-    color="default"
-    :class="`py-0 px-0 ${
-      store.mobileLayout
-        ? 'mediacontrols-player-float'
-        : 'mediacontrols-player-default'
-    }`"
-    :style="[
-      store.mobileLayout && store.showPlayersMenu
-        ? 'z-index: 999 !important;'
-        : '',
-      store.isInPWAMode && !store.isIngressSession
-        ? 'margin-bottom: 10px;'
-        : '',
-    ]"
-  >
-    <Player :use-floating-player="store.mobileLayout" />
-  </v-footer>
+    <v-footer
+      app
+      color="default"
+      :class="`py-0 px-0 ${
+        store.mobileLayout
+          ? 'mediacontrols-player-float'
+          : 'mediacontrols-player-default'
+      }`"
+      :style="[
+        store.mobileLayout && store.showPlayersMenu
+          ? 'z-index: 999 !important;'
+          : '',
+        store.isInPWAMode && !store.isIngressSession
+          ? 'margin-bottom: 10px;'
+          : '',
+      ]"
+    >
+      <Player :use-floating-player="store.mobileLayout" />
+    </v-footer>
+  </template>
 </template>
 
 <script setup lang="ts">
