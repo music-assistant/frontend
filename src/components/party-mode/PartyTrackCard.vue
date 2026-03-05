@@ -35,8 +35,8 @@
       class="guest-badge"
       :style="{ '--badge-color': badgeColor }"
     >
-      <Rocket v-if="isBoost" :size="16" />
-      <UserRound v-else :size="16" />
+      <Rocket v-if="isBoost" class="badge-icon" />
+      <UserRound v-else class="badge-icon" />
       <span v-if="position === 'current'">{{ badgeText }}</span>
     </div>
   </div>
@@ -215,18 +215,23 @@ const sizeClass = computed(() => {
   /* Color set via inline style from config */
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
+  gap: 0.6vw;
+  padding: 0.5vw 1.2vw;
   background: color-mix(in srgb, var(--badge-color) 35%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.2vw, 1.1rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+.badge-icon {
+  width: clamp(14px, 1.6vw, 24px);
+  height: clamp(14px, 1.6vw, 24px);
 }
 
 .track-card.position-next-1 {
