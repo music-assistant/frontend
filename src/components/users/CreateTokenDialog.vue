@@ -141,8 +141,7 @@ const form = useForm({
     tokenName: "",
   },
   validators: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSubmit: createTokenSchema(t) as any,
+    onSubmit: createTokenSchema(t),
   },
   onSubmit: async ({ value }) => {
     loading.value = true;
@@ -158,7 +157,9 @@ const form = useForm({
         toast.error(t("auth.token_create_failed"));
       }
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : t("auth.token_create_failed"));
+      toast.error(
+        error instanceof Error ? error.message : t("auth.token_create_failed"),
+      );
     } finally {
       loading.value = false;
     }

@@ -1,5 +1,7 @@
 import z from "zod";
 
+import { UserRole } from "@/plugins/api/interfaces";
+
 export const createPasswordSchema = (t: (key: string) => string) =>
   z
     .object({
@@ -56,9 +58,9 @@ export const createUserSchema = (t: (key: string) => string) =>
         .min(8, t("auth.password_min_length"))
         .max(128, "Password must be at most 128 characters."),
       confirmPassword: z.string(),
-      role: z.string(),
-      playerFilter: z.array(z.string()).default([]),
-      providerFilter: z.array(z.string()).default([]),
+      role: z.enum(UserRole),
+      playerFilter: z.array(z.string()),
+      providerFilter: z.array(z.string()),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t("auth.passwords_must_match"),
@@ -80,11 +82,11 @@ export const editUserSchema = (t: (key: string) => string) =>
         .refine((val) => !val || z.string().url().safeParse(val).success, {
           message: "Invalid URL format.",
         }),
-      role: z.string(),
+      role: z.enum(UserRole),
       password: z.string().max(128, "Password must be at most 128 characters."),
       confirmPassword: z.string(),
-      playerFilter: z.array(z.string()).default([]),
-      providerFilter: z.array(z.string()).default([]),
+      playerFilter: z.array(z.string()),
+      providerFilter: z.array(z.string()),
     })
     .refine(
       (data) => !data.password || data.password === data.confirmPassword,

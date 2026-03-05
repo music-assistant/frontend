@@ -100,6 +100,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -139,12 +140,12 @@ const form = useForm({
     description: "",
   },
   validators: {
-    onSubmit: addGenreSchema(t) as any,
+    onSubmit: addGenreSchema(t),
   },
   onSubmit: async ({ value }) => {
     loading.value = true;
 
-    const item: Record<string, any> = {
+    const item: Record<string, unknown> = {
       item_id: "0",
       provider: "library",
       name: value.name,
@@ -171,7 +172,7 @@ const form = useForm({
   },
 });
 
-const isInvalid = (field: any) => {
+const isInvalid = (field: AnyFieldApi) => {
   return field.state.meta.isTouched && field.state.meta.errors.length > 0;
 };
 

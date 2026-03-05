@@ -134,7 +134,7 @@
                     :model-value="field.state.value"
                     @update:model-value="
                       (value) => field.handleChange(value as UserRole)
-"
+                    "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
                       <SelectValue :placeholder="$t('auth.role')" />
@@ -325,8 +325,7 @@ const form = useForm({
     providerFilter: [] as string[],
   },
   validators: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSubmit: createUserSchema(t) as any,
+    onSubmit: createUserSchema(t),
   },
   onSubmit: async ({ value }) => {
     loading.value = true;

@@ -20,7 +20,6 @@
 <script setup lang="ts">
 import { CSSProperties } from "vue";
 
-// properties
 export interface Props {
   showBadge?: boolean;
   showIcon?: boolean;
@@ -59,11 +58,17 @@ const props = withDefaults(defineProps<Props>(), {
   align-items: flex-end;
   height: 16px;
 }
+
 .now-playing-icon .bar {
   width: 3px;
+  height: 16px;
   background: rgb(var(--v-theme-primary));
+  transform-origin: bottom;
+  transform: scaleY(0.25);
   animation: eq 1s infinite ease-in-out;
+  will-change: transform;
 }
+
 .now-playing-icon .bar:nth-child(1) {
   animation-delay: 0s;
 }
@@ -80,10 +85,10 @@ const props = withDefaults(defineProps<Props>(), {
 @keyframes eq {
   0%,
   100% {
-    height: 4px;
+    transform: scaleY(0.25);
   }
   50% {
-    height: 16px;
+    transform: scaleY(1);
   }
 }
 </style>
