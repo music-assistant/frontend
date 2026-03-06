@@ -1620,8 +1620,8 @@ button {
 
 @media (max-width: 540px) {
   .main {
-    height: 60% !important;
-    max-height: 70% !important;
+    height: 70% !important;
+    max-height: 75% !important;
   }
 
   .main-media-details-image {
