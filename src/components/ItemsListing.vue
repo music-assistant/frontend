@@ -680,7 +680,11 @@ const redirectSearch = function () {
   router.push({ name: "search" });
 };
 
-const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (allItemsReceived.value) {
     done("empty");
     return;
@@ -1380,7 +1384,9 @@ onMounted(async () => {
         if (idx >= 0) {
           const playData = evt.data as Record<string, unknown>;
           if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData["fully_played"] as boolean;
+            pagedItems.value[idx].fully_played = playData[
+              "fully_played"
+            ] as boolean;
           if ("resume_position_ms" in pagedItems.value[idx])
             pagedItems.value[idx].resume_position_ms =
               (playData["seconds_played"] as number) * 1000;

@@ -1,11 +1,69 @@
 import { watch } from "vue";
 import { createRouter, createWebHashHistory } from "vue-router";
+import { authManager } from "./auth";
 import { api, ConnectionState } from "./api";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
 const routes = [
-  // All routes go through default layout - authentication is handled by server redirect
+  // Guest view uses minimal layout without navigation/player controls
+  // Guest authentication is handled by Login.vue via the ?join= query parameter
+  // which exchanges the short join code for a JWT before navigating here
+  {
+    path: "/guest",
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "guest",
+        component: () =>
+          import(
+            /* webpackChunkName: "guest" */ "@/views/PartyModeGuestView.vue"
+          ),
+      },
+    ],
+  },
+  // Party mode display uses minimal layout (fullscreen for wall-mounted tablets)
+  // Placed at top level so it renders without navigation/player controls
+  {
+    path: "/party",
+    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "party",
+        component: () =>
+          import(
+            /* webpackChunkName: "party" */ "@/views/PartyModeDashboardView.vue"
+          ),
+        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
+        beforeEnter: async (_to: any, _from: any, next: any) => {
+          // Wait for API initialization before checking plugin status
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          // Only allow access if party mode plugin is enabled
+          if (!store.enabledPlugins.has("party_mode")) {
+            next({ name: "discover" });
+            return;
+          }
+          next();
+        },
+      },
+    ],
+  },
+  // All other routes go through default layout with navigation/player controls
   {
     path: "/",
     component: () => import("@/layouts/default/Default.vue"),
@@ -39,7 +97,9 @@ const routes = [
         name: "browse",
         component: () =>
           import(/* webpackChunkName: "browse" */ "@/views/BrowseView.vue"),
-        props: (route: { query: Record<string, string | (string | null)[] | null | undefined> }) => ({ ...route.query }),
+        props: (route: {
+          query: Record<string, string | (string | null)[] | null | undefined>;
+        }) => ({ ...route.query }),
       },
       {
         path: "/artists",
@@ -106,7 +166,13 @@ const routes = [
               import(
                 /* webpackChunkName: "track" */ "@/views/TrackDetails.vue"
               ),
-            props: (route: { params: Record<string, string | string[]>; query: Record<string, string | (string | null)[] | null | undefined> }) => ({
+            props: (route: {
+              params: Record<string, string | string[]>;
+              query: Record<
+                string,
+                string | (string | null)[] | null | undefined
+              >;
+            }) => ({
               ...route.params,
               ...route.query,
             }),
@@ -451,8 +517,18 @@ router.onError((error, to) => {
   }
 });
 
-// Navigation guard for admin-only routes
+// Navigation guard for admin-only routes and guest mode restrictions
 router.beforeEach(async (to, _from, next) => {
+  const currentUser = store.currentUser;
+
+  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
+  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
+    console.debug("Party mode guest: preventing navigation to", to.path);
+    next({ name: "guest" });
+    return;
+  }
+
   // Check admin-only routes - check all matched routes for requiresAdmin meta
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 

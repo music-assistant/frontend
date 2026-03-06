@@ -1,15 +1,36 @@
 <script setup lang="ts">
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
-import { computed } from "vue";
+import { computed, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useSidebar } from "./utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
+const route = useRoute();
 const { isMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
+
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+
+watch(
+  () => route.path,
+  async (path) => {
+    if (path === "/party") {
+      await fetchConfig();
+    }
+  },
+  { immediate: true },
+);
+
+const needsBottomPadding = computed(() => {
+  if (route.path !== "/party") return true;
+  if (partyConfig.value === null) return true;
+  return partyConfig.value?.show_player_controls ?? false;
+});
 </script>
 
 <template>
@@ -22,8 +43,12 @@ const isCollapsed = computed(() => state.value === "collapsed");
         isMobile
           ? 'p-2'
           : isCollapsed
-            ? 'pl-[1px] pt-2 pb-26'
-            : 'px-3 pt-2 pb-26',
+            ? needsBottomPadding
+              ? 'pl-[1px] pt-2 pb-26'
+              : 'pl-[1px] pt-2'
+            : needsBottomPadding
+              ? 'px-3 pt-2 pb-26'
+              : 'px-3 pt-2',
         props.class,
       )
     "
