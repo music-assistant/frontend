@@ -162,8 +162,12 @@
       :skip-token-countdown="skipTokenCountdown"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
+      :boost-enabled="boostEnabled"
+      :boost-tokens="boostTokens"
+      :boosting-item-id="boostingQueueItemId"
       @skip="skipCurrentSong"
       @queue-scroll="handleQueueScroll"
+      @boost-queue-item="boostQueueItem"
     />
   </div>
 </template>
@@ -175,6 +179,7 @@ import { store } from "@/plugins/store";
 import {
   type Artist,
   PlaybackState,
+  type QueueItem,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -270,6 +275,7 @@ const {
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
 const skippingSong = ref(false);
+const boostingQueueItemId = ref("");
 const queueSectionRef = ref<InstanceType<typeof PartyModeQueueSection> | null>(
   null,
 );
@@ -362,6 +368,46 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     toast.error($t("providers.party_mode.add_to_queue_failed"));
   } finally {
     addingItems.value.delete(key);
+  }
+};
+
+const boostQueueItem = async (item: QueueItem) => {
+  if (!boostEnabled.value) {
+    toast.warning($t("providers.party_mode.boost_disabled"));
+    return;
+  }
+
+  if (rateLimitingEnabled.value) {
+    if (!consumeBoostToken()) {
+      const minutesUntilNext = getTimeUntilNextToken();
+      toast.warning(
+        $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+      );
+      return;
+    }
+  }
+
+  const uri = item.media_item?.uri;
+  if (!uri) return;
+
+  boostingQueueItemId.value = item.queue_item_id;
+  try {
+    const result = (await api.sendCommand("party_mode/add_to_queue", {
+      uri,
+      boost: true,
+    })) as { success: boolean };
+
+    if (!result.success) {
+      throw new Error("Server rejected the request");
+    }
+
+    const name = item.media_item?.name || item.name;
+    toast.success($t("providers.party_mode.guest_page.item_boosted", [name]));
+  } catch (error) {
+    console.error("Failed to boost queue item:", error);
+    toast.error($t("providers.party_mode.add_to_queue_failed"));
+  } finally {
+    boostingQueueItemId.value = "";
   }
 };
 

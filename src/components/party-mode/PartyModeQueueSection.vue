@@ -51,6 +51,11 @@
         :is-playing="isPlaying"
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
+        :boost-enabled="boostEnabled"
+        :rate-limiting-enabled="rateLimitingEnabled"
+        :boost-tokens="boostTokens"
+        :boosting="boostingItemId === item.queue_item_id"
+        @boost="$emit('boostQueueItem', $event)"
       />
       <!-- Loading indicator for infinite scroll -->
       <div v-if="loadingMoreQueueItems" class="loading-more">
@@ -83,11 +88,15 @@ const props = defineProps<{
   skipTokenCountdown: string;
   boostBadgeColor: string;
   requestBadgeColor: string;
+  boostEnabled: boolean;
+  boostTokens: number;
+  boostingItemId: string;
 }>();
 
 defineEmits<{
   skip: [];
   queueScroll: [event: Event];
+  boostQueueItem: [item: QueueItem];
 }>();
 
 const listRef = ref<HTMLElement | null>(null);
