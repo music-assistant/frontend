@@ -187,18 +187,17 @@ const artistName = computed(() => {
 }
 
 .action-btn.boost-btn {
-  max-width: 25%;
   color: white;
 }
 
 .action-btn.add-btn {
-  max-width: 45%;
   color: white;
 }
 
-.action-btn.add-btn.v-btn--disabled {
-  opacity: 0.2;
-  background-color: black !important;
+.action-btn.v-btn--disabled {
+  opacity: 0.3;
+  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+  color: rgba(var(--v-theme-on-surface), 0.4) !important;
 }
 
 @media (max-width: 768px) {

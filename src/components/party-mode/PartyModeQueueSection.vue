@@ -5,6 +5,15 @@
         {{ $t("providers.party_mode.guest_page.current_queue") }}
       </h2>
       <div v-if="skipSongEnabled" class="skip-area">
+        <span
+          v-if="
+            rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown
+          "
+          class="skip-countdown"
+        >
+          <v-icon size="x-small">mdi-clock-outline</v-icon>
+          {{ skipTokenCountdown }}
+        </span>
         <v-btn
           color="primary"
           variant="flat"
@@ -24,15 +33,6 @@
             {{ skipSongTokens }}
           </span>
         </v-btn>
-        <span
-          v-if="
-            rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown
-          "
-          class="skip-countdown"
-        >
-          <v-icon size="x-small">mdi-clock-outline</v-icon>
-          {{ skipTokenCountdown }}
-        </span>
       </div>
     </div>
     <div
@@ -151,6 +151,12 @@ defineExpose({ listRef });
 
 .skip-token-badge.no-tokens {
   background: rgba(255, 100, 100, 0.3);
+}
+
+.skip-btn.v-btn--disabled {
+  opacity: 0.3;
+  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+  color: rgba(var(--v-theme-on-surface), 0.4) !important;
 }
 
 .skip-countdown {
