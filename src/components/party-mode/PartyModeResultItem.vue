@@ -172,12 +172,6 @@ const artistName = computed(() => {
   flex-shrink: 0;
   margin-left: auto;
 }
-.action-btn--boost {
-  flex: 1;
-}
-.action-btn--add {
-  flex: 2;
-}
 
 .action-btn {
   font-weight: 600;

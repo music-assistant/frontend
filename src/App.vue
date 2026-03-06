@@ -259,8 +259,9 @@ const completeInitialization = async () => {
   const browserControlsEnabledPref =
     localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
 
-  // Disable web player for party mode guests and companion mode
-  if (isPartyModeGuest || companionMode.value) {
+  // Disable web player for party mode guests, companion mode, and party dashboard
+  const isPartyDashboard = router.currentRoute.value.path.startsWith("/party");
+  if (isPartyModeGuest || companionMode.value || isPartyDashboard) {
     webPlayer.setMode(WebPlayerMode.DISABLED);
   } else if (
     webPlayerEnabledPref !== "false" &&
