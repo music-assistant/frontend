@@ -325,7 +325,9 @@ watch(
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
   cursor: pointer;
 }
 
