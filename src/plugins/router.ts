@@ -34,7 +34,7 @@ const routes = [
         name: "party",
         component: () =>
           import(
-            /* webpackChunkName: "party" */ "@/views/PartyModeDisplayView.vue"
+            /* webpackChunkName: "party" */ "@/views/PartyModeDashboardView.vue"
           ),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
         beforeEnter: async (_to: any, _from: any, next: any) => {

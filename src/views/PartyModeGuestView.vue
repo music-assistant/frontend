@@ -31,7 +31,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -40,7 +40,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -91,7 +91,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -100,7 +100,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -188,10 +188,6 @@ import PartyModeResultItem from "@/components/party-mode/PartyModeResultItem.vue
 import PartyModeQueueSection from "@/components/party-mode/PartyModeQueueSection.vue";
 import PartyModeTokensBadge from "@/components/party-mode/PartyModeTokensBadge.vue";
 
-const isPlaying = computed(
-  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
-);
-
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 const rateLimit = useRateLimiting();
@@ -228,6 +224,30 @@ const {
   fetchQueueItems,
   handleQueueScroll,
 } = queue;
+
+const isPlaying = computed(
+  () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
+);
+
+watch(isPlaying, (val) => {
+  console.debug("[GuestView] isPlaying changed:", val);
+  console.debug("[GuestView] activePlayer:", store.activePlayer?.player_id);
+  console.debug(
+    "[GuestView] playback_state:",
+    store.activePlayer?.playback_state,
+  );
+});
+
+watch(
+  () => store.activePlayer,
+  (player) => {
+    console.debug(
+      "[GuestView] activePlayer changed:",
+      player?.player_id,
+      player?.playback_state,
+    );
+  },
+);
 
 const search = useGuestSearch();
 const {
@@ -409,7 +429,19 @@ onMounted(async () => {
   cleanupCountdown = rateLimit.startCountdown();
 
   try {
-    partyModeQueueId.value = await api.sendCommand("party_mode/player");
+    const partyPlayerId = await api.sendCommand<string | null>(
+      "party_mode/player",
+    );
+    partyModeQueueId.value = partyPlayerId;
+    if (partyPlayerId && !store.activePlayerId) {
+      store.activePlayerId = partyPlayerId;
+    }
+    console.debug("[GuestView] partyPlayerId:", partyPlayerId);
+    console.debug("[GuestView] store.activePlayerId:", store.activePlayerId);
+    console.debug("[GuestView] store.activePlayer:", store.activePlayer);
+    console.debug("[GuestView] api.players keys:", Object.keys(api.players));
+    console.debug("[GuestView] api.queues keys:", Object.keys(api.queues));
+    console.debug("[GuestView] queue state:", queue.currentQueue.value?.state);
   } catch (error) {
     console.error("Failed to fetch party mode player:", error);
   }

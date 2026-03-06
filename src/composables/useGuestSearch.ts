@@ -87,7 +87,7 @@ export function useGuestSearch() {
     if (searchQuery.value && searchQuery.value.length >= 2) {
       searchDebounceTimer = setTimeout(() => {
         performSearch();
-      }, 1000);
+      }, 2000);
     }
   };
 

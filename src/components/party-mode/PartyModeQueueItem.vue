@@ -11,9 +11,6 @@
         v-if="absoluteIndex === currentQueueIndex && isPlaying"
         :show-badge="false"
       />
-      <v-icon v-else-if="absoluteIndex === currentQueueIndex" color="primary">
-        mdi-pause-circle
-      </v-icon>
       <span v-else class="queue-number">{{ absoluteIndex + 1 }}</span>
     </div>
     <v-avatar size="48" rounded class="queue-avatar">
@@ -43,7 +40,6 @@
       <v-icon size="x-small">{{ badgeIcon }}</v-icon>
       <span>{{ badgeLabel }}</span>
     </span>
-
   </div>
 </template>
 
@@ -118,7 +114,7 @@ const badgeLabel = computed(() =>
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(var(--v-theme-surface-variant), 0.3);
+  background: rgba(var(--v-theme-surface-variant), 0.1);
   border-radius: 8px;
   min-height: 64px;
   transition: all 0.2s ease;
@@ -200,5 +196,4 @@ const badgeLabel = computed(() =>
   flex-shrink: 0;
   margin-left: auto;
 }
-
 </style>

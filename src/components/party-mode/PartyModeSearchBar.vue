@@ -4,7 +4,6 @@
       v-if="showBack"
       icon
       variant="text"
-      size="small"
       class="back-arrow"
       :aria-label="$t('back')"
       @click="$emit('back')"

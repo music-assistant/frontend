@@ -16,9 +16,6 @@
         </MarqueeText>
         <MarqueeText class="result-artist">
           {{ artistName }}
-          <span v-if="item.media_type === 'artist'" class="result-type">
-            • {{ $t("artist") }}
-          </span>
         </MarqueeText>
       </div>
     </div>
@@ -113,14 +110,14 @@ const artistName = computed(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(var(--v-theme-surface-variant), 0.25);
+  background: rgba(var(--v-theme-surface-variant), 0.1);
   border-radius: 12px;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   min-height: 72px;
 }
 
 .result-item:hover {
-  background: rgba(var(--v-theme-surface-variant), 0.4);
+  background: rgba(var(--v-theme-surface-variant), 0.2);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   border-color: rgba(var(--v-theme-primary), 0.3);
@@ -177,6 +174,12 @@ const artistName = computed(() => {
   flex-shrink: 0;
   margin-left: auto;
 }
+.action-btn--boost {
+  flex: 1;
+}
+.action-btn--add {
+  flex: 2;
+}
 
 .action-btn {
   font-weight: 600;
@@ -187,11 +190,11 @@ const artistName = computed(() => {
 .action-btn-primary {
   background: rgb(var(--v-theme-primary)) !important;
   color: rgb(var(--v-theme-on-primary)) !important;
-  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4) !important;
+  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.2) !important;
 }
 
 .action-btn-primary:hover {
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.6) !important;
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.3) !important;
   transform: translateY(-1px);
 }
 
