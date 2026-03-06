@@ -65,6 +65,7 @@ const { t } = useI18n();
 const compProps = withDefaults(defineProps<Props>(), {
   displayName: "",
   showCheckboxes: false,
+  isPlaying: false,
 });
 </script>
 
