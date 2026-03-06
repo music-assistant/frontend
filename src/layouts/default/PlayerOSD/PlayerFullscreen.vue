@@ -128,7 +128,7 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album && $vuetify.display.height > 700"
+              v-else-if="store.activePlayer?.current_media?.album && $vuetify.display.height > 750"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -749,7 +749,7 @@ const subTitleFontSize = computed(() => {
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > 700;
+  return vuetify.display.height.value > 750;
 });
 
 // methods
