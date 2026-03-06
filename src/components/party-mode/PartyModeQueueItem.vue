@@ -12,7 +12,7 @@
         :show-badge="false"
       />
       <v-icon v-else-if="absoluteIndex === currentQueueIndex" color="primary">
-        mdi-pause-circle
+        mdi-play-circle
       </v-icon>
       <span v-else class="queue-number">{{ absoluteIndex + 1 }}</span>
     </div>
@@ -117,16 +117,16 @@ const badgeLabel = computed(() =>
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem;
-  background: rgba(var(--v-theme-surface-variant), 0.3);
+  padding: 0 0.75rem;
+  background: rgba(var(--v-theme-surface-variant), 0.05);
   border-radius: 8px;
-  min-height: 64px;
+  min-height: 80px;
   transition: all 0.2s ease;
 }
 
 .queue-item-current {
   background: rgba(var(--v-theme-primary), 0.15);
-  border-left: 3px solid rgb(var(--v-theme-primary));
+  border-left: 6px solid rgb(var(--v-theme-primary));
   padding-left: calc(0.75rem - 3px);
 }
 
@@ -136,7 +136,8 @@ const badgeLabel = computed(() =>
 }
 
 .queue-position {
-  width: 32px;
+  width: 20px;
+  margin-right: -5px;
   text-align: center;
   flex-shrink: 0;
   display: flex;
@@ -188,11 +189,11 @@ const badgeLabel = computed(() =>
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.3rem;
   background: color-mix(in srgb, var(--badge-color) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
   border-radius: 999px;
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
