@@ -718,9 +718,9 @@ watch(
 const titleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.0em";
+      return "1.1em";
     case "sm":
-      return "1.2em";
+      return "1.3em";
     case "md":
       return "2em";
     case "lg":
@@ -737,9 +737,9 @@ const titleFontSize = computed(() => {
 const subTitleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "0.9em";
-    case "sm":
       return "1.0em";
+    case "sm":
+      return "1.1em";
     case "md":
       return "1.7em";
     case "lg":
