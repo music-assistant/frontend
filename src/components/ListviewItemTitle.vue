@@ -1,10 +1,12 @@
 <!-- eslint-disable vue/no-template-shadow -->
 <template v-if="!showCheckboxes">
-  <span v-if="item.media_type == MediaType.FOLDER">
-    <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
-  </span>
   <div class="checkbox-label">
-    {{ displayName }}
+    <span v-if="item.media_type == MediaType.FOLDER">
+      <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
+    </span>
+    <span v-else>
+      {{ displayName }}
+    </span>
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
     <span
       v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
