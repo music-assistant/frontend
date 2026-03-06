@@ -669,7 +669,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
   min-width: 0;
 }
 
@@ -807,7 +807,7 @@ watch(
   background: rgba(var(--v-theme-surface), 0.3);
   border-radius: 8px;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .spec-item:hover {

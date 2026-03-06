@@ -917,7 +917,7 @@ const getAllFilteredProviders = function () {
 }
 
 .provider-card {
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .provider-card:hover {
@@ -938,7 +938,7 @@ const getAllFilteredProviders = function () {
 
 .player-count-chip {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .player-count-chip:hover {
@@ -1005,7 +1005,7 @@ const getAllFilteredProviders = function () {
 
 .player-count-chip {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .player-count-chip:hover {

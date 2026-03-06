@@ -809,7 +809,7 @@ watch(
 /* Popout animation */
 .popout-enter-active,
 .popout-leave-active {
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .popout-enter-from,

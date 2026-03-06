@@ -149,7 +149,7 @@ const handleMenu = (event: Event) => {
 
 <style scoped>
 .player-card {
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 

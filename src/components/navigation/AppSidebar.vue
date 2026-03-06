@@ -108,7 +108,7 @@ onUnmounted(() => {
   margin-right: 15px;
   margin: 2px 15px 8px 2px;
   gap: 6px;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
   position: relative;
   cursor: pointer;
 }
