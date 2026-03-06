@@ -348,6 +348,10 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.checkbox {
+  margin-bottom: 0.2em;
+}
+
 .unavailable {
   opacity: 0.3;
 }
