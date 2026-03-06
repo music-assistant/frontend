@@ -191,6 +191,7 @@ onMounted(() => {
   if (
     metadataPlayerId.value === undefined &&
     webPlayer.interacted &&
+    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
     silentAudioRef.value
   ) {
     silentAudioRef.value.play().catch(() => {});
