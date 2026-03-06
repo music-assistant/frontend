@@ -14,7 +14,10 @@
         <MarqueeText class="result-name">
           {{ item.name }}
         </MarqueeText>
-        <MarqueeText class="result-artist">
+        <MarqueeText
+          v-if="item.media_type === 'track'"
+          class="result-artist"
+        >
           {{ artistName }}
         </MarqueeText>
       </div>
@@ -36,13 +39,14 @@
         <v-icon start>mdi-rocket-launch</v-icon>
         {{ $t("providers.party_mode.boost") }}
       </v-btn>
+
       <v-btn
         v-if="addQueueEnabled"
-        variant="elevated"
+        variant="text"
         :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
         :disabled="rateLimitingEnabled && addQueueTokens <= 0"
         class="add-btn action-btn"
-        :style="{ backgroundColor: requestBadgeColor }"
+        :style="{ color: requestBadgeColor }"
         @click="$emit('addToQueue', item, 'end')"
       >
         <v-icon start>mdi-playlist-plus</v-icon>
@@ -54,7 +58,7 @@
     <div v-else-if="item.media_type === 'artist'" class="result-actions">
       <v-btn
         variant="text"
-        class="action-btn"
+        class="view-btn action-btn"
         @click="$emit('selectArtist', item)"
       >
         <v-icon start>mdi-music-note-outline</v-icon>
@@ -172,32 +176,27 @@ const artistName = computed(() => {
   flex-shrink: 0;
   margin-left: auto;
 }
-.action-btn--boost {
-  flex: 1;
-}
-.action-btn--add {
-  flex: 2;
-}
 
 .action-btn {
+  font-size: 1rem;
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.5px;
   color: var(--primary-foreground);
 }
 
-.action-btn.boost-btn {
-  color: white;
+.view-btn {
+  opacity: 0.75;
 }
 
-.action-btn.add-btn {
-  color: white;
+.boost-btn,
+.action-btn--boost {
+  flex: 1;
 }
 
-.action-btn.v-btn--disabled {
-  opacity: 0.3;
-  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
-  color: rgba(var(--v-theme-on-surface), 0.4) !important;
+.add-btn,
+.action-btn--add {
+  flex: 2;
 }
 
 @media (max-width: 768px) {
@@ -220,9 +219,9 @@ const artistName = computed(() => {
 
   .result-spacer {
     display: block;
-    background: #2d2d2d;
+    background: #373737;
     height: 1px;
-    margin: 6px 16px;
+    margin: 6px 16px 0px 16px;
   }
 
   .result-actions {
