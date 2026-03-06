@@ -749,7 +749,7 @@ const subTitleFontSize = computed(() => {
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > 800;
+  return vuetify.display.height.value > 700;
 });
 
 // methods
