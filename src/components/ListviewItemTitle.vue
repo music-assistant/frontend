@@ -4,7 +4,7 @@
     <span v-if="item.media_type == MediaType.FOLDER">
       <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
     </span>
-    <span v-else>
+    <span v-else :class="{ 'is-playing': isPlaying }">
       {{ displayName }}
     </span>
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
@@ -56,6 +56,7 @@ export interface Props {
   displayName: string;
   item: MediaItemType;
   showCheckboxes: boolean;
+  isPlaying: boolean;
 }
 
 // global refs

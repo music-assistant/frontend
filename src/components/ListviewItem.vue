@@ -24,6 +24,7 @@
             :display-name="displayName"
             :item="item"
             :show-checkboxes="showCheckboxes"
+            :is-playing="isPlaying"
           />
         </label>
       </div>
@@ -38,6 +39,7 @@
         :display-name="displayName"
         :item="item"
         :show-checkboxes="showCheckboxes"
+        :is-playing="isPlaying"
       />
     </template>
 
