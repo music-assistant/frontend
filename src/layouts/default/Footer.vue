@@ -1,46 +1,77 @@
+import { store } from '@/plugins/store';
+
 <template>
-  <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
-  <div
-    v-if="store.mobileLayout"
-    :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
-    :style="`
-      position: fixed;
-      width: 100%;
-      height: 180px;
-      bottom: 0px;
-      z-index: 999;
-    `"
-  ></div>
+  <!-- Hide footer entirely when on party view with controls disabled -->
+  <template v-if="!hideFooter">
+    <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
+    <div
+      v-if="store.mobileLayout"
+      :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
+      :style="`
+        position: fixed;
+        width: 100%;
+        height: 180px;
+        bottom: 0px;
+        z-index: 999;
+      `"
+    ></div>
 
-  <!-- bottom navigation for mobile layout -->
-  <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
+    <!-- bottom navigation for mobile layout -->
+    <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
+    <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
 
-  <v-footer
-    app
-    color="default"
-    :class="`py-0 px-0 ${
-      store.mobileLayout
-        ? 'mediacontrols-player-float'
-        : 'mediacontrols-player-default'
-    }`"
-    :style="[
-      store.mobileLayout && store.showPlayersMenu
-        ? 'z-index: 999 !important;'
-        : '',
-      store.isInPWAMode && !store.isIngressSession
-        ? 'margin-bottom: 10px;'
-        : '',
-    ]"
-  >
-    <Player :use-floating-player="store.mobileLayout" />
-  </v-footer>
+    <v-footer
+      app
+      color="default"
+      :class="`py-0 px-0 ${
+        store.mobileLayout
+          ? 'mediacontrols-player-float'
+          : 'mediacontrols-player-default'
+      }`"
+      :style="[
+        store.mobileLayout && store.showPlayersMenu
+          ? 'z-index: 999 !important;'
+          : '',
+        store.isInPWAMode && !store.isIngressSession
+          ? 'margin-bottom: 10px;'
+          : '',
+      ]"
+    >
+      <Player :use-floating-player="store.mobileLayout" />
+    </v-footer>
+  </template>
 </template>
 
 <script setup lang="ts">
-import Player from "./PlayerOSD/Player.vue";
-import { store } from "@/plugins/store";
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { store } from "@/plugins/store";
+import { computed, watch } from "vue";
+import { useRoute } from "vue-router";
+import Player from "./PlayerOSD/Player.vue";
+
+const route = useRoute();
+const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+
+// Fetch party mode config when entering party route
+watch(
+  () => route.path,
+  async (path) => {
+    if (path === "/party") {
+      await fetchConfig();
+    }
+  },
+  { immediate: true },
+);
+
+// Hide footer when on party view and controls are explicitly disabled
+const hideFooter = computed(() => {
+  return (
+    route.path === "/party" &&
+    partyConfig.value !== null &&
+    (partyConfig.value?.show_player_controls ?? false) === false
+  );
+});
 </script>
 
 <style>

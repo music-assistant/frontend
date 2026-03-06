@@ -305,6 +305,19 @@
                       </div>
                     </template>
                     <template #append>
+                      <PartyModePlayerBadge
+                        v-if="item.extra_attributes?.party_mode_guest === true"
+                        :type="
+                          item.extra_attributes?.party_mode_boosted === true
+                            ? 'boost'
+                            : 'request'
+                        "
+                        :badge-color="
+                          item.extra_attributes?.party_mode_boosted === true
+                            ? boostBadgeColor
+                            : requestBadgeColor
+                        "
+                      />
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
@@ -505,6 +518,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import PartyModePlayerBadge from "@/components/party-mode/PartyModePlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -521,6 +535,7 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -573,6 +588,10 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
+
+// Badge colors for guest request badges (loaded from party_mode/config)
+const requestBadgeColor = ref("#2196f3");
+const boostBadgeColor = ref("#ff5722");
 
 // Lyrics elapsed time computation (similar to PlayerTimeline)
 const nowTick = ref(0);
@@ -1186,7 +1205,11 @@ const resetItems = async function () {
   tempHide.value = false;
 };
 
-const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done("empty");
     return;
@@ -1209,6 +1232,25 @@ const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" |
     done("ok");
   }
 };
+
+// Fetch badge colors from party mode config
+const { config: partyConfig, fetchConfig: fetchPartyConfig } =
+  usePartyModeConfig();
+
+// React to party mode config changes (e.g., admin changes badge colors)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+  }
+});
+
+onMounted(async () => {
+  // Only fetch badge colors if party_mode provider is loaded
+  if (Object.values(api.providers).some((p) => p.domain === "party_mode")) {
+    await fetchPartyConfig();
+  }
+});
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
@@ -1616,5 +1658,21 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.guest-request-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 35%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  margin-right: 0.5rem;
 }
 </style>
