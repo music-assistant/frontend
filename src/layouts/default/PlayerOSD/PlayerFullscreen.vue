@@ -177,7 +177,7 @@
                 store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails
               "
-              style="margin: auto; padding-top: 20px"
+              style="margin: auto; padding-top: min(20px, 2vh)"
             >
               <QualityDetailsBtn />
             </div>
@@ -1633,6 +1633,7 @@ button {
 
   .main-media-details-track-info {
     padding: 8px;
+    height: 25%;
   }
 }
 </style>
