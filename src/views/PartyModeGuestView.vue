@@ -31,7 +31,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -40,7 +40,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
@@ -91,7 +91,7 @@
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
             :countdown="nextTokenCountdown"
-            :label="$t('providers.party_mode.boost_available')"
+            :label="$t('providers.party_mode.guest_page.boost_available')"
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
@@ -100,7 +100,7 @@
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
             :countdown="addQueueTokenCountdown"
-            :label="$t('providers.party_mode.add_available')"
+            :label="$t('providers.party_mode.guest_page.add_available')"
             :color="requestBadgeColor"
             icon="mdi-playlist-plus"
           />
