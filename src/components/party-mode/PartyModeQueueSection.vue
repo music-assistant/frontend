@@ -25,7 +25,9 @@
           </span>
         </v-btn>
         <span
-          v-if="rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown"
+          v-if="
+            rateLimitingEnabled && skipSongTokens <= 0 && skipTokenCountdown
+          "
           class="skip-countdown"
         >
           <v-icon size="x-small">mdi-clock-outline</v-icon>
