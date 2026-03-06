@@ -26,11 +26,11 @@
     <div v-if="item.media_type === 'track'" class="result-actions">
       <v-btn
         v-if="boostEnabled"
-        variant="text"
+        variant="elevated"
         :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
         :disabled="rateLimitingEnabled && boostTokens <= 0"
         class="boost-btn action-btn"
-        :style="{ color: boostBadgeColor }"
+        :style="{ backgroundColor: boostBadgeColor }"
         @click="$emit('addToQueue', item, 'next')"
       >
         <v-icon start>mdi-rocket-launch</v-icon>
