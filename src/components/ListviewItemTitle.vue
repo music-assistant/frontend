@@ -6,12 +6,14 @@
     </span>
     <span v-else :class="{ 'is-playing': isPlaying }">
       {{ displayName }}
-    </span>
-    <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
-    <span
-      v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
-    >
-      ({{ new Date(item.metadata.release_date).getFullYear() }})
+      <span v-if="'version' in item && item.version">
+        ({{ item.version }})
+      </span>
+      <span
+        v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
+      >
+        ({{ new Date(item.metadata.release_date).getFullYear() }})
+      </span>
     </span>
     <!-- explicit icon -->
     <template
