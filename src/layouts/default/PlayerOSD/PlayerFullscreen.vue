@@ -69,7 +69,7 @@
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
-              style="max-width: 100%; width: auto; border-radius: 4px"
+              style="max-width: 100%; width: auto; border-radius: 10px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -128,7 +128,7 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album"
+              v-else-if="store.activePlayer?.current_media?.album && $vuetify.display.height > 700"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -366,7 +366,7 @@
           <div class="main-media-details-image main-media-details-image-alt">
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
-              style="max-width: 100%; width: auto; border-radius: 4px"
+              style="max-width: 100%; width: auto; border-radius: 10px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -713,9 +713,9 @@ watch(
 const titleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.2em";
+      return "1.0em";
     case "sm":
-      return "1.6em";
+      return "1.2em";
     case "md":
       return "2em";
     case "lg":
@@ -732,9 +732,9 @@ const titleFontSize = computed(() => {
 const subTitleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.0em";
+      return "0.9em";
     case "sm":
-      return "1.2em";
+      return "1.0em";
     case "md":
       return "1.7em";
     case "lg":
@@ -1611,10 +1611,28 @@ button {
   aspect-ratio: 1;
   max-width: 400px;
   margin: 0 auto;
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 540px) {
+  .main {
+    height: 60% !important;
+    max-height: 70% !important;
+  }
+
+  .main-media-details-image {
+    height: 75%;
+    max-height: 85%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .main-media-details-track-info {
+    padding: 8px;
+  }
 }
 </style>
