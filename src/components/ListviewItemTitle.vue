@@ -1,5 +1,5 @@
 <!-- eslint-disable vue/no-template-shadow -->
-<template v-if="!showCheckboxes">
+<template>
   <div class="checkbox-label">
     <span v-if="item.media_type == MediaType.FOLDER">
       <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
