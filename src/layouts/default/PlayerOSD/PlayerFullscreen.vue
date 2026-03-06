@@ -69,7 +69,7 @@
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
-              style="max-width: 100%; width: auto; border-radius: 10px"
+              style="max-width: 100%; width: auto"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -128,7 +128,7 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album && $vuetify.display.height > 750"
+              v-else-if="store.activePlayer?.current_media?.album && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -366,7 +366,7 @@
           <div class="main-media-details-image main-media-details-image-alt">
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
-              style="max-width: 100%; width: auto; border-radius: 10px"
+              style="max-width: 100%; width: auto"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -560,6 +560,11 @@ import computeElapsedTime from "@/helpers/elapsed";
 
 const { name } = useDisplay();
 
+const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
+const showAlbumSubtitle = computed(
+  () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
+);
+
 interface Props {
   colorPalette: ImageColorPalette;
 }
@@ -749,7 +754,7 @@ const subTitleFontSize = computed(() => {
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > 750;
+  return vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
 });
 
 // methods
@@ -1417,10 +1422,12 @@ watchEffect(() => {
 
 <style scoped>
 .main {
+  --main-height: 50%;
+  --main-max-height: 65%;
   display: flex;
   min-height: 50% !important;
-  height: 50% !important;
-  max-height: 65% !important;
+  height: var(--main-height) !important;
+  max-height: var(--main-max-height) !important;
   padding-bottom: 5px;
 }
 
@@ -1455,8 +1462,9 @@ watchEffect(() => {
   padding-left: 20px;
   padding-right: 20px;
 }
-.main-media-details-image.v-img {
+.main-media-details-image .v-img {
   width: auto;
+  border-radius: 10px;
 }
 
 .main-media-details-image-alt {
@@ -1620,8 +1628,8 @@ button {
 
 @media (max-width: 540px) {
   .main {
-    height: 70% !important;
-    max-height: 75% !important;
+    --main-height: 70%;
+    --main-max-height: 75%;
   }
 
   .main-media-details-image {
