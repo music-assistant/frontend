@@ -93,24 +93,27 @@ let rafId: number | null = null;
 let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
 const startTick = () => {
-  if (rafId == null) {
+  if (rafId === null) {
     const tick = () => {
-      nowTick.value = Date.now();
+      const now = Date.now();
+      if (now - nowTick.value >= 64) {
+        nowTick.value = now;
+      }
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
   }
-  if (!fallbackTimer) {
+  if (fallbackTimer === null) {
     fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
   }
 };
 
 const stopTick = () => {
-  if (rafId != null) {
+  if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
   }
-  if (fallbackTimer) {
+  if (fallbackTimer !== null) {
     clearInterval(fallbackTimer);
     fallbackTimer = null;
   }
