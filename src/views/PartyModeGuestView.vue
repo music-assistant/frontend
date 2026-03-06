@@ -65,7 +65,9 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :is-expanded="expandedResultItemId === `${track.media_type}-${track.item_id}`"
           @add-to-queue="addToQueue"
+          @toggle-expand="toggleExpandedResult"
         />
       </div>
       <!-- Empty state for no tracks -->
@@ -119,8 +121,10 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :is-expanded="expandedResultItemId === `${item.media_type}-${item.item_id}`"
           @add-to-queue="addToQueue"
           @select-artist="selectArtist"
+          @toggle-expand="toggleExpandedResult"
         />
       </div>
     </div>
@@ -276,6 +280,12 @@ const {
 const addingItems = ref(new Set<string>());
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
+const expandedResultItemId = ref("");
+
+const toggleExpandedResult = (itemId: string) => {
+  expandedResultItemId.value =
+    expandedResultItemId.value === itemId ? "" : itemId;
+};
 const queueSectionRef = ref<InstanceType<typeof PartyModeQueueSection> | null>(
   null,
 );
@@ -387,14 +397,10 @@ const boostQueueItem = async (item: QueueItem) => {
     }
   }
 
-  const uri = item.media_item?.uri;
-  if (!uri) return;
-
   boostingQueueItemId.value = item.queue_item_id;
   try {
-    const result = (await api.sendCommand("party_mode/add_to_queue", {
-      uri,
-      boost: true,
+    const result = (await api.sendCommand("party_mode/boost_queue_item", {
+      queue_item_id: item.queue_item_id,
     })) as { success: boolean };
 
     if (!result.success) {

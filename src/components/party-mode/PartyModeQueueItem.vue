@@ -4,7 +4,7 @@
     :class="{
       'queue-item-current': absoluteIndex === currentQueueIndex,
       'queue-item-played': absoluteIndex < currentQueueIndex,
-      'queue-item--expanded': expanded,
+      'queue-item--expanded': isExpanded,
     }"
     @click="onItemClick"
   >
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Boost action (shown when expanded on upcoming items) -->
-    <div v-if="expanded && canBoost" class="queue-item-actions">
+    <div v-if="isExpanded && canBoost" class="queue-item-actions">
       <v-btn
         variant="elevated"
         size="small"
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
@@ -83,17 +83,16 @@ const props = defineProps<{
   rateLimitingEnabled: boolean;
   boostTokens: number;
   boosting: boolean;
+  isExpanded: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   boost: [item: QueueItem];
+  toggleExpand: [queueItemId: string];
 }>();
-
-const expanded = ref(false);
 
 const canBoost = computed(
-  () =>
-    props.boostEnabled && absoluteIndex.value > props.currentQueueIndex,
+  () => props.boostEnabled && absoluteIndex.value > props.currentQueueIndex,
 );
 
 const boostDisabled = computed(
@@ -102,7 +101,7 @@ const boostDisabled = computed(
 
 const onItemClick = () => {
   if (absoluteIndex.value > props.currentQueueIndex) {
-    expanded.value = !expanded.value;
+    emit("toggleExpand", props.item.queue_item_id);
   }
 };
 

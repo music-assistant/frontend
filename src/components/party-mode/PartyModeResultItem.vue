@@ -1,7 +1,7 @@
 <template>
   <div
     class="result-item"
-    :class="{ 'result-item--expanded': expanded }"
+    :class="{ 'result-item--expanded': isExpanded }"
     @click="onItemClick"
   >
     <div class="result-info">
@@ -25,15 +25,13 @@
     </div>
 
     <!-- Actions for tracks (shown when expanded) -->
-    <template v-if="item.media_type === 'track' && expanded">
+    <template v-if="item.media_type === 'track' && isExpanded">
       <div class="result-spacer"></div>
       <div class="result-actions">
         <v-btn
           v-if="boostEnabled"
           variant="elevated"
-          :loading="
-            addingItems.has(`${item.media_type}-${item.item_id}-next`)
-          "
+          :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
           :disabled="rateLimitingEnabled && boostTokens <= 0"
           class="boost-btn action-btn"
           :style="{ backgroundColor: boostBadgeColor }"
@@ -45,9 +43,7 @@
         <v-btn
           v-if="addQueueEnabled"
           variant="elevated"
-          :loading="
-            addingItems.has(`${item.media_type}-${item.item_id}-end`)
-          "
+          :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
           :disabled="rateLimitingEnabled && addQueueTokens <= 0"
           class="add-btn action-btn"
           :style="{ backgroundColor: requestBadgeColor }"
@@ -77,20 +73,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { Artist, Track } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
-
-const expanded = ref(false);
-
-const onItemClick = () => {
-  if (props.item.media_type === MediaType.TRACK) {
-    expanded.value = !expanded.value;
-  }
-};
 
 const props = defineProps<{
   item: Track | Artist;
@@ -102,12 +90,20 @@ const props = defineProps<{
   boostBadgeColor: string;
   requestBadgeColor: string;
   addingItems: Set<string>;
+  isExpanded: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   addToQueue: [item: Track | Artist, position: "next" | "end"];
   selectArtist: [item: Track | Artist];
+  toggleExpand: [itemId: string];
 }>();
+
+const onItemClick = () => {
+  if (props.item.media_type === MediaType.TRACK) {
+    emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
+  }
+};
 
 const imageUrl = computed(() => {
   const img = props.item.metadata?.images?.[0];
