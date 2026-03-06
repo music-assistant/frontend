@@ -1,15 +1,17 @@
 <template>
   <div class="search-section">
     <v-btn
-      v-if="showBack"
       icon
       variant="text"
+      size="medium"
       class="back-arrow"
+      :class="{ active: showBack }"
       :aria-label="$t('back')"
       @click="$emit('back')"
     >
       <v-icon>mdi-arrow-left</v-icon>
     </v-btn>
+
     <v-text-field
       :model-value="searchQuery"
       :placeholder="$t('providers.party_mode.guest_page.search_placeholder')"
@@ -25,6 +27,10 @@
       @update:model-value="$emit('update:searchQuery', $event)"
       @click:clear="$emit('clear')"
     />
+
+    <div class="filter-toggle">
+      <!-- TODO -->
+    </div>
   </div>
 
   <!-- Search Filter Chips -->
@@ -83,11 +89,21 @@ defineEmits<{
 }
 
 .back-arrow {
+  opacity: 0;
   flex-shrink: 0;
+}
+
+.back-arrow.active {
+  opacity: 1;
 }
 
 .search-input {
   flex: 1;
+}
+
+.filter-toggle {
+  width: 24px;
+  height: 24px;
 }
 
 .filter-section {
@@ -109,7 +125,6 @@ defineEmits<{
 
 @media (max-width: 768px) {
   .search-section {
-    align-items: stretch;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
   }

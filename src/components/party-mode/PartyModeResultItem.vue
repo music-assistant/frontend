@@ -20,15 +20,17 @@
       </div>
     </div>
 
+    <div class="result-spacer"></div>
+
     <!-- Actions for tracks -->
     <div v-if="item.media_type === 'track'" class="result-actions">
       <v-btn
         v-if="boostEnabled"
-        variant="elevated"
+        variant="text"
         :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
         :disabled="rateLimitingEnabled && boostTokens <= 0"
-        class="action-btn"
-        :style="{ backgroundColor: boostBadgeColor, color: '#fff' }"
+        class="boost-btn action-btn"
+        :style="{ color: boostBadgeColor }"
         @click="$emit('addToQueue', item, 'next')"
       >
         <v-icon start>mdi-rocket-launch</v-icon>
@@ -39,8 +41,8 @@
         variant="elevated"
         :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
         :disabled="rateLimitingEnabled && addQueueTokens <= 0"
-        class="action-btn"
-        :style="{ backgroundColor: requestBadgeColor, color: '#fff' }"
+        class="add-btn action-btn"
+        :style="{ backgroundColor: requestBadgeColor }"
         @click="$emit('addToQueue', item, 'end')"
       >
         <v-icon start>mdi-playlist-plus</v-icon>
@@ -51,9 +53,8 @@
     <!-- Actions for artists -->
     <div v-else-if="item.media_type === 'artist'" class="result-actions">
       <v-btn
-        color="primary"
-        variant="elevated"
-        class="action-btn action-btn-primary"
+        variant="text"
+        class="action-btn"
         @click="$emit('selectArtist', item)"
       >
         <v-icon start>mdi-music-note-outline</v-icon>
@@ -110,17 +111,9 @@ const artistName = computed(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(var(--v-theme-surface-variant), 0.1);
+  background: rgba(var(--v-theme-surface-variant), 0.07);
   border-radius: 12px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   min-height: 72px;
-}
-
-.result-item:hover {
-  background: rgba(var(--v-theme-surface-variant), 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
 .result-info {
@@ -168,9 +161,14 @@ const artistName = computed(() => {
   opacity: 0.7;
 }
 
+.result-spacer {
+  display: none;
+}
+
 .result-actions {
   display: flex;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 2rem;
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -185,17 +183,21 @@ const artistName = computed(() => {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.5px;
+  color: var(--primary-foreground);
 }
 
-.action-btn-primary {
-  background: rgb(var(--v-theme-primary)) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
-  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.2) !important;
+.action-btn.boost-btn {
+  max-width: 25%;
 }
 
-.action-btn-primary:hover {
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.3) !important;
-  transform: translateY(-1px);
+.action-btn.add-btn {
+  max-width: 45%;
+  color: white;
+}
+
+.action-btn.add-btn.v-btn--disabled {
+    opacity: 0.2;
+    background-color: black !important;
 }
 
 @media (max-width: 768px) {
@@ -214,6 +216,13 @@ const artistName = computed(() => {
 
   .result-text {
     overflow: hidden;
+  }
+
+  .result-spacer {
+    display: block;
+    background: #2d2d2d;
+    height: 1px;
+    margin: 6px 16px;
   }
 
   .result-actions {

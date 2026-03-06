@@ -257,7 +257,7 @@
     "providers": {
         "party_mode": {
             "guest_page": {
-                "add_available": "Add available",
+                "add_available": "Add Available",
                 "add_queue_disabled": "Add to Queue is disabled by the host.",
                 "add_queue_limit_reached": "Add to Queue limit reached. Next use available in {0} minutes.",
                 "add_to_queue_failed": "Failed to add to queue. Please try again.",
@@ -283,8 +283,7 @@
                 "song_skipped": "Song skipped!",
                 "try_different_search": "Try a different search term",
                 "unknown_artist": "Unknown Artist",
-                "view_songs": "View Songs",
-                
+                "view_songs": "View Songs"
             },
             "add": "Add",
             "boost": "Boost",
