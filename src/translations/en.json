@@ -552,7 +552,10 @@
             "playback": "Queue Playback",
             "advanced": "Advanced",
             "generic": "Generic",
+            "preferences": "Preferences",
+            "display_settings": "Display",
             "announcements": "Announcements",
+            "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
             "sync_options": "Sync\/import options",
             "builtin_playlists": "Builtin Playlists",
@@ -635,6 +638,10 @@
                 "it": "Italian",
                 "el_GR": "Greek"
             }
+        },
+        "startup_view": {
+            "label": "Startup view",
+            "description": "Select which view to display when Music Assistant starts."
         },
         "no_music_providers": "No Music Providers configured",
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",

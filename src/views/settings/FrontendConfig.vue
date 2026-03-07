@@ -52,6 +52,8 @@ import { useColorMode } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
+import { store } from "@/plugins/store";
 import { companionMode, isCompanionApp } from "@/plugins/companion";
 
 // global refs
@@ -61,6 +63,9 @@ const loading = ref(false);
 const mode = useColorMode();
 
 onMounted(() => {
+  // TODO: Remove localStorage fallback once migration period is over
+  // (menu_items moved from localStorage to user preferences)
+  // Fall back to per-item localStorage keys during migration
   const enabledMenuItems = DEFAULT_MENU_ITEMS.filter(
     (item) =>
       localStorage.getItem(`frontend.settings.menu_item_${item}_enabled`) !==
@@ -82,8 +87,8 @@ onMounted(() => {
         { title: "light", value: "light" },
       ],
       multi_value: false,
-      category: "generic",
-      value: storedTheme,
+      category: "preferences",
+      value: (store.currentUser?.preferences?.theme as string) || storedTheme,
     },
     {
       key: "language",
@@ -98,8 +103,35 @@ onMounted(() => {
         }),
       ],
       multi_value: false,
-      category: "generic",
-      value: localStorage.getItem("frontend.settings.language"),
+      category: "preferences",
+      value:
+        (store.currentUser?.preferences?.language as string) ||
+        localStorage.getItem("frontend.settings.language"),
+    },
+    {
+      key: "startup_view",
+      type: ConfigEntryType.STRING,
+      label: "startup_view",
+      default_value: "discover",
+      required: false,
+      options: [
+        { title: $t("discover"), value: "discover" },
+        { title: $t("search"), value: "search" },
+        { title: $t("artists"), value: "artists" },
+        { title: $t("albums"), value: "albums" },
+        { title: $t("tracks"), value: "tracks" },
+        { title: $t("playlists"), value: "playlists" },
+        { title: $t("audiobooks"), value: "audiobooks" },
+        { title: $t("podcasts"), value: "podcasts" },
+        { title: $t("radios"), value: "radios" },
+        { title: $t("browse"), value: "browse" },
+      ],
+      multi_value: false,
+      category: "preferences",
+      value:
+        (store.currentUser?.preferences?.startup_view as string) ||
+        localStorage.getItem("frontend.settings.startup_view") ||
+        "home",
     },
     {
       key: "menu_items",
@@ -122,8 +154,10 @@ onMounted(() => {
         { title: $t("settings.settings"), value: "settings" },
       ],
       multi_value: true,
-      category: "generic",
-      value: enabledMenuItems,
+      category: "preferences",
+      value:
+        (store.currentUser?.preferences?.menu_items as string[] | string) ||
+        enabledMenuItems,
     },
     {
       key: "enable_browser_controls",
@@ -145,7 +179,7 @@ onMounted(() => {
       default_value: false,
       required: false,
       multi_value: false,
-      category: "generic",
+      category: "display_settings",
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
@@ -223,44 +257,48 @@ onMounted(() => {
 });
 
 // methods
-const saveValues = function (values: Record<string, ConfigValueType>) {
-  for (const key in values) {
-    const storageKey = `frontend.settings.${key}`;
-    const value = values[key];
-    if (value != null) {
-      if (key === "menu_items") {
-        const selectedItems = Array.isArray(value)
-          ? (value as string[])
-          : String(value).split(",");
-        for (const item of DEFAULT_MENU_ITEMS) {
-          if (selectedItems.includes(item)) {
-            localStorage.removeItem(
-              `frontend.settings.menu_item_${item}_enabled`,
-            );
-          } else {
-            localStorage.setItem(
-              `frontend.settings.menu_item_${item}_enabled`,
-              "false",
-            );
-          }
-        }
-        // clean up old single-key format
-        localStorage.removeItem(storageKey);
-      } else {
-        localStorage.setItem(storageKey, value.toString());
-      }
+const saveValues = async function (values: Record<string, ConfigValueType>) {
+  const { setPreference } = useUserPreferences();
+  loading.value = true;
 
-      if (key === "theme") {
-        mode.value = value.toString() as "light" | "dark" | "auto";
+  let hasPerUserChanges = false;
+
+  try {
+    for (const key in values) {
+      const entry = config.value.find((e) => e.key === key);
+      if (!entry) continue;
+
+      if (entry.category === "preferences") {
+        // Save to backend via user preferences
+        await setPreference(key, values[key]);
+        hasPerUserChanges = true;
+      } else {
+        // Save to localStorage (display_settings and web_player settings)
+        const storageKey = `frontend.settings.${key}`;
+        const value = values[key];
+        if (value != null) {
+          localStorage.setItem(storageKey, value.toString());
+          if (key === "theme") {
+            mode.value = value.toString() as "light" | "dark" | "auto";
+          }
+        } else {
+          localStorage.removeItem(storageKey);
+        }
       }
-    } else {
-      localStorage.removeItem(storageKey);
     }
+
+    // Reload if any per-user settings changed
+    if (hasPerUserChanges) {
+      router.push({ name: "discover" }).then(() => {
+        window.location.reload();
+      });
+    } else {
+      router.push({ name: "discover" });
+    }
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    loading.value = false;
   }
-  router.push({ name: "discover" }).then(() => {
-    // enforce refresh
-    window.location.reload();
-  });
 };
 
 const onSubmit = function (values: Record<string, ConfigValueType>) {

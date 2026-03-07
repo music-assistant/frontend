@@ -28,16 +28,31 @@ export interface MenuItem {
 }
 
 export const getMenuItems = function () {
+  // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
+  // Check user preferences first, then fall back to per-item localStorage keys
+  const userMenuItems = store.currentUser?.preferences?.menu_items as
+    | string
+    | string[]
+    | undefined;
+
+  let enabledItems: string[];
+  if (userMenuItems) {
+    // If user preferences has menu_items, use it (it could be array or comma-separated string)
+    enabledItems = Array.isArray(userMenuItems)
+      ? userMenuItems
+      : userMenuItems.split(",");
+  } else {
+    // Fallback to per-item localStorage keys (main branch approach)
+    enabledItems = DEFAULT_MENU_ITEMS.filter(
+      (item) =>
+        localStorage.getItem(`frontend.settings.menu_item_${item}_enabled`) !==
+        "false",
+    );
+  }
+
   const items: MenuItem[] = [];
-  // we loop through DEFAULT_MENU_ITEMS to respect default order;
-  // new items added to DEFAULT_MENU_ITEMS automatically appear unless explicitly disabled
-  for (const enabledMenuItemStr of DEFAULT_MENU_ITEMS) {
-    if (
-      localStorage.getItem(
-        `frontend.settings.menu_item_${enabledMenuItemStr}_enabled`,
-      ) === "false"
-    )
-      continue;
+  // we loop through enabledItems to respect user's selection
+  for (const enabledMenuItemStr of enabledItems) {
     if (enabledMenuItemStr === "discover") {
       items.push({
         label: "discover",
