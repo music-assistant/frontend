@@ -1467,7 +1467,7 @@ watchEffect(() => {
 <style scoped>
 
 .main {
-  --main-height: 50%;
+  --main-height: 57%;
   --main-max-height: 65%;
   display: flex;
   min-height: 50% !important;
@@ -1689,7 +1689,7 @@ button {
 }
 
 @media (max-width: 540px) {
-  .main {
+  .main:has(.main-media-details) {
     --main-height: 70%;
     --main-max-height: 75%;
   }
@@ -1697,8 +1697,8 @@ button {
   .main-media-details-image {
     height: 75%;
     max-height: 85%;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .main-media-details-track-info {
