@@ -1,0 +1,276 @@
+<template>
+  <div ref="qrContainer" class="qr-container">
+    <div v-if="loading" class="qr-loading">
+      <Spinner class="size-12" />
+    </div>
+    <div v-else-if="!guestAccessEnabled" class="qr-disabled">
+      <QrCode :size="64" />
+      <p>{{ $t("providers.party_mode.guest_access_disabled") }}</p>
+      <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
+    </div>
+    <div v-else-if="qrCodeUrl" class="qr-display">
+      <a
+        :href="qrCodeUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="qr-link"
+      >
+        <canvas ref="qrCanvas"></canvas>
+      </a>
+      <p v-if="instructionText" class="qr-instructions text-h4">
+        {{ instructionText }}
+      </p>
+    </div>
+    <div v-else class="qr-error">
+      <AlertCircle :size="64" />
+      <p>{{ $t("providers.party_mode.qr_failed") }}</p>
+      <p class="qr-hint">{{ $t("providers.party_mode.check_network") }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { Spinner } from "@/components/ui/spinner";
+import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import api from "@/plugins/api";
+import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { AlertCircle, QrCode } from "lucide-vue-next";
+import QRCode from "qrcode";
+import { onMounted, onUnmounted, ref, watch } from "vue";
+
+const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const qrContainer = ref<HTMLElement | null>(null);
+const qrCodeUrl = ref<string>("");
+const guestAccessEnabled = ref<boolean>(false);
+const loading = ref(true);
+const qrSize = ref(320);
+const instructionText = ref($t("providers.party_mode.scan_to_join"));
+const lastRemoteAccessEnabled = ref<boolean | null>(null);
+const { config: partyConfig, fetchConfig: fetchPartyConfig } =
+  usePartyModeConfig();
+let unsubscribe: (() => void) | null = null;
+let resizeObserver: ResizeObserver | null = null;
+
+const calculateQRSize = () => {
+  if (!qrContainer.value) return 320;
+  const containerWidth = qrContainer.value.clientWidth;
+  const containerHeight = qrContainer.value.clientHeight;
+  // Use the smaller dimension, leave room for padding and instructions
+  const availableSize = Math.min(containerWidth, containerHeight) - 120;
+  // Clamp between 160 and 1024 for usability (supports 4K displays)
+  return Math.max(160, Math.min(1024, availableSize));
+};
+
+const checkRemoteAccessStatus = async () => {
+  try {
+    const info = (await api.sendCommand(
+      "remote_access/info",
+    )) as RemoteAccessInfo;
+    const currentEnabled = info.enabled;
+
+    // If remote access status changed, regenerate QR code
+    if (
+      lastRemoteAccessEnabled.value !== null &&
+      lastRemoteAccessEnabled.value !== currentEnabled
+    ) {
+      await generateQRCode();
+    }
+    lastRemoteAccessEnabled.value = currentEnabled;
+  } catch {
+    // Ignore errors - remote_access/info may not be available
+  }
+};
+
+const fetchQrConfig = async () => {
+  const config = await fetchPartyConfig();
+  if (config) {
+    if (config.qr_show_instruction_text === false) {
+      instructionText.value = "";
+    } else {
+      instructionText.value =
+        config.qr_instruction_text ?? $t("providers.party_mode.scan_to_join");
+    }
+  } else {
+    instructionText.value = $t("providers.party_mode.scan_to_join");
+  }
+};
+
+const renderQRToCanvas = async () => {
+  if (!qrCanvas.value || !qrCodeUrl.value) return;
+  qrSize.value = calculateQRSize();
+  await QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
+    width: qrSize.value,
+    margin: 2,
+    color: {
+      dark: "#FFFFFF",
+      light: "#00000000",
+    },
+  });
+};
+
+// Render QR code when canvas mounts (after v-if switches to the qr-display branch)
+watch(qrCanvas, (canvas) => {
+  if (canvas) renderQRToCanvas();
+});
+
+const generateQRCode = async () => {
+  loading.value = true;
+  try {
+    const url = (await api.sendCommand("party_mode/url")) as string | null;
+
+    guestAccessEnabled.value = !!url;
+
+    if (!url) {
+      qrCodeUrl.value = "";
+      return;
+    }
+
+    // Set URL — the watch on qrCanvas handles initial mount rendering
+    qrCodeUrl.value = url;
+
+    // If canvas is already mounted (e.g., re-generating after config change), render now
+    if (qrCanvas.value) {
+      await renderQRToCanvas();
+    }
+  } catch (error) {
+    console.error("Failed to generate QR code:", error);
+    guestAccessEnabled.value = false;
+    qrCodeUrl.value = "";
+  } finally {
+    loading.value = false;
+  }
+};
+
+// React to config changes (e.g., admin updates QR instruction text)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    instructionText.value =
+      newConfig.qr_show_instruction_text === false
+        ? ""
+        : (newConfig.qr_instruction_text ??
+          $t("providers.party_mode.scan_to_join"));
+  } else {
+    instructionText.value = $t("providers.party_mode.scan_to_join");
+  }
+});
+
+onMounted(async () => {
+  await fetchQrConfig();
+  await generateQRCode();
+
+  // Initialize remote access status tracking
+  await checkRemoteAccessStatus();
+
+  // Set up ResizeObserver to regenerate QR code when container size changes
+  if (qrContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (qrCodeUrl.value && qrCanvas.value) {
+        const newSize = calculateQRSize();
+        if (newSize !== qrSize.value) {
+          renderQRToCanvas();
+        }
+      }
+    });
+    resizeObserver.observe(qrContainer.value);
+  }
+
+  // Subscribe to PROVIDERS_UPDATED to detect when party_mode or remote_access
+  // provider is reloaded. Config refresh is handled by the composable automatically.
+  unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    await checkRemoteAccessStatus();
+
+    const hasPartyMode = Object.values(api.providers).some(
+      (p) => p.domain === "party_mode",
+    );
+    if (hasPartyMode) {
+      await generateQRCode();
+    } else {
+      guestAccessEnabled.value = false;
+      qrCodeUrl.value = "";
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe();
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+});
+</script>
+
+<style scoped>
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.qr-display {
+  text-align: center;
+  padding: clamp(1rem, 2vw, 3rem);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: clamp(12px, 1.2vw, 24px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.qr-link {
+  display: block;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.qr-link:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.qr-display canvas {
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.qr-instructions {
+  margin-top: clamp(0.5rem, 1vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.8vw, 2rem);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.qr-disabled {
+  text-align: center;
+  opacity: 0.5;
+}
+
+.qr-disabled p {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.qr-error {
+  text-align: center;
+  opacity: 0.6;
+}
+
+.qr-error p {
+  margin-top: 0.5rem;
+  color: rgba(255, 100, 100, 0.8);
+}
+
+.qr-hint {
+  font-size: 0.75rem;
+  margin-top: 0.25rem !important;
+  opacity: 0.7;
+}
+</style>

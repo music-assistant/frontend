@@ -14,8 +14,8 @@
         {{ $t("add_playlist") }}
       </SheetDescription>
 
-      <ScrollArea class="flex-1">
-        <div class="py-2">
+      <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
+        <div class="pt-2 pb-8">
           <button
             v-for="playlist of playlists"
             :key="playlist.item_id"
