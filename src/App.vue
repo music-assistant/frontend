@@ -388,8 +388,10 @@ onMounted(async () => {
     (newUser) => {
       if (newUser) {
         setTheme();
-        const userLangPref =
-          (newUser.preferences?.language as string) || "auto";
+        const langPref =
+          (store.currentUser?.preferences?.language as string | undefined) ||
+          localStorage.getItem("frontend.settings.language") ||
+          "auto";
         if (userLangPref !== "auto") {
           i18n.global.locale.value = userLangPref;
         }
