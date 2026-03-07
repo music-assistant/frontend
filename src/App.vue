@@ -371,7 +371,7 @@ onMounted(async () => {
 
   // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
   const langPref =
-    store.currentUser?.preferences?.language ||
+    (store.currentUser?.preferences?.language as string | undefined) ||
     localStorage.getItem("frontend.settings.language") ||
     "auto";
   if (langPref !== "auto") {
@@ -388,7 +388,7 @@ onMounted(async () => {
     (newUser) => {
       if (newUser) {
         setTheme();
-        const langPref =
+        const userLangPref =
           (store.currentUser?.preferences?.language as string | undefined) ||
           localStorage.getItem("frontend.settings.language") ||
           "auto";
