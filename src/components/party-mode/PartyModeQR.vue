@@ -5,7 +5,9 @@
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
       <QrCode class="qr-disabled-icon" />
-      <p class="qr-disabled-title">{{ $t("providers.party_mode.guest_access_disabled") }}</p>
+      <p class="qr-disabled-title">
+        {{ $t("providers.party_mode.guest_access_disabled") }}
+      </p>
       <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">

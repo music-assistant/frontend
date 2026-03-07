@@ -8,6 +8,7 @@
       :show-back="hasSearched || !!selectedArtist"
       @clear="clearSearch"
       @back="goBack"
+      @submit="performSearch"
     />
 
     <!-- Artist Tracks View (when drilling into an artist) -->
@@ -274,6 +275,7 @@ const {
   loadingArtistTracks,
   displayedResults,
   resultsListRef,
+  performSearch,
   clearSearch,
   selectArtist,
   clearArtistSelection,
