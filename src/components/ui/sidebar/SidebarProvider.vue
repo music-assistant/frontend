@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
+import { store } from "@/plugins/store";
 import {
   defaultDocument,
   useEventListener,
@@ -37,7 +38,8 @@ const emits = defineEmits<{
   "update:open": [open: boolean];
 }>();
 
-const isMobile = useMediaQuery("(max-width: 768px)");
+const isMobileScreen = useMediaQuery("(max-width: 768px)");
+const isMobile = computed(() => isMobileScreen.value || !!store.forceMobileLayout);
 const openMobile = ref(false);
 
 const open = useVModel(props, "open", emits, {
