@@ -1458,12 +1458,14 @@ watchEffect(() => {
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
   sliderColor.value = textColor.hex();
-  const bottomColor = bgColor.darken(0.35);
-  backgroundColor.value = `linear-gradient(to bottom, ${bgColor.hex()}, ${bottomColor.hex()})`;
+  const topColor = bgColor.lighten(0.25);
+  const bottomColor = bgColor.darken(0.25);
+  backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
 });
 </script>
 
 <style scoped>
+
 .main {
   --main-height: 50%;
   --main-max-height: 65%;
