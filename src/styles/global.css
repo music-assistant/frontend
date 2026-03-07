@@ -61,14 +61,13 @@ html {
   /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-/* Auto-hide scrollbars - only visible on hover */
-* {
+/* Thin scrollbar with subtle always-visible thumb. Applied to html
+   (not *) so the property inherits naturally — the browser only
+   resolves it on elements that actually have a scrollbar, avoiding
+   costly per-element style recalc and failed compositing attempts. */
+html {
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-*:hover {
-  scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
 }
 
 ::-webkit-scrollbar {
