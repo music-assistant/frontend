@@ -388,7 +388,8 @@ onMounted(async () => {
     (newUser) => {
       if (newUser) {
         setTheme();
-        const userLangPref = (newUser.preferences?.language as string) || "auto";
+        const userLangPref =
+          (newUser.preferences?.language as string) || "auto";
         if (userLangPref !== "auto") {
           i18n.global.locale.value = userLangPref;
         }

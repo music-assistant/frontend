@@ -29,9 +29,9 @@ export const getMenuItems = function () {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   // Check user preferences first, then fall back to per-item localStorage keys
   const userMenuItems = store.currentUser?.preferences?.menu_items as
-      | string
-      | string[]
-      | undefined;
+    | string
+    | string[]
+    | undefined;
 
   let enabledItems: string[];
   if (userMenuItems) {
