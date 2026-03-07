@@ -7,7 +7,7 @@
     z-index="9999"
     persistent
   >
-    <v-card :color="backgroundColor">
+    <v-card :style="{ background: backgroundColor }">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -737,9 +737,9 @@ watch(
 const titleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.1em";
+      return "1.2em";
     case "sm":
-      return "1.3em";
+      return "1.4em";
     case "md":
       return "2em";
     case "lg":
@@ -756,9 +756,9 @@ const titleFontSize = computed(() => {
 const subTitleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.0em";
+      return "1.05em";
     case "sm":
-      return "1.1em";
+      return "1.15em";
     case "md":
       return "1.7em";
     case "lg":
@@ -1458,7 +1458,8 @@ watchEffect(() => {
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
   sliderColor.value = textColor.hex();
-  backgroundColor.value = bgColor.hex();
+  const bottomColor = bgColor.darken(0.35);
+  backgroundColor.value = `linear-gradient(to bottom, ${bgColor.hex()}, ${bottomColor.hex()})`;
 });
 </script>
 
@@ -1507,6 +1508,7 @@ watchEffect(() => {
 .main-media-details-image .v-img {
   width: auto;
   border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .main-media-details-image-alt {
