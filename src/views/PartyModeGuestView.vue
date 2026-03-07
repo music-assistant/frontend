@@ -65,7 +65,9 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
-          :is-expanded="expandedResultItemId === `${track.media_type}-${track.item_id}`"
+          :is-expanded="
+            expandedResultItemId === `${track.media_type}-${track.item_id}`
+          "
           @add-to-queue="addToQueue"
           @toggle-expand="toggleExpandedResult"
         />
@@ -121,7 +123,9 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
-          :is-expanded="expandedResultItemId === `${item.media_type}-${item.item_id}`"
+          :is-expanded="
+            expandedResultItemId === `${item.media_type}-${item.item_id}`
+          "
           @add-to-queue="addToQueue"
           @select-artist="selectArtist"
           @toggle-expand="toggleExpandedResult"

@@ -4,8 +4,8 @@
       <Spinner class="size-12" />
     </div>
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
-      <QrCode :size="64" />
-      <p>{{ $t("providers.party_mode.guest_access_disabled") }}</p>
+      <QrCode class="qr-disabled-icon" />
+      <p class="qr-disabled-title">{{ $t("providers.party_mode.guest_access_disabled") }}</p>
       <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
@@ -249,13 +249,32 @@ onUnmounted(() => {
 }
 
 .qr-disabled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  opacity: 0.5;
+  padding: 3rem;
 }
 
-.qr-disabled p {
-  margin-top: 0.5rem;
-  color: rgba(255, 255, 255, 0.5);
+.qr-disabled-icon {
+  width: clamp(64px, 10vw, 120px);
+  height: clamp(64px, 10vw, 120px);
+  opacity: 0.5;
+  margin-bottom: 1.5rem;
+}
+
+.qr-disabled-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.qr-disabled .qr-hint {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 500px;
 }
 
 .qr-error {

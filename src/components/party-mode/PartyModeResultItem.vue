@@ -50,7 +50,7 @@
           @click.stop="$emit('addToQueue', item, 'end')"
         >
           <v-icon start>mdi-playlist-plus</v-icon>
-          {{ $t("providers.party_mode.add") }}
+          {{ $t("providers.party_mode.request") }}
         </v-btn>
       </div>
     </template>
