@@ -87,7 +87,7 @@ const showMainApp = computed(() => {
 const setTheme = function () {
   // TODO: Remove localStorage fallback once migration period is over (theme moved to user preferences)
   const themePref =
-    store.currentUser?.preferences?.theme ||
+    (store.currentUser?.preferences?.theme as string) ||
     localStorage.getItem("frontend.settings.theme") ||
     "auto";
   let themeValue: "light" | "dark";
@@ -388,7 +388,7 @@ onMounted(async () => {
     (newUser) => {
       if (newUser) {
         setTheme();
-        const userLangPref = newUser.preferences?.language || "auto";
+        const userLangPref = (newUser.preferences?.language as string) || "auto";
         if (userLangPref !== "auto") {
           i18n.global.locale.value = userLangPref;
         }
