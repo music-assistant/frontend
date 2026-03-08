@@ -69,7 +69,6 @@
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
-              style="max-width: 100%; width: auto"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -379,7 +378,6 @@
           <div class="main-media-details-image main-media-details-image-alt">
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
-              style="max-width: 100%; width: auto"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -741,15 +739,15 @@ const titleFontSize = computed(() => {
     case "sm":
       return "1.4em";
     case "md":
-      return "2em";
+      return "1.5em";
     case "lg":
-      return store.showQueueItems ? "1.5em" : "2.5em";
+      return store.showQueueItems ? "1.4em" : "1.8em";
     case "xl":
-      return store.showQueueItems ? "1.6em" : "3em";
+      return store.showQueueItems ? "1.5em" : "2em";
     case "xxl":
-      return store.showQueueItems ? "1.7em" : "3.2em";
+      return store.showQueueItems ? "1.6em" : "2.2em";
     default:
-      return "1.0em.";
+      return "1.0em";
   }
 });
 
@@ -760,15 +758,15 @@ const subTitleFontSize = computed(() => {
     case "sm":
       return "1.15em";
     case "md":
-      return "1.7em";
+      return "1.2em";
     case "lg":
-      return store.showQueueItems ? "1.0em" : "1.6em";
+      return store.showQueueItems ? "1.0em" : "1.3em";
     case "xl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.1em" : "1.5em";
     case "xxl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.2em" : "1.6em";
     default:
-      return "1.0em.";
+      return "1.0em";
   }
 });
 
@@ -1503,21 +1501,26 @@ watchEffect(() => {
   min-height: 50%;
   max-height: 80%;
   height: 60%;
-  align-content: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding-left: 20px;
   padding-right: 20px;
+  container-type: size;
 }
 .main-media-details-image .v-img {
-  width: auto;
+  width: min(100cqi, 100cqh);
+  height: min(100cqi, 100cqh);
+  flex: 0 0 auto;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
 .main-media-details-image-alt {
   height: 100% !important;
   max-height: 100% !important;
-  align-content: center;
-  padding: 0px !important;
+  padding: 10px !important;
 }
 
 .main-media-details-track-info {
@@ -1538,6 +1541,7 @@ watchEffect(() => {
   bottom: 0;
   position: unset !important;
   padding-bottom: 5%;
+  width: 100%;
 }
 
 .track-info {
@@ -1686,6 +1690,13 @@ button {
   letter-spacing: 0.3px;
   color: var(--badge-color);
   margin-right: 0.5rem;
+}
+
+@media (min-width: 960px) {
+  .main-media-details:only-child {
+    max-width: 600px;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 540px) {
