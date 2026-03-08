@@ -1474,12 +1474,12 @@ watchEffect(() => {
   padding-bottom: 5px;
 }
 
-.main-media-details {
+.main .main-media-details {
   flex: 50%;
   max-width: 100%;
   width: 50%;
   height: 100%;
-  display: flex !important;
+  display: flex;
   flex-direction: column;
 }
 
