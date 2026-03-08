@@ -11,14 +11,7 @@
       <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
-      <a
-        :href="qrCodeUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="qr-link"
-      >
-        <canvas ref="qrCanvas"></canvas>
-      </a>
+      <canvas ref="qrCanvas"></canvas>
       <p v-if="instructionText" class="qr-instructions text-h4">
         {{ instructionText }}
       </p>
