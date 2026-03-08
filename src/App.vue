@@ -260,7 +260,12 @@ const completeInitialization = async () => {
     localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
 
   // Disable web player for party mode guests, companion mode, and party dashboard
-  const isPartyDashboard = router.currentRoute.value.path.startsWith("/party");
+  const routePath = router.currentRoute.value.path;
+  const hashPath = window.location.hash.replace(/^#/, "").split("?")[0];
+  const isPartyDashboard =
+    routePath.startsWith("/party") ||
+    hashPath.startsWith("/party") ||
+    window.location.pathname.startsWith("/party");
   if (isPartyModeGuest || companionMode.value || isPartyDashboard) {
     webPlayer.setMode(WebPlayerMode.DISABLED);
   } else if (
