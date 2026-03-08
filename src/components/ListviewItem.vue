@@ -20,7 +20,7 @@
           "
         />
         <label :for="`listviewitem-checkbox-${item.item_id}`">
-          <ListviewitemTitle
+          <ListviewItemTitle
             :display-name="displayName"
             :item="item"
             :show-checkboxes="showCheckboxes"
@@ -35,7 +35,7 @@
 
     <!-- title -->
     <template v-if="!showCheckboxes" #title>
-      <ListviewitemTitle
+      <ListviewItemTitle
         :display-name="displayName"
         :item="item"
         :show-checkboxes="showCheckboxes"
@@ -226,7 +226,7 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
-import ListviewitemTitle from "./ListviewItemTitle.vue";
+import ListviewItemTitle from "./ListviewItemTitle.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // properties
@@ -349,7 +349,7 @@ const onPlayClick = function (evt: PointerEvent) {
 
 <style scoped>
 .checkbox {
-  margin-bottom: 0.2em;
+  margin-bottom: 0.1em;
 }
 
 .unavailable {
