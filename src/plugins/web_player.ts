@@ -43,6 +43,10 @@ self.crypto.getRandomValues(array);
 const uniqueId = array.join("");
 
 bc.onmessage = (event) => {
+  if (webPlayer.mode === WebPlayerMode.DISABLED) {
+    return;
+  }
+
   if (
     typeof event.data === "string" &&
     event.data.startsWith(BC_MSG.TAKING_CONTROL)
@@ -60,7 +64,11 @@ bc.onmessage = (event) => {
   }
   switch (event.data) {
     case BC_MSG.IS_ACTIVE:
-      if (isPlaybackMode(webPlayer.tabMode) && webPlayer.player_id) {
+      if (
+        isPlaybackMode(webPlayer.mode) &&
+        isPlaybackMode(webPlayer.tabMode) &&
+        webPlayer.player_id
+      ) {
         // Check if we timed out
         if (webPlayer.timedOutDueToThrottling()) {
           webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
