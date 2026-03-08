@@ -296,6 +296,7 @@
             "nothing_playing": "Nothing Playing Right Now",
             "qr_failed": "Failed to generate QR code",
             "request": "Request",
+            "link_copied": "Link copied!",
             "scan_to_join": "Scan to join!"
         }
     },

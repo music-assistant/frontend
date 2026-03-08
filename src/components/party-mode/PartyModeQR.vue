@@ -11,7 +11,15 @@
       <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
-      <canvas ref="qrCanvas"></canvas>
+      <div class="qr-link" @click="copyUrlToClipboard">
+        <canvas ref="qrCanvas"></canvas>
+        <Transition name="copy-toast">
+          <div v-if="copyFeedback" class="copy-bubble">
+            <Check :size="16" />
+            {{ copyFeedback }}
+          </div>
+        </Transition>
+      </div>
       <p v-if="instructionText" class="qr-instructions text-h4">
         {{ instructionText }}
       </p>
@@ -28,9 +36,10 @@
 import { Spinner } from "@/components/ui/spinner";
 import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import api from "@/plugins/api";
-import { EventType, RemoteAccessInfo } from "@/plugins/api/interfaces";
+import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AlertCircle, QrCode } from "lucide-vue-next";
+import { copyToClipboard } from "@/helpers/utils";
+import { AlertCircle, Check, QrCode } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 
@@ -40,8 +49,8 @@ const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
+const copyFeedback = ref<string>("");
 const instructionText = ref($t("providers.party_mode.scan_to_join"));
-const lastRemoteAccessEnabled = ref<boolean | null>(null);
 const { config: partyConfig, fetchConfig: fetchPartyConfig } =
   usePartyModeConfig();
 let unsubscribe: (() => void) | null = null;
@@ -57,26 +66,6 @@ const calculateQRSize = () => {
   return Math.max(160, Math.min(1024, availableSize));
 };
 
-const checkRemoteAccessStatus = async () => {
-  try {
-    const info = (await api.sendCommand(
-      "remote_access/info",
-    )) as RemoteAccessInfo;
-    const currentEnabled = info.enabled;
-
-    // If remote access status changed, regenerate QR code
-    if (
-      lastRemoteAccessEnabled.value !== null &&
-      lastRemoteAccessEnabled.value !== currentEnabled
-    ) {
-      await generateQRCode();
-    }
-    lastRemoteAccessEnabled.value = currentEnabled;
-  } catch {
-    // Ignore errors - remote_access/info may not be available
-  }
-};
-
 const fetchQrConfig = async () => {
   const config = await fetchPartyConfig();
   if (config) {
@@ -89,6 +78,17 @@ const fetchQrConfig = async () => {
   } else {
     instructionText.value = $t("providers.party_mode.scan_to_join");
   }
+};
+
+const copyUrlToClipboard = async () => {
+  if (!qrCodeUrl.value) return;
+  const success = await copyToClipboard(qrCodeUrl.value);
+  copyFeedback.value = success
+    ? $t("providers.party_mode.link_copied")
+    : qrCodeUrl.value;
+  setTimeout(() => {
+    copyFeedback.value = "";
+  }, 2000);
 };
 
 const renderQRToCanvas = async () => {
@@ -154,9 +154,6 @@ onMounted(async () => {
   await fetchQrConfig();
   await generateQRCode();
 
-  // Initialize remote access status tracking
-  await checkRemoteAccessStatus();
-
   // Set up ResizeObserver to regenerate QR code when container size changes
   if (qrContainer.value) {
     resizeObserver = new ResizeObserver(() => {
@@ -173,8 +170,6 @@ onMounted(async () => {
   // Subscribe to PROVIDERS_UPDATED to detect when party_mode or remote_access
   // provider is reloaded. Config refresh is handled by the composable automatically.
   unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    await checkRemoteAccessStatus();
-
     const hasPartyMode = Object.values(api.providers).some(
       (p) => p.domain === "party_mode",
     );
@@ -217,6 +212,7 @@ onUnmounted(() => {
 }
 
 .qr-link {
+  position: relative;
   display: block;
   cursor: pointer;
   transition:
@@ -227,6 +223,43 @@ onUnmounted(() => {
 .qr-link:hover {
   transform: scale(1.05);
   opacity: 0.9;
+}
+
+.copy-bubble {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #4ade80;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.copy-toast-enter-active {
+  transition: all 0.2s ease-out;
+}
+
+.copy-toast-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.copy-toast-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+.copy-toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
 }
 
 .qr-display canvas {
