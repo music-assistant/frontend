@@ -1695,13 +1695,6 @@ button {
   margin-right: 0.5rem;
 }
 
-@media (min-width: 960px) {
-  .main-media-details:only-child {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
-
 @media (max-width: 540px) {
   .main:has(.main-media-details) {
     --main-height: 70%;
