@@ -176,7 +176,7 @@
                 store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails
               "
-              style="margin: auto; padding-top: min(20px, 2vh)"
+              style="padding-top: min(20px, 2vh)"
             >
               <QualityDetailsBtn />
             </div>
@@ -737,15 +737,15 @@ const titleFontSize = computed(() => {
     case "xs":
       return "1.2em";
     case "sm":
-      return "1.4em";
-    case "md":
       return "1.5em";
+    case "md":
+      return "1.7em";
     case "lg":
-      return store.showQueueItems ? "1.4em" : "1.8em";
-    case "xl":
       return store.showQueueItems ? "1.5em" : "2em";
-    case "xxl":
+    case "xl":
       return store.showQueueItems ? "1.6em" : "2.2em";
+    case "xxl":
+      return store.showQueueItems ? "1.7em" : "2.4em";
     default:
       return "1.0em";
   }
@@ -756,15 +756,15 @@ const subTitleFontSize = computed(() => {
     case "xs":
       return "1.05em";
     case "sm":
-      return "1.15em";
+      return "1.25em";
     case "md":
-      return "1.2em";
+      return "1.35em";
     case "lg":
-      return store.showQueueItems ? "1.0em" : "1.3em";
+      return store.showQueueItems ? "1.1em" : "1.45em";
     case "xl":
-      return store.showQueueItems ? "1.1em" : "1.5em";
-    case "xxl":
       return store.showQueueItems ? "1.2em" : "1.6em";
+    case "xxl":
+      return store.showQueueItems ? "1.3em" : "1.8em";
     default:
       return "1.0em";
   }
@@ -1478,6 +1478,9 @@ watchEffect(() => {
   flex: 50%;
   max-width: 100%;
   width: 50%;
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
 }
 
 .main-queue-items {
