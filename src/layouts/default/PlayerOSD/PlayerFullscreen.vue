@@ -7,7 +7,7 @@
     z-index="9999"
     persistent
   >
-    <v-card :color="backgroundColor">
+    <v-card :style="{ background: backgroundColor }">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -69,7 +69,6 @@
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
-              style="max-width: 100%; width: auto; border-radius: 4px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -128,7 +127,7 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album"
+              v-else-if="store.activePlayer?.current_media?.album && showAlbumSubtitle"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -177,7 +176,7 @@
                 store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails
               "
-              style="margin: auto; padding-top: 20px"
+              style="padding-top: min(20px, 2vh)"
             >
               <QualityDetailsBtn />
             </div>
@@ -379,7 +378,6 @@
           <div class="main-media-details-image main-media-details-image-alt">
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
-              style="max-width: 100%; width: auto; border-radius: 4px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -575,6 +573,11 @@ import computeElapsedTime from "@/helpers/elapsed";
 
 const { name } = useDisplay();
 
+const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
+const showAlbumSubtitle = computed(
+  () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
+);
+
 interface Props {
   colorPalette: ImageColorPalette;
 }
@@ -734,41 +737,41 @@ const titleFontSize = computed(() => {
     case "xs":
       return "1.2em";
     case "sm":
-      return "1.6em";
+      return "1.5em";
     case "md":
-      return "2em";
+      return "1.7em";
     case "lg":
-      return store.showQueueItems ? "1.5em" : "2.5em";
+      return store.showQueueItems ? "1.5em" : "2em";
     case "xl":
-      return store.showQueueItems ? "1.6em" : "3em";
+      return store.showQueueItems ? "1.6em" : "2.2em";
     case "xxl":
-      return store.showQueueItems ? "1.7em" : "3.2em";
+      return store.showQueueItems ? "1.7em" : "2.4em";
     default:
-      return "1.0em.";
+      return "1.0em";
   }
 });
 
 const subTitleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.0em";
+      return "1.05em";
     case "sm":
-      return "1.2em";
+      return "1.25em";
     case "md":
-      return "1.7em";
+      return "1.35em";
     case "lg":
-      return store.showQueueItems ? "1.0em" : "1.6em";
+      return store.showQueueItems ? "1.1em" : "1.45em";
     case "xl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.2em" : "1.6em";
     case "xxl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.3em" : "1.8em";
     default:
-      return "1.0em.";
+      return "1.0em";
   }
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > 700;
+  return vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
 });
 
 // methods
@@ -1453,23 +1456,31 @@ watchEffect(() => {
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
   sliderColor.value = textColor.hex();
-  backgroundColor.value = bgColor.hex();
+  const topColor = bgColor.lighten(0.25);
+  const bottomColor = bgColor.darken(0.25);
+  backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
 });
 </script>
 
 <style scoped>
+
 .main {
+  --main-height: 57%;
+  --main-max-height: 65%;
   display: flex;
   min-height: 50% !important;
-  height: 50% !important;
-  max-height: 65% !important;
+  height: var(--main-height) !important;
+  max-height: var(--main-max-height) !important;
   padding-bottom: 5px;
 }
 
-.main-media-details {
+.main .main-media-details {
   flex: 50%;
   max-width: 100%;
   width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-queue-items {
@@ -1493,19 +1504,26 @@ watchEffect(() => {
   min-height: 50%;
   max-height: 80%;
   height: 60%;
-  align-content: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding-left: 20px;
   padding-right: 20px;
+  container-type: size;
 }
-.main-media-details-image.v-img {
-  width: auto;
+.main-media-details-image .v-img {
+  width: min(100cqi, 100cqh);
+  height: min(100cqi, 100cqh);
+  flex: 0 0 auto;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
 .main-media-details-image-alt {
   height: 100% !important;
   max-height: 100% !important;
-  align-content: center;
-  padding: 0px !important;
+  padding: 10px !important;
 }
 
 .main-media-details-track-info {
@@ -1526,6 +1544,7 @@ watchEffect(() => {
   bottom: 0;
   position: unset !important;
   padding-bottom: 5%;
+  width: 100%;
 }
 
 .track-info {
@@ -1653,7 +1672,7 @@ button {
   aspect-ratio: 1;
   max-width: 400px;
   margin: 0 auto;
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
   align-items: center;
@@ -1675,4 +1694,24 @@ button {
   color: var(--badge-color);
   margin-right: 0.5rem;
 }
+
+@media (max-width: 540px) {
+  .main:has(.main-media-details) {
+    --main-height: 70%;
+    --main-max-height: 75%;
+  }
+
+  .main-media-details-image {
+    height: 75%;
+    max-height: 85%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .main-media-details-track-info {
+    padding: 8px;
+    height: 25%;
+  }
+}
+
 </style>
