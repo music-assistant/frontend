@@ -127,7 +127,9 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album && showAlbumSubtitle"
+              v-else-if="
+                store.activePlayer?.current_media?.album && showAlbumSubtitle
+              "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -1463,7 +1465,6 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-
 .main {
   --main-height: 57%;
   --main-max-height: 65%;
@@ -1713,5 +1714,4 @@ button {
     height: 25%;
   }
 }
-
 </style>
