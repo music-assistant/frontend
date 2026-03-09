@@ -1589,9 +1589,12 @@ watchEffect(() => {
   justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: 20px;
-  padding-top: 5%;
-  padding-bottom: 10px;
+  padding: 5% 0 10px;
+  overflow: hidden;
+}
+
+.main-media-details-track-info > * {
+  max-width: 100%;
 }
 
 .player-bottom {
@@ -1758,7 +1761,7 @@ button {
   }
 
   .main-media-details-track-info {
-    padding: 8px;
+    padding: 8px 0;
     height: 25%;
   }
 }
