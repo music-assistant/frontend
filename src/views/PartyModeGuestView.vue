@@ -187,6 +187,7 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   type Artist,
+  EventType,
   PlaybackState,
   type QueueItem,
   type Track,
@@ -470,6 +471,17 @@ watch(partyConfig, (newConfig) => {
 // --- Lifecycle ---
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
+let cleanupProvidersSub: (() => void) | null = null;
+
+const refreshPartyPlayer = async () => {
+  const partyPlayerId = await api.sendCommand<string | null>(
+    "party_mode/player",
+  );
+  partyModeQueueId.value = partyPlayerId;
+  if (partyPlayerId) {
+    store.activePlayerId = partyPlayerId;
+  }
+};
 
 const fetchAndApplyConfig = async () => {
   const config = await fetchConfig();
@@ -487,31 +499,27 @@ onMounted(async () => {
   cleanupCountdown = rateLimit.startCountdown();
 
   try {
-    const partyPlayerId = await api.sendCommand<string | null>(
-      "party_mode/player",
-    );
-    partyModeQueueId.value = partyPlayerId;
-    if (partyPlayerId && !store.activePlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
-    console.debug("[GuestView] partyPlayerId:", partyPlayerId);
-    console.debug("[GuestView] store.activePlayerId:", store.activePlayerId);
-    console.debug("[GuestView] store.activePlayer:", store.activePlayer);
-    console.debug("[GuestView] api.players keys:", Object.keys(api.players));
-    console.debug("[GuestView] api.queues keys:", Object.keys(api.queues));
-    console.debug("[GuestView] queue state:", queue.currentQueue.value?.state);
+    await refreshPartyPlayer();
   } catch (error) {
     console.error("Failed to fetch party mode player:", error);
   }
 
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();
+
+  // Re-fetch player when party mode config changes
+  const unsubProviders = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    await refreshPartyPlayer();
+    fetchQueueItems(true);
+  });
+  cleanupProvidersSub = unsubProviders;
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("popstate", handleBack);
   cleanupQueueEvents?.();
   cleanupCountdown?.();
+  cleanupProvidersSub?.();
   search.cleanup();
 });
 </script>

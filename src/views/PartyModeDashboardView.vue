@@ -89,6 +89,20 @@ const theme = useTheme();
 const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
+const refreshPartyPlayer = async () => {
+  const partyPlayerId = await api.sendCommand<string | null>(
+    "party_mode/player",
+  );
+  if (partyPlayerId) {
+    store.activePlayerId = partyPlayerId;
+    if (!api.players[partyPlayerId]) {
+      accessError.value = "no_access";
+    } else {
+      accessError.value = "";
+    }
+  }
+};
+
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
 const accessError = ref("");
@@ -366,19 +380,7 @@ onMounted(async () => {
 
   // Set active player from party mode config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
-  const partyPlayerId = await api.sendCommand<string | null>(
-    "party_mode/player",
-  );
-  if (partyPlayerId) {
-    if (!store.activePlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
-    // Check if the configured player is accessible to this user
-    if (!api.players[partyPlayerId]) {
-      accessError.value = "no_access";
-      return;
-    }
-  }
+  await refreshPartyPlayer();
 
   // Fetch party mode configuration via shared composable
   const config = await fetchConfig();
@@ -417,7 +419,13 @@ onMounted(async () => {
     fetchQueueItems();
   });
 
-  unsubscribeFunctions.value = [unsub1, unsub2];
+  // Subscribe to provider updates to detect party mode player config changes
+  const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    await refreshPartyPlayer();
+    fetchQueueItems(true);
+  });
+
+  unsubscribeFunctions.value = [unsub1, unsub2, unsub3];
 });
 
 // Cleanup when leaving the party view
