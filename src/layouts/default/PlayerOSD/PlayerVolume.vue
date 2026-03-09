@@ -90,8 +90,8 @@
       <Slider
         :model-value="[displayValue]"
         :disabled="isSliderDisabled"
-        :min="0"
-        :max="100"
+        :min="minVolume"
+        :max="maxVolume"
         :step="step"
         class="volume-slider"
         :class="cn('w-full', props.class)"
@@ -211,6 +211,13 @@ const muteDisabled = computed(() => {
 const volumeIconComponent = computed(() => {
   return getVolumeIconComponent(props.player, displayValue.value);
 });
+
+const minVolume = computed(
+  () => (props.player.extra_attributes?.min_volume as number) ?? 0,
+);
+const maxVolume = computed(
+  () => (props.player.extra_attributes?.max_volume as number) ?? 100,
+);
 
 // --- Group popout ---
 
@@ -450,8 +457,9 @@ const getPercentageFromX = (clientX: number): number => {
   const rect = sliderContainerRef.value.getBoundingClientRect();
   const x = clientX - rect.left;
   const percentage = (x / rect.width) * 100;
-
-  return clamp(roundToStep(percentage), 0, 100);
+  const range = maxVolume.value - minVolume.value;
+  const value = minVolume.value + (x / rect.width) * range;
+  return clamp(roundToStep(value), minVolume.value, maxVolume.value);
 };
 
 // --- Touch handlers ---
@@ -548,8 +556,8 @@ const onTouchEnd = (event: TouchEvent) => {
     const touch = event.changedTouches[0];
     const finalValue = clamp(
       roundToStep(getPercentageFromX(touch.clientX)),
-      0,
-      100,
+      minVolume.value,
+      maxVolume.value,
     );
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
