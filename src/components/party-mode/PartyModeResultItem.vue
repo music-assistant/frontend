@@ -1,7 +1,10 @@
 <template>
   <div
     class="result-item"
-    :class="{ 'result-item--expanded': isExpanded }"
+    :class="{
+      'result-item--expanded': isExpanded,
+      'result-item--clickable': item.media_type === 'track',
+    }"
     @click="onItemClick"
   >
     <div class="result-info">
@@ -130,8 +133,11 @@ const artistName = computed(() => {
   background: rgba(var(--v-theme-surface-variant), 0.07);
   border-radius: 12px;
   min-height: 72px;
-  cursor: pointer;
   transition: background 0.2s ease;
+}
+
+.result-item--clickable {
+  cursor: pointer;
 }
 
 .result-item--expanded {

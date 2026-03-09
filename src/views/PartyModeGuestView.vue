@@ -394,14 +394,12 @@ const boostQueueItem = async (item: QueueItem) => {
     return;
   }
 
-  if (rateLimitingEnabled.value) {
-    if (!consumeBoostToken()) {
-      const minutesUntilNext = getTimeUntilNextToken();
-      toast.warning(
-        $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
-      );
-      return;
-    }
+  if (rateLimitingEnabled.value && boostTokens.value <= 0) {
+    const minutesUntilNext = getTimeUntilNextToken();
+    toast.warning(
+      $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+    );
+    return;
   }
 
   boostingQueueItemId.value = item.queue_item_id;
@@ -412,6 +410,10 @@ const boostQueueItem = async (item: QueueItem) => {
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      consumeBoostToken();
     }
 
     const name = item.media_item?.name || item.name;

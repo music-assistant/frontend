@@ -84,8 +84,8 @@ const copyUrlToClipboard = async () => {
   if (!qrCodeUrl.value) return;
   const success = await copyToClipboard(qrCodeUrl.value);
   copyFeedback.value = success
-    ? $t("providers.party_mode.link_copied")
-    : qrCodeUrl.value;
+    ? $t("providers.party_mode.link_copy_success")
+    : $t("providers.party_mode.link_copy_fail");
   setTimeout(() => {
     copyFeedback.value = "";
   }, 2000);
@@ -234,8 +234,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.85);
-  color: #4ade80;
+  background: rgba(var(--v-theme-surface), 0.9);
+  color: rgb(var(--v-theme-success));
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
