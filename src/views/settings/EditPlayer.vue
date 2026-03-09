@@ -230,6 +230,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -398,8 +399,17 @@ const enablePlayer = function () {
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
-  api.savePlayerConfig(props.playerId!, values);
-  router.back();
+  loading.value = true;
+  try {
+    await api.savePlayerConfig(props.playerId!, values);
+    router.back();
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : String(err);
+    toast.error(message);
+  } finally {
+    loading.value = false;
+  }
 };
 
 const onImmediateApply = async function (
