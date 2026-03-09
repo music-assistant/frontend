@@ -7,7 +7,7 @@
     z-index="9999"
     persistent
   >
-    <v-card :style="{ background: backgroundColor }">
+    <v-card class="fullscreen-player-card" :style="{ background: backgroundColor }">
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -1505,7 +1505,7 @@ watchEffect(() => {
 
 <style scoped>
 
-.v-card {
+.fullscreen-player-card {
   overflow: hidden;
   height: 100%;
   display: flex;
@@ -1596,8 +1596,6 @@ watchEffect(() => {
 .main-media-details-track-info > * {
   max-width: 100%;
 }
-
-
 
 .player-bottom {
   flex-shrink: 0;
