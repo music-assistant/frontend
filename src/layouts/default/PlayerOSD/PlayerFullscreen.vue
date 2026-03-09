@@ -1537,10 +1537,11 @@ watchEffect(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   text-align: center;
   padding: 20px;
+  padding-top: 5%;
 }
 
 .player-bottom {
