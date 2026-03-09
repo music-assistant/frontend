@@ -227,7 +227,7 @@
               <!-- list view -->
               <v-virtual-scroll
                 :item-height="70"
-                max-height="90%"
+                max-height="100%"
                 :items="activeQueuePanel == 0 ? nextItems : previousItems"
               >
                 <template #default="{ item, index }">
@@ -1464,14 +1464,17 @@ watchEffect(() => {
 
 <style scoped>
 
-.main {
-  --main-height: 57%;
-  --main-max-height: 65%;
+.v-card {
+  overflow: hidden;
+  height: 100%;
   display: flex;
-  min-height: 50% !important;
-  height: var(--main-height) !important;
-  max-height: var(--main-max-height) !important;
-  padding-bottom: 5px;
+  flex-direction: column;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .main .main-media-details {
@@ -1489,10 +1492,14 @@ watchEffect(() => {
   max-width: 100%;
   padding-right: 10px;
   padding-left: 15px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .queue-items-scroll-box {
-  max-height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: scroll;
 }
 
@@ -1537,13 +1544,9 @@ watchEffect(() => {
 }
 
 .player-bottom {
-  max-height: 35% !important;
-  min-height: 25% !important;
-  height: 30% !important;
-  margin-top: auto;
-  bottom: 0;
+  flex-shrink: 0;
   position: unset !important;
-  padding-bottom: 5%;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 3%);
   width: 100%;
 }
 
@@ -1696,14 +1699,9 @@ button {
 }
 
 @media (max-width: 540px) {
-  .main:has(.main-media-details) {
-    --main-height: 70%;
-    --main-max-height: 75%;
-  }
-
   .main-media-details-image {
-    height: 75%;
-    max-height: 85%;
+    height: 70%;
+    max-height: 80%;
     padding-left: 16px;
     padding-right: 16px;
   }
