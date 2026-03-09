@@ -176,7 +176,7 @@
                 store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails
               "
-              style="padding-top: min(20px, 2vh)"
+              style="padding-top: min(10px, 1vh)"
             >
               <QualityDetailsBtn />
             </div>
@@ -1591,6 +1591,7 @@ watchEffect(() => {
   text-align: center;
   padding: 20px;
   padding-top: 5%;
+  padding-bottom: 10px;
 }
 
 .player-bottom {
