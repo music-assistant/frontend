@@ -1597,6 +1597,8 @@ watchEffect(() => {
   max-width: 100%;
 }
 
+
+
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
@@ -1754,15 +1756,14 @@ button {
 
 @media (max-width: 540px) {
   .main-media-details-image {
-    height: 70%;
-    max-height: 80%;
+    height: 65%;
+    max-height: 75%;
     padding-left: 16px;
     padding-right: 16px;
   }
 
   .main-media-details-track-info {
     padding: 8px 0;
-    height: 25%;
   }
 }
 
