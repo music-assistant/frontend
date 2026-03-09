@@ -508,10 +508,13 @@ onMounted(async () => {
   cleanupQueueEvents = queue.subscribeToEvents();
 
   // Re-fetch player when party mode config changes
-  const unsubProviders = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    await refreshPartyPlayer();
-    fetchQueueItems(true);
-  });
+  const unsubProviders = api.subscribe(
+    EventType.PROVIDERS_UPDATED,
+    async () => {
+      await refreshPartyPlayer();
+      fetchQueueItems(true);
+    },
+  );
   cleanupProvidersSub = unsubProviders;
 });
 
