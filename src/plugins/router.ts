@@ -533,6 +533,25 @@ router.beforeEach(async (to, _from, next) => {
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
   if (requiresAdmin) {
+    // Wait for API to be initialized before checking admin access
+    // This ensures store.currentUser is set before we check permissions
+    if (api.state.value !== ConnectionState.INITIALIZED) {
+      // Wait for initialization to complete
+      await new Promise<void>((resolve) => {
+        const unwatch = watch(
+          () => api.state.value,
+          (newState) => {
+            if (newState === ConnectionState.INITIALIZED) {
+              unwatch();
+              resolve();
+            }
+          },
+          { immediate: true },
+        );
+      });
+    }
+
+    const currentUser = store.currentUser;
     console.debug(
       "Admin route check:",
       to.path,
