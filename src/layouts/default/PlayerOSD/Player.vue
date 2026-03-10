@@ -248,7 +248,7 @@ watch(
 
 .mediacontrols-left {
   margin-inline-end: auto;
-  width: 20%;
+  min-width: 20%;
   > div {
     padding: 0px !important;
   }
