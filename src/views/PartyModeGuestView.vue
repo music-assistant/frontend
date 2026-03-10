@@ -8,6 +8,7 @@
       :show-back="hasSearched || !!selectedArtist"
       @clear="clearSearch"
       @back="goBack"
+      @submit="performSearch"
     />
 
     <!-- Artist Tracks View (when drilling into an artist) -->
@@ -65,7 +66,11 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :is-expanded="
+            expandedResultItemId === `${track.media_type}-${track.item_id}`
+          "
           @add-to-queue="addToQueue"
+          @toggle-expand="toggleExpandedResult"
         />
       </div>
       <!-- Empty state for no tracks -->
@@ -119,8 +124,12 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :is-expanded="
+            expandedResultItemId === `${item.media_type}-${item.item_id}`
+          "
           @add-to-queue="addToQueue"
           @select-artist="selectArtist"
+          @toggle-expand="toggleExpandedResult"
         />
       </div>
     </div>
@@ -162,8 +171,12 @@
       :skip-token-countdown="skipTokenCountdown"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
+      :boost-enabled="boostEnabled"
+      :boost-tokens="boostTokens"
+      :boosting-item-id="boostingQueueItemId"
       @skip="skipCurrentSong"
       @queue-scroll="handleQueueScroll"
+      @boost-queue-item="boostQueueItem"
     />
   </div>
 </template>
@@ -174,7 +187,9 @@ import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   type Artist,
+  EventType,
   PlaybackState,
+  type QueueItem,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -229,26 +244,6 @@ const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
 );
 
-watch(isPlaying, (val) => {
-  console.debug("[GuestView] isPlaying changed:", val);
-  console.debug("[GuestView] activePlayer:", store.activePlayer?.player_id);
-  console.debug(
-    "[GuestView] playback_state:",
-    store.activePlayer?.playback_state,
-  );
-});
-
-watch(
-  () => store.activePlayer,
-  (player) => {
-    console.debug(
-      "[GuestView] activePlayer changed:",
-      player?.player_id,
-      player?.playback_state,
-    );
-  },
-);
-
 const search = useGuestSearch();
 const {
   searchQuery,
@@ -261,6 +256,7 @@ const {
   loadingArtistTracks,
   displayedResults,
   resultsListRef,
+  performSearch,
   clearSearch,
   selectArtist,
   clearArtistSelection,
@@ -270,6 +266,13 @@ const {
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
 const skippingSong = ref(false);
+const boostingQueueItemId = ref("");
+const expandedResultItemId = ref("");
+
+const toggleExpandedResult = (itemId: string) => {
+  expandedResultItemId.value =
+    expandedResultItemId.value === itemId ? "" : itemId;
+};
 const queueSectionRef = ref<InstanceType<typeof PartyModeQueueSection> | null>(
   null,
 );
@@ -316,24 +319,19 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   }
 
   if (rateLimitingEnabled.value) {
-    if (position === "next") {
-      if (!consumeBoostToken()) {
-        const minutesUntilNext = getTimeUntilNextToken();
-        toast.warning(
-          $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
-        );
-        return;
-      }
-    } else {
-      if (!consumeAddQueueToken()) {
-        const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        toast.warning(
-          $t("providers.party_mode.add_queue_limit_reached", [
-            minutesUntilNext,
-          ]),
-        );
-        return;
-      }
+    if (position === "next" && boostTokens.value <= 0) {
+      const minutesUntilNext = getTimeUntilNextToken();
+      toast.warning(
+        $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+      );
+      return;
+    }
+    if (position === "end" && addQueueTokens.value <= 0) {
+      const minutesUntilNext = getTimeUntilNextAddQueueToken();
+      toast.warning(
+        $t("providers.party_mode.add_queue_limit_reached", [minutesUntilNext]),
+      );
+      return;
     }
   }
 
@@ -348,6 +346,14 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      if (position === "next") {
+        consumeBoostToken();
+      } else {
+        consumeAddQueueToken();
+      }
     }
 
     const message =
@@ -365,22 +371,58 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   }
 };
 
+const boostQueueItem = async (item: QueueItem) => {
+  if (!boostEnabled.value) {
+    toast.warning($t("providers.party_mode.boost_disabled"));
+    return;
+  }
+
+  if (rateLimitingEnabled.value && boostTokens.value <= 0) {
+    const minutesUntilNext = getTimeUntilNextToken();
+    toast.warning(
+      $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+    );
+    return;
+  }
+
+  boostingQueueItemId.value = item.queue_item_id;
+  try {
+    const result = (await api.sendCommand("party_mode/boost_queue_item", {
+      queue_item_id: item.queue_item_id,
+    })) as { success: boolean };
+
+    if (!result.success) {
+      throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      consumeBoostToken();
+    }
+
+    const name = item.media_item?.name || item.name;
+    toast.success($t("providers.party_mode.guest_page.item_boosted", [name]));
+  } catch (error) {
+    console.error("Failed to boost queue item:", error);
+    toast.error($t("providers.party_mode.add_to_queue_failed"));
+  } finally {
+    boostingQueueItemId.value = "";
+  }
+};
+
 const skipCurrentSong = async () => {
   if (!skipSongEnabled.value) {
     toast.warning($t("providers.party_mode.guest_page.skip_disabled"));
     return;
   }
 
-  if (rateLimitingEnabled.value) {
-    if (!consumeSkipSongToken()) {
-      const minutesUntilNext = getTimeUntilNextSkipToken();
-      toast.warning(
-        $t("providers.party_mode.guest_page.skip_limit_reached", [
-          minutesUntilNext,
-        ]),
-      );
-      return;
-    }
+  if (rateLimitingEnabled.value && skipSongTokens.value <= 0) {
+    const minutesUntilNext = getTimeUntilNextSkipToken();
+    toast.warning(
+      $t("providers.party_mode.guest_page.skip_limit_reached", [
+        minutesUntilNext,
+      ]),
+    );
+    return;
   }
 
   skippingSong.value = true;
@@ -391,6 +433,10 @@ const skipCurrentSong = async () => {
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      consumeSkipSongToken();
     }
 
     toast.success($t("providers.party_mode.guest_page.song_skipped"));
@@ -412,6 +458,17 @@ watch(partyConfig, (newConfig) => {
 // --- Lifecycle ---
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
+let cleanupProvidersSub: (() => void) | null = null;
+
+const refreshPartyPlayer = async () => {
+  const partyPlayerId = await api.sendCommand<string | null>(
+    "party_mode/player",
+  );
+  partyModeQueueId.value = partyPlayerId;
+  if (partyPlayerId) {
+    store.activePlayerId = partyPlayerId;
+  }
+};
 
 const fetchAndApplyConfig = async () => {
   const config = await fetchConfig();
@@ -429,31 +486,30 @@ onMounted(async () => {
   cleanupCountdown = rateLimit.startCountdown();
 
   try {
-    const partyPlayerId = await api.sendCommand<string | null>(
-      "party_mode/player",
-    );
-    partyModeQueueId.value = partyPlayerId;
-    if (partyPlayerId && !store.activePlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
-    console.debug("[GuestView] partyPlayerId:", partyPlayerId);
-    console.debug("[GuestView] store.activePlayerId:", store.activePlayerId);
-    console.debug("[GuestView] store.activePlayer:", store.activePlayer);
-    console.debug("[GuestView] api.players keys:", Object.keys(api.players));
-    console.debug("[GuestView] api.queues keys:", Object.keys(api.queues));
-    console.debug("[GuestView] queue state:", queue.currentQueue.value?.state);
+    await refreshPartyPlayer();
   } catch (error) {
     console.error("Failed to fetch party mode player:", error);
   }
 
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();
+
+  // Re-fetch player when party mode config changes
+  const unsubProviders = api.subscribe(
+    EventType.PROVIDERS_UPDATED,
+    async () => {
+      await refreshPartyPlayer();
+      fetchQueueItems(true);
+    },
+  );
+  cleanupProvidersSub = unsubProviders;
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("popstate", handleBack);
   cleanupQueueEvents?.();
   cleanupCountdown?.();
+  cleanupProvidersSub?.();
   search.cleanup();
 });
 </script>
