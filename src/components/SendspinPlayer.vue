@@ -1,4 +1,5 @@
 <template>
+  <audio ref="audioRef" controls class="hidden-audio"></audio>
   <audio
     ref="silentAudioRef"
     class="hidden-audio"
@@ -30,7 +31,12 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
+const audioRef = ref<HTMLAudioElement>();
 const silentAudioRef = ref<HTMLAudioElement>();
+
+// Detect Android for MediaSession workaround
+const isAndroid = /android/i.test(navigator.userAgent);
+const isMobileOutput = isAndroid || /iphone|ipad|ipod/i.test(navigator.userAgent);
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
@@ -191,67 +197,69 @@ onMounted(() => {
   if (
     metadataPlayerId.value === undefined &&
     webPlayer.interacted &&
-    store.activePlayer?.playback_state === PlaybackState.PLAYING &&
     silentAudioRef.value
   ) {
     silentAudioRef.value.play().catch(() => {});
   }
 
-  const defaultSyncDelay = getSendspinDefaultSyncDelay();
-  const syncDelay = parseInt(
-    localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-      String(defaultSyncDelay),
-    10,
-  );
+  // Create and initialize player
+  if (audioRef.value) {
+    const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-  // Output latency compensation - enabled by default
-  const storedOutputLatency = localStorage.getItem(
-    "frontend.settings.sendspin_output_latency_compensation",
-  );
-  const useOutputLatencyCompensation =
-    storedOutputLatency !== null ? storedOutputLatency === "true" : true;
+    const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    const syncDelay = parseInt(
+      localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
+        String(defaultSyncDelay),
+      10,
+    );
 
-  // Prepare session first, then create player with appropriate codecs
-  prepareSendspinSession()
-    .then(() => {
-      // Prefer opus for bandwidth efficiency, flac as fallback
-      // (opus requires secure context which may not be available)
-      const codecs: Codec[] = ["opus", "flac"];
+    // Output latency compensation - enabled by default
+    const storedOutputLatency = localStorage.getItem(
+      "frontend.settings.sendspin_output_latency_compensation",
+    );
+    const useOutputLatencyCompensation =
+      storedOutputLatency !== null ? storedOutputLatency === "true" : true;
 
-      console.debug(
-        `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
-      );
-      console.debug(
-        "Sendspin: Output mode auto (desktop=direct, mobile=media-element)",
-      );
+    // Prepare session first, then create player with appropriate codecs
+    prepareSendspinSession()
+      .then(() => {
+        // Prefer opus for bandwidth efficiency, flac as fallback
+        // (opus requires secure context which may not be available)
+        const codecs: Codec[] = ["opus", "flac"];
 
-      // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
-      // The URL just needs to be valid and contain "/sendspin" for the interceptor
-      player = new SendspinPlayer({
-        playerId: props.playerId,
-        baseUrl: "http://sendspin.local",
-        clientName: getDeviceName(),
-        codecs,
-        syncDelay,
-        useOutputLatencyCompensation,
-        onStateChange: (state) => {
-          // Update reactive state when player state changes
-          isPlaying.value = state.isPlaying;
-          volume.value = state.volume;
-          muted.value = state.muted;
-          playerState.value = state.playerState;
-        },
-        correctionMode: correctionMode.value,
+        console.debug(
+          `Sendspin: Using codecs [${codecs.join(", ")}] for ${isDirectConnection() ? "direct" : "remote"} connection`,
+        );
+
+        // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
+        // The URL just needs to be valid and contain "/sendspin" for the interceptor
+        player = new SendspinPlayer({
+          playerId: props.playerId,
+          baseUrl: "http://sendspin.local",
+          audioElement,
+          clientName: getDeviceName(),
+          codecs,
+          syncDelay,
+          useOutputLatencyCompensation,
+          onStateChange: (state) => {
+            // Update reactive state when player state changes
+            isPlaying.value = state.isPlaying;
+            volume.value = state.volume;
+            muted.value = state.muted;
+            playerState.value = state.playerState;
+          },
+          correctionMode: correctionMode.value,
+        });
+
+        // Register callback for real-time sync delay changes from settings
+        webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
+
+        return player.connect();
+      })
+      .catch((error) => {
+        console.error("Sendspin: Failed to connect", error);
       });
-
-      // Register callback for real-time sync delay changes from settings
-      webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
-
-      return player.connect();
-    })
-    .catch((error) => {
-      console.error("Sendspin: Failed to connect", error);
-    });
+  }
 
   // MediaSession setup for browser controls
   // Commands go to the player whose metadata is being shown
@@ -271,10 +279,9 @@ onMounted(() => {
   navigator.mediaSession.setActionHandler("pause", () => {
     const targetId = getTargetPlayerId();
     if (!targetId) return;
-
     // workaround-alert: delay the pause command a tiny bit
     // to workaround a browser bug where pause is sent if a laptop/computer
-    // goes to standby (lid closed).
+    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
     setTimeout(() => {
       api.playerCommandPause(targetId);
     }, 250);
@@ -320,6 +327,26 @@ onMounted(() => {
       lastSeekPos = newPos;
       resetLastSeekPos();
       api.playerCommandSeek(targetId, newPos);
+    });
+  }
+
+  // Audio element event listeners for mobile MediaSession resilience
+  if (audioRef.value) {
+    // Ensure audio element doesn't stay paused after interruptions while stream should play
+    audioRef.value.addEventListener("pause", () => {
+      console.debug("Sendspin: Audio element paused");
+      if (!isMobileOutput) return;
+
+      const shouldBePlaying =
+        isPlaying.value &&
+        playerState.value !== "error" &&
+        api.players[props.playerId]?.playback_state === PlaybackState.PLAYING;
+      if (!shouldBePlaying || !audioRef.value) return;
+
+      audioRef.value.play().catch((error) => {
+        console.warn("Sendspin: Failed to recover audio element playback:", error);
+        api.playerCommandPause(props.playerId);
+      });
     });
   }
 });
