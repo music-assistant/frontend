@@ -976,7 +976,7 @@
         "login": "Prijavite se",
         "logout": "Odjavite se",
         "field_required": "Ovo polje je obavezno",
-        "username_min_length": "Korisničko ime mora imati najmanje 3 znaka",
+        "username_min_length": "Korisničko ime mora imati najmanje 2 znaka",
         "username_already_exists": "Korisničko ime već postoji. Molimo izaberite drugo korisničko ime.",
         "invalid_username": "Nevažeće korisničko ime. Molimo izaberite drugo korisničko ime.",
         "password_min_length": "Lozinka mora imati najmanje 8 karaktera",
@@ -1359,7 +1359,6 @@
         "read_only": "Opcije plejera samo za čitanje za plejer {0}"
     },
     "select_sound_mode": "Izaberi režim zvuka",
-    "chunk_load_error": "Nova verzija interfejsa je dostupna.",
     "refresh": "Osveži",
     "enqueue": "Opcije dodavanja u red čekanja",
     "queue_option": {
@@ -1368,5 +1367,10 @@
         "replace": "Pusti odmah (zameni red čekanja)",
         "replace_next": "Pusti sledeće (zameni red čekanja)",
         "add": "Dodaj u red čekanja"
-    }
+    },
+    "playlist_create_media_types": "{0} provajder podržava ove tipove medija:",
+    "playlist_mix_allowed": "Ovi tipovi medija se mogu mešati.",
+    "playlist_mix_not_allowed": "Ovaj provajder ne podržava mešanje tipova medija u plejlistama. Izaberite za koji tip medija želite da kreirate plejlistu:",
+    "playlist_create_provider_error": "Nije moguće dobiti provajdera.",
+    "playlist_create_no_type_selected": "Nije izabran tip medija."
 }
