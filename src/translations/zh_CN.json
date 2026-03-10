@@ -690,7 +690,8 @@
         "scanner_idle": "闲置",
         "last_scan": "上次扫描",
         "scan_now": "立即扫描",
-        "scan_never": "从不"
+        "scan_never": "从不",
+        "player_needs_setup": "此播放器需要设置"
     },
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
@@ -1138,5 +1139,19 @@
         "experimental": "实验"
     },
     "remove": "移除",
-    "remove_alias": "移除别名"
+    "remove_alias": "移除别名",
+    "refresh": "刷新",
+    "enqueue": "队列选项",
+    "queue_option": {
+        "play": "立即播放（保留队列）",
+        "next": "下一个播放（保留队列）",
+        "replace": "立即播放（替换队列）",
+        "replace_next": "下一个播放（替换队列）",
+        "add": "添加到队列"
+    },
+    "playlist_create_media_types": "{0} 提供商支持这些媒体类型：",
+    "playlist_mix_allowed": "这些媒体类型可以混合使用。",
+    "playlist_mix_not_allowed": "此服务商不支持在播放列表中混合使用多种媒体类型。请选择您要创建播放列表的媒体类型：",
+    "playlist_create_provider_error": "无法获取提供商。",
+    "playlist_create_no_type_selected": "未选择媒体类型。"
 }

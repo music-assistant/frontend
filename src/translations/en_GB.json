@@ -955,7 +955,6 @@
         "role": "Role",
         "admin_role": "Administrator",
         "user_role": "User",
-        "guest_role": "Guest",
         "enabled": "Enabled",
         "disabled": "Disabled",
         "enable_user": "Enable user",

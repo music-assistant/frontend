@@ -287,7 +287,11 @@
             "announcements": "Konfigurasjon av kunngjøringer",
             "player_controls": "Spillerkontroller",
             "sync_options": "Instillinger for synkronisering og importering",
-            "builtin_playlists": "Innstillinger for innebygde spillelister"
+            "builtin_playlists": "Innstillinger for innebygde spillelister",
+            "web_player": "Nettspiller",
+            "protocol_output_settings": "Aktiver {0} støtte",
+            "dsp": "Digital signalbehandling (DSP)",
+            "options": "Spillerinnstillinger"
         },
         "tts_pre_announce": {
             "label": "Forhåndsannonsere TTS-kunngjøringer",
@@ -358,7 +362,9 @@
                 "sl_SI": "Slovensk",
                 "hu_HU": "Ungarsk",
                 "it": "Italiensk",
-                "el_GR": "Gresk"
+                "el_GR": "Gresk",
+                "lt_LT": "Litauisk",
+                "lv_LV": "Latvisk"
             }
         },
         "no_music_providers": "Ingen musikkleverandører er konfigurert",
@@ -468,7 +474,122 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Denne gruppetypen støtter ikke DSP ved avspilling til flere enheter."
         },
-        "add_group_player_desc_universal": "Ved å opprette en universell spillergruppe kan du gruppere spillere fra forskjellige leverandører\/økosystemer sammen. \n Dette vil sende den samme lyden til alle spillere i gruppen (men lyden er ikke synkronisert)."
+        "add_group_player_desc_universal": "Ved å opprette en universell spillergruppe kan du gruppere spillere fra forskjellige leverandører\/økosystemer sammen. \n Dette vil sende den samme lyden til alle spillere i gruppen (men lyden er ikke synkronisert).",
+        "auto_refresh_log": "Automatisk oppdatering",
+        "log_truncated": "Viser siste {0} linjer. Last ned hele loggfilen for fullstendig historikk.",
+        "version_info": "Versjonsinformasjon",
+        "library_stats": "Bibliotekstatistikk",
+        "links": "Lenker",
+        "changelog": "Endringslogg",
+        "feature_requests": "Funksjonsforespørsler",
+        "bug_reports": "Feilrapporter",
+        "discussion_forums": "Diskusjonsforum",
+        "license": "Lisens",
+        "open_home_foundation": "Open Home Foundation",
+        "proud_part_of": "Stolt del av",
+        "core_module": {
+            "cache": {
+                "name": "Hurtigbuffer"
+            },
+            "metadata": {
+                "name": "Metadata"
+            },
+            "music": {
+                "name": "Musikk"
+            },
+            "players": {
+                "name": "Spillere"
+            },
+            "remote_access": {
+                "name": "Fjerntilgang",
+                "description": "Aktiverer ekstern tilgang til Music Assistant-serveren"
+            },
+            "streams": {
+                "name": "Strømmer"
+            },
+            "webserver": {
+                "name": "Webserver"
+            }
+        },
+        "remote_access": "Fjerntilgang",
+        "remote_access_description": "Sikker tilgang til Music Assistant fra hvor som helst",
+        "remote_access_title": "Sikker fjerntilgang",
+        "remote_access_mode_basic": "Kjører i grunnleggende modus",
+        "remote_access_upgrade_to_optimized": "Oppgrader til Home Assistant Cloud",
+        "remote_access_status": "Status for fjerntilgang",
+        "remote_access_enabled": "Fjerntilgang er aktivert",
+        "remote_access_disabled": "Fjerntilgang er deaktivert",
+        "remote_access_connected": "Tilkoblet",
+        "remote_access_connecting": "Kobler til...",
+        "remote_access_your_id": "Din ID for fjerntilgang",
+        "remote_access_id_explanation": "Bruk denne unike ID-en for å koble til Music Assistant-serveren din fra eksterne enheter:",
+        "remote_access_copy_id": "Kopier ID for fjerntilgang",
+        "remote_access_id_copied": "ID for fjerntilgang er kopiert til utklippstavlen!",
+        "remote_access_how_to_use": "Slik bruker du fjerntilgang",
+        "remote_access_step_1": "Gå til",
+        "remote_access_technical_details": "Tekniske detaljer",
+        "remote_access_encryption": "Kryptering",
+        "frontend": "Brukergrensesnitt",
+        "players_count": "{0} spiller{1}",
+        "one_player": "1 spiller",
+        "view_players": "Se spillere",
+        "api_docs": "API-dokumentasjon",
+        "provider_credits": "Gjort mulig av",
+        "onboarding_music_title": "Musikk",
+        "onboarding_add_music": "Legg til musikk",
+        "onboarding_player_title": "Spillere",
+        "onboarding_add_player": "Legg til spillere",
+        "remote_access_qr_code": "QR-kode",
+        "remote_access_qr_code_description": "Skann med telefonens kamera for å koble til umiddelbart.",
+        "reset_to_defaults": "Tilbakestill til standardinnstillingene",
+        "unsaved_changes": "Ulagrede endringer",
+        "stay": "Bli",
+        "reconfigure": "Konfigurer på nytt",
+        "fix_now": "Fiks nå",
+        "settings_saved": "Innstillingene er lagret",
+        "protocol_no_settings_with_advanced": "Ingen innstillinger er synlige. Aktiver avanserte innstillinger for å se flere innstillinger.",
+        "show_advanced_settings": "Vis avanserte innstillinger",
+        "advanced": "Avansert",
+        "mobile_sidebar_side": {
+            "label": "Sidefelt på mobil",
+            "description": "Hvilken side navigasjonsmenyen (ark) åpnes fra på mobil. Standard er venstre.",
+            "options": {
+                "left": "Venstre",
+                "right": "Høyre"
+            }
+        },
+        "genre_management": "Sjangerhåndtering",
+        "genre_management_description": "Administrer standard sjangre og gjenopprett standard sjangerinnstillinger",
+        "restore_missing_defaults": "Gjenopprett manglende standardinnstillinger",
+        "restore_missing_defaults_description": "Legger til eventuelle manglende standardsjangre uten å påvirke eksisterende sjangre eller tilpassede tilordninger.",
+        "full_restore_genres": "Full gjenoppretting (tilbakestill alt)",
+        "full_restore_genres_description": "Sletter alle sjangre og aliaser, gjenskaper standardinnstillingene og tilordner alle eksisterende medieelementer på nytt. Bruk med forsiktighet!",
+        "confirm_restore_defaults": "Vil du gjenopprette manglende standardsjangre? Dette vil legge til eventuelle manglende standardsjangre uten å slette eller endre eksisterende sjangre.",
+        "confirm_full_restore": "Dette vil SLETTE ALLE eksisterende sjangere og aliaser, og gjenskape standardinnstillingene og tilordne alle eksisterende medieelementer til de nye sjangrene. Alle tilpassede sjangere, alias-tilordninger og medietilknytninger vil gå tapt.",
+        "confirm_full_restore_2": "Er du helt sikker? Denne handlingen kan ikke angres.",
+        "restore_success": "Gjenopprettet {0} manglende sjanger(e).",
+        "restore_all_present": "Alle standardsjangrene finnes allerede.",
+        "full_restore_success": "Fullstendig gjenoppretting fullført. {0} standardsjanger(e) gjenopprettet.",
+        "genre_statistics": "Sjangerstatistikk",
+        "total_genres": "Totalt antall sjangere",
+        "view_all_genres": "Se alle sjangere",
+        "background_scanner": "Bakgrunnsskanner",
+        "background_scanner_description": "Tilordner automatisk spor, album og artister til sjangere.",
+        "scanner_status": "Skannerstatus",
+        "scanner_running": "Kjører...",
+        "scanner_idle": "Inaktiv",
+        "last_scan": "Siste skanning",
+        "last_scan_mapped": "Kartlagte elementer (siste skanning)",
+        "scan_now": "Skann nå",
+        "scan_triggered": "Sjangerskanningen startet.",
+        "scan_already_running": "Sjangerskanning pågår allerede.",
+        "scan_never": "Aldri",
+        "scanner_status_failed": "Kunne ikke hente skannerstatus",
+        "scan_trigger_failed": "Kunne ikke utløse sjangerskanning",
+        "restore_defaults_failed": "Kunne ikke gjenopprette standardinnstillingene for sjangeren",
+        "full_restore_failed": "Kunne ikke utføre fullstendig gjenoppretting av sjangeren",
+        "error_loading_genres": "Feil ved lasting av sjangre",
+        "player_needs_setup": "Denne spilleren krever nye innstillinger"
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -533,7 +654,10 @@
         "loading": "Serveren behandler en forespørsel eller synkroniserer musikk.",
         "primary_image": "Dette er hovedbildet for denne bildetypen",
         "copy_uri": "Kopier URI til utklippstavlen",
-        "select_all": "Velg alle elementer"
+        "select_all": "Velg alle elementer",
+        "hide_empty_genres": "Skjul tomme sjangere",
+        "show_empty_genres": "Vis tomme sjangere",
+        "filter_genre": "Filtrer etter sjanger"
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -681,12 +805,120 @@
         "new_releases_for_you": "Nye utgivelser for deg",
         "recent_favorite_tracks": "Nylige favorittspor",
         "favorite_playlists": "Favorittspillelister",
-        "favorite_radio_stations": "Favorittradiostasjoner"
+        "favorite_radio_stations": "Favorittradiostasjoner",
+        "listen_again": "Lytt igjen",
+        "in_progress_series": "Fortsett serien...",
+        "recommended": "Anbefalt",
+        "recently_added": "Nylig lagt til",
+        "episodes_recently_added": "Nylig lagt til episoder",
+        "recent_series": "Nylige serier",
+        "newest_episodes": "Nyeste episoder",
+        "discover": "Oppdag",
+        "libraries": "Biblioteker",
+        "library": "Bibliotek",
+        "trending_podcasts": "Populære podkaster"
     },
     "homescreen_edit_enable": "Rediger startskjermen",
     "homescreen_edit_disable": "Gå ut av redigeringsmodus for startskjermen",
     "lyrics_will_appear_soon": "Tekster vises når sangen begynner...",
     "radiobrowser_by_votes": "Etter stemmer",
     "radiobrowser_by_clicks": "Etter klikk",
-    "radiobrowser_by_language": "Etter språk"
+    "radiobrowser_by_language": "Etter språk",
+    "remote": {
+        "back": "Tilbake"
+    },
+    "uri_copied": "URI kopiert til utklippstavlen",
+    "uri_copy_failed": "Kunne ikke kopiere URI til utklippstavlen",
+    "login": {
+        "scan_qr": "Skann QR",
+        "scan_qr_code": "Skann QR-kode",
+        "scan_qr_hint": "Rett kameraet mot QR-koden som vises i serverinnstillingene på Music Assistant."
+    },
+    "player_tip": {
+        "selected_player": "Valgte spiller",
+        "currently_playing": "Spiller på"
+    },
+    "more_options": "Flere alternativer",
+    "auth": {
+        "save_changes": "Lagre endringer",
+        "update_password": "Oppdater passord"
+    },
+    "edit": "Rediger",
+    "series_plural": "Serier",
+    "series_singular": "Serie",
+    "queue_move_end": "Flytt til slutten",
+    "discover": "Oppdag",
+    "save_queue_as_playlist": "Lagre kø som spilleliste",
+    "playlist_created": "Spilleliste opprettet",
+    "open_playlist": "Åpne spilleliste",
+    "add": "Legg til",
+    "add_genre": "Legg til sjanger",
+    "genre_deleted": "Sjanger slettet",
+    "alias": "Alias",
+    "aliases": "Aliaser",
+    "delete": "Slett",
+    "delete_genre": "Slett sjanger",
+    "description": "Beskrivelse",
+    "genre": "Sjanger",
+    "genres": "Sjangre",
+    "genre_names": {
+        "disco": "Disko",
+        "folk": "Folkemusikk",
+        "funk": "Funk",
+        "gospel": "Gospel",
+        "jazz": "Jazz",
+        "metal": "Metall",
+        "polka": "Polka",
+        "pop": "Pop",
+        "r_b": "R&b",
+        "reggae": "Reggae",
+        "rock": "Rock",
+        "salsa": "Salsa",
+        "singer_songwriter": "Singer-songwriter",
+        "ska": "Ska",
+        "soul": "Soul",
+        "swing": "Swing",
+        "tango": "Tango"
+    },
+    "remove": "Fjern",
+    "remove_alias": "Fjern alias",
+    "remove_alias_failed": "Kunne ikke fjerne alias",
+    "delete_genres": "Slett {0} sjangere",
+    "confirm_delete_genres": "Er du sikker på at du vil slette {0} sjangere? Sjangrene vil bli fjernet, sammen med alias-koblingene deres.",
+    "genres_deleted": "{0} sjangere slettet",
+    "merge_into": "Slå sammen med en eksisterende sjanger",
+    "merge_genres": "Slå sammen sjangere",
+    "merge_genres_description": "Velg en sjanger å slå sammen med. Alle aliaser og tilordnede medier fra kildesjangeren overføres til sjangeren.",
+    "merge_genres_warning": "Følgende sjangre vil bli slettet: {0}",
+    "merge_genres_success": "Sjangere er slått sammen",
+    "merge_genres_failed": "Kunne ikke slå sammen sjangre",
+    "select_target_genre": "Velg sjanger",
+    "server_state": {
+        "starting": "Serveren er under oppstart, og det kan hende at enkelte leverandører, spillere eller funksjoner ikke er tilgjengelige før oppstarten er fullført.",
+        "stopping": "Serveren stenger ned...",
+        "stopped": "Serveren har stoppet"
+    },
+    "genre_descriptions": {
+        "asian_music": "Asiatisk musikk omfatter en rekke musikalske stiler, ulike kulturelle og religiøse tradisjoner og former med opprinnelse på det asiatiske kontinentet."
+    },
+    "link_to_genre": "Koble til sjanger",
+    "link_to_genre_title": "Koble til Sjanger",
+    "link_to_genre_description": "Velg en sjanger som de valgte elementene skal knyttes til.",
+    "link_to_genre_success": "Vellykket knyttet til sjanger",
+    "link_to_genre_failed": "Kunne ikke knytte til sjanger",
+    "player_options": {
+        "open": "Åpne spillerinnstillinger",
+        "settable": "Justerbare spillerinnstillinger for spiller {0}",
+        "read_only": "Skrivebeskyttede spilleinstillinger for spiller {0}"
+    },
+    "select_sound_mode": "Velg lydmodus",
+    "refresh": "Oppdater",
+    "enqueue": "Køinstillinger",
+    "queue_option": {
+        "play": "Spill av nå (behold køen)",
+        "next": "Spill av som neste (behold køen)",
+        "replace": "Spill av nå (erstatt kø)",
+        "replace_next": "Spill av som neste (erstatt kø)",
+        "add": "Legg til i køen"
+    }
 }
