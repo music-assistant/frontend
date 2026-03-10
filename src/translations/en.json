@@ -249,6 +249,11 @@
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
+    "playlist_create_media_types": "The {0} provider supports these media types:",
+    "playlist_mix_allowed": "These media types can be mixed.",
+    "playlist_mix_not_allowed": "This provider does not support mixing media types in playlists. Please select for which media type you would like to create a playlist:",
+    "playlist_create_provider_error": "Unable to get provider.",
+    "playlist_create_no_type_selected": "No media type selected.",
     "providers": {
         "party_mode": {
             "guest_page": {
@@ -307,6 +312,7 @@
     "queue_radio_enabled": "Radio mode is enabled",
     "radios": "Radio",
     "read_more": "read more",
+    "refresh": "Refresh",
     "refresh_item": "Refresh item",
     "remove": "Remove",
     "remove_alias": "Remove alias",

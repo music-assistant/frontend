@@ -1,6 +1,7 @@
 import { watch } from "vue";
 import { createRouter, createWebHashHistory } from "vue-router";
 import { authManager } from "./auth";
+import { api, ConnectionState } from "./api";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
@@ -517,7 +518,7 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes and guest mode restrictions
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const currentUser = store.currentUser;
 
   // If party mode guest is trying to navigate away from /guest, redirect back to guest

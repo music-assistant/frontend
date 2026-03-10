@@ -231,6 +231,7 @@ const completeInitialization = async () => {
     store.libraryTracksCount = await api.getLibraryTracksCount();
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+    store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
     console.debug("[App] Party mode guest - skipping full state fetch");
   }

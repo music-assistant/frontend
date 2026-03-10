@@ -11,9 +11,6 @@
         v-if="absoluteIndex === currentQueueIndex && isPlaying"
         :show-badge="false"
       />
-      <v-icon v-else-if="absoluteIndex === currentQueueIndex" color="primary">
-        mdi-play-circle
-      </v-icon>
       <span v-else class="queue-number">{{ absoluteIndex + 1 }}</span>
     </div>
     <v-avatar size="48" rounded class="queue-avatar">
