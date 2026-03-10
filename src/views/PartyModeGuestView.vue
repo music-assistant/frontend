@@ -244,26 +244,6 @@ const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
 );
 
-watch(isPlaying, (val) => {
-  console.debug("[GuestView] isPlaying changed:", val);
-  console.debug("[GuestView] activePlayer:", store.activePlayer?.player_id);
-  console.debug(
-    "[GuestView] playback_state:",
-    store.activePlayer?.playback_state,
-  );
-});
-
-watch(
-  () => store.activePlayer,
-  (player) => {
-    console.debug(
-      "[GuestView] activePlayer changed:",
-      player?.player_id,
-      player?.playback_state,
-    );
-  },
-);
-
 const search = useGuestSearch();
 const {
   searchQuery,
@@ -339,24 +319,21 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   }
 
   if (rateLimitingEnabled.value) {
-    if (position === "next") {
-      if (!consumeBoostToken()) {
-        const minutesUntilNext = getTimeUntilNextToken();
-        toast.warning(
-          $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
-        );
-        return;
-      }
-    } else {
-      if (!consumeAddQueueToken()) {
-        const minutesUntilNext = getTimeUntilNextAddQueueToken();
-        toast.warning(
-          $t("providers.party_mode.add_queue_limit_reached", [
-            minutesUntilNext,
-          ]),
-        );
-        return;
-      }
+    if (position === "next" && boostTokens.value <= 0) {
+      const minutesUntilNext = getTimeUntilNextToken();
+      toast.warning(
+        $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+      );
+      return;
+    }
+    if (position === "end" && addQueueTokens.value <= 0) {
+      const minutesUntilNext = getTimeUntilNextAddQueueToken();
+      toast.warning(
+        $t("providers.party_mode.add_queue_limit_reached", [
+          minutesUntilNext,
+        ]),
+      );
+      return;
     }
   }
 
@@ -371,6 +348,14 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      if (position === "next") {
+        consumeBoostToken();
+      } else {
+        consumeAddQueueToken();
+      }
     }
 
     const message =
@@ -432,16 +417,14 @@ const skipCurrentSong = async () => {
     return;
   }
 
-  if (rateLimitingEnabled.value) {
-    if (!consumeSkipSongToken()) {
-      const minutesUntilNext = getTimeUntilNextSkipToken();
-      toast.warning(
-        $t("providers.party_mode.guest_page.skip_limit_reached", [
-          minutesUntilNext,
-        ]),
-      );
-      return;
-    }
+  if (rateLimitingEnabled.value && skipSongTokens.value <= 0) {
+    const minutesUntilNext = getTimeUntilNextSkipToken();
+    toast.warning(
+      $t("providers.party_mode.guest_page.skip_limit_reached", [
+        minutesUntilNext,
+      ]),
+    );
+    return;
   }
 
   skippingSong.value = true;
@@ -452,6 +435,10 @@ const skipCurrentSong = async () => {
 
     if (!result.success) {
       throw new Error("Server rejected the request");
+    }
+
+    if (rateLimitingEnabled.value) {
+      consumeSkipSongToken();
     }
 
     toast.success($t("providers.party_mode.guest_page.song_skipped"));

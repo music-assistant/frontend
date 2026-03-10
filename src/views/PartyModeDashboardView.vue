@@ -93,12 +93,11 @@ const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>(
     "party_mode/player",
   );
+  accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;
     if (!api.players[partyPlayerId]) {
       accessError.value = "no_access";
-    } else {
-      accessError.value = "";
     }
   }
 };
