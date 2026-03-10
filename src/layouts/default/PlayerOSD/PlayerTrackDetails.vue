@@ -1,108 +1,79 @@
 <template>
   <!-- now playing media -->
-  <v-list-item
-    class="player-track-details"
-    style="height: auto; width: 100%; margin: 0px; padding: 0px"
-    lines="two"
-  >
-    <template #prepend>
+  <div class="player-track-details flex w-full items-center">
+    <!-- prepend: album art / player icon -->
+    <div
+      class="player-media-thumb relative shrink-0"
+      :style="`cursor: pointer; height: ${
+        getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
+      }px; width: ${
+        getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
+      }px;`"
+      @click="store.showFullscreenPlayer = true"
+    >
       <div
-        class="media-thumb player-media-thumb"
-        :style="`cursor: pointer;height: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; `"
-        @click="store.showFullscreenPlayer = true"
+        v-if="
+          store.activePlayer?.powered != false &&
+          store.activePlayer?.current_media?.image_url
+        "
       >
-        <!-- player.current_media has content loaded (will work for all sources)  -->
-        <div
-          v-if="
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.current_media?.image_url
-          "
-        >
-          <v-img
-            class="media-thumb"
-            style="border-radius: 4px"
-            size="60"
-            :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
-          />
-        </div>
-        <!-- fallback: display player icon -->
-        <div v-else class="icon-thumb">
-          <v-icon
-            size="32"
-            :icon="
-              store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_members.length
-                ? 'mdi-speaker-multiple'
-                : store.activePlayer?.icon || 'mdi-speaker'
-            "
-          />
-        </div>
+        <v-img
+          class="media-thumb"
+          style="border-radius: 4px"
+          size="60"
+          :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+        />
       </div>
-    </template>
-
-    <!-- title -->
-    <template #title>
+      <div v-else class="icon-thumb">
+        <v-icon
+          size="32"
+          :icon="
+            store.activePlayer?.type == PlayerType.PLAYER &&
+            store.activePlayer?.group_members.length
+              ? 'mdi-speaker-multiple'
+              : store.activePlayer?.icon || 'mdi-speaker'
+          "
+        />
+      </div>
       <div
-        :style="{
-          cursor: 'pointer',
-          color: primaryColor,
-        }"
-        class="d-flex align-center"
+        v-if="
+          store.activePlayer &&
+          store.activePlayer?.powered != false &&
+          store.activePlayer?.playback_state != PlaybackState.IDLE
+        "
+        class="absolute bottom-0 right-0"
+      >
+        <NowPlayingBadge :show-badge="false" :show-icon="true" />
+      </div>
+    </div>
+
+    <!-- content: title + subtitle -->
+    <div class="min-w-0 flex-1">
+      <!-- title -->
+      <div
+        :style="{ cursor: 'pointer', color: primaryColor }"
+        class="flex items-center"
       >
         <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
         </div>
-        <!-- player name as title if its powered off-->
         <div
           v-else-if="store.activePlayer?.powered == false"
           @click="store.showPlayersMenu = true"
         >
           {{ store.activePlayer?.name }}
         </div>
-        <!-- no player selected message -->
         <div v-else @click="store.showPlayersMenu = true">
           {{ $t("no_player") }}
         </div>
-        <NowPlayingBadge
-          v-if="
-            store.activePlayer &&
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.playback_state != PlaybackState.IDLE
-          "
-          :show-badge="false"
-          :show-icon="true"
-          icon-style="margin-left: 12px; margin-bottom: 4px;"
-        />
       </div>
-    </template>
-    <!-- append chip(s): quality -->
-    <template #append>
-      <!-- format -->
+
+      <!-- subtitle -->
       <div
-        v-if="
-          streamDetails?.audio_format.content_type &&
-          !getBreakpointValue({ breakpoint: 'phone' }) &&
-          showQualityDetailsBtn
-        "
-        class="pl-4"
-      >
-        <QualityDetailsBtn />
-      </div>
-    </template>
-    <!-- subtitle -->
-    <template #subtitle>
-      <div
-        :style="{
-          cursor: 'pointer',
-          color: primaryColor,
-        }"
+        :style="{ cursor: 'pointer', color: primaryColor }"
+        class="text-sm opacity-70"
         @click="store.showFullscreenPlayer = true"
       >
-        <!-- player powered off -->
         <div v-if="store.activePlayer?.powered == false">
           {{ $t("off") }}
         </div>
@@ -114,7 +85,6 @@
           </div>
           <div class="ma-line-clamp-1">
             <MarqueeText :sync="marqueeSync">
-              <!-- artists(s) + album -->
               <span
                 v-if="
                   store.activePlayer?.current_media?.artist &&
@@ -125,18 +95,15 @@
                 {{ store.activePlayer?.current_media?.artist }} •
                 {{ store.activePlayer?.current_media?.album }}
               </span>
-              <!-- artists(s) only -->
               <span v-else-if="store.activePlayer?.current_media?.artist">
                 {{ store.activePlayer?.current_media?.artist }}
               </span>
-              <!-- album only -->
               <span v-else-if="store.activePlayer?.current_media?.album">
                 {{ store.activePlayer?.current_media?.album }}
               </span>
             </MarqueeText>
           </div>
         </template>
-        <!-- 3rd party source active -->
         <div
           v-else-if="
             store.activePlayer &&
@@ -149,7 +116,6 @@
             $t("external_source_active", [getSourceName(store.activePlayer)])
           }}
         </div>
-        <!-- queue empty message -->
         <div
           v-else-if="
             store.activePlayerQueue && store.activePlayerQueue.items == 0
@@ -162,8 +128,20 @@
           {{ store.activePlayer?.name }}
         </div>
       </div>
-    </template>
-  </v-list-item>
+    </div>
+
+    <!-- append: quality details -->
+    <div
+      v-if="
+        streamDetails?.audio_format.content_type &&
+        !getBreakpointValue({ breakpoint: 'phone' }) &&
+        showQualityDetailsBtn
+      "
+      class="shrink-0 pl-4"
+    >
+      <QualityDetailsBtn />
+    </div>
+  </div>
   <PlayerFullscreen
     :show-fullscreen="store.showFullscreenPlayer"
     :color-palette="colorPalette"
@@ -214,18 +192,6 @@ const streamDetails = computed(() => {
   margin-right: 10px;
 }
 
-.player-track-content-type {
-  height: 20px !important;
-  padding: 5px !important;
-  padding-right: 9px !important;
-  padding-left: 9px !important;
-  font-weight: 500;
-  font-size: 10px !important;
-  letter-spacing: 0.1em;
-  border-radius: 2px;
-  margin-right: 30px;
-}
-
 .icon-thumb {
   width: 60px;
   height: 60px;
@@ -234,13 +200,5 @@ const streamDetails = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-</style>
-
-<style>
-/* this fixes missing subtitle items on webkit*/
-.player-track-details .v-list-item-subtitle {
-  -webkit-line-clamp: unset !important;
-  line-clamp: unset !important;
 }
 </style>

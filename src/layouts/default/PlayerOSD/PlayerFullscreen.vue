@@ -244,8 +244,22 @@
                     @mouseleave="hoveredQueueIndex = -1"
                   >
                     <template #prepend>
-                      <div class="media-thumb listitem-media-thumb">
+                      <div class="media-thumb listitem-media-thumb relative">
                         <MediaItemThumb size="50" :item="item" />
+                        <div
+                          v-if="
+                            item.queue_item_id ===
+                              store.curQueueItem?.queue_item_id &&
+                            store.activePlayer?.playback_state !=
+                              PlaybackState.IDLE
+                          "
+                          class="absolute bottom-0 right-0"
+                        >
+                          <NowPlayingBadge
+                            :show-badge="false"
+                            :show-icon="true"
+                          />
+                        </div>
                       </div>
                     </template>
                     <template #title>
@@ -319,15 +333,6 @@
                             ? boostBadgeColor
                             : requestBadgeColor
                         "
-                      />
-                      <NowPlayingBadge
-                        v-if="
-                          item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id &&
-                          store.activePlayer?.playback_state !=
-                            PlaybackState.IDLE
-                        "
-                        :show-badge="getBreakpointValue('bp4')"
                       />
                       <v-icon v-if="!item.available">mdi-alert</v-icon>
                     </template>
