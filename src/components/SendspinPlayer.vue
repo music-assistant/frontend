@@ -347,7 +347,10 @@ onMounted(() => {
       if (!shouldBePlaying || !audioRef.value) return;
 
       audioRef.value.play().catch((error) => {
-        console.warn("Sendspin: Failed to recover audio element playback:", error);
+        console.warn(
+          "Sendspin: Failed to recover audio element playback:",
+          error,
+        );
       });
     });
   }
