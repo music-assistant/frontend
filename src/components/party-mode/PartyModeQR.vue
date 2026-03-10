@@ -167,19 +167,41 @@ onMounted(async () => {
     resizeObserver.observe(qrContainer.value);
   }
 
-  // Subscribe to PROVIDERS_UPDATED to detect when party_mode or remote_access
-  // provider is reloaded. Config refresh is handled by the composable automatically.
-  unsubscribe = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    const hasPartyMode = Object.values(api.providers).some(
-      (p) => p.domain === "party_mode",
-    );
-    if (hasPartyMode) {
-      await generateQRCode();
-    } else {
-      guestAccessEnabled.value = false;
-      qrCodeUrl.value = "";
-    }
-  });
+  // Subscribe to PROVIDERS_UPDATED to detect when party_mode provider is
+  // loaded/unloaded. Config refresh is handled by the composable automatically.
+  const unsubProviders = api.subscribe(
+    EventType.PROVIDERS_UPDATED,
+    async () => {
+      const hasPartyMode = Object.values(api.providers).some(
+        (p) => p.domain === "party_mode",
+      );
+      if (hasPartyMode) {
+        await generateQRCode();
+      } else {
+        guestAccessEnabled.value = false;
+        qrCodeUrl.value = "";
+      }
+    },
+  );
+
+  // Subscribe to CORE_STATE_UPDATED to detect when remote access is toggled,
+  // which changes the party mode join URL between local and remote.
+  const unsubCoreState = api.subscribe(
+    EventType.CORE_STATE_UPDATED,
+    async () => {
+      const hasPartyMode = Object.values(api.providers).some(
+        (p) => p.domain === "party_mode",
+      );
+      if (hasPartyMode) {
+        await generateQRCode();
+      }
+    },
+  );
+
+  unsubscribe = () => {
+    unsubProviders();
+    unsubCoreState();
+  };
 });
 
 onUnmounted(() => {
