@@ -6,9 +6,7 @@
       class="player-media-thumb relative shrink-0"
       :style="`cursor: pointer; height: ${
         getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-      }px; width: ${
-        getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-      }px;`"
+      }px; width: ${getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64}px;`"
       @click="store.showFullscreenPlayer = true"
     >
       <div
