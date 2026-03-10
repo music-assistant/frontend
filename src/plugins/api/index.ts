@@ -1033,6 +1033,40 @@ export class MusicAssistantApi {
     });
   }
 
+  public excludeGenreFromItem(
+    genre_id: string,
+    media_type: string,
+    media_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/exclude_genre_from_media_item", {
+      genre_id,
+      media_type,
+      media_id,
+    });
+  }
+
+  public removeGenreExclusion(
+    genre_id: string,
+    media_type: string,
+    media_id: string,
+  ): Promise<void> {
+    return this.sendCommand("music/genres/remove_genre_exclusion", {
+      genre_id,
+      media_type,
+      media_id,
+    });
+  }
+
+  public getGenreExclusionsForItem(
+    media_type: string,
+    media_id: string,
+  ): Promise<Genre[]> {
+    return this.sendCommand("music/genres/genre_exclusions_for_media_item", {
+      media_type,
+      media_id,
+    });
+  }
+
   public async getGenreOverviewRows(
     item_id: string,
     provider_instance_id_or_domain: string,
