@@ -36,7 +36,10 @@ const silentAudioRef = ref<HTMLAudioElement>();
 
 // Detect Android for MediaSession workaround
 const isAndroid = /android/i.test(navigator.userAgent);
-const isMobileOutput = isAndroid || /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isIOS =
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isMobileOutput = isAndroid || isIOS;
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
@@ -345,7 +348,6 @@ onMounted(() => {
 
       audioRef.value.play().catch((error) => {
         console.warn("Sendspin: Failed to recover audio element playback:", error);
-        api.playerCommandPause(props.playerId);
       });
     });
   }
