@@ -178,7 +178,7 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 <style scoped>
 .dsp-pipeline-card {
   min-width: 160px;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .dsp-pipeline-card:hover,

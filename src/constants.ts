@@ -1,6 +1,7 @@
 export const DEFAULT_MENU_ITEMS = [
   "discover",
   "search",
+  "party",
   "artists",
   "albums",
   "tracks",
