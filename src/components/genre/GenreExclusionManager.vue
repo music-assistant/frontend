@@ -108,7 +108,7 @@ const onMenu = (evt: Event, genre: Genre) => {
   eventbus.emit("contextmenu", {
     items: [
       {
-        label: t("remove_genre_exclusion"),
+        label: "remove_genre_exclusion",
         icon: "mdi-delete",
         action: () => removeExclusion(genre),
         disabled: operationInProgress.value,
