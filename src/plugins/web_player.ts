@@ -1,6 +1,9 @@
-import { reactive } from "vue";
+import { reactive, watch } from "vue";
+import authManager from "./auth";
 import api from "./api";
 import { EventType } from "./api/interfaces";
+import { companionMode } from "./companion";
+import router from "./router";
 import { resetSendspinConnection } from "./sendspin-connection";
 
 export enum WebPlayerMode {
@@ -43,6 +46,10 @@ self.crypto.getRandomValues(array);
 const uniqueId = array.join("");
 
 bc.onmessage = (event) => {
+  if (webPlayer.mode === WebPlayerMode.DISABLED) {
+    return;
+  }
+
   if (
     typeof event.data === "string" &&
     event.data.startsWith(BC_MSG.TAKING_CONTROL)
@@ -60,7 +67,11 @@ bc.onmessage = (event) => {
   }
   switch (event.data) {
     case BC_MSG.IS_ACTIVE:
-      if (isPlaybackMode(webPlayer.tabMode) && webPlayer.player_id) {
+      if (
+        isPlaybackMode(webPlayer.mode) &&
+        isPlaybackMode(webPlayer.tabMode) &&
+        webPlayer.player_id
+      ) {
         // Check if we timed out
         if (webPlayer.timedOutDueToThrottling()) {
           webPlayer.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
@@ -130,6 +141,95 @@ async function isAnotherTabActive(): Promise<boolean> {
 }
 
 let highestPriority: string | undefined;
+let modeSyncInitialized = false;
+let modeSyncInitializationPromise: Promise<void> | null = null;
+let pendingModeApplication = Promise.resolve();
+
+function resolvePreferredMode(): WebPlayerMode {
+  // This route explicitly disables the web player
+  const routeDisablesWebPlayer = router.currentRoute.value.matched.some(
+    (record) => record.meta.disableWebPlayer === true,
+  );
+
+  // Hard-disable conditions always win over user preferences.
+  if (
+    authManager.isPartyModeGuest() ||
+    companionMode.value ||
+    routeDisablesWebPlayer
+  ) {
+    return WebPlayerMode.DISABLED;
+  }
+
+  const webPlayerEnabledPref =
+    window.localStorage.getItem("frontend.settings.web_player_enabled") ||
+    "true";
+  const browserControlsEnabledPref =
+    window.localStorage.getItem("frontend.settings.enable_browser_controls") ||
+    "true";
+
+  if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref !== "false"
+  ) {
+    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+  }
+  if (
+    webPlayerEnabledPref !== "false" &&
+    browserControlsEnabledPref === "false"
+  ) {
+    return WebPlayerMode.SENDSPIN_ONLY;
+  }
+  if (
+    webPlayerEnabledPref === "false" &&
+    browserControlsEnabledPref !== "false"
+  ) {
+    return WebPlayerMode.CONTROLS_ONLY;
+  }
+  return WebPlayerMode.DISABLED;
+}
+
+// Serializes mode updates so concurrent triggers (init/route/watchers) apply in order.
+function queueModeApplication(): Promise<void> {
+  pendingModeApplication = pendingModeApplication.then(async () => {
+    const mode = resolvePreferredMode();
+    if (mode !== webPlayer.mode || mode !== webPlayer.tabMode) {
+      await webPlayer.setMode(mode);
+    }
+  });
+  return pendingModeApplication;
+}
+
+// Automatically sets web player mode from route policy, guest/companion state, and user preferences.
+// Must be called once on page load to set up mode synchronization hooks.
+// Safe to call multiple times.
+export async function initializeWebPlayerModeSync(): Promise<void> {
+  if (modeSyncInitializationPromise) {
+    await modeSyncInitializationPromise;
+    return queueModeApplication();
+  }
+
+  if (modeSyncInitialized) {
+    return queueModeApplication();
+  }
+
+  modeSyncInitializationPromise = (async () => {
+    await router.isReady();
+    await queueModeApplication();
+
+    router.afterEach(() => {
+      void queueModeApplication();
+    });
+
+    watch(companionMode, () => {
+      void queueModeApplication();
+    });
+
+    modeSyncInitialized = true;
+    modeSyncInitializationPromise = null;
+  })();
+
+  return modeSyncInitializationPromise;
+}
 
 async function canTakeControl(): Promise<boolean> {
   // Generate a unique priority string with interaction as a prefix

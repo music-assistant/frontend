@@ -11,6 +11,8 @@ const routes = [
   // which exchanges the short join code for a JWT before navigating here
   {
     path: "/guest",
+    // Guest users don't have access to the player.
+    meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyModeGuestLayout.vue"),
     children: [
       {
@@ -27,6 +29,8 @@ const routes = [
   // Placed at top level so it renders without navigation/player controls
   {
     path: "/party",
+    // Party mode only displays the dashboard and doesn't need the player.
+    meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyModeGuestLayout.vue"),
     children: [
       {
