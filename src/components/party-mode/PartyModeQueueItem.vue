@@ -16,15 +16,12 @@
         />
         <span v-else class="queue-number">{{ absoluteIndex + 1 }}</span>
       </div>
-      <v-avatar size="48" rounded class="queue-avatar">
-        <v-img :src="imageUrl" :alt="item.name" cover>
-          <template #placeholder>
-            <div class="avatar-placeholder">
-              <v-icon>mdi-music</v-icon>
-            </div>
-          </template>
-        </v-img>
-      </v-avatar>
+      <Avatar class="queue-avatar size-12 rounded-md">
+        <AvatarImage :src="imageUrl" :alt="item.name" />
+        <AvatarFallback class="avatar-placeholder rounded-md">
+          <Music :size="20" />
+        </AvatarFallback>
+      </Avatar>
       <div class="queue-info">
         <MarqueeText class="queue-name">
           {{ title }}
@@ -40,25 +37,24 @@
         class="guest-request-badge"
         :style="{ '--badge-color': badgeColor }"
       >
-        <v-icon size="x-small">{{ badgeIcon }}</v-icon>
+        <component :is="badgeIconComponent" :size="10" />
         <span>{{ badgeLabel }}</span>
       </span>
     </div>
 
     <!-- Boost action (shown when expanded on upcoming items) -->
     <div v-if="isExpanded && canBoost" class="queue-item-actions">
-      <v-btn
-        variant="elevated"
-        size="small"
-        :loading="boosting"
-        :disabled="boostDisabled"
+      <Button
+        size="sm"
+        :disabled="boostDisabled || boosting"
         class="boost-btn"
         :style="{ backgroundColor: boostBadgeColor }"
         @click.stop="$emit('boost', item)"
       >
-        <v-icon start size="small">mdi-rocket-launch</v-icon>
+        <Spinner v-if="boosting" class="size-4" />
+        <Rocket v-else :size="16" />
         {{ $t("providers.party_mode.boost") }}
-      </v-btn>
+      </Button>
     </div>
   </div>
 </template>
@@ -70,6 +66,10 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { Music, Rocket, UserRound } from "lucide-vue-next";
 
 const props = defineProps<{
   item: QueueItem;
@@ -141,8 +141,8 @@ const badgeColor = computed(() =>
   isBoosted.value ? props.boostBadgeColor : props.requestBadgeColor,
 );
 
-const badgeIcon = computed(() =>
-  isBoosted.value ? "mdi-rocket-launch" : "mdi-account-music",
+const badgeIconComponent = computed(() =>
+  isBoosted.value ? Rocket : UserRound,
 );
 
 const badgeLabel = computed(() =>

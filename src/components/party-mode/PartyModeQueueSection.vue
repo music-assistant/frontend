@@ -11,19 +11,17 @@
           "
           class="skip-countdown"
         >
-          <v-icon size="x-small">mdi-clock-outline</v-icon>
+          <Clock :size="12" />
           {{ skipTokenCountdown }}
         </span>
-        <v-btn
-          color="primary"
-          variant="flat"
-          size="small"
-          :loading="skippingSong"
-          :disabled="rateLimitingEnabled && skipSongTokens <= 0"
+        <Button
+          size="sm"
+          :disabled="(rateLimitingEnabled && skipSongTokens <= 0) || skippingSong"
           class="skip-btn"
           @click="$emit('skip')"
         >
-          <v-icon start size="small">mdi-skip-next</v-icon>
+          <Spinner v-if="skippingSong" class="size-4" />
+          <SkipForward v-else :size="16" />
           {{ $t("providers.party_mode.guest_page.skip") }}
           <span
             v-if="rateLimitingEnabled"
@@ -32,7 +30,7 @@
           >
             {{ skipSongTokens }}
           </span>
-        </v-btn>
+        </Button>
       </div>
     </div>
     <div
@@ -61,11 +59,11 @@
       />
       <!-- Loading indicator for infinite scroll -->
       <div v-if="loadingMoreQueueItems" class="loading-more">
-        <v-progress-circular indeterminate color="primary" size="32" />
+        <Spinner class="size-8 text-primary" />
       </div>
     </div>
     <div v-else class="empty-queue">
-      <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
+      <ListMusic :size="48" class="text-muted-foreground" />
       <p>{{ $t("providers.party_mode.guest_page.queue_empty") }}</p>
     </div>
   </div>
@@ -76,6 +74,9 @@ import { ref } from "vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import PartyModeQueueItem from "./PartyModeQueueItem.vue";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { Clock, ListMusic, SkipForward } from "lucide-vue-next";
 
 const props = defineProps<{
   queueItems: QueueItem[];
@@ -173,10 +174,8 @@ defineExpose({ listRef });
   background: rgba(255, 100, 100, 0.3);
 }
 
-.skip-btn.v-btn--disabled {
+.skip-btn:disabled {
   opacity: 0.3;
-  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
-  color: rgba(var(--v-theme-on-surface), 0.4) !important;
 }
 
 .skip-countdown {

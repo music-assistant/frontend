@@ -8,15 +8,12 @@
     @click="onItemClick"
   >
     <div class="result-info">
-      <v-avatar size="56" rounded class="result-avatar">
-        <v-img :src="imageUrl" :alt="item.name" cover>
-          <template #placeholder>
-            <div class="avatar-placeholder">
-              <v-icon>mdi-music</v-icon>
-            </div>
-          </template>
-        </v-img>
-      </v-avatar>
+      <Avatar class="result-avatar size-14 rounded-md">
+        <AvatarImage :src="imageUrl" :alt="item.name" />
+        <AvatarFallback class="avatar-placeholder rounded-md">
+          <Music :size="24" />
+        </AvatarFallback>
+      </Avatar>
       <div class="result-text">
         <MarqueeText class="result-name">
           {{ item.name }}
@@ -31,30 +28,30 @@
     <template v-if="item.media_type === 'track' && isExpanded">
       <div class="result-spacer"></div>
       <div class="result-actions">
-        <v-btn
+        <Button
           v-if="boostEnabled"
-          variant="elevated"
-          :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
-          :disabled="rateLimitingEnabled && boostTokens <= 0"
+          size="sm"
+          :disabled="(rateLimitingEnabled && boostTokens <= 0) || isBoostLoading"
           class="boost-btn action-btn"
           :style="{ backgroundColor: boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
-          <v-icon start>mdi-rocket-launch</v-icon>
+          <Spinner v-if="isBoostLoading" class="size-4" />
+          <Rocket v-else :size="16" />
           {{ $t("providers.party_mode.boost") }}
-        </v-btn>
-        <v-btn
+        </Button>
+        <Button
           v-if="addQueueEnabled"
-          variant="elevated"
-          :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
-          :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+          size="sm"
+          :disabled="(rateLimitingEnabled && addQueueTokens <= 0) || isAddLoading"
           class="add-btn action-btn"
           :style="{ backgroundColor: requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
-          <v-icon start>mdi-playlist-plus</v-icon>
+          <Spinner v-if="isAddLoading" class="size-4" />
+          <ListPlus v-else :size="16" />
           {{ $t("providers.party_mode.request") }}
-        </v-btn>
+        </Button>
       </div>
     </template>
 
@@ -62,14 +59,15 @@
     <template v-else-if="item.media_type === 'artist'">
       <div class="result-spacer"></div>
       <div class="result-actions">
-        <v-btn
-          variant="text"
+        <Button
+          variant="ghost"
+          size="sm"
           class="action-btn"
           @click.stop="$emit('selectArtist', item)"
         >
-          <v-icon start>mdi-music-note-outline</v-icon>
+          <Music :size="16" />
           {{ $t("providers.party_mode.guest_page.view_songs") }}
-        </v-btn>
+        </Button>
       </div>
     </template>
   </div>
@@ -82,6 +80,10 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { ListPlus, Music, Rocket } from "lucide-vue-next";
 
 const props = defineProps<{
   item: Track | Artist;
@@ -101,6 +103,13 @@ const emit = defineEmits<{
   selectArtist: [item: Track | Artist];
   toggleExpand: [itemId: string];
 }>();
+
+const isBoostLoading = computed(() =>
+  props.addingItems.has(`${props.item.media_type}-${props.item.item_id}-next`),
+);
+const isAddLoading = computed(() =>
+  props.addingItems.has(`${props.item.media_type}-${props.item.item_id}-end`),
+);
 
 const onItemClick = () => {
   if (props.item.media_type === MediaType.TRACK) {
@@ -216,10 +225,8 @@ const artistName = computed(() => {
   color: white;
 }
 
-.action-btn.v-btn--disabled {
+.action-btn:disabled {
   opacity: 0.3;
-  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
-  color: rgba(var(--v-theme-on-surface), 0.4) !important;
 }
 
 @media (max-width: 768px) {
@@ -253,7 +260,7 @@ const artistName = computed(() => {
     margin-left: 0;
   }
 
-  .result-actions .v-btn {
+  .result-actions button {
     flex: 1;
   }
 }

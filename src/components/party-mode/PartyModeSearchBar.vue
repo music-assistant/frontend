@@ -1,33 +1,38 @@
 <template>
   <div class="search-section">
-    <v-btn
-      icon
-      variant="text"
-      size="medium"
+    <Button
+      variant="ghost"
+      size="icon"
       class="back-arrow"
       :class="{ active: showBack }"
       :aria-label="$t('back')"
       @click="$emit('back')"
     >
-      <v-icon>mdi-arrow-left</v-icon>
-    </v-btn>
+      <ArrowLeft :size="20" />
+    </Button>
 
-    <v-text-field
-      :model-value="searchQuery"
-      :placeholder="$t('providers.party_mode.guest_page.search_placeholder')"
-      prepend-inner-icon="mdi-magnify"
-      variant="outlined"
-      density="comfortable"
-      clearable
-      autofocus
-      hide-details
-      inputmode="search"
-      enterkeyhint="search"
-      class="search-input"
-      @update:model-value="$emit('update:searchQuery', $event)"
-      @click:clear="$emit('clear')"
-      @keydown.enter="$emit('submit')"
-    />
+    <div class="search-input-wrapper">
+      <Search :size="18" class="search-icon" />
+      <Input
+        :model-value="searchQuery"
+        :placeholder="$t('providers.party_mode.guest_page.search_placeholder')"
+        autofocus
+        inputmode="search"
+        enterkeyhint="search"
+        class="search-input"
+        @update:model-value="$emit('update:searchQuery', $event)"
+        @keydown.enter="$emit('submit')"
+      />
+      <Button
+        v-if="searchQuery"
+        variant="ghost"
+        size="icon-sm"
+        class="clear-btn"
+        @click="$emit('clear')"
+      >
+        <X :size="16" />
+      </Button>
+    </div>
 
     <div class="filter-toggle">
       <!-- TODO -->
@@ -36,34 +41,28 @@
 
   <!-- Search Filter Chips -->
   <div v-if="hasSearched || searchQuery.length >= 2" class="filter-section">
-    <v-chip-group
-      :model-value="searchFilter"
-      mandatory
-      selected-class="filter-active"
-      @update:model-value="$emit('update:searchFilter', $event)"
-    >
-      <v-chip value="all" variant="outlined" size="small" class="filter-chip">
-        {{ $t("searchtype_all") }}
-      </v-chip>
-      <v-chip value="track" variant="outlined" size="small" class="filter-chip">
-        <v-icon start size="small">mdi-music-note</v-icon>
-        {{ $t("providers.party_mode.guest_page.filter_songs") }}
-      </v-chip>
-      <v-chip
-        value="artist"
-        variant="outlined"
-        size="small"
+    <div class="filter-group">
+      <Button
+        v-for="filter in filters"
+        :key="filter.value"
+        :variant="searchFilter === filter.value ? 'default' : 'outline'"
+        size="sm"
         class="filter-chip"
+        @click="$emit('update:searchFilter', filter.value)"
       >
-        <v-icon start size="small">mdi-account-music</v-icon>
-        {{ $t("artists") }}
-      </v-chip>
-    </v-chip-group>
+        <component :is="filter.icon" v-if="filter.icon" :size="14" />
+        {{ filter.label }}
+      </Button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { $t } from "@/plugins/i18n";
+import { Button } from "@/components/ui/button";
+import Input from "@/components/ui/input/Input.vue";
+import { ArrowLeft, Music, Search, UserRound, X } from "lucide-vue-next";
 
 defineProps<{
   searchQuery: string;
@@ -73,12 +72,22 @@ defineProps<{
 }>();
 
 defineEmits<{
-  "update:searchQuery": [value: string];
+  "update:searchQuery": [value: string | number];
   "update:searchFilter": [value: string];
   clear: [];
   back: [];
   submit: [];
 }>();
+
+const filters = computed(() => [
+  { value: "all", label: $t("searchtype_all"), icon: null },
+  {
+    value: "track",
+    label: $t("providers.party_mode.guest_page.filter_songs"),
+    icon: Music,
+  },
+  { value: "artist", label: $t("artists"), icon: UserRound },
+]);
 </script>
 
 <style scoped>
@@ -92,15 +101,40 @@ defineEmits<{
 
 .back-arrow {
   opacity: 0;
+  pointer-events: none;
   flex-shrink: 0;
 }
 
 .back-arrow.active {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .search-input {
   flex: 1;
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
+  height: 2.75rem !important;
+}
+
+.clear-btn {
+  position: absolute;
+  right: 0.25rem;
 }
 
 .filter-toggle {
@@ -114,15 +148,14 @@ defineEmits<{
   flex-shrink: 0;
 }
 
+.filter-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .filter-chip {
   font-weight: 500;
   transition: all 0.2s ease;
-}
-
-.filter-active {
-  background: rgb(var(--v-theme-primary)) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
-  border-color: rgb(var(--v-theme-primary)) !important;
 }
 
 @media (max-width: 768px) {

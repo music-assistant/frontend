@@ -11,18 +11,24 @@
       @submit="performSearch"
     />
 
+    <!-- Search Loading State -->
+    <div v-if="searching && !selectedArtist" class="loading-state">
+      <Spinner class="size-12 text-primary" />
+      <p>{{ $t("providers.party_mode.guest_page.searching") }}</p>
+    </div>
+
     <!-- Artist Tracks View (when drilling into an artist) -->
     <div v-if="selectedArtist" class="results-section">
       <div class="section-header">
-        <v-btn
-          variant="text"
-          color="primary"
+        <Button
+          variant="ghost"
+          size="sm"
           class="back-btn"
           @click="clearArtistSelection"
         >
-          <v-icon start>mdi-arrow-left</v-icon>
+          <ArrowLeft :size="16" />
           {{ $t("back") }}
-        </v-btn>
+        </Button>
         <h2 class="section-title artist-title">
           {{ selectedArtist.name }}
         </h2>
@@ -49,7 +55,7 @@
       </div>
       <!-- Loading state -->
       <div v-if="loadingArtistTracks" class="loading-state">
-        <v-progress-circular indeterminate color="primary" size="48" />
+        <Spinner class="size-12 text-primary" />
         <p>{{ $t("providers.party_mode.guest_page.loading_tracks") }}</p>
       </div>
       <!-- Artist tracks list -->
@@ -75,13 +81,16 @@
       </div>
       <!-- Empty state for no tracks -->
       <div v-else class="empty-state">
-        <v-icon size="64" color="grey">mdi-music-off</v-icon>
+        <Music :size="64" class="text-muted-foreground" />
         <p>{{ $t("providers.party_mode.guest_page.no_tracks_for_artist") }}</p>
       </div>
     </div>
 
     <!-- Search Results -->
-    <div v-else-if="searchResults.length > 0" class="results-section">
+    <div
+      v-else-if="!searching && searchResults.length > 0"
+      class="results-section"
+    >
       <div class="section-header">
         <h2 class="section-title">
           {{
@@ -144,7 +153,7 @@
       "
       class="empty-state"
     >
-      <v-icon size="64" color="grey">mdi-magnify</v-icon>
+      <Search :size="64" class="text-muted-foreground" />
       <p>
         {{
           $t("providers.party_mode.guest_page.no_results_for", [searchQuery])
@@ -182,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
@@ -202,6 +211,9 @@ import PartyModeSearchBar from "@/components/party-mode/PartyModeSearchBar.vue";
 import PartyModeResultItem from "@/components/party-mode/PartyModeResultItem.vue";
 import PartyModeQueueSection from "@/components/party-mode/PartyModeQueueSection.vue";
 import PartyModeTokensBadge from "@/components/party-mode/PartyModeTokensBadge.vue";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { ArrowLeft, Music, Search } from "lucide-vue-next";
 
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
@@ -286,12 +298,15 @@ watch(
 );
 
 // --- Back navigation ---
-const goBack = () => {
+const goBack = async () => {
   if (selectedArtist.value) {
     clearArtistSelection();
     return;
   }
   clearSearch();
+  // Wait for the queue section to mount and expose its listRef
+  // before attempting to scroll to the current item.
+  await nextTick();
   queue.scrollToCurrentItem();
 };
 
