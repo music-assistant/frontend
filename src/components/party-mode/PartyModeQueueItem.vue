@@ -196,7 +196,7 @@ const badgeLabel = computed(() =>
   text-transform: none;
   letter-spacing: 0.5px;
   background-color: var(--btn-bg) !important;
-  color: white !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
 }
 
 .queue-item-current {
@@ -206,7 +206,7 @@ const badgeLabel = computed(() =>
 }
 
 .queue-item-played {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(var(--v-theme-on-surface), 0.08);
   opacity: 0.5;
 }
 

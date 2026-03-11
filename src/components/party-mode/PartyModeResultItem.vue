@@ -224,7 +224,7 @@ const artistName = computed(() => {
 .action-btn.boost-btn,
 .action-btn.add-btn {
   background-color: var(--btn-bg) !important;
-  color: white !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
 }
 
 .action-btn:disabled {
@@ -251,7 +251,7 @@ const artistName = computed(() => {
 
   .result-spacer {
     display: block;
-    background: #2d2d2d;
+    background: rgba(var(--v-theme-on-surface), 0.15);
     height: 1px;
     margin: 6px 16px;
   }

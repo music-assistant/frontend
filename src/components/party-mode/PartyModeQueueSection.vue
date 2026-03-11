@@ -166,14 +166,14 @@ defineExpose({ listRef });
 .skip-token-badge {
   margin-left: 0.5rem;
   padding: 0.125rem 0.375rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--v-theme-on-primary), 0.2);
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .skip-token-badge.no-tokens {
-  background: rgba(255, 100, 100, 0.3);
+  background: rgba(var(--v-theme-error), 0.3);
 }
 
 .skip-btn:disabled {
