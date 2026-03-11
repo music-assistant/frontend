@@ -31,7 +31,9 @@
         <Button
           v-if="boostEnabled"
           size="sm"
-          :disabled="(rateLimitingEnabled && boostTokens <= 0) || isBoostLoading"
+          :disabled="
+            (rateLimitingEnabled && boostTokens <= 0) || isBoostLoading
+          "
           class="boost-btn action-btn"
           :style="{ backgroundColor: boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
@@ -43,7 +45,9 @@
         <Button
           v-if="addQueueEnabled"
           size="sm"
-          :disabled="(rateLimitingEnabled && addQueueTokens <= 0) || isAddLoading"
+          :disabled="
+            (rateLimitingEnabled && addQueueTokens <= 0) || isAddLoading
+          "
           class="add-btn action-btn"
           :style="{ backgroundColor: requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"

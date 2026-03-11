@@ -61,7 +61,10 @@ const calculateQRSize = () => {
   const containerHeight = qrContainer.value.clientHeight;
   // Use the smaller dimension, leave room for padding and instructions
   // Scale the padding based on container size so mobile uses more space
-  const padding = Math.min(120, Math.max(32, Math.min(containerWidth, containerHeight) * 0.1));
+  const padding = Math.min(
+    120,
+    Math.max(32, Math.min(containerWidth, containerHeight) * 0.1),
+  );
   const availableSize = Math.min(containerWidth, containerHeight) - padding;
   // Clamp between 160 and 1024 for usability (supports 4K displays)
   return Math.max(160, Math.min(1024, availableSize));

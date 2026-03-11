@@ -16,7 +16,9 @@
         </span>
         <Button
           size="sm"
-          :disabled="(rateLimitingEnabled && skipSongTokens <= 0) || skippingSong"
+          :disabled="
+            (rateLimitingEnabled && skipSongTokens <= 0) || skippingSong
+          "
           class="skip-btn"
           @click="$emit('skip')"
         >
