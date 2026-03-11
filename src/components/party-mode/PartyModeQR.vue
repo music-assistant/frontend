@@ -60,12 +60,7 @@ const calculateQRSize = () => {
   const containerWidth = qrContainer.value.clientWidth;
   const containerHeight = qrContainer.value.clientHeight;
   // Use the smaller dimension, leave room for padding and instructions
-  // Scale the padding based on container size so mobile uses more space
-  const padding = Math.min(
-    120,
-    Math.max(32, Math.min(containerWidth, containerHeight) * 0.1),
-  );
-  const availableSize = Math.min(containerWidth, containerHeight) - padding;
+  const availableSize = Math.min(containerWidth, containerHeight) - 120;
   // Clamp between 160 and 1024 for usability (supports 4K displays)
   return Math.max(160, Math.min(1024, availableSize));
 };
@@ -224,16 +219,11 @@ onBeforeUnmount(() => {
 
 .qr-display {
   text-align: center;
-  padding: clamp(0.5rem, 2vw, 3rem);
+  padding: clamp(1rem, 2vw, 3rem);
   background: rgba(0, 0, 0, 0.3);
   border-radius: clamp(12px, 1.2vw, 24px);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  width: fit-content;
-  max-width: 100%;
-  max-height: 95%;
-  box-sizing: border-box;
-  overflow: hidden;
 }
 
 .qr-link {
@@ -291,15 +281,12 @@ onBeforeUnmount(() => {
   display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
 }
 
 .qr-instructions {
   margin-top: clamp(0.5rem, 1vw, 1.5rem);
   font-size: clamp(0.875rem, 1.8vw, 2rem);
-  color: rgba(var(--v-theme-on-surface), 0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -324,12 +311,12 @@ onBeforeUnmount(() => {
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .qr-disabled .qr-hint {
   font-size: 1.25rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: rgba(255, 255, 255, 0.7);
   max-width: 500px;
 }
 
