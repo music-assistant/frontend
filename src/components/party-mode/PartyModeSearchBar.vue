@@ -26,6 +26,7 @@
       class="search-input"
       @update:model-value="$emit('update:searchQuery', $event)"
       @click:clear="$emit('clear')"
+      @keydown.enter="$emit('submit')"
     />
 
     <div class="filter-toggle">
@@ -76,6 +77,7 @@ defineEmits<{
   "update:searchFilter": [value: string];
   clear: [];
   back: [];
+  submit: [];
 }>();
 </script>
 

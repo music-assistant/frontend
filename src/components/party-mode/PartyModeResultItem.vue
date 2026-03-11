@@ -1,5 +1,12 @@
 <template>
-  <div class="result-item">
+  <div
+    class="result-item"
+    :class="{
+      'result-item--expanded': isExpanded,
+      'result-item--clickable': item.media_type === 'track',
+    }"
+    @click="onItemClick"
+  >
     <div class="result-info">
       <v-avatar size="56" rounded class="result-avatar">
         <v-img :src="imageUrl" :alt="item.name" cover>
@@ -20,47 +27,51 @@
       </div>
     </div>
 
-    <div class="result-spacer"></div>
-
-    <!-- Actions for tracks -->
-    <div v-if="item.media_type === 'track'" class="result-actions">
-      <v-btn
-        v-if="boostEnabled"
-        variant="elevated"
-        :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
-        :disabled="rateLimitingEnabled && boostTokens <= 0"
-        class="boost-btn action-btn"
-        :style="{ backgroundColor: boostBadgeColor }"
-        @click="$emit('addToQueue', item, 'next')"
-      >
-        <v-icon start>mdi-rocket-launch</v-icon>
-        {{ $t("providers.party_mode.boost") }}
-      </v-btn>
-      <v-btn
-        v-if="addQueueEnabled"
-        variant="elevated"
-        :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
-        :disabled="rateLimitingEnabled && addQueueTokens <= 0"
-        class="add-btn action-btn"
-        :style="{ backgroundColor: requestBadgeColor }"
-        @click="$emit('addToQueue', item, 'end')"
-      >
-        <v-icon start>mdi-playlist-plus</v-icon>
-        {{ $t("providers.party_mode.add") }}
-      </v-btn>
-    </div>
+    <!-- Actions for tracks (shown when expanded) -->
+    <template v-if="item.media_type === 'track' && isExpanded">
+      <div class="result-spacer"></div>
+      <div class="result-actions">
+        <v-btn
+          v-if="boostEnabled"
+          variant="elevated"
+          :loading="addingItems.has(`${item.media_type}-${item.item_id}-next`)"
+          :disabled="rateLimitingEnabled && boostTokens <= 0"
+          class="boost-btn action-btn"
+          :style="{ backgroundColor: boostBadgeColor }"
+          @click.stop="$emit('addToQueue', item, 'next')"
+        >
+          <v-icon start>mdi-rocket-launch</v-icon>
+          {{ $t("providers.party_mode.boost") }}
+        </v-btn>
+        <v-btn
+          v-if="addQueueEnabled"
+          variant="elevated"
+          :loading="addingItems.has(`${item.media_type}-${item.item_id}-end`)"
+          :disabled="rateLimitingEnabled && addQueueTokens <= 0"
+          class="add-btn action-btn"
+          :style="{ backgroundColor: requestBadgeColor }"
+          @click.stop="$emit('addToQueue', item, 'end')"
+        >
+          <v-icon start>mdi-playlist-plus</v-icon>
+          {{ $t("providers.party_mode.request") }}
+        </v-btn>
+      </div>
+    </template>
 
     <!-- Actions for artists -->
-    <div v-else-if="item.media_type === 'artist'" class="result-actions">
-      <v-btn
-        variant="text"
-        class="action-btn"
-        @click="$emit('selectArtist', item)"
-      >
-        <v-icon start>mdi-music-note-outline</v-icon>
-        {{ $t("providers.party_mode.guest_page.view_songs") }}
-      </v-btn>
-    </div>
+    <template v-else-if="item.media_type === 'artist'">
+      <div class="result-spacer"></div>
+      <div class="result-actions">
+        <v-btn
+          variant="text"
+          class="action-btn"
+          @click.stop="$emit('selectArtist', item)"
+        >
+          <v-icon start>mdi-music-note-outline</v-icon>
+          {{ $t("providers.party_mode.guest_page.view_songs") }}
+        </v-btn>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -82,12 +93,20 @@ const props = defineProps<{
   boostBadgeColor: string;
   requestBadgeColor: string;
   addingItems: Set<string>;
+  isExpanded: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   addToQueue: [item: Track | Artist, position: "next" | "end"];
   selectArtist: [item: Track | Artist];
+  toggleExpand: [itemId: string];
 }>();
+
+const onItemClick = () => {
+  if (props.item.media_type === MediaType.TRACK) {
+    emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
+  }
+};
 
 const imageUrl = computed(() => {
   const img = props.item.metadata?.images?.[0];
@@ -114,6 +133,15 @@ const artistName = computed(() => {
   background: rgba(var(--v-theme-surface-variant), 0.07);
   border-radius: 12px;
   min-height: 72px;
+  transition: background 0.2s ease;
+}
+
+.result-item--clickable {
+  cursor: pointer;
+}
+
+.result-item--expanded {
+  background: rgba(var(--v-theme-primary), 0.1);
 }
 
 .result-info {

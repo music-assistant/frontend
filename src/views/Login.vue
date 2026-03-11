@@ -858,16 +858,25 @@ const autoConnect = async () => {
     }
   }
 
-  // If remote_id is in URL, pre-fill and auto-connect (when in remote-only mode)
+  // If remote_id is in URL, pre-fill and auto-connect (when in remote-only mode).
+  // This also serves as a fallback when both remote_id and join are present but
+  // the combined handler above didn't succeed (e.g., connection error).
   let urlRemoteIdForAutoConnect: string | null = null;
-  if (urlRemoteId && !urlJoinCode) {
+  if (urlRemoteId) {
     console.debug("[Login] Found remote_id in URL:", urlRemoteId);
     const cleanRemoteId = urlRemoteId.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (cleanRemoteId.length === 26) {
       setRemoteIdFromString(cleanRemoteId);
       urlRemoteIdForAutoConnect = cleanRemoteId;
+      // Store the join code in sessionStorage so the remote-only auto-connect
+      // path can pick it up after establishing the WebRTC connection.
+      if (urlJoinCode) {
+        sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, urlJoinCode);
+        localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
+      }
       // Clean up the URL
       urlParams.delete("remote_id");
+      urlParams.delete("join");
       const queryString = urlParams.toString();
       const newUrl =
         window.location.origin +

@@ -7,7 +7,10 @@
     z-index="9999"
     persistent
   >
-    <v-card class="fullscreen-player-card" :style="{ background: backgroundColor }">
+    <v-card
+      class="fullscreen-player-card"
+      :style="{ background: backgroundColor }"
+    >
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -127,7 +130,9 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album && showAlbumSubtitle"
+              v-else-if="
+                store.activePlayer?.current_media?.album && showAlbumSubtitle
+              "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -1504,7 +1509,6 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-
 .fullscreen-player-card {
   overflow: hidden;
   height: 100%;
@@ -1764,5 +1768,4 @@ button {
     padding: 8px 0;
   }
 }
-
 </style>
