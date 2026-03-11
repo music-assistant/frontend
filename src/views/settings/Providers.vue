@@ -141,26 +141,6 @@
 
         <template #append>
           <div class="provider-status-icons">
-            <v-chip
-              v-if="
-                item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
-              "
-              size="x-small"
-              variant="flat"
-              color="primary"
-              class="player-count-chip"
-              @click.stop="viewPlayers(item.instance_id)"
-            >
-              <v-icon start size="small">mdi-speaker</v-icon>
-              {{
-                getPlayerCount(item) === 1
-                  ? $t("settings.one_player")
-                  : $t("settings.players_count", [
-                      getPlayerCount(item),
-                      getPlayerCount(item) !== 1 ? "s" : "",
-                    ])
-              }}
-            </v-chip>
             <v-icon
               v-if="
                 api.syncTasks.value.filter(
@@ -193,14 +173,11 @@
               color="grey"
               :title="$t('settings.not_loaded')"
             />
-            <v-icon
-              :icon="getProviderTypeIcon(item.type)"
-              size="20"
-              color="grey"
-              :title="getProviderTypeTitle(item.type)"
-            />
             <v-chip
-              v-if="api.providerManifests[item.domain]"
+              v-if="
+                api.providerManifests[item.domain] &&
+                api.providerManifests[item.domain]?.stage !== 'stable'
+              "
               size="x-small"
               variant="flat"
               class="mx-1 text-uppercase"
@@ -214,6 +191,12 @@
                 )
               }}
             </v-chip>
+            <v-icon
+              :icon="getProviderTypeIcon(item.type)"
+              size="20"
+              color="grey"
+              :title="getProviderTypeTitle(item.type)"
+            />
           </div>
         </template>
       </ListItem>
@@ -951,9 +934,20 @@ const getAllFilteredProviders = function () {
   background: transparent;
 }
 
+.providers-list :deep(.v-list-item__content) {
+  min-width: 0;
+}
+
+.providers-list :deep(.v-list-item__spacer) {
+  width: 16px !important;
+}
+
 .provider-name-title {
   font-weight: 500;
   font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .provider-meta {
@@ -968,6 +962,9 @@ const getAllFilteredProviders = function () {
   font-size: 14px;
   color: rgba(var(--v-theme-on-surface), 0.7);
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .provider-type-badge {
@@ -986,15 +983,6 @@ const getAllFilteredProviders = function () {
 }
 
 @media (max-width: 960px) {
-  .provider-description-text {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .provider-status-icons {
     gap: 4px;
     min-width: 0;
@@ -1012,10 +1000,6 @@ const getAllFilteredProviders = function () {
 
 .player-count-chip:hover {
   transform: scale(1.05);
-}
-
-.provider-icon {
-  margin-right: 12px;
 }
 
 .provider-disabled {

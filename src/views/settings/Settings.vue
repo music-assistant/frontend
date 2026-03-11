@@ -793,6 +793,10 @@ const documentationUrl = computed(() => {
   margin-right: 8px;
 }
 
+.settings-list-item :deep(.v-list-item__spacer) {
+  width: 12px !important;
+}
+
 .settings-list-item :deep(.v-list-item__prepend .v-icon) {
   margin-inline-end: 0 !important;
 }

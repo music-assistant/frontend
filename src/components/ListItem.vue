@@ -68,8 +68,8 @@ const { listItemProps, listItemClasses } = useListItem(props);
 }
 
 .list-item-main :deep(.v-list-item__content > div) {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .list-item--compact {

@@ -1,9 +1,7 @@
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-  <div
-    :style="`width:${size}px;margin-left:10px;margin-right:10px;content-align:center`"
-  >
+  <div :style="`width:${size}px;content-align:center`">
     <!-- icon for library-->
     <v-icon
       v-if="domain && domain == 'library'"

@@ -837,6 +837,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   height: 50px;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 @media (max-width: 400px) {
