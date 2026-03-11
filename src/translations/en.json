@@ -323,6 +323,7 @@
     "remove_alias_failed": "Failed to remove alias",
     "exclude_genre": "Exclude genre",
     "genre_exclusions": "Genre Exclusions",
+    "genre_view_discovery": "Discovery",
     "remove_genre_exclusion": "Remove exclusion",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",

@@ -23,12 +23,10 @@
       </slot>
     </template>
 
-    <template v-if="$slots.append" #append>
+    <template v-if="$slots.append || menuItems?.length" #append>
       <slot name="append"></slot>
-    </template>
-    <template v-else-if="menuItems?.length" #append>
       <v-btn
-        v-for="menuItem of menuItems.filter(
+        v-for="menuItem of menuItems?.filter(
           (x) =>
             !x.hide &&
             !enforceOverflowMenu &&
@@ -61,8 +59,9 @@
       <div
         v-if="
           (!getBreakpointValue('bp8') || enforceOverflowMenu) &&
-          menuItems.filter((x) => x.hide != true && x.overflowAllowed !== false)
-            .length
+          menuItems?.filter(
+            (x) => x.hide != true && x.overflowAllowed !== false,
+          ).length
         "
       >
         <v-menu
@@ -87,7 +86,7 @@
           </template>
           <v-list density="compact" slim tile>
             <v-list-item
-              v-for="(menuItem, index) in menuItems.filter(
+              v-for="(menuItem, index) in menuItems?.filter(
                 (x) => x.hide != true && x.overflowAllowed != false,
               )"
               :key="index"
