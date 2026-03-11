@@ -1593,7 +1593,7 @@ watchEffect(() => {
   justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: 5% 0 10px;
+  padding: min(5%, 5vh) 0 10px;
   overflow: hidden;
 }
 
@@ -1604,7 +1604,7 @@ watchEffect(() => {
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 3%);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), min(3%, 3vh));
   width: 100%;
 }
 
