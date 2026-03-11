@@ -265,5 +265,8 @@ const badgeLabel = computed(() =>
   color: var(--badge-color);
   flex-shrink: 0;
   margin-left: auto;
+  max-width: 6rem;
+  overflow: hidden;
+  white-space: nowrap;
 }
 </style>

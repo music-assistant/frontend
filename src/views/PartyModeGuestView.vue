@@ -310,11 +310,11 @@ const handleBack = (event: PopStateEvent) => {
 // --- Action glue (bridges rate limiting + API + snackbar) ---
 const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   if (position === "next" && !boostEnabled.value) {
-    toast.warning($t("providers.party_mode.boost_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.boost_disabled"));
     return;
   }
   if (position === "end" && !addQueueEnabled.value) {
-    toast.warning($t("providers.party_mode.add_queue_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.add_queue_disabled"));
     return;
   }
 
@@ -322,14 +322,18 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     if (position === "next" && boostTokens.value <= 0) {
       const minutesUntilNext = getTimeUntilNextToken();
       toast.warning(
-        $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+        $t("providers.party_mode.guest_page.boost_limit_reached", [
+          minutesUntilNext,
+        ]),
       );
       return;
     }
     if (position === "end" && addQueueTokens.value <= 0) {
       const minutesUntilNext = getTimeUntilNextAddQueueToken();
       toast.warning(
-        $t("providers.party_mode.add_queue_limit_reached", [minutesUntilNext]),
+        $t("providers.party_mode.guest_page.add_queue_limit_reached", [
+          minutesUntilNext,
+        ]),
       );
       return;
     }
@@ -365,7 +369,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
-    toast.error($t("providers.party_mode.add_to_queue_failed"));
+    toast.error($t("providers.party_mode.guest_page.add_to_queue_failed"));
   } finally {
     addingItems.value.delete(key);
   }
@@ -373,14 +377,16 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
 
 const boostQueueItem = async (item: QueueItem) => {
   if (!boostEnabled.value) {
-    toast.warning($t("providers.party_mode.boost_disabled"));
+    toast.warning($t("providers.party_mode.guest_page.boost_disabled"));
     return;
   }
 
   if (rateLimitingEnabled.value && boostTokens.value <= 0) {
     const minutesUntilNext = getTimeUntilNextToken();
     toast.warning(
-      $t("providers.party_mode.boost_limit_reached", [minutesUntilNext]),
+      $t("providers.party_mode.guest_page.boost_limit_reached", [
+        minutesUntilNext,
+      ]),
     );
     return;
   }
@@ -403,7 +409,7 @@ const boostQueueItem = async (item: QueueItem) => {
     toast.success($t("providers.party_mode.guest_page.item_boosted", [name]));
   } catch (error) {
     console.error("Failed to boost queue item:", error);
-    toast.error($t("providers.party_mode.add_to_queue_failed"));
+    toast.error($t("providers.party_mode.guest_page.add_to_queue_failed"));
   } finally {
     boostingQueueItemId.value = "";
   }
@@ -461,12 +467,16 @@ let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
-  const partyPlayerId = await api.sendCommand<string | null>(
-    "party_mode/player",
-  );
-  partyModeQueueId.value = partyPlayerId;
-  if (partyPlayerId) {
-    store.activePlayerId = partyPlayerId;
+  try {
+    const partyPlayerId = await api.sendCommand<string | null>(
+      "party_mode/player",
+    );
+    partyModeQueueId.value = partyPlayerId;
+    if (partyPlayerId) {
+      store.activePlayerId = partyPlayerId;
+    }
+  } catch (error) {
+    console.error("Failed to fetch party mode player:", error);
   }
 };
 
@@ -485,11 +495,7 @@ onMounted(async () => {
 
   cleanupCountdown = rateLimit.startCountdown();
 
-  try {
-    await refreshPartyPlayer();
-  } catch (error) {
-    console.error("Failed to fetch party mode player:", error);
-  }
+  await refreshPartyPlayer();
 
   fetchQueueItems();
   cleanupQueueEvents = queue.subscribeToEvents();

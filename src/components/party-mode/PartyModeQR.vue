@@ -41,7 +41,7 @@ import { $t } from "@/plugins/i18n";
 import { copyToClipboard } from "@/helpers/utils";
 import { AlertCircle, Check, QrCode } from "lucide-vue-next";
 import QRCode from "qrcode";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
@@ -53,7 +53,6 @@ const copyFeedback = ref<string>("");
 const instructionText = ref($t("providers.party_mode.scan_to_join"));
 const { config: partyConfig, fetchConfig: fetchPartyConfig } =
   usePartyModeConfig();
-let unsubscribe: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
 const calculateQRSize = () => {
@@ -183,6 +182,7 @@ onMounted(async () => {
       }
     },
   );
+  onBeforeUnmount(unsubProviders);
 
   // Subscribe to CORE_STATE_UPDATED to detect when remote access is toggled,
   // which changes the party mode join URL between local and remote.
@@ -197,17 +197,10 @@ onMounted(async () => {
       }
     },
   );
-
-  unsubscribe = () => {
-    unsubProviders();
-    unsubCoreState();
-  };
+  onBeforeUnmount(unsubCoreState);
 });
 
-onUnmounted(() => {
-  if (unsubscribe) {
-    unsubscribe();
-  }
+onBeforeUnmount(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
@@ -293,7 +286,7 @@ onUnmounted(() => {
 .qr-instructions {
   margin-top: clamp(0.5rem, 1vw, 1.5rem);
   font-size: clamp(0.875rem, 1.8vw, 2rem);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(var(--v-theme-on-surface), 0.8);
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -318,12 +311,12 @@ onUnmounted(() => {
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(var(--v-theme-on-surface), 0.9);
 }
 
 .qr-disabled .qr-hint {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   max-width: 500px;
 }
 

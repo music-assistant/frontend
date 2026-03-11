@@ -338,9 +338,6 @@ const gradientBackgroundStyle = computed(() => {
   };
 });
 
-// Track unsubscribe functions
-const unsubscribeFunctions = ref<(() => void)[]>([]);
-
 // Screen Wake Lock to prevent display from sleeping
 let wakeLock: WakeLockSentinel | null = null;
 
@@ -410,6 +407,7 @@ onMounted(async () => {
       fetchQueueItems(true);
     },
   );
+  onBeforeUnmount(unsub1);
 
   // Subscribe to queue updates (for index changes)
   const unsub2 = api.subscribe(EventType.QUEUE_UPDATED, (evt: EventMessage) => {
@@ -417,14 +415,14 @@ onMounted(async () => {
     // Don't force refetch for index changes - let buffer optimization work
     fetchQueueItems();
   });
+  onBeforeUnmount(unsub2);
 
   // Subscribe to provider updates to detect party mode player config changes
   const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     await refreshPartyPlayer();
     fetchQueueItems(true);
   });
-
-  unsubscribeFunctions.value = [unsub1, unsub2, unsub3];
+  onBeforeUnmount(unsub3);
 });
 
 // Cleanup when leaving the party view
@@ -435,9 +433,6 @@ onBeforeUnmount(() => {
     wakeLock = null;
   }
   document.removeEventListener("visibilitychange", handleVisibilityChange);
-
-  // Unsubscribe from events
-  unsubscribeFunctions.value.forEach((unsub) => unsub());
 });
 
 // React to party mode config changes (e.g., admin toggles player controls)
@@ -552,12 +547,12 @@ watch(
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(var(--v-theme-on-surface), 0.9);
 }
 
 .empty-message {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   max-width: 500px;
 }
 
@@ -600,12 +595,12 @@ watch(
 .access-error-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(var(--v-theme-on-surface), 0.9);
 }
 
 .access-error-message {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   max-width: 400px;
 }
 
