@@ -38,7 +38,7 @@
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("artists") }}</span>
@@ -56,7 +56,7 @@
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("albums") }}</span>
@@ -75,7 +75,7 @@
         :show-favorites-only-filter="true"
         :show-track-number="false"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("tracks") }}</span>
@@ -93,7 +93,7 @@
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("playlists") }}</span>
@@ -111,7 +111,7 @@
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("podcasts") }}</span>
@@ -129,7 +129,7 @@
         :allow-collapse="true"
         :show-favorites-only-filter="true"
         :hide-on-empty="true"
-        :forced-view-mode="viewMode"
+        :forced-view-mode="itemsViewMode"
       >
         <template #title>
           <span>{{ $t("audiobooks") }}</span>
@@ -213,9 +213,19 @@ const router = useRouter();
 
 const isAdmin = computed(() => authManager.isAdmin());
 
+type GenreViewMode = "discovery" | "list" | "panel" | "panel_compact";
+
 const { getPreference, setPreference } = useUserPreferences();
-const savedViewMode = getPreference<string>("genre_detail_view", "discovery");
-const viewMode = ref<string>(savedViewMode.value);
+const savedViewMode = getPreference<GenreViewMode>(
+  "genre_detail_view",
+  "discovery",
+);
+const viewMode = ref<GenreViewMode>(savedViewMode.value);
+const itemsViewMode = computed(() =>
+  viewMode.value !== "discovery"
+    ? (viewMode.value as "list" | "panel" | "panel_compact")
+    : undefined,
+);
 
 watch(viewMode, (newVal) => {
   setPreference("genre_detail_view", newVal);
