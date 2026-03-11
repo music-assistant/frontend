@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 defineOptions({
   name: "GenreIcon",
 });
@@ -8,9 +10,13 @@ const props = withDefaults(
     strokeWidth?: number;
   }>(),
   {
-    strokeWidth: 4,
+    strokeWidth: 2,
   },
 );
+
+// Genre viewBox (52×57) is ~2× larger than typical icon viewBox (e.g. 26×24).
+// Scale stroke so the same strokeWidth prop gives similar visual weight as other icons.
+const scaledStrokeWidth = computed(() => props.strokeWidth * 2);
 </script>
 
 <template>
@@ -25,14 +31,14 @@ const props = withDefaults(
     <path
       d="M49.8333 33.6316C49.8365 34.0359 49.722 34.4324 49.5038 34.7727C49.2855 35.113 48.9729 35.3825 48.6042 35.5482L30.7292 43.6732C30.1892 43.9178 29.6032 44.0443 29.0104 44.0443C28.4176 44.0443 27.8317 43.9178 27.2917 43.6732L12 36.7209M8.16666 44.0482C8.16568 44.4467 8.27899 44.8371 8.49316 45.1731C8.70733 45.5092 9.01337 45.7767 9.375 45.9441L27.2917 54.0899C27.8317 54.3344 28.4176 54.4609 29.0104 54.4609C29.6032 54.4609 30.1892 54.3344 30.7292 54.0899L48.6042 45.9649C48.9729 45.7992 49.2855 45.5297 49.5038 45.1894C49.722 44.849 49.8365 44.4525 49.8333 44.0482M19 29.478L27.2917 33.2566C27.8345 33.5042 28.4242 33.6323 29.0208 33.6323C29.6175 33.6323 30.2072 33.5042 30.75 33.2566L48.625 25.1316C48.9947 24.9686 49.309 24.7016 49.5297 24.3631C49.7503 24.0247 49.8678 23.6294 49.8678 23.2253C49.8678 22.8213 49.7503 22.426 49.5297 22.0875C49.309 21.7491 48.9947 21.4821 48.625 21.3191L30.7292 13.1732C30.1863 12.9256 29.5966 12.7975 29 12.7975C28.4034 12.7975 27.8137 12.9256 27.2708 13.1732L22 15.6316"
       stroke="currentColor"
-      :stroke-width="props.strokeWidth"
+      :stroke-width="scaledStrokeWidth"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
       d="M13.2 24.1053C13.2 27.1574 10.6928 29.6316 7.6 29.6316C4.50721 29.6316 2 27.1574 2 24.1053C2 21.0532 4.50721 18.5789 7.6 18.5789C10.6928 18.5789 13.2 21.0532 13.2 24.1053ZM13.2 24.1053V2L23 7.52632"
       stroke="currentColor"
-      :stroke-width="props.strokeWidth"
+      :stroke-width="scaledStrokeWidth"
       stroke-linecap="round"
       stroke-linejoin="round"
     />

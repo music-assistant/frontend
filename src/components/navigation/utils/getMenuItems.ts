@@ -1,5 +1,5 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
-import GenreIconSidebar from "@/components/icons/GenreIconSidebar.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
 import {
@@ -125,7 +125,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "genres") {
       items.push({
         label: "genres",
-        icon: GenreIconSidebar,
+        icon: GenreIcon,
         path: "/genres",
         isLibraryNode: true,
       });
