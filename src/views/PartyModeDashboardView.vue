@@ -109,6 +109,17 @@ const accessError = ref("");
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
 
+// Compact mode: hide previous tracks on small screens to reclaim space
+const compactQuery = window.matchMedia("(max-width: 768px)");
+const isCompact = ref(compactQuery.matches);
+const handleCompactChange = (e: MediaQueryListEvent) => {
+  isCompact.value = e.matches;
+};
+compactQuery.addEventListener("change", handleCompactChange);
+onBeforeUnmount(() => {
+  compactQuery.removeEventListener("change", handleCompactChange);
+});
+
 // Check if album art background is enabled - prioritize query parameter over config
 const useAlbumArtBackground = computed(() => {
   // Query parameter takes precedence for manual override
@@ -147,11 +158,13 @@ const visibleItems = computed(() => {
   const currentIndex = store.activePlayerQueue.current_index || 0;
   const offset = lastFetchedOffset.value;
 
-  // Return up to 5 items: previous-2, previous-1, current, next-1, next-2
+  // In compact mode (small screens) show only current + next items
+  const startDelta = isCompact.value ? 0 : -2;
+  const count = isCompact.value ? 3 : 5;
   const items: QueueItem[] = [];
 
-  for (let i = 0; i < 5; i++) {
-    const queuePosition = currentIndex - 2 + i;
+  for (let i = 0; i < count; i++) {
+    const queuePosition = currentIndex + startDelta + i;
     const relativeIdx = queuePosition - offset;
 
     if (relativeIdx >= 0 && relativeIdx < queueItems.value.length) {
@@ -501,6 +514,8 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
+  height: 60vh;
 }
 
 .track-stack {
@@ -517,9 +532,9 @@ watch(
   width: 100%;
   height: 80%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
 }
 
 /* Empty State - same dimensions as .track-list for consistent layout */
@@ -568,9 +583,18 @@ watch(
 }
 
 /* Transition animations */
+.track-slide-move {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .track-slide-enter-active,
 .track-slide-leave-active {
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.track-slide-leave-active {
+  position: absolute;
+  width: 95%;
 }
 
 .track-slide-enter-from,
@@ -608,20 +632,30 @@ watch(
 @media (max-width: 1024px) {
   .party-content {
     flex-direction: column;
+    justify-content: center;
     padding: 1rem;
     gap: 1rem;
   }
 
   .qr-section {
-    flex: 0 0 12vh;
+    flex: 0 1 auto;
+    height: auto;
+    align-self: auto;
+    overflow: hidden;
+  }
+
+  .track-stack {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .track-list {
-    height: 60vh;
+    height: 100%;
   }
 
   .empty-state {
-    height: 60vh;
+    height: 100%;
   }
 
   .qr-box {
@@ -655,20 +689,19 @@ watch(
 }
 
 @media (max-width: 768px) {
-  .qr-section {
-    display: none;
-  }
-
   .party-content {
+    justify-content: stretch;
     padding: 0.5rem;
+    gap: 0.25rem;
   }
 
-  .track-list {
-    height: 50vh;
+  .qr-section {
+    flex: 1 1 0;
+    max-height: none;
   }
 
-  .empty-state {
-    height: 50vh;
+  .track-stack {
+    flex: 0 1 auto;
   }
 
   .empty-icon {

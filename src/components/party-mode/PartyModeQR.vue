@@ -60,7 +60,9 @@ const calculateQRSize = () => {
   const containerWidth = qrContainer.value.clientWidth;
   const containerHeight = qrContainer.value.clientHeight;
   // Use the smaller dimension, leave room for padding and instructions
-  const availableSize = Math.min(containerWidth, containerHeight) - 120;
+  // Scale the padding based on container size so mobile uses more space
+  const padding = Math.min(120, Math.max(32, Math.min(containerWidth, containerHeight) * 0.1));
+  const availableSize = Math.min(containerWidth, containerHeight) - padding;
   // Clamp between 160 and 1024 for usability (supports 4K displays)
   return Math.max(160, Math.min(1024, availableSize));
 };
@@ -219,11 +221,16 @@ onBeforeUnmount(() => {
 
 .qr-display {
   text-align: center;
-  padding: clamp(1rem, 2vw, 3rem);
+  padding: clamp(0.5rem, 2vw, 3rem);
   background: rgba(0, 0, 0, 0.3);
   border-radius: clamp(12px, 1.2vw, 24px);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: fit-content;
+  max-width: 100%;
+  max-height: 95%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .qr-link {
@@ -281,6 +288,9 @@ onBeforeUnmount(() => {
   display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .qr-instructions {
