@@ -305,7 +305,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
-  forcedViewMode?: string;
+  forcedViewMode?: "list" | "panel" | "panel_compact";
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],

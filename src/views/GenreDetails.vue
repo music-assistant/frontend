@@ -215,7 +215,7 @@ const isAdmin = computed(() => authManager.isAdmin());
 
 const { getPreference, setPreference } = useUserPreferences();
 const savedViewMode = getPreference<string>("genre_detail_view", "discovery");
-const viewMode = ref<string>(savedViewMode.value ?? "discovery");
+const viewMode = ref<string>(savedViewMode.value);
 
 watch(viewMode, (newVal) => {
   setPreference("genre_detail_view", newVal);
@@ -236,7 +236,7 @@ const openViewModeMenu = (e: MouseEvent) => {
   eventbus.emit("contextmenu", {
     items: [
       {
-        label: "genre_view_discovery",
+        label: "view.discovery",
         icon: "mdi-view-dashboard",
         selected: viewMode.value === "discovery",
         action: () => {
@@ -477,10 +477,6 @@ onMounted(() => {
 
 .overview-container {
   padding: 0 16px 16px 16px;
-}
-
-.overview-container :deep(.header.v-toolbar) {
-  font-family: "JetBrains Mono Medium";
 }
 
 .overview-container :deep(.header.v-toolbar .v-toolbar-title) {
