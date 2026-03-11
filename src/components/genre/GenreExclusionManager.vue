@@ -24,7 +24,7 @@
                 align-items: center;
               "
             >
-              <Compass :size="30" />
+              <GenreIcon class="size-[30px]" />
             </div>
           </template>
           <template #title>{{
@@ -47,7 +47,8 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Compass, ChevronUp, ChevronDown } from "lucide-vue-next";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { ChevronUp, ChevronDown } from "lucide-vue-next";
 
 interface Props {
   mediaType: MediaType;

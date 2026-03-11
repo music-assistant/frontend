@@ -116,7 +116,7 @@
           v-if="searchResult && !loading"
           :widget-row="{
             title: $t('genres'),
-            icon: Compass,
+            icon: GenreIcon,
             items: searchResult.genres,
           }"
           :show-provider-on-cover="true"
@@ -157,7 +157,8 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Compass, Search } from "lucide-vue-next";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { Search } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const SEARCH_TYPE_ALL = "all";

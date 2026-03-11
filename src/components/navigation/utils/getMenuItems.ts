@@ -1,4 +1,5 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
+import GenreIconSidebar from "@/components/icons/GenreIconSidebar.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
 import {
@@ -13,7 +14,6 @@ import {
   Radio,
   Search,
   Settings,
-  Compass,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -125,7 +125,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "genres") {
       items.push({
         label: "genres",
-        icon: Compass,
+        icon: GenreIconSidebar,
         path: "/genres",
         isLibraryNode: true,
       });

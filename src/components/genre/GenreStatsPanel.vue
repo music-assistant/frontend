@@ -10,15 +10,19 @@
       class="mt-4"
       variant="outlined"
       color="primary"
-      prepend-icon="mdi-compass-outline"
       @click="$emit('view-genres')"
     >
+      <template #prepend>
+        <GenreIcon class="size-[18px]" />
+      </template>
       {{ $t("settings.view_all_genres") }}
     </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+
 interface Props {
   count: number | undefined;
 }

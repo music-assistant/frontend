@@ -210,6 +210,8 @@
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { Eye, EyeClosed } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -864,7 +866,7 @@ const menuItems = computed(() => {
         : [];
     items.push({
       label: "tooltip.filter_genre",
-      icon: "mdi-compass-outline",
+      icon: GenreIcon,
       disabled: loading.value,
       active: activeIds.length > 0,
       closeOnContentClick: false,
@@ -910,9 +912,7 @@ const menuItems = computed(() => {
       label: params.value.hideEmptyFilter
         ? "tooltip.show_empty_genres"
         : "tooltip.hide_empty_genres",
-      icon: params.value.hideEmptyFilter
-        ? "mdi-compass"
-        : "mdi-compass-outline",
+      icon: params.value.hideEmptyFilter ? EyeClosed : Eye,
       action: toggleHideEmptyFilter,
       active: params.value.hideEmptyFilter,
       overflowAllowed: true,
