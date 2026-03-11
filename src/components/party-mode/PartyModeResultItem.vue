@@ -35,7 +35,7 @@
             (rateLimitingEnabled && boostTokens <= 0) || isBoostLoading
           "
           class="boost-btn action-btn"
-          :style="{ backgroundColor: boostBadgeColor }"
+          :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
           <Spinner v-if="isBoostLoading" class="size-4" />
@@ -49,7 +49,7 @@
             (rateLimitingEnabled && addQueueTokens <= 0) || isAddLoading
           "
           class="add-btn action-btn"
-          :style="{ backgroundColor: requestBadgeColor }"
+          :style="{ '--btn-bg': requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
           <Spinner v-if="isAddLoading" class="size-4" />
@@ -221,12 +221,10 @@ const artistName = computed(() => {
   color: var(--primary-foreground);
 }
 
-.action-btn.boost-btn {
-  color: white;
-}
-
+.action-btn.boost-btn,
 .action-btn.add-btn {
-  color: white;
+  background-color: var(--btn-bg) !important;
+  color: white !important;
 }
 
 .action-btn:disabled {

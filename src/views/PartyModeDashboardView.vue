@@ -12,7 +12,7 @@
     <!-- Access Error -->
     <div v-if="accessError" class="party-content access-error-content">
       <div class="access-error">
-        <ShieldAlert :size="80" class="text-destructive" />
+        <Speaker :size="80" class="text-destructive" />
         <h2 class="access-error-title">
           {{ $t("providers.party_mode.no_player_access") }}
         </h2>
@@ -80,7 +80,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Color from "color";
-import { Music, ShieldAlert } from "lucide-vue-next";
+import { Music, Speaker } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";

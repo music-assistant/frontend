@@ -8,7 +8,7 @@
     }"
     @click="onItemClick"
   >
-    <div class="queue-item-row">
+    <div class="queue-item-info">
       <div class="queue-position">
         <NowPlayingBadge
           v-if="absoluteIndex === currentQueueIndex && isPlaying"
@@ -43,19 +43,22 @@
     </div>
 
     <!-- Boost action (shown when expanded on upcoming items) -->
-    <div v-if="isExpanded && canBoost" class="queue-item-actions">
-      <Button
-        size="sm"
-        :disabled="boostDisabled || boosting"
-        class="boost-btn"
-        :style="{ backgroundColor: boostBadgeColor }"
-        @click.stop="$emit('boost', item)"
-      >
-        <Spinner v-if="boosting" class="size-4" />
-        <Rocket v-else :size="16" />
-        {{ $t("providers.party_mode.boost") }}
-      </Button>
-    </div>
+    <template v-if="isExpanded && canBoost">
+      <div class="queue-item-spacer"></div>
+      <div class="queue-item-actions">
+        <Button
+          size="sm"
+          :disabled="boostDisabled || boosting"
+          class="boost-btn"
+          :style="{ '--btn-bg': boostBadgeColor }"
+          @click.stop="$emit('boost', item)"
+        >
+          <Spinner v-if="boosting" class="size-4" />
+          <Rocket v-else :size="16" />
+          {{ $t("providers.party_mode.boost") }}
+        </Button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -155,12 +158,13 @@ const badgeLabel = computed(() =>
 <style scoped>
 .queue-item {
   display: flex;
-  flex-direction: column;
-  padding: 0 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
   background: rgba(var(--v-theme-surface-variant), 0.05);
-  border-radius: 8px;
-  min-height: 80px;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  min-height: 72px;
+  transition: background 0.2s ease;
   cursor: pointer;
 }
 
@@ -168,25 +172,31 @@ const badgeLabel = computed(() =>
   background: rgba(var(--v-theme-primary), 0.1);
 }
 
-.queue-item-row {
+.queue-item-info {
   display: flex;
   align-items: center;
   gap: 1rem;
-  min-height: 80px;
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-item-spacer {
+  display: none;
 }
 
 .queue-item-actions {
   display: flex;
   justify-content: center;
-  padding: 0 0 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .queue-item-actions .boost-btn {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.5px;
-  color: white;
-  flex: 1;
+  background-color: var(--btn-bg) !important;
+  color: white !important;
 }
 
 .queue-item-current {
@@ -268,5 +278,30 @@ const badgeLabel = computed(() =>
   max-width: 6rem;
   overflow: hidden;
   white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .queue-item--expanded {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+
+  .queue-item-spacer {
+    display: block;
+    height: 1px;
+    background: rgba(var(--v-theme-on-surface), 0.1);
+    margin: 0 0.5rem;
+  }
+
+  .queue-item-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .queue-item-actions .boost-btn {
+    flex: 1;
+  }
 }
 </style>
