@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: 8px 16px;
   background: rgba(var(--v-theme-surface), 0.9);
-  color: rgb(var(--v-theme-success));
+  color: var(--v-theme-success);
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;

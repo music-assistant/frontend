@@ -39,7 +39,7 @@ const label = computed(() =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: rgb(var(--v-theme-on-primary));
+  color: var(--v-theme-on-primary);
   margin-right: 0.5rem;
 }
 </style>

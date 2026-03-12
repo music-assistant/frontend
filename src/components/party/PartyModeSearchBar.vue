@@ -11,28 +11,29 @@
       <ArrowLeft :size="20" />
     </Button>
 
-    <div class="search-input-wrapper">
-      <Search :size="18" class="search-icon" />
-      <Input
+    <InputGroup class="search-input-group">
+      <InputGroupAddon>
+        <Search />
+      </InputGroupAddon>
+      <InputGroupInput
         :model-value="searchQuery"
         :placeholder="$t('providers.party.guest_page.search_placeholder')"
         autofocus
         inputmode="search"
         enterkeyhint="search"
-        class="search-input"
         @update:model-value="$emit('update:searchQuery', $event)"
         @keydown.enter="$emit('submit')"
       />
-      <Button
-        v-if="searchQuery"
-        variant="ghost"
-        size="icon-sm"
-        class="clear-btn"
-        @click="$emit('clear')"
-      >
-        <X :size="16" />
-      </Button>
-    </div>
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          v-if="searchQuery"
+          size="icon-sm"
+          @click="$emit('clear')"
+        >
+          <X :size="16" />
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
 
     <div class="filter-toggle">
       <!-- TODO -->
@@ -61,7 +62,12 @@
 import { computed } from "vue";
 import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/input/Input.vue";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { ArrowLeft, Music, Search, UserRound, X } from "lucide-vue-next";
 
 defineProps<{
@@ -72,7 +78,7 @@ defineProps<{
 }>();
 
 defineEmits<{
-  "update:searchQuery": [value: string | number];
+  "update:searchQuery": [value: string];
   "update:searchFilter": [value: string];
   clear: [];
   back: [];
@@ -110,31 +116,8 @@ const filters = computed(() => [
   pointer-events: auto;
 }
 
-.search-input-wrapper {
-  position: relative;
+.search-input-group {
   flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  color: var(--muted-foreground);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.search-input {
-  flex: 1;
-  padding-left: 2.5rem !important;
-  padding-right: 2.5rem !important;
-  height: 2.75rem !important;
-}
-
-.clear-btn {
-  position: absolute;
-  right: 0.25rem;
 }
 
 .filter-toggle {

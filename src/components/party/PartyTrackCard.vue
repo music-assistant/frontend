@@ -264,7 +264,7 @@ const sizeClass = computed(() => {
 }
 
 .now-playing-overlay :deep(.now-playing-icon .bar) {
-  background: rgb(var(--v-theme-primary));
+  background: var(--v-theme-primary);
 }
 
 .track-artwork.size-medium {

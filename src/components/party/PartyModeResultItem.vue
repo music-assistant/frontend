@@ -38,7 +38,7 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
-          <Spinner v-if="isBoostLoading" class="size-4" />
+          <Spinner v-if="isBoostLoading" :size="16" />
           <Rocket v-else :size="16" />
           {{ $t("providers.party.boost") }}
         </Button>
@@ -52,7 +52,7 @@
           :style="{ '--btn-bg': requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
-          <Spinner v-if="isAddLoading" class="size-4" />
+          <Spinner v-if="isAddLoading" :size="16" />
           <ListPlus v-else :size="16" />
           {{ $t("providers.party.request") }}
         </Button>
@@ -224,7 +224,7 @@ const artistName = computed(() => {
 .action-btn.boost-btn,
 .action-btn.add-btn {
   background-color: var(--btn-bg) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
+  color: var(--v-theme-on-primary) !important;
 }
 
 .action-btn:disabled {

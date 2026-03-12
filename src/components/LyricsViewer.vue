@@ -79,6 +79,7 @@ const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 const lyricsContentRef = ref<HTMLElement | null>(null);
 const lineRefs = new Map<number, HTMLElement>();
 const isProgrammaticScroll = ref(false);
+let programmaticScrollCooldown: ReturnType<typeof setTimeout> | null = null;
 const userManuallyScrolled = ref(false);
 let manualScrollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -295,7 +296,13 @@ const tickScroll = () => {
 
   if (t >= 1) {
     scrollDuration = 0;
-    isProgrammaticScroll.value = false;
+    // Keep the flag true briefly so trailing momentum scroll events
+    // on touch devices aren't misidentified as manual scrolls.
+    if (programmaticScrollCooldown) clearTimeout(programmaticScrollCooldown);
+    programmaticScrollCooldown = setTimeout(() => {
+      isProgrammaticScroll.value = false;
+      programmaticScrollCooldown = null;
+    }, 100);
   }
 };
 
@@ -399,6 +406,9 @@ watch(
 onBeforeUnmount(() => {
   if (manualScrollTimer) {
     clearTimeout(manualScrollTimer);
+  }
+  if (programmaticScrollCooldown) {
+    clearTimeout(programmaticScrollCooldown);
   }
   lineRefs.clear();
 });

@@ -39,7 +39,6 @@
             :position="lyricsElapsedTime"
             :duration="store.curQueueItem?.duration"
             :stream-details="store.curQueueItem?.streamdetails"
-            text-color="#FFFFFF"
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
           />
@@ -90,7 +89,6 @@
               :position="lyricsElapsedTime"
               :duration="store.curQueueItem?.duration"
               :stream-details="store.curQueueItem?.streamdetails"
-              text-color="#FFFFFF"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
             />
@@ -691,7 +689,7 @@ watch(displayLyrics, (enabled) => {
   max-height: 50%;
 }
 
-.lyrics-section :deep(.lyrics-scroll-container) {
+.lyrics-section :deep(.lyrics-content--synced) {
   padding: 15vh 0;
 }
 
@@ -790,7 +788,7 @@ watch(displayLyrics, (enabled) => {
   min-height: 0;
 }
 
-.karaoke-lyrics :deep(.lyrics-scroll-container) {
+.karaoke-lyrics :deep(.lyrics-content--synced) {
   padding: 20vh 0;
 }
 
@@ -974,7 +972,7 @@ watch(displayLyrics, (enabled) => {
     max-width: 100%;
   }
 
-  .karaoke-lyrics :deep(.lyrics-scroll-container) {
+  .karaoke-lyrics :deep(.lyrics-content--synced) {
     padding: 10vh 0;
   }
 
