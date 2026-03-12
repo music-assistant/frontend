@@ -42,6 +42,8 @@
             text-color="#FFFFFF"
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
+            :anticipation="10"
+            :external-loading="lyricsLoading"
           />
         </div>
 
@@ -93,6 +95,7 @@
               text-color="#FFFFFF"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
+              :external-loading="lyricsLoading"
             />
           </div>
         </div>
@@ -227,10 +230,10 @@ const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
   synced: null,
 });
+const lyricsLoading = ref(false);
 
 const fetchLyrics = async () => {
   currentLyrics.value = { plain: null, synced: null };
-  if (!displayLyrics.value) return;
 
   const mediaItem = store.curQueueItem?.media_item;
   if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
@@ -244,6 +247,7 @@ const fetchLyrics = async () => {
     return;
   }
 
+  lyricsLoading.value = true;
   try {
     const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
     currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
@@ -256,6 +260,8 @@ const fetchLyrics = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch track lyrics:", error);
+  } finally {
+    lyricsLoading.value = false;
   }
 };
 
@@ -606,17 +612,19 @@ watch(
   },
 );
 
-// Fetch lyrics when track changes
+// Fetch lyrics when track changes, and pre-fetch next track lyrics
 watch(
   () => store.curQueueItem?.media_item?.item_id,
-  () => fetchLyrics(),
+  async () => {
+    await fetchLyrics();
+    // Pre-fetch next track lyrics so they're cached when it starts playing
+    const nextItem = store.activePlayerQueue?.next_item;
+    if (nextItem?.media_item?.media_type === MediaType.TRACK) {
+      api.getTrackLyrics(nextItem.media_item as Track).catch(() => {});
+    }
+  },
   { immediate: true },
 );
-
-// Re-fetch lyrics when display_lyrics is toggled on
-watch(displayLyrics, (enabled) => {
-  if (enabled) fetchLyrics();
-});
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
   <div class="lyrics-container">
-    <div v-if="loading" class="lyrics-loading">
+    <div v-if="loading || externalLoading" class="lyrics-loading">
       <Spinner class="size-6" />
       <div>{{ $t("loading_lyrics") }}</div>
     </div>
@@ -58,6 +58,8 @@ interface Props {
   debugMode?: boolean;
   lyrics?: string | null;
   lrcLyrics?: string | null;
+  anticipation?: number;
+  externalLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -69,6 +71,8 @@ const props = withDefaults(defineProps<Props>(), {
   debugMode: false,
   lyrics: undefined,
   lrcLyrics: undefined,
+  anticipation: 0,
+  externalLoading: false,
 });
 
 // Core lyrics state
@@ -101,14 +105,19 @@ const setLineRef = (el: HTMLElement | null, index: number) => {
   }
 };
 
-// True when playback is before the first lyric timestamp — shows intro screen
+// True when playback is before the first lyric timestamp — shows intro screen.
+// When anticipation is set (karaoke mode), the intro screen is dismissed early
+// so the singer can see the upcoming first line before they need to sing it.
 const beforeFirstLyric = computed(() => {
   if (!hasTimestamps.value || !parsedLyrics.value.length) {
     return false;
   }
   const firstLyricTime = parsedLyrics.value[0].time;
   const currentPosition = props.position || 0;
-  return activeLyricIndex.value === -1 && currentPosition < firstLyricTime;
+  return (
+    activeLyricIndex.value === -1 &&
+    currentPosition < firstLyricTime - props.anticipation
+  );
 });
 
 const artistName = computed(() => {
@@ -239,8 +248,15 @@ const fetchLyrics = () => {
   }
 };
 
-// Find active lyric index based on current position — no look-ahead.
-// The highlight always matches the actual timestamp exactly.
+// How far ahead (in seconds) the highlight activates before the lyric timestamp.
+// With the 2.5s ease transition, the line becomes perceptually "active" (visually
+// ~50-60% transitioned) about 1s into the animation — so a 1.0s lead makes the
+// highlight feel like it lands right on the beat.
+const HIGHLIGHT_LEAD_SECONDS = 1.0;
+
+// Find active lyric index based on current position.
+// The highlight activates HIGHLIGHT_LEAD_SECONDS early so the CSS transition
+// completes right when the lyric timestamp is reached.
 const findActiveLyricIndex = (positionMs: number): number => {
   let index = -1;
   for (let i = 0; i < parsedLyrics.value.length; i++) {
@@ -371,8 +387,12 @@ watch(
       return;
     }
 
-    const positionMs = Math.round(newPosition * 1000);
-    const newActiveIndex = findActiveLyricIndex(positionMs);
+    // Shift position forward by the highlight lead time so the CSS transition
+    // finishes exactly when the lyric timestamp is reached.
+    const highlightPositionMs = Math.round(
+      (newPosition + HIGHLIGHT_LEAD_SECONDS) * 1000,
+    );
+    const newActiveIndex = findActiveLyricIndex(highlightPositionMs);
 
     // When the active lyric changes, begin scrolling toward the next one
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
@@ -381,9 +401,11 @@ watch(
       if (!userManuallyScrolled.value) {
         const nextIndex = newActiveIndex + 1;
         if (nextIndex < parsedLyrics.value.length) {
-          // Time until the next lyric activates — scroll over this duration
+          // Time until the next lyric's highlight activates (accounting for lead)
           const timeUntilNext =
-            parsedLyrics.value[nextIndex].time - newPosition;
+            parsedLyrics.value[nextIndex].time -
+            newPosition -
+            HIGHLIGHT_LEAD_SECONDS;
           nextTick(() => beginScrollTo(nextIndex, timeUntilNext));
         }
       }
@@ -467,19 +489,21 @@ onBeforeUnmount(() => {
 
 .lyrics-line {
   padding: 10px 4px;
-  font-size: 1.1em;
-  opacity: 0.5;
+  font-size: 1.4em;
+  font-weight: bold;
+  opacity: 0.35;
   margin: 8px 0;
-  filter: blur(1px);
-  text-shadow: 0 0 1px var(--text-color);
+  transform: scale(0.78);
+  transform-origin: center center;
+  will-change: transform, opacity;
+  transition:
+    opacity 2.5s ease,
+    transform 2.5s ease;
 }
 
 .lyrics-line.active {
   opacity: 1;
-  font-size: 1.4em;
-  font-weight: bold;
   color: v-bind(textColor);
-  filter: blur(0);
-  text-shadow: none;
+  transform: scale(1);
 }
 </style>
