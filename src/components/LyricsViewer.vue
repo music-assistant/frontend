@@ -290,7 +290,7 @@ const computeTranslateY = (index: number) => {
   if (!el || !container) return;
 
   const containerHeight = container.clientHeight;
-  const anchorY = containerHeight * 0.25;
+  const anchorY = containerHeight * 0.35;
   const lineTop = el.offsetTop;
   const lineHeight = el.offsetHeight;
 
