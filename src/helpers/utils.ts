@@ -27,6 +27,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import Color from "color";
+import { getPaletteSync } from "colorthief";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
 
 export const openLinkInNewTab = function (url: string) {
