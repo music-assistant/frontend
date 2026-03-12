@@ -46,10 +46,7 @@ import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import {
-  companionMode,
-  initializeCompanionIntegration,
-} from "./plugins/companion";
+import { initializeCompanionIntegration } from "./plugins/companion";
 // import {
 //   subscribeToHAProperties,
 //   unsubscribeFromHAProperties,
@@ -59,7 +56,11 @@ import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
-import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import {
+  initializeWebPlayerModeSync,
+  webPlayer,
+  WebPlayerMode,
+} from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
 const theme = useTheme();
@@ -252,39 +253,6 @@ const completeInitialization = async () => {
     store.enabledPlugins.delete("party_mode");
   }
 
-  // Enable Sendspin if available and not explicitly disabled
-  // Sendspin works over WebRTC DataChannel which requires signaling via the API server
-  const webPlayerEnabledPref =
-    localStorage.getItem("frontend.settings.web_player_enabled") || "true";
-  const browserControlsEnabledPref =
-    localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
-
-  // Disable web player for party mode guests, companion mode, and party dashboard
-  const isPartyDashboard = router.currentRoute.value.path.startsWith("/party");
-  if (isPartyModeGuest || companionMode.value || isPartyDashboard) {
-    webPlayer.setMode(WebPlayerMode.DISABLED);
-  } else if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    // sendspin enabled, browser controls enabled
-    webPlayer.setMode(WebPlayerMode.SENDSPIN_WITH_CONTROLS);
-  } else if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref === "false"
-  ) {
-    // sendspin enabled but no browser controls
-    webPlayer.setMode(WebPlayerMode.SENDSPIN_ONLY);
-  } else if (
-    webPlayerEnabledPref === "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    // sendspin disabled but browser controls allowed
-    webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
-  } else {
-    webPlayer.setMode(WebPlayerMode.DISABLED);
-  }
-
   const urlParams = new URLSearchParams(window.location.search);
   if (
     (urlParams.get("onboard") === "true" ||
@@ -301,6 +269,7 @@ const completeInitialization = async () => {
   // from the URL hash. The router config already redirects "/" to "/discover"
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
+  await initializeWebPlayerModeSync();
 
   // Initialize companion app integration
   if (api.baseUrl) {

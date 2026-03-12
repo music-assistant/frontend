@@ -1068,7 +1068,8 @@
         "select_players": "Selecteer spelers",
         "select_providers": "Selecteer providers",
         "save_changes": "Wijzigingen opslaan",
-        "update_password": "Wachtwoord bijwerken"
+        "update_password": "Wachtwoord bijwerken",
+        "guest_role": "Gast"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1108,7 +1109,7 @@
         "oauth_waiting_message": "Er is een browservenster geopend. Meld je eerst aan bij Home Assistant en keer vervolgens terug naar deze pagina.",
         "waiting_for_auth": "Wachten op authenticatie...",
         "connection_failed": "Verbinding mislukt",
-        "try_again": "Probeer opnieuw",
+        "try_again": "Probeer het opnieuw",
         "error_unknown": "Er is een onbekende fout opgetreden",
         "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
         "error_oauth_failed": "Authenticatie met Home Assistant is mislukt.",
@@ -1140,7 +1141,7 @@
         "status_establishing": "Beveiligde verbinding tot stand brengen...",
         "cancel": "Annuleren",
         "connection_failed": "Verbinding mislukt",
-        "retry": "Probeer opnieuw",
+        "retry": "Probeer het opnieuw",
         "error_unknown": "Er is een onbekende fout opgetreden",
         "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
         "error_server_not_found": "Server niet gevonden. Zorg ervoor dat je Music Assistant server actief is en dat Externe Toegang is ingeschakeld.",
@@ -1359,7 +1360,6 @@
         "read_only": "Alleen-lezen speleropties voor speler {0}"
     },
     "select_sound_mode": "Selecteer geluidsmodus",
-    "chunk_load_error": "Er is een nieuwe versie van de frontend beschikbaar.",
     "refresh": "Vernieuwen",
     "enqueue": "Opties voor toevoegen aan wachtrij",
     "queue_option": {
@@ -1373,5 +1373,48 @@
     "playlist_mix_allowed": "Deze mediatypen kunnen gecombineerd worden.",
     "playlist_mix_not_allowed": "Deze provider ondersteunt het combineren van mediatypen in afspeellijsten niet. Selecteer voor welk mediatype je een afspeellijst wilt maken:",
     "playlist_create_provider_error": "Kan provider niet bereiken.",
-    "playlist_create_no_type_selected": "Geen mediatype geselecteerd."
+    "playlist_create_no_type_selected": "Geen mediatype geselecteerd.",
+    "providers": {
+        "party_mode": {
+            "guest_page": {
+                "add_available": "Toevoegen Beschikbaar",
+                "add_queue_disabled": "Toevoegen aan wachtrij is door de host uitgeschakeld.",
+                "add_queue_limit_reached": "Limiet voor toevoegen aan wachtrij bereikt. Toevoegen kan weer over {0} minuten.",
+                "add_to_queue_failed": "Toevoegen aan de wachtrij mislukt. Probeer het opnieuw.",
+                "boost_available": "Boost beschikbaar",
+                "boost_disabled": "Boost is uitgeschakeld door de host.",
+                "boost_limit_reached": "Boostlimiet bereikt. Volgende boost beschikbaar over {0} minuten.",
+                "current_queue": "Huidige Wachtrij",
+                "filter_songs": "Nummers",
+                "item_added_to_queue": "\"{0}\" aan wachtrij toegevoegd",
+                "item_boosted": "\"{0}\" geboost",
+                "load_artist_tracks_failed": "Het laden van de artiestnummers is mislukt. Probeer het opnieuw.",
+                "loading_tracks": "Nummers worden geladen...",
+                "no_results_for": "Geen resultaten gevonden voor \"{0}\"",
+                "no_tracks_for_artist": "Er zijn geen nummers gevonden van deze artiest.",
+                "queue_empty": "Wachtrij is leeg",
+                "search_failed": "Zoeken mislukt. Probeer het opnieuw.",
+                "search_placeholder": "Zoek naar nummers of artiesten...",
+                "search_results_count": "Zoekresultaten ({0})",
+                "skip_disabled": "Nummer overslaan is door de host uitgeschakeld.",
+                "skip_failed": "Overslaan van het nummer is mislukt. Probeer het opnieuw.",
+                "skip_limit_reached": "Limiet voor overslaan bereikt. Overslaan kan weer over {0} minuten.",
+                "skip": "Overslaan",
+                "song_skipped": "Nummer overgeslagen!",
+                "try_different_search": "Probeer een andere zoekterm",
+                "unknown_artist": "Onbekende Artiest",
+                "view_songs": "Bekijk Nummers"
+            },
+            "add": "Toevoegen",
+            "boost": "Boost",
+            "check_network": "Controleer je netwerkinstellingen",
+            "enable_in_settings": "Inschakelen via de Party Mode providerinstellingen",
+            "get_started": "Zet wat muziek op om het feest op gang te brengen!",
+            "guest_access_disabled": "Gasttoegang uitgeschakeld",
+            "nothing_playing": "Er wordt nu niets afgespeeld",
+            "qr_failed": "Genereren van QR-code mislukt",
+            "request": "Aanvragen",
+            "scan_to_join": "Scan om mee te doen!"
+        }
+    }
 }

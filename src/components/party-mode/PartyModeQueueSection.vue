@@ -51,6 +51,13 @@
         :is-playing="isPlaying"
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
+        :boost-enabled="boostEnabled"
+        :rate-limiting-enabled="rateLimitingEnabled"
+        :boost-tokens="boostTokens"
+        :boosting="boostingItemId === item.queue_item_id"
+        :is-expanded="expandedQueueItemId === item.queue_item_id"
+        @boost="handleBoost"
+        @toggle-expand="toggleExpandedItem"
       />
       <!-- Loading indicator for infinite scroll -->
       <div v-if="loadingMoreQueueItems" class="loading-more">
@@ -83,20 +90,33 @@ const props = defineProps<{
   skipTokenCountdown: string;
   boostBadgeColor: string;
   requestBadgeColor: string;
+  boostEnabled: boolean;
+  boostTokens: number;
+  boostingItemId: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   skip: [];
   queueScroll: [event: Event];
+  boostQueueItem: [item: QueueItem];
 }>();
+
+const expandedQueueItemId = ref("");
+
+const toggleExpandedItem = (queueItemId: string) => {
+  expandedQueueItemId.value =
+    expandedQueueItemId.value === queueItemId ? "" : queueItemId;
+};
+
+const handleBoost = (item: QueueItem) => {
+  expandedQueueItemId.value = "";
+  emit("boostQueueItem", item);
+};
 
 const listRef = ref<HTMLElement | null>(null);
 
 // Expose the list ref so the parent's composable can use it for auto-scroll
 defineExpose({ listRef });
-
-// Sync listRef to the composable's queueListRef via a watcher pattern
-// The parent will set up the connection
 </script>
 
 <style scoped>

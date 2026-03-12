@@ -9,7 +9,20 @@
       class="background-image"
       :style="{ backgroundImage: `url(${albumArtUrl})` }"
     ></div>
-    <div class="party-content">
+    <!-- Access Error -->
+    <div v-if="accessError" class="party-content access-error-content">
+      <div class="access-error">
+        <v-icon size="80" color="error">mdi-lock-alert</v-icon>
+        <h2 class="access-error-title">
+          {{ $t("providers.party_mode.no_player_access") }}
+        </h2>
+        <p class="access-error-message">
+          {{ $t("providers.party_mode.no_player_access_detail") }}
+        </p>
+      </div>
+    </div>
+
+    <div v-else class="party-content">
       <!-- QR Code -->
       <div class="qr-section">
         <PartyModeQR />
@@ -76,8 +89,22 @@ const theme = useTheme();
 const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
+const refreshPartyPlayer = async () => {
+  const partyPlayerId = await api.sendCommand<string | null>(
+    "party_mode/player",
+  );
+  accessError.value = "";
+  if (partyPlayerId) {
+    store.activePlayerId = partyPlayerId;
+    if (!api.players[partyPlayerId]) {
+      accessError.value = "no_access";
+    }
+  }
+};
+
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
+const accessError = ref("");
 // Badge colors (hex values from config)
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
@@ -352,14 +379,7 @@ onMounted(async () => {
 
   // Set active player from party mode config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
-  if (!store.activePlayerId) {
-    const partyPlayerId = await api.sendCommand<string | null>(
-      "party_mode/player",
-    );
-    if (partyPlayerId) {
-      store.activePlayerId = partyPlayerId;
-    }
-  }
+  await refreshPartyPlayer();
 
   // Fetch party mode configuration via shared composable
   const config = await fetchConfig();
@@ -398,7 +418,13 @@ onMounted(async () => {
     fetchQueueItems();
   });
 
-  unsubscribeFunctions.value = [unsub1, unsub2];
+  // Subscribe to provider updates to detect party mode player config changes
+  const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    await refreshPartyPlayer();
+    fetchQueueItems(true);
+  });
+
+  unsubscribeFunctions.value = [unsub1, unsub2, unsub3];
 });
 
 // Cleanup when leaving the party view
@@ -555,6 +581,32 @@ watch(
 .track-slide-enter-from,
 .track-slide-leave-to {
   opacity: 0;
+}
+
+/* Access error state */
+.access-error-content {
+  justify-content: center;
+}
+
+.access-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.access-error-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.access-error-message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 400px;
 }
 
 /* Responsive adjustments */

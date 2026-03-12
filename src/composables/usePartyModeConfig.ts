@@ -62,12 +62,14 @@ function invalidate() {
 let subscribed = false;
 
 /**
- * Subscribe to PROVIDERS_UPDATED so the shared config ref
- * auto-refreshes whenever the party_mode provider is reloaded.
+ * Subscribe to PROVIDERS_UPDATED and CORE_STATE_UPDATED so the shared
+ * config ref auto-refreshes whenever the party_mode provider is reloaded
+ * or remote access is toggled.
  */
 function ensureSubscribed() {
   if (subscribed) return;
   subscribed = true;
+
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     const hasPartyMode = Object.values(api.providers).some(
       (p) => p.domain === "party_mode",
@@ -78,6 +80,18 @@ function ensureSubscribed() {
     } else {
       config.value = null;
       loaded.value = true;
+    }
+  });
+
+  // Remote access toggle fires CORE_STATE_UPDATED; refresh config so the
+  // join URL switches between local and remote.
+  api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
+    const hasPartyMode = Object.values(api.providers).some(
+      (p) => p.domain === "party_mode",
+    );
+    if (hasPartyMode) {
+      invalidate();
+      await fetchConfig(true);
     }
   });
 }
