@@ -35,7 +35,9 @@ const isActive = (url: string) =>
 const handleClick = (item: NavItem, event: Event) => {
   if (item.openInNewTab) {
     event.preventDefault();
-    window.open(router.resolve(item.url).href, "_blank");
+    const resolved = router.resolve(item.url).href;
+    const fullUrl = new URL(resolved, window.location.href).href;
+    window.open(fullUrl, '_blank');
   }
   if (isMobile.value) {
     setOpenMobile(false);
