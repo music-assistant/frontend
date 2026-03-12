@@ -22,18 +22,20 @@
       </div>
     </div>
 
-    <div v-else class="party-content">
-      <!-- QR Code and Lyrics -->
-      <div
-        :class="[
-          'qr-section',
-          { 'qr-section--with-lyrics': displayLyrics && !isCompact },
-        ]"
-      >
-        <div class="qr-wrapper">
+    <div
+      v-else
+      :class="[
+        'party-content',
+        { 'party-content--karaoke': karaokeMode },
+      ]"
+    >
+      <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
+      <template v-if="karaokeMode">
+        <div class="karaoke-qr">
           <PartyModeQR />
         </div>
-        <div v-if="displayLyrics && !isCompact" class="lyrics-section">
+
+        <div class="karaoke-lyrics">
           <LyricsViewer
             :media-item="store.curQueueItem?.media_item"
             :position="lyricsElapsedTime"
@@ -44,37 +46,96 @@
             :lrc-lyrics="currentLyrics.synced"
           />
         </div>
-      </div>
 
-      <!-- Track Stack or Empty State -->
-      <div class="track-stack">
-        <!-- Empty State -->
+        <div class="karaoke-track-stack">
+          <div
+            v-if="!store.curQueueItem && !visibleItems.length"
+            class="empty-state empty-state--karaoke"
+          >
+            <Music :size="60" class="empty-icon" />
+            <h2 class="empty-title">
+              {{ $t("providers.party_mode.nothing_playing") }}
+            </h2>
+          </div>
+          <TransitionGroup
+            v-else
+            name="track-slide"
+            tag="div"
+            class="track-list track-list--karaoke"
+          >
+            <PartyTrackCard
+              v-for="item in visibleItems"
+              :key="item.queue_item_id"
+              :queue-item="item"
+              :position="getPosition(item)"
+              :is-playing="isPlaying"
+              :request-badge-color="requestBadgeColor"
+              :boost-badge-color="boostBadgeColor"
+            />
+          </TransitionGroup>
+        </div>
+      </template>
+
+      <!-- Normal Mode -->
+      <template v-else>
+        <!-- QR Code and Lyrics -->
         <div
-          v-if="!store.curQueueItem && !visibleItems.length"
-          class="empty-state"
+          :class="[
+            'qr-section',
+            { 'qr-section--with-lyrics': displayLyrics },
+          ]"
         >
-          <Music :size="120" class="empty-icon" />
-          <h2 class="empty-title">
-            {{ $t("providers.party_mode.nothing_playing") }}
-          </h2>
-          <p class="empty-message">
-            {{ $t("providers.party_mode.get_started") }}
-          </p>
+          <div class="qr-wrapper">
+            <PartyModeQR />
+          </div>
+          <div v-if="displayLyrics" class="lyrics-section">
+            <LyricsViewer
+              :media-item="store.curQueueItem?.media_item"
+              :position="lyricsElapsedTime"
+              :duration="store.curQueueItem?.duration"
+              :stream-details="store.curQueueItem?.streamdetails"
+              text-color="#FFFFFF"
+              :lyrics="currentLyrics.plain"
+              :lrc-lyrics="currentLyrics.synced"
+            />
+          </div>
         </div>
 
-        <!-- Track List -->
-        <TransitionGroup v-else name="track-slide" tag="div" class="track-list">
-          <PartyTrackCard
-            v-for="item in visibleItems"
-            :key="item.queue_item_id"
-            :queue-item="item"
-            :position="getPosition(item)"
-            :is-playing="isPlaying"
-            :request-badge-color="requestBadgeColor"
-            :boost-badge-color="boostBadgeColor"
-          />
-        </TransitionGroup>
-      </div>
+        <!-- Track Stack or Empty State -->
+        <div class="track-stack">
+          <!-- Empty State -->
+          <div
+            v-if="!store.curQueueItem && !visibleItems.length"
+            class="empty-state"
+          >
+            <Music :size="120" class="empty-icon" />
+            <h2 class="empty-title">
+              {{ $t("providers.party_mode.nothing_playing") }}
+            </h2>
+            <p class="empty-message">
+              {{ $t("providers.party_mode.get_started") }}
+            </p>
+          </div>
+
+          <!-- Track List -->
+          <TransitionGroup
+            v-else
+            name="track-slide"
+            tag="div"
+            class="track-list"
+          >
+            <PartyTrackCard
+              v-for="item in visibleItems"
+              :key="item.queue_item_id"
+              :queue-item="item"
+              :position="getPosition(item)"
+              :is-playing="isPlaying"
+              :request-badge-color="requestBadgeColor"
+              :boost-badge-color="boostBadgeColor"
+            />
+          </TransitionGroup>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -127,6 +188,7 @@ const refreshPartyPlayer = async () => {
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
+const karaokeMode = ref(false); // Whether karaoke mode layout is active
 const accessError = ref("");
 // Badge colors (hex values from config)
 const requestBadgeColor = ref("");
@@ -220,8 +282,7 @@ const stopTick = () => {
 
 const lyricsElapsedTime = computed(() => {
   void nowTick.value;
-  const playing =
-    store.activePlayer?.playback_state === PlaybackState.PLAYING;
+  const playing = store.activePlayer?.playback_state === PlaybackState.PLAYING;
   const queue = store.activePlayerQueue;
 
   if (playing && queue?.active && displayLyrics.value) {
@@ -259,9 +320,11 @@ const visibleItems = computed(() => {
   const currentIndex = store.activePlayerQueue.current_index || 0;
   const offset = lastFetchedOffset.value;
 
-  // In compact mode (small screens) show only current + next items
-  const startDelta = isCompact.value ? 0 : -2;
-  const count = isCompact.value ? 3 : 5;
+  // Karaoke mode: current + next only; compact: current + 2 next; normal: 2 prev + current + 2 next
+  const isKaraokeCompact = karaokeMode.value && isCompact.value;
+  const isKaraoke = karaokeMode.value && !isCompact.value;
+  const startDelta = isCompact.value || karaokeMode.value ? 0 : -2;
+  const count = isKaraokeCompact ? 1 : isKaraoke ? 2 : isCompact.value ? 3 : 5;
   const items: QueueItem[] = [];
 
   for (let i = 0; i < count; i++) {
@@ -504,6 +567,9 @@ onMounted(async () => {
     if (config.display_lyrics !== undefined) {
       displayLyrics.value = config.display_lyrics;
     }
+    if (config.karaoke_mode !== undefined) {
+      karaokeMode.value = config.display_lyrics && config.karaoke_mode;
+    }
     requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
   } else {
@@ -559,12 +625,14 @@ watch(partyConfig, (newConfig) => {
     albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
     showPlayerControls.value = newConfig.show_player_controls ?? false;
     displayLyrics.value = newConfig.display_lyrics ?? false;
+    karaokeMode.value = (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
   } else {
     albumArtBackgroundEnabled.value = true;
     showPlayerControls.value = false;
     displayLyrics.value = false;
+    karaokeMode.value = false;
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
   }
@@ -725,6 +793,68 @@ watch(displayLyrics, (enabled) => {
   }
 }
 
+/* ==================== Karaoke Mode Layout ==================== */
+.party-content--karaoke {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.karaoke-qr {
+  position: absolute;
+  top: 2vw;
+  left: 2vw;
+  z-index: 10;
+  max-width: 20vw;
+}
+
+.karaoke-qr :deep(.qr-display) {
+  padding: clamp(0.5rem, 1vw, 1.5rem);
+}
+
+.karaoke-lyrics {
+  flex: 1;
+  width: 100%;
+  max-width: 70vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.karaoke-lyrics :deep(.lyrics-scroll-container) {
+  padding: 20vh 0;
+}
+
+.karaoke-lyrics :deep(.lyrics-line) {
+  font-size: clamp(1.2rem, 2.5vw, 2.5rem);
+}
+
+.karaoke-track-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 60vw;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+
+.track-list--karaoke {
+  flex-direction: row;
+  gap: 2vw;
+  height: auto;
+  width: 100%;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.empty-state--karaoke {
+  height: auto;
+  padding: 1rem;
+}
+
 /* Transition animations */
 .track-slide-move {
   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -771,6 +901,21 @@ watch(displayLyrics, (enabled) => {
   max-width: 400px;
 }
 
+/* Karaoke at 1024px breakpoint */
+@media (max-width: 1024px) {
+  .karaoke-qr {
+    max-width: 25vw;
+  }
+
+  .karaoke-lyrics {
+    max-width: 85vw;
+  }
+
+  .karaoke-track-stack {
+    max-width: 80vw;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .party-content {
@@ -789,17 +934,20 @@ watch(displayLyrics, (enabled) => {
 
   .qr-section--with-lyrics {
     flex-direction: row;
+    flex: 1 1 0;
+    min-height: 0;
     gap: 1rem;
   }
 
   .qr-section--with-lyrics .qr-wrapper {
     flex: 1 1 50%;
-    max-height: none;
+    min-height: 0;
   }
 
   .qr-section--with-lyrics .lyrics-section {
     flex: 1 1 50%;
-    max-height: none;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .track-stack {
@@ -847,6 +995,22 @@ watch(displayLyrics, (enabled) => {
 }
 
 @media (max-width: 768px) {
+  .karaoke-qr {
+    display: none;
+  }
+
+  .karaoke-lyrics {
+    max-width: 100%;
+  }
+
+  .karaoke-lyrics :deep(.lyrics-scroll-container) {
+    padding: 10vh 0;
+  }
+
+  .karaoke-track-stack {
+    max-width: 100%;
+  }
+
   .party-content {
     justify-content: stretch;
     padding: 0.5rem;
@@ -856,6 +1020,21 @@ watch(displayLyrics, (enabled) => {
   .qr-section {
     flex: 1 1 0;
     max-height: none;
+  }
+
+  .qr-section--with-lyrics {
+    flex-direction: column;
+    height: auto;
+    align-self: auto;
+  }
+
+  .qr-section--with-lyrics .qr-wrapper {
+    flex: 1 1 auto;
+    max-height: none;
+  }
+
+  .lyrics-section {
+    display: none;
   }
 
   .track-stack {

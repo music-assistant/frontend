@@ -1174,6 +1174,7 @@ export interface PartyModeConfig {
   album_art_background: boolean;
   show_player_controls: boolean;
   display_lyrics: boolean;
+  karaoke_mode: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
   qr_show_instruction_text: boolean;
