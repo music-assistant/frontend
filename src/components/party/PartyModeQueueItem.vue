@@ -149,9 +149,7 @@ const badgeIconComponent = computed(() =>
 );
 
 const badgeLabel = computed(() =>
-  isBoosted.value
-    ? $t("providers.party.boost")
-    : $t("providers.party.request"),
+  isBoosted.value ? $t("providers.party.boost") : $t("providers.party.request"),
 );
 </script>
 

@@ -142,8 +142,7 @@ watch(partyConfig, (newConfig) => {
     instructionText.value =
       newConfig.qr_show_instruction_text === false
         ? ""
-        : (newConfig.qr_instruction_text ??
-          $t("providers.party.scan_to_join"));
+        : (newConfig.qr_instruction_text ?? $t("providers.party.scan_to_join"));
   } else {
     instructionText.value = $t("providers.party.scan_to_join");
   }

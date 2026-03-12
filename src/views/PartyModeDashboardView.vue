@@ -169,9 +169,7 @@ const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
 const refreshPartyPlayer = async () => {
-  const partyPlayerId = await api.sendCommand<string | null>(
-    "party/player",
-  );
+  const partyPlayerId = await api.sendCommand<string | null>("party/player");
   accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;

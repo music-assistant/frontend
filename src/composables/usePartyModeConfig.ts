@@ -31,9 +31,7 @@ async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
   loading.value = true;
   fetchPromise = (async () => {
     try {
-      const result = (await api.sendCommand(
-        "party/config",
-      )) as PartyModeConfig;
+      const result = (await api.sendCommand("party/config")) as PartyModeConfig;
       config.value = result;
       loaded.value = true;
       return result;

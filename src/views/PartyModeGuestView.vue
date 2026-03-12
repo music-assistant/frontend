@@ -155,9 +155,7 @@
     >
       <Search :size="64" class="text-muted-foreground" />
       <p>
-        {{
-          $t("providers.party.guest_page.no_results_for", [searchQuery])
-        }}
+        {{ $t("providers.party.guest_page.no_results_for", [searchQuery]) }}
       </p>
       <p class="empty-hint">
         {{ $t("providers.party.guest_page.try_different_search") }}
@@ -385,9 +383,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
     const message =
       position === "next"
         ? $t("providers.party.guest_page.item_boosted", [item.name])
-        : $t("providers.party.guest_page.item_added_to_queue", [
-            item.name,
-          ]);
+        : $t("providers.party.guest_page.item_added_to_queue", [item.name]);
     toast.success(message);
   } catch (error) {
     console.error("Failed to add to queue:", error);
@@ -406,9 +402,7 @@ const boostQueueItem = async (item: QueueItem) => {
   if (rateLimitingEnabled.value && boostTokens.value <= 0) {
     const minutesUntilNext = getTimeUntilNextToken();
     toast.warning(
-      $t("providers.party.guest_page.boost_limit_reached", [
-        minutesUntilNext,
-      ]),
+      $t("providers.party.guest_page.boost_limit_reached", [minutesUntilNext]),
     );
     return;
   }
@@ -446,9 +440,7 @@ const skipCurrentSong = async () => {
   if (rateLimitingEnabled.value && skipSongTokens.value <= 0) {
     const minutesUntilNext = getTimeUntilNextSkipToken();
     toast.warning(
-      $t("providers.party.guest_page.skip_limit_reached", [
-        minutesUntilNext,
-      ]),
+      $t("providers.party.guest_page.skip_limit_reached", [minutesUntilNext]),
     );
     return;
   }
@@ -490,9 +482,7 @@ let cleanupProvidersSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
   try {
-    const partyPlayerId = await api.sendCommand<string | null>(
-      "party/player",
-    );
+    const partyPlayerId = await api.sendCommand<string | null>("party/player");
     partyModeQueueId.value = partyPlayerId;
     if (partyPlayerId) {
       store.activePlayerId = partyPlayerId;

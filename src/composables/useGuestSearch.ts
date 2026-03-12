@@ -140,9 +140,7 @@ export function useGuestSearch() {
       artistTracks.value = tracks;
     } catch (error) {
       console.error("Failed to fetch artist tracks:", error);
-      toast.error(
-        $t("providers.party.guest_page.load_artist_tracks_failed"),
-      );
+      toast.error($t("providers.party.guest_page.load_artist_tracks_failed"));
       selectedArtist.value = null;
     } finally {
       loadingArtistTracks.value = false;
