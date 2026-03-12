@@ -1,5 +1,5 @@
 <template>
-  <span class="party-mode-badge">
+  <span class="party-badge">
     <v-icon size="x-small">{{ icon }}</v-icon>
     {{ label }}
   </span>
@@ -22,13 +22,13 @@ const icon = computed(() =>
 
 const label = computed(() =>
   props.type === "boost"
-    ? $t("providers.party_mode.boost")
-    : $t("providers.party_mode.request"),
+    ? $t("providers.party.boost")
+    : $t("providers.party.request"),
 );
 </script>
 
 <style scoped>
-.party-mode-badge {
+.party-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -39,7 +39,7 @@ const label = computed(() =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: rgb(var(--v-theme-on-primary));
+  color: var(--v-theme-on-primary);
   margin-right: 0.5rem;
 }
 </style>

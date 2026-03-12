@@ -313,14 +313,14 @@
                     </template>
                     <template #append>
                       <PartyModePlayerBadge
-                        v-if="item.extra_attributes?.party_mode_guest === true"
+                        v-if="item.extra_attributes?.party_guest === true"
                         :type="
-                          item.extra_attributes?.party_mode_boosted === true
+                          item.extra_attributes?.party_boosted === true
                             ? 'boost'
                             : 'request'
                         "
                         :badge-color="
-                          item.extra_attributes?.party_mode_boosted === true
+                          item.extra_attributes?.party_boosted === true
                             ? boostBadgeColor
                             : requestBadgeColor
                         "
@@ -524,7 +524,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import PartyModePlayerBadge from "@/components/party-mode/PartyModePlayerBadge.vue";
+import PartyModePlayerBadge from "@/components/party/PartyModePlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -600,7 +600,7 @@ const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
-// Badge colors for guest request badges (loaded from party_mode/config)
+// Badge colors for guest request badges (loaded from party/config)
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
@@ -1238,11 +1238,11 @@ const loadNextPage = async function ({
   }
 };
 
-// Fetch badge colors from party mode config
+// Fetch badge colors from party config
 const { config: partyConfig, fetchConfig: fetchPartyConfig } =
   usePartyModeConfig();
 
-// React to party mode config changes (e.g., admin changes badge colors)
+// React to party config changes (e.g., admin changes badge colors)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
@@ -1251,8 +1251,8 @@ watch(partyConfig, (newConfig) => {
 });
 
 onMounted(async () => {
-  // Only fetch badge colors if party_mode provider is loaded
-  if (Object.values(api.providers).some((p) => p.domain === "party_mode")) {
+  // Only fetch badge colors if party provider is loaded
+  if (Object.values(api.providers).some((p) => p.domain === "party")) {
     await fetchPartyConfig();
   }
 });

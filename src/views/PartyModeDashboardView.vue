@@ -14,10 +14,10 @@
       <div class="access-error">
         <Speaker :size="80" class="text-destructive" />
         <h2 class="access-error-title">
-          {{ $t("providers.party_mode.no_player_access") }}
+          {{ $t("providers.party.no_player_access") }}
         </h2>
         <p class="access-error-message">
-          {{ $t("providers.party_mode.no_player_access_detail") }}
+          {{ $t("providers.party.no_player_access_detail") }}
         </p>
       </div>
     </div>
@@ -38,7 +38,6 @@
             :position="lyricsElapsedTime"
             :duration="store.curQueueItem?.duration"
             :stream-details="store.curQueueItem?.streamdetails"
-            text-color="#FFFFFF"
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
             :anticipation="10"
@@ -53,7 +52,7 @@
           >
             <Music :size="60" class="empty-icon" />
             <h2 class="empty-title">
-              {{ $t("providers.party_mode.nothing_playing") }}
+              {{ $t("providers.party.nothing_playing") }}
             </h2>
           </div>
           <TransitionGroup
@@ -90,7 +89,6 @@
               :position="lyricsElapsedTime"
               :duration="store.curQueueItem?.duration"
               :stream-details="store.curQueueItem?.streamdetails"
-              text-color="#FFFFFF"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
   
@@ -107,10 +105,10 @@
           >
             <Music :size="120" class="empty-icon" />
             <h2 class="empty-title">
-              {{ $t("providers.party_mode.nothing_playing") }}
+              {{ $t("providers.party.nothing_playing") }}
             </h2>
             <p class="empty-message">
-              {{ $t("providers.party_mode.get_started") }}
+              {{ $t("providers.party.get_started") }}
             </p>
           </div>
 
@@ -139,8 +137,8 @@
 
 <script setup lang="ts">
 import LyricsViewer from "@/components/LyricsViewer.vue";
-import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
-import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
+import PartyModeQR from "@/components/party/PartyModeQR.vue";
+import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
 import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import {
@@ -170,9 +168,7 @@ const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
 const refreshPartyPlayer = async () => {
-  const partyPlayerId = await api.sendCommand<string | null>(
-    "party_mode/player",
-  );
+  const partyPlayerId = await api.sendCommand<string | null>("party/player");
   accessError.value = "";
   if (partyPlayerId) {
     store.activePlayerId = partyPlayerId;
@@ -548,11 +544,11 @@ onMounted(async () => {
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  // Set active player from party mode config (needed when opened in a new tab
+  // Set active player from party config (needed when opened in a new tab
   // where the Default layout's player selection logic doesn't run)
   await refreshPartyPlayer();
 
-  // Fetch party mode configuration via shared composable
+  // Fetch party configuration via shared composable
   const config = await fetchConfig();
   if (config) {
     if (config.album_art_background !== undefined) {
@@ -597,7 +593,7 @@ onMounted(async () => {
   });
   onBeforeUnmount(unsub2);
 
-  // Subscribe to provider updates to detect party mode player config changes
+  // Subscribe to provider updates to detect party player config changes
   const unsub3 = api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     await refreshPartyPlayer();
     fetchQueueItems(true);
@@ -617,7 +613,7 @@ onBeforeUnmount(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
-// React to party mode config changes (e.g., admin toggles player controls)
+// React to party config changes (e.g., admin toggles player controls)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
     albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
@@ -734,7 +730,7 @@ watch(
   max-height: 50%;
 }
 
-.lyrics-section :deep(.lyrics-scroll-container) {
+.lyrics-section :deep(.lyrics-content--synced) {
   padding: 15vh 0;
 }
 
@@ -835,7 +831,7 @@ watch(
   z-index: 2;
 }
 
-.karaoke-lyrics :deep(.lyrics-scroll-container) {
+.karaoke-lyrics :deep(.lyrics-content--synced) {
   padding: 20vh 0;
 }
 
@@ -1018,7 +1014,7 @@ watch(
     max-width: 100%;
   }
 
-  .karaoke-lyrics :deep(.lyrics-scroll-container) {
+  .karaoke-lyrics :deep(.lyrics-content--synced) {
     padding: 10vh 0;
   }
 

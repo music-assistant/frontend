@@ -66,14 +66,14 @@ const props = withDefaults(defineProps<Props>(), {
   boostBadgeColor: "#FF5722", // Default: Orange
 });
 
-// Check if this is a guest request (party mode sets party_mode_guest=true)
+// Check if this is a guest request (party sets party_guest=true)
 const isGuestRequest = computed(() => {
-  return props.queueItem?.extra_attributes?.party_mode_guest === true;
+  return props.queueItem?.extra_attributes?.party_guest === true;
 });
 
-// Check if this was added via "Boost" (party mode sets party_mode_boosted=true)
+// Check if this was added via "Boost" (party sets party_boosted=true)
 const isBoost = computed(() => {
-  return props.queueItem?.extra_attributes?.party_mode_boosted === true;
+  return props.queueItem?.extra_attributes?.party_boosted === true;
 });
 
 // Get the badge color based on queue option (fallback to defaults if empty)
@@ -87,8 +87,8 @@ const badgeColor = computed(() => {
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
-  if (isBoost.value) return $t("providers.party_mode.boost");
-  return $t("providers.party_mode.request");
+  if (isBoost.value) return $t("providers.party.boost");
+  return $t("providers.party.request");
 });
 
 // Computed track name - prefer media_item.name for proper track title
@@ -264,7 +264,7 @@ const sizeClass = computed(() => {
 }
 
 .now-playing-overlay :deep(.now-playing-icon .bar) {
-  background: rgb(var(--v-theme-primary));
+  background: var(--v-theme-primary);
 }
 
 .track-artwork.size-medium {

@@ -38,9 +38,9 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'next')"
         >
-          <Spinner v-if="isBoostLoading" class="size-4" />
+          <Spinner v-if="isBoostLoading" :size="16" />
           <Rocket v-else :size="16" />
-          {{ $t("providers.party_mode.boost") }}
+          {{ $t("providers.party.boost") }}
         </Button>
         <Button
           v-if="addQueueEnabled"
@@ -52,9 +52,9 @@
           :style="{ '--btn-bg': requestBadgeColor }"
           @click.stop="$emit('addToQueue', item, 'end')"
         >
-          <Spinner v-if="isAddLoading" class="size-4" />
+          <Spinner v-if="isAddLoading" :size="16" />
           <ListPlus v-else :size="16" />
-          {{ $t("providers.party_mode.request") }}
+          {{ $t("providers.party.request") }}
         </Button>
       </div>
     </template>
@@ -70,7 +70,7 @@
           @click.stop="$emit('selectArtist', item)"
         >
           <Music :size="16" />
-          {{ $t("providers.party_mode.guest_page.view_songs") }}
+          {{ $t("providers.party.guest_page.view_songs") }}
         </Button>
       </div>
     </template>
@@ -133,7 +133,7 @@ const artistName = computed(() => {
   if ("artists" in props.item && props.item.artists.length > 0) {
     return props.item.artists.map((a) => a.name).join(", ");
   }
-  return $t("providers.party_mode.guest_page.unknown_artist");
+  return $t("providers.party.guest_page.unknown_artist");
 });
 </script>
 
@@ -224,7 +224,7 @@ const artistName = computed(() => {
 .action-btn.boost-btn,
 .action-btn.add-btn {
   background-color: var(--btn-bg) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
+  color: var(--v-theme-on-primary) !important;
 }
 
 .action-btn:disabled {

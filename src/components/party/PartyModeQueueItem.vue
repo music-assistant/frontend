@@ -33,7 +33,7 @@
 
       <!-- Guest request badge -->
       <span
-        v-if="item.extra_attributes?.party_mode_guest === true"
+        v-if="item.extra_attributes?.party_guest === true"
         class="guest-request-badge"
         :style="{ '--badge-color': badgeColor }"
       >
@@ -53,9 +53,9 @@
           :style="{ '--btn-bg': boostBadgeColor }"
           @click.stop="$emit('boost', item)"
         >
-          <Spinner v-if="boosting" class="size-4" />
+          <Spinner v-if="boosting" :size="16" />
           <Rocket v-else :size="16" />
-          {{ $t("providers.party_mode.boost") }}
+          {{ $t("providers.party.boost") }}
         </Button>
       </div>
     </template>
@@ -133,11 +133,11 @@ const subtitle = computed(() => {
 
   return parts.length > 0
     ? parts.join(" • ")
-    : $t("providers.party_mode.guest_page.unknown_artist");
+    : $t("providers.party.guest_page.unknown_artist");
 });
 
 const isBoosted = computed(
-  () => props.item.extra_attributes?.party_mode_boosted === true,
+  () => props.item.extra_attributes?.party_boosted === true,
 );
 
 const badgeColor = computed(() =>
@@ -149,9 +149,7 @@ const badgeIconComponent = computed(() =>
 );
 
 const badgeLabel = computed(() =>
-  isBoosted.value
-    ? $t("providers.party_mode.boost")
-    : $t("providers.party_mode.request"),
+  isBoosted.value ? $t("providers.party.boost") : $t("providers.party.request"),
 );
 </script>
 
@@ -196,12 +194,12 @@ const badgeLabel = computed(() =>
   text-transform: none;
   letter-spacing: 0.5px;
   background-color: var(--btn-bg) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
+  color: var(--v-theme-on-primary) !important;
 }
 
 .queue-item-current {
   background: rgba(var(--v-theme-primary), 0.15);
-  border-left: 6px solid rgb(var(--v-theme-primary));
+  border-left: 6px solid var(--v-theme-primary);
   padding-left: calc(0.75rem - 3px);
 }
 

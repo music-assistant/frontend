@@ -2,7 +2,7 @@
   <div class="queue-section">
     <div class="section-header">
       <h2 class="section-title">
-        {{ $t("providers.party_mode.guest_page.current_queue") }}
+        {{ $t("providers.party.guest_page.current_queue") }}
       </h2>
       <div v-if="skipSongEnabled" class="skip-area">
         <span
@@ -22,9 +22,9 @@
           class="skip-btn"
           @click="$emit('skip')"
         >
-          <Spinner v-if="skippingSong" class="size-4" />
+          <Spinner v-if="skippingSong" :size="16" />
           <SkipForward v-else :size="16" />
-          {{ $t("providers.party_mode.guest_page.skip") }}
+          {{ $t("providers.party.guest_page.skip") }}
           <span
             v-if="rateLimitingEnabled"
             class="skip-token-badge"
@@ -66,7 +66,7 @@
     </div>
     <div v-else class="empty-queue">
       <ListMusic :size="48" class="text-muted-foreground" />
-      <p>{{ $t("providers.party_mode.guest_page.queue_empty") }}</p>
+      <p>{{ $t("providers.party.guest_page.queue_empty") }}</p>
     </div>
   </div>
 </template>
