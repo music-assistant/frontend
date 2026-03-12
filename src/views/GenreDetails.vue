@@ -489,10 +489,6 @@ onMounted(() => {
   padding: 0 16px 16px 16px;
 }
 
-.overview-container :deep(.header.v-toolbar .v-toolbar-title) {
-  font-weight: normal;
-}
-
 .navigate-icon {
   margin-left: 6px;
   cursor: pointer;
