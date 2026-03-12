@@ -673,6 +673,14 @@ watch(
   height: 60vh;
 }
 
+.qr-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .qr-section--with-lyrics {
   flex-direction: column;
   height: 100%;
