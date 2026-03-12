@@ -133,8 +133,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     const unsub1 = api.subscribe(
       EventType.QUEUE_ITEMS_UPDATED,
       (evt: EventMessage) => {
-        const queueId =
-          partyQueueId.value || store.activePlayerQueue?.queue_id;
+        const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
         if (evt.object_id === queueId) {
           fetchQueueItems(true);
         }
@@ -144,8 +143,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     const unsub2 = api.subscribe(
       EventType.QUEUE_UPDATED,
       (evt: EventMessage) => {
-        const queueId =
-          partyQueueId.value || store.activePlayerQueue?.queue_id;
+        const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
         if (evt.object_id === queueId) {
           const currentIdx = currentQueueIndex.value;
           const fetchedStart = queueFetchOffset.value;

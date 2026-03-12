@@ -19,9 +19,7 @@ const routes = [
         path: "",
         name: "guest",
         component: () =>
-          import(
-            /* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"
-          ),
+          import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
     ],
   },

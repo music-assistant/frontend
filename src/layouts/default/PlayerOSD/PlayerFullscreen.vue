@@ -1239,8 +1239,7 @@ const loadNextPage = async function ({
 };
 
 // Fetch badge colors from party config
-const { config: partyConfig, fetchConfig: fetchPartyConfig } =
-  usePartyConfig();
+const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
 
 // React to party config changes (e.g., admin changes badge colors)
 watch(partyConfig, (newConfig) => {

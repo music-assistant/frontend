@@ -51,8 +51,7 @@ const loading = ref(true);
 const qrSize = ref(320);
 const copyFeedback = ref<string>("");
 const instructionText = ref($t("providers.party.scan_to_join"));
-const { config: partyConfig, fetchConfig: fetchPartyConfig } =
-  usePartyConfig();
+const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
 let resizeObserver: ResizeObserver | null = null;
 
 const calculateQRSize = () => {
