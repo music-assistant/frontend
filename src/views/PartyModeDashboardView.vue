@@ -23,9 +23,27 @@
     </div>
 
     <div v-else class="party-content">
-      <!-- QR Code -->
-      <div class="qr-section">
-        <PartyModeQR />
+      <!-- QR Code and Lyrics -->
+      <div
+        :class="[
+          'qr-section',
+          { 'qr-section--with-lyrics': displayLyrics && !isCompact },
+        ]"
+      >
+        <div class="qr-wrapper">
+          <PartyModeQR />
+        </div>
+        <div v-if="displayLyrics && !isCompact" class="lyrics-section">
+          <LyricsViewer
+            :media-item="store.curQueueItem?.media_item"
+            :position="lyricsElapsedTime"
+            :duration="store.curQueueItem?.duration"
+            :stream-details="store.curQueueItem?.streamdetails"
+            text-color="#FFFFFF"
+            :lyrics="currentLyrics.plain"
+            :lrc-lyrics="currentLyrics.synced"
+          />
+        </div>
       </div>
 
       <!-- Track Stack or Empty State -->
@@ -62,9 +80,11 @@
 </template>
 
 <script setup lang="ts">
+import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
 import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
 import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { computeElapsedTime } from "@/helpers/elapsed";
 import {
   ImageColorPalette,
   getColorPalette,
@@ -75,8 +95,10 @@ import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  MediaType,
   PlaybackState,
   QueueItem,
+  Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Color from "color";
@@ -104,6 +126,7 @@ const refreshPartyPlayer = async () => {
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
+const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const accessError = ref("");
 // Badge colors (hex values from config)
 const requestBadgeColor = ref("");
@@ -140,6 +163,84 @@ const isPlaying = computed(
 // Queue items state
 const queueItems = ref<QueueItem[]>([]);
 const lastFetchedOffset = ref<number>(0);
+
+// Lyrics state
+const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
+  plain: null,
+  synced: null,
+});
+
+const fetchLyrics = async () => {
+  currentLyrics.value = { plain: null, synced: null };
+  if (!displayLyrics.value) return;
+
+  const mediaItem = store.curQueueItem?.media_item;
+  if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) return;
+
+  const track = mediaItem as Track;
+  const existingPlain = track.metadata?.lyrics?.trim() || null;
+  const existingSynced = track.metadata?.lrc_lyrics?.trim() || null;
+
+  if (existingPlain || existingSynced) {
+    currentLyrics.value = { plain: existingPlain, synced: existingSynced };
+    return;
+  }
+
+  try {
+    const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
+    currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
+    if (lyrics || lrcLyrics) {
+      track.metadata = {
+        ...track.metadata,
+        ...(lyrics && { lyrics }),
+        ...(lrcLyrics && { lrc_lyrics: lrcLyrics }),
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch track lyrics:", error);
+  }
+};
+
+// Lyrics elapsed time (250ms tick for smooth sync)
+const nowTick = ref(0);
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+const startTick = (interval = 250) => {
+  if (!tickTimer) {
+    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
+  }
+};
+
+const stopTick = () => {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+};
+
+const lyricsElapsedTime = computed(() => {
+  void nowTick.value;
+  const playing =
+    store.activePlayer?.playback_state === PlaybackState.PLAYING;
+  const queue = store.activePlayerQueue;
+
+  if (playing && queue?.active && displayLyrics.value) {
+    startTick();
+  } else {
+    stopTick();
+  }
+
+  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+    return (
+      computeElapsedTime(
+        queue.elapsed_time,
+        queue.elapsed_time_last_updated,
+        store.activePlayer?.playback_state,
+      ) ?? 0
+    );
+  }
+  return 0;
+});
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
@@ -400,6 +501,9 @@ onMounted(async () => {
     if (config.show_player_controls !== undefined) {
       showPlayerControls.value = config.show_player_controls;
     }
+    if (config.display_lyrics !== undefined) {
+      displayLyrics.value = config.display_lyrics;
+    }
     requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
   } else {
@@ -445,6 +549,7 @@ onBeforeUnmount(() => {
     wakeLock.release();
     wakeLock = null;
   }
+  stopTick();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -453,11 +558,13 @@ watch(partyConfig, (newConfig) => {
   if (newConfig) {
     albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
     showPlayerControls.value = newConfig.show_player_controls ?? false;
+    displayLyrics.value = newConfig.display_lyrics ?? false;
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
   } else {
     albumArtBackgroundEnabled.value = true;
     showPlayerControls.value = false;
+    displayLyrics.value = false;
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
   }
@@ -470,6 +577,18 @@ watch(
     fetchQueueItems();
   },
 );
+
+// Fetch lyrics when track changes
+watch(
+  () => store.curQueueItem?.media_item?.item_id,
+  () => fetchLyrics(),
+  { immediate: true },
+);
+
+// Re-fetch lyrics when display_lyrics is toggled on
+watch(displayLyrics, (enabled) => {
+  if (enabled) fetchLyrics();
+});
 </script>
 
 <style scoped>
@@ -516,6 +635,30 @@ watch(
   justify-content: center;
   align-self: center;
   height: 60vh;
+}
+
+.qr-section--with-lyrics {
+  flex-direction: column;
+  height: 100%;
+  align-self: stretch;
+}
+
+.qr-section--with-lyrics .qr-wrapper {
+  flex: 0 0 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 50%;
+}
+
+.lyrics-section {
+  flex: 0 0 50%;
+  overflow: hidden;
+  max-height: 50%;
+}
+
+.lyrics-section :deep(.lyrics-scroll-container) {
+  padding: 15vh 0;
 }
 
 .track-stack {
@@ -642,6 +785,21 @@ watch(
     height: auto;
     align-self: auto;
     overflow: hidden;
+  }
+
+  .qr-section--with-lyrics {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .qr-section--with-lyrics .qr-wrapper {
+    flex: 1 1 50%;
+    max-height: none;
+  }
+
+  .qr-section--with-lyrics .lyrics-section {
+    flex: 1 1 50%;
+    max-height: none;
   }
 
   .track-stack {

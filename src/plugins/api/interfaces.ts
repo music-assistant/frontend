@@ -1173,6 +1173,7 @@ export interface PartyModeConfig {
   skip_song_refill_minutes: number;
   album_art_background: boolean;
   show_player_controls: boolean;
+  display_lyrics: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
   qr_show_instruction_text: boolean;
