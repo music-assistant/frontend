@@ -25,11 +25,11 @@ const routes = [
       },
     ],
   },
-  // Party mode display uses minimal layout (fullscreen for wall-mounted tablets)
+  // Party display uses minimal layout (fullscreen for wall-mounted tablets)
   // Placed at top level so it renders without navigation/player controls
   {
     path: "/party",
-    // Party mode only displays the dashboard and doesn't need the player.
+    // Party only displays the dashboard and doesn't need the player.
     meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyModeGuestLayout.vue"),
     children: [
@@ -57,8 +57,8 @@ const routes = [
               );
             });
           }
-          // Only allow access if party mode plugin is enabled
-          if (!store.enabledPlugins.has("party_mode")) {
+          // Only allow access if party plugin is enabled
+          if (!store.enabledPlugins.has("party")) {
             next({ name: "discover" });
             return;
           }
@@ -525,10 +525,10 @@ router.onError((error, to) => {
 router.beforeEach(async (to, _from, next) => {
   const currentUser = store.currentUser;
 
-  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // If party guest is trying to navigate away from /guest, redirect back to guest
   // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
   if (authManager.isPartyModeGuest() && to.path !== "/guest") {
-    console.debug("Party mode guest: preventing navigation to", to.path);
+    console.debug("Party guest: preventing navigation to", to.path);
     next({ name: "guest" });
     return;
   }

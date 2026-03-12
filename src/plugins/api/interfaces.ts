@@ -820,10 +820,10 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
-  // Party mode: extra_attributes for guest-added items
+  // Party: extra_attributes for guest-added items
   extra_attributes?: {
-    party_mode_guest?: boolean; // true if added by party mode guest
-    party_mode_boosted?: boolean; // true if added as "boost" (play next)
+    party_guest?: boolean; // true if added by party guest
+    party_boosted?: boolean; // true if added as "boost" (play next)
   };
 }
 
@@ -1104,7 +1104,7 @@ export interface User {
   preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
-  // Use authManager.isPartyModeGuest() to check for party mode sessions.
+  // Use authManager.isPartyModeGuest() to check for party sessions.
 }
 
 export interface AuthToken {

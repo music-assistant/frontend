@@ -60,7 +60,7 @@ export const getMenuItems = function () {
         icon: PartyPopper,
         path: "/party",
         isLibraryNode: false,
-        hidden: !store.enabledPlugins.has("party_mode"),
+        hidden: !store.enabledPlugins.has("party"),
         openInNewTab: true,
       });
     }

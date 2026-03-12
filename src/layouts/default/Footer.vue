@@ -53,7 +53,7 @@ import Player from "./PlayerOSD/Player.vue";
 const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyModeConfig();
 
-// Fetch party mode config when entering party route
+// Fetch party config when entering party route
 watch(
   () => route.path,
   async (path) => {

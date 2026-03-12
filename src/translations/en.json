@@ -255,7 +255,7 @@
     "playlist_create_provider_error": "Unable to get provider.",
     "playlist_create_no_type_selected": "No media type selected.",
     "providers": {
-        "party_mode": {
+        "party": {
             "guest_page": {
                 "add_available": "Add Available",
                 "add_queue_disabled": "Add to Queue is disabled by the host.",
@@ -289,7 +289,7 @@
             "add": "Add",
             "boost": "Boost",
             "check_network": "Check your network settings",
-            "enable_in_settings": "Enable in party mode provider settings",
+            "enable_in_settings": "Enable in party provider settings",
             "get_started": "Play some music to get the party started!",
             "guest_access_disabled": "Guest Access Disabled",
             "no_player_access": "Player Not Accessible",

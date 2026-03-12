@@ -15,7 +15,7 @@
       <Search :size="18" class="search-icon" />
       <Input
         :model-value="searchQuery"
-        :placeholder="$t('providers.party_mode.guest_page.search_placeholder')"
+        :placeholder="$t('providers.party.guest_page.search_placeholder')"
         autofocus
         inputmode="search"
         enterkeyhint="search"
@@ -83,7 +83,7 @@ const filters = computed(() => [
   { value: "all", label: $t("searchtype_all"), icon: null },
   {
     value: "track",
-    label: $t("providers.party_mode.guest_page.filter_songs"),
+    label: $t("providers.party.guest_page.filter_songs"),
     icon: Music,
   },
   { value: "artist", label: $t("artists"), icon: UserRound },

@@ -1,6 +1,6 @@
 /**
- * Shared composable for party mode configuration.
- * Fetches party_mode/config once and shares reactive state across components,
+ * Shared composable for party configuration.
+ * Fetches party/config once and shares reactive state across components,
  * avoiding redundant API calls when multiple components need the same config.
  */
 
@@ -15,7 +15,7 @@ const loaded = ref(false);
 let fetchPromise: Promise<PartyModeConfig | null> | null = null;
 
 /**
- * Fetch party mode config, deduplicating concurrent requests.
+ * Fetch party config, deduplicating concurrent requests.
  * Returns the cached config if already loaded, unless force is true.
  */
 async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
@@ -32,7 +32,7 @@ async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
   fetchPromise = (async () => {
     try {
       const result = (await api.sendCommand(
-        "party_mode/config",
+        "party/config",
       )) as PartyModeConfig;
       config.value = result;
       loaded.value = true;
@@ -63,7 +63,7 @@ let subscribed = false;
 
 /**
  * Subscribe to PROVIDERS_UPDATED and CORE_STATE_UPDATED so the shared
- * config ref auto-refreshes whenever the party_mode provider is reloaded
+ * config ref auto-refreshes whenever the party provider is reloaded
  * or remote access is toggled.
  */
 function ensureSubscribed() {
@@ -72,7 +72,7 @@ function ensureSubscribed() {
 
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     const hasPartyMode = Object.values(api.providers).some(
-      (p) => p.domain === "party_mode",
+      (p) => p.domain === "party",
     );
     if (hasPartyMode) {
       invalidate();
@@ -87,7 +87,7 @@ function ensureSubscribed() {
   // join URL switches between local and remote.
   api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
     const hasPartyMode = Object.values(api.providers).some(
-      (p) => p.domain === "party_mode",
+      (p) => p.domain === "party",
     );
     if (hasPartyMode) {
       invalidate();

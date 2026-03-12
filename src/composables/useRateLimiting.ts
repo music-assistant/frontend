@@ -238,7 +238,7 @@ export function useRateLimiting() {
 
   /**
    * Apply server config to rate limiting parameters.
-   * Called after fetching party_mode/config from the server.
+   * Called after fetching party/config from the server.
    */
   const configure = (config: PartyModeConfig) => {
     rateLimitingEnabled.value = config.enable_rate_limiting ?? true;

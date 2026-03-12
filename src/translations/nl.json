@@ -1375,7 +1375,7 @@
     "playlist_create_provider_error": "Kan provider niet bereiken.",
     "playlist_create_no_type_selected": "Geen mediatype geselecteerd.",
     "providers": {
-        "party_mode": {
+        "party": {
             "guest_page": {
                 "add_available": "Toevoegen Beschikbaar",
                 "add_queue_disabled": "Toevoegen aan wachtrij is door de host uitgeschakeld.",

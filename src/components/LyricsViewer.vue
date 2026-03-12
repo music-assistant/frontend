@@ -304,9 +304,9 @@ const tickScroll = () => {
 // user-initiated scrolls. After user scrolls, auto-scroll is paused for 8s.
 const setupScrollListener = () => {
   const root = scrollAreaRef.value?.$el as HTMLElement | undefined;
-  scrollViewport = root?.querySelector<HTMLElement>(
-    "[data-slot=scroll-area-viewport]",
-  ) ?? null;
+  scrollViewport =
+    root?.querySelector<HTMLElement>("[data-slot=scroll-area-viewport]") ??
+    null;
   if (!scrollViewport) return;
 
   scrollViewport.addEventListener(

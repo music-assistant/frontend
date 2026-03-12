@@ -33,7 +33,7 @@
 
       <!-- Guest request badge -->
       <span
-        v-if="item.extra_attributes?.party_mode_guest === true"
+        v-if="item.extra_attributes?.party_guest === true"
         class="guest-request-badge"
         :style="{ '--badge-color': badgeColor }"
       >
@@ -55,7 +55,7 @@
         >
           <Spinner v-if="boosting" class="size-4" />
           <Rocket v-else :size="16" />
-          {{ $t("providers.party_mode.boost") }}
+          {{ $t("providers.party.boost") }}
         </Button>
       </div>
     </template>
@@ -133,11 +133,11 @@ const subtitle = computed(() => {
 
   return parts.length > 0
     ? parts.join(" • ")
-    : $t("providers.party_mode.guest_page.unknown_artist");
+    : $t("providers.party.guest_page.unknown_artist");
 });
 
 const isBoosted = computed(
-  () => props.item.extra_attributes?.party_mode_boosted === true,
+  () => props.item.extra_attributes?.party_boosted === true,
 );
 
 const badgeColor = computed(() =>
@@ -150,8 +150,8 @@ const badgeIconComponent = computed(() =>
 
 const badgeLabel = computed(() =>
   isBoosted.value
-    ? $t("providers.party_mode.boost")
-    : $t("providers.party_mode.request"),
+    ? $t("providers.party.boost")
+    : $t("providers.party.request"),
 );
 </script>
 

@@ -41,7 +41,7 @@ describe("useGuestQueue", () => {
     storeMock.activePlayerQueue = { queue_id: "queue1" };
   });
 
-  it("fetches queue items using active player queue when no party mode queue id is set", async () => {
+  it("fetches queue items using active player queue when no party queue id is set", async () => {
     const queue = {
       queue_id: "queue1",
       current_index: 5,
