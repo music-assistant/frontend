@@ -41,7 +41,33 @@
             },
           ]"
         >
-          {{ line.text }}
+          <template
+            v-if="musicalBreakLineIndex === index"
+          >
+            <span
+              v-for="n in NOTE_COUNT"
+              :key="n"
+              class="break-note"
+              :class="{
+                'break-note--filled': n <= filledNoteCount,
+                'break-note--filling': n === filledNoteCount + 1,
+              }"
+              :style="
+                n === filledNoteCount + 1
+                  ? {
+                      backgroundImage: `linear-gradient(to right, ${textColor} ${currentNoteFillPercent}%, color-mix(in srgb, ${textColor} 35%, transparent) ${currentNoteFillPercent}%)`,
+                      backgroundClip: 'text',
+                      '-webkit-background-clip': 'text',
+                      '-webkit-text-fill-color': 'transparent',
+                    }
+                  : undefined
+              "
+              >&#9835;</span
+            >
+          </template>
+          <template v-else>
+            {{ line.text }}
+          </template>
         </div>
       </div>
     </div>
@@ -261,6 +287,31 @@ const fetchLyrics = () => {
   }
 };
 
+// Musical break detection: show countdown notes during long instrumental gaps
+const GAP_THRESHOLD = 10; // seconds — minimum gap to trigger break display
+const BREAK_DELAY = 2; // seconds after line before showing notes
+const NOTE_COUNT = 7;
+
+const musicalBreakMap = computed(() => {
+  const map = new Map<number, { gapStart: number; gapEnd: number }>();
+  const lyrics = parsedLyrics.value;
+  for (let i = 0; i < lyrics.length - 1; i++) {
+    const gap = lyrics[i + 1].time - lyrics[i].time;
+    if (gap > GAP_THRESHOLD) {
+      map.set(i, {
+        gapStart: lyrics[i].time + BREAK_DELAY,
+        gapEnd: lyrics[i + 1].time,
+      });
+    }
+  }
+  return map;
+});
+
+const isInMusicalBreak = ref(false);
+const musicalBreakLineIndex = ref(-1);
+const filledNoteCount = ref(0);
+const currentNoteFillPercent = ref(0);
+
 // How far ahead (in seconds) the highlight activates before the lyric timestamp.
 // Matches the CSS transition duration so the transition is fully complete
 // exactly when the lyric timestamp is reached.
@@ -302,6 +353,8 @@ watch(
   [() => props.mediaItem?.item_id, () => props.lyrics, () => props.lrcLyrics],
   () => {
     activeLyricIndex.value = -1;
+    musicalBreakLineIndex.value = -1;
+    isInMusicalBreak.value = false;
     contentTranslateY.value = 0;
     lineRefs.clear();
     fetchLyrics();
@@ -331,6 +384,49 @@ watch(
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
       activeLyricIndex.value = newActiveIndex;
       nextTick(() => computeTranslateY(newActiveIndex));
+    }
+
+    // Update musical break state using raw position (not highlight-shifted).
+    // Notes appear grayed out for the full break, but only fill in the last
+    // NOTE_COUNT * SECONDS_PER_NOTE seconds as a tight countdown.
+    // musicalBreakLineIndex persists so notes remain as a "previous line"
+    // after the next lyric activates.
+    const breakInfo = musicalBreakMap.value.get(activeLyricIndex.value);
+    if (
+      breakInfo &&
+      newPosition >= breakInfo.gapStart &&
+      newPosition < breakInfo.gapEnd
+    ) {
+      isInMusicalBreak.value = true;
+      musicalBreakLineIndex.value = activeLyricIndex.value;
+      const SECONDS_PER_NOTE = 2;
+      const fillDuration = NOTE_COUNT * SECONDS_PER_NOTE;
+      const fillStart = breakInfo.gapEnd - fillDuration;
+      if (newPosition >= fillStart) {
+        const elapsed = newPosition - fillStart;
+        const noteProgress = elapsed / SECONDS_PER_NOTE;
+        filledNoteCount.value = Math.min(
+          NOTE_COUNT,
+          Math.floor(noteProgress),
+        );
+        currentNoteFillPercent.value = Math.round(
+          (noteProgress - Math.floor(noteProgress)) * 100,
+        );
+      } else {
+        filledNoteCount.value = 0;
+        currentNoteFillPercent.value = 0;
+      }
+    } else {
+      isInMusicalBreak.value = false;
+      // Clear the break line index only once it would be scrolled out of view
+      if (
+        musicalBreakLineIndex.value >= 0 &&
+        activeLyricIndex.value > musicalBreakLineIndex.value + 1
+      ) {
+        musicalBreakLineIndex.value = -1;
+      }
+      filledNoteCount.value = NOTE_COUNT;
+      currentNoteFillPercent.value = 100;
     }
   },
 );
@@ -435,5 +531,23 @@ onBeforeUnmount(() => {
   opacity: 1;
   color: v-bind(textColor);
   transform: scale(1);
+}
+
+.break-note {
+  display: inline-block;
+  font-size: clamp(2rem, 4vw, 4rem);
+  margin: 0 0.15em;
+  color: v-bind(textColor);
+  opacity: 0.35;
+  background-image: none;
+  -webkit-text-fill-color: initial;
+}
+
+.break-note--filled {
+  opacity: 1;
+}
+
+.break-note--filling {
+  opacity: 1;
 }
 </style>
