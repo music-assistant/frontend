@@ -1,5 +1,6 @@
 import { MediaType } from "@/plugins/api/interfaces";
-import { Compass, Route } from "lucide-vue-next";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { Route } from "lucide-vue-next";
 import type { Component } from "vue";
 
 // Icon mapping for different media types in genre overview
@@ -11,7 +12,7 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.RADIO]: "mdi-radio",
   [MediaType.AUDIOBOOK]: "mdi-book-music",
   [MediaType.PODCAST]: "mdi-podcast",
-  [MediaType.GENRE]: Compass,
+  [MediaType.GENRE]: GenreIcon,
   [MediaType.GENRE_ALIAS]: Route,
   [MediaType.PODCAST_EPISODE]: "mdi-podcast",
   [MediaType.FOLDER]: "mdi-folder",

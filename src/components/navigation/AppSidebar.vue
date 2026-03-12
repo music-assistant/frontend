@@ -158,6 +158,12 @@ onUnmounted(() => {
   margin-right: 0.3rem !important;
 }
 
+:deep([data-sidebar="menu-button"] > svg.genre-icon) {
+  width: auto !important;
+  height: auto !important;
+  margin-right: 0.3rem !important;
+}
+
 @media (min-height: 700px) {
   :deep([data-sidebar="menu-button"]) {
     min-height: 2.5rem !important;

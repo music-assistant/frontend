@@ -46,7 +46,12 @@
         >
           <template #prepend>
             <v-avatar color="purple" size="48">
-              <v-icon :icon="item.icon" size="24" color="white" />
+              <component
+                :is="item.icon"
+                v-if="typeof item.icon !== 'string'"
+                class="size-6 text-white"
+              />
+              <v-icon v-else :icon="item.icon" size="24" color="white" />
             </v-avatar>
           </template>
 
@@ -72,7 +77,8 @@ import Container from "@/components/Container.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, type Component } from "vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -88,7 +94,7 @@ interface SystemConfigExtraEntry {
   route: string;
   name: string;
   description: string;
-  icon: string;
+  icon: string | Component;
 }
 
 type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
@@ -106,7 +112,7 @@ const extraSystemEntries: SystemConfigExtraEntry[] = [
     domain: "genre_management",
     name: "settings.genre_management",
     description: "settings.genre_management_description",
-    icon: "mdi-compass-outline",
+    icon: GenreIcon,
     route: "/settings/genremanagement",
   },
 ];
