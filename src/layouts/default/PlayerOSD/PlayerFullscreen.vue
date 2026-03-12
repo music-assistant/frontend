@@ -577,7 +577,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import { getSourceName } from "@/plugins/api/helpers";
-import computeElapsedTime from "@/helpers/elapsed";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 
 const { name } = useDisplay();
 
@@ -604,51 +604,7 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-// Lyrics elapsed time computation (similar to PlayerTimeline)
-const nowTick = ref(0);
-let tickTimer: ReturnType<typeof setInterval> | null = null;
-
-const startTick = (interval = 250) => {
-  if (!tickTimer) {
-    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
-  }
-};
-
-const stopTick = () => {
-  if (tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-};
-
-const lyricsElapsedTime = computed(() => {
-  // Include nowTick.value so this computed re-evaluates periodically
-  void nowTick.value;
-
-  const isPlaying =
-    store.activePlayer?.playback_state === PlaybackState.PLAYING;
-  const queue = store.activePlayerQueue;
-
-  // Start/stop tick based on playback state
-  if (isPlaying && queue?.active) {
-    startTick();
-  } else {
-    stopTick();
-  }
-
-  // Compute elapsed time from queue
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
-    return (
-      computeElapsedTime(
-        queue.elapsed_time,
-        queue.elapsed_time_last_updated,
-        store.activePlayer?.playback_state,
-      ) ?? 0
-    );
-  }
-
-  return 0;
-});
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Computed properties
 
@@ -1324,7 +1280,6 @@ onMounted(() => {
   window.addEventListener("keydown", onKeydown);
   onBeforeUnmount(() => {
     window.removeEventListener("keydown", onKeydown);
-    stopTick();
   });
 });
 
