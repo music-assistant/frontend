@@ -1,39 +1,103 @@
 <template>
   <div class="lyrics-container">
-    <div v-if="loading" class="lyrics-loading">
+    <div v-if="loading || externalLoading" class="lyrics-loading">
       <Spinner class="size-6" />
       <div>{{ $t("loading_lyrics") }}</div>
     </div>
     <div v-else-if="!parsedLyrics.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
     </div>
-    <div v-else-if="beforeFirstLyric && hasTimestamps" class="lyrics-intro">
-      <div class="song-title" :style="{ color: textColor }">
-        {{ props.mediaItem?.name }}
-      </div>
-      <div class="artist-name">{{ artistName }}</div>
-      <div class="lyrics-coming-soon">{{ $t("lyrics_will_appear_soon") }}</div>
-    </div>
-    <ScrollArea
-      v-else
-      ref="scrollAreaRef"
-      class="h-full w-full"
-      :class="{ 'static-lyrics': !hasTimestamps }"
+    <!-- Synced lyrics: always mounted when timestamps exist so DOM is ready for transition -->
+    <div
+      v-else-if="hasTimestamps"
+      ref="syncedContainerRef"
+      class="synced-container"
     >
+      <Transition name="intro-fade">
+        <div v-if="beforeFirstLyric" class="lyrics-intro">
+          <div class="song-title" :style="{ color: textColor }">
+            {{ props.mediaItem?.name }}
+          </div>
+          <div class="artist-name">{{ artistName }}</div>
+          <div class="lyrics-coming-soon">
+            {{ $t("lyrics_will_appear_soon") }}
+          </div>
+        </div>
+      </Transition>
       <div
-        ref="lyricsContentRef"
-        :class="['lyrics-content', { 'lyrics-content--synced': hasTimestamps }]"
+        ref="syncedContentRef"
+        class="synced-content"
+        :style="{
+          transform: `translateY(${contentTranslateY}px)`,
+          transition: contentTransitionEnabled ? undefined : 'none',
+        }"
       >
+        <template v-for="(line, index) in parsedLyrics" :key="index">
+          <div
+            :ref="(el) => setLineRef(el as HTMLElement | null, index)"
+            :class="[
+              'lyrics-line',
+              {
+                active: activeLyricIndex === index,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0
+                    ? index < activeLyricIndex - 1 ||
+                      index > activeLyricIndex + 2
+                    : index > 2,
+              },
+            ]"
+          >
+            {{ line.text }}
+          </div>
+          <!-- Musical break notes inserted between lines, never replacing them -->
+          <div
+            v-if="musicalBreakLineIndex === index"
+            :class="[
+              'lyrics-line',
+              {
+                active: isInMusicalBreak,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0 &&
+                  (index < activeLyricIndex - 2 ||
+                    index > activeLyricIndex + 1),
+              },
+            ]"
+          >
+            <span
+              v-for="n in NOTE_COUNT"
+              :key="n"
+              class="break-note"
+              :class="{
+                'break-note--filled': n <= filledNoteCount,
+                'break-note--filling': n === filledNoteCount + 1,
+              }"
+              :style="
+                n === filledNoteCount + 1
+                  ? {
+                      backgroundImage: `linear-gradient(to right, ${textColor} ${currentNoteFillPercent}%, color-mix(in srgb, ${textColor} 35%, transparent) ${currentNoteFillPercent}%)`,
+                      backgroundClip: 'text',
+                      '-webkit-background-clip': 'text',
+                      '-webkit-text-fill-color': 'transparent',
+                    }
+                  : undefined
+              "
+              >&#9835;</span
+            >
+          </div>
+        </template>
+      </div>
+    </div>
+    <!-- Non-synced lyrics: simple scrollable list (hidden in karaoke mode) -->
+    <ScrollArea
+      v-else-if="!props.anticipation"
+      ref="scrollAreaRef"
+      class="h-full w-full static-lyrics"
+    >
+      <div class="lyrics-content">
         <div
           v-for="(line, index) in parsedLyrics"
           :key="index"
-          :ref="(el) => setLineRef(el as HTMLElement | null, index)"
-          :class="[
-            'lyrics-line',
-            {
-              active: activeLyricIndex === index || !hasTimestamps,
-            },
-          ]"
+          class="lyrics-line active"
         >
           {{ line.text }}
         </div>
@@ -58,6 +122,8 @@ interface Props {
   debugMode?: boolean;
   lyrics?: string | null;
   lrcLyrics?: string | null;
+  anticipation?: number;
+  externalLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -69,6 +135,8 @@ const props = withDefaults(defineProps<Props>(), {
   debugMode: false,
   lyrics: undefined,
   lrcLyrics: undefined,
+  anticipation: 0,
+  externalLoading: false,
 });
 
 // Core lyrics state
@@ -76,22 +144,14 @@ const parsedLyrics = ref<Array<{ time: number; text: string }>>([]);
 const loading = ref(false);
 const activeLyricIndex = ref(-1);
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
-const lyricsContentRef = ref<HTMLElement | null>(null);
+const syncedContainerRef = ref<HTMLElement | null>(null);
+const syncedContentRef = ref<HTMLElement | null>(null);
 const lineRefs = new Map<number, HTMLElement>();
-const isProgrammaticScroll = ref(false);
-const userManuallyScrolled = ref(false);
-let manualScrollTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Continuous scroll state.
-// Instead of discrete scrollIntoView jumps, we linearly interpolate scrollTop
-// between the current and next lyric's centered positions. This creates a
-// constant smooth scroll rate that lands the next line at center exactly
-// when it highlights.
-let scrollViewport: HTMLElement | null = null;
-let scrollStartTop = 0;
-let scrollEndTop = 0;
-let scrollStartTime = 0;
-let scrollDuration = 0;
+// Transform-based positioning: translateY applied to the content div
+// so the active line always sits at the fixed anchor point.
+const contentTranslateY = ref(0);
+const contentTransitionEnabled = ref(false);
 
 const setLineRef = (el: HTMLElement | null, index: number) => {
   if (el) {
@@ -101,14 +161,19 @@ const setLineRef = (el: HTMLElement | null, index: number) => {
   }
 };
 
-// True when playback is before the first lyric timestamp — shows intro screen
+// True when playback is before the first lyric timestamp — shows intro screen.
+// When anticipation is set (karaoke mode), the intro screen is dismissed early
+// so the singer can see the upcoming first line before they need to sing it.
 const beforeFirstLyric = computed(() => {
   if (!hasTimestamps.value || !parsedLyrics.value.length) {
     return false;
   }
   const firstLyricTime = parsedLyrics.value[0].time;
   const currentPosition = props.position || 0;
-  return activeLyricIndex.value === -1 && currentPosition < firstLyricTime;
+  return (
+    activeLyricIndex.value === -1 &&
+    currentPosition < firstLyricTime - props.anticipation
+  );
 });
 
 const artistName = computed(() => {
@@ -239,8 +304,59 @@ const fetchLyrics = () => {
   }
 };
 
-// Find active lyric index based on current position — no look-ahead.
-// The highlight always matches the actual timestamp exactly.
+// Musical break detection: show countdown notes during long instrumental gaps
+const GAP_THRESHOLD = 10; // seconds — minimum gap to trigger break display
+const BREAK_DELAY = 2; // seconds after line before showing notes
+const NOTE_COUNT = 7;
+
+const musicalBreakMap = computed(() => {
+  const map = new Map<number, { gapStart: number; gapEnd: number }>();
+  const lyrics = parsedLyrics.value;
+  for (let i = 0; i < lyrics.length - 1; i++) {
+    const gap = lyrics[i + 1].time - lyrics[i].time;
+    if (gap > GAP_THRESHOLD) {
+      map.set(i, {
+        gapStart: lyrics[i].time + BREAK_DELAY,
+        gapEnd: lyrics[i + 1].time,
+      });
+    }
+  }
+  return map;
+});
+
+const isInMusicalBreak = ref(false);
+const musicalBreakLineIndex = ref(-1);
+
+// Derive fill state as computed properties so the template always sees
+// values consistent with the current break state — no stale refs possible.
+const noteProgressState = computed(() => {
+  if (!isInMusicalBreak.value || musicalBreakLineIndex.value < 0) {
+    return { filled: NOTE_COUNT, percent: 100 };
+  }
+  const breakInfo = musicalBreakMap.value.get(musicalBreakLineIndex.value);
+  if (!breakInfo) {
+    return { filled: NOTE_COUNT, percent: 100 };
+  }
+  const pos = props.position || 0;
+  const gapDuration = breakInfo.gapEnd - breakInfo.gapStart;
+  const elapsed = Math.max(0, pos - breakInfo.gapStart);
+  const noteProgress = (elapsed / gapDuration) * NOTE_COUNT;
+  return {
+    filled: Math.min(NOTE_COUNT, Math.floor(noteProgress)),
+    percent: Math.round((noteProgress - Math.floor(noteProgress)) * 100),
+  };
+});
+const filledNoteCount = computed(() => noteProgressState.value.filled);
+const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
+
+// How far ahead (in seconds) the highlight activates before the lyric timestamp.
+// Matches the CSS transition duration so the transition is fully complete
+// exactly when the lyric timestamp is reached.
+const HIGHLIGHT_LEAD_SECONDS = 1.0;
+
+// Find active lyric index based on current position.
+// The highlight activates HIGHLIGHT_LEAD_SECONDS (= transition duration) early
+// so the CSS transition is fully complete when the lyric timestamp is reached.
 const findActiveLyricIndex = (positionMs: number): number => {
   let index = -1;
   for (let i = 0; i < parsedLyrics.value.length; i++) {
@@ -254,81 +370,19 @@ const findActiveLyricIndex = (positionMs: number): number => {
   return index;
 };
 
-// Calculate the scrollTop value that centers a given lyric line in the viewport.
-const getCenteredScrollTop = (index: number): number | null => {
+// Calculate the translateY needed to place a line at the anchor point
+// (40% from top of the container).
+const computeTranslateY = (index: number) => {
   const el = lineRefs.get(index);
-  if (!el || !scrollViewport) return null;
-  const elTop = el.offsetTop;
-  const elHeight = el.offsetHeight;
-  const viewportHeight = scrollViewport.clientHeight;
-  return elTop - viewportHeight / 2 + elHeight / 2;
-};
+  const container = syncedContainerRef.value;
+  if (!el || !container) return;
 
-// Begin a new scroll interpolation from the current position to center the
-// target lyric, completing over the given duration in seconds.
-const beginScrollTo = (targetIndex: number, durationSec: number) => {
-  if (!scrollViewport) return;
-  const targetTop = getCenteredScrollTop(targetIndex);
-  if (targetTop === null) return;
+  const containerHeight = container.clientHeight;
+  const anchorY = containerHeight * 0.35;
+  const lineTop = el.offsetTop;
+  const lineHeight = el.offsetHeight;
 
-  scrollStartTop = scrollViewport.scrollTop;
-  scrollEndTop = targetTop;
-  scrollStartTime = performance.now();
-  // Minimum 300ms so very fast lyrics don't cause jarring snaps
-  scrollDuration = Math.max(300, durationSec * 1000);
-};
-
-// Called on every position update (~60fps via rAF) to advance the scroll.
-// Uses ease-out interpolation for a natural feel.
-const tickScroll = () => {
-  if (!scrollViewport || scrollDuration === 0) return;
-
-  const elapsed = performance.now() - scrollStartTime;
-  const t = Math.min(1, elapsed / scrollDuration);
-
-  // Ease-out for a natural feel: fast start, gentle arrival at center
-  const eased = 1 - (1 - t) * (1 - t);
-
-  isProgrammaticScroll.value = true;
-  scrollViewport.scrollTop =
-    scrollStartTop + (scrollEndTop - scrollStartTop) * eased;
-
-  if (t >= 1) {
-    scrollDuration = 0;
-    isProgrammaticScroll.value = false;
-  }
-};
-
-// Detect manual scrolling so we don't fight the user with auto-scroll.
-// Uses isProgrammaticScroll to distinguish our scroll writes from
-// user-initiated scrolls. After user scrolls, auto-scroll is paused for 8s.
-const setupScrollListener = () => {
-  const root = scrollAreaRef.value?.$el as HTMLElement | undefined;
-  scrollViewport = root?.querySelector<HTMLElement>(
-    "[data-slot=scroll-area-viewport]",
-  ) ?? null;
-  if (!scrollViewport) return;
-
-  scrollViewport.addEventListener(
-    "scroll",
-    () => {
-      if (isProgrammaticScroll.value) return;
-
-      userManuallyScrolled.value = true;
-      // Stop any in-progress interpolation
-      scrollDuration = 0;
-
-      // Debounce: clear previous timer, start new 8s timer
-      if (manualScrollTimer) {
-        clearTimeout(manualScrollTimer);
-      }
-      manualScrollTimer = setTimeout(() => {
-        userManuallyScrolled.value = false;
-        manualScrollTimer = null;
-      }, 8000);
-    },
-    { passive: true },
-  );
+  contentTranslateY.value = anchorY - lineTop - lineHeight / 2;
 };
 
 // Watch for lyrics data changes
@@ -336,30 +390,33 @@ watch(
   [() => props.mediaItem?.item_id, () => props.lyrics, () => props.lrcLyrics],
   () => {
     activeLyricIndex.value = -1;
-    scrollDuration = 0;
+    musicalBreakLineIndex.value = -1;
+    isInMusicalBreak.value = false;
+    contentTranslateY.value = 99999;
+    contentTransitionEnabled.value = false;
     lineRefs.clear();
     fetchLyrics();
+    // After DOM renders with new lyrics, position first line at bottom of container
+    nextTick(() => {
+      const container = syncedContainerRef.value;
+      if (container && hasTimestamps.value) {
+        contentTranslateY.value = container.clientHeight;
+      }
+    });
   },
   { immediate: true },
 );
 
-// Watch for ScrollArea ref becoming available and attach scroll listener
-watch(scrollAreaRef, (newRef) => {
-  if (newRef) {
-    nextTick(() => setupScrollListener());
+// Slide lyrics into view when the intro dismisses (handles anticipation mode
+// where beforeFirstLyric goes false before activeLyricIndex becomes 0).
+watch(beforeFirstLyric, (isBefore, wasBefore) => {
+  if (wasBefore && !isBefore && !contentTransitionEnabled.value) {
+    contentTransitionEnabled.value = true;
+    nextTick(() => computeTranslateY(0));
   }
 });
 
-// Main sync: highlight follows timestamps exactly, scroll interpolates smoothly.
-//
-// On each ~60fps position update:
-//   1. Check if the active lyric changed — if so, start a new scroll
-//      interpolation toward the NEXT lyric's centered position, timed to
-//      arrive exactly when that lyric will activate.
-//   2. Advance the ongoing scroll interpolation by one frame (tickScroll).
-//
-// This creates a constant, smooth scroll that naturally lands each line
-// at the center of the viewport right when it highlights.
+// Main sync: update active index and reposition content.
 watch(
   () => props.position,
   (newPosition: number | undefined) => {
@@ -371,35 +428,44 @@ watch(
       return;
     }
 
-    const positionMs = Math.round(newPosition * 1000);
-    const newActiveIndex = findActiveLyricIndex(positionMs);
+    // Shift position forward by the highlight lead time so the CSS transition
+    // finishes exactly when the lyric timestamp is reached.
+    const highlightPositionMs = Math.round(
+      (newPosition + HIGHLIGHT_LEAD_SECONDS) * 1000,
+    );
+    const newActiveIndex = findActiveLyricIndex(highlightPositionMs);
 
-    // When the active lyric changes, begin scrolling toward the next one
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
+      contentTransitionEnabled.value = true;
       activeLyricIndex.value = newActiveIndex;
-
-      if (!userManuallyScrolled.value) {
-        const nextIndex = newActiveIndex + 1;
-        if (nextIndex < parsedLyrics.value.length) {
-          // Time until the next lyric activates — scroll over this duration
-          const timeUntilNext =
-            parsedLyrics.value[nextIndex].time - newPosition;
-          nextTick(() => beginScrollTo(nextIndex, timeUntilNext));
-        }
-      }
+      nextTick(() => computeTranslateY(newActiveIndex));
     }
 
-    // Advance the scroll interpolation every frame
-    if (!userManuallyScrolled.value) {
-      tickScroll();
+    // Update musical break state using raw position (not highlight-shifted).
+    // musicalBreakLineIndex persists so notes remain as a "previous line"
+    // after the next lyric activates. Fill state is derived via computed props.
+    const breakInfo = musicalBreakMap.value.get(activeLyricIndex.value);
+    if (
+      breakInfo &&
+      newPosition >= breakInfo.gapStart &&
+      newPosition < breakInfo.gapEnd
+    ) {
+      isInMusicalBreak.value = true;
+      musicalBreakLineIndex.value = activeLyricIndex.value;
+    } else {
+      isInMusicalBreak.value = false;
+      // Clear the break line index only once it would be scrolled out of view
+      if (
+        musicalBreakLineIndex.value >= 0 &&
+        activeLyricIndex.value > musicalBreakLineIndex.value + 1
+      ) {
+        musicalBreakLineIndex.value = -1;
+      }
     }
   },
 );
 
 onBeforeUnmount(() => {
-  if (manualScrollTimer) {
-    clearTimeout(manualScrollTimer);
-  }
   lineRefs.clear();
 });
 </script>
@@ -424,7 +490,9 @@ onBeforeUnmount(() => {
 }
 
 .lyrics-intro {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -432,22 +500,51 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
+.intro-fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.intro-fade-leave-to {
+  opacity: 0;
+}
+
 .song-title {
-  font-size: 2em;
+  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
   font-weight: bold;
   margin-bottom: 10px;
 }
 
 .artist-name {
-  font-size: 1.5em;
+  font-size: clamp(1.4rem, 2.5vw, 2.5rem);
   margin-bottom: 40px;
   opacity: 0.8;
 }
 
 .lyrics-coming-soon {
-  font-size: 1.2em;
+  font-size: clamp(1rem, 1.8vw, 1.8rem);
   opacity: 0.6;
   font-style: italic;
+}
+
+/* Synced lyrics: fixed anchor with transform-based positioning */
+.synced-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.synced-content {
+  text-align: center;
+  will-change: transform;
+  transition: transform 1s ease;
+}
+
+/* Non-synced static lyrics */
+.static-lyrics {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .lyrics-content {
@@ -455,31 +552,46 @@ onBeforeUnmount(() => {
   padding: 10px 0;
 }
 
-.lyrics-content--synced {
-  padding: 40vh 0;
-}
-
-.static-lyrics {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
 .lyrics-line {
   padding: 10px 4px;
-  font-size: 1.1em;
-  opacity: 0.5;
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: bold;
+  opacity: 0.35;
   margin: 8px 0;
-  filter: blur(1px);
-  text-shadow: 0 0 1px var(--text-color);
+  transform: scale(0.78);
+  transform-origin: center center;
+  will-change: transform, opacity;
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
+}
+
+.lyrics-line.lyrics-line--hidden {
+  opacity: 0;
+  transform: scale(0.78);
 }
 
 .lyrics-line.active {
   opacity: 1;
-  font-size: 1.4em;
-  font-weight: bold;
   color: v-bind(textColor);
-  filter: blur(0);
-  text-shadow: none;
+  transform: scale(1);
+}
+
+.break-note {
+  display: inline-block;
+  font-size: clamp(2rem, 4vw, 4rem);
+  margin: 0 0.15em;
+  color: v-bind(textColor);
+  opacity: 0.35;
+  background-image: none;
+  -webkit-text-fill-color: initial;
+}
+
+.break-note--filled {
+  opacity: 1;
+}
+
+.break-note--filling {
+  opacity: 1;
 }
 </style>
