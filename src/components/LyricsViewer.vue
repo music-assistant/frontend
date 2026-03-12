@@ -249,14 +249,13 @@ const fetchLyrics = () => {
 };
 
 // How far ahead (in seconds) the highlight activates before the lyric timestamp.
-// With the 2.5s ease transition, the line becomes perceptually "active" (visually
-// ~50-60% transitioned) about 1s into the animation — so a 1.0s lead makes the
-// highlight feel like it lands right on the beat.
+// Matches the CSS transition duration so the transition is fully complete
+// exactly when the lyric timestamp is reached.
 const HIGHLIGHT_LEAD_SECONDS = 1.0;
 
 // Find active lyric index based on current position.
-// The highlight activates HIGHLIGHT_LEAD_SECONDS early so the CSS transition
-// completes right when the lyric timestamp is reached.
+// The highlight activates HIGHLIGHT_LEAD_SECONDS (= transition duration) early
+// so the CSS transition is fully complete when the lyric timestamp is reached.
 const findActiveLyricIndex = (positionMs: number): number => {
   let index = -1;
   for (let i = 0; i < parsedLyrics.value.length; i++) {
@@ -497,8 +496,8 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   will-change: transform, opacity;
   transition:
-    opacity 2.5s ease,
-    transform 2.5s ease;
+    opacity 1s ease,
+    transform 1s ease;
 }
 
 .lyrics-line.active {
