@@ -14,15 +14,16 @@
       <div class="artist-name">{{ artistName }}</div>
       <div class="lyrics-coming-soon">{{ $t("lyrics_will_appear_soon") }}</div>
     </div>
-    <ScrollArea
-      v-else
-      ref="scrollAreaRef"
-      class="h-full w-full"
-      :class="{ 'static-lyrics': !hasTimestamps }"
+    <!-- Synced lyrics: transform-based fixed anchor -->
+    <div
+      v-else-if="hasTimestamps"
+      ref="syncedContainerRef"
+      class="synced-container"
     >
       <div
-        ref="lyricsContentRef"
-        :class="['lyrics-content', { 'lyrics-content--synced': hasTimestamps }]"
+        ref="syncedContentRef"
+        class="synced-content"
+        :style="{ transform: `translateY(${contentTranslateY}px)` }"
       >
         <div
           v-for="(line, index) in parsedLyrics"
@@ -31,9 +32,25 @@
           :class="[
             'lyrics-line',
             {
-              active: activeLyricIndex === index || !hasTimestamps,
+              active: activeLyricIndex === index,
+              'lyrics-line--hidden':
+                activeLyricIndex >= 0 &&
+                (index < activeLyricIndex - 1 ||
+                  index > activeLyricIndex + 2),
             },
           ]"
+        >
+          {{ line.text }}
+        </div>
+      </div>
+    </div>
+    <!-- Non-synced lyrics: simple scrollable list -->
+    <ScrollArea v-else ref="scrollAreaRef" class="h-full w-full static-lyrics">
+      <div class="lyrics-content">
+        <div
+          v-for="(line, index) in parsedLyrics"
+          :key="index"
+          class="lyrics-line active"
         >
           {{ line.text }}
         </div>
@@ -80,22 +97,13 @@ const parsedLyrics = ref<Array<{ time: number; text: string }>>([]);
 const loading = ref(false);
 const activeLyricIndex = ref(-1);
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
-const lyricsContentRef = ref<HTMLElement | null>(null);
+const syncedContainerRef = ref<HTMLElement | null>(null);
+const syncedContentRef = ref<HTMLElement | null>(null);
 const lineRefs = new Map<number, HTMLElement>();
-const isProgrammaticScroll = ref(false);
-const userManuallyScrolled = ref(false);
-let manualScrollTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Continuous scroll state.
-// Instead of discrete scrollIntoView jumps, we linearly interpolate scrollTop
-// between the current and next lyric's centered positions. This creates a
-// constant smooth scroll rate that lands the next line at center exactly
-// when it highlights.
-let scrollViewport: HTMLElement | null = null;
-let scrollStartTop = 0;
-let scrollEndTop = 0;
-let scrollStartTime = 0;
-let scrollDuration = 0;
+// Transform-based positioning: translateY applied to the content div
+// so the active line always sits at the fixed anchor point.
+const contentTranslateY = ref(0);
 
 const setLineRef = (el: HTMLElement | null, index: number) => {
   if (el) {
@@ -269,81 +277,19 @@ const findActiveLyricIndex = (positionMs: number): number => {
   return index;
 };
 
-// Calculate the scrollTop value that centers a given lyric line in the viewport.
-const getCenteredScrollTop = (index: number): number | null => {
+// Calculate the translateY needed to place a line at the anchor point
+// (40% from top of the container).
+const computeTranslateY = (index: number) => {
   const el = lineRefs.get(index);
-  if (!el || !scrollViewport) return null;
-  const elTop = el.offsetTop;
-  const elHeight = el.offsetHeight;
-  const viewportHeight = scrollViewport.clientHeight;
-  return elTop - viewportHeight / 2 + elHeight / 2;
-};
+  const container = syncedContainerRef.value;
+  if (!el || !container) return;
 
-// Begin a new scroll interpolation from the current position to center the
-// target lyric, completing over the given duration in seconds.
-const beginScrollTo = (targetIndex: number, durationSec: number) => {
-  if (!scrollViewport) return;
-  const targetTop = getCenteredScrollTop(targetIndex);
-  if (targetTop === null) return;
+  const containerHeight = container.clientHeight;
+  const anchorY = containerHeight * 0.4;
+  const lineTop = el.offsetTop;
+  const lineHeight = el.offsetHeight;
 
-  scrollStartTop = scrollViewport.scrollTop;
-  scrollEndTop = targetTop;
-  scrollStartTime = performance.now();
-  // Minimum 300ms so very fast lyrics don't cause jarring snaps
-  scrollDuration = Math.max(300, durationSec * 1000);
-};
-
-// Called on every position update (~60fps via rAF) to advance the scroll.
-// Uses ease-out interpolation for a natural feel.
-const tickScroll = () => {
-  if (!scrollViewport || scrollDuration === 0) return;
-
-  const elapsed = performance.now() - scrollStartTime;
-  const t = Math.min(1, elapsed / scrollDuration);
-
-  // Ease-out for a natural feel: fast start, gentle arrival at center
-  const eased = 1 - (1 - t) * (1 - t);
-
-  isProgrammaticScroll.value = true;
-  scrollViewport.scrollTop =
-    scrollStartTop + (scrollEndTop - scrollStartTop) * eased;
-
-  if (t >= 1) {
-    scrollDuration = 0;
-    isProgrammaticScroll.value = false;
-  }
-};
-
-// Detect manual scrolling so we don't fight the user with auto-scroll.
-// Uses isProgrammaticScroll to distinguish our scroll writes from
-// user-initiated scrolls. After user scrolls, auto-scroll is paused for 8s.
-const setupScrollListener = () => {
-  const root = scrollAreaRef.value?.$el as HTMLElement | undefined;
-  scrollViewport = root?.querySelector<HTMLElement>(
-    "[data-slot=scroll-area-viewport]",
-  ) ?? null;
-  if (!scrollViewport) return;
-
-  scrollViewport.addEventListener(
-    "scroll",
-    () => {
-      if (isProgrammaticScroll.value) return;
-
-      userManuallyScrolled.value = true;
-      // Stop any in-progress interpolation
-      scrollDuration = 0;
-
-      // Debounce: clear previous timer, start new 8s timer
-      if (manualScrollTimer) {
-        clearTimeout(manualScrollTimer);
-      }
-      manualScrollTimer = setTimeout(() => {
-        userManuallyScrolled.value = false;
-        manualScrollTimer = null;
-      }, 8000);
-    },
-    { passive: true },
-  );
+  contentTranslateY.value = anchorY - lineTop - lineHeight / 2;
 };
 
 // Watch for lyrics data changes
@@ -351,30 +297,14 @@ watch(
   [() => props.mediaItem?.item_id, () => props.lyrics, () => props.lrcLyrics],
   () => {
     activeLyricIndex.value = -1;
-    scrollDuration = 0;
+    contentTranslateY.value = 0;
     lineRefs.clear();
     fetchLyrics();
   },
   { immediate: true },
 );
 
-// Watch for ScrollArea ref becoming available and attach scroll listener
-watch(scrollAreaRef, (newRef) => {
-  if (newRef) {
-    nextTick(() => setupScrollListener());
-  }
-});
-
-// Main sync: highlight follows timestamps exactly, scroll interpolates smoothly.
-//
-// On each ~60fps position update:
-//   1. Check if the active lyric changed — if so, start a new scroll
-//      interpolation toward the NEXT lyric's centered position, timed to
-//      arrive exactly when that lyric will activate.
-//   2. Advance the ongoing scroll interpolation by one frame (tickScroll).
-//
-// This creates a constant, smooth scroll that naturally lands each line
-// at the center of the viewport right when it highlights.
+// Main sync: update active index and reposition content.
 watch(
   () => props.position,
   (newPosition: number | undefined) => {
@@ -393,34 +323,14 @@ watch(
     );
     const newActiveIndex = findActiveLyricIndex(highlightPositionMs);
 
-    // When the active lyric changes, begin scrolling toward the next one
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
       activeLyricIndex.value = newActiveIndex;
-
-      if (!userManuallyScrolled.value) {
-        const nextIndex = newActiveIndex + 1;
-        if (nextIndex < parsedLyrics.value.length) {
-          // Time until the next lyric's highlight activates (accounting for lead)
-          const timeUntilNext =
-            parsedLyrics.value[nextIndex].time -
-            newPosition -
-            HIGHLIGHT_LEAD_SECONDS;
-          nextTick(() => beginScrollTo(nextIndex, timeUntilNext));
-        }
-      }
-    }
-
-    // Advance the scroll interpolation every frame
-    if (!userManuallyScrolled.value) {
-      tickScroll();
+      nextTick(() => computeTranslateY(newActiveIndex));
     }
   },
 );
 
 onBeforeUnmount(() => {
-  if (manualScrollTimer) {
-    clearTimeout(manualScrollTimer);
-  }
   lineRefs.clear();
 });
 </script>
@@ -471,24 +381,35 @@ onBeforeUnmount(() => {
   font-style: italic;
 }
 
-.lyrics-content {
+/* Synced lyrics: fixed anchor with transform-based positioning */
+.synced-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.synced-content {
   text-align: center;
-  padding: 10px 0;
+  will-change: transform;
+  transition: transform 1s ease;
 }
 
-.lyrics-content--synced {
-  padding: 40vh 0;
-}
-
+/* Non-synced static lyrics */
 .static-lyrics {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
+.lyrics-content {
+  text-align: center;
+  padding: 10px 0;
+}
+
 .lyrics-line {
   padding: 10px 4px;
-  font-size: 1.4em;
+  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
   font-weight: bold;
   opacity: 0.35;
   margin: 8px 0;
@@ -498,6 +419,11 @@ onBeforeUnmount(() => {
   transition:
     opacity 1s ease,
     transform 1s ease;
+}
+
+.lyrics-line--hidden {
+  opacity: 0 !important;
+  transform: scale(0.78) !important;
 }
 
 .lyrics-line.active {

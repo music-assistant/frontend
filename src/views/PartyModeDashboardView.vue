@@ -797,7 +797,7 @@ watch(
 }
 
 .karaoke-lyrics :deep(.lyrics-line) {
-  font-size: clamp(1.2rem, 2.5vw, 2.5rem);
+  font-size: clamp(2rem, 4vw, 4rem);
 }
 
 .karaoke-track-stack {
