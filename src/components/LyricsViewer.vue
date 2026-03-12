@@ -364,19 +364,19 @@ onBeforeUnmount(() => {
 }
 
 .song-title {
-  font-size: 2em;
+  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
   font-weight: bold;
   margin-bottom: 10px;
 }
 
 .artist-name {
-  font-size: 1.5em;
+  font-size: clamp(1.4rem, 2.5vw, 2.5rem);
   margin-bottom: 40px;
   opacity: 0.8;
 }
 
 .lyrics-coming-soon {
-  font-size: 1.2em;
+  font-size: clamp(1rem, 1.8vw, 1.8rem);
   opacity: 0.6;
   font-style: italic;
 }
