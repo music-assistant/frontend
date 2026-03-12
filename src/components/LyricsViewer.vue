@@ -141,6 +141,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Core lyrics state
 const parsedLyrics = ref<Array<{ time: number; text: string }>>([]);
+// Timestamps of empty LRC lines — these mark genuine instrumental breaks
+const breakMarkerTimes = ref<Set<number>>(new Set());
 const loading = ref(false);
 const activeLyricIndex = ref(-1);
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
@@ -278,10 +280,20 @@ const fetchLyrics = () => {
         .split("\n")
         .filter((line) => line.trim());
 
-      parsedLyrics.value = lyricsLines
+      const allParsed = lyricsLines
         .map((line) => parseLrcLine(line))
-        .filter((line) => line.text.trim())
         .sort((a, b) => a.time - b.time);
+
+      // Empty timestamped lines mark genuine instrumental breaks
+      const markers = new Set<number>();
+      for (const line of allParsed) {
+        if (!line.text.trim() && line.time > 0) {
+          markers.add(line.time);
+        }
+      }
+      breakMarkerTimes.value = markers;
+
+      parsedLyrics.value = allParsed.filter((line) => line.text.trim());
     } else if (lyricsToProcess) {
       const lyricsLines = lyricsToProcess
         .split("\n")
@@ -304,20 +316,31 @@ const fetchLyrics = () => {
   }
 };
 
-// Musical break detection: show countdown notes during long instrumental gaps
-const GAP_THRESHOLD = 10; // seconds — minimum gap to trigger break display
+// Musical break detection: only trigger when the LRC contains an empty
+// timestamped line between two content lines (a genuine break marker).
 const BREAK_DELAY = 2; // seconds after line before showing notes
 const NOTE_COUNT = 7;
 
 const musicalBreakMap = computed(() => {
   const map = new Map<number, { gapStart: number; gapEnd: number }>();
   const lyrics = parsedLyrics.value;
+  const markers = breakMarkerTimes.value;
+  if (!markers.size) return map;
   for (let i = 0; i < lyrics.length - 1; i++) {
-    const gap = lyrics[i + 1].time - lyrics[i].time;
-    if (gap > GAP_THRESHOLD) {
+    const gapStart = lyrics[i].time;
+    const gapEnd = lyrics[i + 1].time;
+    // Check if any break marker timestamp falls within this gap
+    let hasMarker = false;
+    for (const t of markers) {
+      if (t > gapStart && t < gapEnd) {
+        hasMarker = true;
+        break;
+      }
+    }
+    if (hasMarker) {
       map.set(i, {
-        gapStart: lyrics[i].time + BREAK_DELAY,
-        gapEnd: lyrics[i + 1].time,
+        gapStart: gapStart + BREAK_DELAY,
+        gapEnd,
       });
     }
   }
