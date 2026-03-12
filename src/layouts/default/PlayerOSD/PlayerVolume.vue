@@ -775,7 +775,7 @@ watch(
 .group-popout-divider {
   height: 1px;
   background: rgba(var(--v-border-color), 0.15);
-  margin: 6px 0;
+  margin: 14px 0 10px 0;
 }
 
 /* Drag handle for swipe-down-to-dismiss (touch only) */
