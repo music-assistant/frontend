@@ -305,6 +305,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
+  forcedViewMode?: "list" | "panel" | "panel_compact";
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -337,6 +338,7 @@ const props = withDefaults(defineProps<Props>(), {
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
+  forcedViewMode: undefined,
 });
 
 // global refs
@@ -434,13 +436,22 @@ const toggleExpand = function () {
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  setItemsListingPreference(
-    props.path || props.itemtype,
-    props.itemtype,
-    "viewMode",
-    newMode,
-  );
+  if (!props.forcedViewMode) {
+    setItemsListingPreference(
+      props.path || props.itemtype,
+      props.itemtype,
+      "viewMode",
+      newMode,
+    );
+  }
 };
+
+watch(
+  () => props.forcedViewMode,
+  (newMode) => {
+    if (newMode) viewMode.value = newMode;
+  },
+);
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
@@ -1007,38 +1018,39 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle view mode
-  items.push({
-    label: "tooltip.toggle_view_mode",
-    icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
-    overflowAllowed: true,
-    subItems: [
-      {
-        label: "view.list",
-        icon: "mdi-view-list",
-        selected: viewMode.value == "list",
-        action: () => {
-          selectViewMode("list");
+  // toggle view mode (hidden when view mode is controlled externally)
+  if (!props.forcedViewMode)
+    items.push({
+      label: "tooltip.toggle_view_mode",
+      icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+      overflowAllowed: true,
+      subItems: [
+        {
+          label: "view.list",
+          icon: "mdi-view-list",
+          selected: viewMode.value == "list",
+          action: () => {
+            selectViewMode("list");
+          },
         },
-      },
-      {
-        label: "view.panel",
-        icon: "mdi-grid",
-        selected: viewMode.value == "panel",
-        action: () => {
-          selectViewMode("panel");
+        {
+          label: "view.panel",
+          icon: "mdi-grid",
+          selected: viewMode.value == "panel",
+          action: () => {
+            selectViewMode("panel");
+          },
         },
-      },
-      {
-        label: "view.panel_compact",
-        icon: "mdi-grid",
-        selected: viewMode.value == "panel_compact",
-        action: () => {
-          selectViewMode("panel_compact");
+        {
+          label: "view.panel_compact",
+          icon: "mdi-grid",
+          selected: viewMode.value == "panel_compact",
+          action: () => {
+            selectViewMode("panel_compact");
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
   if (props.extraMenuItems?.length) {
     items.push(...props.extraMenuItems);
@@ -1135,7 +1147,9 @@ const restoreSettings = async function () {
   const prefs = savedPrefs.value;
 
   // get stored/default viewMode for this itemtype
-  if (prefs.viewMode) {
+  if (props.forcedViewMode) {
+    viewMode.value = props.forcedViewMode;
+  } else if (prefs.viewMode) {
     viewMode.value = prefs.viewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";

@@ -30,7 +30,11 @@
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
-      />
+      >
+        <template v-if="$slots['toolbar-append']" #append>
+          <slot name="toolbar-append"></slot>
+        </template>
+      </Toolbar>
       <v-layout
         v-if="item"
         style="
