@@ -34,9 +34,10 @@
             {
               active: activeLyricIndex === index,
               'lyrics-line--hidden':
-                activeLyricIndex >= 0 &&
-                (index < activeLyricIndex - 1 ||
-                  index > activeLyricIndex + 2),
+                activeLyricIndex >= 0
+                  ? index < activeLyricIndex - 1 ||
+                    index > activeLyricIndex + 2
+                  : index > 2,
             },
           ]"
         >
@@ -44,8 +45,12 @@
         </div>
       </div>
     </div>
-    <!-- Non-synced lyrics: simple scrollable list -->
-    <ScrollArea v-else ref="scrollAreaRef" class="h-full w-full static-lyrics">
+    <!-- Non-synced lyrics: simple scrollable list (hidden in karaoke mode) -->
+    <ScrollArea
+      v-else-if="!props.anticipation"
+      ref="scrollAreaRef"
+      class="h-full w-full static-lyrics"
+    >
       <div class="lyrics-content">
         <div
           v-for="(line, index) in parsedLyrics"
@@ -285,7 +290,7 @@ const computeTranslateY = (index: number) => {
   if (!el || !container) return;
 
   const containerHeight = container.clientHeight;
-  const anchorY = containerHeight * 0.4;
+  const anchorY = containerHeight * 0.25;
   const lineTop = el.offsetTop;
   const lineHeight = el.offsetHeight;
 
@@ -409,7 +414,7 @@ onBeforeUnmount(() => {
 
 .lyrics-line {
   padding: 10px 4px;
-  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
+  font-size: clamp(2rem, 4vw, 4rem);
   font-weight: bold;
   opacity: 0.35;
   margin: 8px 0;

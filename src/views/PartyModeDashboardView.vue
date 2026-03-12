@@ -34,7 +34,6 @@
 
         <div class="karaoke-lyrics">
           <LyricsViewer
-            :key="store.curQueueItem?.queue_item_id"
             :media-item="store.curQueueItem?.media_item"
             :position="lyricsElapsedTime"
             :duration="store.curQueueItem?.duration"
@@ -43,7 +42,7 @@
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
             :anticipation="10"
-            :external-loading="lyricsLoading"
+
           />
         </div>
 
@@ -87,7 +86,6 @@
           </div>
           <div v-if="displayLyrics" class="lyrics-section">
             <LyricsViewer
-              :key="store.curQueueItem?.queue_item_id"
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
               :duration="store.curQueueItem?.duration"
@@ -95,7 +93,7 @@
               text-color="#FFFFFF"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
-              :external-loading="lyricsLoading"
+  
             />
           </div>
         </div>
@@ -230,7 +228,6 @@ const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
   synced: null,
 });
-const lyricsLoading = ref(false);
 
 const fetchLyrics = async () => {
   currentLyrics.value = { plain: null, synced: null };
@@ -247,7 +244,6 @@ const fetchLyrics = async () => {
     return;
   }
 
-  lyricsLoading.value = true;
   try {
     const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
     currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
@@ -260,8 +256,6 @@ const fetchLyrics = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch track lyrics:", error);
-  } finally {
-    lyricsLoading.value = false;
   }
 };
 
