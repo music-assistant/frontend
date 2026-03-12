@@ -1,7 +1,7 @@
 <template>
   <div class="guest-view">
     <!-- Search Section -->
-    <PartyModeSearchBar
+    <PartySearchBar
       v-model:search-query="searchQuery"
       v-model:search-filter="searchFilter"
       :has-searched="hasSearched"
@@ -33,7 +33,7 @@
           {{ selectedArtist.name }}
         </h2>
         <div v-if="rateLimitingEnabled" class="tokens-row">
-          <PartyModeTokensBadge
+          <PartyTokensBadge
             v-if="boostEnabled"
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
@@ -42,7 +42,7 @@
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
-          <PartyModeTokensBadge
+          <PartyTokensBadge
             v-if="addQueueEnabled"
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
@@ -60,7 +60,7 @@
       </div>
       <!-- Artist tracks list -->
       <div v-else-if="artistTracks.length > 0" class="results-list">
-        <PartyModeResultItem
+        <PartyResultItem
           v-for="track in artistTracks"
           :key="`track-${track.item_id}`"
           :item="track"
@@ -100,7 +100,7 @@
           }}
         </h2>
         <div v-if="rateLimitingEnabled" class="tokens-row">
-          <PartyModeTokensBadge
+          <PartyTokensBadge
             v-if="boostEnabled"
             :tokens="boostTokens"
             :max-tokens="BOOST_MAX_TOKENS"
@@ -109,7 +109,7 @@
             :color="boostBadgeColor"
             icon="mdi-rocket-launch"
           />
-          <PartyModeTokensBadge
+          <PartyTokensBadge
             v-if="addQueueEnabled"
             :tokens="addQueueTokens"
             :max-tokens="ADD_QUEUE_MAX_TOKENS"
@@ -121,7 +121,7 @@
         </div>
       </div>
       <div ref="resultsListRef" class="results-list" @scroll="handleScroll">
-        <PartyModeResultItem
+        <PartyResultItem
           v-for="item in displayedResults"
           :key="`${item.media_type}-${item.item_id}`"
           :item="item"
@@ -163,7 +163,7 @@
     </div>
 
     <!-- Current Queue Section -->
-    <PartyModeQueueSection
+    <PartyQueueSection
       v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
       ref="queueSectionRef"
       :queue-items="queueItems"
@@ -208,20 +208,20 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { toast } from "vue-sonner";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import { useGuestQueue } from "@/composables/useGuestQueue";
 import { useGuestSearch } from "@/composables/useGuestSearch";
-import PartyModeSearchBar from "@/components/party/PartyModeSearchBar.vue";
-import PartyModeResultItem from "@/components/party/PartyModeResultItem.vue";
-import PartyModeQueueSection from "@/components/party/PartyModeQueueSection.vue";
-import PartyModeTokensBadge from "@/components/party/PartyModeTokensBadge.vue";
+import PartySearchBar from "@/components/party/PartySearchBar.vue";
+import PartyResultItem from "@/components/party/PartyResultItem.vue";
+import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
+import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { ArrowLeft, Music, Search } from "lucide-vue-next";
 
 // --- Composables ---
-const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyConfig();
 const rateLimit = useRateLimiting();
 const {
   rateLimitingEnabled,
@@ -251,7 +251,7 @@ const {
   queueItems,
   queueFetchOffset,
   loadingMoreQueueItems,
-  partyModeQueueId,
+  partyQueueId,
   currentQueueIndex,
   fetchQueueItems,
   handleQueueScroll,
@@ -290,7 +290,7 @@ const toggleExpandedResult = (itemId: string) => {
   expandedResultItemId.value =
     expandedResultItemId.value === itemId ? "" : itemId;
 };
-const queueSectionRef = ref<InstanceType<typeof PartyModeQueueSection> | null>(
+const queueSectionRef = ref<InstanceType<typeof PartyQueueSection> | null>(
   null,
 );
 
@@ -483,7 +483,7 @@ let cleanupProvidersSub: (() => void) | null = null;
 const refreshPartyPlayer = async () => {
   try {
     const partyPlayerId = await api.sendCommand<string | null>("party/player");
-    partyModeQueueId.value = partyPlayerId;
+    partyQueueId.value = partyPlayerId;
     if (partyPlayerId) {
       store.activePlayerId = partyPlayerId;
     }

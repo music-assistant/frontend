@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -52,7 +52,7 @@ const qrSize = ref(320);
 const copyFeedback = ref<string>("");
 const instructionText = ref($t("providers.party.scan_to_join"));
 const { config: partyConfig, fetchConfig: fetchPartyConfig } =
-  usePartyModeConfig();
+  usePartyConfig();
 let resizeObserver: ResizeObserver | null = null;
 
 const calculateQRSize = () => {
@@ -170,10 +170,10 @@ onMounted(async () => {
   const unsubProviders = api.subscribe(
     EventType.PROVIDERS_UPDATED,
     async () => {
-      const hasPartyMode = Object.values(api.providers).some(
+      const hasParty = Object.values(api.providers).some(
         (p) => p.domain === "party",
       );
-      if (hasPartyMode) {
+      if (hasParty) {
         await generateQRCode();
       } else {
         guestAccessEnabled.value = false;
@@ -188,10 +188,10 @@ onMounted(async () => {
   const unsubCoreState = api.subscribe(
     EventType.CORE_STATE_UPDATED,
     async () => {
-      const hasPartyMode = Object.values(api.providers).some(
+      const hasParty = Object.values(api.providers).some(
         (p) => p.domain === "party",
       );
-      if (hasPartyMode) {
+      if (hasParty) {
         await generateQRCode();
       }
     },

@@ -29,7 +29,7 @@
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
         <div class="karaoke-qr">
-          <PartyModeQR />
+          <PartyQR />
         </div>
 
         <div class="karaoke-lyrics">
@@ -80,7 +80,7 @@
           :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
           <div class="qr-wrapper">
-            <PartyModeQR />
+            <PartyQR />
           </div>
           <div v-if="displayLyrics" class="lyrics-section">
             <LyricsViewer
@@ -135,9 +135,9 @@
 
 <script setup lang="ts">
 import LyricsViewer from "@/components/LyricsViewer.vue";
-import PartyModeQR from "@/components/party/PartyModeQR.vue";
+import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import {
   ImageColorPalette,
@@ -163,7 +163,7 @@ import { useTheme } from "vuetify";
 
 const theme = useTheme();
 const route = useRoute();
-const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyConfig();
 
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");

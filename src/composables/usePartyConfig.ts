@@ -6,19 +6,19 @@
 
 import { ref } from "vue";
 import api from "@/plugins/api";
-import { EventType, type PartyModeConfig } from "@/plugins/api/interfaces";
+import { EventType, type PartyConfig } from "@/plugins/api/interfaces";
 
-const config = ref<PartyModeConfig | null>(null);
+const config = ref<PartyConfig | null>(null);
 const loading = ref(false);
 const loaded = ref(false);
 
-let fetchPromise: Promise<PartyModeConfig | null> | null = null;
+let fetchPromise: Promise<PartyConfig | null> | null = null;
 
 /**
  * Fetch party config, deduplicating concurrent requests.
  * Returns the cached config if already loaded, unless force is true.
  */
-async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
+async function fetchConfig(force = false): Promise<PartyConfig | null> {
   if (loaded.value && !force) {
     return config.value;
   }
@@ -31,7 +31,7 @@ async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
   loading.value = true;
   fetchPromise = (async () => {
     try {
-      const result = (await api.sendCommand("party/config")) as PartyModeConfig;
+      const result = (await api.sendCommand("party/config")) as PartyConfig;
       config.value = result;
       loaded.value = true;
       return result;
@@ -69,10 +69,10 @@ function ensureSubscribed() {
   subscribed = true;
 
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    const hasPartyMode = Object.values(api.providers).some(
+    const hasParty = Object.values(api.providers).some(
       (p) => p.domain === "party",
     );
-    if (hasPartyMode) {
+    if (hasParty) {
       invalidate();
       await fetchConfig(true);
     } else {
@@ -84,17 +84,17 @@ function ensureSubscribed() {
   // Remote access toggle fires CORE_STATE_UPDATED; refresh config so the
   // join URL switches between local and remote.
   api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
-    const hasPartyMode = Object.values(api.providers).some(
+    const hasParty = Object.values(api.providers).some(
       (p) => p.domain === "party",
     );
-    if (hasPartyMode) {
+    if (hasParty) {
       invalidate();
       await fetchConfig(true);
     }
   });
 }
 
-export function usePartyModeConfig() {
+export function usePartyConfig() {
   ensureSubscribed();
   return {
     config,

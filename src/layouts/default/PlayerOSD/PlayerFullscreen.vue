@@ -312,7 +312,7 @@
                       </div>
                     </template>
                     <template #append>
-                      <PartyModePlayerBadge
+                      <PartyPlayerBadge
                         v-if="item.extra_attributes?.party_guest === true"
                         :type="
                           item.extra_attributes?.party_boosted === true
@@ -524,7 +524,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import PartyModePlayerBadge from "@/components/party/PartyModePlayerBadge.vue";
+import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -541,7 +541,7 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -1240,7 +1240,7 @@ const loadNextPage = async function ({
 
 // Fetch badge colors from party config
 const { config: partyConfig, fetchConfig: fetchPartyConfig } =
-  usePartyModeConfig();
+  usePartyConfig();
 
 // React to party config changes (e.g., admin changes badge colors)
 watch(partyConfig, (newConfig) => {

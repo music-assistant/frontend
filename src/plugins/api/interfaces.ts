@@ -1104,7 +1104,7 @@ export interface User {
   preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
-  // Use authManager.isPartyModeGuest() to check for party sessions.
+  // Use authManager.isPartyGuest() to check for party sessions.
 }
 
 export interface AuthToken {
@@ -1158,9 +1158,9 @@ export interface RemoteAccessInfo {
   signaling_url: string;
 }
 
-// Party Mode interfaces
+// Party interfaces
 
-export interface PartyModeConfig {
+export interface PartyConfig {
   enable_rate_limiting: boolean;
   enable_add_queue: boolean;
   add_queue_limit: number;

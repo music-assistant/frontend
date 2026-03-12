@@ -1,5 +1,5 @@
 import { useRateLimiting } from "@/composables/useRateLimiting";
-import type { PartyModeConfig } from "@/plugins/api/interfaces";
+import type { PartyConfig } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const BOOST_STORAGE_KEY = "guest_boost_bucket";
@@ -69,7 +69,7 @@ describe("useRateLimiting", () => {
   it("applies configuration from server", () => {
     const rateLimiting = useRateLimiting();
 
-    const config: PartyModeConfig = {
+    const config: PartyConfig = {
       enable_rate_limiting: false,
       enable_add_queue: false,
       enable_boost: false,

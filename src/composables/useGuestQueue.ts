@@ -11,14 +11,14 @@ import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 
 export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   const queueItems = ref<QueueItem[]>([]);
-  const partyModeQueueId = ref<string | null>(null);
+  const partyQueueId = ref<string | null>(null);
   const queueListRef = ref<HTMLElement | null>(null);
   const queueFetchOffset = ref(0);
   const queueTotalItems = ref(0);
   const loadingMoreQueueItems = ref(false);
 
   const currentQueue = computed(() => {
-    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
     return queueId ? api.queues[queueId] : null;
   });
 
@@ -72,7 +72,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
   );
 
   const fetchQueueItems = async (reset = true) => {
-    const queueId = partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+    const queueId = partyQueueId.value || store.activePlayerQueue?.queue_id;
     if (!queueId) {
       queueItems.value = [];
       return;
@@ -134,7 +134,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
       EventType.QUEUE_ITEMS_UPDATED,
       (evt: EventMessage) => {
         const queueId =
-          partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+          partyQueueId.value || store.activePlayerQueue?.queue_id;
         if (evt.object_id === queueId) {
           fetchQueueItems(true);
         }
@@ -145,7 +145,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
       EventType.QUEUE_UPDATED,
       (evt: EventMessage) => {
         const queueId =
-          partyModeQueueId.value || store.activePlayerQueue?.queue_id;
+          partyQueueId.value || store.activePlayerQueue?.queue_id;
         if (evt.object_id === queueId) {
           const currentIdx = currentQueueIndex.value;
           const fetchedStart = queueFetchOffset.value;
@@ -174,7 +174,7 @@ export function useGuestQueue(options?: { onItemsChanged?: () => void }) {
     queueFetchOffset,
     queueTotalItems,
     loadingMoreQueueItems,
-    partyModeQueueId,
+    partyQueueId,
     currentQueue,
     currentQueueIndex,
     fetchQueueItems,

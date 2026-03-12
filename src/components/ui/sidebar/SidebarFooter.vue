@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
 import { computed, watch } from "vue";
@@ -14,7 +14,7 @@ const route = useRoute();
 const { isMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
 
-const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyConfig();
 
 watch(
   () => route.path,

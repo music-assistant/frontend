@@ -41,7 +41,7 @@
       class="queue-list"
       @scroll="$emit('queueScroll', $event)"
     >
-      <PartyModeQueueItem
+      <PartyQueueItem
         v-for="(item, index) in queueItems"
         :key="item.queue_item_id"
         :item="item"
@@ -75,7 +75,7 @@
 import { ref } from "vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import PartyModeQueueItem from "./PartyModeQueueItem.vue";
+import PartyQueueItem from "./PartyQueueItem.vue";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import { Clock, ListMusic, SkipForward } from "lucide-vue-next";

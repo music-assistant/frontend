@@ -56,7 +56,7 @@ export const getMenuItems = function () {
     }
     if (enabledMenuItemStr === "party") {
       items.push({
-        label: "Party Mode",
+        label: "Party",
         icon: PartyPopper,
         path: "/party",
         isLibraryNode: false,

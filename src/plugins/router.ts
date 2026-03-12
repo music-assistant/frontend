@@ -13,14 +13,14 @@ const routes = [
     path: "/guest",
     // Guest users don't have access to the player.
     meta: { disableWebPlayer: true },
-    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {
         path: "",
         name: "guest",
         component: () =>
           import(
-            /* webpackChunkName: "guest" */ "@/views/PartyModeGuestView.vue"
+            /* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"
           ),
       },
     ],
@@ -31,14 +31,14 @@ const routes = [
     path: "/party",
     // Party only displays the dashboard and doesn't need the player.
     meta: { disableWebPlayer: true },
-    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {
         path: "",
         name: "party",
         component: () =>
           import(
-            /* webpackChunkName: "party" */ "@/views/PartyModeDashboardView.vue"
+            /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
           ),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
         beforeEnter: async (_to: any, _from: any, next: any) => {
@@ -527,7 +527,7 @@ router.beforeEach(async (to, _from, next) => {
 
   // If party guest is trying to navigate away from /guest, redirect back to guest
   // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
-  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
+  if (authManager.isPartyGuest() && to.path !== "/guest") {
     console.debug("Party guest: preventing navigation to", to.path);
     next({ name: "guest" });
     return;

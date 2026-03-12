@@ -124,7 +124,7 @@ export class AuthManager {
    * Party guests authenticate via QR code/join code and have
    * restricted UI access (only the guest view).
    */
-  isPartyModeGuest(): boolean {
+  isPartyGuest(): boolean {
     return this.claims?.username === "party_guest";
   }
 
