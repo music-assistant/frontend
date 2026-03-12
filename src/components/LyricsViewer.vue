@@ -90,6 +90,7 @@ const setLineRef = (el: HTMLElement | null, index: number) => {
   }
 };
 
+// True when playback is before the first lyric timestamp — shows intro screen
 const beforeFirstLyric = computed(() => {
   if (!hasTimestamps.value || !parsedLyrics.value.length) {
     return false;
@@ -137,21 +138,25 @@ const hasLyrics = computed(() => {
   );
 });
 
+// Check parsed lyrics first, then fall back to raw data for LRC format patterns
 const hasTimestamps = computed(() => {
   if (parsedLyrics.value.some((line) => line.time > 0)) {
     return true;
   }
   const syncedLyrics = getSyncedLyrics();
   const plainLyrics = getPlainLyrics();
+  // Check lrc_lyrics field
   if (syncedLyrics && syncedLyrics.includes("[")) {
     return true;
   }
+  // Check regular lyrics field for LRC patterns like [00:29.79]
   if (plainLyrics && /\[\d+:\d+[.:]?\d*\]/.test(plainLyrics)) {
     return true;
   }
   return false;
 });
 
+// Parse a single LRC line like "[00:29.79] Some lyric text" into {time, text}
 const parseLrcLine = (line: string) => {
   const match = line.match(/\[(\d+):(\d+)([.:]\d+)?\](.*)/);
   if (match) {
@@ -169,6 +174,8 @@ const parseLrcLine = (line: string) => {
   return { time: 0, text: line.trim() || " " };
 };
 
+// Determine which lyrics source to use and parse them.
+// Priority: lrc_lyrics > plain lyrics with LRC patterns > plain text lyrics
 const fetchLyrics = () => {
   loading.value = true;
   try {
@@ -182,6 +189,7 @@ const fetchLyrics = () => {
       lyricsToProcess = syncedLyrics;
       isLrcFormat = true;
     } else if (plainLyrics && /\[\d+:\d+[.:]?\d*\]/.test(plainLyrics)) {
+      // Plain lyrics field contains LRC format
       lyricsToProcess = plainLyrics;
       isLrcFormat = true;
     } else if (plainLyrics) {
@@ -243,7 +251,8 @@ const calculateLookAhead = (currentPosition: number): number => {
   return Math.min(1.0, Math.max(0.05, gap * 0.15));
 };
 
-// Find active lyric index based on current position
+// Find active lyric index based on current position.
+// Uses millisecond precision to avoid floating-point comparison issues.
 const findActiveLyricIndex = (position: number, lookAhead: number): number => {
   const adjustedPositionMs = Math.round((position + lookAhead) * 1000);
 
@@ -276,7 +285,9 @@ const scrollToActiveLyric = (index: number) => {
   }, 400);
 };
 
-// Setup scroll listener to detect manual scrolling
+// Detect manual scrolling so we don't fight the user with auto-scroll.
+// Uses isProgrammaticScroll to distinguish our scrollIntoView calls from
+// user-initiated scrolls. After user scrolls, auto-scroll is paused for 8s.
 const setupScrollListener = () => {
   const root = scrollAreaRef.value?.$el as HTMLElement | undefined;
   const scrollEl = root?.querySelector<HTMLElement>(
@@ -287,7 +298,6 @@ const setupScrollListener = () => {
   scrollEl.addEventListener(
     "scroll",
     () => {
-      // Ignore scroll events triggered by our own scrollIntoView
       if (isProgrammaticScroll.value) return;
 
       userManuallyScrolled.value = true;
