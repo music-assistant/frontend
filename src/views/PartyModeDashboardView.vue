@@ -259,8 +259,9 @@ const fetchLyrics = async () => {
   }
 };
 
+const lyricsEnabled = computed(() => displayLyrics.value || karaokeMode.value);
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
-  useLyricsElapsedTime(displayLyrics);
+  useLyricsElapsedTime(lyricsEnabled);
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
@@ -505,7 +506,44 @@ const handleVisibilityChange = () => {
 };
 
 // Lifecycle and event subscriptions
+// Apply layout overrides to the parent .content-section so the party view
+// fills its container. Scoped to mount/unmount to avoid leaking global styles.
+const parentSection = ref<HTMLElement | null>(null);
+
+const applyParentStyles = () => {
+  const el = document.querySelector(".content-section");
+  if (el instanceof HTMLElement) {
+    parentSection.value = el;
+    el.classList.add("party-view-active");
+    if (!showPlayerControls.value) {
+      el.classList.add("party-view-no-footer");
+    }
+  }
+};
+
+const cleanupParentStyles = () => {
+  if (parentSection.value) {
+    parentSection.value.classList.remove(
+      "party-view-active",
+      "party-view-no-footer",
+    );
+    parentSection.value = null;
+  }
+};
+
+watch(showPlayerControls, (show) => {
+  if (!parentSection.value) return;
+  if (show) {
+    parentSection.value.classList.remove("party-view-no-footer");
+  } else {
+    parentSection.value.classList.add("party-view-no-footer");
+  }
+});
+
 onMounted(async () => {
+  // Apply parent container overrides
+  applyParentStyles();
+
   // Request wake lock to keep screen on
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -575,6 +613,7 @@ onBeforeUnmount(() => {
     wakeLock = null;
   }
   stopTick();
+  cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -878,8 +917,9 @@ watch(
   max-width: 400px;
 }
 
-/* Karaoke at 1024px breakpoint */
+/* Responsive adjustments */
 @media (max-width: 1024px) {
+  /* Karaoke */
   .karaoke-qr {
     max-width: 25vw;
   }
@@ -891,10 +931,8 @@ watch(
   .karaoke-track-stack {
     max-width: 80vw;
   }
-}
 
-/* Responsive adjustments */
-@media (max-width: 1024px) {
+  /* General layout */
   .party-content {
     flex-direction: column;
     justify-content: center;
@@ -1033,14 +1071,14 @@ watch(
 </style>
 
 <style>
-/* Global styles to ensure party view fills its container properly */
-.content-section:has(.party-view) {
+/* Classes toggled programmatically on .content-section by mount/unmount */
+.content-section.party-view-active {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
 }
 
-.content-section:has(.party-view--no-footer) {
+.content-section.party-view-no-footer {
   padding-bottom: 0 !important;
 }
 </style>

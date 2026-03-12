@@ -44,20 +44,38 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
     }
   };
 
+  // Track whether the loop *should* be running so visibility changes
+  // can pause/resume without fighting the watchEffect.
+  let shouldRun = false;
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === "visible" && shouldRun) {
+      start();
+    } else {
+      stop();
+    }
+  };
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
   watchEffect(() => {
     const playing =
       store.activePlayer?.playback_state === PlaybackState.PLAYING;
     const queue = store.activePlayerQueue;
     const isEnabled = enabled ? enabled.value : true;
 
-    if (playing && queue?.active && isEnabled) {
+    shouldRun = playing && !!queue?.active && isEnabled;
+
+    if (shouldRun && document.visibilityState === "visible") {
       start();
     } else {
       stop();
     }
   });
 
-  onScopeDispose(stop);
+  onScopeDispose(() => {
+    stop();
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  });
 
   return { elapsedTime, start, stop };
 }

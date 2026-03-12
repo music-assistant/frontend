@@ -522,9 +522,9 @@ onBeforeUnmount(() => {
     transform 1s ease;
 }
 
-.lyrics-line--hidden {
-  opacity: 0 !important;
-  transform: scale(0.78) !important;
+.lyrics-line.lyrics-line--hidden {
+  opacity: 0;
+  transform: scale(0.78);
 }
 
 .lyrics-line.active {

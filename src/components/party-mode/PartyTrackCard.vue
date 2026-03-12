@@ -157,11 +157,11 @@ const sizeClass = computed(() => {
   backdrop-filter: blur(1vh);
   width: 95%;
   box-sizing: border-box;
-  scale: var(--scale, 1);
+  transform: scale(var(--scale, 1));
   opacity: var(--opacity, 1);
   z-index: var(--z-index, 1);
   transition:
-    scale 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     margin 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.8s cubic-bezier(0.4, 0, 0.2, 1),
