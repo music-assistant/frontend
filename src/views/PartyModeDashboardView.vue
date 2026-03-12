@@ -839,12 +839,12 @@ watch(displayLyrics, (enabled) => {
 }
 
 .track-list--karaoke {
-  flex-direction: row;
-  gap: 2vw;
+  flex-direction: column;
+  gap: 0;
   height: auto;
   width: 100%;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .empty-state--karaoke {
