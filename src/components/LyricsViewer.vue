@@ -7,42 +7,66 @@
     <div v-else-if="!parsedLyrics.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
     </div>
-    <div v-else-if="beforeFirstLyric && hasTimestamps" class="lyrics-intro">
-      <div class="song-title" :style="{ color: textColor }">
-        {{ props.mediaItem?.name }}
-      </div>
-      <div class="artist-name">{{ artistName }}</div>
-      <div class="lyrics-coming-soon">{{ $t("lyrics_will_appear_soon") }}</div>
-    </div>
-    <!-- Synced lyrics: transform-based fixed anchor -->
+    <!-- Synced lyrics: always mounted when timestamps exist so DOM is ready for transition -->
     <div
       v-else-if="hasTimestamps"
       ref="syncedContainerRef"
       class="synced-container"
     >
+      <Transition name="intro-fade">
+        <div v-if="beforeFirstLyric" class="lyrics-intro">
+          <div class="song-title" :style="{ color: textColor }">
+            {{ props.mediaItem?.name }}
+          </div>
+          <div class="artist-name">{{ artistName }}</div>
+          <div class="lyrics-coming-soon">
+            {{ $t("lyrics_will_appear_soon") }}
+          </div>
+        </div>
+      </Transition>
       <div
         ref="syncedContentRef"
         class="synced-content"
-        :style="{ transform: `translateY(${contentTranslateY}px)` }"
+        :style="{
+          transform: `translateY(${contentTranslateY}px)`,
+          transition: contentTransitionEnabled
+            ? undefined
+            : 'none',
+        }"
       >
-        <div
+        <template
           v-for="(line, index) in parsedLyrics"
           :key="index"
-          :ref="(el) => setLineRef(el as HTMLElement | null, index)"
-          :class="[
-            'lyrics-line',
-            {
-              active: activeLyricIndex === index,
-              'lyrics-line--hidden':
-                activeLyricIndex >= 0
-                  ? index < activeLyricIndex - 1 ||
-                    index > activeLyricIndex + 2
-                  : index > 2,
-            },
-          ]"
         >
-          <template
+          <div
+            :ref="(el) => setLineRef(el as HTMLElement | null, index)"
+            :class="[
+              'lyrics-line',
+              {
+                active: activeLyricIndex === index,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0
+                    ? index < activeLyricIndex - 1 ||
+                      index > activeLyricIndex + 2
+                    : index > 2,
+              },
+            ]"
+          >
+            {{ line.text }}
+          </div>
+          <!-- Musical break notes inserted between lines, never replacing them -->
+          <div
             v-if="musicalBreakLineIndex === index"
+            :class="[
+              'lyrics-line',
+              {
+                active: isInMusicalBreak,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0 &&
+                  (index < activeLyricIndex - 2 ||
+                    index > activeLyricIndex + 1),
+              },
+            ]"
           >
             <span
               v-for="n in NOTE_COUNT"
@@ -64,11 +88,8 @@
               "
               >&#9835;</span
             >
-          </template>
-          <template v-else>
-            {{ line.text }}
-          </template>
-        </div>
+          </div>
+        </template>
       </div>
     </div>
     <!-- Non-synced lyrics: simple scrollable list (hidden in karaoke mode) -->
@@ -135,6 +156,7 @@ const lineRefs = new Map<number, HTMLElement>();
 // Transform-based positioning: translateY applied to the content div
 // so the active line always sits at the fixed anchor point.
 const contentTranslateY = ref(0);
+const contentTransitionEnabled = ref(false);
 
 const setLineRef = (el: HTMLElement | null, index: number) => {
   if (el) {
@@ -309,8 +331,30 @@ const musicalBreakMap = computed(() => {
 
 const isInMusicalBreak = ref(false);
 const musicalBreakLineIndex = ref(-1);
-const filledNoteCount = ref(0);
-const currentNoteFillPercent = ref(0);
+
+// Derive fill state as computed properties so the template always sees
+// values consistent with the current break state — no stale refs possible.
+const noteProgressState = computed(() => {
+  if (!isInMusicalBreak.value || musicalBreakLineIndex.value < 0) {
+    return { filled: NOTE_COUNT, percent: 100 };
+  }
+  const breakInfo = musicalBreakMap.value.get(musicalBreakLineIndex.value);
+  if (!breakInfo) {
+    return { filled: NOTE_COUNT, percent: 100 };
+  }
+  const pos = props.position || 0;
+  const gapDuration = breakInfo.gapEnd - breakInfo.gapStart;
+  const elapsed = Math.max(0, pos - breakInfo.gapStart);
+  const noteProgress = (elapsed / gapDuration) * NOTE_COUNT;
+  return {
+    filled: Math.min(NOTE_COUNT, Math.floor(noteProgress)),
+    percent: Math.round(
+      (noteProgress - Math.floor(noteProgress)) * 100,
+    ),
+  };
+});
+const filledNoteCount = computed(() => noteProgressState.value.filled);
+const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
 
 // How far ahead (in seconds) the highlight activates before the lyric timestamp.
 // Matches the CSS transition duration so the transition is fully complete
@@ -355,12 +399,29 @@ watch(
     activeLyricIndex.value = -1;
     musicalBreakLineIndex.value = -1;
     isInMusicalBreak.value = false;
-    contentTranslateY.value = 0;
+    contentTranslateY.value = 99999;
+    contentTransitionEnabled.value = false;
     lineRefs.clear();
     fetchLyrics();
+    // After DOM renders with new lyrics, position first line at bottom of container
+    nextTick(() => {
+      const container = syncedContainerRef.value;
+      if (container && hasTimestamps.value) {
+        contentTranslateY.value = container.clientHeight;
+      }
+    });
   },
   { immediate: true },
 );
+
+// Slide lyrics into view when the intro dismisses (handles anticipation mode
+// where beforeFirstLyric goes false before activeLyricIndex becomes 0).
+watch(beforeFirstLyric, (isBefore, wasBefore) => {
+  if (wasBefore && !isBefore && !contentTransitionEnabled.value) {
+    contentTransitionEnabled.value = true;
+    nextTick(() => computeTranslateY(0));
+  }
+});
 
 // Main sync: update active index and reposition content.
 watch(
@@ -382,15 +443,14 @@ watch(
     const newActiveIndex = findActiveLyricIndex(highlightPositionMs);
 
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
+      contentTransitionEnabled.value = true;
       activeLyricIndex.value = newActiveIndex;
       nextTick(() => computeTranslateY(newActiveIndex));
     }
 
     // Update musical break state using raw position (not highlight-shifted).
-    // Notes appear grayed out for the full break, but only fill in the last
-    // NOTE_COUNT * SECONDS_PER_NOTE seconds as a tight countdown.
     // musicalBreakLineIndex persists so notes remain as a "previous line"
-    // after the next lyric activates.
+    // after the next lyric activates. Fill state is derived via computed props.
     const breakInfo = musicalBreakMap.value.get(activeLyricIndex.value);
     if (
       breakInfo &&
@@ -399,23 +459,6 @@ watch(
     ) {
       isInMusicalBreak.value = true;
       musicalBreakLineIndex.value = activeLyricIndex.value;
-      const SECONDS_PER_NOTE = 2;
-      const fillDuration = NOTE_COUNT * SECONDS_PER_NOTE;
-      const fillStart = breakInfo.gapEnd - fillDuration;
-      if (newPosition >= fillStart) {
-        const elapsed = newPosition - fillStart;
-        const noteProgress = elapsed / SECONDS_PER_NOTE;
-        filledNoteCount.value = Math.min(
-          NOTE_COUNT,
-          Math.floor(noteProgress),
-        );
-        currentNoteFillPercent.value = Math.round(
-          (noteProgress - Math.floor(noteProgress)) * 100,
-        );
-      } else {
-        filledNoteCount.value = 0;
-        currentNoteFillPercent.value = 0;
-      }
     } else {
       isInMusicalBreak.value = false;
       // Clear the break line index only once it would be scrolled out of view
@@ -425,8 +468,6 @@ watch(
       ) {
         musicalBreakLineIndex.value = -1;
       }
-      filledNoteCount.value = NOTE_COUNT;
-      currentNoteFillPercent.value = 100;
     }
   },
 );
@@ -456,12 +497,22 @@ onBeforeUnmount(() => {
 }
 
 .lyrics-intro {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.intro-fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.intro-fade-leave-to {
+  opacity: 0;
 }
 
 .song-title {
