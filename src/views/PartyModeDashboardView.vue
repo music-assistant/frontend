@@ -41,7 +41,6 @@
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
             :anticipation="10"
-
           />
         </div>
 
@@ -91,7 +90,6 @@
               :stream-details="store.curQueueItem?.streamdetails"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
-  
             />
           </div>
         </div>

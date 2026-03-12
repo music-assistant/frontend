@@ -29,15 +29,10 @@
         class="synced-content"
         :style="{
           transform: `translateY(${contentTranslateY}px)`,
-          transition: contentTransitionEnabled
-            ? undefined
-            : 'none',
+          transition: contentTransitionEnabled ? undefined : 'none',
         }"
       >
-        <template
-          v-for="(line, index) in parsedLyrics"
-          :key="index"
-        >
+        <template v-for="(line, index) in parsedLyrics" :key="index">
           <div
             :ref="(el) => setLineRef(el as HTMLElement | null, index)"
             :class="[
@@ -348,9 +343,7 @@ const noteProgressState = computed(() => {
   const noteProgress = (elapsed / gapDuration) * NOTE_COUNT;
   return {
     filled: Math.min(NOTE_COUNT, Math.floor(noteProgress)),
-    percent: Math.round(
-      (noteProgress - Math.floor(noteProgress)) * 100,
-    ),
+    percent: Math.round((noteProgress - Math.floor(noteProgress)) * 100),
   };
 });
 const filledNoteCount = computed(() => noteProgressState.value.filled);
