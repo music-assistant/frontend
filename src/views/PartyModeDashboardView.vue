@@ -34,6 +34,7 @@
 
         <div class="karaoke-lyrics">
           <LyricsViewer
+            :key="store.curQueueItem?.queue_item_id"
             :media-item="store.curQueueItem?.media_item"
             :position="lyricsElapsedTime"
             :duration="store.curQueueItem?.duration"
@@ -84,6 +85,7 @@
           </div>
           <div v-if="displayLyrics" class="lyrics-section">
             <LyricsViewer
+              :key="store.curQueueItem?.queue_item_id"
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
               :duration="store.curQueueItem?.duration"
