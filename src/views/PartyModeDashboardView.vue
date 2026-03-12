@@ -24,10 +24,7 @@
 
     <div
       v-else
-      :class="[
-        'party-content',
-        { 'party-content--karaoke': karaokeMode },
-      ]"
+      :class="['party-content', { 'party-content--karaoke': karaokeMode }]"
     >
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
@@ -80,10 +77,7 @@
       <template v-else>
         <!-- QR Code and Lyrics -->
         <div
-          :class="[
-            'qr-section',
-            { 'qr-section--with-lyrics': displayLyrics },
-          ]"
+          :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
           <div class="qr-wrapper">
             <PartyModeQR />
@@ -625,7 +619,8 @@ watch(partyConfig, (newConfig) => {
     albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
     showPlayerControls.value = newConfig.show_player_controls ?? false;
     displayLyrics.value = newConfig.display_lyrics ?? false;
-    karaokeMode.value = (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
+    karaokeMode.value =
+      (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
   } else {
