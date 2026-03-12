@@ -228,7 +228,10 @@ const fetchLyrics = () => {
   }
 };
 
-// Simple linear look-ahead: 15% of gap to next lyric, clamped to [0.05, 1.0]s
+// Look-ahead: highlight the next lyric slightly before its timestamp so readers
+// can follow along. Uses a linear 15% of the gap to next lyric (clamped to
+// [0.05, 1.0]s) instead of per-speed-tier percentages, which were non-monotonic
+// and required smoothing that added lag on tempo changes.
 const calculateLookAhead = (currentPosition: number): number => {
   let currentIndex = -1;
   let nextIndex = -1;
