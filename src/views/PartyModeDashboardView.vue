@@ -141,7 +141,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyModeQR from "@/components/party-mode/PartyModeQR.vue";
 import PartyTrackCard from "@/components/party-mode/PartyTrackCard.vue";
 import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
-import { computeElapsedTime } from "@/helpers/elapsed";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import {
   ImageColorPalette,
   getColorPalette,
@@ -259,45 +259,8 @@ const fetchLyrics = async () => {
   }
 };
 
-// Lyrics elapsed time (250ms tick for smooth sync)
-const nowTick = ref(0);
-let tickTimer: ReturnType<typeof setInterval> | null = null;
-
-const startTick = (interval = 250) => {
-  if (!tickTimer) {
-    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
-  }
-};
-
-const stopTick = () => {
-  if (tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-};
-
-const lyricsElapsedTime = computed(() => {
-  void nowTick.value;
-  const playing = store.activePlayer?.playback_state === PlaybackState.PLAYING;
-  const queue = store.activePlayerQueue;
-
-  if (playing && queue?.active && displayLyrics.value) {
-    startTick();
-  } else {
-    stopTick();
-  }
-
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
-    return (
-      computeElapsedTime(
-        queue.elapsed_time,
-        queue.elapsed_time_last_updated,
-        store.activePlayer?.playback_state,
-      ) ?? 0
-    );
-  }
-  return 0;
-});
+const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
+  useLyricsElapsedTime(displayLyrics);
 
 // Color palette state
 const colorPalette = ref<ImageColorPalette>({
