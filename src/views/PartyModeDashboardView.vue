@@ -775,7 +775,7 @@ watch(
   position: absolute;
   top: 2vw;
   left: 2vw;
-  z-index: 10;
+  z-index: 1;
   max-width: 20vw;
 }
 
@@ -792,6 +792,8 @@ watch(
   justify-content: center;
   overflow: hidden;
   min-height: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .karaoke-lyrics :deep(.lyrics-scroll-container) {
