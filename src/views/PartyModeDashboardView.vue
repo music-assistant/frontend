@@ -801,6 +801,11 @@ watch(displayLyrics, (enabled) => {
   padding-bottom: 1rem;
 }
 
+.karaoke-track-stack :deep(.track-artwork) {
+  width: 10vh;
+  height: 10vh;
+}
+
 .track-list--karaoke {
   flex-direction: column;
   gap: 0;
