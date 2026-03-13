@@ -106,7 +106,7 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 - **No magic numbers/strings**: Extract constants with descriptive names.
 - **Meaningful naming**: Variables, functions, and components should clearly describe their purpose. Avoid abbreviations unless universally understood.
 - **Keep templates readable**: If a template expression is complex, move it to a computed property.
-- **Clean up side effects**: Always clean up watchers, event listeners, and intervals in `onUnmounted`.
+- **Clean up side effects**: Always clean up event listeners and intervals in `onUnmounted`; manually created watchers outside component `setup` or manual effect scopes must also be cleaned up.
 - **Accessibility**: Use semantic HTML elements and provide `aria-*` attributes where appropriate.
 
 ---
