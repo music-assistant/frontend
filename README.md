@@ -83,7 +83,7 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 
 - **Pure functions go in `src/helpers/`**: Any standalone utility function (e.g. string manipulation, date formatting, data transformation) must be placed in `src/helpers/` rather than inlined in a component or composable.
 - **One file per concern**: Group related helpers in a named file (e.g. `src/helpers/string.ts`, `src/helpers/date.ts`). Avoid a single catch-all `utils.ts`.
-- **Test every helper**: Each helper file must have a corresponding test file in `tests/helpers/` (e.g. `tests/helpers/string.test.ts`). Helpers with no test coverage should not be merged.
+- **Test every helper**: Each helper file must be covered by unit tests. For new helpers, add a corresponding test file colocated with the helper (e.g. `src/helpers/string.test.ts`). Existing tests under `tests/helpers/` may remain, but new tests should follow the colocated pattern. Helpers with no test coverage should not be merged.
 
 ### API Calls & User Feedback
 
