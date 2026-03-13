@@ -159,11 +159,11 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
-    if (
-      !playlist.supported_mediatypes.includes(refItem.media_type) ||
-      (refItem.media_type === MediaType.ALBUM &&
-        !playlist.supported_mediatypes.includes(MediaType.TRACK))
-    ) {
+    let _supported_mediatypes = playlist.supported_mediatypes;
+    if (_supported_mediatypes.includes(MediaType.TRACK))
+      // backend unwraps albums to individual tracks
+      _supported_mediatypes.push(MediaType.ALBUM);
+    if (!_supported_mediatypes.includes(refItem.media_type)) {
       // target playlist doesn't support media type
       continue;
     }
