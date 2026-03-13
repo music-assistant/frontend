@@ -159,7 +159,11 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
-    if (!playlist.supported_mediatypes.includes(refItem.media_type)) {
+    if (
+      !playlist.supported_mediatypes.includes(refItem.media_type) ||
+      (refItem.media_type === MediaType.ALBUM &&
+        !playlist.supported_mediatypes.includes(MediaType.TRACK))
+    ) {
       // target playlist doesn't support media type
       continue;
     }
@@ -183,7 +187,9 @@ const fetchPlaylists = async function () {
   for (const provider of Object.values(api.providers)) {
     // filter suitable create provider base on media_type
     if (
-      refItem.media_type == MediaType.TRACK &&
+      // album is unwrapped to individual tracks by backend
+      (refItem.media_type == MediaType.TRACK ||
+        refItem.media_type == MediaType.ALBUM) &&
       !provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_TRACKS,
