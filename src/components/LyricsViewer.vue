@@ -47,7 +47,16 @@
               },
             ]"
           >
-            {{ line.text }}
+            <template v-if="line.words && activeLyricIndex === index">
+              <span
+                v-for="(word, wi) in line.words"
+                :key="wi"
+                class="lyrics-word"
+                :class="{ 'lyrics-word--active': isWordActive(word.time) }"
+                >{{ word.text }}
+              </span>
+            </template>
+            <template v-else>{{ line.text }}</template>
           </div>
           <!-- Musical break notes inserted between lines, never replacing them -->
           <div
@@ -139,8 +148,20 @@ const props = withDefaults(defineProps<Props>(), {
   externalLoading: false,
 });
 
+// Word-level timing for Enhanced LRC (A2 format)
+interface LyricWord {
+  time: number; // start time in seconds
+  text: string;
+}
+
+interface ParsedLyric {
+  time: number;
+  text: string;
+  words?: LyricWord[];
+}
+
 // Core lyrics state
-const parsedLyrics = ref<Array<{ time: number; text: string }>>([]);
+const parsedLyrics = ref<ParsedLyric[]>([]);
 // Timestamps of empty LRC lines — these mark genuine instrumental breaks
 const breakMarkerTimes = ref<Set<number>>(new Set());
 const loading = ref(false);
@@ -234,20 +255,50 @@ const hasTimestamps = computed(() => {
   return false;
 });
 
+// Parse a timestamp string "mm:ss.xx" into seconds
+const parseTimestamp = (
+  minutes: string,
+  seconds: string,
+  fraction?: string,
+): number => {
+  const min = parseInt(minutes);
+  const sec = parseInt(seconds);
+  let ms = 0;
+  if (fraction) {
+    const decimalPart = fraction.replace(/[.:]/, ".");
+    ms = Math.round(parseFloat(decimalPart) * 1000);
+  }
+  return (min * 60 * 1000 + sec * 1000 + ms) / 1000;
+};
+
+// Parse Enhanced LRC word timestamps from line text.
+// Format: "<mm:ss.xx> word <mm:ss.xx> word ..."
+const parseWordTimestamps = (text: string): LyricWord[] | undefined => {
+  const wordPattern = /<(\d+):(\d+)([.:]\d+)?>\s*([^<]*)/g;
+  const words: LyricWord[] = [];
+  let match;
+  while ((match = wordPattern.exec(text)) !== null) {
+    const time = parseTimestamp(match[1], match[2], match[3]);
+    const word = match[4].trim();
+    if (word) {
+      words.push({ time, text: word });
+    }
+  }
+  return words.length > 0 ? words : undefined;
+};
+
 // Parse a single LRC line like "[00:29.79] Some lyric text" into {time, text}
-const parseLrcLine = (line: string) => {
+// Also detects Enhanced LRC (A2) word-level timestamps like <00:00.04>
+const parseLrcLine = (line: string): ParsedLyric => {
   const match = line.match(/\[(\d+):(\d+)([.:]\d+)?\](.*)/);
   if (match) {
-    const minutes = parseInt(match[1]);
-    const seconds = parseInt(match[2]);
-    let milliseconds = 0;
-    if (match[3]) {
-      const decimalPart = match[3].replace(/[.:]/, ".");
-      milliseconds = Math.round(parseFloat(decimalPart) * 1000);
-    }
-    const timeMs = minutes * 60 * 1000 + seconds * 1000 + milliseconds;
-    const time = timeMs / 1000;
-    return { time, text: match[4].trim() || " " };
+    const time = parseTimestamp(match[1], match[2], match[3]);
+    const rawText = match[4];
+    const words = parseWordTimestamps(rawText);
+    const text = words
+      ? words.map((w) => w.text).join(" ")
+      : rawText.trim() || " ";
+    return { time, text, words };
   }
   return { time: 0, text: line.trim() || " " };
 };
@@ -371,6 +422,12 @@ const noteProgressState = computed(() => {
 });
 const filledNoteCount = computed(() => noteProgressState.value.filled);
 const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
+
+// Check if a word-level timestamp has been reached (for Enhanced LRC highlighting)
+const isWordActive = (wordTime: number): boolean => {
+  const pos = props.position || 0;
+  return pos >= wordTime;
+};
 
 // How far ahead (in seconds) the highlight activates before the lyric timestamp.
 // Matches the CSS transition duration so the transition is fully complete
@@ -598,6 +655,16 @@ onBeforeUnmount(() => {
   opacity: 1;
   color: v-bind(textColor);
   transform: scale(1);
+}
+
+/* Enhanced LRC word-level highlighting */
+.lyrics-word {
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+
+.lyrics-word--active {
+  opacity: 1;
 }
 
 .break-note {
