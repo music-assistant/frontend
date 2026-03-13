@@ -1179,4 +1179,5 @@ export interface PartyConfig {
   boost_badge_color?: string;
   qr_show_instruction_text: boolean;
   qr_instruction_text: string;
+  anti_burn_in: boolean;
 }

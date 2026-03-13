@@ -88,6 +88,7 @@ describe("useRateLimiting", () => {
       boost_badge_color: "#ffffff",
       qr_show_instruction_text: false,
       qr_instruction_text: "",
+      anti_burn_in: false,
     };
 
     rateLimiting.configure(config);

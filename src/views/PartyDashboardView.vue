@@ -28,7 +28,10 @@
     >
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
-        <div class="karaoke-qr">
+        <div
+          class="karaoke-qr"
+          :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
+        >
           <PartyQR />
         </div>
 
@@ -79,7 +82,10 @@
         <div
           :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
-          <div class="qr-wrapper">
+          <div
+            class="qr-wrapper"
+            :style="swapped && displayLyrics ? { order: 1 } : undefined"
+          >
             <PartyQR />
           </div>
           <div v-if="displayLyrics" class="lyrics-section">
@@ -95,7 +101,10 @@
         </div>
 
         <!-- Track Stack or Empty State -->
-        <div class="track-stack">
+        <div
+          class="track-stack"
+          :style="swapped && !displayLyrics ? { order: -1 } : undefined"
+        >
           <!-- Empty State -->
           <div
             v-if="!store.curQueueItem && !visibleItems.length"
@@ -180,6 +189,9 @@ const albumArtBackgroundEnabled = ref(true); // Default to true
 const showPlayerControls = ref(false); // Whether footer player controls are shown
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
+const antiBurnIn = ref(false); // Swap QR/track sides periodically
+const swapped = ref(false); // Current swap state for anti burn-in
+let burnInInterval: ReturnType<typeof setInterval> | null = null;
 const accessError = ref("");
 // Badge colors (hex values from config)
 const requestBadgeColor = ref("");
@@ -525,6 +537,23 @@ const cleanupParentStyles = () => {
   }
 };
 
+const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
+
+watch(antiBurnIn, (enabled) => {
+  if (burnInInterval) {
+    clearInterval(burnInInterval);
+    burnInInterval = null;
+  }
+  if (enabled) {
+    swapped.value = false;
+    burnInInterval = setInterval(() => {
+      swapped.value = !swapped.value;
+    }, BURN_IN_SWAP_MS);
+  } else {
+    swapped.value = false;
+  }
+});
+
 watch(showPlayerControls, (show) => {
   if (!parentSection.value) return;
   if (show) {
@@ -563,6 +592,7 @@ onMounted(async () => {
     }
     requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
+    antiBurnIn.value = config.anti_burn_in ?? false;
   } else {
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
@@ -606,6 +636,10 @@ onBeforeUnmount(() => {
     wakeLock.release();
     wakeLock = null;
   }
+  if (burnInInterval) {
+    clearInterval(burnInInterval);
+    burnInInterval = null;
+  }
   stopTick();
   cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -621,6 +655,7 @@ watch(partyConfig, (newConfig) => {
       (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+    antiBurnIn.value = newConfig.anti_burn_in ?? false;
   } else {
     albumArtBackgroundEnabled.value = true;
     showPlayerControls.value = false;
@@ -628,6 +663,7 @@ watch(partyConfig, (newConfig) => {
     karaokeMode.value = false;
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
+    antiBurnIn.value = false;
   }
 });
 
