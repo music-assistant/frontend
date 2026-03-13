@@ -1,11 +1,15 @@
 import { watch } from "vue";
-import { createRouter, createWebHashHistory } from "vue-router";
+import {
+  createRouter,
+  createWebHashHistory,
+  type RouteRecordRaw,
+} from "vue-router";
 import { authManager } from "./auth";
 import { api, ConnectionState } from "./api";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   // Guest view uses minimal layout without navigation/player controls
   // Guest authentication is handled by Login.vue via the ?join= query parameter
   // which exchanges the short join code for a JWT before navigating here
@@ -39,7 +43,7 @@ const routes = [
             /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
           ),
         props: (route: { query: Record<string, any> }) => ({ ...route.query }),
-        beforeEnter: async (_to: any, _from: any, next: any) => {
+        beforeEnter: async (_to, _from, next) => {
           // Wait for API initialization before checking plugin status
           if (api.state.value !== ConnectionState.INITIALIZED) {
             await new Promise<void>((resolve) => {
