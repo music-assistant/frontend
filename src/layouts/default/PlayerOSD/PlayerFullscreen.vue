@@ -1561,9 +1561,9 @@ watchEffect(() => {
 }
 
 .main-media-details-image {
-  min-height: 50%;
-  max-height: 80%;
-  height: 60%;
+  flex: 1;
+  min-height: 0;
+  max-height: 60%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1587,7 +1587,7 @@ watchEffect(() => {
 }
 
 .main-media-details-track-info {
-  flex: 1;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -1758,7 +1758,6 @@ button {
 
 @media (max-width: 540px) {
   .main-media-details-image {
-    height: 65%;
     max-height: 75%;
     padding-left: 16px;
     padding-right: 16px;
