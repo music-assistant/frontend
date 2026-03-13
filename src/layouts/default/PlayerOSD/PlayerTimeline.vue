@@ -315,4 +315,14 @@ const chapterClicked = function (chaperPos: number) {
   align-items: center;
   margin-inline: 0px;
 }
+
+/* Disable Vuetify's CSS transitions on slider internals — the frequent
+   rAF-driven value updates already produce smooth movement, so the
+   extra transition just causes costly width/left layout animations. */
+:deep(.v-slider-track__fill),
+:deep(.v-slider-track__background),
+:deep(.v-slider-thumb),
+:deep(.v-slider-thumb__surface) {
+  transition: none !important;
+}
 </style>
