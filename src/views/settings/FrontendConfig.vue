@@ -166,7 +166,7 @@ onMounted(() => {
       default_value: true,
       required: false,
       multi_value: false,
-      category: "generic",
+      category: "display_settings",
       hidden: companionMode.value,
       value:
         localStorage.getItem("frontend.settings.enable_browser_controls") !==
@@ -195,7 +195,7 @@ onMounted(() => {
         { title: "Right", value: "right" },
       ],
       multi_value: false,
-      category: "generic",
+      category: "display_settings",
       value:
         localStorage.getItem("frontend.settings.mobile_sidebar_side") || "left",
     },
