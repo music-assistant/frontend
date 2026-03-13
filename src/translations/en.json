@@ -255,7 +255,7 @@
     "playlist_create_provider_error": "Unable to get provider.",
     "playlist_create_no_type_selected": "No media type selected.",
     "providers": {
-        "party_mode": {
+        "party": {
             "guest_page": {
                 "add_available": "Add Available",
                 "add_queue_disabled": "Add to Queue is disabled by the host.",
@@ -274,6 +274,7 @@
                 "no_tracks_for_artist": "No tracks found for this artist",
                 "queue_empty": "Queue is empty",
                 "search_failed": "Search failed. Please try again.",
+                "searching": "Searching...",
                 "search_placeholder": "Search for songs or artists...",
                 "search_results_count": "Search Results ({0})",
                 "skip_disabled": "Skip Song is disabled by the host.",
@@ -288,7 +289,7 @@
             "add": "Add",
             "boost": "Boost",
             "check_network": "Check your network settings",
-            "enable_in_settings": "Enable in party mode provider settings",
+            "enable_in_settings": "Enable in party provider settings",
             "get_started": "Play some music to get the party started!",
             "guest_access_disabled": "Guest Access Disabled",
             "no_player_access": "Player Not Accessible",
@@ -1221,6 +1222,7 @@
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
+    "no_lyrics_available": "No lyrics available",
     "radiobrowser_by_votes": "By votes",
     "radiobrowser_by_clicks": "By clicks",
     "radiobrowser_by_language": "By language",

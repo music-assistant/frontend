@@ -1375,7 +1375,7 @@
     "playlist_create_provider_error": "Det gick inte att få tag på leverantör.",
     "playlist_create_no_type_selected": "Ingen medietyp vald.",
     "providers": {
-        "party_mode": {
+        "party": {
             "guest_page": {
                 "add_available": "Lägg till tillgänglig",
                 "add_queue_disabled": "Lägg till i kö har inaktiverats av värden.",

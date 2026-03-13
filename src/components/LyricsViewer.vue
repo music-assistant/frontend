@@ -1,56 +1,127 @@
 <template>
   <div class="lyrics-container">
-    <div v-if="loading" class="lyrics-loading">
-      <v-progress-circular indeterminate :color="textColor" />
+    <div v-if="loading || externalLoading" class="lyrics-loading">
+      <Spinner class="size-6" />
       <div>{{ $t("loading_lyrics") }}</div>
     </div>
     <div v-else-if="!parsedLyrics.length" class="lyrics-empty">
       {{ $t("no_lyrics_available") }}
     </div>
-    <div v-else-if="beforeFirstLyric && hasTimestamps" class="lyrics-intro">
-      <div class="song-title">{{ props.mediaItem?.name }}</div>
-      <div class="artist-name">{{ artistName }}</div>
-      <div class="lyrics-coming-soon">{{ $t("lyrics_will_appear_soon") }}</div>
-    </div>
+    <!-- Synced lyrics: always mounted when timestamps exist so DOM is ready for transition -->
     <div
-      v-else
-      ref="lyricsContainer"
-      class="lyrics-scroll-container"
-      :class="{ 'static-lyrics': !hasTimestamps }"
+      v-else-if="hasTimestamps"
+      ref="syncedContainerRef"
+      class="synced-container"
     >
+      <Transition name="intro-fade">
+        <div v-if="beforeFirstLyric" class="lyrics-intro">
+          <div class="song-title" :style="{ color: textColor }">
+            {{ props.mediaItem?.name }}
+          </div>
+          <div class="artist-name">{{ artistName }}</div>
+          <div class="lyrics-coming-soon">
+            {{ $t("lyrics_will_appear_soon") }}
+          </div>
+        </div>
+      </Transition>
       <div
-        v-for="(line, index) in parsedLyrics"
-        :key="index"
-        :class="[
-          'lyrics-line',
-          {
-            active: activeLyricIndex === index || !hasTimestamps,
-          },
-        ]"
+        ref="syncedContentRef"
+        class="synced-content"
+        :style="{
+          transform: `translateY(${contentTranslateY}px)`,
+          transition: contentTransitionEnabled ? undefined : 'none',
+        }"
       >
-        {{ line.text }}
+        <template v-for="(line, index) in parsedLyrics" :key="index">
+          <div
+            :ref="(el) => setLineRef(el as HTMLElement | null, index)"
+            :class="[
+              'lyrics-line',
+              {
+                active: activeLyricIndex === index,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0
+                    ? index < activeLyricIndex - 1 ||
+                      index > activeLyricIndex + 2
+                    : index > 2,
+              },
+            ]"
+          >
+            <template v-if="line.words && activeLyricIndex === index">
+              <span
+                v-for="(word, wi) in line.words"
+                :key="wi"
+                class="lyrics-word"
+                :class="{ 'lyrics-word--active': isWordActive(word.time) }"
+                >{{ word.text }}
+              </span>
+            </template>
+            <template v-else>{{ line.text }}</template>
+          </div>
+          <!-- Musical break notes inserted between lines, never replacing them -->
+          <div
+            v-if="musicalBreakLineIndex === index"
+            :class="[
+              'lyrics-line',
+              {
+                active: isInMusicalBreak,
+                'lyrics-line--hidden':
+                  activeLyricIndex >= 0 &&
+                  (index < activeLyricIndex - 2 ||
+                    index > activeLyricIndex + 1),
+              },
+            ]"
+          >
+            <span
+              v-for="n in NOTE_COUNT"
+              :key="n"
+              class="break-note"
+              :class="{
+                'break-note--filled': n <= filledNoteCount,
+                'break-note--filling': n === filledNoteCount + 1,
+              }"
+              :style="
+                n === filledNoteCount + 1
+                  ? {
+                      backgroundImage: `linear-gradient(to right, ${textColor} ${currentNoteFillPercent}%, color-mix(in srgb, ${textColor} 35%, transparent) ${currentNoteFillPercent}%)`,
+                      backgroundClip: 'text',
+                      '-webkit-background-clip': 'text',
+                      '-webkit-text-fill-color': 'transparent',
+                    }
+                  : undefined
+              "
+              >&#9835;</span
+            >
+          </div>
+        </template>
       </div>
     </div>
+    <!-- Non-synced lyrics: simple scrollable list (hidden in karaoke mode) -->
+    <ScrollArea
+      v-else-if="!props.anticipation"
+      ref="scrollAreaRef"
+      class="h-full w-full static-lyrics"
+    >
+      <div class="lyrics-content">
+        <div
+          v-for="(line, index) in parsedLyrics"
+          :key="index"
+          class="lyrics-line active"
+        >
+          {{ line.text }}
+        </div>
+      </div>
+    </ScrollArea>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  nextTick,
-  onMounted,
-  onBeforeUnmount,
-} from "vue";
-import {
-  Track,
-  MediaItemType,
-  ContentType,
-  Artist,
-  StreamDetails,
-} from "@/plugins/api/interfaces";
+import { ref, computed, watch, nextTick, onBeforeUnmount } from "vue";
+import { Track, MediaItemType, StreamDetails } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
+import { parseLrcLine, type ParsedLyric } from "@/helpers/lrcParser";
 
 interface Props {
   mediaItem?: MediaItemType;
@@ -61,6 +132,8 @@ interface Props {
   debugMode?: boolean;
   lyrics?: string | null;
   lrcLyrics?: string | null;
+  anticipation?: number;
+  externalLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -72,65 +145,66 @@ const props = withDefaults(defineProps<Props>(), {
   debugMode: false,
   lyrics: undefined,
   lrcLyrics: undefined,
+  anticipation: 0,
+  externalLoading: false,
 });
 
-// Logger helper that respects debug mode
-const logSync = (message: string, isVerbose = true) => {
-  if (isVerbose && !props.debugMode) {
-    return; // Skip verbose logs in non-debug mode
-  }
-  // Always use console.debug for verbose logs, console.log for important ones
-  const logger = isVerbose ? console.debug : console.log;
-  logger(`[lyricSynch] ${message}`);
-};
-
 // Core lyrics state
-const parsedLyrics = ref<Array<{ time: number; text: string }>>([]);
+const parsedLyrics = ref<ParsedLyric[]>([]);
+// Timestamps of empty LRC lines — these mark genuine instrumental breaks
+const breakMarkerTimes = ref<Set<number>>(new Set());
 const loading = ref(false);
 const activeLyricIndex = ref(-1);
-const lyricsContainer = ref<HTMLElement | null>(null);
-const userManuallyScrolled = ref(false);
-const lyricsLookAhead = ref(0); // Dynamic look-ahead
-const previousLyricTransitionTime = ref(0);
+const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
+const syncedContainerRef = ref<HTMLElement | null>(null);
+const syncedContentRef = ref<HTMLElement | null>(null);
+const lineRefs = new Map<number, HTMLElement>();
 
-// Add this computed property to check if we're before the first lyric
+// Transform-based positioning: translateY applied to the content div
+// so the active line always sits at the fixed anchor point.
+const contentTranslateY = ref(0);
+const contentTransitionEnabled = ref(false);
+
+const setLineRef = (el: HTMLElement | null, index: number) => {
+  if (el) {
+    lineRefs.set(index, el);
+  } else {
+    lineRefs.delete(index);
+  }
+};
+
+// True when playback is before the first lyric timestamp — shows intro screen.
+// When anticipation is set (karaoke mode), the intro screen is dismissed early
+// so the singer can see the upcoming first line before they need to sing it.
 const beforeFirstLyric = computed(() => {
   if (!hasTimestamps.value || !parsedLyrics.value.length) {
     return false;
   }
-
-  // Check if we're before the first lyric timestamp or if no lyric is active yet
   const firstLyricTime = parsedLyrics.value[0].time;
   const currentPosition = props.position || 0;
-
-  return activeLyricIndex.value === -1 && currentPosition < firstLyricTime;
+  return (
+    activeLyricIndex.value === -1 &&
+    currentPosition < firstLyricTime - props.anticipation
+  );
 });
 
-// Replace the artistName computed property
 const artistName = computed(() => {
   if (!props.mediaItem) return "";
-
-  // Handle Track which has artists array
   if (
     "media_type" in props.mediaItem &&
     props.mediaItem.media_type === "track"
   ) {
     const track = props.mediaItem as Track;
     if (track.artists?.length) {
-      // Use a more generic type approach - both ItemMapping and Artist have name property
       return track.artists.map((a) => a.name).join(", ");
     }
   }
-
-  // If it's an artist, return its own name
   if (
     "media_type" in props.mediaItem &&
     props.mediaItem.media_type === "artist"
   ) {
     return props.mediaItem.name;
   }
-
-  // Fall back to empty string if no artist found
   return "";
 });
 
@@ -143,7 +217,6 @@ const getSyncedLyrics = () => {
   return props.lrcLyrics ?? props.mediaItem?.metadata?.lrc_lyrics ?? null;
 };
 
-// Computed properties
 const hasLyrics = computed(() => {
   const plainLyrics = getPlainLyrics();
   const syncedLyrics = getSyncedLyrics();
@@ -153,61 +226,32 @@ const hasLyrics = computed(() => {
   );
 });
 
+// Check parsed lyrics first, then fall back to raw data for LRC format patterns
 const hasTimestamps = computed(() => {
-  // First check if we have parsed lyrics with timestamps
   if (parsedLyrics.value.some((line) => line.time > 0)) {
     return true;
   }
-
-  // If no parsed lyrics yet, check the raw data for LRC format patterns
   const syncedLyrics = getSyncedLyrics();
   const plainLyrics = getPlainLyrics();
-
   // Check lrc_lyrics field
   if (syncedLyrics && syncedLyrics.includes("[")) {
     return true;
   }
-
   // Check regular lyrics field for LRC patterns like [00:29.79]
   if (plainLyrics && /\[\d+:\d+[.:]?\d*\]/.test(plainLyrics)) {
     return true;
   }
-
   return false;
 });
 
-// Methods for lyrics handling
-const parseLrcLine = (line: string) => {
-  const match = line.match(/\[(\d+):(\d+)([.:]\d+)?\](.*)/);
-  if (match) {
-    const minutes = parseInt(match[1]);
-    let seconds = parseInt(match[2]);
-    let milliseconds = 0;
-
-    // Handle milliseconds/hundredths part with more precision
-    if (match[3]) {
-      const decimalPart = match[3].replace(/[.:]/, ".");
-      milliseconds = Math.round(parseFloat(decimalPart) * 1000);
-    }
-
-    // Calculate total time in milliseconds for precision
-    const timeMs = minutes * 60 * 1000 + seconds * 1000 + milliseconds;
-
-    // Store as seconds but with precise decimal
-    const time = timeMs / 1000;
-
-    return { time, text: match[4].trim() || " " };
-  }
-  return { time: 0, text: line.trim() || " " };
-};
-
+// Determine which lyrics source to use and parse them.
+// Priority: lrc_lyrics > plain lyrics with LRC patterns > plain text lyrics
 const fetchLyrics = () => {
   loading.value = true;
   try {
     const syncedLyrics = getSyncedLyrics() || "";
     const plainLyrics = getPlainLyrics() || "";
 
-    // Determine which lyrics to use - prefer lrc_lyrics but check both for LRC format
     let lyricsToProcess = "";
     let isLrcFormat = false;
 
@@ -219,28 +263,30 @@ const fetchLyrics = () => {
       lyricsToProcess = plainLyrics;
       isLrcFormat = true;
     } else if (plainLyrics) {
-      // Plain text lyrics without timestamps
       lyricsToProcess = plainLyrics;
       isLrcFormat = false;
     }
 
     if (isLrcFormat) {
-      // Process LRC formatted lyrics
       const lyricsLines = lyricsToProcess
         .split("\n")
         .filter((line) => line.trim());
 
-      parsedLyrics.value = lyricsLines
+      const allParsed = lyricsLines
         .map((line) => parseLrcLine(line))
-        .filter((line) => line.text.trim()) // Filter out empty text
         .sort((a, b) => a.time - b.time);
 
-      logSync(
-        `Loaded ${parsedLyrics.value.length} synchronized lyrics lines`,
-        false,
-      );
+      // Empty timestamped lines mark genuine instrumental breaks
+      const markers = new Set<number>();
+      for (const line of allParsed) {
+        if (!line.text.trim() && line.time > 0) {
+          markers.add(line.time);
+        }
+      }
+      breakMarkerTimes.value = markers;
+
+      parsedLyrics.value = allParsed.filter((line) => line.text.trim());
     } else if (lyricsToProcess) {
-      // For plain text lyrics without timestamps
       const lyricsLines = lyricsToProcess
         .split("\n")
         .filter((line) => line.trim());
@@ -251,289 +297,197 @@ const fetchLyrics = () => {
           text: line.trim(),
         }))
         .filter((line) => line.text);
-
-      logSync(
-        `Loaded ${parsedLyrics.value.length} plain text lyrics lines`,
-        false,
-      );
     } else {
       parsedLyrics.value = [];
     }
   } catch (error) {
-    logSync(`Error processing lyrics: ${error}`, false);
+    console.error(`[LyricsViewer] Error processing lyrics: ${error}`);
     parsedLyrics.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-// Function to calculate dynamic look-ahead based on upcoming lyrics pattern
-const calculateDynamicLookAhead = (currentPosition: number) => {
-  // Find current position in lyrics timeline
-  const adjustedTime = currentPosition;
+// Musical break detection: only trigger when the LRC contains an empty
+// timestamped line between two content lines (a genuine break marker).
+const BREAK_DELAY = 2; // seconds after line before showing notes
+const NOTE_COUNT = 7;
 
-  // Basic state logging (verbose)
-  logSync(`Calculating look-ahead at ${currentPosition.toFixed(3)}s`);
-
-  // Find current and next lyric indices
-  let currentIndex = -1;
-  let nextIndex = -1;
-
-  for (let i = 0; i < parsedLyrics.value.length; i++) {
-    if (parsedLyrics.value[i].time <= adjustedTime) {
-      currentIndex = i;
-    } else {
-      nextIndex = i;
-      break;
+const musicalBreakMap = computed(() => {
+  const map = new Map<number, { gapStart: number; gapEnd: number }>();
+  const lyrics = parsedLyrics.value;
+  const markers = breakMarkerTimes.value;
+  if (!markers.size) return map;
+  for (let i = 0; i < lyrics.length - 1; i++) {
+    const gapStart = lyrics[i].time;
+    const gapEnd = lyrics[i + 1].time;
+    // Check if any break marker timestamp falls within this gap
+    let hasMarker = false;
+    for (const t of markers) {
+      if (t > gapStart && t < gapEnd) {
+        hasMarker = true;
+        break;
+      }
+    }
+    if (hasMarker) {
+      map.set(i, {
+        gapStart: gapStart + BREAK_DELAY,
+        gapEnd,
+      });
     }
   }
+  return map;
+});
 
-  // Log the found indices (verbose)
-  logSync(
-    `Current lyric index: ${currentIndex}, Next lyric index: ${nextIndex}`,
-  );
+const isInMusicalBreak = ref(false);
+const musicalBreakLineIndex = ref(-1);
 
-  // Handle special cases with more concise logging
-  if (nextIndex === 0) {
-    const firstLyricTime = parsedLyrics.value[0].time;
-    const timeUntilFirstLyric = firstLyricTime - adjustedTime;
-
-    logSync(
-      `Pre-lyrics intro: ${timeUntilFirstLyric.toFixed(2)}s until first lyric`,
-    );
-
-    if (timeUntilFirstLyric > 5) {
-      logSync("Long intro - using fixed look-ahead: 0.3s");
-      lyricsLookAhead.value = 0.3;
-      return;
-    } else if (timeUntilFirstLyric > 2) {
-      const newLookAhead = Math.min(1.0, timeUntilFirstLyric * 0.15);
-      logSync(
-        `Medium intro - calculated look-ahead: ${newLookAhead.toFixed(2)}s`,
-      );
-      lyricsLookAhead.value = newLookAhead;
-      return;
-    }
-    logSync("Short intro - using standard calculation");
+// Derive fill state as computed properties so the template always sees
+// values consistent with the current break state — no stale refs possible.
+const noteProgressState = computed(() => {
+  if (!isInMusicalBreak.value || musicalBreakLineIndex.value < 0) {
+    return { filled: NOTE_COUNT, percent: 100 };
   }
-
-  // If we couldn't find next lyric, use a default look-ahead
-  if (nextIndex === -1 || currentIndex === -1) {
-    logSync("Cannot determine appropriate look-ahead, using default: 0.3s");
-    lyricsLookAhead.value = 0.3;
-    return;
+  const breakInfo = musicalBreakMap.value.get(musicalBreakLineIndex.value);
+  if (!breakInfo) {
+    return { filled: NOTE_COUNT, percent: 100 };
   }
+  const pos = props.position || 0;
+  const gapDuration = breakInfo.gapEnd - breakInfo.gapStart;
+  const elapsed = Math.max(0, pos - breakInfo.gapStart);
+  const noteProgress = (elapsed / gapDuration) * NOTE_COUNT;
+  return {
+    filled: Math.min(NOTE_COUNT, Math.floor(noteProgress)),
+    percent: Math.round((noteProgress - Math.floor(noteProgress)) * 100),
+  };
+});
+const filledNoteCount = computed(() => noteProgressState.value.filled);
+const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
 
-  // Calculate time until next lyric
-  const currentLyricTime = parsedLyrics.value[currentIndex].time;
-  const nextLyricTime = parsedLyrics.value[nextIndex].time;
-  const gapToNextLyric = nextLyricTime - currentLyricTime;
-
-  // Get previous look-ahead for smoother transitions
-  const previousLookAhead = lyricsLookAhead.value;
-
-  // Gap analysis (verbose)
-  logSync(`Gap analysis:
-    - Current lyric time: ${currentLyricTime.toFixed(3)}s
-    - Next lyric time: ${nextLyricTime.toFixed(3)}s
-    - Gap between lyrics: ${gapToNextLyric.toFixed(3)}s
-    - Previous look-ahead: ${previousLookAhead.toFixed(3)}s`);
-
-  // Calculate look-ahead percentage based on gap size
-  let lookAheadPercentage;
-  if (gapToNextLyric < 0.5) {
-    lookAheadPercentage = 0.3; // Very rapid lyrics - 30%
-    logSync(
-      `Very rapid lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 30% look-ahead`,
-    );
-  } else if (gapToNextLyric < 0.8) {
-    lookAheadPercentage = 0.1;
-    logSync(
-      `Fast lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 10% look-ahead`,
-    );
-  } else if (gapToNextLyric < 1.5) {
-    lookAheadPercentage = 0.2;
-    logSync(
-      `Medium lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 20% look-ahead`,
-    );
-  } else if (gapToNextLyric < 3) {
-    lookAheadPercentage = 0.3;
-    logSync(
-      `Slower lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 30% look-ahead`,
-    );
-  } else if (gapToNextLyric > 10) {
-    lookAheadPercentage = 0.02; // Extremely slow - just 2%
-    logSync(
-      `Very slow lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 2% look-ahead`,
-    );
-  } else {
-    lookAheadPercentage = 0.4;
-    logSync(
-      `Slow lyrics detected (${gapToNextLyric.toFixed(2)}s gap) - using 40% look-ahead`,
-    );
-  }
-
-  // Calculate target look-ahead
-  const targetLookAhead = Math.min(1.5, gapToNextLyric * lookAheadPercentage);
-  logSync(`Target look-ahead: ${targetLookAhead.toFixed(3)}s`);
-
-  // Smooth transition to new look-ahead
-  const difference = Math.abs(targetLookAhead - previousLookAhead);
-  const adaptationRate = Math.min(0.8, 0.3 + difference * 0.5); // More difference = faster adaptation
-  const newLookAhead =
-    previousLookAhead * (1 - adaptationRate) + targetLookAhead * adaptationRate;
-  logSync(
-    `Smoothed look-ahead: ${newLookAhead.toFixed(3)}s (adaptation rate: ${(adaptationRate * 100).toFixed(0)}%)`,
-  );
-
-  // Only log significant look-ahead changes (non-verbose)
-  if (Math.abs(newLookAhead - previousLookAhead) > 0.3) {
-    logSync(
-      `Look-ahead adjusted: ${previousLookAhead.toFixed(2)}s → ${newLookAhead.toFixed(2)}s`,
-      false,
-    );
-  }
-
-  // Update the look-ahead value
-  lyricsLookAhead.value = newLookAhead;
+// Check if a word-level timestamp has been reached (for Enhanced LRC highlighting)
+const isWordActive = (wordTime: number): boolean => {
+  const pos = props.position || 0;
+  return pos >= wordTime;
 };
 
-// Function to check if synchronization should be skipped
-const shouldSkipSync = (position?: number): boolean => {
-  return (
-    position === undefined ||
-    !parsedLyrics.value.length ||
-    !hasTimestamps.value ||
-    userManuallyScrolled.value
-  );
-};
+// How far ahead (in seconds) the highlight activates before the lyric timestamp.
+// Matches the CSS transition duration so the transition is fully complete
+// exactly when the lyric timestamp is reached.
+const HIGHLIGHT_LEAD_SECONDS = 1.0;
 
-// Function to find active lyric index based on current position
-const findActiveLyricIndex = (position: number): number => {
-  // Calculate the adjusted position with look-ahead
-  const adjustedPositionMs = Math.round(
-    (position + lyricsLookAhead.value) * 1000,
-  );
-
-  // Find the active lyric using millisecond precision
+// Find active lyric index based on current position.
+// The highlight activates HIGHLIGHT_LEAD_SECONDS (= transition duration) early
+// so the CSS transition is fully complete when the lyric timestamp is reached.
+const findActiveLyricIndex = (positionMs: number): number => {
   let index = -1;
   for (let i = 0; i < parsedLyrics.value.length; i++) {
     const lineTimeMs = Math.round(parsedLyrics.value[i].time * 1000);
-    if (lineTimeMs <= adjustedPositionMs) {
+    if (lineTimeMs <= positionMs) {
       index = i;
     } else {
       break;
     }
   }
-
   return index;
 };
 
-// Function to handle active lyric change
-const handleActiveLyricChange = (newIndex: number, position: number) => {
-  if (newIndex < 0 || newIndex === activeLyricIndex.value) return;
+// Calculate the translateY needed to place a line at the anchor point
+// (40% from top of the container).
+const computeTranslateY = (index: number) => {
+  const el = lineRefs.get(index);
+  const container = syncedContainerRef.value;
+  if (!el || !container) return;
 
-  // Log lyric activation
-  logSync(`Lyric activated: "${parsedLyrics.value[newIndex].text}"`);
+  const containerHeight = container.clientHeight;
+  const anchorY = containerHeight * 0.35;
+  const lineTop = el.offsetTop;
+  const lineHeight = el.offsetHeight;
 
-  // Debug logging
-  logSync(`Activating lyric at ${position.toFixed(2)}s (adjusted: ${(position + lyricsLookAhead.value).toFixed(2)}s):
-    - Index: ${newIndex}
-    - Lyric time: ${parsedLyrics.value[newIndex].time.toFixed(2)}s`);
-
-  logSync(`Transition details:
-    - Raw position: ${position.toFixed(3)}s
-    - Dynamic look-ahead: ${lyricsLookAhead.value.toFixed(3)}s
-    - Adjusted position: ${(position + lyricsLookAhead.value).toFixed(3)}s`);
-
-  // Timing analysis
-  if (newIndex > 0) {
-    logTimingAnalysis(newIndex, position);
-  }
-
-  // Store transition time for future analysis
-  previousLyricTransitionTime.value = position;
-
-  // Update state
-  activeLyricIndex.value = newIndex;
-
-  // Scroll to active lyric
-  nextTick(() => scrollToActiveLyric());
+  contentTranslateY.value = anchorY - lineTop - lineHeight / 2;
 };
 
-// Function to analyze timing
-const logTimingAnalysis = (index: number, position: number) => {
-  const actualGap = position - previousLyricTransitionTime.value;
-  const expectedGap =
-    parsedLyrics.value[index].time - parsedLyrics.value[index - 1].time;
-
-  logSync(`Timing analysis:
-    - Expected gap: ${expectedGap.toFixed(3)}s
-    - Actual gap: ${actualGap.toFixed(3)}s
-    - Difference: ${(actualGap - expectedGap).toFixed(3)}s`);
-};
-
-// Function to scroll to active lyric
-const scrollToActiveLyric = () => {
-  const activeElement = document.querySelector(".lyrics-line.active");
-  const container = lyricsContainer.value;
-
-  if (activeElement && container) {
-    activeElement.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }
-};
-
-// Setup watchers
+// Watch for lyrics data changes
 watch(
   [() => props.mediaItem?.item_id, () => props.lyrics, () => props.lrcLyrics],
   () => {
+    activeLyricIndex.value = -1;
+    musicalBreakLineIndex.value = -1;
+    isInMusicalBreak.value = false;
+    contentTranslateY.value = 99999;
+    contentTransitionEnabled.value = false;
+    lineRefs.clear();
     fetchLyrics();
+    // After DOM renders with new lyrics, position first line at bottom of container
+    nextTick(() => {
+      const container = syncedContainerRef.value;
+      if (container && hasTimestamps.value) {
+        contentTranslateY.value = container.clientHeight;
+      }
+    });
   },
   { immediate: true },
 );
 
+// Slide lyrics into view when the intro dismisses (handles anticipation mode
+// where beforeFirstLyric goes false before activeLyricIndex becomes 0).
+watch(beforeFirstLyric, (isBefore, wasBefore) => {
+  if (wasBefore && !isBefore && !contentTransitionEnabled.value) {
+    contentTransitionEnabled.value = true;
+    nextTick(() => computeTranslateY(0));
+  }
+});
+
+// Main sync: update active index and reposition content.
 watch(
   () => props.position,
   (newPosition: number | undefined) => {
-    // Skip synchronization if needed
-    if (shouldSkipSync(newPosition)) return;
+    if (
+      newPosition === undefined ||
+      !parsedLyrics.value.length ||
+      !hasTimestamps.value
+    ) {
+      return;
+    }
 
-    // Safely handle the position with a default or unwrapped value
-    const position = newPosition ?? 0;
+    // Shift position forward by the highlight lead time so the CSS transition
+    // finishes exactly when the lyric timestamp is reached.
+    const highlightPositionMs = Math.round(
+      (newPosition + HIGHLIGHT_LEAD_SECONDS) * 1000,
+    );
+    const newActiveIndex = findActiveLyricIndex(highlightPositionMs);
 
-    // Calculate dynamic look-ahead based on upcoming lyrics
-    calculateDynamicLookAhead(position);
+    if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
+      contentTransitionEnabled.value = true;
+      activeLyricIndex.value = newActiveIndex;
+      nextTick(() => computeTranslateY(newActiveIndex));
+    }
 
-    // Find the active lyric index
-    const newIndex = findActiveLyricIndex(position);
-
-    // Handle lyric change if needed
-    if (newIndex !== activeLyricIndex.value) {
-      handleActiveLyricChange(newIndex, position);
+    // Update musical break state using raw position (not highlight-shifted).
+    // musicalBreakLineIndex persists so notes remain as a "previous line"
+    // after the next lyric activates. Fill state is derived via computed props.
+    const breakInfo = musicalBreakMap.value.get(activeLyricIndex.value);
+    if (
+      breakInfo &&
+      newPosition >= breakInfo.gapStart &&
+      newPosition < breakInfo.gapEnd
+    ) {
+      isInMusicalBreak.value = true;
+      musicalBreakLineIndex.value = activeLyricIndex.value;
+    } else {
+      isInMusicalBreak.value = false;
+      // Clear the break line index only once it would be scrolled out of view
+      if (
+        musicalBreakLineIndex.value >= 0 &&
+        activeLyricIndex.value > musicalBreakLineIndex.value + 1
+      ) {
+        musicalBreakLineIndex.value = -1;
+      }
     }
   },
 );
 
-// Setup scroll listener to detect manual scrolling
-onMounted(() => {
-  const container = lyricsContainer.value;
-  if (container) {
-    container.addEventListener(
-      "scroll",
-      () => {
-        userManuallyScrolled.value = true;
-
-        // Reset the flag after 8 seconds of no scrolling
-        setTimeout(() => {
-          userManuallyScrolled.value = false;
-        }, 8000);
-      },
-      { passive: true },
-    );
-  }
+onBeforeUnmount(() => {
+  lineRefs.clear();
 });
 </script>
 
@@ -557,7 +511,9 @@ onMounted(() => {
 }
 
 .lyrics-intro {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -565,61 +521,108 @@ onMounted(() => {
   text-align: center;
 }
 
+.intro-fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.intro-fade-leave-to {
+  opacity: 0;
+}
+
 .song-title {
-  font-size: 2em;
+  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
   font-weight: bold;
   margin-bottom: 10px;
-  color: v-bind(textColor);
 }
 
 .artist-name {
-  font-size: 1.5em;
+  font-size: clamp(1.4rem, 2.5vw, 2.5rem);
   margin-bottom: 40px;
   opacity: 0.8;
 }
 
 .lyrics-coming-soon {
-  font-size: 1.2em;
+  font-size: clamp(1rem, 1.8vw, 1.8rem);
   opacity: 0.6;
   font-style: italic;
 }
 
-.lyrics-scroll-container {
+/* Synced lyrics: fixed anchor with transform-based positioning */
+.synced-container {
   height: 100%;
   width: 100%;
-  overflow-y: auto;
-  padding: 40vh 0; /* This padding is for timestamped lyrics only */
-  text-align: center;
+  overflow: hidden;
+  position: relative;
 }
 
+.synced-content {
+  text-align: center;
+  will-change: transform;
+  transition: transform 1s ease;
+}
+
+/* Non-synced static lyrics */
 .static-lyrics {
-  padding: 10px 0 !important; /* Much less padding for static lyrics */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
+.lyrics-content {
+  text-align: center;
+  padding: 10px 0;
+}
+
 .lyrics-line {
   padding: 10px 4px;
-  font-size: 1.1em;
-  opacity: 0.5;
-  transition:
-    opacity 0.3s ease,
-    font-size 0.3s ease,
-    filter 0.3s ease,
-    text-shadow 0.3s ease,
-    color 0.3s ease;
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: bold;
+  opacity: 0.35;
   margin: 8px 0;
-  filter: blur(1px); /* Blur effect for inactive lyrics */
-  text-shadow: 0 0 1px var(--text-color);
+  transform: scale(0.78);
+  transform-origin: center center;
+  will-change: transform, opacity;
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
+}
+
+.lyrics-line.lyrics-line--hidden {
+  opacity: 0;
+  transform: scale(0.78);
 }
 
 .lyrics-line.active {
   opacity: 1;
-  font-size: 1.4em;
-  font-weight: bold;
   color: v-bind(textColor);
-  filter: blur(0); /* No blur effect for active lyric */
-  text-shadow: none;
+  transform: scale(1);
+}
+
+/* Enhanced LRC word-level highlighting */
+.lyrics-word {
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+
+.lyrics-word--active {
+  opacity: 1;
+}
+
+.break-note {
+  display: inline-block;
+  font-size: clamp(2rem, 4vw, 4rem);
+  margin: 0 0.15em;
+  color: v-bind(textColor);
+  opacity: 0.35;
+  background-image: none;
+  -webkit-text-fill-color: initial;
+}
+
+.break-note--filled {
+  opacity: 1;
+}
+
+.break-note--filling {
+  opacity: 1;
 }
 </style>

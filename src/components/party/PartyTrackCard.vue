@@ -66,14 +66,14 @@ const props = withDefaults(defineProps<Props>(), {
   boostBadgeColor: "#FF5722", // Default: Orange
 });
 
-// Check if this is a guest request (party mode sets party_mode_guest=true)
+// Check if this is a guest request (party sets party_guest=true)
 const isGuestRequest = computed(() => {
-  return props.queueItem?.extra_attributes?.party_mode_guest === true;
+  return props.queueItem?.extra_attributes?.party_guest === true;
 });
 
-// Check if this was added via "Boost" (party mode sets party_mode_boosted=true)
+// Check if this was added via "Boost" (party sets party_boosted=true)
 const isBoost = computed(() => {
-  return props.queueItem?.extra_attributes?.party_mode_boosted === true;
+  return props.queueItem?.extra_attributes?.party_boosted === true;
 });
 
 // Get the badge color based on queue option (fallback to defaults if empty)
@@ -87,8 +87,8 @@ const badgeColor = computed(() => {
 // Get badge text based on queue option
 const badgeText = computed(() => {
   if (!isGuestRequest.value) return "";
-  if (isBoost.value) return $t("providers.party_mode.boost");
-  return $t("providers.party_mode.request");
+  if (isBoost.value) return $t("providers.party.boost");
+  return $t("providers.party.request");
 });
 
 // Computed track name - prefer media_item.name for proper track title
@@ -148,53 +148,60 @@ const sizeClass = computed(() => {
 
 <style scoped>
 .track-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
   display: flex;
   align-items: center;
-  gap: 1.5vw;
-  padding: 1vw;
-  border-radius: 1.2vw;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(1vw);
+  gap: 1.5vh;
+  padding: 1vh;
+  border-radius: 1.2vh;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  backdrop-filter: blur(1vh);
   width: 95%;
-  max-width: 95%;
   box-sizing: border-box;
-  /* Transform combines centering, vertical position, and scale */
-  transform: translateX(-50%) translateY(calc(-50% + var(--y, 0vh)))
-    scale(var(--scale, 1));
+  transform: scale(var(--scale, 1));
   opacity: var(--opacity, 1);
   z-index: var(--z-index, 1);
-  /* Transition the actual CSS properties, not the variables */
   transition:
     transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .track-card.position-previous-2 {
-  --y: -30vh;
   --scale: 0.85;
   --opacity: 0.5;
   --z-index: 1;
+  margin-bottom: -4vh;
 }
 
 .track-card.position-previous-1 {
-  --y: -19vh;
   --scale: 0.9;
   --opacity: 0.7;
   --z-index: 2;
+  margin-bottom: -3vh;
 }
 
 .track-card.position-current {
-  --y: 0vh;
   --scale: 1;
   --opacity: 1;
   --z-index: 3;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.3);
+  background: rgba(var(--v-theme-on-surface), 0.1);
+  box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.2);
+}
+
+.track-card.position-next-1 {
+  --scale: 0.9;
+  --opacity: 0.7;
+  --z-index: 2;
+  margin-top: -3vh;
+}
+
+.track-card.position-next-2 {
+  --scale: 0.85;
+  --opacity: 0.5;
+  --z-index: 1;
+  margin-top: -4vh;
 }
 
 /* Guest request highlighting - color set via inline style from config */
@@ -215,13 +222,13 @@ const sizeClass = computed(() => {
   /* Color set via inline style from config */
   display: flex;
   align-items: center;
-  gap: 0.6vw;
-  padding: 0.5vw 1.2vw;
+  gap: 0.6vh;
+  padding: 0.5vh 1.2vh;
   background: color-mix(in srgb, var(--badge-color) 35%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: clamp(0.65rem, 1.2vw, 1.1rem);
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  font-size: clamp(0.65rem, 1.2vh, 1.1rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -230,28 +237,14 @@ const sizeClass = computed(() => {
 }
 
 .badge-icon {
-  width: clamp(14px, 1.6vw, 24px);
-  height: clamp(14px, 1.6vw, 24px);
-}
-
-.track-card.position-next-1 {
-  --y: 19vh;
-  --scale: 0.9;
-  --opacity: 0.7;
-  --z-index: 2;
-}
-
-.track-card.position-next-2 {
-  --y: 30vh;
-  --scale: 0.85;
-  --opacity: 0.5;
-  --z-index: 1;
+  width: clamp(14px, 1.6vh, 24px);
+  height: clamp(14px, 1.6vh, 24px);
 }
 
 .track-artwork {
   position: relative;
   flex-shrink: 0;
-  border-radius: 0.8vw;
+  border-radius: 0.8vh;
   overflow: hidden;
   transition:
     width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
@@ -260,23 +253,18 @@ const sizeClass = computed(() => {
 
 .now-playing-overlay {
   position: absolute;
-  bottom: 0.4vw;
-  right: 0.4vw;
+  bottom: 0.4vh;
+  right: 0.4vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(var(--v-theme-surface), 0.4);
   border-radius: 6px;
-  padding: 0.3vw;
+  padding: 0.3vh;
 }
 
 .now-playing-overlay :deep(.now-playing-icon .bar) {
-  background: #03a9f4;
-}
-
-.track-artwork.size-small {
-  width: 8vh;
-  height: 8vh;
+  background: rgb(var(--v-theme-primary));
 }
 
 .track-artwork.size-medium {
@@ -292,53 +280,30 @@ const sizeClass = computed(() => {
 .track-info {
   flex: 1;
   min-width: 0;
+  transform-origin: left center;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.track-info.size-medium {
+  transform: scale(0.85);
 }
 
 .track-name {
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.95);
-  transition: font-size 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0.3em;
+  font-size: clamp(1.4rem, 3vh, 3.5rem);
+  color: rgba(var(--v-theme-on-surface), 0.95);
 }
 
 .track-artist {
-  color: rgba(255, 255, 255, 0.7);
-  transition: font-size 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.track-info.size-small .track-name {
-  font-size: clamp(0.875rem, 1.2vw, 1.5rem);
-}
-
-.track-info.size-small .track-artist {
-  font-size: clamp(0.75rem, 1vw, 1.25rem);
-}
-
-.track-info.size-medium .track-name {
-  font-size: clamp(1rem, 1.5vw, 2rem);
-}
-
-.track-info.size-medium .track-artist {
-  font-size: clamp(0.875rem, 1.2vw, 1.5rem);
-}
-
-.track-info.size-large .track-name {
-  font-size: clamp(1.2rem, 2.5vw, 3rem);
-}
-
-.track-info.size-large .track-artist {
-  font-size: clamp(1rem, 1.8vw, 2.2rem);
+  font-size: clamp(1.1rem, 2.2vh, 2.5rem);
+  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
 @media (max-width: 768px) {
   .track-card {
-    gap: 0.75rem;
-    padding: 0.5rem;
-  }
-
-  .track-artwork.size-large {
-    width: 12vh;
-    height: 12vh;
+    gap: 0.75vh;
+    padding: 0.5vh;
   }
 }
 </style>

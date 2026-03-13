@@ -1,5 +1,5 @@
 import { useRateLimiting } from "@/composables/useRateLimiting";
-import type { PartyModeConfig } from "@/plugins/api/interfaces";
+import type { PartyConfig } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const BOOST_STORAGE_KEY = "guest_boost_bucket";
@@ -69,7 +69,7 @@ describe("useRateLimiting", () => {
   it("applies configuration from server", () => {
     const rateLimiting = useRateLimiting();
 
-    const config: PartyModeConfig = {
+    const config: PartyConfig = {
       enable_rate_limiting: false,
       enable_add_queue: false,
       enable_boost: false,
@@ -82,10 +82,13 @@ describe("useRateLimiting", () => {
       skip_song_refill_minutes: 30,
       album_art_background: false,
       show_player_controls: true,
+      display_lyrics: false,
+      karaoke_mode: false,
       request_badge_color: "#000000",
       boost_badge_color: "#ffffff",
       qr_show_instruction_text: false,
       qr_instruction_text: "",
+      anti_burn_in: false,
     };
 
     rateLimiting.configure(config);

@@ -673,7 +673,7 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
 
 /**
  * Try to authenticate with a guest code (exchange for JWT)
- * This is the new short code system for party mode guest access
+ * This is the new short code system for party guest access
  */
 const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
   if (!code) {
@@ -942,7 +942,7 @@ const autoConnect = async () => {
         step.value = "error";
         return;
       } catch (error) {
-        console.error("[Login] Local party mode connection failed:", error);
+        console.error("[Login] Local party connection failed:", error);
         connectionError.value =
           error instanceof Error
             ? error.message
@@ -1499,7 +1499,7 @@ const connectToRemote = async () => {
       throw new Error("Failed to establish API connection");
     }
 
-    // Check if there's a join code in the URL (party mode)
+    // Check if there's a join code in the URL (party)
     const currentUrlParams = new URLSearchParams(window.location.search);
     const joinCodeFromUrl = currentUrlParams.get("join");
 
@@ -1741,18 +1741,18 @@ const onQrCodeDetected = (detectedCodes: { rawValue: string }[]) => {
     }
   }
 
-  // If we have a guest code (party mode QR), navigate to the full URL
+  // If we have a guest code (party QR), navigate to the full URL
   // This will trigger the autoConnect flow with the code parameter
   if (extractedGuestCode) {
     closeQrScanner();
 
     // Build the URL and navigate to trigger guest login flow
     if (extractedRemoteId) {
-      // Remote party mode
+      // Remote party
       const newUrl = `${window.location.origin}${window.location.pathname}?remote_id=${extractedRemoteId}&join=${extractedGuestCode}#/guest`;
       window.location.href = newUrl;
     } else {
-      // Local party mode
+      // Local party
       const newUrl = `${window.location.origin}${window.location.pathname}?join=${extractedGuestCode}#/guest`;
       window.location.href = newUrl;
     }

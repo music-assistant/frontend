@@ -2,7 +2,7 @@
   <div class="queue-section">
     <div class="section-header">
       <h2 class="section-title">
-        {{ $t("providers.party_mode.guest_page.current_queue") }}
+        {{ $t("providers.party.guest_page.current_queue") }}
       </h2>
       <div v-if="skipSongEnabled" class="skip-area">
         <span
@@ -11,20 +11,20 @@
           "
           class="skip-countdown"
         >
-          <v-icon size="x-small">mdi-clock-outline</v-icon>
+          <Clock :size="12" />
           {{ skipTokenCountdown }}
         </span>
-        <v-btn
-          color="primary"
-          variant="flat"
-          size="small"
-          :loading="skippingSong"
-          :disabled="rateLimitingEnabled && skipSongTokens <= 0"
+        <Button
+          size="sm"
+          :disabled="
+            (rateLimitingEnabled && skipSongTokens <= 0) || skippingSong
+          "
           class="skip-btn"
           @click="$emit('skip')"
         >
-          <v-icon start size="small">mdi-skip-next</v-icon>
-          {{ $t("providers.party_mode.guest_page.skip") }}
+          <Spinner v-if="skippingSong" :size="16" />
+          <SkipForward v-else :size="16" />
+          {{ $t("providers.party.guest_page.skip") }}
           <span
             v-if="rateLimitingEnabled"
             class="skip-token-badge"
@@ -32,7 +32,7 @@
           >
             {{ skipSongTokens }}
           </span>
-        </v-btn>
+        </Button>
       </div>
     </div>
     <div
@@ -41,7 +41,7 @@
       class="queue-list"
       @scroll="$emit('queueScroll', $event)"
     >
-      <PartyModeQueueItem
+      <PartyQueueItem
         v-for="(item, index) in queueItems"
         :key="item.queue_item_id"
         :item="item"
@@ -61,12 +61,12 @@
       />
       <!-- Loading indicator for infinite scroll -->
       <div v-if="loadingMoreQueueItems" class="loading-more">
-        <v-progress-circular indeterminate color="primary" size="32" />
+        <Spinner class="size-8 text-primary" />
       </div>
     </div>
     <div v-else class="empty-queue">
-      <v-icon size="48" color="grey">mdi-playlist-music-outline</v-icon>
-      <p>{{ $t("providers.party_mode.guest_page.queue_empty") }}</p>
+      <ListMusic :size="48" class="text-muted-foreground" />
+      <p>{{ $t("providers.party.guest_page.queue_empty") }}</p>
     </div>
   </div>
 </template>
@@ -75,7 +75,10 @@
 import { ref } from "vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import PartyModeQueueItem from "./PartyModeQueueItem.vue";
+import PartyQueueItem from "./PartyQueueItem.vue";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { Clock, ListMusic, SkipForward } from "lucide-vue-next";
 
 const props = defineProps<{
   queueItems: QueueItem[];
@@ -163,20 +166,18 @@ defineExpose({ listRef });
 .skip-token-badge {
   margin-left: 0.5rem;
   padding: 0.125rem 0.375rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--v-theme-on-primary), 0.2);
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .skip-token-badge.no-tokens {
-  background: rgba(255, 100, 100, 0.3);
+  background: rgba(var(--v-theme-error), 0.3);
 }
 
-.skip-btn.v-btn--disabled {
+.skip-btn:disabled {
   opacity: 0.3;
-  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
-  color: rgba(var(--v-theme-on-surface), 0.4) !important;
 }
 
 .skip-countdown {

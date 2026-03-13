@@ -220,9 +220,9 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  const isPartyModeGuest = authManager.isPartyModeGuest();
+  const isPartyGuest = authManager.isPartyGuest();
 
-  if (!isPartyModeGuest) {
+  if (!isPartyGuest) {
     // Full initialization for regular and non-party guest users
     await api.fetchState();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
@@ -234,23 +234,23 @@ const completeInitialization = async () => {
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
-    console.debug("[App] Party mode guest - skipping full state fetch");
+    console.debug("[App] Party guest - skipping full state fetch");
   }
 
-  // Check if party mode plugin is enabled
+  // Check if party plugin is enabled
   try {
-    const partyModeProviders = await api.getProviderConfigs(
+    const partyProviders = await api.getProviderConfigs(
       ProviderType.PLUGIN,
-      "party_mode",
+      "party",
     );
-    if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
-      store.enabledPlugins.add("party_mode");
+    if (partyProviders.length > 0 && partyProviders[0].enabled) {
+      store.enabledPlugins.add("party");
     } else {
-      store.enabledPlugins.delete("party_mode");
+      store.enabledPlugins.delete("party");
     }
   } catch (error) {
-    console.error("[App] Failed to check party mode status:", error);
-    store.enabledPlugins.delete("party_mode");
+    console.error("[App] Failed to check party status:", error);
+    store.enabledPlugins.delete("party");
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -261,8 +261,8 @@ const completeInitialization = async () => {
   ) {
     store.isOnboarding = true;
     router.push("/settings/providers");
-  } else if (isPartyModeGuest) {
-    // Party mode guests should always be redirected to the guest view
+  } else if (isPartyGuest) {
+    // Party guests should always be redirected to the guest view
     router.push("/guest");
   }
   // Don't push to any route here - let the router handle navigation naturally
@@ -409,17 +409,17 @@ onMounted(async () => {
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     try {
-      const partyModeProviders = await api.getProviderConfigs(
+      const partyProviders = await api.getProviderConfigs(
         ProviderType.PLUGIN,
-        "party_mode",
+        "party",
       );
-      if (partyModeProviders.length > 0 && partyModeProviders[0].enabled) {
-        store.enabledPlugins.add("party_mode");
+      if (partyProviders.length > 0 && partyProviders[0].enabled) {
+        store.enabledPlugins.add("party");
       } else {
-        store.enabledPlugins.delete("party_mode");
+        store.enabledPlugins.delete("party");
       }
     } catch (error) {
-      console.error("[App] Failed to update party mode status:", error);
+      console.error("[App] Failed to update party status:", error);
     }
   });
 });

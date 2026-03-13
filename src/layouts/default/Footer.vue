@@ -44,16 +44,16 @@ import { store } from '@/plugins/store';
 
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { store } from "@/plugins/store";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import Player from "./PlayerOSD/Player.vue";
 
 const route = useRoute();
-const { config: partyConfig, fetchConfig } = usePartyModeConfig();
+const { config: partyConfig, fetchConfig } = usePartyConfig();
 
-// Fetch party mode config when entering party route
+// Fetch party config when entering party route
 watch(
   () => route.path,
   async (path) => {
