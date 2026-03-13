@@ -74,7 +74,11 @@ const routes = [
     children: [
       {
         path: "",
-        redirect: "/discover",
+        redirect: () => {
+          const startupView =
+            store.currentUser?.preferences?.startup_view || "discover";
+          return `/${startupView}`;
+        },
       },
       {
         // "/home" has now been renamed to "/discover". This
