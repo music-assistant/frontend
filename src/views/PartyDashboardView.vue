@@ -44,6 +44,7 @@
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
             :anticipation="10"
+            :debug-mode="debugLyrics"
           />
         </div>
 
@@ -96,6 +97,7 @@
               :stream-details="store.curQueueItem?.streamdetails"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
+              :debug-mode="debugLyrics"
             />
           </div>
         </div>
@@ -206,6 +208,13 @@ const handleCompactChange = (e: MediaQueryListEvent) => {
 compactQuery.addEventListener("change", handleCompactChange);
 onBeforeUnmount(() => {
   compactQuery.removeEventListener("change", handleCompactChange);
+});
+
+// Debug mode for lyrics: enabled via ?debug=true query parameter
+const debugLyrics = computed(() => {
+  const param = route.query.debug;
+  const raw = Array.isArray(param) ? param[0] : param;
+  return parseBool(raw);
 });
 
 // Check if album art background is enabled - prioritize query parameter over config

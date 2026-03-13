@@ -112,6 +112,18 @@
         </div>
       </div>
     </ScrollArea>
+    <!-- Debug overlay: shows current time and raw LRC lines -->
+    <div v-if="debugMode && hasTimestamps" class="debug-overlay">
+      <div class="debug-time">{{ debugCurrentTime }}</div>
+      <div v-if="debugActiveLine" class="debug-line debug-line--active">
+        <span class="debug-label">NOW</span>
+        <code>{{ debugActiveLine.raw }}</code>
+      </div>
+      <div v-if="debugNextLine" class="debug-line debug-line--next">
+        <span class="debug-label">NEXT</span>
+        <code>{{ debugNextLine.raw }}</code>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -158,6 +170,7 @@ interface ParsedLyric {
   time: number;
   text: string;
   words?: LyricWord[];
+  raw?: string; // Original LRC line (debug mode)
 }
 
 // Core lyrics state
@@ -298,9 +311,9 @@ const parseLrcLine = (line: string): ParsedLyric => {
     const text = words
       ? words.map((w) => w.text).join(" ")
       : rawText.trim() || " ";
-    return { time, text, words };
+    return { time, text, words, raw: line };
   }
-  return { time: 0, text: line.trim() || " " };
+  return { time: 0, text: line.trim() || " ", raw: line };
 };
 
 // Determine which lyrics source to use and parse them.
@@ -545,6 +558,26 @@ watch(
   },
 );
 
+// Format seconds as mm:ss.xx for debug display
+const formatDebugTime = (seconds: number): string => {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min.toString().padStart(2, "0")}:${sec.toFixed(2).padStart(5, "0")}`;
+};
+
+const debugCurrentTime = computed(() => formatDebugTime(props.position || 0));
+
+const debugActiveLine = computed(() => {
+  if (activeLyricIndex.value < 0) return null;
+  return parsedLyrics.value[activeLyricIndex.value] ?? null;
+});
+
+const debugNextLine = computed(() => {
+  const nextIdx = activeLyricIndex.value + 1;
+  if (nextIdx < 0 || nextIdx >= parsedLyrics.value.length) return null;
+  return parsedLyrics.value[nextIdx] ?? null;
+});
+
 onBeforeUnmount(() => {
   lineRefs.clear();
 });
@@ -683,5 +716,64 @@ onBeforeUnmount(() => {
 
 .break-note--filling {
   opacity: 1;
+}
+
+/* Debug overlay */
+.debug-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 12px 16px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  z-index: 10;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.debug-time {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #4fc3f7;
+  margin-bottom: 6px;
+}
+
+.debug-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.debug-line code {
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.debug-line--next code {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.debug-label {
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.debug-line--active .debug-label {
+  background: #4fc3f7;
+  color: #000;
+}
+
+.debug-line--next .debug-label {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 </style>
