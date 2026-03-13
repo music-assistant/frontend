@@ -2,10 +2,11 @@ import { watch } from "vue";
 import {
   createRouter,
   createWebHashHistory,
+  type RouteLocationNormalized,
   type RouteRecordRaw,
 } from "vue-router";
-import { authManager } from "./auth";
 import { api, ConnectionState } from "./api";
+import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
@@ -42,8 +43,13 @@ const routes: RouteRecordRaw[] = [
           import(
             /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
           ),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
-        beforeEnter: async (_to, _from, next) => {
+        props: (route: { query: Record<string, string> }) => ({
+          ...route.query,
+        }),
+        beforeEnter: async (
+          _to: RouteLocationNormalized,
+          _from: RouteLocationNormalized,
+        ) => {
           // Wait for API initialization before checking plugin status
           if (api.state.value !== ConnectionState.INITIALIZED) {
             await new Promise<void>((resolve) => {
@@ -61,10 +67,8 @@ const routes: RouteRecordRaw[] = [
           }
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
-            next({ name: "discover" });
-            return;
+            return { name: "discover" };
           }
-          next();
         },
       },
     ],
