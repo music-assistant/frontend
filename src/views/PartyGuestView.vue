@@ -40,7 +40,7 @@
             :countdown="nextTokenCountdown"
             :label="$t('providers.party.guest_page.boost_available')"
             :color="boostBadgeColor"
-            icon="mdi-rocket-launch"
+            icon="boost"
           />
           <PartyTokensBadge
             v-if="addQueueEnabled"
@@ -49,7 +49,7 @@
             :countdown="addQueueTokenCountdown"
             :label="$t('providers.party.guest_page.add_available')"
             :color="requestBadgeColor"
-            icon="mdi-playlist-plus"
+            icon="request"
           />
         </div>
       </div>
@@ -107,7 +107,7 @@
             :countdown="nextTokenCountdown"
             :label="$t('providers.party.guest_page.boost_available')"
             :color="boostBadgeColor"
-            icon="mdi-rocket-launch"
+            icon="boost"
           />
           <PartyTokensBadge
             v-if="addQueueEnabled"
@@ -116,7 +116,7 @@
             :countdown="addQueueTokenCountdown"
             :label="$t('providers.party.guest_page.add_available')"
             :color="requestBadgeColor"
-            icon="mdi-playlist-plus"
+            icon="request"
           />
         </div>
       </div>

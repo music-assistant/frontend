@@ -14,7 +14,6 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { match } from "ts-pattern";
 import Color from "color";
 import { Clock, ListPlus, Rocket } from "lucide-vue-next";
 
@@ -24,14 +23,11 @@ const props = defineProps<{
   countdown: string;
   label: string;
   color: string;
-  icon: string;
+  icon: "boost" | "request";
 }>();
 
 const iconComponent = computed(() =>
-  match(props.icon)
-    .with("mdi-rocket-launch", () => Rocket)
-    .with("mdi-playlist-plus", () => ListPlus)
-    .otherwise(() => Rocket),
+  props.icon === "request" ? ListPlus : Rocket,
 );
 
 const badgeStyle = computed(() => {

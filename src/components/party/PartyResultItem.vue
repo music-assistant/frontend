@@ -224,7 +224,7 @@ const artistName = computed(() => {
 .action-btn.boost-btn,
 .action-btn.add-btn {
   background-color: var(--btn-bg) !important;
-  color: var(--v-theme-on-primary) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
 }
 
 .action-btn:disabled {
