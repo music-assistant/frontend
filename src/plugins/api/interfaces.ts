@@ -993,6 +993,10 @@ export interface Player {
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
   active_output_protocol: string | null;
+
+  // extra_attributes: additional runtime attributes from the backend
+  // e.g. min_volume, max_volume (only present when non-default)
+  extra_attributes?: Record<string, unknown>;
 }
 
 // provider

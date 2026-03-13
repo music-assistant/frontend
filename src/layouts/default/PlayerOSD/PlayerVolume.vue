@@ -212,6 +212,13 @@ const volumeIconComponent = computed(() => {
   return getVolumeIconComponent(props.player, displayValue.value);
 });
 
+const minVolume = computed(
+  () => (props.player.extra_attributes?.min_volume as number) ?? 0,
+);
+const maxVolume = computed(
+  () => (props.player.extra_attributes?.max_volume as number) ?? 100,
+);
+
 // --- Group popout ---
 
 const showGroupPopout = ref(false);
@@ -444,6 +451,9 @@ const vibrate = (duration: number = 10) => {
   }
 };
 
+const clampToLimits = (value: number): number =>
+  clamp(value, minVolume.value, maxVolume.value);
+
 const getPercentageFromX = (clientX: number): number => {
   if (!sliderContainerRef.value) return displayValue.value;
 
@@ -451,7 +461,7 @@ const getPercentageFromX = (clientX: number): number => {
   const x = clientX - rect.left;
   const percentage = (x / rect.width) * 100;
 
-  return clamp(roundToStep(percentage), 0, 100);
+  return clampToLimits(roundToStep(percentage));
 };
 
 // --- Touch handlers ---
@@ -546,10 +556,8 @@ const onTouchEnd = (event: TouchEvent) => {
   } else {
     // Drag end: send the final absolute value to the server
     const touch = event.changedTouches[0];
-    const finalValue = clamp(
+    const finalValue = clampToLimits(
       roundToStep(getPercentageFromX(touch.clientX)),
-      0,
-      100,
     );
     displayValue.value = finalValue;
     emit("update:local-value", finalValue);
@@ -596,7 +604,7 @@ const onSliderUpdate = (values: number[] | undefined) => {
   )
     return;
 
-  const newValue = values[0] ?? displayValue.value;
+  const newValue = clampToLimits(values[0] ?? displayValue.value);
   startDragging();
   displayValue.value = newValue;
   emit("update:local-value", newValue);
@@ -628,9 +636,10 @@ watch(
   (val: number) => {
     if (isDragging.value) return;
 
-    if (Math.abs(displayValue.value - val) > 0.5) {
-      displayValue.value = val;
-      emit("update:local-value", val);
+    const clamped = clampToLimits(val);
+    if (Math.abs(displayValue.value - clamped) > 0.5) {
+      displayValue.value = clamped;
+      emit("update:local-value", clamped);
     }
   },
   { immediate: true },
