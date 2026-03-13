@@ -764,7 +764,7 @@ watch(
   max-height: 50%;
 }
 
-.lyrics-section :deep(.lyrics-content--synced) {
+.lyrics-section :deep(.synced-content) {
   padding: 15vh 0;
 }
 
@@ -865,7 +865,7 @@ watch(
   z-index: 2;
 }
 
-.karaoke-lyrics :deep(.lyrics-content--synced) {
+.karaoke-lyrics :deep(.synced-content) {
   padding: 20vh 0;
 }
 
@@ -1048,7 +1048,7 @@ watch(
     max-width: 100%;
   }
 
-  .karaoke-lyrics :deep(.lyrics-content--synced) {
+  .karaoke-lyrics :deep(.synced-content) {
     padding: 10vh 0;
   }
 
