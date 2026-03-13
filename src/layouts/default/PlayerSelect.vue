@@ -276,11 +276,6 @@ function toggleGroupExpand(player: Player) {
   }
 }
 
-function onPlayerSettingsClick() {
-  store.showPlayersMenu = false;
-  store.showFullscreenPlayer = false;
-}
-
 onMounted(() => {
   checkDefaultPlayer();
 });
