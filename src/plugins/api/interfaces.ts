@@ -1186,12 +1186,106 @@ export interface PartyConfig {
 
 export type AIRadioMode = "playlist" | "dynamic";
 
+export type AIRadioSectionType = "ai_text" | "ai_meta";
+export type AIRadioWebSearchMode = "disabled" | "allow" | "force";
+
+export interface AIRadioSectionConstraints {
+  max_chars?: number;
+}
+
+export interface AIRadioSection {
+  id: string;
+  name: string;
+  type: AIRadioSectionType;
+  prompt: string;
+  web_search?: AIRadioWebSearchMode;
+  constraints?: AIRadioSectionConstraints;
+  cover_image?: string;
+}
+
+export interface AIRadioOptionalGuards {
+  min_gap_songs?: number;
+  max_per_60min?: number;
+  require_placeholders_present?: string[];
+}
+
+export interface AIRadioAlternativeChoice {
+  section: string;
+  weight: number;
+}
+
+export interface AIRadioFlowMust {
+  MUST: string;
+}
+
+export interface AIRadioFlowAlternative {
+  ALTERNATIVE: {
+    choices: AIRadioAlternativeChoice[];
+  };
+}
+
+export interface AIRadioFlowOptional {
+  OPTIONAL: {
+    section: string;
+    chance?: number;
+    guards?: AIRadioOptionalGuards;
+  };
+}
+
+export type AIRadioFlowItem =
+  | AIRadioFlowMust
+  | AIRadioFlowAlternative
+  | AIRadioFlowOptional;
+
+export type AIRadioPlacement =
+  | "start_of_playlist"
+  | "between_songs"
+  | "end_of_playlist";
+
+export interface AIRadioSectionOrderRule {
+  when: AIRadioPlacement;
+  flow: AIRadioFlowItem[];
+}
+
+export interface AIRadioStationGeneral {
+  timezone: string;
+  location: {
+    city: string;
+    country: string;
+  };
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  instructions: string;
+  openai_base_url: string;
+  section_store_path: string;
+  weather_provider: string;
+  weather_timeout_seconds: number;
+  tts_provider: string;
+  openai_tts_model: string;
+  openai_tts_voice: string;
+  openai_tts_instructions: string;
+  elevenlabs_model: string;
+  elevenlabs_voice_id: string;
+}
+
 export interface AIRadioStation {
   id: string;
   name: string;
   source_playlist_id: string;
   source_playlist_provider: string;
+  target_playlist_provider?: string;
   default_player_id?: string;
+  max_duration_minutes?: number;
+  dynamic_batch_size?: number;
+  dynamic_poll_seconds?: number;
+  dynamic_prefetch_remaining_tracks?: number;
+  clear_queue_on_start?: boolean;
+  merge_section_id?: string;
+  general?: AIRadioStationGeneral;
+  section_ids?: string[];
+  sections?: AIRadioSection[];
+  section_order?: AIRadioSectionOrderRule[];
 }
 
 export interface AIRadioSession {

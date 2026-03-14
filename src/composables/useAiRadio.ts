@@ -34,7 +34,9 @@ const sortSessions = (items: AIRadioSession[]) => {
 async function loadStations(silent = false): Promise<AIRadioStation[]> {
   loadingStations.value = true;
   try {
-    const result = await api.sendCommand<AIRadioStation[]>("ai_radio/stations/list");
+    const result = await api.sendCommand<AIRadioStation[]>(
+      "ai_radio/stations/list",
+    );
     stations.value = sortByName(result);
     if (!silent) {
       toast.success("AI Radio stations loaded");
@@ -97,9 +99,14 @@ async function startRun(
     if (typeof options?.dynamicBatchSizeOverride === "number") {
       args.dynamic_batch_size_override = options.dynamicBatchSizeOverride;
     }
-    const result = await api.sendCommand<AIRadioSession>("ai_radio/start", args);
+    const result = await api.sendCommand<AIRadioSession>(
+      "ai_radio/start",
+      args,
+    );
     toast.success(
-      mode === "playlist" ? "Playlist generation started" : "Live radio started",
+      mode === "playlist"
+        ? "Playlist generation started"
+        : "Live radio started",
     );
     await loadStatus(true);
     return result;
