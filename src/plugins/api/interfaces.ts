@@ -1172,7 +1172,6 @@ export interface PartyConfig {
   skip_song_limit: number;
   skip_song_refill_minutes: number;
   album_art_background: boolean;
-  show_player_controls: boolean;
   display_lyrics: boolean;
   karaoke_mode: boolean;
   request_badge_color?: string;

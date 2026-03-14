@@ -1,6 +1,6 @@
 <template>
   <div
-    :class="['party-view', { 'party-view--no-footer': !showPlayerControls }]"
+    class="party-view"
     :style="gradientBackgroundStyle"
   >
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
@@ -186,7 +186,6 @@ const refreshPartyPlayer = async () => {
 };
 
 const albumArtBackgroundEnabled = ref(true); // Default to true
-const showPlayerControls = ref(false); // Whether footer player controls are shown
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
 const antiBurnIn = ref(false); // Swap QR/track sides periodically
@@ -521,18 +520,12 @@ const applyParentStyles = () => {
   if (el instanceof HTMLElement) {
     parentSection.value = el;
     el.classList.add("party-view-active");
-    if (!showPlayerControls.value) {
-      el.classList.add("party-view-no-footer");
-    }
   }
 };
 
 const cleanupParentStyles = () => {
   if (parentSection.value) {
-    parentSection.value.classList.remove(
-      "party-view-active",
-      "party-view-no-footer",
-    );
+    parentSection.value.classList.remove("party-view-active");
     parentSection.value = null;
   }
 };
@@ -554,15 +547,6 @@ watch(antiBurnIn, (enabled) => {
   }
 });
 
-watch(showPlayerControls, (show) => {
-  if (!parentSection.value) return;
-  if (show) {
-    parentSection.value.classList.remove("party-view-no-footer");
-  } else {
-    parentSection.value.classList.add("party-view-no-footer");
-  }
-});
-
 onMounted(async () => {
   // Apply parent container overrides
   applyParentStyles();
@@ -580,9 +564,6 @@ onMounted(async () => {
   if (config) {
     if (config.album_art_background !== undefined) {
       albumArtBackgroundEnabled.value = config.album_art_background;
-    }
-    if (config.show_player_controls !== undefined) {
-      showPlayerControls.value = config.show_player_controls;
     }
     if (config.display_lyrics !== undefined) {
       displayLyrics.value = config.display_lyrics;
@@ -649,7 +630,6 @@ onBeforeUnmount(() => {
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
     albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
-    showPlayerControls.value = newConfig.show_player_controls ?? false;
     displayLyrics.value = newConfig.display_lyrics ?? false;
     karaokeMode.value =
       (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
@@ -658,7 +638,6 @@ watch(partyConfig, (newConfig) => {
     antiBurnIn.value = newConfig.anti_burn_in ?? false;
   } else {
     albumArtBackgroundEnabled.value = true;
-    showPlayerControls.value = false;
     displayLyrics.value = false;
     karaokeMode.value = false;
     requestBadgeColor.value = "#2196F3";
@@ -1108,7 +1087,4 @@ watch(
   flex-direction: column;
 }
 
-.content-section.party-view-no-footer {
-  padding-bottom: 0 !important;
-}
 </style>
