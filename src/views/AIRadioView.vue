@@ -2083,8 +2083,28 @@ const getQueryValue = (value: unknown) => {
   return value.trim();
 };
 
-const parseOptionalInput = (value: string): number | undefined => {
-  const parsed = Number.parseInt(value, 10);
+const parseOptionalCapInput = (
+  value: string | number | null | undefined,
+): number | undefined => {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    return undefined;
+  }
+  const parsed = Number(normalized);
+  if (Number.isNaN(parsed) || parsed < 0) {
+    return undefined;
+  }
+  return parsed;
+};
+
+const parseOptionalPositiveInt = (
+  value: string | number | null | undefined,
+): number | undefined => {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(normalized, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     return undefined;
   }
@@ -2289,10 +2309,10 @@ const runStart = async (mode: AIRadioMode) => {
       sourcePlaylistIdOverride: sourcePlaylistOverrideId.value || undefined,
       sourcePlaylistProviderOverride:
         sourcePlaylistOverrideProvider.value || undefined,
-      dynamicSourcePlaytimeCapOverride: parseOptionalInput(
+      dynamicSourcePlaytimeCapOverride: parseOptionalCapInput(
         runSourcePlaytimeCapOverrideInput.value,
       ),
-      dynamicBatchSizeOverride: parseOptionalInput(
+      dynamicBatchSizeOverride: parseOptionalPositiveInt(
         runDynamicBatchSizeOverrideInput.value,
       ),
     });
