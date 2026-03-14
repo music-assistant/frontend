@@ -236,7 +236,7 @@ watch(
   (newId, oldId) => {
     if (newId && newId !== oldId) {
       const state = store.activePlayer?.playback_state;
-      if (state === PlaybackState.IDLE) {
+      if (state === PlaybackState.IDLE && store.activePlayer?.powered !== false) {
         isLoading.value = true;
         if (loadingTimeout) clearTimeout(loadingTimeout);
         loadingTimeout = setTimeout(() => {
