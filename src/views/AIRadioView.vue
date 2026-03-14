@@ -1187,6 +1187,9 @@ const AUTO_REFRESH_MS = 5000;
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 type AIRadioFlowType = "MUST" | "ALTERNATIVE" | "OPTIONAL";
+type AIRadioStationDraft = Omit<AIRadioStation, "general"> & {
+  general: AIRadioStationGeneral;
+};
 type AIRadioProgressPhase =
   | "fetch_source_tracks"
   | "initializing_queue"
@@ -1249,7 +1252,7 @@ const sourcePlaylistOverrideProvider = ref("");
 const sourcePlaylistOverrideName = ref("");
 
 const selectedEditorStationId = ref("");
-const stationDraft = ref<AIRadioStation | null>(null);
+const stationDraft = ref<AIRadioStationDraft | null>(null);
 
 const selectedEditorSectionId = ref("");
 const sectionDraft = ref<AIRadioSection | null>(null);
@@ -1626,7 +1629,7 @@ const asGeneralDefaults = (
   };
 };
 
-const normalizeStationDraft = (station: AIRadioStation): AIRadioStation => {
+const normalizeStationDraft = (station: AIRadioStation): AIRadioStationDraft => {
   const draft = deepClone(station);
   draft.id = String(draft.id || "").trim();
   draft.name = String(draft.name || "").trim();
@@ -1662,7 +1665,7 @@ const normalizeStationDraft = (station: AIRadioStation): AIRadioStation => {
     : [];
   draft.sections = [];
   draft.general = asGeneralDefaults(draft.general);
-  return draft;
+  return draft as AIRadioStationDraft;
 };
 
 const normalizeSectionDraft = (section: AIRadioSection): AIRadioSection => {
@@ -1866,7 +1869,7 @@ const validateStationDraftLocal = (station: AIRadioStation): string | null => {
   return null;
 };
 
-const buildStationPayload = (draft: AIRadioStation): AIRadioStation => {
+const buildStationPayload = (draft: AIRadioStationDraft): AIRadioStation => {
   const station = normalizeStationDraft(deepClone(draft));
   if (!station.id.trim()) {
     station.id = slugify(station.name);
@@ -1953,9 +1956,9 @@ const onStationImport = async (event: Event) => {
     const data = JSON.parse(await file.text()) as Record<string, unknown>;
     let imported: AIRadioStation | null = null;
     if (Array.isArray(data.stations) && data.stations.length > 0) {
-      imported = data.stations[0] as AIRadioStation;
+      imported = data.stations[0] as unknown as AIRadioStation;
     } else {
-      imported = data as AIRadioStation;
+      imported = data as unknown as AIRadioStation;
     }
     stationDraft.value = normalizeStationDraft(imported);
     selectedEditorStationId.value = stationDraft.value.id || "";
@@ -2075,9 +2078,9 @@ const onSectionImport = async (event: Event) => {
     const data = JSON.parse(await file.text()) as Record<string, unknown>;
     let imported: AIRadioSection | null = null;
     if (Array.isArray(data.sections) && data.sections.length > 0) {
-      imported = data.sections[0] as AIRadioSection;
+      imported = data.sections[0] as unknown as AIRadioSection;
     } else {
-      imported = data as AIRadioSection;
+      imported = data as unknown as AIRadioSection;
     }
     sectionDraft.value = normalizeSectionDraft(imported);
     selectedEditorSectionId.value = sectionDraft.value.id || "";
