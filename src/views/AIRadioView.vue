@@ -1629,7 +1629,9 @@ const asGeneralDefaults = (
   };
 };
 
-const normalizeStationDraft = (station: AIRadioStation): AIRadioStationDraft => {
+const normalizeStationDraft = (
+  station: AIRadioStation,
+): AIRadioStationDraft => {
   const draft = deepClone(station);
   draft.id = String(draft.id || "").trim();
   draft.name = String(draft.name || "").trim();
