@@ -67,8 +67,17 @@
         <div v-else @click="store.showPlayersMenu = true">
           {{ $t("no_player") }}
         </div>
+        <!-- loading spinner while buffering -->
+        <v-progress-circular
+          v-if="isLoading"
+          indeterminate
+          size="14"
+          width="2"
+          color="primary"
+          style="margin-left: 12px; margin-bottom: 4px;"
+        />
         <NowPlayingBadge
-          v-if="
+          v-else-if="
             store.activePlayer &&
             store.activePlayer?.powered != false &&
             store.activePlayer?.playback_state != PlaybackState.IDLE
@@ -184,7 +193,7 @@ import { getSourceName } from "@/plugins/api/helpers";
 import { PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import { computed } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
@@ -201,6 +210,41 @@ const props = withDefaults(defineProps<Props>(), {
   showOnlyArtist: false,
   showQualityDetailsBtn: true,
   primaryColor: "",
+});
+
+// loading state: shown from when a new track starts loading until playback_state = PLAYING
+const isLoading = ref(false);
+let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => store.activePlayerQueue?.current_item?.queue_item_id,
+  (newUri, oldUri) => {
+    if (newUri && newUri !== oldUri) {
+      isLoading.value = true;
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+      // safety fallback: clear after 15s in case state never changes
+      loadingTimeout = setTimeout(() => {
+        isLoading.value = false;
+      }, 15000);
+    }
+  },
+);
+
+watch(
+  () => store.activePlayer?.playback_state,
+  (newState) => {
+    if (newState === PlaybackState.PLAYING) {
+      isLoading.value = false;
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        loadingTimeout = null;
+      }
+    }
+  },
+);
+
+onUnmounted(() => {
+  if (loadingTimeout) clearTimeout(loadingTimeout);
 });
 
 // computed properties
