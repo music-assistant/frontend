@@ -154,6 +154,16 @@
                   {{ startingRun ? "Starting..." : "Start Live Radio" }}
                 </Button>
               </div>
+
+              <div class="border-t pt-3">
+                <Button variant="outline" @click="openGuidedStationCreator">
+                  Create Station (Guided)
+                </Button>
+                <p class="mt-2 text-xs text-muted-foreground">
+                  Recommended for first setup. Advanced settings can be edited
+                  later in the Stations tab.
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -241,6 +251,13 @@
             <CardContent class="space-y-3">
               <div class="flex flex-wrap gap-2">
                 <Button size="sm" @click="createNewStationDraft">New</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  @click="openGuidedStationCreator"
+                >
+                  Guided
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1139,6 +1156,182 @@
         </div>
       </TabsContent>
     </Tabs>
+
+    <Dialog v-model:open="guidedWizardOpen">
+      <DialogContent class="sm:max-w-[760px]">
+        <DialogHeader>
+          <DialogTitle>Create Station (Guided)</DialogTitle>
+          <DialogDescription>
+            Step-by-step setup for a working station. You can fine-tune all
+            advanced options later.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <div class="text-xs text-muted-foreground">
+            Step {{ guidedWizardStep }} of 3
+          </div>
+
+          <div v-if="guidedWizardStep === 1" class="space-y-4">
+            <div class="space-y-2">
+              <Label for="guided-station-name">Station Name</Label>
+              <Input
+                id="guided-station-name"
+                v-model="guidedWizardStationName"
+                placeholder="My AI Radio Station"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="guided-source-playlist">Source Playlist</Label>
+              <select
+                id="guided-source-playlist"
+                v-model="guidedWizardSourcePlaylistSelectValue"
+                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">-- Select --</option>
+                <option
+                  v-for="playlist in playlists"
+                  :key="
+                    playlistSelectValue(playlist.provider, playlist.item_id)
+                  "
+                  :value="
+                    playlistSelectValue(playlist.provider, playlist.item_id)
+                  "
+                >
+                  {{ playlist.name }} ({{ playlist.provider }}:{{
+                    playlist.item_id
+                  }})
+                </option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <Label for="guided-default-player"
+                >Default Playback Device (optional)</Label
+              >
+              <select
+                id="guided-default-player"
+                v-model="guidedWizardDefaultPlayerId"
+                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">-- None --</option>
+                <option
+                  v-for="player in players"
+                  :key="player.player_id"
+                  :value="player.player_id"
+                >
+                  {{ player.name
+                  }}{{ player.available === false ? " (Not available)" : "" }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div v-else-if="guidedWizardStep === 2" class="space-y-4">
+            <div class="space-y-2">
+              <Label>Sections</Label>
+              <p class="text-xs text-muted-foreground">
+                Select reusable sections this station should use. Recommended
+                defaults are preselected.
+              </p>
+              <div
+                class="max-h-[260px] space-y-2 overflow-y-auto rounded-md border p-3"
+              >
+                <label
+                  v-for="section in sections"
+                  :key="`guided-${section.id}`"
+                  class="flex items-start gap-2 rounded-md border p-2"
+                >
+                  <input
+                    type="checkbox"
+                    class="mt-1 h-4 w-4"
+                    :checked="guidedWizardSectionIds.includes(section.id)"
+                    @change="onGuidedSectionToggle(section.id, $event)"
+                  />
+                  <span class="text-sm">
+                    <span class="font-medium">{{ section.name }}</span>
+                    <span class="ml-1 text-xs text-muted-foreground"
+                      >({{ section.type }})</span
+                    >
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <Label for="guided-merge-section">Merge Section (optional)</Label>
+              <select
+                id="guided-merge-section"
+                v-model="guidedWizardMergeSectionId"
+                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">-- None --</option>
+                <option
+                  v-for="section in guidedWizardMergeSectionOptions"
+                  :key="`guided-merge-${section.id}`"
+                  :value="section.id"
+                >
+                  {{ section.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div v-else class="space-y-3 text-sm">
+            <div class="rounded-md border p-3">
+              <div>
+                <span class="font-medium">Name:</span>
+                {{ guidedWizardStationName }}
+              </div>
+              <div>
+                <span class="font-medium">Source:</span>
+                {{ guidedWizardSourcePlaylistLabel }}
+              </div>
+              <div>
+                <span class="font-medium">Sections:</span>
+                {{ guidedWizardSelectedSectionNames.join(", ") || "None" }}
+              </div>
+              <div v-if="guidedWizardMergeSectionName">
+                <span class="font-medium">Merge Section:</span>
+                {{ guidedWizardMergeSectionName }}
+              </div>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              The wizard will generate a sensible default section flow. You can
+              edit the exact flow in the Station Editor afterwards.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter class="gap-2">
+          <Button variant="outline" @click="guidedWizardOpen = false">
+            Cancel
+          </Button>
+          <Button
+            v-if="guidedWizardStep > 1"
+            variant="outline"
+            @click="guidedWizardStep = guidedWizardStep - 1"
+          >
+            Back
+          </Button>
+          <Button
+            v-if="guidedWizardStep < 3"
+            :disabled="!canProceedGuidedWizardStep"
+            @click="guidedWizardStep = guidedWizardStep + 1"
+          >
+            Next
+          </Button>
+          <Button
+            v-else
+            :disabled="creatingGuidedStation"
+            @click="createGuidedStation"
+          >
+            {{ creatingGuidedStation ? "Creating..." : "Create Station" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 
@@ -1152,6 +1345,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -1260,6 +1461,15 @@ const sectionDraft = ref<AIRadioSection | null>(null);
 const stationImportInput = ref<HTMLInputElement | null>(null);
 const sectionImportInput = ref<HTMLInputElement | null>(null);
 
+const guidedWizardOpen = ref(false);
+const guidedWizardStep = ref(1);
+const creatingGuidedStation = ref(false);
+const guidedWizardStationName = ref("");
+const guidedWizardSourcePlaylistSelectValue = ref("");
+const guidedWizardDefaultPlayerId = ref("");
+const guidedWizardSectionIds = ref<string[]>([]);
+const guidedWizardMergeSectionId = ref("");
+
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 const isRefreshing = computed(() => {
@@ -1342,6 +1552,105 @@ const mergeSectionOptions = computed(() => {
   return stationSelectedSections.value.filter(
     (section) => section.type === "ai_meta",
   );
+});
+
+const guidedWizardSectionById = computed(() => {
+  const output = new Map<string, AIRadioSection>();
+  for (const section of sections.value) {
+    output.set(section.id, section);
+  }
+  return output;
+});
+
+const guidedWizardSelectedSections = computed<AIRadioSection[]>(() => {
+  return guidedWizardSectionIds.value
+    .map((sectionId) => guidedWizardSectionById.value.get(sectionId))
+    .filter((section): section is AIRadioSection => Boolean(section));
+});
+
+const guidedWizardMergeSectionOptions = computed<AIRadioSection[]>(() => {
+  const selectedMeta = guidedWizardSelectedSections.value.filter(
+    (section) => section.type === "ai_meta",
+  );
+  if (selectedMeta.length) {
+    return selectedMeta;
+  }
+  return sections.value.filter((section) => section.type === "ai_meta");
+});
+
+const guidedWizardSelectedSectionNames = computed(() => {
+  return guidedWizardSelectedSections.value.map((section) => section.name);
+});
+
+const guidedWizardMergeSectionName = computed(() => {
+  if (!guidedWizardMergeSectionId.value) {
+    return "";
+  }
+  return (
+    guidedWizardSectionById.value.get(guidedWizardMergeSectionId.value)?.name ||
+    guidedWizardMergeSectionId.value
+  );
+});
+
+const guidedWizardSourcePlaylistLabel = computed(() => {
+  if (!guidedWizardSourcePlaylistSelectValue.value) {
+    return "-";
+  }
+  const { provider, itemId } = splitPlaylistSelectValue(
+    guidedWizardSourcePlaylistSelectValue.value,
+  );
+  const playlist = playlists.value.find(
+    (item) => item.provider === provider && item.item_id === itemId,
+  );
+  if (!playlist) {
+    return `${provider}:${itemId}`;
+  }
+  return `${playlist.name} (${playlist.provider}:${playlist.item_id})`;
+});
+
+const recommendedGuidedSectionIds = computed<string[]>(() => {
+  const textSections = sections.value.filter(
+    (section) => section.type === "ai_text",
+  );
+  if (textSections.length <= 6) {
+    return textSections.map((section) => section.id);
+  }
+  const ranked = [...textSections].sort((a, b) => {
+    const aName = `${a.id} ${a.name}`.toLowerCase();
+    const bName = `${b.id} ${b.name}`.toLowerCase();
+    const score = (value: string) => {
+      if (value.includes("intro") || value.includes("start")) return 0;
+      if (value.includes("transition") || value.includes("between")) return 1;
+      if (value.includes("news") || value.includes("weather")) return 2;
+      if (
+        value.includes("outro") ||
+        value.includes("end") ||
+        value.includes("close")
+      ) {
+        return 3;
+      }
+      return 4;
+    };
+    const scoreDiff = score(aName) - score(bName);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  return ranked.slice(0, 6).map((section) => section.id);
+});
+
+const canProceedGuidedWizardStep = computed(() => {
+  if (guidedWizardStep.value === 1) {
+    return (
+      Boolean(guidedWizardStationName.value.trim()) &&
+      Boolean(guidedWizardSourcePlaylistSelectValue.value)
+    );
+  }
+  if (guidedWizardStep.value === 2) {
+    return guidedWizardSectionIds.value.length > 0;
+  }
+  return true;
 });
 
 const stationMaxDurationInput = computed({
@@ -1806,6 +2115,217 @@ const handleRefresh = async () => {
     toast.success("AI Radio data refreshed");
   } catch (error) {
     toast.error(`Refresh failed: ${errorMessage(error)}`);
+  }
+};
+
+const openGuidedStationCreator = () => {
+  guidedWizardOpen.value = true;
+  guidedWizardStep.value = 1;
+  guidedWizardStationName.value = "";
+  if (sourcePlaylistOverrideName.value) {
+    guidedWizardStationName.value = `AI Radio - ${sourcePlaylistOverrideName.value}`;
+  }
+
+  if (sourcePlaylistOverrideId.value && sourcePlaylistOverrideProvider.value) {
+    guidedWizardSourcePlaylistSelectValue.value = playlistSelectValue(
+      sourcePlaylistOverrideProvider.value,
+      sourcePlaylistOverrideId.value,
+    );
+  } else {
+    guidedWizardSourcePlaylistSelectValue.value = playlists.value[0]
+      ? playlistSelectValue(
+          playlists.value[0].provider,
+          playlists.value[0].item_id,
+        )
+      : "";
+  }
+
+  guidedWizardDefaultPlayerId.value = "";
+  const runStation = stations.value.find(
+    (item) => item.id === selectedRunStationId.value,
+  );
+  if (runStation?.default_player_id) {
+    guidedWizardDefaultPlayerId.value = runStation.default_player_id;
+  } else if (availableRunPlayers.value[0]) {
+    guidedWizardDefaultPlayerId.value = availableRunPlayers.value[0].player_id;
+  }
+
+  guidedWizardSectionIds.value = [...recommendedGuidedSectionIds.value];
+  guidedWizardMergeSectionId.value = "";
+  if (guidedWizardMergeSectionOptions.value[0]) {
+    guidedWizardMergeSectionId.value =
+      guidedWizardMergeSectionOptions.value[0].id;
+  }
+};
+
+const onGuidedSectionToggle = (sectionId: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.checked) {
+    if (!guidedWizardSectionIds.value.includes(sectionId)) {
+      guidedWizardSectionIds.value = [
+        ...guidedWizardSectionIds.value,
+        sectionId,
+      ];
+    }
+    return;
+  }
+  guidedWizardSectionIds.value = guidedWizardSectionIds.value.filter(
+    (item) => item !== sectionId,
+  );
+  if (
+    guidedWizardMergeSectionId.value &&
+    !guidedWizardSectionIds.value.includes(guidedWizardMergeSectionId.value)
+  ) {
+    guidedWizardMergeSectionId.value = "";
+  }
+};
+
+const buildGuidedSectionOrder = (
+  sectionIds: string[],
+): AIRadioSectionOrderRule[] => {
+  const selectedSections = sectionIds
+    .map((sectionId) =>
+      sections.value.find((section) => section.id === sectionId),
+    )
+    .filter((section): section is AIRadioSection => Boolean(section));
+  const textSections = selectedSections.filter(
+    (section) => section.type === "ai_text",
+  );
+  if (!textSections.length) {
+    return [];
+  }
+
+  const sectionKey = (section: AIRadioSection) =>
+    `${section.id} ${section.name}`.toLowerCase();
+  const findByTerms = (terms: string[]) => {
+    return textSections.find((section) =>
+      terms.some((term) => sectionKey(section).includes(term)),
+    );
+  };
+
+  const introSection = findByTerms(["intro", "start", "opening", "opener"]);
+  const outroSection = findByTerms([
+    "outro",
+    "end",
+    "closing",
+    "signoff",
+    "sign-off",
+  ]);
+
+  const betweenCandidates = textSections.filter((section) => {
+    if (introSection && section.id === introSection.id) return false;
+    if (outroSection && section.id === outroSection.id) return false;
+    return true;
+  });
+
+  const rules: AIRadioSectionOrderRule[] = [];
+  if (introSection) {
+    rules.push({
+      when: "start_of_playlist",
+      flow: [{ MUST: introSection.id }],
+    });
+  }
+
+  if (betweenCandidates.length === 1) {
+    rules.push({
+      when: "between_songs",
+      flow: [{ MUST: betweenCandidates[0].id }],
+    });
+  } else if (betweenCandidates.length > 1) {
+    rules.push({
+      when: "between_songs",
+      flow: [
+        {
+          ALTERNATIVE: {
+            choices: betweenCandidates.map((section) => ({
+              section: section.id,
+              weight: 1,
+            })),
+          },
+        },
+      ],
+    });
+  }
+
+  if (outroSection && (!introSection || outroSection.id !== introSection.id)) {
+    rules.push({
+      when: "end_of_playlist",
+      flow: [{ MUST: outroSection.id }],
+    });
+  }
+
+  if (!rules.length) {
+    rules.push({
+      when: "between_songs",
+      flow: [{ MUST: textSections[0].id }],
+    });
+  }
+  return rules;
+};
+
+const createGuidedStation = async () => {
+  if (!canProceedGuidedWizardStep.value && guidedWizardStep.value < 3) {
+    toast.error("Please complete the current step first");
+    return;
+  }
+  if (!guidedWizardStationName.value.trim()) {
+    toast.error("Station name is required");
+    guidedWizardStep.value = 1;
+    return;
+  }
+  if (!guidedWizardSourcePlaylistSelectValue.value) {
+    toast.error("Source playlist is required");
+    guidedWizardStep.value = 1;
+    return;
+  }
+  if (!guidedWizardSectionIds.value.length) {
+    toast.error("Select at least one section");
+    guidedWizardStep.value = 2;
+    return;
+  }
+
+  creatingGuidedStation.value = true;
+  try {
+    const draft = normalizeStationDraft(createStationDraftFromTemplate());
+    const { provider, itemId } = splitPlaylistSelectValue(
+      guidedWizardSourcePlaylistSelectValue.value,
+    );
+    draft.name = guidedWizardStationName.value.trim();
+    draft.id = slugify(draft.name);
+    draft.source_playlist_provider = provider;
+    draft.source_playlist_id = itemId;
+    draft.default_player_id = guidedWizardDefaultPlayerId.value;
+
+    const sectionIds = [...guidedWizardSectionIds.value];
+    if (
+      guidedWizardMergeSectionId.value &&
+      !sectionIds.includes(guidedWizardMergeSectionId.value)
+    ) {
+      sectionIds.push(guidedWizardMergeSectionId.value);
+    }
+    draft.section_ids = sectionIds;
+    draft.merge_section_id = guidedWizardMergeSectionId.value;
+    draft.section_order = buildGuidedSectionOrder(sectionIds);
+
+    const payload = buildStationPayload(draft);
+    const localError = validateStationDraftLocal(payload);
+    if (localError) {
+      toast.error(localError);
+      return;
+    }
+
+    const saved = await saveStation(payload);
+    selectedEditorStationId.value = saved.id;
+    stationDraft.value = normalizeStationDraft(saved);
+    selectedRunStationId.value = saved.id;
+    applyRunStationDefaults(saved.id);
+    activeTab.value = "run";
+    guidedWizardOpen.value = false;
+    toast.success("Station created. You can now start AI Radio.");
+  } catch (error) {
+    toast.error(`Failed to create guided station: ${errorMessage(error)}`);
+  } finally {
+    creatingGuidedStation.value = false;
   }
 };
 
