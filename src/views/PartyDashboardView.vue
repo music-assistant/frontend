@@ -39,7 +39,6 @@
           <LyricsViewer
             :media-item="store.curQueueItem?.media_item"
             :position="lyricsElapsedTime"
-            :duration="store.curQueueItem?.duration"
             :stream-details="store.curQueueItem?.streamdetails"
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
@@ -92,7 +91,6 @@
             <LyricsViewer
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
-              :duration="store.curQueueItem?.duration"
               :stream-details="store.curQueueItem?.streamdetails"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
