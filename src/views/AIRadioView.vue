@@ -42,6 +42,30 @@
             </Select>
           </div>
 
+          <div
+            v-if="hasSourcePlaylistOverride"
+            class="space-y-2 rounded-md border border-dashed p-3"
+          >
+            <div class="text-sm font-medium">Source Playlist Override</div>
+            <p class="text-xs text-muted-foreground">
+              This run will use the selected playlist from the playlist context menu.
+            </p>
+            <div class="text-sm">
+              {{ sourcePlaylistOverrideName || sourcePlaylistOverrideId }}
+            </div>
+            <div class="text-xs text-muted-foreground">
+              {{ sourcePlaylistOverrideProvider }}:{{ sourcePlaylistOverrideId }}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-auto justify-start px-0"
+              @click="clearSourcePlaylistOverride"
+            >
+              Use station source playlist
+            </Button>
+          </div>
+
           <div class="space-y-2">
             <Label for="ai-radio-player">Playback Device Override (optional)</Label>
             <Select
@@ -153,7 +177,8 @@ import {
 import { useAiRadio } from "@/composables/useAiRadio";
 import api from "@/plugins/api";
 import type { AIRadioSession, Player } from "@/plugins/api/interfaces";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const DEFAULT_PLAYER_SELECT_VALUE = "__station_default__";
 const AUTO_REFRESH_MS = 5000;
@@ -174,12 +199,23 @@ const {
 
 const selectedStationId = ref("");
 const selectedPlayerId = ref("");
+const sourcePlaylistOverrideId = ref("");
+const sourcePlaylistOverrideProvider = ref("");
+const sourcePlaylistOverrideName = ref("");
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+const route = useRoute();
+const router = useRouter();
 
 const refreshing = computed(() => loadingStations.value || loadingStatus.value);
 
 const selectedPlayerSelectValue = computed(() => {
   return selectedPlayerId.value || DEFAULT_PLAYER_SELECT_VALUE;
+});
+
+const hasSourcePlaylistOverride = computed(() => {
+  return Boolean(
+    sourcePlaylistOverrideId.value && sourcePlaylistOverrideProvider.value,
+  );
 });
 
 const availablePlayers = computed<Player[]>(() => {
@@ -225,22 +261,79 @@ const onSelectPlayer = (value: string) => {
     value === DEFAULT_PLAYER_SELECT_VALUE ? "" : value;
 };
 
+const getQueryValue = (value: unknown) => {
+  if (typeof value !== "string") return "";
+  return value.trim();
+};
+
+// Keep route query and selected overrides in sync.
+const applyRouteOverrides = () => {
+  const querySourcePlaylistId = getQueryValue(route.query.source_playlist_id);
+  const querySourcePlaylistProvider = getQueryValue(
+    route.query.source_playlist_provider,
+  );
+  const querySourcePlaylistName = getQueryValue(
+    route.query.source_playlist_name,
+  );
+
+  if (querySourcePlaylistId && querySourcePlaylistProvider) {
+    sourcePlaylistOverrideId.value = querySourcePlaylistId;
+    sourcePlaylistOverrideProvider.value = querySourcePlaylistProvider;
+    sourcePlaylistOverrideName.value = querySourcePlaylistName;
+  } else {
+    sourcePlaylistOverrideId.value = "";
+    sourcePlaylistOverrideProvider.value = "";
+    sourcePlaylistOverrideName.value = "";
+  }
+
+  const queryStationId = getQueryValue(route.query.station_id);
+  if (
+    queryStationId &&
+    stations.value.some((station) => station.id === queryStationId)
+  ) {
+    if (selectedStationId.value !== queryStationId) {
+      onSelectStation(queryStationId);
+    }
+    return;
+  }
+
+  if (!selectedStationId.value && stations.value.length > 0) {
+    onSelectStation(stations.value[0].id);
+  }
+};
+
+const clearSourcePlaylistOverride = async () => {
+  sourcePlaylistOverrideId.value = "";
+  sourcePlaylistOverrideProvider.value = "";
+  sourcePlaylistOverrideName.value = "";
+  const query = { ...route.query };
+  delete query.source_playlist_id;
+  delete query.source_playlist_provider;
+  delete query.source_playlist_name;
+  await router.replace({ query });
+};
+
 const handleRefresh = async () => {
   await refreshAll();
 };
 
 const startPlaylist = async () => {
   if (!selectedStationId.value) return;
-  await startRun(selectedStationId.value, "playlist");
+  await startRun(selectedStationId.value, "playlist", {
+    sourcePlaylistIdOverride: sourcePlaylistOverrideId.value || undefined,
+    sourcePlaylistProviderOverride:
+      sourcePlaylistOverrideProvider.value || undefined,
+  });
 };
 
 const startDynamic = async () => {
   if (!selectedStationId.value) return;
-  await startRun(
-    selectedStationId.value,
-    "dynamic",
-    selectedPlayerId.value || undefined,
-  );
+  await startRun(selectedStationId.value, "dynamic", {
+    playerIdOverride: selectedPlayerId.value || undefined,
+    sourcePlaylistIdOverride: sourcePlaylistOverrideId.value || undefined,
+    sourcePlaylistProviderOverride:
+      sourcePlaylistOverrideProvider.value || undefined,
+  });
 };
 
 const stopSession = async (sessionId: string) => {
@@ -249,12 +342,21 @@ const stopSession = async (sessionId: string) => {
 
 onMounted(async () => {
   await refreshAll(true);
-  if (stations.value.length > 0) {
-    onSelectStation(stations.value[0].id);
-  }
+  applyRouteOverrides();
   refreshTimer = setInterval(() => {
     void refreshAll(true).catch(() => undefined);
   }, AUTO_REFRESH_MS);
+});
+
+watch(
+  () => route.query,
+  () => {
+    applyRouteOverrides();
+  },
+);
+
+watch(stations, () => {
+  applyRouteOverrides();
 });
 
 onBeforeUnmount(() => {

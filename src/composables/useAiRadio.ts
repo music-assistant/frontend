@@ -15,6 +15,14 @@ const loadingStatus = ref(false);
 const startingRun = ref(false);
 const stoppingRun = ref(false);
 
+interface StartRunOptions {
+  playerIdOverride?: string;
+  sourcePlaylistIdOverride?: string;
+  sourcePlaylistProviderOverride?: string;
+  dynamicSourcePlaytimeCapOverride?: number;
+  dynamicBatchSizeOverride?: number;
+}
+
 const sortByName = (items: AIRadioStation[]) => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -64,7 +72,7 @@ async function loadStatus(silent = false): Promise<AIRadioSession[]> {
 async function startRun(
   stationId: string,
   mode: AIRadioMode,
-  playerIdOverride?: string,
+  options?: StartRunOptions,
 ): Promise<AIRadioSession> {
   startingRun.value = true;
   try {
@@ -72,8 +80,22 @@ async function startRun(
       station_id: stationId,
       mode,
     };
-    if (playerIdOverride && mode === "dynamic") {
-      args.player_id_override = playerIdOverride;
+    if (options?.playerIdOverride && mode === "dynamic") {
+      args.player_id_override = options.playerIdOverride;
+    }
+    if (options?.sourcePlaylistIdOverride) {
+      args.source_playlist_id_override = options.sourcePlaylistIdOverride;
+    }
+    if (options?.sourcePlaylistProviderOverride) {
+      args.source_playlist_provider_override =
+        options.sourcePlaylistProviderOverride;
+    }
+    if (typeof options?.dynamicSourcePlaytimeCapOverride === "number") {
+      args.dynamic_source_playtime_cap_override =
+        options.dynamicSourcePlaytimeCapOverride;
+    }
+    if (typeof options?.dynamicBatchSizeOverride === "number") {
+      args.dynamic_batch_size_override = options.dynamicBatchSizeOverride;
     }
     const result = await api.sendCommand<AIRadioSession>("ai_radio/start", args);
     toast.success(

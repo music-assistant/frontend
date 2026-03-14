@@ -424,6 +424,31 @@ export const getContextMenuItems = async function (
     });
   }
 
+  // Quick entrypoint: open AI Radio prefilled with this playlist as source.
+  if (
+    items.length === 1 &&
+    firstItem.media_type === MediaType.PLAYLIST &&
+    itemIsAvailable(firstItem) &&
+    authManager.isAdmin() &&
+    store.enabledPlugins.has("ai_radio")
+  ) {
+    contextMenuItems.push({
+      label: "Run with AI Radio",
+      labelArgs: [],
+      action: () => {
+        router.push({
+          name: "ai-radio",
+          query: {
+            source_playlist_id: firstItem.item_id,
+            source_playlist_provider: firstItem.provider,
+            source_playlist_name: firstItem.name,
+          },
+        });
+      },
+      icon: "mdi-radio-tower",
+    });
+  }
+
   // browse folder
   if (
     items.length === 1 &&

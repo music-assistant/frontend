@@ -100,7 +100,22 @@ const routes: RouteRecordRaw[] = [
         name: "ai-radio",
         component: () =>
           import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
-        beforeEnter: () => {
+        beforeEnter: async () => {
+          // Wait for API initialization before checking plugin status.
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
           if (!store.enabledPlugins.has("ai_radio")) {
             return { name: "discover" };
           }
