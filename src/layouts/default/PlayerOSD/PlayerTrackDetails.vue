@@ -212,40 +212,55 @@ const props = withDefaults(defineProps<Props>(), {
   primaryColor: "",
 });
 
-// loading state: shown from when a new track starts loading until playback_state = PLAYING
+// loading state: shown from when a new track starts loading until playback is confirmed
 const isLoading = ref(false);
 let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
 
+function clearLoading() {
+  isLoading.value = false;
+  if (loadingTimeout) {
+    clearTimeout(loadingTimeout);
+    loadingTimeout = null;
+  }
+}
+
+// clear loading immediately when the active player changes
 watch(
-  () => store.activePlayerQueue?.current_item?.queue_item_id,
-  (newUri, oldUri) => {
-    if (newUri && newUri !== oldUri) {
-      isLoading.value = true;
-      if (loadingTimeout) clearTimeout(loadingTimeout);
-      // safety fallback: clear after 15s in case state never changes
-      loadingTimeout = setTimeout(() => {
-        isLoading.value = false;
-      }, 15000);
-    }
-  },
+  () => store.activePlayer?.player_id,
+  () => clearLoading(),
 );
 
+// detect new track loading — only show spinner if player is currently idle
 watch(
-  () => store.activePlayer?.playback_state,
-  (newState) => {
-    if (newState === PlaybackState.PLAYING) {
-      isLoading.value = false;
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        loadingTimeout = null;
+  () => store.activePlayerQueue?.current_item?.queue_item_id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      const state = store.activePlayer?.playback_state;
+      if (state === PlaybackState.IDLE) {
+        isLoading.value = true;
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        loadingTimeout = setTimeout(() => {
+          isLoading.value = false;
+        }, 15000);
       }
     }
   },
 );
 
-onUnmounted(() => {
-  if (loadingTimeout) clearTimeout(loadingTimeout);
-});
+// clear loading once playback is confirmed (playing or paused means track is loaded)
+watch(
+  () => store.activePlayer?.playback_state,
+  (newState) => {
+    if (
+      newState === PlaybackState.PLAYING ||
+      newState === PlaybackState.PAUSED
+    ) {
+      clearLoading();
+    }
+  },
+);
+
+onUnmounted(() => clearLoading());
 
 // computed properties
 const streamDetails = computed(() => {
