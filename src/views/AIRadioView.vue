@@ -4,7 +4,12 @@
       class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
     >
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight">AI Radio</h1>
+        <h1
+          class="inline-flex items-center text-2xl font-semibold tracking-tight"
+        >
+          <Sparkles class="mr-2 h-5 w-5" />
+          AI Radio
+        </h1>
         <p class="text-sm text-muted-foreground">
           Run, create, and manage AI Radio stations and reusable sections.
         </p>
@@ -153,13 +158,15 @@
                   :disabled="!selectedRunStationId || startingRun"
                   @click="startPlaylistRun"
                 >
+                  <Sparkles class="mr-1 h-4 w-4" />
                   {{ startingRun ? "Starting..." : "Create Playlist" }}
                 </Button>
                 <Button
-                  variant="secondary"
                   :disabled="!selectedRunStationId || startingRun"
                   @click="startDynamicRun"
                 >
+                  <Sparkles class="mr-1 h-4 w-4" />
+                  <Radio class="mr-1 h-4 w-4" />
                   {{ startingRun ? "Starting..." : "Start Live Radio" }}
                 </Button>
               </div>
@@ -1523,6 +1530,7 @@ import type {
   Playlist,
 } from "@/plugins/api/interfaces";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { Radio, Sparkles } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
