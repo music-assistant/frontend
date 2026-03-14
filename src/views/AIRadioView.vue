@@ -9,9 +9,18 @@
           Run, create, and manage AI Radio stations and reusable sections.
         </p>
       </div>
-      <Button variant="outline" :disabled="isRefreshing" @click="handleRefresh">
-        {{ isRefreshing ? "Refreshing..." : "Refresh" }}
-      </Button>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button variant="outline" @click="tutorialOpen = true">
+          Show Tutorial
+        </Button>
+        <Button
+          variant="outline"
+          :disabled="isRefreshing"
+          @click="handleRefresh"
+        >
+          {{ isRefreshing ? "Refreshing..." : "Refresh" }}
+        </Button>
+      </div>
     </header>
 
     <Tabs v-model:model-value="activeTab" class="w-full">
@@ -1158,7 +1167,7 @@
     </Tabs>
 
     <Dialog v-model:open="guidedWizardOpen">
-      <DialogContent class="sm:max-w-[760px]">
+      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-[760px]">
         <DialogHeader>
           <DialogTitle>Create Station (Guided)</DialogTitle>
           <DialogDescription>
@@ -1228,18 +1237,18 @@
             </div>
           </div>
 
-          <div v-else-if="guidedWizardStep === 2" class="space-y-4">
+          <div v-else-if="guidedWizardStep === 2" class="space-y-5">
             <div class="space-y-2">
-              <Label>Sections</Label>
+              <Label>Choose Existing Sections</Label>
               <p class="text-xs text-muted-foreground">
-                Select reusable sections this station should use. Recommended
-                defaults are preselected.
+                Select spoken sections and assign where each should be inserted
+                in the generated flow.
               </p>
               <div
-                class="max-h-[260px] space-y-2 overflow-y-auto rounded-md border p-3"
+                class="max-h-[240px] space-y-2 overflow-y-auto rounded-md border p-3"
               >
                 <label
-                  v-for="section in sections"
+                  v-for="section in wizardSelectableSections"
                   :key="`guided-${section.id}`"
                   class="flex items-start gap-2 rounded-md border p-2"
                 >
@@ -1251,11 +1260,84 @@
                   />
                   <span class="text-sm">
                     <span class="font-medium">{{ section.name }}</span>
-                    <span class="ml-1 text-xs text-muted-foreground"
-                      >({{ section.type }})</span
-                    >
                   </span>
                 </label>
+              </div>
+            </div>
+
+            <div class="space-y-2 rounded-md border p-3">
+              <Label>Add New Section</Label>
+              <p class="text-xs text-muted-foreground">
+                Create a new section here and add it to this station instantly.
+              </p>
+              <div class="grid gap-3 md:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="guided-new-section-name">Section Name</Label>
+                  <Input
+                    id="guided-new-section-name"
+                    v-model="guidedNewSectionName"
+                    placeholder="Artist Fact"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="guided-new-section-placement">Insert At</Label>
+                  <select
+                    id="guided-new-section-placement"
+                    v-model="guidedNewSectionPlacement"
+                    class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="start_of_playlist">Start of Playlist</option>
+                    <option value="between_songs">Between Songs</option>
+                    <option value="end_of_playlist">End of Playlist</option>
+                  </select>
+                </div>
+                <div class="space-y-2 md:col-span-2">
+                  <Label for="guided-new-section-prompt">Prompt</Label>
+                  <Textarea
+                    id="guided-new-section-prompt"
+                    v-model="guidedNewSectionPrompt"
+                    rows="4"
+                  />
+                </div>
+              </div>
+              <Button
+                class="mt-1"
+                variant="outline"
+                :disabled="creatingGuidedSection"
+                @click="createGuidedSection"
+              >
+                {{ creatingGuidedSection ? "Adding..." : "Add Section" }}
+              </Button>
+            </div>
+
+            <div class="space-y-2">
+              <Label>Selected Sections and Placement</Label>
+              <div
+                v-if="guidedWizardSelectedSections.length === 0"
+                class="rounded-md border border-dashed p-3 text-xs text-muted-foreground"
+              >
+                No sections selected yet.
+              </div>
+              <div v-else class="space-y-2">
+                <div
+                  v-for="section in guidedWizardSelectedSections"
+                  :key="`guided-placement-${section.id}`"
+                  class="grid items-center gap-2 rounded-md border p-2 md:grid-cols-[1fr_220px]"
+                >
+                  <div class="text-sm font-medium">{{ section.name }}</div>
+                  <select
+                    :value="
+                      guidedWizardSectionPlacements[section.id] ||
+                      'between_songs'
+                    "
+                    class="h-9 rounded-md border bg-background px-3 text-sm"
+                    @change="onGuidedSectionPlacementChange(section.id, $event)"
+                  >
+                    <option value="start_of_playlist">Start of Playlist</option>
+                    <option value="between_songs">Between Songs</option>
+                    <option value="end_of_playlist">End of Playlist</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1275,6 +1357,9 @@
                   {{ section.name }}
                 </option>
               </select>
+              <p class="text-xs text-muted-foreground">
+                Used when a between-song slot contains multiple spoken sections.
+              </p>
             </div>
           </div>
 
@@ -1291,6 +1376,10 @@
               <div>
                 <span class="font-medium">Sections:</span>
                 {{ guidedWizardSelectedSectionNames.join(", ") || "None" }}
+              </div>
+              <div v-if="guidedWizardSectionPlacementSummary.length">
+                <span class="font-medium">Placement:</span>
+                {{ guidedWizardSectionPlacementSummary.join(" | ") }}
               </div>
               <div v-if="guidedWizardMergeSectionName">
                 <span class="font-medium">Merge Section:</span>
@@ -1329,6 +1418,59 @@
           >
             {{ creatingGuidedStation ? "Creating..." : "Create Station" }}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="tutorialOpen">
+      <DialogContent class="sm:max-w-[760px]">
+        <DialogHeader>
+          <DialogTitle>AI Radio Tutorial</DialogTitle>
+          <DialogDescription>
+            Quick overview of sections, stations, and flow rules.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3 text-sm">
+          <div class="rounded-md border p-3">
+            <div class="font-medium">What is a Station?</div>
+            <p class="mt-1 text-muted-foreground">
+              A station is the complete profile for a run: source playlist,
+              chosen sections, and flow rules that define where spoken segments
+              are inserted.
+            </p>
+          </div>
+
+          <div class="rounded-md border p-3">
+            <div class="font-medium">What is a Section?</div>
+            <p class="mt-1 text-muted-foreground">
+              A section is a reusable prompt template. Stations reference
+              sections so you can reuse the same intro/news/weather blocks
+              across multiple stations.
+            </p>
+          </div>
+
+          <div class="rounded-md border p-3">
+            <div class="font-medium">How Flow Rules Work</div>
+            <p class="mt-1 text-muted-foreground">
+              Flow rules are evaluated per placement (start, between songs,
+              end). MUST always inserts a section. ALTERNATIVE picks one
+              weighted option. OPTIONAL inserts by chance and guard conditions.
+            </p>
+          </div>
+
+          <div class="rounded-md border p-3">
+            <div class="font-medium">Run Modes</div>
+            <p class="mt-1 text-muted-foreground">
+              Create Playlist generates a prepared playlist first. Start Live
+              Radio generates in dynamic batches and injects directly into a
+              player queue.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button @click="closeTutorial">Done</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1371,6 +1513,7 @@ import type {
   AIRadioFlowItem,
   AIRadioMode,
   AIRadioOptionalGuards,
+  AIRadioPlacement,
   AIRadioSection,
   AIRadioSectionOrderRule,
   AIRadioSession,
@@ -1385,6 +1528,7 @@ import { toast } from "vue-sonner";
 
 const DEFAULT_PLAYER_SELECT_VALUE = "__station_default__";
 const AUTO_REFRESH_MS = 5000;
+const TUTORIAL_SEEN_STORAGE_KEY = "ai_radio_tutorial_seen_v1";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 type AIRadioFlowType = "MUST" | "ALTERNATIVE" | "OPTIONAL";
@@ -1469,6 +1613,13 @@ const guidedWizardSourcePlaylistSelectValue = ref("");
 const guidedWizardDefaultPlayerId = ref("");
 const guidedWizardSectionIds = ref<string[]>([]);
 const guidedWizardMergeSectionId = ref("");
+const guidedWizardSectionPlacements = ref<Record<string, AIRadioPlacement>>({});
+const creatingGuidedSection = ref(false);
+const guidedNewSectionName = ref("");
+const guidedNewSectionPrompt = ref("");
+const guidedNewSectionPlacement = ref<AIRadioPlacement>("between_songs");
+
+const tutorialOpen = ref(false);
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -1562,6 +1713,12 @@ const guidedWizardSectionById = computed(() => {
   return output;
 });
 
+const wizardSelectableSections = computed(() => {
+  return sections.value
+    .filter((section) => section.type === "ai_text")
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
 const guidedWizardSelectedSections = computed<AIRadioSection[]>(() => {
   return guidedWizardSectionIds.value
     .map((sectionId) => guidedWizardSectionById.value.get(sectionId))
@@ -1590,6 +1747,20 @@ const guidedWizardMergeSectionName = computed(() => {
     guidedWizardSectionById.value.get(guidedWizardMergeSectionId.value)?.name ||
     guidedWizardMergeSectionId.value
   );
+});
+
+const guidedWizardSectionPlacementSummary = computed(() => {
+  return guidedWizardSelectedSections.value.map((section) => {
+    const placement =
+      guidedWizardSectionPlacements.value[section.id] || "between_songs";
+    const placementLabel =
+      placement === "start_of_playlist"
+        ? "Start"
+        : placement === "end_of_playlist"
+          ? "End"
+          : "Between";
+    return `${section.name} → ${placementLabel}`;
+  });
 });
 
 const guidedWizardSourcePlaylistLabel = computed(() => {
@@ -1648,7 +1819,12 @@ const canProceedGuidedWizardStep = computed(() => {
     );
   }
   if (guidedWizardStep.value === 2) {
-    return guidedWizardSectionIds.value.length > 0;
+    return (
+      guidedWizardSectionIds.value.length > 0 &&
+      guidedWizardSectionIds.value.every((sectionId) =>
+        Boolean(guidedWizardSectionPlacements.value[sectionId]),
+      )
+    );
   }
   return true;
 });
@@ -2008,6 +2184,32 @@ const errorMessage = (error: unknown): string => {
   return String(error);
 };
 
+const closeTutorial = () => {
+  tutorialOpen.value = false;
+  localStorage.setItem(TUTORIAL_SEEN_STORAGE_KEY, "1");
+};
+
+const defaultGuidedPlacement = (section: AIRadioSection): AIRadioPlacement => {
+  const label = `${section.id} ${section.name}`.toLowerCase();
+  if (
+    label.includes("intro") ||
+    label.includes("start") ||
+    label.includes("opening")
+  ) {
+    return "start_of_playlist";
+  }
+  if (
+    label.includes("outro") ||
+    label.includes("end") ||
+    label.includes("closing") ||
+    label.includes("signoff") ||
+    label.includes("sign-off")
+  ) {
+    return "end_of_playlist";
+  }
+  return "between_songs";
+};
+
 const applyRouteOverrides = () => {
   const querySourcePlaylistId = getQueryValue(route.query.source_playlist_id);
   const querySourcePlaylistProvider = getQueryValue(
@@ -2151,11 +2353,23 @@ const openGuidedStationCreator = () => {
   }
 
   guidedWizardSectionIds.value = [...recommendedGuidedSectionIds.value];
+  guidedWizardSectionPlacements.value = {};
+  for (const sectionId of guidedWizardSectionIds.value) {
+    const section = guidedWizardSectionById.value.get(sectionId);
+    if (!section) {
+      continue;
+    }
+    guidedWizardSectionPlacements.value[sectionId] =
+      defaultGuidedPlacement(section);
+  }
   guidedWizardMergeSectionId.value = "";
   if (guidedWizardMergeSectionOptions.value[0]) {
     guidedWizardMergeSectionId.value =
       guidedWizardMergeSectionOptions.value[0].id;
   }
+  guidedNewSectionName.value = "";
+  guidedNewSectionPrompt.value = "";
+  guidedNewSectionPlacement.value = "between_songs";
 };
 
 const onGuidedSectionToggle = (sectionId: string, event: Event) => {
@@ -2167,16 +2381,78 @@ const onGuidedSectionToggle = (sectionId: string, event: Event) => {
         sectionId,
       ];
     }
+    if (!guidedWizardSectionPlacements.value[sectionId]) {
+      const section = guidedWizardSectionById.value.get(sectionId);
+      if (section) {
+        guidedWizardSectionPlacements.value[sectionId] =
+          defaultGuidedPlacement(section);
+      }
+    }
     return;
   }
   guidedWizardSectionIds.value = guidedWizardSectionIds.value.filter(
     (item) => item !== sectionId,
   );
+  delete guidedWizardSectionPlacements.value[sectionId];
   if (
     guidedWizardMergeSectionId.value &&
     !guidedWizardSectionIds.value.includes(guidedWizardMergeSectionId.value)
   ) {
     guidedWizardMergeSectionId.value = "";
+  }
+};
+
+const onGuidedSectionPlacementChange = (sectionId: string, event: Event) => {
+  const placement = (event.target as HTMLSelectElement)
+    .value as AIRadioPlacement;
+  guidedWizardSectionPlacements.value = {
+    ...guidedWizardSectionPlacements.value,
+    [sectionId]: placement,
+  };
+};
+
+const createGuidedSection = async () => {
+  if (!guidedNewSectionName.value.trim()) {
+    toast.error("Section name is required");
+    return;
+  }
+  if (!guidedNewSectionPrompt.value.trim()) {
+    toast.error("Section prompt is required");
+    return;
+  }
+
+  creatingGuidedSection.value = true;
+  try {
+    const sectionDraft = normalizeSectionDraft(
+      createSectionDraftFromTemplate(),
+    );
+    sectionDraft.name = guidedNewSectionName.value.trim();
+    sectionDraft.id = slugify(sectionDraft.name);
+    sectionDraft.type = "ai_text";
+    sectionDraft.prompt = guidedNewSectionPrompt.value.trim();
+    sectionDraft.web_search = "disabled";
+    sectionDraft.constraints = { max_chars: 650 };
+
+    const saved = await saveSection(sectionDraft);
+    if (!guidedWizardSectionIds.value.includes(saved.id)) {
+      guidedWizardSectionIds.value = [
+        ...guidedWizardSectionIds.value,
+        saved.id,
+      ];
+    }
+    guidedWizardSectionPlacements.value = {
+      ...guidedWizardSectionPlacements.value,
+      [saved.id]: guidedNewSectionPlacement.value,
+    };
+
+    guidedNewSectionName.value = "";
+    guidedNewSectionPrompt.value = "";
+    guidedNewSectionPlacement.value = "between_songs";
+    toast.success("Section added to station setup");
+  } catch (error) {
+    toast.error(`Failed to create section: ${errorMessage(error)}`);
+  } finally {
+    creatingGuidedSection.value = false;
   }
 };
 
@@ -2195,62 +2471,27 @@ const buildGuidedSectionOrder = (
     return [];
   }
 
-  const sectionKey = (section: AIRadioSection) =>
-    `${section.id} ${section.name}`.toLowerCase();
-  const findByTerms = (terms: string[]) => {
-    return textSections.find((section) =>
-      terms.some((term) => sectionKey(section).includes(term)),
-    );
-  };
-
-  const introSection = findByTerms(["intro", "start", "opening", "opener"]);
-  const outroSection = findByTerms([
-    "outro",
-    "end",
-    "closing",
-    "signoff",
-    "sign-off",
-  ]);
-
-  const betweenCandidates = textSections.filter((section) => {
-    if (introSection && section.id === introSection.id) return false;
-    if (outroSection && section.id === outroSection.id) return false;
-    return true;
-  });
-
   const rules: AIRadioSectionOrderRule[] = [];
-  if (introSection) {
-    rules.push({
-      when: "start_of_playlist",
-      flow: [{ MUST: introSection.id }],
-    });
-  }
+  const placements: AIRadioPlacement[] = [
+    "start_of_playlist",
+    "between_songs",
+    "end_of_playlist",
+  ];
 
-  if (betweenCandidates.length === 1) {
-    rules.push({
-      when: "between_songs",
-      flow: [{ MUST: betweenCandidates[0].id }],
+  for (const placement of placements) {
+    const placementSections = textSections.filter((section) => {
+      const selectedPlacement =
+        guidedWizardSectionPlacements.value[section.id] || "between_songs";
+      return selectedPlacement === placement;
     });
-  } else if (betweenCandidates.length > 1) {
-    rules.push({
-      when: "between_songs",
-      flow: [
-        {
-          ALTERNATIVE: {
-            choices: betweenCandidates.map((section) => ({
-              section: section.id,
-              weight: 1,
-            })),
-          },
-        },
-      ],
-    });
-  }
 
-  if (outroSection && (!introSection || outroSection.id !== introSection.id)) {
+    if (!placementSections.length) {
+      continue;
+    }
+
     rules.push({
-      when: "end_of_playlist",
-      flow: [{ MUST: outroSection.id }],
+      when: placement,
+      flow: placementSections.map((section) => ({ MUST: section.id })),
     });
   }
 
@@ -2981,6 +3222,10 @@ const onOptionalPlaceholdersChange = (
 onMounted(async () => {
   try {
     await Promise.all([refreshEditor(true), loadStatus(true)]);
+
+    if (!localStorage.getItem(TUTORIAL_SEEN_STORAGE_KEY)) {
+      tutorialOpen.value = true;
+    }
 
     if (stations.value.length > 0) {
       if (!selectedEditorStationId.value) {
