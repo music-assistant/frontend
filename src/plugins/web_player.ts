@@ -153,7 +153,7 @@ function resolvePreferredMode(): WebPlayerMode {
 
   // Hard-disable conditions always win over user preferences.
   if (
-    authManager.isPartyModeGuest() ||
+    authManager.isPartyGuest() ||
     companionMode.value ||
     routeDisablesWebPlayer
   ) {

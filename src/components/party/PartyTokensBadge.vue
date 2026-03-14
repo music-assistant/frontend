@@ -1,12 +1,12 @@
 <template>
   <div class="tokens-badge" :style="badgeStyle">
-    <v-icon size="small" :color="color">{{ icon }}</v-icon>
+    <component :is="iconComponent" :size="16" :color="color" />
     <span class="token-count" :style="{ color }">
       {{ tokens }}/{{ maxTokens }}
     </span>
     <span class="token-label" :style="{ color }">{{ label }}</span>
     <span v-if="countdown" class="token-countdown" :style="{ color }">
-      <v-icon size="x-small">mdi-clock-outline</v-icon>
+      <Clock :size="12" :color="color" />
       {{ countdown }}
     </span>
   </div>
@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import Color from "color";
+import { Clock, ListPlus, Rocket } from "lucide-vue-next";
 
 const props = defineProps<{
   tokens: number;
@@ -22,8 +23,12 @@ const props = defineProps<{
   countdown: string;
   label: string;
   color: string;
-  icon: string;
+  icon: "boost" | "request";
 }>();
+
+const iconComponent = computed(() =>
+  props.icon === "request" ? ListPlus : Rocket,
+);
 
 const badgeStyle = computed(() => {
   try {

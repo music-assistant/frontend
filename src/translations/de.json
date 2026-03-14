@@ -1375,7 +1375,7 @@
     "playlist_create_provider_error": "Anbieter nicht erreichbar.",
     "playlist_create_no_type_selected": "Kein Medientyp ausgewählt.",
     "providers": {
-        "party_mode": {
+        "party": {
             "guest_page": {
                 "add_available": "Hinzufügen verfügbar",
                 "add_queue_disabled": "Die Funktion „Zur Warteschlange hinzufügen“ ist vom Host deaktiviert.",

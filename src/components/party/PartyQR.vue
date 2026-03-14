@@ -6,9 +6,9 @@
     <div v-else-if="!guestAccessEnabled" class="qr-disabled">
       <QrCode class="qr-disabled-icon" />
       <p class="qr-disabled-title">
-        {{ $t("providers.party_mode.guest_access_disabled") }}
+        {{ $t("providers.party.guest_access_disabled") }}
       </p>
-      <p class="qr-hint">{{ $t("providers.party_mode.enable_in_settings") }}</p>
+      <p class="qr-hint">{{ $t("providers.party.enable_in_settings") }}</p>
     </div>
     <div v-else-if="qrCodeUrl" class="qr-display">
       <div class="qr-link" @click="copyUrlToClipboard">
@@ -26,22 +26,22 @@
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
-      <p>{{ $t("providers.party_mode.qr_failed") }}</p>
-      <p class="qr-hint">{{ $t("providers.party_mode.check_network") }}</p>
+      <p>{{ $t("providers.party.qr_failed") }}</p>
+      <p class="qr-hint">{{ $t("providers.party.check_network") }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
-import { usePartyModeConfig } from "@/composables/usePartyModeConfig";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { copyToClipboard } from "@/helpers/utils";
 import { AlertCircle, Check, QrCode } from "lucide-vue-next";
 import QRCode from "qrcode";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
@@ -50,10 +50,8 @@ const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
 const copyFeedback = ref<string>("");
-const instructionText = ref($t("providers.party_mode.scan_to_join"));
-const { config: partyConfig, fetchConfig: fetchPartyConfig } =
-  usePartyModeConfig();
-let unsubscribe: (() => void) | null = null;
+const instructionText = ref($t("providers.party.scan_to_join"));
+const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
 let resizeObserver: ResizeObserver | null = null;
 
 const calculateQRSize = () => {
@@ -73,10 +71,10 @@ const fetchQrConfig = async () => {
       instructionText.value = "";
     } else {
       instructionText.value =
-        config.qr_instruction_text ?? $t("providers.party_mode.scan_to_join");
+        config.qr_instruction_text ?? $t("providers.party.scan_to_join");
     }
   } else {
-    instructionText.value = $t("providers.party_mode.scan_to_join");
+    instructionText.value = $t("providers.party.scan_to_join");
   }
 };
 
@@ -84,8 +82,8 @@ const copyUrlToClipboard = async () => {
   if (!qrCodeUrl.value) return;
   const success = await copyToClipboard(qrCodeUrl.value);
   copyFeedback.value = success
-    ? $t("providers.party_mode.link_copy_success")
-    : $t("providers.party_mode.link_copy_fail");
+    ? $t("providers.party.link_copy_success")
+    : $t("providers.party.link_copy_fail");
   setTimeout(() => {
     copyFeedback.value = "";
   }, 2000);
@@ -112,7 +110,7 @@ watch(qrCanvas, (canvas) => {
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    const url = (await api.sendCommand("party_mode/url")) as string | null;
+    const url = (await api.sendCommand("party/url")) as string | null;
 
     guestAccessEnabled.value = !!url;
 
@@ -143,10 +141,9 @@ watch(partyConfig, (newConfig) => {
     instructionText.value =
       newConfig.qr_show_instruction_text === false
         ? ""
-        : (newConfig.qr_instruction_text ??
-          $t("providers.party_mode.scan_to_join"));
+        : (newConfig.qr_instruction_text ?? $t("providers.party.scan_to_join"));
   } else {
-    instructionText.value = $t("providers.party_mode.scan_to_join");
+    instructionText.value = $t("providers.party.scan_to_join");
   }
 });
 
@@ -167,15 +164,15 @@ onMounted(async () => {
     resizeObserver.observe(qrContainer.value);
   }
 
-  // Subscribe to PROVIDERS_UPDATED to detect when party_mode provider is
+  // Subscribe to PROVIDERS_UPDATED to detect when party provider is
   // loaded/unloaded. Config refresh is handled by the composable automatically.
   const unsubProviders = api.subscribe(
     EventType.PROVIDERS_UPDATED,
     async () => {
-      const hasPartyMode = Object.values(api.providers).some(
-        (p) => p.domain === "party_mode",
+      const hasParty = Object.values(api.providers).some(
+        (p) => p.domain === "party",
       );
-      if (hasPartyMode) {
+      if (hasParty) {
         await generateQRCode();
       } else {
         guestAccessEnabled.value = false;
@@ -183,31 +180,25 @@ onMounted(async () => {
       }
     },
   );
+  onBeforeUnmount(unsubProviders);
 
   // Subscribe to CORE_STATE_UPDATED to detect when remote access is toggled,
-  // which changes the party mode join URL between local and remote.
+  // which changes the party join URL between local and remote.
   const unsubCoreState = api.subscribe(
     EventType.CORE_STATE_UPDATED,
     async () => {
-      const hasPartyMode = Object.values(api.providers).some(
-        (p) => p.domain === "party_mode",
+      const hasParty = Object.values(api.providers).some(
+        (p) => p.domain === "party",
       );
-      if (hasPartyMode) {
+      if (hasParty) {
         await generateQRCode();
       }
     },
   );
-
-  unsubscribe = () => {
-    unsubProviders();
-    unsubCoreState();
-  };
+  onBeforeUnmount(unsubCoreState);
 });
 
-onUnmounted(() => {
-  if (unsubscribe) {
-    unsubscribe();
-  }
+onBeforeUnmount(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }

@@ -820,10 +820,10 @@ export interface QueueItem {
   media_item?: PlayableMediaItemType;
   image?: MediaItemImage;
   available: boolean;
-  // Party mode: extra_attributes for guest-added items
+  // Party: extra_attributes for guest-added items
   extra_attributes?: {
-    party_mode_guest?: boolean; // true if added by party mode guest
-    party_mode_boosted?: boolean; // true if added as "boost" (play next)
+    party_guest?: boolean; // true if added by party guest
+    party_boosted?: boolean; // true if added as "boost" (play next)
   };
 }
 
@@ -1104,7 +1104,7 @@ export interface User {
   preferences: Record<string, unknown>;
   provider_filter: string[];
   player_filter: string[];
-  // Use authManager.isPartyModeGuest() to check for party mode sessions.
+  // Use authManager.isPartyGuest() to check for party sessions.
 }
 
 export interface AuthToken {
@@ -1158,9 +1158,9 @@ export interface RemoteAccessInfo {
   signaling_url: string;
 }
 
-// Party Mode interfaces
+// Party interfaces
 
-export interface PartyModeConfig {
+export interface PartyConfig {
   enable_rate_limiting: boolean;
   enable_add_queue: boolean;
   add_queue_limit: number;
@@ -1173,8 +1173,11 @@ export interface PartyModeConfig {
   skip_song_refill_minutes: number;
   album_art_background: boolean;
   show_player_controls: boolean;
+  display_lyrics: boolean;
+  karaoke_mode: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
   qr_show_instruction_text: boolean;
   qr_instruction_text: string;
+  anti_burn_in: boolean;
 }

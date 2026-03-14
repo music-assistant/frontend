@@ -120,12 +120,12 @@ export class AuthManager {
   }
 
   /**
-   * Check if this is a party mode guest session.
-   * Party mode guests authenticate via QR code/join code and have
+   * Check if this is a party guest session.
+   * Party guests authenticate via QR code/join code and have
    * restricted UI access (only the guest view).
    */
-  isPartyModeGuest(): boolean {
-    return this.claims?.username === "party_mode_guest";
+  isPartyGuest(): boolean {
+    return this.claims?.username === "party_guest";
   }
 
   /**

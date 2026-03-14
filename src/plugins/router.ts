@@ -1,11 +1,16 @@
 import { watch } from "vue";
-import { createRouter, createWebHashHistory } from "vue-router";
-import { authManager } from "./auth";
+import {
+  createRouter,
+  createWebHashHistory,
+  type RouteLocationNormalized,
+  type RouteRecordRaw,
+} from "vue-router";
 import { api, ConnectionState } from "./api";
+import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   // Guest view uses minimal layout without navigation/player controls
   // Guest authentication is handled by Login.vue via the ?join= query parameter
   // which exchanges the short join code for a JWT before navigating here
@@ -13,35 +18,38 @@ const routes = [
     path: "/guest",
     // Guest users don't have access to the player.
     meta: { disableWebPlayer: true },
-    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {
         path: "",
         name: "guest",
         component: () =>
-          import(
-            /* webpackChunkName: "guest" */ "@/views/PartyModeGuestView.vue"
-          ),
+          import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
     ],
   },
-  // Party mode display uses minimal layout (fullscreen for wall-mounted tablets)
+  // Party display uses minimal layout (fullscreen for wall-mounted tablets)
   // Placed at top level so it renders without navigation/player controls
   {
     path: "/party",
-    // Party mode only displays the dashboard and doesn't need the player.
+    // Party only displays the dashboard and doesn't need the player.
     meta: { disableWebPlayer: true },
-    component: () => import("@/layouts/PartyModeGuestLayout.vue"),
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {
         path: "",
         name: "party",
         component: () =>
           import(
-            /* webpackChunkName: "party" */ "@/views/PartyModeDashboardView.vue"
+            /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
           ),
-        props: (route: { query: Record<string, any> }) => ({ ...route.query }),
-        beforeEnter: async (_to: any, _from: any, next: any) => {
+        props: (route: { query: Record<string, string> }) => ({
+          ...route.query,
+        }),
+        beforeEnter: async (
+          _to: RouteLocationNormalized,
+          _from: RouteLocationNormalized,
+        ) => {
           // Wait for API initialization before checking plugin status
           if (api.state.value !== ConnectionState.INITIALIZED) {
             await new Promise<void>((resolve) => {
@@ -57,12 +65,10 @@ const routes = [
               );
             });
           }
-          // Only allow access if party mode plugin is enabled
-          if (!store.enabledPlugins.has("party_mode")) {
-            next({ name: "discover" });
-            return;
+          // Only allow access if party plugin is enabled
+          if (!store.enabledPlugins.has("party")) {
+            return { name: "discover" };
           }
-          next();
         },
       },
     ],
@@ -525,10 +531,10 @@ router.onError((error, to) => {
 router.beforeEach(async (to, _from, next) => {
   const currentUser = store.currentUser;
 
-  // If party mode guest is trying to navigate away from /guest, redirect back to guest
+  // If party guest is trying to navigate away from /guest, redirect back to guest
   // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
-  if (authManager.isPartyModeGuest() && to.path !== "/guest") {
-    console.debug("Party mode guest: preventing navigation to", to.path);
+  if (authManager.isPartyGuest() && to.path !== "/guest") {
+    console.debug("Party guest: preventing navigation to", to.path);
     next({ name: "guest" });
     return;
   }
