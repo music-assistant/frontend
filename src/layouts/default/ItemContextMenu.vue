@@ -428,8 +428,6 @@ export const getContextMenuItems = async function (
   if (
     items.length === 1 &&
     firstItem.media_type === MediaType.PLAYLIST &&
-    itemIsAvailable(firstItem) &&
-    authManager.isAdmin() &&
     store.enabledPlugins.has("ai_radio")
   ) {
     contextMenuItems.push({

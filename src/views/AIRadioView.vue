@@ -1,6 +1,8 @@
 <template>
   <section class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
-    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <header
+      class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+    >
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">AI Radio</h1>
         <p class="text-sm text-muted-foreground">
@@ -25,7 +27,8 @@
             <CardHeader>
               <CardTitle>Start Run</CardTitle>
               <CardDescription>
-                Select a station, then start playlist generation or live queue injection.
+                Select a station, then start playlist generation or live queue
+                injection.
               </CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
@@ -33,7 +36,9 @@
                 <Label for="ai-radio-run-station">Station</Label>
                 <Select
                   :model-value="selectedRunStationId"
-                  @update:model-value="(value) => onSelectRunStation(value as string)"
+                  @update:model-value="
+                    (value) => onSelectRunStation(value as string)
+                  "
                 >
                   <SelectTrigger id="ai-radio-run-station" class="w-full">
                     <SelectValue placeholder="Select station" />
@@ -56,13 +61,16 @@
               >
                 <div class="text-sm font-medium">Source Playlist Override</div>
                 <p class="text-xs text-muted-foreground">
-                  This run will use the selected playlist from the playlist context menu.
+                  This run will use the selected playlist from the playlist
+                  context menu.
                 </p>
                 <div class="text-sm">
                   {{ sourcePlaylistOverrideName || sourcePlaylistOverrideId }}
                 </div>
                 <div class="text-xs text-muted-foreground">
-                  {{ sourcePlaylistOverrideProvider }}:{{ sourcePlaylistOverrideId }}
+                  {{ sourcePlaylistOverrideProvider }}:{{
+                    sourcePlaylistOverrideId
+                  }}
                 </div>
                 <Button
                   variant="ghost"
@@ -75,10 +83,14 @@
               </div>
 
               <div class="space-y-2">
-                <Label for="ai-radio-run-player">Playback Device Override (optional)</Label>
+                <Label for="ai-radio-run-player"
+                  >Playback Device Override (optional)</Label
+                >
                 <Select
                   :model-value="selectedRunPlayerSelectValue"
-                  @update:model-value="(value) => onSelectRunPlayer(value as string)"
+                  @update:model-value="
+                    (value) => onSelectRunPlayer(value as string)
+                  "
                 >
                   <SelectTrigger id="ai-radio-run-player" class="w-full">
                     <SelectValue placeholder="Use station default" />
@@ -100,7 +112,9 @@
 
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="space-y-2">
-                  <Label for="ai-radio-run-source-cap">Source Playtime Cap Override (minutes)</Label>
+                  <Label for="ai-radio-run-source-cap"
+                    >Source Playtime Cap Override (minutes)</Label
+                  >
                   <Input
                     id="ai-radio-run-source-cap"
                     v-model="runSourcePlaytimeCapOverrideInput"
@@ -111,7 +125,9 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <Label for="ai-radio-run-batch-size">Dynamic Batch Size Override</Label>
+                  <Label for="ai-radio-run-batch-size"
+                    >Dynamic Batch Size Override</Label
+                  >
                   <Input
                     id="ai-radio-run-batch-size"
                     v-model="runDynamicBatchSizeOverrideInput"
@@ -124,7 +140,10 @@
               </div>
 
               <div class="grid gap-2 sm:grid-cols-2">
-                <Button :disabled="!selectedRunStationId || startingRun" @click="startPlaylistRun">
+                <Button
+                  :disabled="!selectedRunStationId || startingRun"
+                  @click="startPlaylistRun"
+                >
                   {{ startingRun ? "Starting..." : "Create Playlist" }}
                 </Button>
                 <Button
@@ -146,7 +165,10 @@
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div v-if="sessions.length === 0" class="text-sm text-muted-foreground">
+              <div
+                v-if="sessions.length === 0"
+                class="text-sm text-muted-foreground"
+              >
                 No sessions yet.
               </div>
               <ul v-else class="space-y-3">
@@ -156,16 +178,38 @@
                   class="rounded-md border p-3"
                 >
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-medium">{{ stationName(session.station_id) }}</span>
+                    <span class="font-medium">{{
+                      stationName(session.station_id)
+                    }}</span>
                     <Badge :variant="sessionBadgeVariant(session.status)">
                       {{ session.status }}
                     </Badge>
                     <Badge variant="outline">{{ session.mode }}</Badge>
                   </div>
                   <div class="mt-2 text-xs text-muted-foreground">
-                    Started: {{ formatTimestamp(session.started_at || session.created_at) }}
+                    Started:
+                    {{
+                      formatTimestamp(session.started_at || session.created_at)
+                    }}
                   </div>
-                  <div v-if="session.error" class="mt-2 text-sm text-destructive">
+                  <div
+                    v-if="sessionProgressSummary(session)"
+                    class="mt-2 rounded-md border bg-muted/40 px-3 py-2 text-xs"
+                  >
+                    <div class="font-medium">
+                      {{ sessionProgressSummary(session) }}
+                    </div>
+                    <div
+                      v-if="sessionProgressDetails(session)"
+                      class="mt-1 text-muted-foreground"
+                    >
+                      {{ sessionProgressDetails(session) }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="session.error"
+                    class="mt-2 text-sm text-destructive"
+                  >
                     {{ session.error }}
                   </div>
                   <div v-if="session.status === 'running'" class="mt-3">
@@ -190,12 +234,18 @@
           <Card>
             <CardHeader>
               <CardTitle>Stations</CardTitle>
-              <CardDescription>Select and manage station profiles.</CardDescription>
+              <CardDescription
+                >Select and manage station profiles.</CardDescription
+              >
             </CardHeader>
             <CardContent class="space-y-3">
               <div class="flex flex-wrap gap-2">
                 <Button size="sm" @click="createNewStationDraft">New</Button>
-                <Button size="sm" variant="outline" @click="triggerStationImport">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  @click="triggerStationImport"
+                >
                   Import
                 </Button>
               </div>
@@ -207,7 +257,9 @@
                 @change="onStationImport"
               />
 
-              <div class="max-h-[560px] space-y-1 overflow-y-auto rounded-md border p-2">
+              <div
+                class="max-h-[560px] space-y-1 overflow-y-auto rounded-md border p-2"
+              >
                 <button
                   v-for="station in stations"
                   :key="station.id"
@@ -230,7 +282,8 @@
             <CardHeader>
               <CardTitle>Station Editor</CardTitle>
               <CardDescription>
-                Configure source playlist, section selection, flow rules, and runtime profile.
+                Configure source playlist, section selection, flow rules, and
+                runtime profile.
               </CardDescription>
             </CardHeader>
             <CardContent v-if="stationDraft" class="space-y-6">
@@ -250,17 +303,25 @@
                     <option value="">-- Select --</option>
                     <option
                       v-for="playlist in playlists"
-                      :key="playlistSelectValue(playlist.provider, playlist.item_id)"
-                      :value="playlistSelectValue(playlist.provider, playlist.item_id)"
+                      :key="
+                        playlistSelectValue(playlist.provider, playlist.item_id)
+                      "
+                      :value="
+                        playlistSelectValue(playlist.provider, playlist.item_id)
+                      "
                     >
-                      {{ playlist.name }} ({{ playlist.provider }}:{{ playlist.item_id }})
+                      {{ playlist.name }} ({{ playlist.provider }}:{{
+                        playlist.item_id
+                      }})
                     </option>
                     <option value="__custom__">Custom source playlist</option>
                   </select>
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-default-player">Default Playback Device (optional)</Label>
+                  <Label for="station-default-player"
+                    >Default Playback Device (optional)</Label
+                  >
                   <select
                     id="station-default-player"
                     v-model="stationDraft.default_player_id"
@@ -272,23 +333,42 @@
                       :key="player.player_id"
                       :value="player.player_id"
                     >
-                      {{ player.name }}{{ player.available === false ? ' (Not available)' : '' }}
+                      {{ player.name
+                      }}{{
+                        player.available === false ? " (Not available)" : ""
+                      }}
                     </option>
                   </select>
                 </div>
 
-                <div v-if="stationSourcePlaylistSelectValue === '__custom__'" class="space-y-2">
-                  <Label for="station-source-provider">Source Playlist Provider</Label>
-                  <Input id="station-source-provider" v-model="stationDraft.source_playlist_provider" />
+                <div
+                  v-if="stationSourcePlaylistSelectValue === '__custom__'"
+                  class="space-y-2"
+                >
+                  <Label for="station-source-provider"
+                    >Source Playlist Provider</Label
+                  >
+                  <Input
+                    id="station-source-provider"
+                    v-model="stationDraft.source_playlist_provider"
+                  />
                 </div>
 
-                <div v-if="stationSourcePlaylistSelectValue === '__custom__'" class="space-y-2">
+                <div
+                  v-if="stationSourcePlaylistSelectValue === '__custom__'"
+                  class="space-y-2"
+                >
                   <Label for="station-source-id">Source Playlist ID</Label>
-                  <Input id="station-source-id" v-model="stationDraft.source_playlist_id" />
+                  <Input
+                    id="station-source-id"
+                    v-model="stationDraft.source_playlist_id"
+                  />
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-duration-cap">Source Playtime Cap (minutes)</Label>
+                  <Label for="station-duration-cap"
+                    >Source Playtime Cap (minutes)</Label
+                  >
                   <Input
                     id="station-duration-cap"
                     v-model="stationMaxDurationInput"
@@ -299,7 +379,9 @@
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-target-provider">Target Playlist Provider</Label>
+                  <Label for="station-target-provider"
+                    >Target Playlist Provider</Label
+                  >
                   <Input
                     id="station-target-provider"
                     v-model="stationDraft.target_playlist_provider"
@@ -307,7 +389,9 @@
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="station-sections">Selected Sections (shared library)</Label>
+                  <Label for="station-sections"
+                    >Selected Sections (shared library)</Label
+                  >
                   <select
                     id="station-sections"
                     class="min-h-[180px] w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -315,7 +399,11 @@
                     :value="stationDraft.section_ids"
                     @change="onStationSectionIdsChange"
                   >
-                    <option v-for="section in sections" :key="section.id" :value="section.id">
+                    <option
+                      v-for="section in sections"
+                      :key="section.id"
+                      :value="section.id"
+                    >
                       {{ section.name }}
                     </option>
                   </select>
@@ -325,7 +413,9 @@
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="station-merge-section">Merge Section (optional)</Label>
+                  <Label for="station-merge-section"
+                    >Merge Section (optional)</Label
+                  >
                   <select
                     id="station-merge-section"
                     v-model="stationDraft.merge_section_id"
@@ -341,7 +431,8 @@
                     </option>
                   </select>
                   <p class="text-xs text-muted-foreground">
-                    Used when one between-song slot generates multiple spoken sections.
+                    Used when one between-song slot generates multiple spoken
+                    sections.
                   </p>
                 </div>
               </div>
@@ -351,13 +442,19 @@
                   <div>
                     <h3 class="text-base font-semibold">Playback Flow Rules</h3>
                     <p class="text-xs text-muted-foreground">
-                      MUST always includes, ALTERNATIVE picks one weighted choice, OPTIONAL runs by chance and guards.
+                      MUST always includes, ALTERNATIVE picks one weighted
+                      choice, OPTIONAL runs by chance and guards.
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" @click="addOrderRule">Add Placement Rule</Button>
+                  <Button size="sm" variant="outline" @click="addOrderRule"
+                    >Add Placement Rule</Button
+                  >
                 </div>
 
-                <div v-if="!stationDraft.section_order?.length" class="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                <div
+                  v-if="!stationDraft.section_order?.length"
+                  class="rounded-md border border-dashed p-3 text-sm text-muted-foreground"
+                >
                   No flow rules configured yet.
                 </div>
 
@@ -373,20 +470,38 @@
                       class="h-9 rounded-md border bg-background px-3 text-sm"
                       @change="onOrderPlacementChange(ruleIndex, $event)"
                     >
-                      <option value="start_of_playlist">Start of Playlist</option>
+                      <option value="start_of_playlist">
+                        Start of Playlist
+                      </option>
                       <option value="between_songs">Between Songs</option>
                       <option value="end_of_playlist">End of Playlist</option>
                     </select>
-                    <Button size="sm" variant="outline" @click="moveOrderRule(ruleIndex, -1)">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      @click="moveOrderRule(ruleIndex, -1)"
+                    >
                       Up
                     </Button>
-                    <Button size="sm" variant="outline" @click="moveOrderRule(ruleIndex, 1)">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      @click="moveOrderRule(ruleIndex, 1)"
+                    >
                       Down
                     </Button>
-                    <Button size="sm" variant="outline" @click="addFlowItem(ruleIndex)">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      @click="addFlowItem(ruleIndex)"
+                    >
                       Add Flow Item
                     </Button>
-                    <Button size="sm" variant="destructive" @click="removeOrderRule(ruleIndex)">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      @click="removeOrderRule(ruleIndex)"
+                    >
                       Remove Rule
                     </Button>
                   </div>
@@ -401,7 +516,9 @@
                         <select
                           :value="getFlowType(flowItem)"
                           class="h-9 rounded-md border bg-background px-3 text-sm"
-                          @change="onFlowTypeChange(ruleIndex, flowIndex, $event)"
+                          @change="
+                            onFlowTypeChange(ruleIndex, flowIndex, $event)
+                          "
                         >
                           <option value="MUST">MUST</option>
                           <option value="ALTERNATIVE">ALTERNATIVE</option>
@@ -416,12 +533,17 @@
                         </Button>
                       </div>
 
-                      <div v-if="getFlowType(flowItem) === 'MUST'" class="space-y-2">
+                      <div
+                        v-if="getFlowType(flowItem) === 'MUST'"
+                        class="space-y-2"
+                      >
                         <Label class="text-xs">Section</Label>
                         <select
                           :value="getMustSection(flowItem)"
                           class="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                          @change="onMustSectionChange(ruleIndex, flowIndex, $event)"
+                          @change="
+                            onMustSectionChange(ruleIndex, flowIndex, $event)
+                          "
                         >
                           <option value="">-- Select section --</option>
                           <option
@@ -434,7 +556,10 @@
                         </select>
                       </div>
 
-                      <div v-else-if="getFlowType(flowItem) === 'ALTERNATIVE'" class="space-y-2">
+                      <div
+                        v-else-if="getFlowType(flowItem) === 'ALTERNATIVE'"
+                        class="space-y-2"
+                      >
                         <div class="flex items-center justify-between gap-2">
                           <Label class="text-xs">Weighted Choices</Label>
                           <Button
@@ -446,14 +571,23 @@
                           </Button>
                         </div>
                         <div
-                          v-for="(choice, choiceIndex) in getAlternativeChoices(flowItem)"
+                          v-for="(choice, choiceIndex) in getAlternativeChoices(
+                            flowItem,
+                          )"
                           :key="`choice-${ruleIndex}-${flowIndex}-${choiceIndex}`"
                           class="grid gap-2 md:grid-cols-[1fr_160px_auto]"
                         >
                           <select
                             :value="choice.section"
                             class="h-9 rounded-md border bg-background px-3 text-sm"
-                            @change="onAlternativeChoiceSectionChange(ruleIndex, flowIndex, choiceIndex, $event)"
+                            @change="
+                              onAlternativeChoiceSectionChange(
+                                ruleIndex,
+                                flowIndex,
+                                choiceIndex,
+                                $event,
+                              )
+                            "
                           >
                             <option value="">-- Select section --</option>
                             <option
@@ -482,7 +616,13 @@
                           <Button
                             size="sm"
                             variant="outline"
-                            @click="removeAlternativeChoice(ruleIndex, flowIndex, choiceIndex)"
+                            @click="
+                              removeAlternativeChoice(
+                                ruleIndex,
+                                flowIndex,
+                                choiceIndex,
+                              )
+                            "
                           >
                             Remove
                           </Button>
@@ -495,7 +635,13 @@
                           <select
                             :value="getOptionalSection(flowItem)"
                             class="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                            @change="onOptionalSectionChange(ruleIndex, flowIndex, $event)"
+                            @change="
+                              onOptionalSectionChange(
+                                ruleIndex,
+                                flowIndex,
+                                $event,
+                              )
+                            "
                           >
                             <option value="">-- Select section --</option>
                             <option
@@ -510,13 +656,20 @@
                         <div class="space-y-2">
                           <Label class="text-xs">Chance (%)</Label>
                           <Input
-                            :model-value="String(getOptionalChancePercent(flowItem))"
+                            :model-value="
+                              String(getOptionalChancePercent(flowItem))
+                            "
                             type="number"
                             min="0"
                             max="100"
                             step="1"
                             @update:model-value="
-                              (value) => onOptionalChanceChange(ruleIndex, flowIndex, value)
+                              (value) =>
+                                onOptionalChanceChange(
+                                  ruleIndex,
+                                  flowIndex,
+                                  value,
+                                )
                             "
                           />
                         </div>
@@ -528,28 +681,48 @@
                             min="0"
                             step="1"
                             @update:model-value="
-                              (value) => onOptionalMinGapChange(ruleIndex, flowIndex, value)
+                              (value) =>
+                                onOptionalMinGapChange(
+                                  ruleIndex,
+                                  flowIndex,
+                                  value,
+                                )
                             "
                           />
                         </div>
                         <div class="space-y-2">
-                          <Label class="text-xs">Guard: Max Per 60 Minutes</Label>
+                          <Label class="text-xs"
+                            >Guard: Max Per 60 Minutes</Label
+                          >
                           <Input
                             :model-value="String(getOptionalMaxPer60(flowItem))"
                             type="number"
                             min="0"
                             step="1"
                             @update:model-value="
-                              (value) => onOptionalMaxPerChange(ruleIndex, flowIndex, value)
+                              (value) =>
+                                onOptionalMaxPerChange(
+                                  ruleIndex,
+                                  flowIndex,
+                                  value,
+                                )
                             "
                           />
                         </div>
                         <div class="space-y-2 md:col-span-2">
-                          <Label class="text-xs">Guard: Required Placeholders (comma separated)</Label>
+                          <Label class="text-xs"
+                            >Guard: Required Placeholders (comma
+                            separated)</Label
+                          >
                           <Input
                             :model-value="getOptionalPlaceholders(flowItem)"
                             @update:model-value="
-                              (value) => onOptionalPlaceholdersChange(ruleIndex, flowIndex, value)
+                              (value) =>
+                                onOptionalPlaceholdersChange(
+                                  ruleIndex,
+                                  flowIndex,
+                                  value,
+                                )
                             "
                           />
                         </div>
@@ -563,13 +736,17 @@
                 <summary class="cursor-pointer select-none text-sm font-medium">
                   Advanced Runtime and Provider Settings
                 </summary>
-                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <div
+                  class="mt-5 grid gap-x-6 gap-y-5 md:grid-cols-2 md:gap-x-8 [&>div]:min-w-0"
+                >
                   <div class="space-y-2">
                     <Label for="station-id">Station ID (technical key)</Label>
                     <Input id="station-id" v-model="stationDraft.id" />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-clear-queue">Clear Queue on Dynamic Start</Label>
+                    <Label for="station-clear-queue"
+                      >Clear Queue on Dynamic Start</Label
+                    >
                     <div class="flex h-10 items-center rounded-md border px-3">
                       <input
                         id="station-clear-queue"
@@ -581,7 +758,9 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-dynamic-batch">Dynamic Batch Size</Label>
+                    <Label for="station-dynamic-batch"
+                      >Dynamic Batch Size</Label
+                    >
                     <Input
                       id="station-dynamic-batch"
                       v-model="stationDynamicBatchSizeInput"
@@ -591,7 +770,9 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-dynamic-prefetch">Dynamic Prefetch Remaining Tracks</Label>
+                    <Label for="station-dynamic-prefetch"
+                      >Dynamic Prefetch Remaining Tracks</Label
+                    >
                     <Input
                       id="station-dynamic-prefetch"
                       v-model="stationDynamicPrefetchInput"
@@ -602,7 +783,9 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-dynamic-poll">Dynamic Poll Seconds</Label>
+                    <Label for="station-dynamic-poll"
+                      >Dynamic Poll Seconds</Label
+                    >
                     <Input
                       id="station-dynamic-poll"
                       v-model="stationDynamicPollInput"
@@ -614,7 +797,10 @@
 
                   <div class="space-y-2">
                     <Label for="station-general-model">Model</Label>
-                    <Input id="station-general-model" v-model="stationDraft.general.model" />
+                    <Input
+                      id="station-general-model"
+                      v-model="stationDraft.general.model"
+                    />
                   </div>
                   <div class="space-y-2">
                     <Label for="station-general-temp">Temperature</Label>
@@ -639,25 +825,38 @@
                   </div>
                   <div class="space-y-2">
                     <Label for="station-general-timezone">Timezone</Label>
-                    <Input id="station-general-timezone" v-model="stationDraft.general.timezone" />
+                    <Input
+                      id="station-general-timezone"
+                      v-model="stationDraft.general.timezone"
+                    />
                   </div>
                   <div class="space-y-2">
                     <Label for="station-general-city">Weather City</Label>
-                    <Input id="station-general-city" v-model="stationDraft.general.location.city" />
+                    <Input
+                      id="station-general-city"
+                      v-model="stationDraft.general.location.city"
+                    />
                   </div>
                   <div class="space-y-2">
                     <Label for="station-general-country">Weather Country</Label>
-                    <Input id="station-general-country" v-model="stationDraft.general.location.country" />
+                    <Input
+                      id="station-general-country"
+                      v-model="stationDraft.general.location.country"
+                    />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-weather-provider">Weather Provider</Label>
+                    <Label for="station-general-weather-provider"
+                      >Weather Provider</Label
+                    >
                     <Input
                       id="station-general-weather-provider"
                       v-model="stationDraft.general.weather_provider"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-weather-timeout">Weather Timeout Seconds</Label>
+                    <Label for="station-general-weather-timeout"
+                      >Weather Timeout Seconds</Label
+                    >
                     <Input
                       id="station-general-weather-timeout"
                       v-model="stationWeatherTimeoutInput"
@@ -667,21 +866,27 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-url">OpenAI Base URL</Label>
+                    <Label for="station-general-openai-url"
+                      >OpenAI Base URL</Label
+                    >
                     <Input
                       id="station-general-openai-url"
                       v-model="stationDraft.general.openai_base_url"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-section-store">Section Store Path</Label>
+                    <Label for="station-general-section-store"
+                      >Section Store Path</Label
+                    >
                     <Input
                       id="station-general-section-store"
                       v-model="stationDraft.general.section_store_path"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-tts-provider">TTS Provider</Label>
+                    <Label for="station-general-tts-provider"
+                      >TTS Provider</Label
+                    >
                     <select
                       id="station-general-tts-provider"
                       v-model="stationDraft.general.tts_provider"
@@ -692,35 +897,45 @@
                     </select>
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-tts-model">OpenAI TTS Model</Label>
+                    <Label for="station-general-openai-tts-model"
+                      >OpenAI TTS Model</Label
+                    >
                     <Input
                       id="station-general-openai-tts-model"
                       v-model="stationDraft.general.openai_tts_model"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-tts-voice">OpenAI TTS Voice</Label>
+                    <Label for="station-general-openai-tts-voice"
+                      >OpenAI TTS Voice</Label
+                    >
                     <Input
                       id="station-general-openai-tts-voice"
                       v-model="stationDraft.general.openai_tts_voice"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-eleven-model">ElevenLabs Model</Label>
+                    <Label for="station-general-eleven-model"
+                      >ElevenLabs Model</Label
+                    >
                     <Input
                       id="station-general-eleven-model"
                       v-model="stationDraft.general.elevenlabs_model"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-eleven-voice">ElevenLabs Voice ID</Label>
+                    <Label for="station-general-eleven-voice"
+                      >ElevenLabs Voice ID</Label
+                    >
                     <Input
                       id="station-general-eleven-voice"
                       v-model="stationDraft.general.elevenlabs_voice_id"
                     />
                   </div>
                   <div class="space-y-2 md:col-span-2">
-                    <Label for="station-general-instructions">Host and Program Instructions</Label>
+                    <Label for="station-general-instructions"
+                      >Host and Program Instructions</Label
+                    >
                     <Textarea
                       id="station-general-instructions"
                       v-model="stationDraft.general.instructions"
@@ -747,7 +962,9 @@
                 <Button variant="outline" @click="validateStationDraftOnServer">
                   Validate
                 </Button>
-                <Button variant="outline" @click="exportStationDraft">Export</Button>
+                <Button variant="outline" @click="exportStationDraft"
+                  >Export</Button
+                >
                 <Button
                   variant="destructive"
                   :disabled="!selectedEditorStationId || deletingStation"
@@ -771,12 +988,18 @@
           <Card>
             <CardHeader>
               <CardTitle>Sections</CardTitle>
-              <CardDescription>Reusable prompt blocks shared across stations.</CardDescription>
+              <CardDescription
+                >Reusable prompt blocks shared across stations.</CardDescription
+              >
             </CardHeader>
             <CardContent class="space-y-3">
               <div class="flex flex-wrap gap-2">
                 <Button size="sm" @click="createNewSectionDraft">New</Button>
-                <Button size="sm" variant="outline" @click="triggerSectionImport">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  @click="triggerSectionImport"
+                >
                   Import
                 </Button>
               </div>
@@ -788,7 +1011,9 @@
                 @change="onSectionImport"
               />
 
-              <div class="max-h-[560px] space-y-1 overflow-y-auto rounded-md border p-2">
+              <div
+                class="max-h-[560px] space-y-1 overflow-y-auto rounded-md border p-2"
+              >
                 <button
                   v-for="section in sections"
                   :key="section.id"
@@ -811,7 +1036,8 @@
             <CardHeader>
               <CardTitle>Section Editor</CardTitle>
               <CardDescription>
-                Define prompt templates, web-search mode, and section constraints.
+                Define prompt templates, web-search mode, and section
+                constraints.
               </CardDescription>
             </CardHeader>
             <CardContent v-if="sectionDraft" class="space-y-4">
@@ -833,7 +1059,10 @@
                   </select>
                 </div>
 
-                <div class="space-y-2" :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }">
+                <div
+                  class="space-y-2"
+                  :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }"
+                >
                   <Label for="section-web-search">Web Search Mode</Label>
                   <select
                     id="section-web-search"
@@ -847,11 +1076,16 @@
                   </select>
                 </div>
 
-                <div class="space-y-2" :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }">
+                <div
+                  class="space-y-2"
+                  :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }"
+                >
                   <Label for="section-max-chars">Character Limit</Label>
                   <Input
                     id="section-max-chars"
-                    :model-value="String(sectionDraft.constraints?.max_chars ?? 0)"
+                    :model-value="
+                      String(sectionDraft.constraints?.max_chars ?? 0)
+                    "
                     :disabled="sectionDraft.type !== 'ai_text'"
                     type="number"
                     min="0"
@@ -862,12 +1096,18 @@
 
                 <div class="space-y-2 md:col-span-2">
                   <Label for="section-prompt">Prompt</Label>
-                  <Textarea id="section-prompt" v-model="sectionDraft.prompt" rows="8" />
+                  <Textarea
+                    id="section-prompt"
+                    v-model="sectionDraft.prompt"
+                    rows="8"
+                  />
                 </div>
               </div>
 
               <details class="rounded-md border p-4">
-                <summary class="cursor-pointer select-none text-sm font-medium">Advanced</summary>
+                <summary class="cursor-pointer select-none text-sm font-medium">
+                  Advanced
+                </summary>
                 <div class="mt-4 space-y-2">
                   <Label for="section-id">Section ID (technical key)</Label>
                   <Input id="section-id" v-model="sectionDraft.id" />
@@ -878,7 +1118,9 @@
                 <Button :disabled="savingSection" @click="saveSectionDraft">
                   {{ savingSection ? "Saving..." : "Save Section" }}
                 </Button>
-                <Button variant="outline" @click="exportSectionDraft">Export</Button>
+                <Button variant="outline" @click="exportSectionDraft"
+                  >Export</Button
+                >
                 <Button
                   variant="destructive"
                   :disabled="!selectedEditorSectionId || deletingSection"
@@ -945,6 +1187,16 @@ const AUTO_REFRESH_MS = 5000;
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 type AIRadioFlowType = "MUST" | "ALTERNATIVE" | "OPTIONAL";
+type AIRadioProgressPhase =
+  | "fetch_source_tracks"
+  | "initializing_queue"
+  | "planning_sections"
+  | "generating_llm"
+  | "generating_tts"
+  | "publishing_playlist"
+  | "queueing_batch"
+  | "waiting_for_playback"
+  | "running";
 
 const activeTab = ref<"run" | "stations" | "sections">("run");
 
@@ -1046,7 +1298,9 @@ const stationSourcePlaylistSelectValue = computed({
     if (!stationDraft.value) {
       return "";
     }
-    const provider = String(stationDraft.value.source_playlist_provider || "").trim();
+    const provider = String(
+      stationDraft.value.source_playlist_provider || "",
+    ).trim();
     const itemId = String(stationDraft.value.source_playlist_id || "").trim();
     if (!provider || !itemId) {
       return "";
@@ -1082,7 +1336,9 @@ const stationSelectedSections = computed<AIRadioSection[]>(() => {
 });
 
 const mergeSectionOptions = computed(() => {
-  return stationSelectedSections.value.filter((section) => section.type === "ai_meta");
+  return stationSelectedSections.value.filter(
+    (section) => section.type === "ai_meta",
+  );
 });
 
 const stationMaxDurationInput = computed({
@@ -1111,7 +1367,11 @@ const stationDynamicPrefetchInput = computed({
     if (!stationDraft.value) {
       return;
     }
-    stationDraft.value.dynamic_prefetch_remaining_tracks = safeNumber(value, 1, 1);
+    stationDraft.value.dynamic_prefetch_remaining_tracks = safeNumber(
+      value,
+      1,
+      1,
+    );
   },
 });
 
@@ -1151,11 +1411,19 @@ const stationWeatherTimeoutInput = computed({
     if (!stationDraft.value) {
       return;
     }
-    stationDraft.value.general.weather_timeout_seconds = safeInteger(value, 1, 8);
+    stationDraft.value.general.weather_timeout_seconds = safeInteger(
+      value,
+      1,
+      8,
+    );
   },
 });
 
-const safeNumber = (value: string | number, min: number, fallback: number): number => {
+const safeNumber = (
+  value: string | number,
+  min: number,
+  fallback: number,
+): number => {
   const parsed = Number(value);
   if (Number.isNaN(parsed)) {
     return fallback;
@@ -1163,7 +1431,11 @@ const safeNumber = (value: string | number, min: number, fallback: number): numb
   return Math.max(min, parsed);
 };
 
-const safeInteger = (value: string | number, min: number, fallback: number): number => {
+const safeInteger = (
+  value: string | number,
+  min: number,
+  fallback: number,
+): number => {
   const parsed = Number.parseInt(String(value), 10);
   if (Number.isNaN(parsed)) {
     return fallback;
@@ -1171,7 +1443,9 @@ const safeInteger = (value: string | number, min: number, fallback: number): num
   return Math.max(min, parsed);
 };
 
-const parseOptionalNumber = (value: string | number | null | undefined): number => {
+const parseOptionalNumber = (
+  value: string | number | null | undefined,
+): number => {
   if (value === null || value === undefined || value === "") {
     return 0;
   }
@@ -1182,11 +1456,111 @@ const stationName = (stationId: string) => {
   return stationById.value.get(stationId) || stationId;
 };
 
-const sessionBadgeVariant = (status: AIRadioSession["status"]): BadgeVariant => {
+const sessionBadgeVariant = (
+  status: AIRadioSession["status"],
+): BadgeVariant => {
   if (status === "running") return "default";
   if (status === "completed") return "secondary";
   if (status === "failed") return "destructive";
   return "outline";
+};
+
+const toProgressRecord = (session: AIRadioSession): Record<string, unknown> => {
+  if (!session.progress || typeof session.progress !== "object") {
+    return {};
+  }
+  return session.progress as Record<string, unknown>;
+};
+
+const asProgressNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const progressPhaseLabel = (phase: string): string => {
+  const labels: Record<AIRadioProgressPhase, string> = {
+    fetch_source_tracks: "Loading source playlist",
+    initializing_queue: "Preparing player queue",
+    planning_sections: "Planning station sections",
+    generating_llm: "Generating AI text",
+    generating_tts: "Generating voice audio",
+    publishing_playlist: "Publishing generated playlist",
+    queueing_batch: "Queueing next dynamic batch",
+    waiting_for_playback: "Waiting for playback progress",
+    running: "Running",
+  };
+  return labels[phase as AIRadioProgressPhase] || phase;
+};
+
+const sessionProgressSummary = (session: AIRadioSession): string => {
+  const progress = toProgressRecord(session);
+  const phase = String(progress.phase || progress.step || "").trim();
+  if (!phase) {
+    return "";
+  }
+  return progressPhaseLabel(phase);
+};
+
+const sessionProgressDetails = (session: AIRadioSession): string => {
+  const progress = toProgressRecord(session);
+  const phase = String(progress.phase || progress.step || "").trim();
+  const queuedTracks = asProgressNumber(progress.queued_tracks);
+  const totalTracks = asProgressNumber(progress.total_tracks);
+  const batchIndex = asProgressNumber(progress.batch_index);
+  const sectionsPlanned = asProgressNumber(progress.sections_planned);
+  const sections = asProgressNumber(progress.sections);
+  const queueEntries = asProgressNumber(progress.queue_entries);
+  const entries = asProgressNumber(progress.entries);
+  const tracks = asProgressNumber(progress.tracks);
+
+  if (!phase) {
+    return "";
+  }
+  if (phase === "generating_llm") {
+    if (sectionsPlanned !== null && batchIndex !== null) {
+      return `Batch ${batchIndex}: ${sectionsPlanned} section(s) to generate`;
+    }
+    if (sectionsPlanned !== null) {
+      return `${sectionsPlanned} section(s) to generate`;
+    }
+  }
+  if (phase === "generating_tts") {
+    if (sections !== null && batchIndex !== null) {
+      return `Batch ${batchIndex}: ${sections} section(s) to synthesize`;
+    }
+    if (sections !== null) {
+      return `${sections} section(s) to synthesize`;
+    }
+  }
+  if (phase === "queueing_batch") {
+    if (batchIndex !== null && queueEntries !== null) {
+      return `Batch ${batchIndex}: ${queueEntries} queue entries total`;
+    }
+  }
+  if (phase === "waiting_for_playback") {
+    if (queuedTracks !== null && totalTracks !== null && batchIndex !== null) {
+      return `Batch ${batchIndex} queued, waiting (${queuedTracks}/${totalTracks} tracks prepared)`;
+    }
+  }
+  if (phase === "publishing_playlist") {
+    if (entries !== null || tracks !== null) {
+      const entryText = entries !== null ? `${entries} entries` : "";
+      const trackText = tracks !== null ? `${tracks} source tracks` : "";
+      return [entryText, trackText].filter(Boolean).join(" · ");
+    }
+  }
+  if (queuedTracks !== null && totalTracks !== null) {
+    return `${queuedTracks}/${totalTracks} source tracks processed`;
+  }
+  return "";
 };
 
 const formatTimestamp = (value?: string) => {
@@ -1221,7 +1595,9 @@ const parseOptionalInput = (value: string): number | undefined => {
   return parsed;
 };
 
-const asGeneralDefaults = (general?: AIRadioStationGeneral): AIRadioStationGeneral => {
+const asGeneralDefaults = (
+  general?: AIRadioStationGeneral,
+): AIRadioStationGeneral => {
   return {
     timezone: general?.timezone || "UTC",
     location: {
@@ -1229,8 +1605,10 @@ const asGeneralDefaults = (general?: AIRadioStationGeneral): AIRadioStationGener
       country: general?.location?.country || "",
     },
     model: general?.model || "gpt-4o-mini",
-    temperature: typeof general?.temperature === "number" ? general.temperature : 0.7,
-    max_tokens: typeof general?.max_tokens === "number" ? general.max_tokens : 1200,
+    temperature:
+      typeof general?.temperature === "number" ? general.temperature : 0.7,
+    max_tokens:
+      typeof general?.max_tokens === "number" ? general.max_tokens : 1200,
     instructions: general?.instructions || "",
     openai_base_url: general?.openai_base_url || "https://api.openai.com/v1",
     section_store_path: general?.section_store_path || "ai_radio_sections",
@@ -1259,8 +1637,16 @@ const normalizeStationDraft = (station: AIRadioStation): AIRadioStation => {
     String(draft.target_playlist_provider || "builtin").trim() || "builtin";
   draft.default_player_id = String(draft.default_player_id || "").trim();
   draft.max_duration_minutes = parseOptionalNumber(draft.max_duration_minutes);
-  draft.dynamic_batch_size = safeInteger(String(draft.dynamic_batch_size ?? 1), 1, 1);
-  draft.dynamic_poll_seconds = safeInteger(String(draft.dynamic_poll_seconds ?? 5), 1, 5);
+  draft.dynamic_batch_size = safeInteger(
+    String(draft.dynamic_batch_size ?? 1),
+    1,
+    1,
+  );
+  draft.dynamic_poll_seconds = safeInteger(
+    String(draft.dynamic_poll_seconds ?? 5),
+    1,
+    5,
+  );
   draft.dynamic_prefetch_remaining_tracks = safeInteger(
     String(draft.dynamic_prefetch_remaining_tracks ?? 2),
     1,
@@ -1268,7 +1654,9 @@ const normalizeStationDraft = (station: AIRadioStation): AIRadioStation => {
   );
   draft.clear_queue_on_start = draft.clear_queue_on_start !== false;
   draft.merge_section_id = String(draft.merge_section_id || "").trim();
-  draft.section_ids = Array.isArray(draft.section_ids) ? [...draft.section_ids] : [];
+  draft.section_ids = Array.isArray(draft.section_ids)
+    ? [...draft.section_ids]
+    : [];
   draft.section_order = Array.isArray(draft.section_order)
     ? deepClone(draft.section_order)
     : [];
@@ -1311,12 +1699,15 @@ const applyRouteOverrides = () => {
   const querySourcePlaylistProvider = getQueryValue(
     route.query.source_playlist_provider,
   );
-  const querySourcePlaylistName = getQueryValue(route.query.source_playlist_name);
+  const querySourcePlaylistName = getQueryValue(
+    route.query.source_playlist_name,
+  );
 
   if (querySourcePlaylistId && querySourcePlaylistProvider) {
     sourcePlaylistOverrideId.value = querySourcePlaylistId;
     sourcePlaylistOverrideProvider.value = querySourcePlaylistProvider;
     sourcePlaylistOverrideName.value = querySourcePlaylistName;
+    activeTab.value = "run";
   } else {
     sourcePlaylistOverrideId.value = "";
     sourcePlaylistOverrideProvider.value = "";
@@ -1324,7 +1715,10 @@ const applyRouteOverrides = () => {
   }
 
   const queryStationId = getQueryValue(route.query.station_id);
-  if (queryStationId && stations.value.some((station) => station.id === queryStationId)) {
+  if (
+    queryStationId &&
+    stations.value.some((station) => station.id === queryStationId)
+  ) {
     selectedRunStationId.value = queryStationId;
     applyRunStationDefaults(queryStationId);
   } else if (!selectedRunStationId.value && stations.value.length > 0) {
@@ -1374,7 +1768,9 @@ const runStart = async (mode: AIRadioMode) => {
       dynamicSourcePlaytimeCapOverride: parseOptionalInput(
         runSourcePlaytimeCapOverrideInput.value,
       ),
-      dynamicBatchSizeOverride: parseOptionalInput(runDynamicBatchSizeOverrideInput.value),
+      dynamicBatchSizeOverride: parseOptionalInput(
+        runDynamicBatchSizeOverrideInput.value,
+      ),
     });
     await loadStatus(true);
   } catch (error) {
@@ -1454,7 +1850,8 @@ const validateStationDraftLocal = (station: AIRadioStation): string | null => {
       }
       if (type === "ALTERNATIVE") {
         const choices = getAlternativeChoices(item).filter(
-          (choice) => choice.section.trim() && parseOptionalNumber(choice.weight) > 0,
+          (choice) =>
+            choice.section.trim() && parseOptionalNumber(choice.weight) > 0,
         );
         if (!choices.length) {
           return `Rule ${ruleIndex + 1}, flow ${flowIndex + 1}: ALTERNATIVE needs at least one valid choice`;
@@ -1724,7 +2121,9 @@ const onStationSectionIdsChange = (event: Event) => {
   );
   if (
     stationDraft.value.merge_section_id &&
-    !stationDraft.value.section_ids.includes(stationDraft.value.merge_section_id)
+    !stationDraft.value.section_ids.includes(
+      stationDraft.value.merge_section_id,
+    )
   ) {
     stationDraft.value.merge_section_id = "";
   }
@@ -1752,7 +2151,8 @@ const moveOrderRule = (index: number, direction: -1 | 1) => {
     return;
   }
   const current = stationDraft.value.section_order[index];
-  stationDraft.value.section_order[index] = stationDraft.value.section_order[target];
+  stationDraft.value.section_order[index] =
+    stationDraft.value.section_order[target];
   stationDraft.value.section_order[target] = current;
 };
 
@@ -1764,7 +2164,8 @@ const onOrderPlacementChange = (ruleIndex: number, event: Event) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
-  const value = (event.target as HTMLSelectElement).value as AIRadioSectionOrderRule["when"];
+  const value = (event.target as HTMLSelectElement)
+    .value as AIRadioSectionOrderRule["when"];
   stationDraft.value.section_order[ruleIndex].when = value;
 };
 
@@ -1806,19 +2207,26 @@ const addFlowItem = (ruleIndex: number) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
-  stationDraft.value.section_order[ruleIndex].flow.push(makeDefaultFlowItem("MUST"));
+  stationDraft.value.section_order[ruleIndex].flow.push(
+    makeDefaultFlowItem("MUST"),
+  );
 };
 
 const removeFlowItem = (ruleIndex: number, flowIndex: number) => {
   stationDraft.value?.section_order?.[ruleIndex]?.flow.splice(flowIndex, 1);
 };
 
-const onFlowTypeChange = (ruleIndex: number, flowIndex: number, event: Event) => {
+const onFlowTypeChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  event: Event,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
   const type = (event.target as HTMLSelectElement).value as AIRadioFlowType;
-  stationDraft.value.section_order[ruleIndex].flow[flowIndex] = makeDefaultFlowItem(type);
+  stationDraft.value.section_order[ruleIndex].flow[flowIndex] =
+    makeDefaultFlowItem(type);
 };
 
 const getMustSection = (item: AIRadioFlowItem): string => {
@@ -1828,7 +2236,11 @@ const getMustSection = (item: AIRadioFlowItem): string => {
   return "";
 };
 
-const onMustSectionChange = (ruleIndex: number, flowIndex: number, event: Event) => {
+const onMustSectionChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  event: Event,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
@@ -1839,7 +2251,9 @@ const onMustSectionChange = (ruleIndex: number, flowIndex: number, event: Event)
   flow.MUST = (event.target as HTMLSelectElement).value;
 };
 
-const getAlternativeChoices = (item: AIRadioFlowItem): AIRadioAlternativeChoice[] => {
+const getAlternativeChoices = (
+  item: AIRadioFlowItem,
+): AIRadioAlternativeChoice[] => {
   if ("ALTERNATIVE" in item) {
     return item.ALTERNATIVE.choices;
   }
@@ -1885,8 +2299,9 @@ const onAlternativeChoiceSectionChange = (
   if (!("ALTERNATIVE" in flow)) {
     return;
   }
-  flow.ALTERNATIVE.choices[choiceIndex].section =
-    (event.target as HTMLSelectElement).value;
+  flow.ALTERNATIVE.choices[choiceIndex].section = (
+    event.target as HTMLSelectElement
+  ).value;
 };
 
 const onAlternativeChoiceWeightChange = (
@@ -1902,10 +2317,20 @@ const onAlternativeChoiceWeightChange = (
   if (!("ALTERNATIVE" in flow)) {
     return;
   }
-  flow.ALTERNATIVE.choices[choiceIndex].weight = safeNumber(String(value), 0, 0);
+  flow.ALTERNATIVE.choices[choiceIndex].weight = safeNumber(
+    String(value),
+    0,
+    0,
+  );
 };
 
-const getOptionalPayload = (item: AIRadioFlowItem): { section: string; chance?: number; guards?: AIRadioOptionalGuards } | null => {
+const getOptionalPayload = (
+  item: AIRadioFlowItem,
+): {
+  section: string;
+  chance?: number;
+  guards?: AIRadioOptionalGuards;
+} | null => {
   if ("OPTIONAL" in item) {
     if (!item.OPTIONAL.guards) {
       item.OPTIONAL.guards = {
@@ -1924,7 +2349,11 @@ const getOptionalSection = (item: AIRadioFlowItem): string => {
   return optional?.section || "";
 };
 
-const onOptionalSectionChange = (ruleIndex: number, flowIndex: number, event: Event) => {
+const onOptionalSectionChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  event: Event,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
@@ -1941,7 +2370,11 @@ const getOptionalChancePercent = (item: AIRadioFlowItem): number => {
   return Math.round((optional?.chance ?? 0) * 100);
 };
 
-const onOptionalChanceChange = (ruleIndex: number, flowIndex: number, value: string | number) => {
+const onOptionalChanceChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  value: string | number,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
@@ -1959,7 +2392,11 @@ const getOptionalMinGap = (item: AIRadioFlowItem): number => {
   return safeInteger(String(optional?.guards?.min_gap_songs ?? 0), 0, 0);
 };
 
-const onOptionalMinGapChange = (ruleIndex: number, flowIndex: number, value: string | number) => {
+const onOptionalMinGapChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  value: string | number,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
@@ -1976,7 +2413,11 @@ const getOptionalMaxPer60 = (item: AIRadioFlowItem): number => {
   return safeInteger(String(optional?.guards?.max_per_60min ?? 0), 0, 0);
 };
 
-const onOptionalMaxPerChange = (ruleIndex: number, flowIndex: number, value: string | number) => {
+const onOptionalMaxPerChange = (
+  ruleIndex: number,
+  flowIndex: number,
+  value: string | number,
+) => {
   if (!stationDraft.value?.section_order) {
     return;
   }
@@ -2057,7 +2498,9 @@ watch(stations, async (nextStations) => {
 
   if (
     selectedEditorStationId.value &&
-    !nextStations.some((station) => station.id === selectedEditorStationId.value)
+    !nextStations.some(
+      (station) => station.id === selectedEditorStationId.value,
+    )
   ) {
     await selectStationForEdit(nextStations[0].id);
   }
@@ -2082,7 +2525,9 @@ watch(sections, async (nextSections) => {
 
   if (
     selectedEditorSectionId.value &&
-    !nextSections.some((section) => section.id === selectedEditorSectionId.value)
+    !nextSections.some(
+      (section) => section.id === selectedEditorSectionId.value,
+    )
   ) {
     await selectSectionForEdit(nextSections[0].id);
   }

@@ -37,7 +37,9 @@ const sortByName = <T extends { name: string }>(items: T[]): T[] => {
 async function loadStations(silent = false): Promise<AIRadioStation[]> {
   loadingStations.value = true;
   try {
-    const result = await api.sendCommand<AIRadioStation[]>("ai_radio/stations/list");
+    const result = await api.sendCommand<AIRadioStation[]>(
+      "ai_radio/stations/list",
+    );
     stations.value = sortByName(result || []);
     if (!silent) {
       toast.success("AI Radio stations loaded");
@@ -56,7 +58,9 @@ async function loadStations(silent = false): Promise<AIRadioStation[]> {
 async function loadSections(silent = false): Promise<AIRadioSection[]> {
   loadingSections.value = true;
   try {
-    const result = await api.sendCommand<AIRadioSection[]>("ai_radio/sections/list");
+    const result = await api.sendCommand<AIRadioSection[]>(
+      "ai_radio/sections/list",
+    );
     sections.value = sortByName(result || []);
     if (!silent) {
       toast.success("AI Radio sections loaded");
@@ -119,8 +123,9 @@ async function loadPlaylists(silent = false): Promise<Playlist[]> {
     // Load in pages to avoid truncating larger libraries.
     const limit = 200;
     let offset = 0;
+    let hasMore = true;
     const allItems: Playlist[] = [];
-    while (true) {
+    while (hasMore && offset < 5000) {
       const batch = await api.getLibraryPlaylists(
         undefined,
         undefined,
@@ -128,13 +133,8 @@ async function loadPlaylists(silent = false): Promise<Playlist[]> {
         offset,
       );
       allItems.push(...batch);
-      if (batch.length < limit) {
-        break;
-      }
+      hasMore = batch.length === limit;
       offset += limit;
-      if (offset >= 5000) {
-        break;
-      }
     }
     playlists.value = sortByName(allItems);
     if (!silent) {
@@ -154,9 +154,12 @@ async function loadPlaylists(silent = false): Promise<Playlist[]> {
 async function saveStation(station: AIRadioStation): Promise<AIRadioStation> {
   savingStation.value = true;
   try {
-    const saved = await api.sendCommand<AIRadioStation>("ai_radio/stations/save", {
-      station,
-    });
+    const saved = await api.sendCommand<AIRadioStation>(
+      "ai_radio/stations/save",
+      {
+        station,
+      },
+    );
     toast.success("Station saved");
     await loadStations(true);
     return saved;
@@ -171,7 +174,9 @@ async function saveStation(station: AIRadioStation): Promise<AIRadioStation> {
 async function deleteStation(stationId: string): Promise<void> {
   deletingStation.value = true;
   try {
-    await api.sendCommand("ai_radio/stations/delete", { station_id: stationId });
+    await api.sendCommand("ai_radio/stations/delete", {
+      station_id: stationId,
+    });
     toast.success("Station deleted");
     await loadStations(true);
   } catch (error) {
@@ -188,7 +193,9 @@ async function getStation(stationId: string): Promise<AIRadioStation> {
   });
 }
 
-async function validateStation(station: AIRadioStation): Promise<AIRadioStation> {
+async function validateStation(
+  station: AIRadioStation,
+): Promise<AIRadioStation> {
   return api.sendCommand<AIRadioStation>("ai_radio/stations/validate", {
     station,
   });
@@ -197,9 +204,12 @@ async function validateStation(station: AIRadioStation): Promise<AIRadioStation>
 async function saveSection(section: AIRadioSection): Promise<AIRadioSection> {
   savingSection.value = true;
   try {
-    const saved = await api.sendCommand<AIRadioSection>("ai_radio/sections/save", {
-      section,
-    });
+    const saved = await api.sendCommand<AIRadioSection>(
+      "ai_radio/sections/save",
+      {
+        section,
+      },
+    );
     toast.success("Section saved");
     await Promise.all([loadSections(true), loadStations(true)]);
     return saved;
@@ -214,7 +224,9 @@ async function saveSection(section: AIRadioSection): Promise<AIRadioSection> {
 async function deleteSection(sectionId: string): Promise<void> {
   deletingSection.value = true;
   try {
-    await api.sendCommand("ai_radio/sections/delete", { section_id: sectionId });
+    await api.sendCommand("ai_radio/sections/delete", {
+      section_id: sectionId,
+    });
     toast.success("Section deleted");
     await Promise.all([loadSections(true), loadStations(true)]);
   } catch (error) {
