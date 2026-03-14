@@ -189,6 +189,27 @@ const handleLocalConnect = async (serverAddress: string) => {
 
 let initializationCompleted = false;
 
+const refreshPluginEnabledState = async (domain: string) => {
+  try {
+    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, domain);
+    if (providers.length > 0 && providers[0].enabled) {
+      store.enabledPlugins.add(domain);
+    } else {
+      store.enabledPlugins.delete(domain);
+    }
+  } catch (error) {
+    console.error("[App] Failed to check " + domain + " status:", error);
+    store.enabledPlugins.delete(domain);
+  }
+};
+
+const refreshPluginEnabledStates = async () => {
+  await Promise.all([
+    refreshPluginEnabledState("party"),
+    refreshPluginEnabledState("ai_radio"),
+  ]);
+};
+
 const completeInitialization = async () => {
   // Guard against multiple initializations
   if (initializationCompleted) {
@@ -237,21 +258,8 @@ const completeInitialization = async () => {
     console.debug("[App] Party guest - skipping full state fetch");
   }
 
-  // Check if party plugin is enabled
-  try {
-    const partyProviders = await api.getProviderConfigs(
-      ProviderType.PLUGIN,
-      "party",
-    );
-    if (partyProviders.length > 0 && partyProviders[0].enabled) {
-      store.enabledPlugins.add("party");
-    } else {
-      store.enabledPlugins.delete("party");
-    }
-  } catch (error) {
-    console.error("[App] Failed to check party status:", error);
-    store.enabledPlugins.delete("party");
-  }
+  // Keep plugin-backed UI entries in sync with enabled providers.
+  await refreshPluginEnabledStates();
 
   const urlParams = new URLSearchParams(window.location.search);
   if (
@@ -406,21 +414,9 @@ onMounted(async () => {
     await completeInitialization();
   }
 
-  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
+  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    try {
-      const partyProviders = await api.getProviderConfigs(
-        ProviderType.PLUGIN,
-        "party",
-      );
-      if (partyProviders.length > 0 && partyProviders[0].enabled) {
-        store.enabledPlugins.add("party");
-      } else {
-        store.enabledPlugins.delete("party");
-      }
-    } catch (error) {
-      console.error("[App] Failed to update party status:", error);
-    }
+    await refreshPluginEnabledStates();
   });
 });
 

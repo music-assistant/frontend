@@ -96,6 +96,17 @@ const routes: RouteRecordRaw[] = [
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
+        path: "/ai-radio",
+        name: "ai-radio",
+        component: () =>
+          import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
+        beforeEnter: () => {
+          if (!store.enabledPlugins.has("ai_radio")) {
+            return { name: "discover" };
+          }
+        },
+      },
+      {
         path: "/search",
         name: "search",
         component: () =>

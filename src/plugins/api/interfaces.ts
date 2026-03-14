@@ -1181,3 +1181,32 @@ export interface PartyConfig {
   qr_instruction_text: string;
   anti_burn_in: boolean;
 }
+
+// AI Radio interfaces
+
+export type AIRadioMode = "playlist" | "dynamic";
+
+export interface AIRadioStation {
+  id: string;
+  name: string;
+  source_playlist_id: string;
+  source_playlist_provider: string;
+  default_player_id?: string;
+}
+
+export interface AIRadioSession {
+  session_id: string;
+  station_id: string;
+  mode: AIRadioMode;
+  status: "running" | "completed" | "failed" | "stopped";
+  created_at: string;
+  started_at?: string;
+  ended_at?: string;
+  error?: string;
+  progress?: Record<string, unknown>;
+  result?: Record<string, unknown>;
+}
+
+export interface AIRadioStatus {
+  sessions: AIRadioSession[];
+}

@@ -54,6 +54,15 @@ export const getMenuItems = function () {
         isLibraryNode: false,
       });
     }
+    if (enabledMenuItemStr === "ai_radio") {
+      items.push({
+        label: "AI Radio",
+        icon: Radio,
+        path: "/ai-radio",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("ai_radio"),
+      });
+    }
     if (enabledMenuItemStr === "party") {
       items.push({
         label: "Party",
