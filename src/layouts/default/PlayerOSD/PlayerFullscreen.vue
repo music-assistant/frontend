@@ -152,6 +152,43 @@
               </MarqueeText>
             </v-card-subtitle>
 
+            <!-- subtitle: chapter -->
+            <v-card-subtitle
+              v-if="
+                store.activePlayer?.current_media?.media_type ===
+                  MediaType.AUDIOBOOK && currentChapter
+              "
+              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                Chapter {{ currentChapter.position }}: {{ currentChapter.name }}
+              </MarqueeText>
+            </v-card-subtitle>
+
+            <!-- subtitle: authors/ narrators -->
+            <v-card-subtitle
+              v-if="
+                store.activePlayer?.current_media?.media_type ===
+                MediaType.AUDIOBOOK
+              "
+              :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
+            >
+              <MarqueeText :sync="playerMarqueeSync">
+                <v-icon
+                  v-if="audiobookAuthors"
+                  icon="mdi-fountain-pen"
+                  size="x-small"
+                />
+                {{ audiobookAuthors }}
+                <v-icon
+                  v-if="audiobookNarrators"
+                  icon="mdi-microphone"
+                  size="x-small"
+                />
+                {{ audiobookNarrators }}
+              </MarqueeText>
+            </v-card-subtitle>
+
             <!-- subtitle: queue empty or other source active -->
             <!-- 3rd party source active -->
             <v-card-subtitle
@@ -351,9 +388,24 @@
                       @click.stop="chapterClicked(item.media_item, chapter)"
                     >
                       <template #title>
-                        <div>{{ chapter.name }}</div>
+                        <div
+                          :class="{
+                            'is-playing':
+                              chapter.position === currentChapter?.position,
+                          }"
+                        >
+                          {{ chapter.name }}
+                        </div>
                       </template>
                       <template #append>
+                        <NowPlayingBadge
+                          v-if="
+                            chapter.position === currentChapter?.position &&
+                            store.activePlayer?.playback_state !=
+                              PlaybackState.IDLE
+                          "
+                          :show-badge="getBreakpointValue('bp4')"
+                        />
                         <span v-if="chapter.end" class="text-caption"
                           >{{ formatDuration(chapter.end - chapter.start) }}
                         </span>
@@ -544,6 +596,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
 import {
+  Audiobook,
   EventMessage,
   EventType,
   MediaItemChapter,
@@ -578,6 +631,8 @@ import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 import { getSourceName } from "@/plugins/api/helpers";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import computeElapsedTime from "@/helpers/elapsed";
+import { currentChapter } from "@/composables/currentChapter";
 
 const { name } = useDisplay();
 
@@ -607,6 +662,29 @@ const boostBadgeColor = ref("#ff5722");
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Computed properties
+
+const audiobookAuthors = computed(() => {
+  let mediaItem = store.curQueueItem?.media_item;
+  if (!mediaItem) return;
+  let result = "";
+  if ("authors" in mediaItem) {
+    result = mediaItem.authors.slice(0, 2).join(", ");
+    if (mediaItem.authors.length > 2) result += "...";
+  }
+  return result;
+});
+
+const audiobookNarrators = computed(() => {
+  let mediaItem = store.curQueueItem?.media_item;
+  if (!mediaItem) return;
+  let result = "";
+  if ("narrators" in mediaItem) {
+    if (result != "") result += " | ";
+    result += mediaItem.narrators.slice(0, 2).join(", ");
+    if (mediaItem.narrators.length > 2) result += "...";
+  }
+  return result;
+});
 
 const nextItems = computed(() => {
   if (store.activePlayerQueue) {
