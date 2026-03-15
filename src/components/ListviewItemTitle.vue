@@ -1,8 +1,16 @@
 <template>
-  <span v-if="item.media_type == MediaType.FOLDER" class="v-list-item-title">
+  <span
+    v-if="item.media_type == MediaType.FOLDER"
+    class="v-list-item-title"
+    :class="{ 'checkbox-label': showCheckboxes }"
+  >
     <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
   </span>
-  <span v-else :class="{ 'is-playing': isPlaying }" class="v-list-item-title">
+  <span
+    v-else
+    :class="{ 'is-playing': isPlaying, 'checkbox-label': showCheckboxes }"
+    class="v-list-item-title"
+  >
     {{ displayName }}
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
     <span
@@ -44,7 +52,6 @@ import { useI18n } from "vue-i18n";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -68,7 +75,7 @@ withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .checkbox-label {
-  font-weight: 500;
+  margin-left: 23px;
 }
 
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.

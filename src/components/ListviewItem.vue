@@ -349,7 +349,7 @@ const onPlayClick = function (evt: PointerEvent) {
 
 <style scoped>
 .checkbox {
-  margin-bottom: 0.1em;
+  margin-left: 20px;
 }
 
 .unavailable {
