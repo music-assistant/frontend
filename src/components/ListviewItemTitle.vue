@@ -15,22 +15,20 @@
   <template
     v-if="item && item.metadata && parseBool(item.metadata.explicit || false)"
   >
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <span :aria-label="t('tooltip.explicit')" role="button" tabindex="0">
-            <v-icon
-              :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-              icon="mdi-alpha-e-box"
-              width="35"
-            />
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          <span>{{ $t("tooltip.explicit") }}</span>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <span :aria-label="t('tooltip.explicit')" role="button" tabindex="0">
+          <v-icon
+            :class="{ 'explicit-icon-margin-left': showCheckboxes }"
+            icon="mdi-alpha-e-box"
+            width="35"
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <span>{{ $t("tooltip.explicit") }}</span>
+      </TooltipContent>
+    </Tooltip>
   </template>
 </template>
 
