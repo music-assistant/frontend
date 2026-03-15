@@ -1,8 +1,8 @@
 <template>
-  <span v-if="item.media_type == MediaType.FOLDER" class="checkbox-label">
+  <span v-if="item.media_type == MediaType.FOLDER" class="v-list-item-title">
     <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
   </span>
-  <span v-else :class="{ 'is-playing': isPlaying }" class="checkbox-label">
+  <span v-else :class="{ 'is-playing': isPlaying }" class="v-list-item-title">
     {{ displayName }}
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
     <span
@@ -18,11 +18,7 @@
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger as-child>
-          <span
-            :aria-label="t('tooltip.explicit')"
-            role="button"
-            tabindex="0"
-          >
+          <span :aria-label="t('tooltip.explicit')" role="button" tabindex="0">
             <v-icon
               :class="{ 'explicit-icon-margin-left': showCheckboxes }"
               icon="mdi-alpha-e-box"
