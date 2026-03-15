@@ -10,40 +10,44 @@
         <DialogTitle class="mb-2">
           {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
         </DialogTitle>
-        <DialogDescription>
-          {{ $t("playlist_create_media_types", [providerName]) }}
-          {{ playlistAllowedMediaTypesTranslated.join(", ") }}
-        </DialogDescription>
+        <template v-if="!queueId">
+          <DialogDescription>
+            {{ $t("playlist_create_media_types", [providerName]) }}
+            {{ playlistAllowedMediaTypesTranslated.join(", ") }}
+          </DialogDescription>
+
+          <div class="flex flex-col gap-4 mb-3">
+            <DialogDescription v-if="playlistAllowMixedMediaTypes">
+              {{ $t("playlist_mix_allowed") }}
+            </DialogDescription>
+            <div
+              v-else-if="playlistAllowedMediaTypes.length > 1"
+              class="flex flex-col gap-3"
+            >
+              <DialogDescription>{{
+                $t("playlist_mix_not_allowed")
+              }}</DialogDescription>
+
+              <RadioGroup
+                v-model="playlistSelectedMediaType"
+                class="flex flex-row flex-wrap gap-4 justify-center mt-2"
+              >
+                <div
+                  v-for="(item, index) in playlistAllowedMediaTypes"
+                  :key="index"
+                  class="flex items-center gap-2"
+                >
+                  <RadioGroupItem :id="`media-type-${index}`" :value="item" />
+                  <Label :for="`media-type-${index}`">
+                    {{ playlistAllowedMediaTypesTranslated[index] }}
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        </template>
 
         <div class="flex flex-col gap-4 mb-3">
-          <DialogDescription v-if="playlistAllowMixedMediaTypes">
-            {{ $t("playlist_mix_allowed") }}
-          </DialogDescription>
-          <div
-            v-else-if="playlistAllowedMediaTypes.length > 1"
-            class="flex flex-col gap-3"
-          >
-            <DialogDescription>{{
-              $t("playlist_mix_not_allowed")
-            }}</DialogDescription>
-
-            <RadioGroup
-              v-model="playlistSelectedMediaType"
-              class="flex flex-row flex-wrap gap-4 justify-center mt-2"
-            >
-              <div
-                v-for="(item, index) in playlistAllowedMediaTypes"
-                :key="index"
-                class="flex items-center gap-2"
-              >
-                <RadioGroupItem :id="`media-type-${index}`" :value="item" />
-                <Label :for="`media-type-${index}`">
-                  {{ playlistAllowedMediaTypesTranslated[index] }}
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
           <div class="flex flex-col gap-2 mt-3">
             <Label for="playlist-name">{{ $t("new_playlist_name") }}</Label>
             <Input
@@ -118,54 +122,64 @@ onMounted(() => {
     playlistAllowedMediaTypes.value = [];
     playlistSelectedMediaType.value = MediaType.UNKNOWN;
 
-    const provider = api.getProvider(providerId.value);
+    if (!queueId.value) {
+      // Provider feature detection is only needed for the "new playlist" flow.
+      // The queue-to-playlist flow uses a different backend endpoint that
+      // handles provider selection internally.
+      const provider = api.getProvider(providerId.value);
 
-    if (provider != undefined) {
-      providerName.value = provider.name;
-      if (
-        provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_TRACKS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.TRACK);
+      if (provider != undefined) {
+        providerName.value = provider.name;
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE,
+          ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.TRACK);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_RADIOS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.RADIO);
+        }
+        playlistAllowMixedMediaTypes.value =
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_MIXED,
+          );
+        if (
+          !playlistAllowMixedMediaTypes.value &&
+          playlistAllowedMediaTypes.value.length > 1
+        ) {
+          // set the first to be the default for the radio button
+          playlistSelectedMediaType.value =
+            playlistAllowedMediaTypes.value[0];
+        }
+      } else {
+        toast.error($t("playlist_create_provider_error"));
+        return;
       }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
-      }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
-      }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_RADIOS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.RADIO);
-      }
-      playlistAllowMixedMediaTypes.value = provider.supported_features.includes(
-        ProviderFeature.PLAYLIST_CREATE_MIXED,
-      );
-      if (
-        !playlistAllowMixedMediaTypes.value &&
-        playlistAllowedMediaTypes.value.length > 1
-      ) {
-        // set the first to be the default for the radio button
-        playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
-      }
-    } else {
-      toast.error($t("playlist_create_provider_error"));
+      playlistAllowedMediaTypesTranslated.value =
+        getTranslatedSupportedMediaTypes();
     }
-    playlistAllowedMediaTypesTranslated.value =
-      getTranslatedSupportedMediaTypes();
     showDialog.value = true;
   });
 });
