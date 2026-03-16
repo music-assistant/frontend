@@ -1175,6 +1175,7 @@ export interface PartyConfig {
   show_player_controls: boolean;
   display_lyrics: boolean;
   karaoke_mode: boolean;
+  highlight_ahead: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
   qr_show_instruction_text: boolean;

@@ -121,6 +121,7 @@ interface Props {
   lrcLyrics?: string | null;
   anticipation?: number;
   externalLoading?: boolean;
+  highlightAhead?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -132,6 +133,7 @@ const props = withDefaults(defineProps<Props>(), {
   lrcLyrics: undefined,
   anticipation: 0,
   externalLoading: false,
+  highlightAhead: true,
 });
 
 // Core state
@@ -336,7 +338,7 @@ const noteProgressState = computed(() => {
     return { filled: NOTE_COUNT, percent: 100 };
   }
   const pos = props.position || 0;
-  const duration = line.breakEnd - LINE_TRANSITION_DURATION - line.time;
+  const duration = line.breakEnd - highlightLeadTime.value - line.time;
   if (duration <= 0) return { filled: NOTE_COUNT, percent: 100 };
   const elapsed = Math.max(0, pos - line.time);
   const noteProgress = (elapsed / duration) * NOTE_COUNT;
@@ -350,6 +352,12 @@ const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
 
 const LINE_TRANSITION_DURATION = 0.5;
 const transitionDuration = computed(() => `${LINE_TRANSITION_DURATION}s`);
+
+// When highlightAhead is true, the transition finishes at the LRC timestamp.
+// When false, the transition starts at the LRC timestamp.
+const highlightLeadTime = computed(() =>
+  props.highlightAhead ? LINE_TRANSITION_DURATION : 0,
+);
 
 const findActiveLineIndex = (positionMs: number): number => {
   let index = -1;
@@ -410,10 +418,10 @@ watch(
       return;
     }
 
-    // Shift position forward by the transition duration so the CSS
-    // transition is fully complete exactly when the line's timestamp arrives.
+    // Shift position forward by the lead time so the CSS transition
+    // is fully complete exactly when the line's timestamp arrives.
     const highlightPositionMs = Math.round(
-      (newPosition + LINE_TRANSITION_DURATION) * 1000,
+      (newPosition + highlightLeadTime.value) * 1000,
     );
     const newActiveIndex = findActiveLineIndex(highlightPositionMs);
 

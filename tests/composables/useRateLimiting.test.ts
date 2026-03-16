@@ -84,6 +84,7 @@ describe("useRateLimiting", () => {
       show_player_controls: true,
       display_lyrics: false,
       karaoke_mode: false,
+      highlight_ahead: true,
       request_badge_color: "#000000",
       boost_badge_color: "#ffffff",
       qr_show_instruction_text: false,
