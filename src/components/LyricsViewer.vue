@@ -35,12 +35,15 @@
               active: activeLyricIndex === index,
               'lyrics-line--hidden':
                 activeLyricIndex >= 0
-                  ? index < activeLyricIndex - 1 || index > activeLyricIndex + 2
+                  ? index < activeLyricIndex - 1 ||
+                    index > activeLyricIndex + 2
                   : index > 2,
             },
           ]"
         >
-          <template v-if="musicalBreakLineIndex === index">
+          <template
+            v-if="musicalBreakLineIndex === index"
+          >
             <span
               v-for="n in NOTE_COUNT"
               :key="n"
@@ -385,7 +388,10 @@ watch(
       if (newPosition >= fillStart) {
         const elapsed = newPosition - fillStart;
         const noteProgress = elapsed / SECONDS_PER_NOTE;
-        filledNoteCount.value = Math.min(NOTE_COUNT, Math.floor(noteProgress));
+        filledNoteCount.value = Math.min(
+          NOTE_COUNT,
+          Math.floor(noteProgress),
+        );
         currentNoteFillPercent.value = Math.round(
           (noteProgress - Math.floor(noteProgress)) * 100,
         );
