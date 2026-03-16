@@ -210,7 +210,6 @@ const hasTimestamps = computed(() => {
 });
 
 // Constants
-const BREAK_DELAY = 2; // seconds after a lyric before showing break notes
 const INTRO_BREAK_LEAD = 5; // seconds before first lyric to insert intro break
 const NOTE_COUNT = 7;
 
@@ -280,20 +279,22 @@ const fetchLyrics = () => {
           isBreak: false,
         });
 
-        // Check for a break marker between this line and the next
+        // Check for a break marker between this line and the next.
+        // Use the marker's actual LRC timestamp as the break start so
+        // the duration and activation align with the authored timing.
         if (i < contentLines.length - 1) {
           const gapStart = contentLines[i].time;
           const gapEnd = contentLines[i + 1].time;
-          let hasMarker = false;
+          let markerTime: number | null = null;
           for (const t of breakMarkers) {
             if (t > gapStart && t < gapEnd) {
-              hasMarker = true;
+              markerTime = t;
               break;
             }
           }
-          if (hasMarker) {
+          if (markerTime !== null) {
             lines.push({
-              time: gapStart + BREAK_DELAY,
+              time: markerTime,
               text: "",
               isBreak: true,
               breakEnd: gapEnd,
@@ -335,7 +336,7 @@ const noteProgressState = computed(() => {
     return { filled: NOTE_COUNT, percent: 100 };
   }
   const pos = props.position || 0;
-  const duration = line.breakEnd - line.time;
+  const duration = line.breakEnd - LINE_TRANSITION_DURATION - line.time;
   if (duration <= 0) return { filled: NOTE_COUNT, percent: 100 };
   const elapsed = Math.max(0, pos - line.time);
   const noteProgress = (elapsed / duration) * NOTE_COUNT;
@@ -347,7 +348,7 @@ const noteProgressState = computed(() => {
 const filledNoteCount = computed(() => noteProgressState.value.filled);
 const currentNoteFillPercent = computed(() => noteProgressState.value.percent);
 
-const LINE_TRANSITION_DURATION = 1.0;
+const LINE_TRANSITION_DURATION = 0.5;
 const transitionDuration = computed(() => `${LINE_TRANSITION_DURATION}s`);
 
 const findActiveLineIndex = (positionMs: number): number => {
@@ -409,8 +410,12 @@ watch(
       return;
     }
 
-    const positionMs = Math.round(newPosition * 1000);
-    const newActiveIndex = findActiveLineIndex(positionMs);
+    // Shift position forward by the transition duration so the CSS
+    // transition is fully complete exactly when the line's timestamp arrives.
+    const highlightPositionMs = Math.round(
+      (newPosition + LINE_TRANSITION_DURATION) * 1000,
+    );
+    const newActiveIndex = findActiveLineIndex(highlightPositionMs);
 
     if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
       contentTransitionEnabled.value = true;
