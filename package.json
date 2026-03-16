@@ -35,7 +35,7 @@
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
         "qrcode": "^1.5.4",
-        "reka-ui": "^2.9.0",
+        "reka-ui": "^2.9.2",
         "swiper": "^12.1.2",
         "tailwind-merge": "^3.5.0",
         "tailwindcss": "^4.1.18",
