@@ -81,7 +81,6 @@ describe("useRateLimiting", () => {
       skip_song_limit: 2,
       skip_song_refill_minutes: 30,
       album_art_background: false,
-      show_player_controls: true,
       display_lyrics: false,
       karaoke_mode: false,
       request_badge_color: "#000000",
