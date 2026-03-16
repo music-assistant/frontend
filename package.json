@@ -29,7 +29,7 @@
         "clsx": "^2.1.1",
         "color": "5.0.3",
         "colorthief": "3.3.1",
-        "happy-dom": "^20.8.3",
+        "happy-dom": "^20.8.4",
         "lucide-vue-next": "^0.577.0",
         "marked": "^17.0.4",
         "mitt": "3.0.1",
