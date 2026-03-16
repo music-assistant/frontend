@@ -4,12 +4,13 @@
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar v-if="!store.frameless" />
       <SidebarInset>
         <div
           :class="[
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
+            { 'content-section--frameless': store.frameless },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -61,5 +62,9 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 
 .content-section--mobile {
   padding-bottom: 230px;
+}
+
+.content-section--frameless {
+  padding-bottom: 0;
 }
 </style>
