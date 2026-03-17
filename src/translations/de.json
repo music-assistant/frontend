@@ -824,7 +824,8 @@
     "view": {
         "list": "Listenansicht",
         "panel": "Panelansicht",
-        "panel_compact": "Kompakte Raster-Ansicht"
+        "panel_compact": "Kompakte Raster-Ansicht",
+        "discovery": "Entdeckung"
     },
     "play_replace": "Jetzt wiedergeben (Warteschlange leeren)",
     "played": "Gespielt",
@@ -1374,10 +1375,13 @@
     "playlist_mix_not_allowed": "Dieser Anbieter unterstützt keine Mischung verschiedener Medientypen in Wiedergabelisten. Bitte wählen Sie den Medientyp aus, für den Sie eine Wiedergabeliste erstellen möchten:",
     "playlist_create_provider_error": "Anbieter nicht erreichbar.",
     "playlist_create_no_type_selected": "Kein Medientyp ausgewählt.",
+    "exclude_genre": "Genre ausschließen",
+    "genre_exclusions": "Genre-Ausschlüsse",
+    "remove_genre_exclusion": "Ausschluss entfernen",
     "providers": {
         "party": {
             "guest_page": {
-                "add_available": "Hinzufügen verfügbar",
+                "add_available": "Verfügbare hinzufügen",
                 "add_queue_disabled": "Die Funktion „Zur Warteschlange hinzufügen“ ist vom Host deaktiviert.",
                 "add_queue_limit_reached": "Die maximale Anzahl an Warteschlangenelementen ist erreicht. Nächste Verwendung möglich in {0} Minuten.",
                 "add_to_queue_failed": "Das Hinzufügen zur Warteschlange ist fehlgeschlagen. Bitte versuche es erneut.",
@@ -1394,6 +1398,7 @@
                 "no_tracks_for_artist": "Keine Titel für diesen Künstler gefunden",
                 "queue_empty": "Warteschlange ist leer",
                 "search_failed": "Suche fehlgeschlagen. Bitte versuche es erneut.",
+                "searching": "Suche...",
                 "search_placeholder": "Suche nach Liedern oder Künstlern...",
                 "search_results_count": "Suchergebnisse ({0})",
                 "skip_disabled": "Die Option „Song überspringen“ ist vom Host deaktiviert.",
@@ -1408,13 +1413,18 @@
             "add": "Hinzufügen",
             "boost": "Boost",
             "check_network": "Überprüfe deine Netzwerkeinstellungen",
-            "enable_in_settings": "Aktivieren in den Plugin-Einstellungen des Partymodus",
+            "enable_in_settings": "In den Einstellungen des Drittanbieters aktivieren",
             "get_started": "Spiel etwas Musik, um die Party in Schwung zu bringen!",
             "guest_access_disabled": "Gastzugang deaktiviert",
+            "no_player_access": "Wiedergabegerät nicht erreichbar",
+            "no_player_access_detail": "Du hast keinen Zugriff auf das konfigurierte Wiedergabegerät. Bitte kontaktiere den Administrator.",
             "nothing_playing": "Im Moment wird nichts abgespielt.",
             "qr_failed": "QR-Code konnte nicht generiert werden",
             "request": "Anfragen",
+            "link_copy_fail": "Link konnte nicht kopiert werden",
+            "link_copy_success": "Link kopiert!",
             "scan_to_join": "Scannen zum Mitmachen!"
         }
-    }
+    },
+    "no_lyrics_available": "Keine Liedtexte verfügbar"
 }

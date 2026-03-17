@@ -824,7 +824,8 @@
     "view": {
         "list": "Prikaz liste",
         "panel": "Panelni prikaz",
-        "panel_compact": "Kompaktni prikaz sličica"
+        "panel_compact": "Kompaktni prikaz sličica",
+        "discovery": "Pronalaženje"
     },
     "play_replace": "Pusti sada (obriši red za reprodukciju)",
     "played": "Reprodukovano",
@@ -1068,7 +1069,8 @@
         "select_players": "Izaberite plejere",
         "select_providers": "Izaberite provajdere",
         "save_changes": "Sačuvaj izmene",
-        "update_password": "Ažuriraj lozinku"
+        "update_password": "Ažuriraj lozinku",
+        "guest_role": "Gost"
     },
     "login": {
         "subtitle": "Povežite se sa svojim muzičkim serverom",
@@ -1355,12 +1357,12 @@
     "link_to_genre_failed": "Povezivanje sa žanrom nije uspelo",
     "player_options": {
         "open": "Otvori opcije plejera",
-        "settable": "Opcije plejera koje se mogu podešavati za plejer {0}",
-        "read_only": "Opcije plejera samo za čitanje za plejer {0}"
+        "settable": "Opcije koje se mogu podešavati za plejer {0}",
+        "read_only": "Opcije plejera samo za čitanje {0}"
     },
     "select_sound_mode": "Izaberi režim zvuka",
     "refresh": "Osveži",
-    "enqueue": "Opcije dodavanja u red čekanja",
+    "enqueue": "Opcije stavljanja u red za reprodukciju",
     "queue_option": {
         "play": "Pusti odmah (zadrži red čekanja)",
         "next": "Pusti sledeće (zadrži red čekanja)",
@@ -1372,5 +1374,57 @@
     "playlist_mix_allowed": "Ovi tipovi medija se mogu mešati.",
     "playlist_mix_not_allowed": "Ovaj provajder ne podržava mešanje tipova medija u plejlistama. Izaberite za koji tip medija želite da kreirate plejlistu:",
     "playlist_create_provider_error": "Nije moguće dobiti provajdera.",
-    "playlist_create_no_type_selected": "Nije izabran tip medija."
+    "playlist_create_no_type_selected": "Nije izabran tip medija.",
+    "exclude_genre": "Isključi žanr",
+    "genre_exclusions": "Izuzeci žanra",
+    "remove_genre_exclusion": "Ukloni isključenje",
+    "providers": {
+        "party": {
+            "guest_page": {
+                "add_available": "Dodaj dostupne",
+                "add_queue_disabled": "Dodavanje u red je onemogućeno od strane hosta.",
+                "add_queue_limit_reached": "Dostignut je limit za dodavanje u red. Sledeće korišćenje dostupno za {0} minut.",
+                "add_to_queue_failed": "Dodavanje u red nije uspelo. Pokušajte ponovo.",
+                "boost_available": "Isticanje je dostupno",
+                "boost_disabled": "Isticanje je onemogućeno od strane hosta.",
+                "boost_limit_reached": "Dostignut je limit za isticanje. Sledeće korišćenje dostupno za {0} minut.",
+                "current_queue": "Trenutni redosled",
+                "filter_songs": "Pesme",
+                "item_added_to_queue": "„{0}“ je dodat u redosled",
+                "item_boosted": "„{0}“ je pojačano",
+                "load_artist_tracks_failed": "Učitavanje numera izvođača nije uspelo. Pokušajte ponovo.",
+                "loading_tracks": "Učitavanje numera...",
+                "no_results_for": "Nema pronađenih rezultata za \"{0}\"",
+                "no_tracks_for_artist": "Nijedna numera nije pronađena za ovog izvođača",
+                "queue_empty": "Red za reprodukciju je prazan",
+                "search_failed": "Pretraga nije uspela. Pokušajte ponovo.",
+                "searching": "Pretraga...",
+                "search_placeholder": "Pretražite pesme ili izvođače...",
+                "search_results_count": "Rezultati pretrage ({0})",
+                "skip_disabled": "Preskakanje pesme je onemogućeno od strane hosta.",
+                "skip_failed": "Preskakanje pesme nije uspelo. Pokušajte ponovo.",
+                "skip_limit_reached": "Dostignut je limit preskakanja. Sledeće preskakanje dostupno za {0} minuta.",
+                "skip": "Preskoči",
+                "song_skipped": "Pesma je preskočena!",
+                "try_different_search": "Pokušajte sa drugim pojmom za pretragu",
+                "unknown_artist": "Nepoznat izvođač",
+                "view_songs": "Prikaži pesme"
+            },
+            "add": "Dodaj",
+            "boost": "Pojačanje",
+            "check_network": "Proverite podešavanja mreže",
+            "enable_in_settings": "Omogući u podešavanjima provajdera za režim zabave",
+            "get_started": "Pustite muziku da žurka počne!",
+            "guest_access_disabled": "Pristup gostima je onemogućen",
+            "no_player_access": "Plejer nije dostupan",
+            "no_player_access_detail": "Nemate pristup podešenom plejeru. Molimo kontaktirajte administratora.",
+            "nothing_playing": "Trenutno se ništa ne reprodukuje",
+            "qr_failed": "Generisanje QR koda nije uspelo",
+            "request": "Zahtev",
+            "link_copy_fail": "Kopiranje linka nije uspelo",
+            "link_copy_success": "Link kopiran!",
+            "scan_to_join": "Skenirajte da biste se pridružili!"
+        }
+    },
+    "no_lyrics_available": "Nema dostupnih tekstova pesama"
 }
