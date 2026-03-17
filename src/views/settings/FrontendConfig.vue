@@ -40,8 +40,6 @@
 
 <script setup lang="ts">
 import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
-import { webPlayer } from "@/plugins/web_player";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -181,26 +179,6 @@ onMounted(() => {
         "false",
     });
 
-    // Sendspin sync delay option
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    configEntries.push({
-      key: "sendspin_sync_delay",
-      type: ConfigEntryType.INTEGER,
-      label: "sendspin_sync_delay",
-      default_value: defaultSyncDelay,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value: parseInt(
-        localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-          String(defaultSyncDelay),
-        10,
-      ),
-      range: [-1000, 1000],
-      immediate_apply: true,
-      depends_on: "web_player_enabled",
-    });
-
     // Output latency compensation - enabled by default everywhere
     const storedOutputLatency = localStorage.getItem(
       "frontend.settings.sendspin_output_latency_compensation",
@@ -275,9 +253,6 @@ const onAction = async function (
 const onImmediateApply = function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
     localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
-  }
-  if ("sendspin_sync_delay" in values) {
-    webPlayer.setSyncDelay(values.sendspin_sync_delay as number);
   }
 };
 </script>

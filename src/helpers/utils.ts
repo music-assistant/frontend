@@ -909,23 +909,23 @@ export const handleMenuBtnClick = function (
 };
 
 /**
- * Get platform-specific default sync delay for Sendspin player.
+ * Get platform-specific default static delay for Sendspin player.
  * Based on testing across various platforms/browsers.
  */
-export const getSendspinDefaultSyncDelay = function (): number {
+export const getSendspinDefaultStaticDelay = function (): number {
   const ua = navigator.userAgent;
   const isAndroid = /android/i.test(ua);
   const isIOS = /iPad|iPhone|iPod/i.test(ua);
   const isFirefox = /firefox/i.test(ua);
 
   if (isIOS) {
-    return -250;
+    return 250;
   } else if (!isAndroid && !isFirefox) {
     // Desktop Chrome/Chromium/Edge
-    return -300;
+    return 300;
   }
   // Android, Firefox (desktop/mobile)
-  return -200;
+  return 200;
 };
 
 /**

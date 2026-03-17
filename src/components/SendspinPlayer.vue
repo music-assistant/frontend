@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
+import { getSendspinDefaultStaticDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
@@ -209,12 +209,20 @@ onMounted(() => {
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    const syncDelay = parseInt(
-      localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-        String(defaultSyncDelay),
-      10,
+    const defaultStaticDelay = getSendspinDefaultStaticDelay();
+    // Read from old localStorage key for backwards compat.
+    // Old values used opposite sign convention (negative = play earlier).
+    const savedSyncDelay = localStorage.getItem(
+      "frontend.settings.sendspin_sync_delay",
     );
+    let syncDelay: number;
+    if (savedSyncDelay !== null) {
+      const parsed = parseInt(savedSyncDelay, 10);
+      // Old convention: negative = play earlier = same as sendspin-js convention
+      syncDelay = isNaN(parsed) ? -defaultStaticDelay : parsed;
+    } else {
+      syncDelay = -defaultStaticDelay;
+    }
 
     // Output latency compensation - enabled by default
     const storedOutputLatency = localStorage.getItem(
@@ -253,9 +261,6 @@ onMounted(() => {
           },
           correctionMode: correctionMode.value,
         });
-
-        // Register callback for real-time sync delay changes from settings
-        webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
 
         return player.connect();
       })
@@ -364,7 +369,6 @@ onBeforeUnmount(() => {
   }
   if (unsubMetadata) unsubMetadata();
   if (silentAudioInterval) clearInterval(silentAudioInterval);
-  webPlayer.onSyncDelayChange = null;
 
   // Clear MediaSession state
   navigator.mediaSession.metadata = null;

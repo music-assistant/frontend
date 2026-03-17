@@ -956,9 +956,9 @@
             "label": "Enable built-in (Sendspin) Web Player",
             "description": "Allow playback to this device/browser using the built-in Sendspin web player."
         },
-        "sendspin_sync_delay": {
-            "label": "Sendspin sync delay (ms)",
-            "description": "Static delay in milliseconds to adjust audio synchronization. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
+        "sendspin_static_delay": {
+            "label": "Static playback delay (ms)",
+            "description": "Delay in milliseconds to compensate for device-specific audio latency (e.g., AV receiver, Bluetooth). Higher values play audio earlier."
         },
         "sendspin_output_latency_compensation": {
             "label": "Use browser latency detection",
