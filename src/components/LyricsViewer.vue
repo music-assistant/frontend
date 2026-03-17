@@ -213,6 +213,7 @@ const hasTimestamps = computed(() => {
 
 // Constants
 const INTRO_BREAK_LEAD = 5; // seconds before first lyric to insert intro break
+const MIN_BREAK_DURATION = 5; // minimum gap (seconds) to show a musical break
 const NOTE_COUNT = 7;
 
 // Build the unified display array: lyric lines + break entries interleaved.
@@ -294,7 +295,7 @@ const fetchLyrics = () => {
               break;
             }
           }
-          if (markerTime !== null) {
+          if (markerTime !== null && gapEnd - markerTime >= MIN_BREAK_DURATION) {
             lines.push({
               time: markerTime,
               text: "",
