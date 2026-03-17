@@ -368,7 +368,6 @@
               <LyricsViewer
                 :media-item="store.curQueueItem?.media_item"
                 :position="lyricsElapsedTime"
-                :duration="store.curQueueItem?.duration"
                 :stream-details="store.curQueueItem?.streamdetails"
                 :text-color="sliderColor"
                 :lyrics="currentLyrics.plain"

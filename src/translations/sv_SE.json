@@ -824,7 +824,8 @@
     "view": {
         "list": "Listvy",
         "panel": "Rutnätsvy",
-        "panel_compact": "Kompakt rutsnätsvy"
+        "panel_compact": "Kompakt rutsnätsvy",
+        "discovery": "Upptäckt"
     },
     "play_replace": "Spela nu (rensa kö)",
     "played": "Spelade",
@@ -1374,6 +1375,9 @@
     "playlist_mix_not_allowed": "Den här leverantören stöder inte blandning av medietyper i spellistor. Välj vilken medietyp du vill skapa en spellista för:",
     "playlist_create_provider_error": "Det gick inte att få tag på leverantör.",
     "playlist_create_no_type_selected": "Ingen medietyp vald.",
+    "exclude_genre": "Uteslut genre",
+    "genre_exclusions": "Genreundantag",
+    "remove_genre_exclusion": "Ta bort undantag",
     "providers": {
         "party": {
             "guest_page": {
@@ -1383,22 +1387,23 @@
                 "add_to_queue_failed": "Misslyckades med att lägga till i kön. Försök igen.",
                 "boost_available": "Boost tillgänglig",
                 "boost_disabled": "Boost är inaktiverat av värden.",
-                "boost_limit_reached": "Boost gränsen nådd. Nästa användning tillgänglig om {0} minuter.",
+                "boost_limit_reached": "Boost gränsen nådd. Nästa användning tillgänglig om 1 minuter.",
                 "current_queue": "Nuvarande kö",
                 "filter_songs": "Låtar",
                 "item_added_to_queue": "\"{0}\" tillagd i kön",
                 "item_boosted": "\"{0}\" förstärkt",
                 "load_artist_tracks_failed": "Misslyckades med att ladda artistens spår. Vänligen försök igen.",
                 "loading_tracks": "Laddar spår...",
-                "no_results_for": "Inga resultat hittades för \"{0}\"",
+                "no_results_for": "Inga resultat hittades för \"1\"",
                 "no_tracks_for_artist": "Inga spår hittades för den här artisten",
                 "queue_empty": "Kön är tom",
                 "search_failed": "Sökningen misslyckades. Försök igen.",
+                "searching": "Söker...",
                 "search_placeholder": "Sök efter låtar eller artister...",
-                "search_results_count": "Sökresultat ({0})",
+                "search_results_count": "Sökresultat (1)",
                 "skip_disabled": "Hoppa över låt har inaktiverats av värden.",
                 "skip_failed": "Misslyckades med att hoppa över låten. Försök igen.",
-                "skip_limit_reached": "Överhoppningsgränsen nådd. Nästa överhoppning är tillgänglig om {0} minuter.",
+                "skip_limit_reached": "Överhoppningsgränsen nådd. Nästa överhoppning är tillgänglig om 1 minuter.",
                 "skip": "Hoppa över",
                 "song_skipped": "Låten hoppades över!",
                 "try_different_search": "Prova en annan sökterm",
@@ -1406,15 +1411,20 @@
                 "view_songs": "Visa låtar"
             },
             "add": "Lägg till",
-            "boost": "Öka",
+            "boost": "Höj",
             "check_network": "Kontrollera dina nätverksinställningar",
-            "enable_in_settings": "Aktivera plugin inställningar i partyläge",
+            "enable_in_settings": "Aktivera i inställningarna för partyleverantören",
             "get_started": "Spela lite musik för att få igång festen!",
             "guest_access_disabled": "Gäståtkomst inaktiverad",
+            "no_player_access": "Spelaren är inte tillgänglig",
+            "no_player_access_detail": "Du har inte åtkomst till den konfigurerade spelaren. Kontakta administratören.",
             "nothing_playing": "Ingenting spelas just nu",
             "qr_failed": "Misslyckades med att generera QR koden",
             "request": "Begäran",
+            "link_copy_fail": "Misslyckades med att kopiera länken",
+            "link_copy_success": "Länk kopierad!",
             "scan_to_join": "Skanna för att gå med!"
         }
-    }
+    },
+    "no_lyrics_available": "Inga texter tillgängliga"
 }

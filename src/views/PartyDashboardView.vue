@@ -39,11 +39,11 @@
           <LyricsViewer
             :media-item="store.curQueueItem?.media_item"
             :position="lyricsElapsedTime"
-            :duration="store.curQueueItem?.duration"
             :stream-details="store.curQueueItem?.streamdetails"
             :lyrics="currentLyrics.plain"
             :lrc-lyrics="currentLyrics.synced"
             :anticipation="10"
+            :highlight-ahead="highlightAhead"
           />
         </div>
 
@@ -92,10 +92,10 @@
             <LyricsViewer
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
-              :duration="store.curQueueItem?.duration"
               :stream-details="store.curQueueItem?.streamdetails"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
+              :highlight-ahead="highlightAhead"
             />
           </div>
         </div>
@@ -188,6 +188,7 @@ const refreshPartyPlayer = async () => {
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
+const highlightAhead = ref(true); // Whether lyric highlight finishes at LRC time
 const antiBurnIn = ref(false); // Swap QR/track sides periodically
 const swapped = ref(false); // Current swap state for anti burn-in
 let burnInInterval: ReturnType<typeof setInterval> | null = null;
@@ -571,6 +572,9 @@ onMounted(async () => {
     if (config.karaoke_mode !== undefined) {
       karaokeMode.value = config.display_lyrics && config.karaoke_mode;
     }
+    if (config.highlight_ahead !== undefined) {
+      highlightAhead.value = config.highlight_ahead;
+    }
     requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
     antiBurnIn.value = config.anti_burn_in ?? false;
@@ -633,6 +637,7 @@ watch(partyConfig, (newConfig) => {
     displayLyrics.value = newConfig.display_lyrics ?? false;
     karaokeMode.value =
       (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
+    highlightAhead.value = newConfig.highlight_ahead ?? true;
     requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
     antiBurnIn.value = newConfig.anti_burn_in ?? false;
@@ -640,6 +645,7 @@ watch(partyConfig, (newConfig) => {
     albumArtBackgroundEnabled.value = true;
     displayLyrics.value = false;
     karaokeMode.value = false;
+    highlightAhead.value = true;
     requestBadgeColor.value = "#2196F3";
     boostBadgeColor.value = "#FF5722";
     antiBurnIn.value = false;
