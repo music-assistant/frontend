@@ -81,7 +81,6 @@
     <!-- Non-synced lyrics: simple scrollable list (hidden in karaoke mode) -->
     <ScrollArea
       v-else-if="!props.anticipation"
-      ref="scrollAreaRef"
       class="h-full w-full static-lyrics"
     >
       <div class="lyrics-content">
@@ -98,12 +97,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onBeforeUnmount } from "vue";
-import { Track, MediaItemType, StreamDetails } from "@/plugins/api/interfaces";
-import { $t } from "@/plugins/i18n";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { parseLrcLine } from "@/helpers/lrcParser";
+import { MediaItemType, StreamDetails, Track } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 interface DisplayLine {
   time: number;
@@ -140,7 +139,6 @@ const props = withDefaults(defineProps<Props>(), {
 const displayLines = ref<DisplayLine[]>([]);
 const loading = ref(false);
 const activeLyricIndex = ref(-1);
-const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 const syncedContainerRef = ref<HTMLElement | null>(null);
 const lineRefs = new Map<number, HTMLElement>();
 
@@ -295,7 +293,10 @@ const fetchLyrics = () => {
               break;
             }
           }
-          if (markerTime !== null && gapEnd - markerTime >= MIN_BREAK_DURATION) {
+          if (
+            markerTime !== null &&
+            gapEnd - markerTime >= MIN_BREAK_DURATION
+          ) {
             lines.push({
               time: markerTime,
               text: "",
@@ -379,7 +380,7 @@ const computeTranslateY = (index: number) => {
   if (!el || !container) return;
 
   const containerHeight = container.clientHeight;
-  const anchorY = containerHeight * (props.anticipation ? 0.5 : 0.35);
+  const anchorY = containerHeight * (props.anticipation > 0 ? 0.5 : 0.35);
   const lineTop = el.offsetTop;
   const lineHeight = el.offsetHeight;
 
