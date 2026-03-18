@@ -196,7 +196,16 @@ const filteredProviders = computed(() => {
   }
 
   if (activeTypeFilter.value) {
-    providers = providers.filter((x) => x.type === activeTypeFilter.value);
+    const activeTypes = Array.isArray(activeTypeFilter.value)
+      ? activeTypeFilter.value
+      : String(activeTypeFilter.value)
+          .split(",")
+          .map((type) => type.trim())
+          .filter((type) => type.length > 0);
+
+    if (activeTypes.length > 0) {
+      providers = providers.filter((x) => activeTypes.includes(x.type));
+    }
   }
 
   if (selectedProviderStages.value.length > 0) {
