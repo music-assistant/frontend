@@ -138,21 +138,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
-import { useRouter } from "vue-router";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-  ProviderConfig,
   ConfigValueType,
   EventMessage,
   EventType,
-  ConfigEntry,
+  ProviderConfig,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { nanoid } from "nanoid";
-import { markdownToHtml } from "@/helpers/utils";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
@@ -220,7 +219,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
-      router.push({ name: "providersettings" });
+      router.push({
+        name: "providersettings",
+        query: { types: config.value!.type },
+      });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday

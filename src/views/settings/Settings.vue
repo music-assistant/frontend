@@ -43,6 +43,80 @@
       variant="comfortable"
       class="settings-overview"
     >
+      <!-- Onboarding welcome message -->
+      <div v-if="store.isOnboarding" class="onboarding-card">
+        <div class="onboarding-header">
+          <div>
+            <h2 class="onboarding-title">
+              {{ t("settings.onboarding_title") }}
+            </h2>
+            <p class="onboarding-subtitle">
+              {{ t("settings.onboarding_subtitle") }}
+            </p>
+          </div>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            class="onboarding-close"
+            @click="store.isOnboarding = false"
+          />
+        </div>
+
+        <div class="onboarding-sections">
+          <div class="onboarding-section">
+            <div class="section-icon music">
+              <v-icon icon="mdi-music" size="24" />
+            </div>
+            <div class="section-content">
+              <h3>{{ t("settings.onboarding_music_title") }}</h3>
+              <p>{{ t("settings.onboarding_music_desc") }}</p>
+            </div>
+            <v-btn
+              color="primary"
+              variant="flat"
+              class="section-btn"
+              @click="
+                router.push({
+                  name: 'providersettings',
+                  query: { types: 'music' },
+                })
+              "
+            >
+              {{ t("settings.onboarding_add_music") }}
+            </v-btn>
+          </div>
+
+          <div class="onboarding-section">
+            <div class="section-icon player">
+              <v-icon icon="mdi-speaker" size="24" />
+            </div>
+            <div class="section-content">
+              <h3>{{ t("settings.onboarding_player_title") }}</h3>
+              <p>{{ t("settings.onboarding_player_desc") }}</p>
+            </div>
+            <v-btn
+              color="primary"
+              variant="flat"
+              class="section-btn"
+              @click="
+                router.push({
+                  name: 'providersettings',
+                  query: { types: 'player' },
+                })
+              "
+            >
+              {{ t("settings.onboarding_add_player") }}
+            </v-btn>
+          </div>
+        </div>
+
+        <p class="onboarding-footer">
+          <v-icon icon="mdi-information-outline" size="16" class="mr-1" />
+          {{ t("settings.onboarding_footer") }}
+        </p>
+      </div>
+
       <div v-if="settingsViewMode === 'card'" class="settings-card-view">
         <div class="settings-featured">
           <Card
@@ -208,6 +282,7 @@ import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
@@ -619,12 +694,6 @@ const breadcrumbItems = computed(() => {
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "plugin" } },
       });
-    } else if (currentTab === "providers") {
-      items.push({
-        title: t("settings.providers"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings" },
-      });
     } else if (currentTab === "about") {
       items.push({
         title: t("settings.about"),
@@ -721,8 +790,7 @@ const documentationUrl = computed(() => {
 
 <style scoped>
 .settings-overview {
-  padding: 32px 24px;
-  max-width: 1200px;
+  max-width: 800px !important;
   margin: 0 auto;
 }
 
@@ -1009,6 +1077,131 @@ const documentationUrl = computed(() => {
 
   .settings-list-item :deep(.v-list-item-subtitle) {
     font-size: 0.813rem;
+  }
+}
+
+.onboarding-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.08) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 25px;
+}
+
+.onboarding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.onboarding-close {
+  opacity: 0.6;
+}
+
+.onboarding-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.onboarding-subtitle {
+  font-size: 15px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.onboarding-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.onboarding-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(var(--v-theme-surface), 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-icon.music {
+  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  color: white;
+}
+
+.section-icon.player {
+  background: linear-gradient(135deg, #5c6bc0 0%, #7986cb 100%);
+  color: white;
+}
+
+.section-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.section-content p {
+  font-size: 13px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.section-btn {
+  flex-shrink: 0;
+}
+
+.onboarding-footer {
+  font-size: 13px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .onboarding-card {
+    padding: 20px;
+  }
+
+  .onboarding-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .section-btn {
+    width: 100%;
+  }
+
+  .onboarding-title {
+    font-size: 20px;
   }
 }
 </style>

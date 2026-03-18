@@ -1,65 +1,4 @@
 <template>
-  <!-- Onboarding welcome message -->
-  <div v-if="store.isOnboarding" class="onboarding-card mx-5 mt-4">
-    <div class="onboarding-header">
-      <div>
-        <h2 class="onboarding-title">{{ $t("settings.onboarding_title") }}</h2>
-        <p class="onboarding-subtitle">
-          {{ $t("settings.onboarding_subtitle") }}
-        </p>
-      </div>
-      <v-btn
-        icon="mdi-close"
-        variant="text"
-        size="small"
-        class="onboarding-close"
-        @click="dismissOnboarding"
-      />
-    </div>
-
-    <div class="onboarding-sections">
-      <div class="onboarding-section">
-        <div class="section-icon music">
-          <v-icon icon="mdi-music" size="24" />
-        </div>
-        <div class="section-content">
-          <h3>{{ $t("settings.onboarding_music_title") }}</h3>
-          <p>{{ $t("settings.onboarding_music_desc") }}</p>
-        </div>
-        <v-btn
-          color="primary"
-          variant="flat"
-          class="section-btn"
-          @click="openAddProviderWithType('music')"
-        >
-          {{ $t("settings.onboarding_add_music") }}
-        </v-btn>
-      </div>
-
-      <div class="onboarding-section">
-        <div class="section-icon player">
-          <v-icon icon="mdi-speaker" size="24" />
-        </div>
-        <div class="section-content">
-          <h3>{{ $t("settings.onboarding_player_title") }}</h3>
-          <p>{{ $t("settings.onboarding_player_desc") }}</p>
-        </div>
-        <v-btn
-          color="primary"
-          variant="flat"
-          class="section-btn"
-          @click="openAddProviderWithType('player')"
-        >
-          {{ $t("settings.onboarding_add_player") }}
-        </v-btn>
-      </div>
-    </div>
-
-    <p class="onboarding-footer">
-      <v-icon icon="mdi-information-outline" size="16" class="mr-1" />
-      {{ $t("settings.onboarding_footer") }}
-    </p>
-  </div>
   <div class="providers-header w-100">
     <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
@@ -398,10 +337,7 @@
       </div>
     </div>
   </Container>
-  <AddProviderDialog
-    v-model:show="showAddProviderDialog"
-    :initial-type="addProviderInitialType"
-  />
+  <AddProviderDialog v-model:show="showAddProviderDialog" />
 </template>
 
 <script setup lang="ts">
@@ -421,7 +357,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
@@ -443,18 +378,6 @@ const viewMode = computed(() => providersViewMode.viewMode.value);
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
-const addProviderInitialType = ref<string | undefined>(undefined);
-
-const openAddProviderWithType = (type: string) => {
-  addProviderInitialType.value = type;
-  showAddProviderDialog.value = true;
-};
-
-watch(showAddProviderDialog, (isOpen) => {
-  if (!isOpen) {
-    addProviderInitialType.value = undefined;
-  }
-});
 const playerConfigs = ref<PlayerConfig[]>([]);
 
 // listen for item updates to refresh items when that happens
@@ -474,10 +397,6 @@ const loadItems = async function () {
   }
   providerConfigs.value = await api.getProviderConfigs();
   playerConfigs.value = await api.getPlayerConfigs();
-};
-
-const dismissOnboarding = function () {
-  store.isOnboarding = false;
 };
 
 const removeProvider = function (providerInstanceId: string) {
@@ -776,141 +695,6 @@ const getAllFilteredProviders = function () {
 
 .provider-description.truncated-text {
   margin-bottom: 16px !important;
-}
-
-.onboarding-card {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--v-theme-primary), 0.08) 0%,
-    rgba(var(--v-theme-primary), 0.02) 100%
-  );
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
-  border-radius: 16px;
-  padding: 24px;
-  position: relative;
-}
-
-.onboarding-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.onboarding-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.onboarding-close {
-  opacity: 0.6;
-}
-
-.onboarding-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.onboarding-subtitle {
-  font-size: 15px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 24px 0;
-  line-height: 1.5;
-}
-
-.onboarding-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.onboarding-section {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(var(--v-theme-surface), 0.6);
-  border-radius: 12px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.section-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.section-icon.music {
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
-  color: white;
-}
-
-.section-icon.player {
-  background: linear-gradient(135deg, #5c6bc0 0%, #7986cb 100%);
-  color: white;
-}
-
-.section-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.section-content h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 4px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.section-content p {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin: 0;
-  line-height: 1.4;
-}
-
-.section-btn {
-  flex-shrink: 0;
-}
-
-.onboarding-footer {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-@media (max-width: 768px) {
-  .onboarding-card {
-    padding: 20px;
-  }
-
-  .onboarding-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
-
-  .section-btn {
-    width: 100%;
-  }
-
-  .onboarding-title {
-    font-size: 20px;
-  }
 }
 
 .provider-card {

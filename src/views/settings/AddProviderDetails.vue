@@ -145,7 +145,8 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(props.domain, values)
     .then(() => {
-      router.push({ name: "providersettings" });
+      const providerType = api.providerManifests[props.domain]?.type;
+      router.push({ name: "providersettings", query: { types: providerType } });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday

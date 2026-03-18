@@ -106,7 +106,6 @@ import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
-  initialType?: string;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -131,11 +130,7 @@ const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
 const searchInput = ref<{ focus: () => void } | null>(null);
 
-// Active type filter: initialType prop (onboarding) takes precedence, then route query
-const activeTypeFilter = computed(() => {
-  if (props.initialType) return props.initialType;
-  return (route.query.types as string) || null;
-});
+const activeTypeFilter = computed(() => (route.query.types as string) || null);
 
 const providerStageOptions = computed(() => [
   { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },

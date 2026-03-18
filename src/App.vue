@@ -260,7 +260,7 @@ const completeInitialization = async () => {
     userInfo.role === "admin"
   ) {
     store.isOnboarding = true;
-    router.push("/settings/providers");
+    router.push("/settings");
   } else if (isPartyGuest) {
     // Party guests should always be redirected to the guest view
     router.push("/guest");
