@@ -61,10 +61,7 @@
     </p>
   </div>
   <div class="providers-header w-100">
-    <ProviderFilters
-      @update:search="searchQuery = $event"
-      @update:types="selectedProviderTypes = $event"
-    />
+    <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
       <Plus class="size-4" />
       {{ $t("settings.add_provider") }}
@@ -428,11 +425,12 @@ import { store } from "@/plugins/store";
 import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
 const router = useRouter();
+const route = useRoute();
 
 const providersViewMode = inject<{
   viewMode: { value: "list" | "card" };
@@ -444,7 +442,6 @@ const viewMode = computed(() => providersViewMode.viewMode.value);
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
-const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
 const addProviderInitialType = ref<string | undefined>(undefined);
 
@@ -720,10 +717,10 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  if (selectedProviderTypes.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedProviderTypes.value.includes(item.type),
-    );
+  const typesQuery = route.query.types as string | undefined;
+  if (typesQuery) {
+    const types = typesQuery.split(",");
+    filtered = filtered.filter((item) => types.includes(item.type));
   }
 
   // Sort: providers with errors first, then alphabetically

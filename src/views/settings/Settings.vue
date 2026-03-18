@@ -206,6 +206,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "lucide-vue-next";
 import { match } from "ts-pattern";
@@ -304,20 +305,47 @@ provide("providersViewMode", {
 
 const allSettingsSections = [
   {
-    name: "providers",
-    label: "settings.providers",
-    description: "settings.providers_description",
-    icon: "mdi-monitor-dashboard",
+    name: "music_providers",
+    label: "settings.music_sources",
+    description: "settings.music_providers_description",
+    icon: "mdi-music",
     color: "blue",
-    route: { name: "providersettings" },
+    route: { name: "providersettings", query: { types: "music" } },
+    adminOnly: true,
+  },
+  {
+    name: "player_providers",
+    label: "settings.playerproviders",
+    description: "settings.player_providers_description",
+    icon: "mdi-speaker-multiple",
+    color: "green",
+    route: { name: "providersettings", query: { types: "player" } },
+    adminOnly: true,
+  },
+  {
+    name: "metadata_providers",
+    label: "settings.metadataproviders",
+    description: "settings.metadata_providers_description",
+    icon: "mdi-file-code",
+    color: "indigo",
+    route: { name: "providersettings", query: { types: "metadata" } },
+    adminOnly: true,
+  },
+  {
+    name: "plugin_providers",
+    label: "settings.plugins",
+    description: "settings.plugin_providers_description",
+    icon: "mdi-puzzle",
+    color: "deep-purple",
+    route: { name: "providersettings", query: { types: "plugin" } },
     adminOnly: true,
   },
   {
     name: "players",
     label: "settings.players",
     description: "settings.players_description",
-    icon: "mdi-speaker-multiple",
-    color: "green",
+    icon: "mdi-tune",
+    color: "teal",
     route: { name: "playersettings" },
     adminOnly: true,
   },
@@ -382,21 +410,30 @@ const settingsSections = computed(() => {
   return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
 });
 
+const providerSectionNames = [
+  "music_providers",
+  "player_providers",
+  "metadata_providers",
+  "plugin_providers",
+];
+
 const featuredSections = computed(() => {
   return settingsSections.value.filter(
-    (section) => section.name === "providers" || section.name === "players",
+    (section) =>
+      section.name === "music_providers" || section.name === "player_providers",
   );
 });
 
 const regularSections = computed(() => {
   return settingsSections.value.filter(
-    (section) => section.name !== "providers" && section.name !== "players",
+    (section) =>
+      section.name !== "music_providers" && section.name !== "player_providers",
   );
 });
 
 const providersSection = computed(() => {
-  return settingsSections.value.filter(
-    (section) => section.name === "providers",
+  return settingsSections.value.filter((section) =>
+    providerSectionNames.includes(section.name),
   );
 });
 
@@ -406,7 +443,9 @@ const playersSection = computed(() => {
 
 const otherSettingsSections = computed(() => {
   return settingsSections.value.filter(
-    (section) => section.name !== "providers" && section.name !== "players",
+    (section) =>
+      !providerSectionNames.includes(section.name) &&
+      section.name !== "players",
   );
 });
 
@@ -456,6 +495,36 @@ const activeTab = computed(() => {
   }
   if (name.includes("about")) {
     return "about";
+  }
+
+  const typesQuery = router.currentRoute.value.query.types as
+    | string
+    | undefined;
+  if (typesQuery === "music") return "music_providers";
+  if (typesQuery === "player") return "player_providers";
+  if (typesQuery === "metadata") return "metadata_providers";
+  if (typesQuery === "plugin") return "plugin_providers";
+
+  if (name === "editprovider") {
+    const instanceId = router.currentRoute.value.params.instanceId as string;
+    const provider = api.getProvider(instanceId);
+    if (provider) {
+      if (provider.type === ProviderType.MUSIC) return "music_providers";
+      if (provider.type === ProviderType.PLAYER) return "player_providers";
+      if (provider.type === ProviderType.METADATA) return "metadata_providers";
+      if (provider.type === ProviderType.PLUGIN) return "plugin_providers";
+    }
+  }
+
+  if (name === "addproviderdetails") {
+    const domain = router.currentRoute.value.params.domain as string;
+    const manifest = api.providerManifests[domain];
+    if (manifest) {
+      if (manifest.type === ProviderType.MUSIC) return "music_providers";
+      if (manifest.type === ProviderType.PLAYER) return "player_providers";
+      if (manifest.type === ProviderType.METADATA) return "metadata_providers";
+      if (manifest.type === ProviderType.PLUGIN) return "plugin_providers";
+    }
   }
   return "providers";
 });
@@ -525,6 +594,30 @@ const breadcrumbItems = computed(() => {
         title: t("settings.users"),
         disabled: name === "usersettings",
         to: { name: "usersettings" },
+      });
+    } else if (currentTab === "music_providers") {
+      items.push({
+        title: t("settings.music_sources"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings", query: { types: "music" } },
+      });
+    } else if (currentTab === "player_providers") {
+      items.push({
+        title: t("settings.playerproviders"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings", query: { types: "player" } },
+      });
+    } else if (currentTab === "metadata_providers") {
+      items.push({
+        title: t("settings.metadataproviders"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings", query: { types: "metadata" } },
+      });
+    } else if (currentTab === "plugin_providers") {
+      items.push({
+        title: t("settings.plugins"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings", query: { types: "plugin" } },
       });
     } else if (currentTab === "providers") {
       items.push({

@@ -23,11 +23,6 @@
       <div class="px-6 flex-shrink-0">
         <div class="filter-buttons">
           <FacetedFilter
-            v-model="selectedProviderTypes"
-            :title="$t('settings.provider_type')"
-            :options="providerTypeOptions"
-          />
-          <FacetedFilter
             v-model="selectedProviderStages"
             :title="$t('settings.stage.label')"
             :options="providerStageOptions"
@@ -107,7 +102,7 @@ import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
@@ -130,18 +125,17 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
-const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
 const searchInput = ref<{ focus: () => void } | null>(null);
 
-const providerTypeOptions = computed(() => [
-  { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
-  { label: $t("settings.playerprovider"), value: ProviderType.PLAYER },
-  { label: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { label: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
-]);
+// Active type filter: initialType prop (onboarding) takes precedence, then route query
+const activeTypeFilter = computed(() => {
+  if (props.initialType) return props.initialType;
+  return (route.query.types as string) || null;
+});
 
 const providerStageOptions = computed(() => [
   { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
@@ -206,10 +200,8 @@ const filteredProviders = computed(() => {
     );
   }
 
-  if (selectedProviderTypes.value.length > 0) {
-    providers = providers.filter((x) =>
-      selectedProviderTypes.value.includes(x.type),
-    );
+  if (activeTypeFilter.value) {
+    providers = providers.filter((x) => x.type === activeTypeFilter.value);
   }
 
   if (selectedProviderStages.value.length > 0) {
@@ -280,11 +272,7 @@ watch(
 watch(
   () => props.show,
   (isOpen) => {
-    if (isOpen && props.initialType) {
-      selectedProviderTypes.value = [props.initialType];
-      searchQuery.value = "";
-    } else if (!isOpen) {
-      selectedProviderTypes.value = [];
+    if (!isOpen) {
       selectedProviderStages.value = [];
       searchQuery.value = "";
     }
