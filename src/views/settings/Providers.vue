@@ -637,9 +637,12 @@ const getAllFilteredProviders = function () {
   }
 
   const typesQuery = route.query.types as string | undefined;
-  if (typesQuery) {
+  if (typesQuery && typesQuery.trim().length > 0) {
     const types = typesQuery.split(",");
     filtered = filtered.filter((item) => types.includes(item.type));
+  } else {
+    // Default to showing only music providers when no types are specified
+    filtered = filtered.filter((item) => item.type === ProviderType.MUSIC);
   }
 
   // Sort: providers with errors first, then alphabetically
