@@ -6,7 +6,7 @@ import {
   BookAudio,
   Disc3,
   Folder,
-  House,
+  Compass,
   ListMusic,
   Music2,
   PartyPopper,
@@ -41,7 +41,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "discover") {
       items.push({
         label: "discover",
-        icon: House,
+        icon: Compass,
         path: "/discover",
         isLibraryNode: false,
       });

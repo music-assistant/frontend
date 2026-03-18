@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="party-view"
-    :style="gradientBackgroundStyle"
-  >
+  <div class="party-view" :style="gradientBackgroundStyle">
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
       v-if="useAlbumArtBackground && albumArtUrl"
@@ -1092,5 +1089,4 @@ watch(
   display: flex;
   flex-direction: column;
 }
-
 </style>

@@ -590,7 +590,7 @@ router.afterEach((to, from) => {
   }
 
   // Clean up onboard parameter from URL if present
-  if (store.isOnboarding && to.path === "/settings/providers") {
+  if (store.isOnboarding && to.path === "/settings") {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("onboard")) {
       urlParams.delete("onboard");
@@ -602,11 +602,11 @@ router.afterEach((to, from) => {
     }
   }
 
-  // Reset onboarding flag when navigating away from the providers page
+  // Reset onboarding flag when navigating away from settings
   if (
     store.isOnboarding &&
-    from.path === "/settings/providers" &&
-    to.path !== "/settings/providers"
+    from.path === "/settings" &&
+    to.path !== "/settings"
   ) {
     store.isOnboarding = false;
   }

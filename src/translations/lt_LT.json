@@ -1422,8 +1422,7 @@
             "qr_failed": "Nepavyko sugeneruoti QR kodo",
             "request": "Prašymas",
             "link_copy_fail": "Nepavyko nukopijuoti nuorodos",
-            "link_copy_success": "Nuoroda nukopijuota!",
-            "scan_to_join": "Nuskaitykite, kad prisijungtumėte!"
+            "link_copy_success": "Nuoroda nukopijuota!"
         }
     },
     "no_lyrics_available": "Dainų tekstai nepasiekiami"

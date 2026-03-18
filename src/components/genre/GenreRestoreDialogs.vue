@@ -4,8 +4,10 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.restore_missing_defaults") }}</DialogTitle>
+        <DialogDescription>{{
+          $t("settings.confirm_restore_defaults")
+        }}</DialogDescription>
       </DialogHeader>
-      <p>{{ $t("settings.confirm_restore_defaults") }}</p>
       <DialogFooter>
         <Button variant="outline" @click="showRestoreDialog = false">
           {{ $t("cancel") }}
@@ -22,8 +24,10 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
+        <DialogDescription>{{
+          $t("settings.confirm_full_restore")
+        }}</DialogDescription>
       </DialogHeader>
-      <p>{{ $t("settings.confirm_full_restore") }}</p>
       <DialogFooter>
         <Button variant="outline" @click="showFullRestoreDialog = false">
           {{ $t("cancel") }}
@@ -40,8 +44,10 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
+        <DialogDescription>{{
+          $t("settings.confirm_full_restore_2")
+        }}</DialogDescription>
       </DialogHeader>
-      <p>{{ $t("settings.confirm_full_restore_2") }}</p>
       <DialogFooter>
         <Button variant="outline" @click="showFullRestoreDialog2 = false">
           {{ $t("cancel") }}
@@ -63,6 +69,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

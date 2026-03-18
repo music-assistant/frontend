@@ -159,11 +159,9 @@ const beforeFirstLyric = computed(() => {
     return false;
   }
   const firstTime = displayLines.value[0].time;
+  if (firstTime < 2) return false;
   const currentPosition = props.position || 0;
-  return (
-    activeLyricIndex.value === -1 &&
-    currentPosition < firstTime - props.anticipation
-  );
+  return currentPosition < firstTime - props.anticipation;
 });
 
 const artistName = computed(() => {
@@ -427,10 +425,22 @@ watch(
     );
     const newActiveIndex = findActiveLineIndex(highlightPositionMs);
 
-    if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
-      contentTransitionEnabled.value = true;
-      activeLyricIndex.value = newActiveIndex;
-      nextTick(() => computeTranslateY(newActiveIndex));
+    if (newActiveIndex !== activeLyricIndex.value) {
+      if (newActiveIndex >= 0) {
+        contentTransitionEnabled.value = true;
+        activeLyricIndex.value = newActiveIndex;
+        nextTick(() => computeTranslateY(newActiveIndex));
+      } else {
+        // Rewound before the first lyric — scroll content back out of view
+        activeLyricIndex.value = -1;
+        contentTransitionEnabled.value = true;
+        const firstEl = lineRefs.get(0);
+        const container = syncedContainerRef.value;
+        if (firstEl && container) {
+          contentTranslateY.value =
+            container.clientHeight - firstEl.offsetTop + 40;
+        }
+      }
     }
   },
 );

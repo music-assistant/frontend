@@ -1,81 +1,84 @@
 <template>
-  <section class="genre-management">
+  <div class="space-y-6 p-6">
     <GenreManagementHeader />
 
-    <!-- Sections as expansion panels (matching EditConfig style) -->
-    <v-expansion-panels v-model="activePanels" multiple class="config-panels">
-      <!-- Background Scanner -->
-      <v-expansion-panel value="scanner" class="config-panel">
-        <v-expansion-panel-title class="config-panel-title">
-          <v-icon icon="mdi-radar" class="mr-3" size="20" />
-          <span class="panel-title-text">
-            {{ $t("settings.background_scanner") }}
-          </span>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <GenreScannerPanel
-            :status="scannerStatus"
-            :triggering="scanTriggering"
-            @trigger="triggerScan"
-          />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
+    <!-- Background Scanner -->
+    <Card>
+      <CardHeader>
+        <div class="flex items-center gap-2">
+          <ScanLine class="size-4 text-primary" />
+          <CardTitle>{{ $t("settings.background_scanner") }}</CardTitle>
+        </div>
+        <CardDescription>
+          {{ $t("settings.background_scanner_description") }}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <GenreScannerPanel
+          :status="scannerStatus"
+          :triggering="scanTriggering"
+          @trigger="triggerScan"
+        />
+      </CardContent>
+    </Card>
 
-      <!-- Genre Statistics -->
-      <v-expansion-panel value="statistics" class="config-panel">
-        <v-expansion-panel-title class="config-panel-title">
-          <v-icon icon="mdi-chart-bar" class="mr-3" size="20" />
-          <span class="panel-title-text">
-            {{ $t("settings.genre_statistics") }}
-          </span>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <GenreStatsPanel
-            :count="genreCount"
-            @view-genres="router.push({ name: 'genres' })"
-          />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
+    <!-- Genre Statistics -->
+    <Card>
+      <CardHeader>
+        <div class="flex items-center gap-2">
+          <BarChart2 class="size-4 text-primary" />
+          <CardTitle>{{ $t("settings.genre_statistics") }}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <GenreStatsPanel
+          :count="genreCount"
+          @view-genres="router.push({ name: 'genres' })"
+        />
+      </CardContent>
+    </Card>
 
-      <!-- Restore Missing Defaults -->
-      <v-expansion-panel value="restore" class="config-panel">
-        <v-expansion-panel-title class="config-panel-title">
-          <v-icon icon="mdi-refresh" class="mr-3" size="20" />
-          <span class="panel-title-text">
+    <!-- Restore Options -->
+    <Card>
+      <CardHeader>
+        <div class="flex items-center gap-2">
+          <RefreshCw class="size-4 text-primary" />
+          <CardTitle>{{ $t("settings.restore_genres") }}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <div class="space-y-2">
+          <p class="text-sm font-semibold">
             {{ $t("settings.restore_missing_defaults") }}
-          </span>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
+          </p>
+          <p class="text-sm text-muted-foreground">
+            {{ $t("settings.restore_missing_defaults_description") }}
+          </p>
           <GenreRestorePanel
-            :description="$t('settings.restore_missing_defaults_description')"
             :button-text="$t('settings.restore_missing_defaults')"
             :loading="restoreInProgress || fullRestoreInProgress"
-            icon="mdi-refresh"
             @restore="showRestoreDialog = true"
           />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
+        </div>
 
-      <!-- Full Restore -->
-      <v-expansion-panel value="fullrestore" class="config-panel">
-        <v-expansion-panel-title class="config-panel-title">
-          <v-icon icon="mdi-alert" class="mr-3" size="20" />
-          <span class="panel-title-text">
+        <Separator />
+
+        <div class="space-y-2">
+          <p class="text-sm font-semibold">
             {{ $t("settings.full_restore_genres") }}
-          </span>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
+          </p>
+          <p class="text-sm text-muted-foreground">
+            {{ $t("settings.full_restore_genres_description") }}
+          </p>
           <GenreRestorePanel
-            :description="$t('settings.full_restore_genres_description')"
             :button-text="$t('settings.full_restore_genres')"
             :loading="restoreInProgress || fullRestoreInProgress"
-            icon="mdi-alert"
             destructive
             @restore="showFullRestoreDialog = true"
           />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+        </div>
+      </CardContent>
+    </Card>
 
     <GenreRestoreDialogs
       v-model:show-restore-dialog="showRestoreDialog"
@@ -87,28 +90,37 @@
       @full-restore-step2="showFullRestoreStep2"
       @full-restore="fullRestore"
     />
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { BarChart2, RefreshCw, ScanLine } from "lucide-vue-next";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
+
 import GenreManagementHeader from "@/components/genre/GenreManagementHeader.vue";
 import GenreRestoreDialogs from "@/components/genre/GenreRestoreDialogs.vue";
 import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
 import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
 import GenreStatsPanel from "@/components/genre/GenreStatsPanel.vue";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 
 const SCANNER_POLL_INTERVAL_MS = 30000;
 
 const { t } = useI18n();
 const router = useRouter();
 
-const activePanels = ref(["scanner", "statistics", "restore", "fullrestore"]);
 const genreCount = ref<number | undefined>(undefined);
 const restoreInProgress = ref(false);
 const fullRestoreInProgress = ref(false);
@@ -152,7 +164,11 @@ const triggerScan = async () => {
 };
 
 const loadStats = async () => {
-  genreCount.value = await api.getLibraryGenresCount();
+  try {
+    genreCount.value = await api.getLibraryGenresCount();
+  } catch (error) {
+    toast.error(t("settings.genre_stats_failed"));
+  }
 };
 
 const restoreDefaults = async () => {
@@ -216,44 +232,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-.genre-management {
-  padding: 16px;
-}
-
-.config-panels {
-  margin-top: 16px;
-}
-
-.config-panel {
-  margin-bottom: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.config-panel::before {
-  display: none;
-}
-
-.config-panel-title {
-  min-height: 52px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.config-panel-title .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.panel-title-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-</style>

@@ -917,7 +917,7 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
-    hide_empty?: boolean,
+    hide_empty?: boolean | null,
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", {
       favorite,

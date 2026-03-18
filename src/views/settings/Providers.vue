@@ -1,73 +1,9 @@
 <template>
-  <!-- Onboarding welcome message -->
-  <div v-if="store.isOnboarding" class="onboarding-card mx-5 mt-4">
-    <div class="onboarding-header">
-      <div>
-        <h2 class="onboarding-title">{{ $t("settings.onboarding_title") }}</h2>
-        <p class="onboarding-subtitle">
-          {{ $t("settings.onboarding_subtitle") }}
-        </p>
-      </div>
-      <v-btn
-        icon="mdi-close"
-        variant="text"
-        size="small"
-        class="onboarding-close"
-        @click="dismissOnboarding"
-      />
-    </div>
-
-    <div class="onboarding-sections">
-      <div class="onboarding-section">
-        <div class="section-icon music">
-          <v-icon icon="mdi-music" size="24" />
-        </div>
-        <div class="section-content">
-          <h3>{{ $t("settings.onboarding_music_title") }}</h3>
-          <p>{{ $t("settings.onboarding_music_desc") }}</p>
-        </div>
-        <v-btn
-          color="primary"
-          variant="flat"
-          class="section-btn"
-          @click="openAddProviderWithType('music')"
-        >
-          {{ $t("settings.onboarding_add_music") }}
-        </v-btn>
-      </div>
-
-      <div class="onboarding-section">
-        <div class="section-icon player">
-          <v-icon icon="mdi-speaker" size="24" />
-        </div>
-        <div class="section-content">
-          <h3>{{ $t("settings.onboarding_player_title") }}</h3>
-          <p>{{ $t("settings.onboarding_player_desc") }}</p>
-        </div>
-        <v-btn
-          color="primary"
-          variant="flat"
-          class="section-btn"
-          @click="openAddProviderWithType('player')"
-        >
-          {{ $t("settings.onboarding_add_player") }}
-        </v-btn>
-      </div>
-    </div>
-
-    <p class="onboarding-footer">
-      <v-icon icon="mdi-information-outline" size="16" class="mr-1" />
-      {{ $t("settings.onboarding_footer") }}
-    </p>
-  </div>
   <div class="providers-header w-100">
-    <ProviderFilters
-      @update:search="searchQuery = $event"
-      @update:types="selectedProviderTypes = $event"
-    />
+    <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
       <Plus class="size-4" />
-      {{ $t("settings.add_provider") }}
+      {{ addProviderLabel }}
     </Button>
   </div>
 
@@ -141,26 +77,6 @@
 
         <template #append>
           <div class="provider-status-icons">
-            <v-chip
-              v-if="
-                item.type === ProviderType.PLAYER && getPlayerCount(item) > 0
-              "
-              size="x-small"
-              variant="flat"
-              color="primary"
-              class="player-count-chip"
-              @click.stop="viewPlayers(item.instance_id)"
-            >
-              <v-icon start size="small">mdi-speaker</v-icon>
-              {{
-                getPlayerCount(item) === 1
-                  ? $t("settings.one_player")
-                  : $t("settings.players_count", [
-                      getPlayerCount(item),
-                      getPlayerCount(item) !== 1 ? "s" : "",
-                    ])
-              }}
-            </v-chip>
             <v-icon
               v-if="
                 api.syncTasks.value.filter(
@@ -200,7 +116,9 @@
               :title="getProviderTypeTitle(item.type)"
             />
             <v-chip
-              v-if="api.providerManifests[item.domain]"
+              v-if="
+                shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
+              "
               size="x-small"
               variant="flat"
               class="mx-1 text-uppercase"
@@ -301,7 +219,9 @@
             </v-btn>
 
             <v-chip
-              v-if="api.providerManifests[item.domain]"
+              v-if="
+                shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
+              "
               size="x-small"
               variant="flat"
               class="mx-1 text-uppercase"
@@ -365,30 +285,6 @@
           >
             {{ api.providerManifests[item.domain].description }}
           </v-card-text>
-
-          <!-- Player count badge for player providers -->
-          <v-card-text
-            v-if="item.type === ProviderType.PLAYER && getPlayerCount(item) > 0"
-            class="provider-players-count mt-auto"
-          >
-            <v-chip
-              size="small"
-              variant="flat"
-              color="primary"
-              class="player-count-chip"
-              @click.stop="viewPlayers(item.instance_id)"
-            >
-              <v-icon start size="small">mdi-speaker</v-icon>
-              {{
-                getPlayerCount(item) === 1
-                  ? $t("settings.one_player")
-                  : $t("settings.players_count", [
-                      getPlayerCount(item),
-                      getPlayerCount(item) !== 1 ? "s" : "",
-                    ])
-              }}
-            </v-chip>
-          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -401,10 +297,7 @@
       </div>
     </div>
   </Container>
-  <AddProviderDialog
-    v-model:show="showAddProviderDialog"
-    :initial-type="addProviderInitialType"
-  />
+  <AddProviderDialog v-model:show="showAddProviderDialog" />
 </template>
 
 <script setup lang="ts">
@@ -413,26 +306,26 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
-import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
+import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
-  PlayerConfig,
   ProviderConfig,
   ProviderFeature,
+  ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
 const router = useRouter();
+const route = useRoute();
 
 const providersViewMode = inject<{
   viewMode: { value: "list" | "card" };
@@ -441,24 +334,21 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
+const addProviderLabel = computed(() => {
+  const type = route.query.types as string | undefined;
+
+  return match(type)
+    .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+    .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
+    .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
+    .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+    .otherwise(() => $t("settings.add_provider"));
+});
+
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
-const selectedProviderTypes = ref<string[]>([]);
 const showAddProviderDialog = ref<boolean>(false);
-const addProviderInitialType = ref<string | undefined>(undefined);
-
-const openAddProviderWithType = (type: string) => {
-  addProviderInitialType.value = type;
-  showAddProviderDialog.value = true;
-};
-
-watch(showAddProviderDialog, (isOpen) => {
-  if (!isOpen) {
-    addProviderInitialType.value = undefined;
-  }
-});
-const playerConfigs = ref<PlayerConfig[]>([]);
 
 // listen for item updates to refresh items when that happens
 const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
@@ -476,11 +366,6 @@ const loadItems = async function () {
     return;
   }
   providerConfigs.value = await api.getProviderConfigs();
-  playerConfigs.value = await api.getPlayerConfigs();
-};
-
-const dismissOnboarding = function () {
-  store.isOnboarding = false;
 };
 
 const removeProvider = function (providerInstanceId: string) {
@@ -494,31 +379,8 @@ const editProvider = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
 };
 
-const viewPlayers = function (providerInstanceId: string) {
-  const providerInstance = api.getProvider(providerInstanceId);
-  if (providerInstance) {
-    router.push({
-      name: "playersettings",
-      query: { providers: providerInstance.instance_id },
-    });
-  }
-};
-
-const getPlayerCount = function (providerConfig: ProviderConfig): number {
-  if (providerConfig.type !== ProviderType.PLAYER) return 0;
-  const providerInstance = api.getProvider(providerConfig.instance_id);
-  if (!providerInstance) return 0;
-
-  return playerConfigs.value.filter((playerConfig) => {
-    if (isHiddenSendspinWebPlayer(playerConfig)) return false;
-
-    const playerProviderInstance = api.getProvider(playerConfig.provider);
-    return (
-      playerProviderInstance?.instance_id === providerInstance.instance_id ||
-      playerConfig.provider === providerInstance.instance_id ||
-      playerConfig.provider === providerInstance.domain
-    );
-  }).length;
+const shouldShowStageBadge = function (stage?: ProviderStage) {
+  return !!stage && stage !== ProviderStage.STABLE;
 };
 
 const toggleEnabled = function (config: ProviderConfig) {
@@ -720,10 +582,13 @@ const getAllFilteredProviders = function () {
     });
   }
 
-  if (selectedProviderTypes.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedProviderTypes.value.includes(item.type),
-    );
+  const typesQuery = route.query.types as string | undefined;
+  if (typesQuery && typesQuery.trim().length > 0) {
+    const types = typesQuery.split(",");
+    filtered = filtered.filter((item) => types.includes(item.type));
+  } else {
+    // Default to showing only music providers when no types are specified
+    filtered = filtered.filter((item) => item.type === ProviderType.MUSIC);
   }
 
   // Sort: providers with errors first, then alphabetically
@@ -781,141 +646,6 @@ const getAllFilteredProviders = function () {
   margin-bottom: 16px !important;
 }
 
-.onboarding-card {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--v-theme-primary), 0.08) 0%,
-    rgba(var(--v-theme-primary), 0.02) 100%
-  );
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
-  border-radius: 16px;
-  padding: 24px;
-  position: relative;
-}
-
-.onboarding-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.onboarding-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.onboarding-close {
-  opacity: 0.6;
-}
-
-.onboarding-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.onboarding-subtitle {
-  font-size: 15px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0 0 24px 0;
-  line-height: 1.5;
-}
-
-.onboarding-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.onboarding-section {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(var(--v-theme-surface), 0.6);
-  border-radius: 12px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.section-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.section-icon.music {
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
-  color: white;
-}
-
-.section-icon.player {
-  background: linear-gradient(135deg, #5c6bc0 0%, #7986cb 100%);
-  color: white;
-}
-
-.section-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.section-content h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 4px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.section-content p {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin: 0;
-  line-height: 1.4;
-}
-
-.section-btn {
-  flex-shrink: 0;
-}
-
-.onboarding-footer {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-@media (max-width: 768px) {
-  .onboarding-card {
-    padding: 20px;
-  }
-
-  .onboarding-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
-
-  .section-btn {
-    width: 100%;
-  }
-
-  .onboarding-title {
-    font-size: 20px;
-  }
-}
-
 .provider-card {
   transition:
     transform 0.2s ease,
@@ -931,24 +661,16 @@ const getAllFilteredProviders = function () {
   cursor: pointer;
 }
 
-.provider-players-count {
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
-  margin-top: auto;
-  align-content: end;
-}
-
-.player-count-chip {
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.player-count-chip:hover {
-  transform: scale(1.05);
-}
-
 .providers-list {
   background: transparent;
+}
+
+.providers-list :deep(.v-list-item__prepend) {
+  margin-right: 4px;
+}
+
+.providers-list :deep(.v-list-item__content > div) {
+  padding-left: 4px;
 }
 
 .provider-name-title {
@@ -999,23 +721,10 @@ const getAllFilteredProviders = function () {
     gap: 4px;
     min-width: 0;
   }
-
-  .player-count-chip {
-    flex-shrink: 1;
-  }
-}
-
-.player-count-chip {
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.player-count-chip:hover {
-  transform: scale(1.05);
 }
 
 .provider-icon {
-  margin-right: 12px;
+  margin-right: 0;
 }
 
 .provider-disabled {

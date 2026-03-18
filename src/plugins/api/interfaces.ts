@@ -1177,7 +1177,5 @@ export interface PartyConfig {
   highlight_ahead: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
-  qr_show_instruction_text: boolean;
-  qr_instruction_text: string;
   anti_burn_in: boolean;
 }
