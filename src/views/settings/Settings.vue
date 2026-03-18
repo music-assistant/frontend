@@ -526,7 +526,7 @@ const activeTab = computed(() => {
       if (manifest.type === ProviderType.PLUGIN) return "plugin_providers";
     }
   }
-  return "providers";
+  return "music_providers";
 });
 
 const getProviderName = (instanceId: string) => {
