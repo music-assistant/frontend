@@ -346,6 +346,10 @@
     "settings": {
         "add_new": "Add new",
         "add_provider": "Add a new provider",
+        "add_music_provider": "Add a music source",
+        "add_player_provider": "Add a player provider",
+        "add_metadata_provider": "Add a metadata provider",
+        "add_plugin_provider": "Add a plugin",
         "advanced_settings": "Advanced settings",
         "check_docs": "Check out the documentation",
         "config_player": "Configure player: {0}",

@@ -4,7 +4,7 @@
       class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
-        <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
       <div class="px-6 pb-2 flex-shrink-0">
@@ -131,6 +131,15 @@ const selectedProviderStages = ref<string[]>([]);
 const searchInput = ref<{ focus: () => void } | null>(null);
 
 const activeTypeFilter = computed(() => (route.query.types as string) || null);
+
+const dialogTitle = computed(() =>
+  match(activeTypeFilter.value)
+    .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+    .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
+    .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
+    .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+    .otherwise(() => $t("settings.add_provider")),
+);
 
 const providerStageOptions = computed(() => [
   { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },

@@ -3,7 +3,7 @@
     <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
       <Plus class="size-4" />
-      {{ $t("settings.add_provider") }}
+      {{ addProviderLabel }}
     </Button>
   </div>
 
@@ -373,6 +373,17 @@ const providersViewMode = inject<{
 }>("providersViewMode")!;
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
+
+const addProviderLabel = computed(() => {
+  const type = route.query.types as string | undefined;
+
+  return match(type)
+    .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+    .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
+    .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
+    .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+    .otherwise(() => $t("settings.add_provider"));
+});
 
 // local refs
 const providerConfigs = ref<ProviderConfig[]>([]);

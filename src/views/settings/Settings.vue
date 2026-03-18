@@ -575,9 +575,7 @@ const activeTab = computed(() => {
   const typesQuery = router.currentRoute.value.query.types as
     | string
     | undefined;
-  const firstType = typesQuery
-    ? typesQuery.split(",")[0].trim()
-    : undefined;
+  const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
   if (firstType === "music") return "music_providers";
   if (firstType === "player") return "player_providers";
   if (firstType === "metadata") return "metadata_providers";
