@@ -1422,8 +1422,7 @@
             "qr_failed": "QR-Code konnte nicht generiert werden",
             "request": "Anfragen",
             "link_copy_fail": "Link konnte nicht kopiert werden",
-            "link_copy_success": "Link kopiert!",
-            "scan_to_join": "Scannen zum Mitmachen!"
+            "link_copy_success": "Link kopiert!"
         }
     },
     "no_lyrics_available": "Keine Liedtexte verfügbar"

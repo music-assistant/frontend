@@ -10,7 +10,11 @@
       </p>
       <p class="qr-hint">{{ $t("providers.party.enable_in_settings") }}</p>
     </div>
-    <div v-else-if="qrCodeUrl" class="qr-display">
+    <div
+      v-else-if="qrCodeUrl"
+      class="qr-display"
+      :style="{ '--qr-size': qrSize + 'px' }"
+    >
       <div class="qr-link" @click="copyUrlToClipboard">
         <canvas ref="qrCanvas"></canvas>
         <Transition name="copy-toast">
@@ -20,9 +24,7 @@
           </div>
         </Transition>
       </div>
-      <p v-if="instructionText" class="qr-instructions text-h4">
-        {{ instructionText }}
-      </p>
+      <img src="@/assets/logo.svg" class="qr-logo" alt="Music Assistant" />
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
@@ -34,11 +36,10 @@
 
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
-import { usePartyConfig } from "@/composables/usePartyConfig";
+import { copyToClipboard } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { copyToClipboard } from "@/helpers/utils";
 import { AlertCircle, Check, QrCode } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -50,8 +51,6 @@ const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
 const copyFeedback = ref<string>("");
-const instructionText = ref($t("providers.party.scan_to_join"));
-const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
 let resizeObserver: ResizeObserver | null = null;
 
 const calculateQRSize = () => {
@@ -62,20 +61,6 @@ const calculateQRSize = () => {
   const availableSize = Math.min(containerWidth, containerHeight) - 120;
   // Clamp between 160 and 1024 for usability (supports 4K displays)
   return Math.max(160, Math.min(1024, availableSize));
-};
-
-const fetchQrConfig = async () => {
-  const config = await fetchPartyConfig();
-  if (config) {
-    if (config.qr_show_instruction_text === false) {
-      instructionText.value = "";
-    } else {
-      instructionText.value =
-        config.qr_instruction_text ?? $t("providers.party.scan_to_join");
-    }
-  } else {
-    instructionText.value = $t("providers.party.scan_to_join");
-  }
 };
 
 const copyUrlToClipboard = async () => {
@@ -135,20 +120,7 @@ const generateQRCode = async () => {
   }
 };
 
-// React to config changes (e.g., admin updates QR instruction text)
-watch(partyConfig, (newConfig) => {
-  if (newConfig) {
-    instructionText.value =
-      newConfig.qr_show_instruction_text === false
-        ? ""
-        : (newConfig.qr_instruction_text ?? $t("providers.party.scan_to_join"));
-  } else {
-    instructionText.value = $t("providers.party.scan_to_join");
-  }
-});
-
 onMounted(async () => {
-  await fetchQrConfig();
   await generateQRCode();
 
   // Set up ResizeObserver to regenerate QR code when container size changes
@@ -216,8 +188,11 @@ onBeforeUnmount(() => {
 }
 
 .qr-display {
-  text-align: center;
-  padding: clamp(1rem, 2vw, 3rem);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  padding-bottom: 0.5rem;
   background: rgba(0, 0, 0, 0.3);
   border-radius: clamp(12px, 1.2vw, 24px);
   backdrop-filter: blur(10px);
@@ -231,6 +206,13 @@ onBeforeUnmount(() => {
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
+}
+
+.qr-logo {
+  width: calc(var(--qr-size) * 0.8);
+  height: auto;
+  margin-top: 0.375rem;
+  opacity: 0.85;
 }
 
 .qr-link:hover {
@@ -279,14 +261,6 @@ onBeforeUnmount(() => {
   display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.qr-instructions {
-  margin-top: clamp(0.5rem, 1vw, 1.5rem);
-  font-size: clamp(0.875rem, 1.8vw, 2rem);
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 .qr-disabled {

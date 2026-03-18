@@ -1422,8 +1422,7 @@
             "qr_failed": "Generisanje QR koda nije uspelo",
             "request": "Zahtev",
             "link_copy_fail": "Kopiranje linka nije uspelo",
-            "link_copy_success": "Link kopiran!",
-            "scan_to_join": "Skenirajte da biste se pridružili!"
+            "link_copy_success": "Link kopiran!"
         }
     },
     "no_lyrics_available": "Nema dostupnih tekstova pesama"

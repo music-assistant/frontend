@@ -168,11 +168,18 @@ const props = defineProps<{
 }>();
 
 // computed properties
+const HIDDEN_CONFIG_KEYS = new Set([
+  "qr_show_instruction_text",
+  "qr_instruction_text",
+]);
+
 const allConfigEntries = computed(() => {
   if (!config.value) return [];
   // Pass all entries (including hidden ones) to EditConfig
   // Hidden entries contain values that need to be preserved on save
-  return Object.values(config.value.values);
+  return Object.values(config.value.values).filter(
+    (entry) => !HIDDEN_CONFIG_KEYS.has(entry.key),
+  );
 });
 
 onMounted(() => {

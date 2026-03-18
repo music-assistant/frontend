@@ -1422,8 +1422,7 @@
             "qr_failed": "Misslyckades med att generera QR koden",
             "request": "Begäran",
             "link_copy_fail": "Misslyckades med att kopiera länken",
-            "link_copy_success": "Länk kopierad!",
-            "scan_to_join": "Skanna för att gå med!"
+            "link_copy_success": "Länk kopierad!"
         }
     },
     "no_lyrics_available": "Inga texter tillgängliga"

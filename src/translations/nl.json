@@ -1422,8 +1422,7 @@
             "qr_failed": "QR-code genereren mislukt",
             "request": "Aanvragen",
             "link_copy_fail": "Link kopiëren mislukt.",
-            "link_copy_success": "Link gekopieerd!",
-            "scan_to_join": "Scan om mee te doen!"
+            "link_copy_success": "Link gekopieerd!"
         }
     },
     "no_lyrics_available": "Geen songtekst beschikbaar"
