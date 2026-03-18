@@ -575,10 +575,13 @@ const activeTab = computed(() => {
   const typesQuery = router.currentRoute.value.query.types as
     | string
     | undefined;
-  if (typesQuery === "music") return "music_providers";
-  if (typesQuery === "player") return "player_providers";
-  if (typesQuery === "metadata") return "metadata_providers";
-  if (typesQuery === "plugin") return "plugin_providers";
+  const firstType = typesQuery
+    ? typesQuery.split(",")[0].trim()
+    : undefined;
+  if (firstType === "music") return "music_providers";
+  if (firstType === "player") return "player_providers";
+  if (firstType === "metadata") return "metadata_providers";
+  if (firstType === "plugin") return "plugin_providers";
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
