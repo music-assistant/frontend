@@ -4,48 +4,49 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <Dialog v-model:open="showDialog">
+  <Dialog :key="dialogKey" v-model:open="showDialog">
     <DialogContent class="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle class="mb-2">
           {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
         </DialogTitle>
-        <template v-if="!queueId">
-          <DialogDescription>
-            {{ $t("playlist_create_media_types", [providerName]) }}
-            {{ playlistAllowedMediaTypesTranslated.join(", ") }}
+        <DialogDescription v-if="queueId" class="sr-only">
+          {{ $t("save_queue_as_playlist") }}
+        </DialogDescription>
+        <DialogDescription v-else>
+          {{ $t("playlist_create_media_types", [providerName]) }}
+          {{ playlistAllowedMediaTypesTranslated.join(", ") }}
+        </DialogDescription>
+
+        <div v-if="!queueId" class="flex flex-col gap-4 mb-3">
+          <DialogDescription v-if="playlistAllowMixedMediaTypes">
+            {{ $t("playlist_mix_allowed") }}
           </DialogDescription>
+          <div
+            v-else-if="playlistAllowedMediaTypes.length > 1"
+            class="flex flex-col gap-3"
+          >
+            <DialogDescription>{{
+              $t("playlist_mix_not_allowed")
+            }}</DialogDescription>
 
-          <div class="flex flex-col gap-4 mb-3">
-            <DialogDescription v-if="playlistAllowMixedMediaTypes">
-              {{ $t("playlist_mix_allowed") }}
-            </DialogDescription>
-            <div
-              v-else-if="playlistAllowedMediaTypes.length > 1"
-              class="flex flex-col gap-3"
+            <RadioGroup
+              v-model="playlistSelectedMediaType"
+              class="flex flex-row flex-wrap gap-4 justify-center mt-2"
             >
-              <DialogDescription>{{
-                $t("playlist_mix_not_allowed")
-              }}</DialogDescription>
-
-              <RadioGroup
-                v-model="playlistSelectedMediaType"
-                class="flex flex-row flex-wrap gap-4 justify-center mt-2"
+              <div
+                v-for="(item, index) in playlistAllowedMediaTypes"
+                :key="index"
+                class="flex items-center gap-2"
               >
-                <div
-                  v-for="(item, index) in playlistAllowedMediaTypes"
-                  :key="index"
-                  class="flex items-center gap-2"
-                >
-                  <RadioGroupItem :id="`media-type-${index}`" :value="item" />
-                  <Label :for="`media-type-${index}`">
-                    {{ playlistAllowedMediaTypesTranslated[index] }}
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
+                <RadioGroupItem :id="`media-type-${index}`" :value="item" />
+                <Label :for="`media-type-${index}`">
+                  {{ playlistAllowedMediaTypesTranslated[index] }}
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
-        </template>
+        </div>
 
         <div class="flex flex-col gap-4 mb-3">
           <div class="flex flex-col gap-2 mt-3">
@@ -95,6 +96,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 const showDialog = ref(false);
+const dialogKey = ref(0);
 const playlistName = ref("");
 const playlistAllowedMediaTypes = ref<MediaType[]>([]);
 const playlistAllowedMediaTypesTranslated = ref<string[]>([]);
@@ -170,8 +172,7 @@ onMounted(() => {
           playlistAllowedMediaTypes.value.length > 1
         ) {
           // set the first to be the default for the radio button
-          playlistSelectedMediaType.value =
-            playlistAllowedMediaTypes.value[0];
+          playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
         }
       } else {
         toast.error($t("playlist_create_provider_error"));
@@ -180,6 +181,7 @@ onMounted(() => {
       playlistAllowedMediaTypesTranslated.value =
         getTranslatedSupportedMediaTypes();
     }
+    dialogKey.value++;
     showDialog.value = true;
   });
 });
