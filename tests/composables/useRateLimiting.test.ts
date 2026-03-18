@@ -86,8 +86,6 @@ describe("useRateLimiting", () => {
       highlight_ahead: true,
       request_badge_color: "#000000",
       boost_badge_color: "#ffffff",
-      qr_show_instruction_text: false,
-      qr_instruction_text: "",
       anti_burn_in: false,
     };
 
