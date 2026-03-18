@@ -856,6 +856,7 @@
         "scan_triggered": "Genre scan started successfully.",
         "scan_already_running": "Genre scan is already in progress.",
         "scan_never": "Never",
+        "scan_ago": "{0} ago",
         "scanner_status_failed": "Failed to fetch scanner status",
         "scan_trigger_failed": "Failed to trigger genre scan",
         "restore_defaults_failed": "Failed to restore genre defaults",

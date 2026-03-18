@@ -11,7 +11,7 @@
               v-if="status?.running"
               class="size-3 animate-spin text-primary"
             />
-            <span v-else class="size-2 rounded-full bg-green-500" />
+            <span v-else class="size-2 rounded-full bg-green-500"></span>
             {{
               status?.running
                 ? $t("settings.scanner_running")
@@ -92,6 +92,8 @@ const lastScanDisplay = computed(() => {
   ) {
     return t("settings.scan_never");
   }
-  return formatRelativeTime(props.status.last_scan_ago_seconds) + " ago";
+  return t("settings.scan_ago", [
+    formatRelativeTime(props.status.last_scan_ago_seconds),
+  ]);
 });
 </script>

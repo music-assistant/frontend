@@ -4,7 +4,9 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.restore_missing_defaults") }}</DialogTitle>
-        <DialogDescription>{{ $t("settings.confirm_restore_defaults") }}</DialogDescription>
+        <DialogDescription>{{
+          $t("settings.confirm_restore_defaults")
+        }}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" @click="showRestoreDialog = false">
@@ -22,7 +24,9 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
-        <DialogDescription>{{ $t("settings.confirm_full_restore") }}</DialogDescription>
+        <DialogDescription>{{
+          $t("settings.confirm_full_restore")
+        }}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" @click="showFullRestoreDialog = false">
@@ -40,7 +44,9 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.full_restore_genres") }}</DialogTitle>
-        <DialogDescription>{{ $t("settings.confirm_full_restore_2") }}</DialogDescription>
+        <DialogDescription>{{
+          $t("settings.confirm_full_restore_2")
+        }}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" @click="showFullRestoreDialog2 = false">
