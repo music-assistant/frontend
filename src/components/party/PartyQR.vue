@@ -88,7 +88,6 @@ watch(qrCanvas, (canvas) => {
   if (canvas) renderQRToCanvas();
 });
 
-
 const generateQRCode = async () => {
   loading.value = true;
   try {
@@ -225,8 +224,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(var(--v-theme-surface), 0.9);
-  color: rgb(var(--v-theme-success));
+  background: black;
+  color: white;
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
