@@ -1459,11 +1459,17 @@ export class MusicAssistantApi {
   public queueCommandSaveAsPlaylist(
     queueId: string,
     name: string,
-  ): Promise<Playlist> {
+    options: { showBackgroundTaskToast?: boolean } = {},
+  ): Promise<BackgroundTask> {
     // Save the current queue items as a new playlist.
-    return this.sendCommand("player_queues/save_as_playlist", {
+    return this.sendCommand<BackgroundTask>("player_queues/save_as_playlist", {
       queue_id: queueId,
       name,
+    }).then((task) => {
+      if (options.showBackgroundTaskToast !== false) {
+        this._notifyBackgroundTaskStarted(task);
+      }
+      return task;
     });
   }
 
