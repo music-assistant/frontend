@@ -1227,6 +1227,7 @@
         "add_playlist_tracks": "Add items to playlist {0}",
         "remove_playlist_tracks": "Remove items from playlist {0}",
         "database_cleanup": "Database cleanup",
+        "correct_provider_mappings": "Correct provider mappings",
         "scan_genre_mappings": "Scan genre mappings",
         "cache_database_cleanup": "Cache database cleanup",
         "scan_missing_artist_artwork": "Scan missing artist artwork",
