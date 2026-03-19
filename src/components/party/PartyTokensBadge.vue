@@ -100,7 +100,6 @@ const rightStyle = computed(() => {
   align-items: center;
   gap: 0.2rem;
   font-size: 0.72rem;
-  opacity: 0.8;
   padding-left: 0.35rem;
   border-left: 1px solid currentColor;
   opacity: 0.7;
