@@ -102,7 +102,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   addToQueue: [item: Track | Artist, position: "next" | "end"];
-  selectArtist: [item: Track | Artist];
+  selectArtist: [item: Artist];
   toggleExpand: [itemId: string];
 }>();
 

@@ -12,7 +12,7 @@
       v-model:search-filter="searchFilter"
       :has-searched="hasSearched"
       :show-back="hasSearched || !!selectedArtist"
-      @clear="clearSearch"
+      @clear="handleClear"
       @back="goBack"
       @submit="performSearch"
     />
@@ -170,7 +170,11 @@
 
     <!-- Current Queue Section -->
     <PartyQueueSection
-      v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
+      v-if="
+        !selectedArtist &&
+        !searching &&
+        (!searchQuery || searchResults.length === 0)
+      "
       ref="queueSectionRef"
       :queue-items="queueItems"
       :queue-fetch-offset="queueFetchOffset"
@@ -308,25 +312,32 @@ const queueSectionRef = ref<InstanceType<typeof PartyQueueSection> | null>(
   null,
 );
 
-// Sync the queue section's listRef to the composable's queueListRef for auto-scroll
+// Sync the queue section's listRef to the composable's queueListRef for auto-scroll.
+// Also scroll to the current item whenever the list becomes available (e.g. after
+// search is cleared and PartyQueueSection remounts).
 watch(
   () => queueSectionRef.value?.listRef,
   (el) => {
     queue.queueListRef.value = el ?? null;
+    if (el) {
+      nextTick(() => queue.scrollToCurrentItem());
+    }
   },
 );
 
 // --- Back navigation ---
-const goBack = async () => {
+const goBack = () => {
   if (selectedArtist.value) {
     clearArtistSelection();
     return;
   }
   clearSearch();
-  // Wait for the queue section to mount and expose its listRef
-  // before attempting to scroll to the current item.
-  await nextTick();
-  queue.scrollToCurrentItem();
+  // Scroll is triggered by the watcher above when PartyQueueSection remounts
+};
+
+const handleClear = () => {
+  clearSearch();
+  // Scroll is triggered by the watcher above when PartyQueueSection remounts
 };
 
 const handleBack = (event: PopStateEvent) => {
