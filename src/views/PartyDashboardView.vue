@@ -32,9 +32,9 @@
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
         <div
+          v-show="qrAvailable"
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
-          v-show="qrAvailable"
         >
           <PartyQR @available="qrAvailable = $event" />
         </div>
