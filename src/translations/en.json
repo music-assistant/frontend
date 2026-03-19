@@ -1163,9 +1163,6 @@
             "daily_at": "Daily at {0}",
             "every_days_at": "Every {0}d at {1}",
             "weekly_at": "Weekly {0} at {1}",
-            "utc_time": "{0} UTC",
-            "utc_weekly": "{0} at {1} UTC",
-            "with_utc": "{0} ({1})",
             "disabled_suffix": " (disabled)",
             "last_run": "Last run {0}",
             "next_run": "Next run {0}"
@@ -1183,7 +1180,6 @@
             "hour": "Hour",
             "minute": "Minute",
             "browser_timezone": "Browser timezone: {0}.",
-            "stored_as_utc": " Stored as {0}.",
             "weekdays": "Weekdays",
             "invalid_every": "Please enter a valid repeat interval.",
             "invalid_hour": "Please enter a valid hour.",
@@ -1198,7 +1194,7 @@
             "summary_with_message": "{0} {1} • {2}"
         },
         "toast": {
-            "added": "The requested action is running in the background. You can follow its progress in Background tasks.",
+            "added": "The requested action is running in the background.",
             "history_cleared": "Finished task history cleared.",
             "history_clear_failed": "Failed to clear finished tasks.",
             "run_failed": "Failed to start {0}.",
@@ -1229,7 +1225,13 @@
         "sync_provider_audiobooks": "Sync Audiobooks for {0}",
         "sync_provider_podcasts": "Sync Podcasts for {0}",
         "add_playlist_tracks": "Add items to playlist {0}",
-        "remove_playlist_tracks": "Remove items from playlist {0}"
+        "remove_playlist_tracks": "Remove items from playlist {0}",
+        "database_cleanup": "Database cleanup",
+        "scan_genre_mappings": "Scan genre mappings",
+        "cache_database_cleanup": "Cache database cleanup",
+        "scan_missing_artist_artwork": "Scan missing artist artwork",
+        "refresh_playlist_metadata": "Refresh playlist metadata",
+        "update_metadata": "Update metadata"
     },
     "images": "Images",
     "image_type": "Type",

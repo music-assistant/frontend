@@ -82,14 +82,14 @@
                 {{ t("background_tasks.last_run_by") }}
               </div>
               <div class="detail-value">
-                <Button
+                <button
                   v-if="lastRunByUserId && canOpenUsers"
-                  variant="link"
+                  type="button"
                   class="detail-link"
                   @click="openUserSettings(lastRunByUserId)"
                 >
                   {{ lastRunByLabel }}
-                </Button>
+                </button>
                 <span v-else>
                   {{ lastRunByLabel }}
                 </span>
@@ -101,14 +101,14 @@
                 {{ t("background_tasks.created_by") }}
               </div>
               <div class="detail-value">
-                <Button
+                <button
                   v-if="createdByUserId && canOpenUsers"
-                  variant="link"
+                  type="button"
                   class="detail-link"
                   @click="openUserSettings(createdByUserId)"
                 >
                   {{ createdByLabel }}
-                </Button>
+                </button>
                 <span v-else>
                   {{ createdByLabel }}
                 </span>
@@ -407,11 +407,23 @@ const formatDate = (value: string | undefined) =>
 }
 
 .detail-link {
-  height: auto;
+  display: inline;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
   padding: 0;
+  vertical-align: baseline;
   font-size: inherit;
   font-weight: 400;
   line-height: inherit;
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.detail-link:hover {
+  text-decoration: underline;
 }
 
 .detail-error {

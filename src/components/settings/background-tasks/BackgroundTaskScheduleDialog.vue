@@ -141,13 +141,6 @@
                 browserTimeZone,
               ])
             }}
-            <span v-if="utcPreview">
-              {{
-                t("background_tasks.schedule_dialog.stored_as_utc", [
-                  utcPreview,
-                ])
-              }}
-            </span>
           </p>
         </template>
 
@@ -225,13 +218,6 @@
                 browserTimeZone,
               ])
             }}
-            <span v-if="utcPreview">
-              {{
-                t("background_tasks.schedule_dialog.stored_as_utc", [
-                  utcPreview,
-                ])
-              }}
-            </span>
           </p>
         </template>
 
@@ -287,7 +273,6 @@ import {
 import {
   convertBackgroundTaskScheduleToLocal,
   convertBackgroundTaskScheduleToUtc,
-  formatBackgroundTaskScheduleUtcDetail,
   formatLocalTaskScheduleWeekday,
   getBackgroundTaskBrowserTimeZone,
 } from "@/helpers/backgroundTaskSchedule";
@@ -433,22 +418,6 @@ const buildLocalSchedule = (): TaskSchedule => {
     minute: minute.value,
   };
 };
-
-const utcPreview = computed(() => {
-  if (
-    scheduleType.value !== TaskScheduleType.DAILY &&
-    scheduleType.value !== TaskScheduleType.WEEKLY
-  ) {
-    return "";
-  }
-  if (validationError.value) {
-    return "";
-  }
-  return formatBackgroundTaskScheduleUtcDetail(
-    convertBackgroundTaskScheduleToUtc(buildLocalSchedule()),
-    t,
-  );
-});
 
 const onSave = () => {
   if (validationError.value) {
