@@ -202,30 +202,7 @@ const doSave = async () => {
 
   try {
     if (queueId.value) {
-      const task = await api.queueCommandSaveAsPlaylist(
-        queueId.value,
-        playlistName.value,
-        { showBackgroundTaskToast: false },
-      );
-      const playlistId = String(task.metadata.playlist_id || "");
-      toast.success($t("playlist_created"), {
-        description: $t("background_tasks.toast.added"),
-        action: playlistId
-          ? {
-              label: $t("open_playlist"),
-              onClick: () => {
-                store.showFullscreenPlayer = false;
-                router.push({
-                  name: "playlist",
-                  params: {
-                    itemId: playlistId,
-                    provider: "library",
-                  },
-                });
-              },
-            }
-          : undefined,
-      });
+      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value);
       return;
     }
 
