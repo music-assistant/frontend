@@ -4,6 +4,7 @@
       <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
       <Button
+        v-if="isAdmin"
         class="clear-finished-btn"
         variant="outline"
         @click="clearFinishedTasks"
@@ -141,6 +142,7 @@ const usersLoaded = ref(false);
 
 const { t, te } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
+const isAdmin = computed(() => store.currentUser?.role === UserRole.ADMIN);
 const {
   loading,
   refreshTasks: refreshTasksState,
@@ -489,7 +491,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         openScheduleDialog(task);
       },
       icon: "mdi-timer-edit-outline",
-      hide: !canEditTaskSchedule(task),
+      hide: !isAdmin.value || !canEditTaskSchedule(task),
     },
     {
       label: "background_tasks.run_now",
@@ -497,7 +499,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void runTask(task);
       },
       icon: "mdi-play",
-      hide: !canRunTaskManually(task),
+      hide: !isAdmin.value || !canRunTaskManually(task),
     },
     {
       label: task.schedule?.enabled
@@ -509,7 +511,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       icon: task.schedule?.enabled
         ? "mdi-calendar-remove"
         : "mdi-calendar-check",
-      hide: !isScheduledTask(task),
+      hide: !isAdmin.value || !isScheduledTask(task),
     },
     {
       label: "background_tasks.retry",
@@ -517,7 +519,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void retryTask(task);
       },
       icon: "mdi-refresh",
-      hide: !(task.allow_retry && isRetryableTask(task)),
+      hide: !isAdmin.value || !(task.allow_retry && isRetryableTask(task)),
     },
     {
       label: "background_tasks.cancel",
@@ -525,7 +527,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void cancelTask(task);
       },
       icon: "mdi-cancel",
-      hide: !(task.allow_cancel && isCancelableTask(task)),
+      hide: !isAdmin.value || !(task.allow_cancel && isCancelableTask(task)),
     },
     {
       label: "background_tasks.remove_history",
@@ -534,7 +536,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       },
       icon: "mdi-delete",
       color: "error",
-      hide: !canRemoveTask(task),
+      hide: !isAdmin.value || !canRemoveTask(task),
     },
   ];
 

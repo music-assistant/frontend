@@ -43,7 +43,7 @@
                     {{ scheduleLabel }}
                   </span>
                   <Button
-                    v-if="task?.schedule"
+                    v-if="task?.schedule && canEditSchedule"
                     variant="ghost-icon"
                     size="icon-sm"
                     class="detail-inline-action"
@@ -285,6 +285,9 @@ const scheduleLabel = computed(() => {
 });
 
 const canOpenUsers = computed(() => store.currentUser?.role === UserRole.ADMIN);
+const canEditSchedule = computed(
+  () => store.currentUser?.role === UserRole.ADMIN,
+);
 
 const resolveUserLabel = (userId: string | undefined, automatic = false) => {
   if (!userId) {

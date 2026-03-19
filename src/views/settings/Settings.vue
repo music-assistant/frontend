@@ -689,11 +689,13 @@ const breadcrumbItems = computed(() => {
         to: { name: "playersettings" },
       });
     } else if (currentTab === "system") {
-      items.push({
-        title: t("settings.system"),
-        disabled: name === "systemsettings",
-        to: { name: "systemsettings" },
-      });
+      if (!(name === "backgroundtasks" && !authManager.isAdmin())) {
+        items.push({
+          title: t("settings.system"),
+          disabled: name === "systemsettings",
+          to: { name: "systemsettings" },
+        });
+      }
     } else if (currentTab === "remote_access") {
       items.push({
         title: t("settings.remote_access"),
