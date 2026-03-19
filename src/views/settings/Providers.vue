@@ -78,11 +78,7 @@
         <template #append>
           <div class="provider-status-icons">
             <v-icon
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
+              v-if="isProviderSyncing(item.instance_id)"
               icon="mdi-sync"
               size="20"
               color="grey"
@@ -163,11 +159,7 @@
 
           <template #append>
             <v-btn
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
+              v-if="isProviderSyncing(item.instance_id)"
               variant="text"
               size="small"
               icon
@@ -306,7 +298,8 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
-import { openLinkInNewTab } from "@/helpers/utils";
+import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
+import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -319,8 +312,8 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
@@ -349,12 +342,20 @@ const addProviderLabel = computed(() => {
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
+const addProviderInitialType = ref<string | undefined>(undefined);
+const { isProviderSyncing } = useBackgroundTasks();
+let unsubProvidersUpdated: (() => void) | undefined;
 
-// listen for item updates to refresh items when that happens
-const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-  loadItems();
+const openAddProviderWithType = (type: string) => {
+  addProviderInitialType.value = type;
+  showAddProviderDialog.value = true;
+};
+
+watch(showAddProviderDialog, (isOpen) => {
+  if (!isOpen) {
+    addProviderInitialType.value = undefined;
+  }
 });
-onBeforeUnmount(unsub);
 
 const loadItems = async function () {
   // Only load provider configs if provider manifests are available
@@ -382,6 +383,16 @@ const editProvider = function (providerInstanceId: string) {
 const shouldShowStageBadge = function (stage?: ProviderStage) {
   return !!stage && stage !== ProviderStage.STABLE;
 };
+
+onMounted(() => {
+  unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    loadItems();
+  });
+});
+
+onBeforeUnmount(() => {
+  unsubProvidersUpdated?.();
+});
 
 const toggleEnabled = function (config: ProviderConfig) {
   config.enabled = !config.enabled;

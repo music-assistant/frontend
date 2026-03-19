@@ -401,6 +401,16 @@ const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "tasks",
+            name: "backgroundtasks",
+            component: () =>
+              import(
+                /* webpackChunkName: "backgroundtasks" */ "@/views/settings/BackgroundTasks.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "genremanagement",
             name: "genremanagement",
             component: () =>

@@ -27,6 +27,13 @@
           @click="toggleProvidersViewMode()"
         />
         <v-btn
+          v-if="isTasksPage"
+          :icon="tasksViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="text"
+          :title="t('tooltip.toggle_view_mode')"
+          @click="toggleTasksViewMode()"
+        />
+        <v-btn
           v-if="documentationUrl"
           icon="mdi-help-circle"
           variant="text"
@@ -381,6 +388,36 @@ provide("providersViewMode", {
   toggleViewMode: toggleProvidersViewMode,
 });
 
+const tasksViewMode = ref<"list" | "card">("list");
+const isTasksPage = computed(
+  () => router.currentRoute.value.name?.toString() === "backgroundtasks",
+);
+
+const savedTasksViewMode = getPreference<"list" | "card">(
+  "settings.tasks.viewMode",
+  "list",
+);
+
+watch(
+  () => savedTasksViewMode.value,
+  (savedViewMode) => {
+    if (savedViewMode === "list" || savedViewMode === "card") {
+      tasksViewMode.value = savedViewMode;
+    }
+  },
+  { immediate: true },
+);
+
+const toggleTasksViewMode = function () {
+  tasksViewMode.value = tasksViewMode.value === "list" ? "card" : "list";
+  setPreference("settings.tasks.viewMode", tasksViewMode.value);
+};
+
+provide("tasksViewMode", {
+  viewMode: tasksViewMode,
+  toggleViewMode: toggleTasksViewMode,
+});
+
 const allSettingsSections = [
   {
     name: "music_providers",
@@ -558,6 +595,7 @@ const activeTab = computed(() => {
     name.includes("system") ||
     name.includes("core") ||
     name.includes("serverlog") ||
+    name === "backgroundtasks" ||
     name === "genremanagement"
   ) {
     return "system";
@@ -747,6 +785,12 @@ const breadcrumbItems = computed(() => {
     .with("serverlogs", () => {
       items.push({
         title: t("settings.server_logging"),
+        disabled: true,
+      });
+    })
+    .with("backgroundtasks", () => {
+      items.push({
+        title: t("background_tasks.title"),
         disabled: true,
       });
     })
