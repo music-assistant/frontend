@@ -109,6 +109,13 @@ const extraSystemEntries: SystemConfigExtraEntry[] = [
     route: "/settings/serverlogs",
   },
   {
+    domain: "tasks",
+    name: "background_tasks.title",
+    description: "background_tasks.description",
+    icon: "mdi-playlist-play",
+    route: "/settings/tasks",
+  },
+  {
     domain: "genre_management",
     name: "settings.genre_management",
     description: "settings.genre_management_description",

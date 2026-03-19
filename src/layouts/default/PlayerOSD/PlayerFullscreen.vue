@@ -4,7 +4,8 @@
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
-    z-index="9999"
+    z-index="9000"
+    :retain-focus="false"
     persistent
   >
     <v-card

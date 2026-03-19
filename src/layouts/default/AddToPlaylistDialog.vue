@@ -102,7 +102,6 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ListPlus } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { toast } from "vue-sonner";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -242,7 +241,6 @@ const addToPlaylist = async function (value: MediaItemType) {
     selectedItems.value.map((x) => x.uri),
   );
   close();
-  toast.info($t("background_task_added"));
 };
 const newPlaylist = async function (provId: string) {
   let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;

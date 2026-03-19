@@ -10,17 +10,17 @@
         <DialogTitle class="mb-2">
           {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription v-if="!queueId">
           {{ $t("playlist_create_media_types", [providerName]) }}
           {{ playlistAllowedMediaTypesTranslated.join(", ") }}
         </DialogDescription>
 
         <div class="flex flex-col gap-4 mb-3">
-          <DialogDescription v-if="playlistAllowMixedMediaTypes">
+          <DialogDescription v-if="!queueId && playlistAllowMixedMediaTypes">
             {{ $t("playlist_mix_allowed") }}
           </DialogDescription>
           <div
-            v-else-if="playlistAllowedMediaTypes.length > 1"
+            v-else-if="!queueId && playlistAllowedMediaTypes.length > 1"
             class="flex flex-col gap-3"
           >
             <DialogDescription>{{
@@ -105,7 +105,7 @@ watch(showDialog, (open) => {
   store.dialogActive = open;
   if (open) {
     nextTick(() => {
-      nameInput.value?.$el?.focus();
+      nameInput.value?.focus?.();
     });
   }
 });
@@ -118,55 +118,62 @@ onMounted(() => {
     playlistAllowedMediaTypes.value = [];
     playlistSelectedMediaType.value = MediaType.UNKNOWN;
 
-    const provider = api.getProvider(providerId.value);
+    if (!queueId.value) {
+      const provider = api.getProvider(providerId.value);
 
-    if (provider != undefined) {
-      providerName.value = provider.name;
-      if (
-        provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_TRACKS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.TRACK);
+      if (provider != undefined) {
+        providerName.value = provider.name;
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE,
+          ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.TRACK);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
+        }
+        if (
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_RADIOS,
+          )
+        ) {
+          playlistAllowedMediaTypes.value.push(MediaType.RADIO);
+        }
+        playlistAllowMixedMediaTypes.value =
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_MIXED,
+          );
+        if (
+          !playlistAllowMixedMediaTypes.value &&
+          playlistAllowedMediaTypes.value.length > 1
+        ) {
+          // set the first to be the default for the radio button
+          playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
+        }
+      } else {
+        toast.error($t("playlist_create_provider_error"));
       }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
-      }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
-      }
-      if (
-        provider.supported_features.includes(
-          ProviderFeature.PLAYLIST_CREATE_RADIOS,
-        )
-      ) {
-        playlistAllowedMediaTypes.value.push(MediaType.RADIO);
-      }
-      playlistAllowMixedMediaTypes.value = provider.supported_features.includes(
-        ProviderFeature.PLAYLIST_CREATE_MIXED,
-      );
-      if (
-        !playlistAllowMixedMediaTypes.value &&
-        playlistAllowedMediaTypes.value.length > 1
-      ) {
-        // set the first to be the default for the radio button
-        playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
-      }
-    } else {
-      toast.error($t("playlist_create_provider_error"));
     }
     playlistAllowedMediaTypesTranslated.value =
       getTranslatedSupportedMediaTypes();
-    showDialog.value = true;
+    nextTick(() => {
+      showDialog.value = true;
+    });
   });
 });
 
@@ -194,13 +201,27 @@ const doSave = async () => {
   }
 
   try {
-    const playlist = queueId.value
-      ? await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value)
-      : await api.createPlaylist(
-          playlistName.value,
-          providerId.value,
-          selectedMediaTypes,
-        );
+    if (queueId.value) {
+      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value, {
+        showBackgroundTaskToast: false,
+      });
+      toast.info($t("background_tasks.toast.added"), {
+        action: {
+          label: $t("background_tasks.open"),
+          onClick: () => {
+            store.showFullscreenPlayer = false;
+            router.push({ name: "backgroundtasks" });
+          },
+        },
+      });
+      return;
+    }
+
+    const playlist = await api.createPlaylist(
+      playlistName.value,
+      providerId.value,
+      selectedMediaTypes,
+    );
     toast.success($t("playlist_created"), {
       action: {
         label: $t("open_playlist"),
@@ -217,8 +238,18 @@ const doSave = async () => {
       },
     });
   } catch (e) {
-    toast.error(e as string);
+    toast.error(getErrorMessage(e, $t("background_tasks.status.failed")));
   }
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
 };
 
 const getTranslatedSupportedMediaTypes = (): string[] => {
