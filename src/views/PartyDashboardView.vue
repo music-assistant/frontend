@@ -85,11 +85,11 @@
       <template v-else>
         <!-- QR Code and Lyrics -->
         <div
-          v-if="qrAvailable || displayLyrics"
+          v-show="qrAvailable || displayLyrics"
           :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
           <div
-            v-if="qrAvailable"
+            v-show="qrAvailable"
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
@@ -269,7 +269,11 @@ const fetchLyrics = async () => {
 
 const lyricsEnabled = computed(() => displayLyrics.value || karaokeMode.value);
 const lyricsTextColor = computed(() =>
-  albumArtUrl.value ? "#FFFFFF" : theme.current.value.dark ? "#FFFFFF" : "#000000",
+  albumArtUrl.value
+    ? "#FFFFFF"
+    : theme.current.value.dark
+      ? "#FFFFFF"
+      : "#000000",
 );
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
