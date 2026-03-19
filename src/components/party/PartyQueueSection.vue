@@ -1,9 +1,9 @@
 <template>
   <div class="queue-section">
     <div class="section-header">
-      <span class="section-label">
+      <h2 class="section-label">
         {{ $t("providers.party.guest_page.current_queue") }}
-      </span>
+      </h2>
       <div class="section-divider"></div>
       <div v-if="skipSongEnabled" class="skip-area">
         <span
