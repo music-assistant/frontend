@@ -93,10 +93,7 @@
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR
-              :force-white="useAlbumArtBackground && !!albumArtUrl"
-              @available="qrAvailable = $event"
-            />
+            <PartyQR @available="qrAvailable = $event" />
           </div>
           <div
             v-if="displayLyrics"
@@ -170,7 +167,6 @@ import {
   ImageColorPalette,
   getColorPalette,
   getMediaItemImageUrl,
-  parseBool,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -185,11 +181,9 @@ import { store } from "@/plugins/store";
 import Color from "color";
 import { Music, Speaker } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";
 
 const theme = useTheme();
-const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 
 const refreshPartyPlayer = async () => {
@@ -204,7 +198,6 @@ const refreshPartyPlayer = async () => {
 };
 
 const qrAvailable = ref(true); // Optimistic default; PartyQR emits false if guest access disabled
-const albumArtBackgroundEnabled = ref(true); // Default to true
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
 const highlightAhead = ref(true); // Whether lyric highlight finishes at LRC time
@@ -227,18 +220,8 @@ onBeforeUnmount(() => {
   compactQuery.removeEventListener("change", handleCompactChange);
 });
 
-// Check if album art background is enabled - prioritize query parameter over config
-const useAlbumArtBackground = computed(() => {
-  // Query parameter takes precedence for manual override
-  const param = route.query.albumArtBackground;
-
-  if (param !== undefined) {
-    const raw = Array.isArray(param) ? param[0] : param;
-    return parseBool(raw);
-  }
-  // Otherwise use config value
-  return albumArtBackgroundEnabled.value;
-});
+// Album art background is always active
+const useAlbumArtBackground = computed(() => true);
 
 const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
@@ -285,10 +268,9 @@ const fetchLyrics = async () => {
 };
 
 const lyricsEnabled = computed(() => displayLyrics.value || karaokeMode.value);
-const lyricsTextColor = computed(() => {
-  if (useAlbumArtBackground.value && albumArtUrl.value) return "#FFFFFF";
-  return theme.current.value.dark ? "#FFFFFF" : "#000000";
-});
+const lyricsTextColor = computed(() =>
+  albumArtUrl.value ? "#FFFFFF" : theme.current.value.dark ? "#FFFFFF" : "#000000",
+);
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
 
@@ -586,9 +568,6 @@ onMounted(async () => {
   // Fetch party configuration via shared composable
   const config = await fetchConfig();
   if (config) {
-    if (config.album_art_background !== undefined) {
-      albumArtBackgroundEnabled.value = config.album_art_background;
-    }
     if (config.display_lyrics !== undefined) {
       displayLyrics.value = config.display_lyrics;
     }
@@ -656,7 +635,6 @@ onBeforeUnmount(() => {
 // React to party config changes (e.g., admin toggles player controls)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
-    albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
     displayLyrics.value = newConfig.display_lyrics ?? false;
     karaokeMode.value =
       (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
@@ -665,7 +643,6 @@ watch(partyConfig, (newConfig) => {
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
     antiBurnIn.value = newConfig.anti_burn_in ?? false;
   } else {
-    albumArtBackgroundEnabled.value = true;
     displayLyrics.value = false;
     karaokeMode.value = false;
     highlightAhead.value = true;

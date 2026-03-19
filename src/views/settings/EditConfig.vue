@@ -822,6 +822,8 @@ const visibleEntriesByCategory = computed(() => {
     // Always skip 'enabled' and 'name' entries - they're either handled via dedicated props
     // or shouldn't be shown (e.g., when adding a new provider)
     if (entry.key === "enabled" || entry.key === "name") continue;
+    // Album art background is always enabled in the party dashboard
+    if (entry.key === "album_art_background") continue;
     // Skip protocol-specific enabled entries (they're shown in the header)
     if (entry.key.includes("||protocol||enabled")) continue;
     // Skip advanced entries if advanced settings are not shown
