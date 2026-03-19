@@ -202,7 +202,18 @@ const doSave = async () => {
 
   try {
     if (queueId.value) {
-      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value);
+      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value, {
+        showBackgroundTaskToast: false,
+      });
+      toast.info($t("background_tasks.toast.added"), {
+        action: {
+          label: $t("background_tasks.open"),
+          onClick: () => {
+            store.showFullscreenPlayer = false;
+            router.push({ name: "backgroundtasks" });
+          },
+        },
+      });
       return;
     }
 
@@ -227,8 +238,18 @@ const doSave = async () => {
       },
     });
   } catch (e) {
-    toast.error(e as string);
+    toast.error(getErrorMessage(e, $t("background_tasks.status.failed")));
   }
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
 };
 
 const getTranslatedSupportedMediaTypes = (): string[] => {
