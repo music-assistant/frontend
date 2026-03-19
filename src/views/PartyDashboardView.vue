@@ -26,10 +26,11 @@
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
         <div
+          v-if="qrAvailable"
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
-          <PartyQR />
+          <PartyQR @available="qrAvailable = $event" />
         </div>
 
         <div class="karaoke-lyrics">
@@ -68,6 +69,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
+              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
             />
           </TransitionGroup>
         </div>
@@ -77,15 +79,23 @@
       <template v-else>
         <!-- QR Code and Lyrics -->
         <div
+          v-if="qrAvailable || displayLyrics"
           :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
           <div
+            v-if="qrAvailable"
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR />
+            <PartyQR @available="qrAvailable = $event" />
           </div>
-          <div v-if="displayLyrics" class="lyrics-section">
+          <div
+            v-if="displayLyrics"
+            :class="[
+              'lyrics-section',
+              { 'lyrics-section--full': !qrAvailable },
+            ]"
+          >
             <LyricsViewer
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
@@ -131,6 +141,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
+              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
             />
           </TransitionGroup>
         </div>
@@ -143,8 +154,8 @@
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
   ImageColorPalette,
   getColorPalette,
@@ -182,6 +193,7 @@ const refreshPartyPlayer = async () => {
   }
 };
 
+const qrAvailable = ref(true); // Optimistic default; PartyQR emits false if guest access disabled
 const albumArtBackgroundEnabled = ref(true); // Default to true
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
@@ -744,6 +756,11 @@ watch(
   flex: 0 0 50%;
   overflow: hidden;
   max-height: 50%;
+}
+
+.lyrics-section--full {
+  flex: 1 1 100%;
+  max-height: 100%;
 }
 
 .lyrics-section :deep(.synced-content) {

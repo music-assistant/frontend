@@ -1,7 +1,13 @@
 <template>
   <div class="guest-view">
+    <!-- Logo -->
+    <div class="guest-logo">
+      <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
+    </div>
+
     <!-- Search Section -->
     <PartySearchBar
+      ref="searchBarRef"
       v-model:search-query="searchQuery"
       v-model:search-filter="searchFilter"
       :has-searched="hasSearched"
@@ -189,16 +195,17 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  nextTick,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-} from "vue";
+import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
+import PartyResultItem from "@/components/party/PartyResultItem.vue";
+import PartySearchBar from "@/components/party/PartySearchBar.vue";
+import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestSearch } from "@/composables/useGuestSearch";
+import { usePartyConfig } from "@/composables/usePartyConfig";
+import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import {
   type Artist,
   EventType,
@@ -207,18 +214,25 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
-import { usePartyConfig } from "@/composables/usePartyConfig";
-import { useRateLimiting } from "@/composables/useRateLimiting";
-import { useGuestQueue } from "@/composables/useGuestQueue";
-import { useGuestSearch } from "@/composables/useGuestSearch";
-import PartySearchBar from "@/components/party/PartySearchBar.vue";
-import PartyResultItem from "@/components/party/PartyResultItem.vue";
-import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
-import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
-import { Button } from "@/components/ui/button";
-import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { store } from "@/plugins/store";
 import { ArrowLeft, Music, Search } from "lucide-vue-next";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
+import { toast } from "vue-sonner";
+import { useTheme } from "vuetify";
+const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
+const theme = useTheme();
+const logoSrc = computed(() =>
+  theme.current.value.dark
+    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
+    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
+);
 
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyConfig();
@@ -468,6 +482,13 @@ const skipCurrentSong = async () => {
   }
 };
 
+// Restore focus to search input after search completes
+watch(searching, (isSearching) => {
+  if (!isSearching) {
+    searchBarRef.value?.focus();
+  }
+});
+
 // React to party config changes (e.g., admin changes rate limits or badge colors)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
@@ -533,6 +554,20 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.guest-logo {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  height: 28px;
+  width: auto;
+  opacity: 0.85;
+  margin-bottom: 1rem;
+}
+
 .guest-view {
   width: 100%;
   max-width: 1200px;
@@ -630,6 +665,11 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .logo-img {
+    height: 25px;
+    margin-bottom: 0.2rem;
+  }
+
   .guest-view {
     padding: 0.75rem;
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
