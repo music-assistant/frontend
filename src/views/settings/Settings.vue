@@ -120,18 +120,18 @@
       <div v-if="settingsViewMode === 'card'" class="settings-card-view">
         <div class="settings-featured">
           <Card
-            v-for="section in featuredSections"
+            v-for="section in [...musicSections, ...playerSections]"
             :key="section.name"
             class="setting-card"
             @click="router.push(section.route)"
           >
-            <CardHeader class="setting-card-header">
+            <CardHeader>
               <div class="setting-header-top">
                 <div
                   class="setting-icon"
                   :style="getIconBackgroundStyle(section.color)"
                 >
-                  <Icon :icon="section.icon" size="24" color="white" />
+                  <Icon :icon="section.icon" size="20" color="white" />
                 </div>
                 <div class="setting-chevron">
                   <Icon icon="mdi-chevron-right" size="20" />
@@ -154,13 +154,13 @@
             class="setting-card"
             @click="router.push(section.route)"
           >
-            <CardHeader class="setting-card-header">
+            <CardHeader>
               <div class="setting-header-top">
                 <div
                   class="setting-icon"
                   :style="getIconBackgroundStyle(section.color)"
                 >
-                  <Icon :icon="section.icon" size="24" color="white" />
+                  <Icon :icon="section.icon" size="20" color="white" />
                 </div>
                 <div class="setting-chevron">
                   <Icon icon="mdi-chevron-right" size="20" />
@@ -495,17 +495,20 @@ const providerSectionNames = [
   "plugin_providers",
 ];
 
-const featuredSections = computed(() => {
+const musicSections = computed(() => {
   return settingsSections.value.filter(
-    (section) =>
-      section.name === "music_providers" || section.name === "player_providers",
+    (section) => section.name === "music_providers",
   );
+});
+
+const playerSections = computed(() => {
+  return settingsSections.value.filter((section) => section.name === "players");
 });
 
 const regularSections = computed(() => {
   return settingsSections.value.filter(
     (section) =>
-      section.name !== "music_providers" && section.name !== "player_providers",
+      section.name !== "music_providers" && section.name !== "players",
   );
 });
 
@@ -801,26 +804,28 @@ const documentationUrl = computed(() => {
 .settings-card-view {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 16px;
 }
 
 .settings-featured {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 25px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .settings-featured {
+    grid-template-columns: 1fr;
+  }
 }
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
 @media (min-width: 960px) {
-  .settings-featured {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .settings-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -841,6 +846,7 @@ const documentationUrl = computed(() => {
     border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding: 6px 0 0 0;
 }
 
 .setting-card:hover {
@@ -851,22 +857,17 @@ const documentationUrl = computed(() => {
   border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
-.setting-card-header {
-  position: relative;
-  padding: 10px 24px 10px 24px;
-}
-
 .setting-header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .setting-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -880,9 +881,9 @@ const documentationUrl = computed(() => {
 }
 
 .setting-title {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   line-height: 1.3;
 }
 
@@ -989,41 +990,31 @@ const documentationUrl = computed(() => {
 }
 
 @media (max-width: 768px) {
-  .settings-featured {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
   .settings-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
   }
 
   .settings-overview {
-    padding: 20px 16px;
-  }
-
-  .setting-card-header {
-    padding: 20px;
-    padding-bottom: 16px;
+    padding: 16px 12px;
   }
 
   .setting-header-top {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .setting-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
   }
 
   .setting-chevron {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
 
   .setting-title {
-    font-size: 1.125rem;
+    font-size: 0.938rem;
   }
 
   .settings-list-item {
@@ -1049,14 +1040,6 @@ const documentationUrl = computed(() => {
 @media (max-width: 480px) {
   .settings-overview {
     padding: 16px 12px;
-  }
-
-  .setting-card-header {
-    padding: 16px;
-  }
-
-  .setting-card-featured .setting-card-header {
-    padding: 16px;
   }
 
   .setting-icon-featured {
