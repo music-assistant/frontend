@@ -17,7 +17,7 @@
           </div>
         </Transition>
       </div>
-      <img src="@/assets/logo/logo.svg" class="qr-logo" alt="Music Assistant" />
+      <img :src="logoSrc" class="qr-logo" alt="Music Assistant" />
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
@@ -35,9 +35,17 @@ import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { AlertCircle, Check } from "lucide-vue-next";
 import QRCode from "qrcode";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useTheme } from "vuetify";
 
+const props = defineProps<{ forceWhite?: boolean }>();
 const emit = defineEmits<{ available: [value: boolean] }>();
+const theme = useTheme();
+const logoSrc = computed(() =>
+  props.forceWhite || theme.current.value.dark
+    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
+    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
+);
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
@@ -72,11 +80,13 @@ const copyUrlToClipboard = async () => {
 const renderQRToCanvas = async () => {
   if (!qrCanvas.value || !qrCodeUrl.value) return;
   qrSize.value = calculateQRSize();
+  const qrColor =
+    props.forceWhite || theme.current.value.dark ? "#FFFFFF" : "#000000";
   await QRCode.toCanvas(qrCanvas.value, qrCodeUrl.value, {
     width: qrSize.value,
     margin: 2,
     color: {
-      dark: "#FFFFFF",
+      dark: qrColor,
       light: "#00000000",
     },
   });
@@ -86,6 +96,13 @@ const renderQRToCanvas = async () => {
 watch(qrCanvas, (canvas) => {
   if (canvas) renderQRToCanvas();
 });
+
+watch(
+  () => [theme.current.value.dark, props.forceWhite],
+  () => {
+    if (qrCanvas.value && qrCodeUrl.value) renderQRToCanvas();
+  },
+);
 
 const generateQRCode = async () => {
   loading.value = true;

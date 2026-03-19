@@ -35,7 +35,6 @@
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-
   </div>
 
   <!-- Search Filter Chips -->

@@ -21,7 +21,13 @@
 
     <div
       v-else
-      :class="['party-content', { 'party-content--karaoke': karaokeMode }]"
+      :class="[
+        'party-content',
+        {
+          'party-content--karaoke': karaokeMode,
+          'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
+        },
+      ]"
     >
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
@@ -87,7 +93,10 @@
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR @available="qrAvailable = $event" />
+            <PartyQR
+              :force-white="useAlbumArtBackground && !!albumArtUrl"
+              @available="qrAvailable = $event"
+            />
           </div>
           <div
             v-if="displayLyrics"
@@ -103,6 +112,7 @@
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
               :highlight-ahead="highlightAhead"
+              :text-color="lyricsTextColor"
             />
           </div>
         </div>
@@ -275,6 +285,10 @@ const fetchLyrics = async () => {
 };
 
 const lyricsEnabled = computed(() => displayLyrics.value || karaokeMode.value);
+const lyricsTextColor = computed(() => {
+  if (useAlbumArtBackground.value && albumArtUrl.value) return "#FFFFFF";
+  return theme.current.value.dark ? "#FFFFFF" : "#000000";
+});
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
 
@@ -707,6 +721,11 @@ watch(
   filter: blur(2vw) brightness(0.5);
   z-index: 0;
   transition: background-image 0.8s ease-in-out;
+}
+
+.party-content--album-art,
+.party-content--album-art * {
+  color: white !important;
 }
 
 .party-content {
