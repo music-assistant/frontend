@@ -27,7 +27,7 @@ export interface MenuItem {
   openInNewTab?: boolean;
 }
 
-export const getMenuItems = function () {
+export const getMenuItems = function (partyOpenInNewTab = false) {
   const items: MenuItem[] = [];
   // we loop through DEFAULT_MENU_ITEMS to respect default order;
   // new items added to DEFAULT_MENU_ITEMS automatically appear unless explicitly disabled
@@ -58,10 +58,10 @@ export const getMenuItems = function () {
       items.push({
         label: "Party",
         icon: PartyPopper,
-        path: "/party",
+        path: partyOpenInNewTab ? "/party" : "/party?frameless=true",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
-        openInNewTab: true,
+        openInNewTab: partyOpenInNewTab,
       });
     }
     if (enabledMenuItemStr === "artists") {

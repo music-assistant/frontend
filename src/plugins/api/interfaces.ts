@@ -1234,4 +1234,5 @@ export interface PartyConfig {
   request_badge_color?: string;
   boost_badge_color?: string;
   anti_burn_in: boolean;
+  open_in_new_tab: boolean;
 }

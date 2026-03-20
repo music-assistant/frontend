@@ -9,6 +9,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { eventbus } from "@/plugins/eventbus";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
@@ -18,9 +19,12 @@ import { getMenuItems } from "./utils/getMenuItems";
 
 const router = useRouter();
 const { t } = useI18n();
+const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
+fetchPartyConfig();
 
 const navItems = computed(() => {
-  return getMenuItems()
+  const partyOpenInNewTab = partyConfig.value?.open_in_new_tab ?? false;
+  return getMenuItems(partyOpenInNewTab)
     .filter((item) => !item.hidden)
     .map((item) => ({
       title: t(item.label),
