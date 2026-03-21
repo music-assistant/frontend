@@ -113,15 +113,15 @@ const providerDetails = computed(() => {
 });
 
 const syncPlayers = computed(() => {
+  let players;
   if (props.provider === "universal_group") {
     // for universal groups, show all available non-group players, regardless of provider
-    return Object.values(api.players).filter(
+    players = Object.values(api.players).filter(
       (x) => x.available && x.type != PlayerType.GROUP,
     );
-  }
-  if (props.provider === "sync_group") {
+  } else if (props.provider === "sync_group") {
     // for sync groups, show all available non-group players that are sync compatible with the provider
-    return Object.values(api.players).filter(
+    players = Object.values(api.players).filter(
       (x) =>
         x.available &&
         x.type != PlayerType.GROUP &&
@@ -131,12 +131,16 @@ const syncPlayers = computed(() => {
           members.value.includes(x.player_id) ||
           members.value.some((m) => x.can_group_with.includes(m))),
     );
+  } else {
+    players = Object.values(api.players).filter(
+      (x) =>
+        x.available &&
+        x.type != PlayerType.GROUP &&
+        x.provider == providerDetails.value?.instance_id,
+    );
   }
-  return Object.values(api.players).filter(
-    (x) =>
-      x.available &&
-      x.type != PlayerType.GROUP &&
-      x.provider == providerDetails.value?.instance_id,
+  return players.sort((a, b) =>
+    a.display_name.localeCompare(b.display_name),
   );
 });
 
