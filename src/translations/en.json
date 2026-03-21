@@ -328,6 +328,7 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "search": "Search",
+    "select_party_instance": "Select a Party",
     "series_plural": "Series",
     "series_singular": "Series",
     "server_state": {

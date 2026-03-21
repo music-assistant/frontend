@@ -97,6 +97,8 @@ describe("useRateLimiting", () => {
     const rateLimiting = useRateLimiting();
 
     const config: PartyConfig = {
+      instance_id: "party--test123",
+      name: "Test Party",
       enable_rate_limiting: false,
       enable_add_queue: false,
       enable_boost: false,

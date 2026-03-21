@@ -237,20 +237,27 @@ const completeInitialization = async () => {
     console.debug("[App] Party guest - skipping full state fetch");
   }
 
-  // Check if party plugin is enabled
+  // Check party plugin instances
   try {
     const partyProviders = await api.getProviderConfigs(
       ProviderType.PLUGIN,
       "party",
     );
-    if (partyProviders.length > 0 && partyProviders[0].enabled) {
+    const enabledParty = partyProviders.filter((p) => p.enabled);
+    if (enabledParty.length > 0) {
       store.enabledPlugins.add("party");
+      store.partyInstances = enabledParty.map((p) => ({
+        instance_id: p.instance_id,
+        name: p.name || p.default_name || "Party",
+      }));
     } else {
       store.enabledPlugins.delete("party");
+      store.partyInstances = [];
     }
   } catch (error) {
     console.error("[App] Failed to check party status:", error);
     store.enabledPlugins.delete("party");
+    store.partyInstances = [];
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -413,10 +420,16 @@ onMounted(async () => {
         ProviderType.PLUGIN,
         "party",
       );
-      if (partyProviders.length > 0 && partyProviders[0].enabled) {
+      const enabledParty = partyProviders.filter((p) => p.enabled);
+      if (enabledParty.length > 0) {
         store.enabledPlugins.add("party");
+        store.partyInstances = enabledParty.map((p) => ({
+          instance_id: p.instance_id,
+          name: p.name || p.default_name || "Party",
+        }));
       } else {
         store.enabledPlugins.delete("party");
+        store.partyInstances = [];
       }
     } catch (error) {
       console.error("[App] Failed to update party status:", error);

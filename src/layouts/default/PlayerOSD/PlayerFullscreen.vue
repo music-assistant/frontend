@@ -1238,21 +1238,62 @@ const loadNextPage = async function ({
   }
 };
 
-// Fetch badge colors from party config
-const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
+// Fetch badge colors from the party instance associated with the active player
+const { config: partyConfigs, fetchConfigForInstance } = usePartyConfig();
+const partyPlayerMap = ref<Record<string, string>>({});
 
-// React to party config changes (e.g., admin changes badge colors)
-watch(partyConfig, (newConfig) => {
-  if (newConfig) {
-    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
-    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+const fetchPartyPlayerMap = async () => {
+  const map: Record<string, string> = {};
+  for (const instance of store.partyInstances) {
+    try {
+      const playerId = (await api.sendCommand(
+        `party/${instance.instance_id}/player`,
+      )) as string | null;
+      if (playerId) {
+        map[playerId] = instance.instance_id;
+      }
+    } catch {
+      // instance may not be ready yet
+    }
+  }
+  partyPlayerMap.value = map;
+};
+
+const activePartyInstanceId = computed(() => {
+  const playerId = store.activePlayer?.player_id;
+  if (!playerId) return undefined;
+  return partyPlayerMap.value[playerId];
+});
+
+// React to party config changes for the active player's party instance
+watch(
+  [activePartyInstanceId, partyConfigs],
+  ([instanceId]) => {
+    if (!instanceId) return;
+    const config = partyConfigs.value[instanceId];
+    if (config) {
+      requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
+      boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
+    }
+  },
+  { deep: true },
+);
+
+// When active player changes and maps to a party instance, fetch its config
+watch(activePartyInstanceId, async (instanceId) => {
+  if (instanceId) {
+    await fetchConfigForInstance(instanceId);
   }
 });
 
 onMounted(async () => {
-  // Only fetch badge colors if party provider is loaded
-  if (Object.values(api.providers).some((p) => p.domain === "party")) {
-    await fetchPartyConfig();
+  if (store.partyInstances.length > 0) {
+    await fetchPartyPlayerMap();
+    // Fetch config for the instance matching the active player
+    const instanceId = activePartyInstanceId.value;
+    if (instanceId) {
+      await fetchConfigForInstance(instanceId);
+    }
   }
 });
 

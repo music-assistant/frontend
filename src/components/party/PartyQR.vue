@@ -37,6 +37,10 @@ import { AlertCircle, Check } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+const props = defineProps<{
+  instanceId: string;
+}>();
+
 const emit = defineEmits<{ available: [value: boolean] }>();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 
@@ -91,7 +95,9 @@ watch(qrCanvas, (canvas) => {
 const generateQRCode = async () => {
   loading.value = true;
   try {
-    const url = (await api.sendCommand("party/url")) as string | null;
+    const url = (await api.sendCommand(`party/${props.instanceId}/url`)) as
+      | string
+      | null;
 
     guestAccessEnabled.value = !!url;
 

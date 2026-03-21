@@ -1218,6 +1218,8 @@ export interface RemoteAccessInfo {
 // Party interfaces
 
 export interface PartyConfig {
+  instance_id: string;
+  name: string;
   enable_rate_limiting: boolean;
   enable_add_queue: boolean;
   add_queue_limit: number;

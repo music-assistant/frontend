@@ -23,6 +23,7 @@ interface JWTClaims {
   provider_filter: string[];
   token_name: string;
   is_long_lived: boolean;
+  extra_claims?: Record<string, unknown>;
 }
 
 export class AuthManager {
@@ -126,6 +127,18 @@ export class AuthManager {
    */
   isPartyGuest(): boolean {
     return this.claims?.username === "party_guest";
+  }
+
+  /**
+   * Get the party instance ID from the JWT extra_claims.
+   * Returns undefined if not a party guest or no instance claim present.
+   */
+  getPartyInstanceId(): string | undefined {
+    const instanceFromClaim = this.claims?.extra_claims?.party_instance;
+    if (typeof instanceFromClaim === "string") {
+      return instanceFromClaim;
+    }
+    return undefined;
   }
 
   /**

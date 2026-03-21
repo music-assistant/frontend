@@ -28,6 +28,11 @@ const navItems = computed(() => {
       icon: item.icon,
       disabled: item.disabled,
       openInNewTab: item.openInNewTab,
+      subItems: item.subItems?.map((sub) => ({
+        title: sub.label,
+        url: sub.path,
+        openInNewTab: sub.openInNewTab,
+      })),
     }));
 });
 

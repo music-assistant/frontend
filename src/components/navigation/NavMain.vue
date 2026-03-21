@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { markRaw, type Component } from "vue";
+import { markRaw, ref, type Component } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 const RouterLinkComponent = markRaw(RouterLink);
@@ -13,12 +13,19 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+interface NavSubItem {
+  title: string;
+  url: string;
+  openInNewTab?: boolean;
+}
+
 interface NavItem {
   title: string;
   url: string;
   icon?: Component;
   disabled?: boolean;
   openInNewTab?: boolean;
+  subItems?: NavSubItem[];
 }
 
 const props = defineProps<{
@@ -29,15 +36,43 @@ const route = useRoute();
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
 
+const showMenu = ref(false);
+const menuPosX = ref(0);
+const menuPosY = ref(0);
+const activeSubItems = ref<NavSubItem[]>([]);
+
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
 
 const handleClick = (item: NavItem, event: Event) => {
+  if (item.subItems && item.subItems.length > 0) {
+    event.preventDefault();
+    const mouseEvent = event as MouseEvent;
+    menuPosX.value = mouseEvent.clientX;
+    menuPosY.value = mouseEvent.clientY;
+    activeSubItems.value = item.subItems;
+    showMenu.value = true;
+    return;
+  }
   if (item.openInNewTab) {
     event.preventDefault();
     const resolved = router.resolve(item.url).href;
     const fullUrl = new URL(resolved, window.location.href).href;
     window.open(fullUrl, "_blank");
+  }
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
+};
+
+const handleSubItemClick = (subItem: NavSubItem) => {
+  showMenu.value = false;
+  if (subItem.openInNewTab) {
+    const resolved = router.resolve(subItem.url).href;
+    const fullUrl = new URL(resolved, window.location.href).href;
+    window.open(fullUrl, "_blank");
+  } else {
+    router.push(subItem.url);
   }
   if (isMobile.value) {
     setOpenMobile(false);
@@ -52,11 +87,15 @@ const handleClick = (item: NavItem, event: Event) => {
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
           <SidebarMenuButton
             :as="
-              item.disabled || item.openInNewTab
+              item.disabled || item.openInNewTab || item.subItems?.length
                 ? 'button'
                 : RouterLinkComponent
             "
-            v-bind="item.disabled || item.openInNewTab ? {} : { to: item.url }"
+            v-bind="
+              item.disabled || item.openInNewTab || item.subItems?.length
+                ? {}
+                : { to: item.url }
+            "
             :is-active="isActive(item.url)"
             :tooltip="item.title"
             :disabled="item.disabled"
@@ -80,6 +119,27 @@ const handleClick = (item: NavItem, event: Event) => {
       </SidebarMenu>
     </SidebarGroupContent>
   </SidebarGroup>
+
+  <v-menu
+    v-model="showMenu"
+    :target="[menuPosX, menuPosY]"
+    scrim
+    style="z-index: 999999"
+    z-index="999999"
+  >
+    <v-card min-width="200" style="overflow-y: auto">
+      <v-list density="compact" slim tile>
+        <v-list-item
+          v-for="subItem in activeSubItems"
+          :key="subItem.url"
+          :title="subItem.title"
+          link
+          style="padding-left: 16px"
+          @click="handleSubItemClick(subItem)"
+        />
+      </v-list>
+    </v-card>
+  </v-menu>
 </template>
 
 <style scoped>

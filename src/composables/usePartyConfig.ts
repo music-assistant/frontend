@@ -1,67 +1,92 @@
 /**
  * Shared composable for party configuration.
- * Fetches party/config once and shares reactive state across components,
- * avoiding redundant API calls when multiple components need the same config.
+ * Fetches party/{instanceId}/config once per instance and shares reactive state
+ * across components, avoiding redundant API calls when multiple components need
+ * the same config.
  */
 
 import { ref } from "vue";
 import api from "@/plugins/api";
 import { EventType, type PartyConfig } from "@/plugins/api/interfaces";
 
-const config = ref<PartyConfig | null>(null);
-const loading = ref(false);
-const loaded = ref(false);
+// Per-instance cache
+const configs = ref<Record<string, PartyConfig | null>>({});
+const loadingMap = ref<Record<string, boolean>>({});
+const loadedMap = ref<Record<string, boolean>>({});
 
-let fetchPromise: Promise<PartyConfig | null> | null = null;
+const fetchPromises: Record<string, Promise<PartyConfig | null> | null> = {};
 
 /**
- * Fetch party config, deduplicating concurrent requests.
+ * Fetch party config for a specific instance, deduplicating concurrent requests.
  * Returns the cached config if already loaded, unless force is true.
  */
-async function fetchConfig(force = false): Promise<PartyConfig | null> {
-  if (loaded.value && !force) {
-    return config.value;
+async function fetchConfig(
+  instanceId: string,
+  force = false,
+): Promise<PartyConfig | null> {
+  if (loadedMap.value[instanceId] && !force) {
+    return configs.value[instanceId] ?? null;
   }
 
   // Deduplicate concurrent fetches
-  if (fetchPromise && !force) {
-    return fetchPromise;
+  if (fetchPromises[instanceId] && !force) {
+    return fetchPromises[instanceId]!;
   }
 
-  loading.value = true;
-  fetchPromise = (async () => {
+  loadingMap.value[instanceId] = true;
+  fetchPromises[instanceId] = (async () => {
     try {
-      const result = (await api.sendCommand("party/config")) as PartyConfig;
-      config.value = result;
-      loaded.value = true;
+      const result = (await api.sendCommand(
+        `party/${instanceId}/config`,
+      )) as PartyConfig;
+      configs.value[instanceId] = result;
+      loadedMap.value[instanceId] = true;
       return result;
     } catch {
-      config.value = null;
-      loaded.value = true;
+      configs.value[instanceId] = null;
+      loadedMap.value[instanceId] = true;
       return null;
     } finally {
-      loading.value = false;
-      fetchPromise = null;
+      loadingMap.value[instanceId] = false;
+      delete fetchPromises[instanceId];
     }
   })();
 
-  return fetchPromise;
+  return fetchPromises[instanceId]!;
 }
 
 /**
- * Reset cached config (e.g., when provider is reloaded).
+ * Reset cached config for a specific instance or all instances.
  */
-function invalidate() {
-  config.value = null;
-  loaded.value = false;
-  fetchPromise = null;
+function invalidate(instanceId?: string) {
+  if (instanceId) {
+    delete configs.value[instanceId];
+    delete loadedMap.value[instanceId];
+    delete fetchPromises[instanceId];
+  } else {
+    configs.value = {};
+    loadedMap.value = {};
+    for (const key of Object.keys(fetchPromises)) {
+      delete fetchPromises[key];
+    }
+  }
+}
+
+/**
+ * Re-fetch configs for all previously loaded instances.
+ * Unlike invalidate(), this updates the reactive state in-place so watchers
+ * see the new per-instance values rather than a blanket null.
+ */
+async function refetchAll() {
+  const instanceIds = Object.keys(loadedMap.value);
+  await Promise.all(instanceIds.map((id) => fetchConfig(id, true)));
 }
 
 let subscribed = false;
 
 /**
  * Subscribe to PROVIDERS_UPDATED and CORE_STATE_UPDATED so the shared
- * config ref auto-refreshes whenever the party provider is reloaded
+ * config ref auto-refreshes whenever any party provider is reloaded
  * or remote access is toggled.
  */
 function ensureSubscribed() {
@@ -73,11 +98,10 @@ function ensureSubscribed() {
       (p) => p.domain === "party",
     );
     if (hasParty) {
-      invalidate();
-      await fetchConfig(true);
+      await refetchAll();
     } else {
-      config.value = null;
-      loaded.value = true;
+      configs.value = {};
+      loadedMap.value = {};
     }
   });
 
@@ -88,19 +112,24 @@ function ensureSubscribed() {
       (p) => p.domain === "party",
     );
     if (hasParty) {
-      invalidate();
-      await fetchConfig(true);
+      await refetchAll();
     }
   });
 }
 
-export function usePartyConfig() {
+export function usePartyConfig(instanceId?: string) {
   ensureSubscribed();
   return {
-    config,
-    loading,
-    loaded,
-    fetchConfig,
+    config: configs,
+    loading: loadingMap,
+    loaded: loadedMap,
+    fetchConfig: (force = false) => {
+      if (instanceId) {
+        return fetchConfig(instanceId, force);
+      }
+      return Promise.resolve(null);
+    },
+    fetchConfigForInstance: fetchConfig,
     invalidate,
   };
 }

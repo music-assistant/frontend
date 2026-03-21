@@ -17,6 +17,12 @@ import {
 } from "lucide-vue-next";
 import { Component } from "vue";
 
+export interface MenuSubItem {
+  label: string;
+  path: string;
+  openInNewTab?: boolean;
+}
+
 export interface MenuItem {
   label: string;
   icon: Component;
@@ -25,6 +31,7 @@ export interface MenuItem {
   hidden?: boolean;
   disabled?: boolean;
   openInNewTab?: boolean;
+  subItems?: MenuSubItem[];
 }
 
 export const getMenuItems = function () {
@@ -55,14 +62,38 @@ export const getMenuItems = function () {
       });
     }
     if (enabledMenuItemStr === "party") {
-      items.push({
-        label: "Party",
-        icon: PartyPopper,
-        path: "/party",
-        isLibraryNode: false,
-        hidden: !store.enabledPlugins.has("party"),
-        openInNewTab: true,
-      });
+      const instances = store.partyInstances;
+      if (instances.length === 1) {
+        items.push({
+          label: instances[0].name,
+          icon: PartyPopper,
+          path: `/party/${instances[0].instance_id}`,
+          isLibraryNode: false,
+          hidden: !store.enabledPlugins.has("party"),
+          openInNewTab: true,
+        });
+      } else if (instances.length > 1) {
+        items.push({
+          label: "Party",
+          icon: PartyPopper,
+          path: "/party",
+          isLibraryNode: false,
+          hidden: !store.enabledPlugins.has("party"),
+          subItems: instances.map((inst) => ({
+            label: inst.name,
+            path: `/party/${inst.instance_id}`,
+            openInNewTab: true,
+          })),
+        });
+      } else {
+        items.push({
+          label: "Party",
+          icon: PartyPopper,
+          path: "/party",
+          isLibraryNode: false,
+          hidden: true,
+        });
+      }
     }
     if (enabledMenuItemStr === "artists") {
       items.push({

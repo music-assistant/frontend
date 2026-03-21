@@ -238,8 +238,15 @@ const logoSrc = computed(() =>
     : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
 );
 
+// Discover the party instance ID from the guest username
+const instanceId = ref("");
+
 // --- Composables ---
-const { config: partyConfig, fetchConfig } = usePartyConfig();
+const { config: partyConfigs, fetchConfigForInstance } = usePartyConfig();
+const partyConfig = computed(
+  () => partyConfigs.value[instanceId.value] ?? null,
+);
+const fetchConfig = () => fetchConfigForInstance(instanceId.value);
 const rateLimit = useRateLimiting();
 const {
   rateLimitingEnabled,
@@ -388,10 +395,13 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   addingItems.value.add(key);
 
   try {
-    const result = (await api.sendCommand("party/add_to_queue", {
-      uri: item.uri,
-      boost: position === "next",
-    })) as { success: boolean; boosted: boolean; started_playback: boolean };
+    const result = (await api.sendCommand(
+      `party/${instanceId.value}/add_to_queue`,
+      {
+        uri: item.uri,
+        boost: position === "next",
+      },
+    )) as { success: boolean; boosted: boolean; started_playback: boolean };
 
     if (!result.success) {
       throw new Error("Server rejected the request");
@@ -434,9 +444,12 @@ const boostQueueItem = async (item: QueueItem) => {
 
   boostingQueueItemId.value = item.queue_item_id;
   try {
-    const result = (await api.sendCommand("party/boost_queue_item", {
-      queue_item_id: item.queue_item_id,
-    })) as { success: boolean };
+    const result = (await api.sendCommand(
+      `party/${instanceId.value}/boost_queue_item`,
+      {
+        queue_item_id: item.queue_item_id,
+      },
+    )) as { success: boolean };
 
     if (!result.success) {
       throw new Error("Server rejected the request");
@@ -472,7 +485,9 @@ const skipCurrentSong = async () => {
 
   skippingSong.value = true;
   try {
-    const result = (await api.sendCommand("party/skip")) as {
+    const result = (await api.sendCommand(
+      `party/${instanceId.value}/skip`,
+    )) as {
       success: boolean;
     };
 
@@ -514,7 +529,9 @@ let cleanupProvidersSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
   try {
-    const partyPlayerId = await api.sendCommand<string | null>("party/player");
+    const partyPlayerId = await api.sendCommand<string | null>(
+      `party/${instanceId.value}/player`,
+    );
     partyQueueId.value = partyPlayerId;
     if (partyPlayerId) {
       store.activePlayerId = partyPlayerId;
@@ -532,6 +549,16 @@ const fetchAndApplyConfig = async () => {
 };
 
 onMounted(async () => {
+  // Discover which party instance this guest belongs to from the username
+  const { authManager } = await import("@/plugins/auth");
+  const discoveredId = authManager.getPartyInstanceId();
+  if (discoveredId) {
+    instanceId.value = discoveredId;
+  } else {
+    console.error("Could not determine party instance ID from guest username");
+    return;
+  }
+
   await fetchAndApplyConfig();
 
   history.pushState(null, "", location.href);

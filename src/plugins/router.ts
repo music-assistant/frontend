@@ -31,7 +31,7 @@ const routes: RouteRecordRaw[] = [
   // Party display uses minimal layout (fullscreen for wall-mounted tablets)
   // Placed at top level so it renders without navigation/player controls
   {
-    path: "/party",
+    path: "/party/:instanceId",
     // Party only displays the dashboard and doesn't need the player.
     meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyGuestLayout.vue"),
@@ -43,7 +43,11 @@ const routes: RouteRecordRaw[] = [
           import(
             /* webpackChunkName: "party" */ "@/views/PartyDashboardView.vue"
           ),
-        props: (route: { query: Record<string, string> }) => ({
+        props: (route: {
+          params: Record<string, string>;
+          query: Record<string, string>;
+        }) => ({
+          instanceId: route.params.instanceId,
           ...route.query,
         }),
         beforeEnter: async (
@@ -72,6 +76,17 @@ const routes: RouteRecordRaw[] = [
         },
       },
     ],
+  },
+  // Redirect /party to the first instance (backward compat)
+  {
+    path: "/party",
+    redirect: () => {
+      const first = store.partyInstances[0];
+      if (first) {
+        return `/party/${first.instance_id}`;
+      }
+      return "/discover";
+    },
   },
   // All other routes go through default layout with navigation/player controls
   {
