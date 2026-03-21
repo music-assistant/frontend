@@ -188,13 +188,7 @@ const props = defineProps<{
 }>();
 
 const theme = useTheme();
-const { config: partyConfigs, fetchConfigForInstance } = usePartyConfig(
-  props.instanceId,
-);
-const partyConfig = computed(
-  () => partyConfigs.value[props.instanceId] ?? null,
-);
-const fetchConfig = () => fetchConfigForInstance(props.instanceId);
+const { config: partyConfig, fetchConfig } = usePartyConfig(props.instanceId);
 
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>(

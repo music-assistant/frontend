@@ -242,11 +242,14 @@ const logoSrc = computed(() =>
 const instanceId = ref("");
 
 // --- Composables ---
-const { config: partyConfigs, fetchConfigForInstance } = usePartyConfig();
+const { allConfigs: partyConfigs, fetchConfigForInstance } = usePartyConfig();
 const partyConfig = computed(
   () => partyConfigs.value[instanceId.value] ?? null,
 );
-const fetchConfig = () => fetchConfigForInstance(instanceId.value);
+const fetchConfig = () => {
+  if (!instanceId.value) return Promise.resolve(null);
+  return fetchConfigForInstance(instanceId.value);
+};
 const rateLimit = useRateLimiting();
 const {
   rateLimitingEnabled,
@@ -528,6 +531,7 @@ let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
+  if (!instanceId.value) return;
   try {
     const partyPlayerId = await api.sendCommand<string | null>(
       `party/${instanceId.value}/player`,

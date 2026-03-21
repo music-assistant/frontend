@@ -1239,23 +1239,21 @@ const loadNextPage = async function ({
 };
 
 // Fetch badge colors from the party instance associated with the active player
-const { config: partyConfigs, fetchConfigForInstance } = usePartyConfig();
+const { allConfigs: partyConfigs, fetchConfigForInstance } = usePartyConfig();
 const partyPlayerMap = ref<Record<string, string>>({});
 
 const fetchPartyPlayerMap = async () => {
   const map: Record<string, string> = {};
-  for (const instance of store.partyInstances) {
-    try {
+  await Promise.allSettled(
+    store.partyInstances.map(async (instance) => {
       const playerId = (await api.sendCommand(
         `party/${instance.instance_id}/player`,
       )) as string | null;
       if (playerId) {
         map[playerId] = instance.instance_id;
       }
-    } catch {
-      // instance may not be ready yet
-    }
-  }
+    }),
+  );
   partyPlayerMap.value = map;
 };
 
@@ -1267,16 +1265,16 @@ const activePartyInstanceId = computed(() => {
 
 // React to party config changes for the active player's party instance
 watch(
-  [activePartyInstanceId, partyConfigs],
-  ([instanceId]) => {
-    if (!instanceId) return;
-    const config = partyConfigs.value[instanceId];
+  () => {
+    const id = activePartyInstanceId.value;
+    return id ? partyConfigs.value[id] : null;
+  },
+  (config) => {
     if (config) {
       requestBadgeColor.value = config.request_badge_color ?? "#2196F3";
       boostBadgeColor.value = config.boost_badge_color ?? "#FF5722";
     }
   },
-  { deep: true },
 );
 
 // When active player changes and maps to a party instance, fetch its config
@@ -1289,11 +1287,17 @@ watch(activePartyInstanceId, async (instanceId) => {
 onMounted(async () => {
   if (store.partyInstances.length > 0) {
     await fetchPartyPlayerMap();
-    // Fetch config for the instance matching the active player
     const instanceId = activePartyInstanceId.value;
     if (instanceId) {
       await fetchConfigForInstance(instanceId);
     }
+
+    // Refresh player map when party providers change
+    api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+      if (store.partyInstances.length > 0) {
+        await fetchPartyPlayerMap();
+      }
+    });
   }
 });
 

@@ -80,13 +80,30 @@ const routes: RouteRecordRaw[] = [
   // Redirect /party to the first instance (backward compat)
   {
     path: "/party",
-    redirect: () => {
+    beforeEnter: async () => {
+      // Wait for API initialization so store.partyInstances is populated
+      if (api.state.value !== ConnectionState.INITIALIZED) {
+        await new Promise<void>((resolve) => {
+          const unwatch = watch(
+            () => api.state.value,
+            (newState) => {
+              if (newState === ConnectionState.INITIALIZED) {
+                unwatch();
+                resolve();
+              }
+            },
+            { immediate: true },
+          );
+        });
+      }
       const first = store.partyInstances[0];
       if (first) {
         return `/party/${first.instance_id}`;
       }
       return "/discover";
     },
+    // Component is required but won't render due to the redirect in beforeEnter
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
   },
   // All other routes go through default layout with navigation/player controls
   {

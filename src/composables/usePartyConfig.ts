@@ -5,7 +5,7 @@
  * the same config.
  */
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import api from "@/plugins/api";
 import { EventType, type PartyConfig } from "@/plugins/api/interfaces";
 
@@ -119,8 +119,12 @@ function ensureSubscribed() {
 
 export function usePartyConfig(instanceId?: string) {
   ensureSubscribed();
+  const singleConfig = instanceId
+    ? computed(() => configs.value[instanceId] ?? null)
+    : computed(() => null);
   return {
-    config: configs,
+    config: singleConfig,
+    allConfigs: configs,
     loading: loadingMap,
     loaded: loadedMap,
     fetchConfig: (force = false) => {

@@ -124,7 +124,6 @@ const handleSubItemClick = (subItem: NavSubItem) => {
     v-model="showMenu"
     :target="[menuPosX, menuPosY]"
     scrim
-    style="z-index: 999999"
     z-index="999999"
   >
     <v-card min-width="200" style="overflow-y: auto">
