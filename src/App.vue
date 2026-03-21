@@ -189,6 +189,30 @@ const handleLocalConnect = async (serverAddress: string) => {
 
 let initializationCompleted = false;
 
+const syncPartyInstances = async () => {
+  try {
+    const partyProviders = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "party",
+    );
+    const enabledParty = partyProviders.filter((p) => p.enabled);
+    if (enabledParty.length > 0) {
+      store.enabledPlugins.add("party");
+      store.partyInstances = enabledParty.map((p) => ({
+        instance_id: p.instance_id,
+        name: p.name || p.default_name || "Party",
+      }));
+    } else {
+      store.enabledPlugins.delete("party");
+      store.partyInstances = [];
+    }
+  } catch (error) {
+    console.error("[App] Failed to sync party status:", error);
+    store.enabledPlugins.delete("party");
+    store.partyInstances = [];
+  }
+};
+
 const completeInitialization = async () => {
   // Guard against multiple initializations
   if (initializationCompleted) {
@@ -238,27 +262,7 @@ const completeInitialization = async () => {
   }
 
   // Check party plugin instances
-  try {
-    const partyProviders = await api.getProviderConfigs(
-      ProviderType.PLUGIN,
-      "party",
-    );
-    const enabledParty = partyProviders.filter((p) => p.enabled);
-    if (enabledParty.length > 0) {
-      store.enabledPlugins.add("party");
-      store.partyInstances = enabledParty.map((p) => ({
-        instance_id: p.instance_id,
-        name: p.name || p.default_name || "Party",
-      }));
-    } else {
-      store.enabledPlugins.delete("party");
-      store.partyInstances = [];
-    }
-  } catch (error) {
-    console.error("[App] Failed to check party status:", error);
-    store.enabledPlugins.delete("party");
-    store.partyInstances = [];
-  }
+  await syncPartyInstances();
 
   const urlParams = new URLSearchParams(window.location.search);
   if (
@@ -415,25 +419,7 @@ onMounted(async () => {
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    try {
-      const partyProviders = await api.getProviderConfigs(
-        ProviderType.PLUGIN,
-        "party",
-      );
-      const enabledParty = partyProviders.filter((p) => p.enabled);
-      if (enabledParty.length > 0) {
-        store.enabledPlugins.add("party");
-        store.partyInstances = enabledParty.map((p) => ({
-          instance_id: p.instance_id,
-          name: p.name || p.default_name || "Party",
-        }));
-      } else {
-        store.enabledPlugins.delete("party");
-        store.partyInstances = [];
-      }
-    } catch (error) {
-      console.error("[App] Failed to update party status:", error);
-    }
+    await syncPartyInstances();
   });
 });
 

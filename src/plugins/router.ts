@@ -84,10 +84,15 @@ const routes: RouteRecordRaw[] = [
       // Wait for API initialization so store.partyInstances is populated
       if (api.state.value !== ConnectionState.INITIALIZED) {
         await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            unwatch();
+            resolve();
+          }, 10000);
           const unwatch = watch(
             () => api.state.value,
             (newState) => {
               if (newState === ConnectionState.INITIALIZED) {
+                clearTimeout(timeout);
                 unwatch();
                 resolve();
               }

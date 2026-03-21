@@ -115,6 +115,7 @@ describe("useRateLimiting", () => {
       request_badge_color: "#000000",
       boost_badge_color: "#ffffff",
       anti_burn_in: false,
+      instance_count: 1,
     };
 
     rateLimiting.configure(config);

@@ -5,6 +5,14 @@
       <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
     </div>
 
+    <!-- Instance name (shown when multiple party instances exist) -->
+    <div
+      v-if="partyConfig && partyConfig.instance_count > 1"
+      class="instance-name"
+    >
+      {{ partyConfig.name }}
+    </div>
+
     <!-- Search Section -->
     <PartySearchBar
       ref="searchBarRef"
@@ -608,6 +616,15 @@ onBeforeUnmount(() => {
   width: auto;
   opacity: 0.85;
   margin-bottom: 1rem;
+}
+
+.instance-name {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-top: -0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .guest-view {

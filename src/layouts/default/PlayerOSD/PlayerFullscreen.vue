@@ -1293,11 +1293,15 @@ onMounted(async () => {
     }
 
     // Refresh player map when party providers change
-    api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-      if (store.partyInstances.length > 0) {
-        await fetchPartyPlayerMap();
-      }
-    });
+    const unsubProviders = api.subscribe(
+      EventType.PROVIDERS_UPDATED,
+      async () => {
+        if (store.partyInstances.length > 0) {
+          await fetchPartyPlayerMap();
+        }
+      },
+    );
+    onBeforeUnmount(unsubProviders);
   }
 });
 

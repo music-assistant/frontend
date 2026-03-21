@@ -1236,4 +1236,5 @@ export interface PartyConfig {
   request_badge_color?: string;
   boost_badge_color?: string;
   anti_burn_in: boolean;
+  instance_count: number;
 }

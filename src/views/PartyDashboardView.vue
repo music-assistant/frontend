@@ -36,7 +36,10 @@
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
-          <PartyQR :instance-id="instanceId" @available="qrAvailable = $event" />
+          <PartyQR
+            :instance-id="instanceId"
+            @available="qrAvailable = $event"
+          />
         </div>
 
         <div class="karaoke-lyrics">
@@ -93,7 +96,10 @@
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR :instance-id="instanceId" @available="qrAvailable = $event" />
+            <PartyQR
+              :instance-id="instanceId"
+              @available="qrAvailable = $event"
+            />
           </div>
           <div
             v-if="displayLyrics"
