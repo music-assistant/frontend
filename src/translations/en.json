@@ -211,6 +211,8 @@
     "narrators": "Narrators",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_aliases": "No aliases linked yet.",
+    "not_found_headline": "Oops, this page is off the setlist.",
+    "not_found_subtext": "The track you're looking for got lost between providers. Head back or find something new.",
     "no_content": "No items found.",
     "no_content_filter": "No items found for the current filter\/search conditions.",
     "no_player": "No player selected",
