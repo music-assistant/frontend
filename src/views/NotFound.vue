@@ -1,48 +1,50 @@
 <template>
   <v-app>
-  <div class="not-found">
-    <div class="content">
-      <!-- Vinyl + needle -->
-      <div class="vinyl-scene">
-        <div class="vinyl">
-          <div class="groove" v-for="i in 6" :key="i" :style="`--i: ${i}`" />
-          <div class="label">
-            <div class="label-text">MA</div>
-            <div class="label-hole" />
+    <v-main>
+      <div class="not-found">
+        <div class="content">
+          <!-- Vinyl + needle -->
+          <div class="vinyl-scene">
+            <div class="vinyl">
+              <div class="groove" v-for="i in 6" :key="i" :style="`--i: ${i}`" />
+              <div class="label">
+                <div class="label-text">MA</div>
+                <div class="label-hole" />
+              </div>
+            </div>
+            <div class="needle-arm">
+              <div class="needle-rod" />
+              <div class="needle-head" />
+            </div>
+          </div>
+
+          <!-- 404 -->
+          <h1 class="error-code">
+            <span>4</span><span class="zero">0</span><span>4</span>
+          </h1>
+
+          <p class="headline">{{ $t("not_found_headline") }}</p>
+          <p class="subtext">{{ $t("not_found_subtext") }}</p>
+
+          <!-- Equalizer -->
+          <div class="equalizer" aria-hidden="true">
+            <div v-for="i in 12" :key="i" class="eq-bar" :style="`--i: ${i}`" />
+          </div>
+
+          <!-- Buttons -->
+          <div class="actions">
+            <Button variant="default" @click="router.back()">
+              <ArrowLeft class="size-4" />
+              {{ $t("back") }}
+            </Button>
+            <Button variant="outline" @click="router.push('/discover')">
+              <Compass class="size-4" />
+              {{ $t("discover") }}
+            </Button>
           </div>
         </div>
-        <div class="needle-arm">
-          <div class="needle-rod" />
-          <div class="needle-head" />
-        </div>
       </div>
-
-      <!-- 404 -->
-      <h1 class="error-code">
-        <span>4</span><span class="zero">0</span><span>4</span>
-      </h1>
-
-      <p class="headline">{{ $t("not_found_headline") }}</p>
-      <p class="subtext">{{ $t("not_found_subtext") }}</p>
-
-      <!-- Equalizer -->
-      <div class="equalizer" aria-hidden="true">
-        <div v-for="i in 12" :key="i" class="eq-bar" :style="`--i: ${i}`" />
-      </div>
-
-      <!-- Buttons -->
-      <div class="actions">
-        <Button variant="default" @click="router.back()">
-          <ArrowLeft class="size-4" />
-          {{ $t("back") }}
-        </Button>
-        <Button variant="outline" @click="router.push('/discover')">
-          <Compass class="size-4" />
-          {{ $t("discover") }}
-        </Button>
-      </div>
-    </div>
-  </div>
+    </v-main>
   </v-app>
 </template>
 
