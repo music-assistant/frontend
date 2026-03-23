@@ -84,9 +84,8 @@
               play: {
                 isVisible: true,
                 icon: {
-                  staticWidth: '40px',
-                  staticHeight: '40px',
-                  color: $vuetify.theme.current.dark ? '#fff' : '#000',
+                  staticWidth: '44px',
+                  staticHeight: '44px',
                 },
               },
               previous: { isVisible: false },
@@ -113,7 +112,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -127,6 +125,7 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import { computed, ref, watch } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";

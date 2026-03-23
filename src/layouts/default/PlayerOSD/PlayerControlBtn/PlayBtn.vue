@@ -44,6 +44,7 @@ export interface Props {
   size?: number;
   playOffset?: number;
 }
+
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
   isVisible: true,

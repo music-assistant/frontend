@@ -34,6 +34,13 @@
           @click="toggleTasksViewMode()"
         />
         <v-btn
+          v-if="isSystemPage"
+          :icon="systemViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
+          variant="text"
+          :title="t('tooltip.toggle_view_mode')"
+          @click="toggleSystemViewMode()"
+        />
+        <v-btn
           v-if="documentationUrl"
           icon="mdi-help-circle"
           variant="text"
@@ -416,6 +423,36 @@ const toggleTasksViewMode = function () {
 provide("tasksViewMode", {
   viewMode: tasksViewMode,
   toggleViewMode: toggleTasksViewMode,
+});
+
+const isSystemPage = computed(
+  () => router.currentRoute.value.name?.toString() === "systemsettings",
+);
+
+const systemViewMode = ref<"list" | "card">("list");
+const savedSystemViewMode = getPreference<"list" | "card">(
+  "settings.system.viewMode",
+  "list",
+);
+
+watch(
+  () => savedSystemViewMode.value,
+  (savedViewMode) => {
+    if (savedViewMode === "list" || savedViewMode === "card") {
+      systemViewMode.value = savedViewMode;
+    }
+  },
+  { immediate: true },
+);
+
+const toggleSystemViewMode = function () {
+  systemViewMode.value = systemViewMode.value === "list" ? "card" : "list";
+  setPreference("settings.system.viewMode", systemViewMode.value);
+};
+
+provide("systemViewMode", {
+  viewMode: systemViewMode,
+  toggleViewMode: toggleSystemViewMode,
 });
 
 const allSettingsSections = [

@@ -23,8 +23,14 @@
       )
     "
   >
-    <IconRepeatOff v-if="playerQueue.repeat_mode == RepeatMode.OFF" :size="size" />
-    <IconRepeat v-else-if="playerQueue.repeat_mode == RepeatMode.ALL" :size="size" />
+    <IconRepeatOff
+      v-if="playerQueue.repeat_mode == RepeatMode.OFF"
+      :size="size"
+    />
+    <IconRepeat
+      v-else-if="playerQueue.repeat_mode == RepeatMode.ALL"
+      :size="size"
+    />
     <IconRepeatOnce v-else :size="size" />
   </Icon>
 </template>
