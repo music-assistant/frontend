@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
+import { getDefaultSyncDelay } from "@sendspin/sendspin-js";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -190,7 +190,7 @@ onMounted(() => {
     });
 
     // Sendspin sync delay option
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    const defaultSyncDelay = getDefaultSyncDelay();
     configEntries.push({
       key: "sendspin_sync_delay",
       type: ConfigEntryType.INTEGER,
