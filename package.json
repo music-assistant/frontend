@@ -31,7 +31,7 @@
         "colorthief": "3.3.1",
         "happy-dom": "^20.8.4",
         "lucide-vue-next": "^0.577.0",
-        "marked": "^17.0.4",
+        "marked": "^17.0.5",
         "mitt": "3.0.1",
         "mobile-detect": "1.4.5",
         "qrcode": "^1.5.4",
