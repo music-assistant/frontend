@@ -418,17 +418,21 @@
           <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
-            :icon="
-              store.curQueueItem?.media_item?.favorite
-                ? 'mdi-heart'
-                : 'mdi-heart-outline'
-            "
             :title="$t('tooltip.favorite')"
             variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
-          />
+          >
+            <Heart
+              :size="18"
+              :fill="
+                store.curQueueItem?.media_item?.favorite
+                  ? 'currentColor'
+                  : 'none'
+              "
+            />
+          </Icon>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -440,14 +444,17 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
           <div class="play-btn-wrapper">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
               class="media-controls-item"
-              :icon="{ staticWidth: '70px', staticHeight: '70px' }"
+              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
+              :size="30"
+              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -455,6 +462,7 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
@@ -466,6 +474,7 @@
             v-if="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
+            :size="18"
           />
         </div>
 
@@ -526,6 +535,8 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -541,8 +552,8 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -563,6 +574,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
+import { Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -576,8 +588,6 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { getSourceName } from "@/plugins/api/helpers";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 
 const { name } = useDisplay();
 

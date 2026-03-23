@@ -6,15 +6,20 @@
           <!-- Vinyl + needle -->
           <div class="vinyl-scene">
             <div class="vinyl">
-              <div class="groove" v-for="i in 6" :key="i" :style="`--i: ${i}`" />
+              <div
+                v-for="i in 6"
+                :key="i"
+                class="groove"
+                :style="`--i: ${i}`"
+              ></div>
               <div class="label">
                 <div class="label-text">MA</div>
-                <div class="label-hole" />
+                <div class="label-hole"></div>
               </div>
             </div>
             <div class="needle-arm">
-              <div class="needle-rod" />
-              <div class="needle-head" />
+              <div class="needle-rod"></div>
+              <div class="needle-head"></div>
             </div>
           </div>
 
@@ -28,7 +33,12 @@
 
           <!-- Equalizer -->
           <div class="equalizer" aria-hidden="true">
-            <div v-for="i in 12" :key="i" class="eq-bar" :style="`--i: ${i}`" />
+            <div
+              v-for="i in 12"
+              :key="i"
+              class="eq-bar"
+              :style="`--i: ${i}`"
+            ></div>
           </div>
 
           <!-- Buttons -->
@@ -98,7 +108,7 @@ const router = useRouter();
   box-shadow:
     0 0 0 1px #333,
     0 12px 40px rgba(0, 0, 0, 0.6),
-    inset 0 0 20px rgba(255,255,255,0.03);
+    inset 0 0 20px rgba(255, 255, 255, 0.03);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,7 +119,7 @@ const router = useRouter();
 .groove {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   --size: calc(40px + var(--i) * 20px);
   width: var(--size);
   height: var(--size);
@@ -119,13 +129,17 @@ const router = useRouter();
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6));
+  background: radial-gradient(
+    circle at 35% 35%,
+    hsl(var(--primary) / 0.9),
+    hsl(var(--primary) / 0.6)
+  );
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 1;
 }
@@ -157,7 +171,11 @@ const router = useRouter();
 .needle-rod {
   width: 3px;
   height: 80px;
-  background: linear-gradient(to bottom, hsl(var(--muted-foreground) / 0.6), hsl(var(--muted-foreground) / 0.3));
+  background: linear-gradient(
+    to bottom,
+    hsl(var(--muted-foreground) / 0.6),
+    hsl(var(--muted-foreground) / 0.3)
+  );
   border-radius: 2px;
   transform: rotate(28deg);
   transform-origin: top center;
@@ -176,12 +194,19 @@ const router = useRouter();
 }
 
 @keyframes vinyl-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes needle-sway {
-  0%, 100% { transform: rotate(-2deg); }
-  50%       { transform: rotate(2deg); }
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
 }
 
 /* ─── 404 ─── */
@@ -209,8 +234,15 @@ const router = useRouter();
 }
 
 @keyframes digit-pulse {
-  0%, 100% { opacity: 1;    transform: translateY(0); }
-  50%       { opacity: 0.6; transform: translateY(-4px); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-4px);
+  }
 }
 
 /* ─── Text ─── */
@@ -238,13 +270,20 @@ const router = useRouter();
   width: 6px;
   border-radius: 3px 3px 0 0;
   background: hsl(var(--primary) / 0.7);
-  animation: eq-bounce calc(0.5s + var(--i) * 0.07s) ease-in-out infinite alternate;
+  animation: eq-bounce calc(0.5s + var(--i) * 0.07s) ease-in-out infinite
+    alternate;
   animation-delay: calc(var(--i) * 0.06s);
 }
 
 @keyframes eq-bounce {
-  from { height: 4px;  opacity: 0.4; }
-  to   { height: 28px; opacity: 1;   }
+  from {
+    height: 4px;
+    opacity: 0.4;
+  }
+  to {
+    height: 28px;
+    opacity: 1;
+  }
 }
 
 /* ─── Buttons ─── */

@@ -5,10 +5,17 @@
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
     :disabled="!canPlayPause || isLoading"
-    :icon="iconStyle ? `${baseIcon}-${iconStyle}` : baseIcon"
     variant="button"
     @click="api.playerCommandPlayPause(player.player_id)"
-  />
+  >
+    <Pause v-if="isPlaying" :size="size" fill="currentColor" />
+    <Play
+      v-else
+      :size="size"
+      fill="currentColor"
+      :style="{ marginLeft: `${compProps.playOffset}px` }"
+    />
+  </Icon>
   <v-progress-circular
     v-if="isVisible && player && isLoading"
     class="play-btn-spinner"
@@ -21,9 +28,10 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
-import { useActiveSource } from "@/composables/activeSource";
+import { Pause, Play } from "lucide-vue-next";
 import { computed, toRef } from "vue";
 
 // properties
@@ -31,18 +39,18 @@ export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
-  withCircle?: boolean;
   icon?: IconProps;
-  iconStyle?: string;
   spinnerSize?: number;
+  size?: number;
+  playOffset?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
   isVisible: true,
-  withCircle: true,
   icon: undefined,
-  iconStyle: "circle",
   spinnerSize: 46,
+  size: 24,
+  playOffset: 1,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
@@ -68,11 +76,8 @@ const canPlayPause = computed(() => {
   return queueCanPlay.value || playerCanPlay.value;
 });
 
-const baseIcon = computed(() => {
-  if (compProps.player?.playback_state == PlaybackState.PLAYING) {
-    return "mdi-pause";
-  }
-  return "mdi-play";
+const isPlaying = computed(() => {
+  return compProps.player?.playback_state == PlaybackState.PLAYING;
 });
 
 const isLoading = computed(() => {
@@ -86,6 +91,14 @@ const isLoading = computed(() => {
 <style>
 .play-btn-icon {
   position: relative;
+  border-radius: 50%;
+  background-color: #212121;
+  color: #fff;
+}
+
+.v-theme--dark .play-btn-icon {
+  background-color: #fff;
+  color: #212121;
 }
 
 .play-btn-spinner {
