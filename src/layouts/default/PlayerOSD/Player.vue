@@ -77,7 +77,7 @@
         <div>
           <!-- player mobile control buttons -->
           <PlayerControls
-            style="padding-right: 5px"
+            :style="{ 'padding-right': '5px' }"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },

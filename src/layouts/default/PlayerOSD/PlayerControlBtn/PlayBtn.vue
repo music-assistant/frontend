@@ -94,12 +94,12 @@ const isLoading = computed(() => {
   position: relative;
   border-radius: 50%;
   background-color: #212121;
-  color: #fff;
+  color: var(--play-icon-color, #fff);
 }
 
 .v-theme--dark .play-btn-icon {
   background-color: #fff;
-  color: #212121;
+  color: var(--play-icon-color, #212121);
 }
 
 .play-btn-spinner {

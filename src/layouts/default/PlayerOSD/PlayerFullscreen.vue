@@ -446,7 +446,7 @@
             max-height="45px"
             :size="28"
           />
-          <div class="play-btn-wrapper">
+          <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
@@ -600,6 +600,15 @@ interface Props {
   colorPalette: ImageColorPalette;
 }
 const compProps = defineProps<Props>();
+
+const playBtnStyle = computed(() => {
+  const isDark = vuetify.theme.current.value.dark;
+  const color = isDark
+    ? compProps.colorPalette.darkColor
+    : compProps.colorPalette.lightColor;
+  if (!color) return {};
+  return { "--play-icon-color": color };
+});
 
 const playerMarqueeSync = new MarqueeTextSync();
 const hoveredQueueIndex = ref(-1);
@@ -1686,7 +1695,6 @@ button {
 
 .play-btn-wrapper :deep(.play-btn-icon) {
   background-color: var(--text-color) !important;
-  color: var(--text-color-inverse) !important;
 }
 
 .player-bottom :deep([data-slot="slider-range"]) {
