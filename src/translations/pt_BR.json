@@ -648,7 +648,6 @@
     },
     "play_replace": "Reproduzir agora (limpar fila)",
     "played": "Reproduzido",
-    "background_task_added": "A ação é realizada pelo servidor em segundo plano e pode levar algum tempo para ser concluída. Fique de olho no log do servidor para ver o progresso.",
     "images": "Imagens",
     "image_type": "Tipo",
     "image_source": "Fonte",

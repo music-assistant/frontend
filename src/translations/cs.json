@@ -828,7 +828,6 @@
     },
     "play_replace": "Přehrát nyní (vymazat frontu)",
     "played": "Přehráno",
-    "background_task_added": "Akci provádí server na pozadí a její dokončení může chvíli trvat. Průběh sledujte v protokolu serveru.",
     "images": "Obrázky",
     "image_type": "Typ",
     "image_source": "Zdroj",
