@@ -3,7 +3,7 @@ import { store } from '@/plugins/store';
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
-    v-if="store.mobileLayout"
+    v-if="store.mobileLayout && !hidePlayer"
     :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
     :style="`
       position: fixed;
@@ -19,6 +19,7 @@ import { store } from '@/plugins/store';
   <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
 
   <v-footer
+    v-if="!hidePlayer"
     app
     color="default"
     :class="`py-0 px-0 ${
@@ -43,6 +44,10 @@ import { store } from '@/plugins/store';
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
 import { store } from "@/plugins/store";
 import Player from "./PlayerOSD/Player.vue";
+
+defineProps<{
+  hidePlayer?: boolean;
+}>();
 </script>
 
 <style>

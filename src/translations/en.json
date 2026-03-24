@@ -303,7 +303,8 @@
             "qr_failed": "Failed to generate QR code",
             "request": "Request",
             "link_copy_fail": "Failed to copy link",
-            "link_copy_success": "Link copied!"
+            "link_copy_success": "Link copied!",
+            "powered_by": "powered by"
         }
     },
     "provider_details": "Provider details",

@@ -1234,4 +1234,7 @@ export interface PartyConfig {
   request_badge_color?: string;
   boost_badge_color?: string;
   anti_burn_in: boolean;
+  party_name: string | null;
+  qr_text: string | null;
+  hide_back_button: boolean;
 }

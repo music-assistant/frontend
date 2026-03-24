@@ -61,7 +61,6 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
-        openInNewTab: true,
       });
     }
     if (enabledMenuItemStr === "artists") {

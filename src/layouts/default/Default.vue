@@ -1,10 +1,10 @@
 <template>
   <v-app>
-    <MainView v-if="store.frameless" />
-    <template v-else>
-      <MainView />
-      <Footer />
-    </template>
+    <MainView />
+    <Footer
+      v-if="!store.frameless && (!route.meta.hideFooter || store.mobileLayout)"
+      :hide-player="!!route.meta.hideFooter"
+    />
   </v-app>
   <reload-prompt />
 </template>

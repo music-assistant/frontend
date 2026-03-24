@@ -29,130 +29,183 @@
         },
       ]"
     >
-      <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
-      <template v-if="karaokeMode">
-        <div
-          v-show="qrAvailable"
-          class="karaoke-qr"
-          :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
-        >
-          <PartyQR @available="qrAvailable = $event" />
-        </div>
+      <button
+        v-if="isFullscreen && !hideBackButton"
+        class="fullscreen-exit-btn"
+        @click="toggleFullscreen"
+      >
+        <Minimize2 :size="20" />
+      </button>
 
-        <div class="karaoke-lyrics">
-          <LyricsViewer
-            :media-item="store.curQueueItem?.media_item"
-            :position="lyricsElapsedTime"
-            :stream-details="store.curQueueItem?.streamdetails"
-            :lyrics="currentLyrics.plain"
-            :lrc-lyrics="currentLyrics.synced"
-            :anticipation="10"
-            :highlight-ahead="highlightAhead"
-          />
-        </div>
-
-        <div class="karaoke-track-stack">
-          <div
-            v-if="!store.curQueueItem && !visibleItems.length"
-            class="empty-state empty-state--karaoke"
+      <div v-if="!isFullscreen" class="party-topbar">
+        <div class="party-topbar-actions">
+          <span v-if="store.activePlayer" class="topbar-badge">
+            <Speaker :size="13" />
+            {{ store.activePlayer.name }}
+          </span>
+          <span v-if="!qrAvailable" class="topbar-badge topbar-badge--warning">
+            {{ $t("providers.party.guest_access_disabled") }}
+          </span>
+          <button
+            v-if="partyInstanceId"
+            class="topbar-btn"
+            @click="goToSettings"
           >
-            <Music :size="60" class="empty-icon" />
-            <h2 class="empty-title">
-              {{ $t("providers.party.nothing_playing") }}
-            </h2>
-          </div>
-          <TransitionGroup
-            v-else
-            name="track-slide"
-            tag="div"
-            class="track-list track-list--karaoke"
-          >
-            <PartyTrackCard
-              v-for="item in visibleItems"
-              :key="item.queue_item_id"
-              :queue-item="item"
-              :position="getPosition(item)"
-              :is-playing="isPlaying"
-              :request-badge-color="requestBadgeColor"
-              :boost-badge-color="boostBadgeColor"
-              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
-            />
-          </TransitionGroup>
+            <Settings :size="18" />
+          </button>
+          <button class="topbar-btn" @click="toggleFullscreen">
+            <Maximize2 :size="18" />
+          </button>
         </div>
-      </template>
+      </div>
 
-      <!-- Normal Mode -->
-      <template v-else>
-        <!-- QR Code and Lyrics -->
-        <div
-          v-show="qrAvailable || displayLyrics"
-          :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
-        >
+      <div class="party-main">
+        <template v-if="karaokeMode">
           <div
             v-show="qrAvailable"
-            class="qr-wrapper"
-            :style="swapped && displayLyrics ? { order: 1 } : undefined"
+            class="karaoke-qr"
+            :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
           >
+            <h3 v-if="partyName" class="party-title party-title--karaoke">
+              {{ partyName }}
+            </h3>
             <PartyQR @available="qrAvailable = $event" />
           </div>
-          <div
-            v-if="displayLyrics"
-            :class="[
-              'lyrics-section',
-              { 'lyrics-section--full': !qrAvailable },
-            ]"
-          >
+
+          <div class="karaoke-lyrics">
             <LyricsViewer
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
               :stream-details="store.curQueueItem?.streamdetails"
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
+              :anticipation="10"
               :highlight-ahead="highlightAhead"
-              :text-color="lyricsTextColor"
             />
           </div>
-        </div>
 
-        <!-- Track Stack or Empty State -->
-        <div
-          class="track-stack"
-          :style="swapped && !displayLyrics ? { order: -1 } : undefined"
-        >
-          <!-- Empty State -->
+          <div class="karaoke-track-stack">
+            <div
+              v-if="!store.curQueueItem && !visibleItems.length"
+              class="empty-state empty-state--karaoke"
+            >
+              <Music :size="60" class="empty-icon" />
+              <h2 class="empty-title">
+                {{ $t("providers.party.nothing_playing") }}
+              </h2>
+            </div>
+            <TransitionGroup
+              v-else
+              name="track-slide"
+              tag="div"
+              class="track-list track-list--karaoke"
+            >
+              <PartyTrackCard
+                v-for="item in visibleItems"
+                :key="item.queue_item_id"
+                :queue-item="item"
+                :position="getPosition(item)"
+                :is-playing="isPlaying"
+                :request-badge-color="requestBadgeColor"
+                :boost-badge-color="boostBadgeColor"
+                :force-white-text="useAlbumArtBackground && !!albumArtUrl"
+              />
+            </TransitionGroup>
+          </div>
+        </template>
+
+        <template v-else>
           <div
-            v-if="!store.curQueueItem && !visibleItems.length"
-            class="empty-state"
+            v-show="qrAvailable || displayLyrics"
+            :class="[
+              'qr-section',
+              { 'qr-section--with-lyrics': displayLyrics },
+            ]"
           >
-            <Music :size="120" class="empty-icon" />
-            <h2 class="empty-title">
-              {{ $t("providers.party.nothing_playing") }}
+            <h2
+              v-if="partyName && qrAvailable && !displayLyrics"
+              class="party-title"
+            >
+              {{ partyName }}
             </h2>
-            <p class="empty-message">
-              {{ $t("providers.party.get_started") }}
-            </p>
+            <div
+              v-show="qrAvailable"
+              class="qr-wrapper"
+              :style="swapped && displayLyrics ? { order: 1 } : undefined"
+            >
+              <PartyQR @available="qrAvailable = $event" />
+            </div>
+            <div
+              v-if="displayLyrics"
+              :class="[
+                'lyrics-section',
+                { 'lyrics-section--full': !qrAvailable },
+              ]"
+            >
+              <LyricsViewer
+                :media-item="store.curQueueItem?.media_item"
+                :position="lyricsElapsedTime"
+                :stream-details="store.curQueueItem?.streamdetails"
+                :lyrics="currentLyrics.plain"
+                :lrc-lyrics="currentLyrics.synced"
+                :highlight-ahead="highlightAhead"
+                :text-color="lyricsTextColor"
+              />
+            </div>
           </div>
 
-          <!-- Track List -->
-          <TransitionGroup
-            v-else
-            name="track-slide"
-            tag="div"
-            class="track-list"
+          <div
+            class="track-stack"
+            :style="swapped && !displayLyrics ? { order: -1 } : undefined"
           >
-            <PartyTrackCard
-              v-for="item in visibleItems"
-              :key="item.queue_item_id"
-              :queue-item="item"
-              :position="getPosition(item)"
-              :is-playing="isPlaying"
-              :request-badge-color="requestBadgeColor"
-              :boost-badge-color="boostBadgeColor"
-              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
-            />
-          </TransitionGroup>
-        </div>
-      </template>
+            <h2
+              v-if="partyName && !qrAvailable"
+              class="party-title party-title--stack"
+            >
+              {{ partyName }}
+            </h2>
+            <div
+              v-if="!store.curQueueItem && !visibleItems.length"
+              class="empty-state"
+            >
+              <Music :size="120" class="empty-icon" />
+              <h2 class="empty-title">
+                {{ $t("providers.party.nothing_playing") }}
+              </h2>
+              <p class="empty-message">
+                {{ $t("providers.party.get_started") }}
+              </p>
+            </div>
+
+            <!-- Track List -->
+            <TransitionGroup
+              v-else
+              name="track-slide"
+              tag="div"
+              class="track-list"
+            >
+              <PartyTrackCard
+                v-for="item in visibleItems"
+                :key="item.queue_item_id"
+                :queue-item="item"
+                :position="getPosition(item)"
+                :is-playing="isPlaying"
+                :request-badge-color="requestBadgeColor"
+                :boost-badge-color="boostBadgeColor"
+                :force-white-text="useAlbumArtBackground && !!albumArtUrl"
+              />
+            </TransitionGroup>
+          </div>
+        </template>
+      </div>
+
+      <!-- Powered by branding (centered below content) -->
+      <div class="powered-by">
+        <span class="powered-by-text">{{
+          $t("providers.party.powered_by")
+        }}</span>
+        <img :src="logoSrc" class="powered-by-logo" alt="Music Assistant" />
+      </div>
     </div>
   </div>
 </template>
@@ -179,12 +232,21 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Color from "color";
-import { Music, Speaker } from "lucide-vue-next";
+import {
+  Maximize2,
+  Minimize2,
+  Music,
+  Settings,
+  Speaker,
+} from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 
 const theme = useTheme();
+const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
+const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
@@ -208,6 +270,43 @@ const accessError = ref("");
 // Badge colors (hex values from config)
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
+const isFullscreen = ref(false);
+
+const handleFullscreenChange = () => {
+  if (!document.fullscreenElement && isFullscreen.value) {
+    isFullscreen.value = false;
+    document.body.classList.remove("party-fullscreen");
+  }
+};
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
+  if (isFullscreen.value) {
+    document.body.classList.add("party-fullscreen");
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.body.classList.remove("party-fullscreen");
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+};
+
+const partyName = computed(() => partyConfig.value?.party_name ?? null);
+const hideBackButton = computed(
+  () => partyConfig.value?.hide_back_button ?? false,
+);
+const partyInstanceId = computed(
+  () =>
+    Object.values(api.providers).find((p) => p.domain === "party")?.instance_id,
+);
+
+const goToSettings = () => {
+  if (partyInstanceId.value) {
+    router.push({
+      name: "editprovider",
+      params: { instanceId: partyInstanceId.value },
+    });
+  }
+};
 
 // Compact mode: hide previous tracks on small screens to reclaim space
 const compactQuery = window.matchMedia("(max-width: 768px)");
@@ -524,13 +623,13 @@ const handleVisibilityChange = () => {
 // Apply layout overrides to the parent .content-section so the party view
 // fills its container. Scoped to mount/unmount to avoid leaking global styles.
 const parentSection = ref<HTMLElement | null>(null);
-
 const applyParentStyles = () => {
   const el = document.querySelector(".content-section");
   if (el instanceof HTMLElement) {
     parentSection.value = el;
     el.classList.add("party-view-active");
   }
+  document.body.classList.add("party-mode");
 };
 
 const cleanupParentStyles = () => {
@@ -538,6 +637,8 @@ const cleanupParentStyles = () => {
     parentSection.value.classList.remove("party-view-active");
     parentSection.value = null;
   }
+  document.body.classList.remove("party-mode");
+  document.body.classList.remove("party-fullscreen");
 };
 
 const BURN_IN_SWAP_MS = 10 * 60 * 1000; // 10 minutes
@@ -564,9 +665,9 @@ onMounted(async () => {
   // Request wake lock to keep screen on
   await requestWakeLock();
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
 
-  // Set active player from party config (needed when opened in a new tab
-  // where the Default layout's player selection logic doesn't run)
+  // Set active player from party config
   await refreshPartyPlayer();
 
   // Fetch party configuration via shared composable
@@ -634,6 +735,7 @@ onBeforeUnmount(() => {
   stopTick();
   cleanupParentStyles();
   document.removeEventListener("visibilitychange", handleVisibilityChange);
+  document.removeEventListener("fullscreenchange", handleFullscreenChange);
 });
 
 // React to party config changes (e.g., admin toggles player controls)
@@ -682,7 +784,8 @@ watch(
 <style scoped>
 .party-view {
   width: 100%;
-  height: 100dvh;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   display: flex;
@@ -715,27 +818,150 @@ watch(
   width: 100%;
   height: 100%;
   display: flex;
-  padding: 2vw;
-  gap: 2vw;
+  flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.party-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.25) 0%,
+    transparent 100%
+  );
+}
+
+.party-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.topbar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: clamp(0.65rem, 1vw, 0.8rem);
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.topbar-badge--warning {
+  background: rgba(234, 179, 8, 0.25);
+  color: rgb(253, 224, 71);
+}
+
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.topbar-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.fullscreen-exit-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  cursor: pointer;
+  border: none;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0.5;
+}
+
+.fullscreen-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  opacity: 1;
+}
+
+.party-main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  padding: 0 2vw 2vw 2vw;
+  gap: 2vw;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.party-title {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 700;
+  text-align: center;
+  color: #ffffff;
+  opacity: 0.95;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  line-height: 1.2;
+  max-width: 100%;
+  margin: 0;
+}
+
+.party-title--stack {
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+}
+
+.party-title--karaoke {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  opacity: 0.85;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  text-align: center;
 }
 
 .qr-section {
   flex: 0 0 42vw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   align-self: center;
   height: 60vh;
+  gap: 0.75rem;
 }
 
 .qr-wrapper {
   width: 100%;
-  height: 100%;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 .qr-section--with-lyrics {
@@ -771,7 +997,7 @@ watch(
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   min-width: 0;
 }
@@ -779,10 +1005,11 @@ watch(
 .track-list {
   position: relative;
   width: 100%;
-  height: 80%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
 }
 
@@ -790,7 +1017,8 @@ watch(
 .empty-state {
   position: relative;
   width: 100%;
-  height: 80%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -832,11 +1060,12 @@ watch(
 }
 
 /* ==================== Karaoke Mode Layout ==================== */
-.party-content--karaoke {
+.party-content--karaoke .party-main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  padding: 0;
 }
 
 .karaoke-qr {
@@ -845,6 +1074,10 @@ watch(
   left: 2vw;
   z-index: 1;
   max-width: 20vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .karaoke-qr :deep(.qr-display) {
@@ -920,7 +1153,30 @@ watch(
   opacity: 0;
 }
 
-/* Access error state */
+.powered-by {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  opacity: 0.85;
+  padding: 0.5rem 1.5rem 1rem;
+  pointer-events: none;
+}
+
+.powered-by-text {
+  font-size: clamp(0.65rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  margin-top: 5px;
+}
+
+.powered-by-logo {
+  height: clamp(1rem, 1.8vw, 1.5rem);
+  width: auto;
+}
+
 .access-error-content {
   justify-content: center;
 }
@@ -946,7 +1202,6 @@ watch(
   max-width: 400px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1024px) {
   /* Karaoke */
   .karaoke-qr {
@@ -961,11 +1216,10 @@ watch(
     max-width: 80vw;
   }
 
-  /* General layout */
-  .party-content {
+  .party-main {
     flex-direction: column;
     justify-content: center;
-    padding: 1rem;
+    padding: 0 1rem 1rem 1rem;
     gap: 1rem;
   }
 
@@ -973,7 +1227,10 @@ watch(
     flex: 0 1 auto;
     height: auto;
     align-self: auto;
-    overflow: hidden;
+  }
+
+  .qr-wrapper {
+    height: auto;
   }
 
   .qr-section--with-lyrics {
@@ -1001,28 +1258,17 @@ watch(
   }
 
   .track-list {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
   .empty-state {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
-  .qr-box {
-    width: 12vh;
-    height: 12vh;
-  }
-
-  .qr-icon {
-    font-size: 40px !important;
-  }
-
-  .qr-text {
-    font-size: 0.875rem;
-  }
-
-  .qr-subtext {
-    font-size: 0.75rem;
+  .party-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
   }
 
   .empty-icon {
@@ -1038,6 +1284,7 @@ watch(
   }
 }
 
+/* ==================== Responsive: mobile (≤768px) ==================== */
 @media (max-width: 768px) {
   .karaoke-qr {
     display: none;
@@ -1055,10 +1302,24 @@ watch(
     max-width: 100%;
   }
 
-  .party-content {
+  .party-main {
     justify-content: stretch;
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem 0.5rem;
     gap: 0.25rem;
+  }
+
+  .party-topbar {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .topbar-badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .topbar-btn {
+    width: 1.8rem;
+    height: 1.8rem;
   }
 
   .qr-section {
@@ -1085,6 +1346,10 @@ watch(
     flex: 0 1 auto;
   }
 
+  .party-title {
+    font-size: clamp(1.6rem, 6vw, 2.5rem);
+  }
+
   .empty-icon {
     font-size: 60px !important;
   }
@@ -1105,5 +1370,18 @@ watch(
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important;
+}
+
+.content-section.party-view-active.content-section--mobile {
+  padding-bottom: 60px !important;
+}
+
+body.party-mode [data-sidebar="footer"] {
+  padding-bottom: 0.5rem !important;
+}
+
+body.party-fullscreen [data-slot="sidebar"] {
+  display: none !important;
 }
 </style>

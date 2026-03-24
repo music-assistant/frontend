@@ -28,13 +28,13 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  // Party display uses minimal layout (fullscreen for wall-mounted tablets)
-  // Placed at top level so it renders without navigation/player controls
+  // Party dashboard uses the default layout so the sidebar is available.
+  // The party view controls store.frameless to hide sidebar+footer in fullscreen mode.
   {
     path: "/party",
     // Party only displays the dashboard and doesn't need the player.
-    meta: { disableWebPlayer: true },
-    component: () => import("@/layouts/PartyGuestLayout.vue"),
+    meta: { disableWebPlayer: true, hideFooter: true },
+    component: () => import("@/layouts/default/Default.vue"),
     children: [
       {
         path: "",

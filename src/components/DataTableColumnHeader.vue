@@ -80,7 +80,7 @@ defineProps<{
       </DropdownMenuContent>
     </DropdownMenu>
   </div>
-  <div v-else :class="($attrs.class as string)">
+  <div v-else :class="$attrs.class as string">
     {{ title }}
   </div>
 </template>
