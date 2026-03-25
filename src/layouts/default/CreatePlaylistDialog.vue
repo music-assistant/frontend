@@ -96,6 +96,8 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 const showDialog = ref(false);
+// force Dialog remount via dynamic key to prevent the enter animation from
+// stalling at opacity:0 when opened from a context menu
 const dialogKey = ref(0);
 const playlistName = ref("");
 const playlistAllowedMediaTypes = ref<MediaType[]>([]);
