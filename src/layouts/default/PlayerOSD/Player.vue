@@ -46,15 +46,12 @@
           <PlayerExtendedControls
             :queue="{
               isVisible: getBreakpointValue('bp3'),
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :player="{
               isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
           />
         </div>
