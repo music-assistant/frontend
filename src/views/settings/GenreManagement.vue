@@ -22,18 +22,21 @@
       </CardContent>
     </Card>
 
-    <!-- Genre Statistics -->
+    <!-- Genre Library Administration -->
     <Card>
       <CardHeader>
         <div class="flex items-center gap-2">
-          <BarChart2 class="size-4 text-primary" />
+          <ChartGantt class="size-4 text-primary" />
           <CardTitle>{{ $t("settings.genre_statistics") }}</CardTitle>
         </div>
+        <CardDescription>{{
+          $t("settings.genre_statistics_description")
+        }}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <GenreStatsPanel
-          :count="genreCount"
-          @view-genres="router.push({ name: 'genres' })"
+      <CardContent class="p-0">
+        <GenreTable
+          :version="tableVersion"
+          @data-changed="onTableDataChanged"
         />
       </CardContent>
     </Card>
@@ -94,17 +97,16 @@
 </template>
 
 <script setup lang="ts">
-import { BarChart2, RefreshCw, ScanLine } from "lucide-vue-next";
+import { ChartGantt, RefreshCw, ScanLine } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 import GenreManagementHeader from "@/components/genre/GenreManagementHeader.vue";
 import GenreRestoreDialogs from "@/components/genre/GenreRestoreDialogs.vue";
 import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
 import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
-import GenreStatsPanel from "@/components/genre/GenreStatsPanel.vue";
+import GenreTable from "@/components/genre/GenreTable.vue";
 import {
   Card,
   CardContent,
@@ -119,9 +121,8 @@ import { store } from "@/plugins/store";
 const SCANNER_POLL_INTERVAL_MS = 30000;
 
 const { t } = useI18n();
-const router = useRouter();
 
-const genreCount = ref<number | undefined>(undefined);
+const tableVersion = ref(0);
 const restoreInProgress = ref(false);
 const fullRestoreInProgress = ref(false);
 const showRestoreDialog = ref(false);
@@ -163,14 +164,6 @@ const triggerScan = async () => {
   }
 };
 
-const loadStats = async () => {
-  try {
-    genreCount.value = await api.getLibraryGenresCount();
-  } catch (error) {
-    toast.error(t("settings.genre_stats_failed"));
-  }
-};
-
 const restoreDefaults = async () => {
   restoreInProgress.value = true;
   try {
@@ -181,11 +174,10 @@ const restoreDefaults = async () => {
     } else {
       toast.success(t("settings.restore_success", [restored.length]));
     }
-    // Clear cached genre listing so it loads fresh data on next visit
     if (store.prevState?.path === "librarygenres") {
       store.prevState = undefined;
     }
-    await loadStats();
+    tableVersion.value++;
   } catch (error) {
     toast.error(t("settings.restore_defaults_failed"));
   } finally {
@@ -204,11 +196,10 @@ const fullRestore = async () => {
     const restored = await api.restoreGenreDefaults(true);
     showFullRestoreDialog2.value = false;
     toast.success(t("settings.full_restore_success", [restored.length]));
-    // Clear cached genre listing so it loads fresh data on next visit
     if (store.prevState?.path === "librarygenres") {
       store.prevState = undefined;
     }
-    await loadStats();
+    tableVersion.value++;
   } catch (error) {
     toast.error(t("settings.full_restore_failed"));
   } finally {
@@ -216,8 +207,14 @@ const fullRestore = async () => {
   }
 };
 
+const onTableDataChanged = async () => {
+  store.libraryGenresCount = await api.getLibraryGenresCount();
+  if (store.prevState?.path === "librarygenres") {
+    store.prevState = undefined;
+  }
+};
+
 onMounted(() => {
-  loadStats();
   loadScannerStatus();
   scannerPollInterval = setInterval(
     loadScannerStatus,

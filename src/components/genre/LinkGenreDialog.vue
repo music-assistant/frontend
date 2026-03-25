@@ -154,16 +154,7 @@ onMounted(() => {
   eventbus.on("linkGenreDialog", async (evt: LinkGenreDialogEvent) => {
     reset();
     items.value = evt.items;
-    allGenres.value = await api.getLibraryGenres(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      false,
-    );
+    allGenres.value = await api.getLibraryGenres({ hide_empty: false });
     open.value = true;
   });
 });

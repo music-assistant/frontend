@@ -23,7 +23,7 @@
             {{ $t("playlist_mix_allowed") }}
           </DialogDescription>
           <div
-            v-else-if="playlistAllowedMediaTypes.length > 1"
+            v-else-if="!queueId && playlistAllowedMediaTypes.length > 1"
             class="flex flex-col gap-3"
           >
             <DialogDescription>{{
@@ -111,7 +111,7 @@ watch(showDialog, (open) => {
   store.dialogActive = open;
   if (open) {
     nextTick(() => {
-      nameInput.value?.$el?.focus();
+      nameInput.value?.focus?.();
     });
   }
 });
@@ -210,13 +210,27 @@ const doSave = async () => {
   }
 
   try {
-    const playlist = queueId.value
-      ? await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value)
-      : await api.createPlaylist(
-          playlistName.value,
-          providerId.value,
-          selectedMediaTypes,
-        );
+    if (queueId.value) {
+      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value, {
+        showBackgroundTaskToast: false,
+      });
+      toast.info($t("background_tasks.toast.added"), {
+        action: {
+          label: $t("background_tasks.open"),
+          onClick: () => {
+            store.showFullscreenPlayer = false;
+            router.push({ name: "backgroundtasks" });
+          },
+        },
+      });
+      return;
+    }
+
+    const playlist = await api.createPlaylist(
+      playlistName.value,
+      providerId.value,
+      selectedMediaTypes,
+    );
     toast.success($t("playlist_created"), {
       action: {
         label: $t("open_playlist"),
@@ -233,8 +247,18 @@ const doSave = async () => {
       },
     });
   } catch (e) {
-    toast.error(e as string);
+    toast.error(getErrorMessage(e, $t("background_tasks.status.failed")));
   }
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
 };
 
 const getTranslatedSupportedMediaTypes = (): string[] => {

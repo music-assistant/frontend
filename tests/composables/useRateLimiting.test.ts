@@ -1,19 +1,46 @@
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import type { PartyConfig } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const BOOST_STORAGE_KEY = "guest_boost_bucket";
 const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
 const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
 
+const createLocalStorageMock = (): Storage => {
+  const store = new Map<string, string>();
+  return {
+    get length() {
+      return store.size;
+    },
+    clear() {
+      store.clear();
+    },
+    getItem(key: string) {
+      return store.get(key) ?? null;
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null;
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    setItem(key: string, value: string) {
+      store.set(key, value);
+    },
+  };
+};
+
 describe("useRateLimiting", () => {
   beforeEach(() => {
     vi.useRealTimers();
-    if (typeof localStorage !== "undefined") {
-      localStorage.removeItem(BOOST_STORAGE_KEY);
-      localStorage.removeItem(ADD_QUEUE_STORAGE_KEY);
-      localStorage.removeItem(SKIP_SONG_STORAGE_KEY);
-    }
+    vi.stubGlobal("localStorage", createLocalStorageMock());
+    localStorage.removeItem(BOOST_STORAGE_KEY);
+    localStorage.removeItem(ADD_QUEUE_STORAGE_KEY);
+    localStorage.removeItem(SKIP_SONG_STORAGE_KEY);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("initializes with default values", () => {
@@ -80,7 +107,6 @@ describe("useRateLimiting", () => {
       boost_refill_minutes: 10,
       skip_song_limit: 2,
       skip_song_refill_minutes: 30,
-      album_art_background: false,
       display_lyrics: false,
       karaoke_mode: false,
       highlight_ahead: true,

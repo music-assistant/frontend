@@ -3,13 +3,6 @@
     <div v-if="loading" class="qr-loading">
       <Spinner class="size-12" />
     </div>
-    <div v-else-if="!guestAccessEnabled" class="qr-disabled">
-      <QrCode class="qr-disabled-icon" />
-      <p class="qr-disabled-title">
-        {{ $t("providers.party.guest_access_disabled") }}
-      </p>
-      <p class="qr-hint">{{ $t("providers.party.enable_in_settings") }}</p>
-    </div>
     <div
       v-else-if="qrCodeUrl"
       class="qr-display"
@@ -24,7 +17,7 @@
           </div>
         </Transition>
       </div>
-      <img src="@/assets/logo.svg" class="qr-logo" alt="Music Assistant" />
+      <img :src="logoSrc" class="qr-logo" alt="Music Assistant" />
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
@@ -40,9 +33,12 @@ import { copyToClipboard } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AlertCircle, Check, QrCode } from "lucide-vue-next";
+import { AlertCircle, Check } from "lucide-vue-next";
 import QRCode from "qrcode";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+
+const emit = defineEmits<{ available: [value: boolean] }>();
+const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
@@ -117,6 +113,7 @@ const generateQRCode = async () => {
     qrCodeUrl.value = "";
   } finally {
     loading.value = false;
+    emit("available", guestAccessEnabled.value);
   }
 };
 
@@ -149,6 +146,7 @@ onMounted(async () => {
       } else {
         guestAccessEnabled.value = false;
         qrCodeUrl.value = "";
+        emit("available", false);
       }
     },
   );
@@ -193,10 +191,6 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 1rem;
   padding-bottom: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: clamp(12px, 1.2vw, 24px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .qr-link {
@@ -211,7 +205,8 @@ onBeforeUnmount(() => {
 .qr-logo {
   width: calc(var(--qr-size) * 0.8);
   height: auto;
-  margin-top: 0.375rem;
+  margin-top: 0.8rem;
+  margin-bottom: 0.2rem;
   opacity: 0.85;
 }
 
@@ -229,8 +224,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(var(--v-theme-surface), 0.9);
-  color: rgb(var(--v-theme-success));
+  background: black;
+  color: white;
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
@@ -261,35 +256,6 @@ onBeforeUnmount(() => {
   display: block;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.qr-disabled {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 3rem;
-}
-
-.qr-disabled-icon {
-  width: clamp(64px, 10vw, 120px);
-  height: clamp(64px, 10vw, 120px);
-  opacity: 0.5;
-  margin-bottom: 1.5rem;
-}
-
-.qr-disabled-title {
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.qr-disabled .qr-hint {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
-  max-width: 500px;
 }
 
 .qr-error {

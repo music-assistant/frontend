@@ -28,7 +28,7 @@
     </div>
     <Container
       :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4"
+      class="mt-4 px-5"
     >
       <v-list v-if="viewMode === 'list'" class="players-list">
         <ListItem
@@ -170,7 +170,6 @@ import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import { SYNCGROUP_PREFIX } from "@/constants";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";

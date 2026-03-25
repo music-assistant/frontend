@@ -21,15 +21,22 @@
 
     <div
       v-else
-      :class="['party-content', { 'party-content--karaoke': karaokeMode }]"
+      :class="[
+        'party-content',
+        {
+          'party-content--karaoke': karaokeMode,
+          'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
+        },
+      ]"
     >
       <!-- Karaoke Mode: QR top-left, lyrics center, track stack bottom -->
       <template v-if="karaokeMode">
         <div
+          v-show="qrAvailable"
           class="karaoke-qr"
           :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
-          <PartyQR />
+          <PartyQR @available="qrAvailable = $event" />
         </div>
 
         <div class="karaoke-lyrics">
@@ -68,6 +75,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
+              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
             />
           </TransitionGroup>
         </div>
@@ -77,15 +85,23 @@
       <template v-else>
         <!-- QR Code and Lyrics -->
         <div
+          v-show="qrAvailable || displayLyrics"
           :class="['qr-section', { 'qr-section--with-lyrics': displayLyrics }]"
         >
           <div
+            v-show="qrAvailable"
             class="qr-wrapper"
             :style="swapped && displayLyrics ? { order: 1 } : undefined"
           >
-            <PartyQR />
+            <PartyQR @available="qrAvailable = $event" />
           </div>
-          <div v-if="displayLyrics" class="lyrics-section">
+          <div
+            v-if="displayLyrics"
+            :class="[
+              'lyrics-section',
+              { 'lyrics-section--full': !qrAvailable },
+            ]"
+          >
             <LyricsViewer
               :media-item="store.curQueueItem?.media_item"
               :position="lyricsElapsedTime"
@@ -93,6 +109,7 @@
               :lyrics="currentLyrics.plain"
               :lrc-lyrics="currentLyrics.synced"
               :highlight-ahead="highlightAhead"
+              :text-color="lyricsTextColor"
             />
           </div>
         </div>
@@ -131,6 +148,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
+              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
             />
           </TransitionGroup>
         </div>
@@ -143,13 +161,12 @@
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
   ImageColorPalette,
   getColorPalette,
   getMediaItemImageUrl,
-  parseBool,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -164,11 +181,9 @@ import { store } from "@/plugins/store";
 import Color from "color";
 import { Music, Speaker } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
 import { useTheme } from "vuetify";
 
 const theme = useTheme();
-const route = useRoute();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 
 const refreshPartyPlayer = async () => {
@@ -182,7 +197,7 @@ const refreshPartyPlayer = async () => {
   }
 };
 
-const albumArtBackgroundEnabled = ref(true); // Default to true
+const qrAvailable = ref(true); // Optimistic default; PartyQR emits false if guest access disabled
 const displayLyrics = ref(false); // Whether karaoke lyrics are shown
 const karaokeMode = ref(false); // Whether karaoke mode layout is active
 const highlightAhead = ref(true); // Whether lyric highlight finishes at LRC time
@@ -205,18 +220,8 @@ onBeforeUnmount(() => {
   compactQuery.removeEventListener("change", handleCompactChange);
 });
 
-// Check if album art background is enabled - prioritize query parameter over config
-const useAlbumArtBackground = computed(() => {
-  // Query parameter takes precedence for manual override
-  const param = route.query.albumArtBackground;
-
-  if (param !== undefined) {
-    const raw = Array.isArray(param) ? param[0] : param;
-    return parseBool(raw);
-  }
-  // Otherwise use config value
-  return albumArtBackgroundEnabled.value;
-});
+// Album art background is always active
+const useAlbumArtBackground = computed(() => true);
 
 const isPlaying = computed(
   () => store.activePlayer?.playback_state === PlaybackState.PLAYING,
@@ -263,6 +268,13 @@ const fetchLyrics = async () => {
 };
 
 const lyricsEnabled = computed(() => displayLyrics.value || karaokeMode.value);
+const lyricsTextColor = computed(() =>
+  albumArtUrl.value
+    ? "#FFFFFF"
+    : theme.current.value.dark
+      ? "#FFFFFF"
+      : "#000000",
+);
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
 
@@ -560,9 +572,6 @@ onMounted(async () => {
   // Fetch party configuration via shared composable
   const config = await fetchConfig();
   if (config) {
-    if (config.album_art_background !== undefined) {
-      albumArtBackgroundEnabled.value = config.album_art_background;
-    }
     if (config.display_lyrics !== undefined) {
       displayLyrics.value = config.display_lyrics;
     }
@@ -630,7 +639,6 @@ onBeforeUnmount(() => {
 // React to party config changes (e.g., admin toggles player controls)
 watch(partyConfig, (newConfig) => {
   if (newConfig) {
-    albumArtBackgroundEnabled.value = newConfig.album_art_background ?? true;
     displayLyrics.value = newConfig.display_lyrics ?? false;
     karaokeMode.value =
       (newConfig.display_lyrics ?? false) && (newConfig.karaoke_mode ?? false);
@@ -639,7 +647,6 @@ watch(partyConfig, (newConfig) => {
     boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
     antiBurnIn.value = newConfig.anti_burn_in ?? false;
   } else {
-    albumArtBackgroundEnabled.value = true;
     displayLyrics.value = false;
     karaokeMode.value = false;
     highlightAhead.value = true;
@@ -697,6 +704,11 @@ watch(
   transition: background-image 0.8s ease-in-out;
 }
 
+.party-content--album-art,
+.party-content--album-art * {
+  color: white !important;
+}
+
 .party-content {
   position: relative;
   z-index: 1;
@@ -744,6 +756,11 @@ watch(
   flex: 0 0 50%;
   overflow: hidden;
   max-height: 50%;
+}
+
+.lyrics-section--full {
+  flex: 1 1 100%;
+  max-height: 100%;
 }
 
 .lyrics-section :deep(.synced-content) {

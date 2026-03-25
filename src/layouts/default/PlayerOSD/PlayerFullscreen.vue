@@ -4,7 +4,8 @@
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
-    z-index="9999"
+    z-index="9000"
+    :retain-focus="false"
     persistent
   >
     <v-card
@@ -417,17 +418,21 @@
           <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
-            :icon="
-              store.curQueueItem?.media_item?.favorite
-                ? 'mdi-heart'
-                : 'mdi-heart-outline'
-            "
             :title="$t('tooltip.favorite')"
             variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
-          />
+          >
+            <Heart
+              :size="18"
+              :fill="
+                store.curQueueItem?.media_item?.favorite
+                  ? 'currentColor'
+                  : 'none'
+              "
+            />
+          </Icon>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -439,14 +444,17 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
-          <div class="play-btn-wrapper">
+          <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
               class="media-controls-item"
-              :icon="{ staticWidth: '70px', staticHeight: '70px' }"
+              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
+              :size="30"
+              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -454,6 +462,7 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
@@ -465,6 +474,7 @@
             v-if="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
+            :size="18"
           />
         </div>
 
@@ -525,6 +535,8 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -540,8 +552,8 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -562,6 +574,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
+import { Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -575,8 +588,6 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { getSourceName } from "@/plugins/api/helpers";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 
 const { name } = useDisplay();
 
@@ -589,6 +600,15 @@ interface Props {
   colorPalette: ImageColorPalette;
 }
 const compProps = defineProps<Props>();
+
+const playBtnStyle = computed(() => {
+  const isDark = vuetify.theme.current.value.dark;
+  const color = isDark
+    ? compProps.colorPalette.darkColor
+    : compProps.colorPalette.lightColor;
+  if (!color) return {};
+  return { "--play-icon-color": color };
+});
 
 const playerMarqueeSync = new MarqueeTextSync();
 const hoveredQueueIndex = ref(-1);
@@ -1454,6 +1474,10 @@ watchEffect(() => {
   // Keep color between text and sliders consistent.
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
+  document.documentElement.style.setProperty(
+    "--text-color-inverse",
+    isLight ? DARK_TEXT_COLOR.hex() : LIGHT_TEXT_COLOR.hex(),
+  );
   sliderColor.value = textColor.hex();
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
@@ -1669,10 +1693,51 @@ button {
   color: var(--text-color);
 }
 
+.play-btn-wrapper :deep(.play-btn-icon) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-range"]) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-thumb"])::before {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-track"])::before {
+  background-color: color-mix(
+    in srgb,
+    var(--text-color) 24%,
+    transparent
+  ) !important;
+}
+
 .lyrics-wrapper {
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+.lyrics-wrapper :deep(.lyrics-line),
+.lyrics-wrapper :deep(.break-note) {
+  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+}
+
+/* Tablet */
+@media (min-width: 600px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1280px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.4rem, 2vw, 2.2rem);
+  }
 }
 
 .title-row {

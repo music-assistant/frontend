@@ -8,7 +8,7 @@
           :title="$t('tooltip.toggle_view_mode')"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
-          <component :is="viewModeIcon" class="size-[22px]" />
+          <v-icon :icon="viewModeIcon" />
         </Button>
       </template>
     </InfoHeader>
@@ -172,13 +172,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { Button } from "@/components/ui/button";
-import {
-  AlignJustify,
-  LayoutDashboard,
-  LayoutGrid,
-  Grid2X2,
-  SquareArrowRightEnter,
-} from "lucide-vue-next";
+import { SquareArrowRightEnter } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -236,10 +230,10 @@ const displayRows = computed(() =>
 );
 
 const viewModeIcon = computed(() => {
-  if (viewMode.value === "discovery") return LayoutDashboard;
-  if (viewMode.value === "panel") return LayoutGrid;
-  if (viewMode.value === "panel_compact") return Grid2X2;
-  return AlignJustify;
+  if (viewMode.value === "discovery") return "mdi-view-dashboard";
+  if (viewMode.value === "panel") return "mdi-grid";
+  if (viewMode.value === "panel_compact") return "mdi-view-comfy";
+  return "mdi-view-list";
 });
 
 const openViewModeMenu = (e: MouseEvent) => {

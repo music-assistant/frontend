@@ -4,10 +4,11 @@
     v-if="isVisible && player"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!canPrevious || isLoading"
-    icon="mdi-skip-previous-outline"
     variant="button"
     @click="api.playerCommandPrevious(player.player_id)"
-  />
+  >
+    <SkipBack :size="size" />
+  </Icon>
 </template>
 
 <script setup lang="ts">
@@ -17,6 +18,7 @@ import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { useActiveSource } from "@/composables/activeSource";
 import { computed, toRef } from "vue";
+import { SkipBack } from "lucide-vue-next";
 
 // properties
 export interface Props {
@@ -24,11 +26,13 @@ export interface Props {
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
   icon?: IconProps;
+  size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
   isVisible: true,
   icon: undefined,
+  size: 20,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));

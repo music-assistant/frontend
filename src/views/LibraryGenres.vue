@@ -71,16 +71,19 @@ const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
 
-  return await api.getLibraryGenres(
-    params.favoritesOnly || undefined,
-    params.search,
-    params.limit,
-    params.offset,
-    params.sortBy,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
-    params.genreIds,
-    params.hideEmptyFilter,
-  );
+  return await api.getLibraryGenres({
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    limit: params.limit,
+    offset: params.offset,
+    order_by: params.sortBy,
+    provider:
+      params.provider && params.provider.length > 0
+        ? params.provider
+        : undefined,
+    genre: params.genreIds,
+    hide_empty: params.hideEmptyFilter,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {
@@ -110,11 +113,9 @@ const handleGenreAdded = async () => {
 };
 
 const triggerRefresh = async () => {
-  // Disable restore state temporarily to force fresh data load
   restoreState.value = false;
   updateAvailable.value = true;
   refreshKey.value++;
-  // Re-enable restore state after a short delay
   await new Promise((resolve) => setTimeout(resolve, 50));
   restoreState.value = true;
 };

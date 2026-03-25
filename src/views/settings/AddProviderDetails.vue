@@ -169,6 +169,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
 const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
+  _immediateApply: boolean,
 ) {
   loading.value = true;
   // append existing ConfigEntry values to allow

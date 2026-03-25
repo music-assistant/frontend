@@ -15,7 +15,10 @@
       ])
     }}
   </div>
-  <Container :variant="viewMode === 'list' ? 'default' : 'panel'" class="mt-4">
+  <Container
+    :variant="viewMode === 'list' ? 'default' : 'panel'"
+    class="mt-4 px-5"
+  >
     <v-list v-if="viewMode === 'list'" class="providers-list">
       <ListItem
         v-for="item in getAllFilteredProviders()"
@@ -78,11 +81,7 @@
         <template #append>
           <div class="provider-status-icons">
             <v-icon
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
+              v-if="isProviderSyncing(item.instance_id)"
               icon="mdi-sync"
               size="20"
               color="grey"
@@ -108,12 +107,6 @@
               size="20"
               color="grey"
               :title="$t('settings.not_loaded')"
-            />
-            <v-icon
-              :icon="getProviderTypeIcon(item.type)"
-              size="20"
-              color="grey"
-              :title="getProviderTypeTitle(item.type)"
             />
             <v-chip
               v-if="
@@ -163,11 +156,7 @@
 
           <template #append>
             <v-btn
-              v-if="
-                api.syncTasks.value.filter(
-                  (x) => x.provider_instance == item.instance_id,
-                ).length > 0
-              "
+              v-if="isProviderSyncing(item.instance_id)"
               variant="text"
               size="small"
               icon
@@ -207,15 +196,6 @@
               :title="$t('settings.not_loaded')"
             >
               <v-icon icon="mdi-timer-sand" />
-            </v-btn>
-
-            <v-btn
-              variant="text"
-              size="small"
-              icon
-              :title="getProviderTypeTitle(item.type)"
-            >
-              <v-icon :icon="getProviderTypeIcon(item.type)" />
             </v-btn>
 
             <v-chip
@@ -306,6 +286,7 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
+import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -319,7 +300,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
@@ -349,12 +330,20 @@ const addProviderLabel = computed(() => {
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref<string>("");
 const showAddProviderDialog = ref<boolean>(false);
+const addProviderInitialType = ref<string | undefined>(undefined);
+const { isProviderSyncing } = useBackgroundTasks();
+let unsubProvidersUpdated: (() => void) | undefined;
 
-// listen for item updates to refresh items when that happens
-const unsub = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-  loadItems();
+const openAddProviderWithType = (type: string) => {
+  addProviderInitialType.value = type;
+  showAddProviderDialog.value = true;
+};
+
+watch(showAddProviderDialog, (isOpen) => {
+  if (!isOpen) {
+    addProviderInitialType.value = undefined;
+  }
 });
-onBeforeUnmount(unsub);
 
 const loadItems = async function () {
   // Only load provider configs if provider manifests are available
@@ -382,6 +371,16 @@ const editProvider = function (providerInstanceId: string) {
 const shouldShowStageBadge = function (stage?: ProviderStage) {
   return !!stage && stage !== ProviderStage.STABLE;
 };
+
+onMounted(() => {
+  unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    loadItems();
+  });
+});
+
+onBeforeUnmount(() => {
+  unsubProvidersUpdated?.();
+});
 
 const toggleEnabled = function (config: ProviderConfig) {
   config.enabled = !config.enabled;
@@ -561,16 +560,6 @@ const getProviderTypeTitle = function (type: ProviderType) {
     .otherwise(() => $t("settings.player"));
 };
 
-const getProviderTypeIcon = function (type: ProviderType) {
-  const iconMap = {
-    [ProviderType.MUSIC]: "mdi-music",
-    [ProviderType.PLAYER]: "mdi-speaker",
-    [ProviderType.METADATA]: "mdi-file-code",
-    [ProviderType.PLUGIN]: "mdi-puzzle",
-  };
-  return iconMap[type] || "mdi-help-circle";
-};
-
 const getAllFilteredProviders = function () {
   let filtered = [...providerConfigs.value];
 
@@ -666,11 +655,11 @@ const getAllFilteredProviders = function () {
 }
 
 .providers-list :deep(.v-list-item__prepend) {
-  margin-right: 4px;
+  padding-inline-end: 6px;
 }
 
 .providers-list :deep(.v-list-item__content > div) {
-  padding-left: 4px;
+  padding-left: 0;
 }
 
 .provider-name-title {

@@ -764,7 +764,6 @@
     },
     "play_replace": "Play Now (clear queue)",
     "played": "Played",
-    "background_task_added": "The action is performed by the server in the background and may take some time to complete. Keep an eye on the server log for progress.",
     "images": "Images",
     "image_type": "Type",
     "image_source": "Source",

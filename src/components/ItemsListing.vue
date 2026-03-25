@@ -217,6 +217,7 @@ import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -347,7 +348,7 @@ const props = withDefaults(defineProps<Props>(), {
 // global refs
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
 
@@ -1168,6 +1169,8 @@ const restoreSettings = async function () {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";
+  } else if (props.itemtype == "genres") {
+    viewMode.value = "panel_compact";
   } else {
     viewMode.value = "list";
   }
@@ -1325,6 +1328,15 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+const itemtypeToMediaType: Partial<Record<string, MediaType>> = {
+  tracks: MediaType.TRACK,
+  albums: MediaType.ALBUM,
+  artists: MediaType.ARTIST,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+};
+
 const loadGenreOptions = async () => {
   if (!props.showGenreFilter) return;
 
@@ -1333,20 +1345,21 @@ const loadGenreOptions = async () => {
     const all: { label: string; value: number }[] = [];
     let offset = 0;
     let page: Genre[];
+    const mediaType = itemtypeToMediaType[props.itemtype];
 
     do {
-      page = await api.getLibraryGenres(
-        undefined,
-        undefined,
-        pageSize,
+      page = await api.getLibraryGenres({
+        limit: pageSize,
         offset,
-        "name",
-        undefined,
-        undefined,
-        true, // always hide empty genres in the filter dropdown
-      );
+        order_by: "name",
+        hide_empty: true, // always hide empty genres in the filter dropdown
+        media_type: mediaType, // filter to genres relevant for this media type
+      });
       for (const genre of page) {
-        all.push({ label: genre.name, value: Number(genre.item_id) });
+        all.push({
+          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          value: Number(genre.item_id),
+        });
       }
       offset += pageSize;
     } while (page.length === pageSize);

@@ -47,7 +47,7 @@
             clearable
             multiple
             :items="syncPlayers"
-            item-title="display_name"
+            item-title="name"
             item-value="player_id"
             :label="$t('settings.group_members')"
           />
@@ -115,29 +115,52 @@ const providerDetails = computed(() => {
 const syncPlayers = computed(() => {
   if (props.provider === "universal_group") {
     // for universal groups, show all available non-group players, regardless of provider
-    return Object.values(api.players).filter(
-      (x) => x.available && x.type != PlayerType.GROUP,
-    );
+    return Object.values(api.players)
+      .filter((x) => x.available && x.type != PlayerType.GROUP)
+      .sort((a, b) =>
+        (a.name ?? "")
+          .toUpperCase()
+          .localeCompare((b.name ?? "").toUpperCase()),
+      );
   }
   if (props.provider === "sync_group") {
-    // for sync groups, show all available non-group players that are sync compatible with the provider
-    return Object.values(api.players).filter(
+    // for sync groups, show all available non-group players that are sync compatible
+    return Object.values(api.players)
+      .filter((x) => {
+        if (!x.available || x.type === PlayerType.GROUP) return false;
+        if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
+          return false;
+        // If a player is temporarily synced, can_group_with will be empty.
+        // In that case, use the sync leader's can_group_with as a proxy.
+        let canGroupWith = x.can_group_with;
+        if (
+          canGroupWith.length === 0 &&
+          x.synced_to &&
+          api.players[x.synced_to]
+        ) {
+          canGroupWith = api.players[x.synced_to].can_group_with;
+        }
+        if (canGroupWith.length === 0) return false;
+        if (members.value.length === 0) return true;
+        if (members.value.includes(x.player_id)) return true;
+        return members.value.some((m) => canGroupWith.includes(m));
+      })
+      .sort((a, b) =>
+        (a.name ?? "")
+          .toUpperCase()
+          .localeCompare((b.name ?? "").toUpperCase()),
+      );
+  }
+  return Object.values(api.players)
+    .filter(
       (x) =>
         x.available &&
         x.type != PlayerType.GROUP &&
-        x.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
-        x.can_group_with.length > 0 &&
-        (members.value.length == 0 ||
-          members.value.includes(x.player_id) ||
-          members.value.some((m) => x.can_group_with.includes(m))),
+        x.provider == providerDetails.value?.instance_id,
+    )
+    .sort((a, b) =>
+      (a.name ?? "").toUpperCase().localeCompare((b.name ?? "").toUpperCase()),
     );
-  }
-  return Object.values(api.players).filter(
-    (x) =>
-      x.available &&
-      x.type != PlayerType.GROUP &&
-      x.provider == providerDetails.value?.instance_id,
-  );
 });
 
 // methods
