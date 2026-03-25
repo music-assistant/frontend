@@ -385,6 +385,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   }
 
   const key = `${item.media_type}-${item.item_id}-${position}`;
+  if (addingItems.value.has(key)) return;
   addingItems.value.add(key);
 
   try {
@@ -432,6 +433,7 @@ const boostQueueItem = async (item: QueueItem) => {
     return;
   }
 
+  if (boostingQueueItemId.value === item.queue_item_id) return;
   boostingQueueItemId.value = item.queue_item_id;
   try {
     const result = (await api.sendCommand("party/boost_queue_item", {
