@@ -28,7 +28,7 @@
     </div>
     <Container
       :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4"
+      class="mt-4 px-5"
     >
       <v-list v-if="viewMode === 'list'" class="players-list">
         <ListItem
@@ -159,6 +159,17 @@
         </div>
       </div>
     </Container>
+    <div class="missing-players-hint">
+      <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
+      <i18n-t keypath="settings.missing_players_hint" tag="span">
+        <router-link
+          :to="{ name: 'providersettings', query: { types: 'player' } }"
+          class="hint-link"
+        >
+          {{ $t("settings.add_player_providers") }}
+        </router-link>
+      </i18n-t>
+    </div>
     <AddPlayerGroupDialog v-model:show="showAddPlayerGroupDialog" />
   </div>
 </template>
@@ -170,7 +181,6 @@ import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import { SYNCGROUP_PREFIX } from "@/constants";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
@@ -610,5 +620,29 @@ watch(
 .player-warning-text {
   font-size: 13px;
   font-weight: 500;
+}
+
+.missing-players-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+}
+
+.hint-icon {
+  color: rgba(var(--v-theme-on-surface), 0.4);
+  flex-shrink: 0;
+}
+
+.hint-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+.hint-link:hover {
+  text-decoration: underline;
 }
 </style>

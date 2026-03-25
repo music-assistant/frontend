@@ -19,10 +19,8 @@ import { getMenuItems } from "./utils/getMenuItems";
 const router = useRouter();
 const { t } = useI18n();
 
-const menuItems = getMenuItems();
-
 const navItems = computed(() => {
-  return menuItems
+  return getMenuItems()
     .filter((item) => !item.hidden)
     .map((item) => ({
       title: t(item.label),
@@ -108,7 +106,7 @@ onUnmounted(() => {
   margin-right: 15px;
   margin: 2px 15px 8px 2px;
   gap: 6px;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
   position: relative;
   cursor: pointer;
 }
@@ -156,6 +154,12 @@ onUnmounted(() => {
 :deep([data-sidebar="menu-button"] > svg.artist-icon) {
   width: 1.2rem !important;
   height: 1.2rem !important;
+  margin-right: 0.3rem !important;
+}
+
+:deep([data-sidebar="menu-button"] > svg.genre-icon) {
+  width: auto !important;
+  height: auto !important;
   margin-right: 0.3rem !important;
 }
 

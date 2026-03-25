@@ -237,6 +237,7 @@ import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 
 import type { Component } from "vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 
 export interface ContextMenuItem {
   label: string;
@@ -809,7 +810,7 @@ export const getContextMenuItems = async function (
         });
         eventbus.emit("clearSelection");
       },
-      icon: "mdi-compass-outline",
+      icon: GenreIcon,
     });
   }
   // merge genres (admin only, all items must be library genres)

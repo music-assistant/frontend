@@ -4,10 +4,14 @@
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
-    z-index="9999"
+    z-index="9000"
+    :retain-focus="false"
     persistent
   >
-    <v-card :color="backgroundColor">
+    <v-card
+      class="fullscreen-player-card"
+      :style="{ background: backgroundColor }"
+    >
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
           <Button icon @click="store.showFullscreenPlayer = false">
@@ -69,7 +73,6 @@
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
-              style="max-width: 100%; width: auto; border-radius: 4px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -128,7 +131,9 @@
 
             <!-- subtitle: album -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media?.album"
+              v-else-if="
+                store.activePlayer?.current_media?.album && showAlbumSubtitle
+              "
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
@@ -177,7 +182,7 @@
                 store.activePlayer?.powered != false &&
                 store.curQueueItem?.streamdetails
               "
-              style="margin: auto; padding-top: 20px"
+              style="padding-top: min(10px, 1vh)"
             >
               <QualityDetailsBtn />
             </div>
@@ -218,7 +223,10 @@
               {{ $t("lyrics") }}
             </v-tab>
           </v-tabs>
-          <div class="queue-items-scroll-box">
+          <div
+            class="queue-items-scroll-box"
+            :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
+          >
             <v-infinite-scroll
               v-if="!tempHide && activeQueuePanel !== 2"
               :onLoad="loadNextPage"
@@ -228,7 +236,7 @@
               <!-- list view -->
               <v-virtual-scroll
                 :item-height="70"
-                max-height="90%"
+                max-height="100%"
                 :items="activeQueuePanel == 0 ? nextItems : previousItems"
               >
                 <template #default="{ item, index }">
@@ -305,6 +313,19 @@
                       </div>
                     </template>
                     <template #append>
+                      <PartyPlayerBadge
+                        v-if="item.extra_attributes?.party_guest === true"
+                        :type="
+                          item.extra_attributes?.party_boosted === true
+                            ? 'boost'
+                            : 'request'
+                        "
+                        :badge-color="
+                          item.extra_attributes?.party_boosted === true
+                            ? boostBadgeColor
+                            : requestBadgeColor
+                        "
+                      />
                       <NowPlayingBadge
                         v-if="
                           item.queue_item_id ===
@@ -348,7 +369,6 @@
               <LyricsViewer
                 :media-item="store.curQueueItem?.media_item"
                 :position="lyricsElapsedTime"
-                :duration="store.curQueueItem?.duration"
                 :stream-details="store.curQueueItem?.streamdetails"
                 :text-color="sliderColor"
                 :lyrics="currentLyrics.plain"
@@ -366,7 +386,6 @@
           <div class="main-media-details-image main-media-details-image-alt">
             <v-img
               v-if="store.activePlayer?.current_media?.image_url"
-              style="max-width: 100%; width: auto; border-radius: 4px"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -399,17 +418,21 @@
           <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
-            :icon="
-              store.curQueueItem?.media_item?.favorite
-                ? 'mdi-heart'
-                : 'mdi-heart-outline'
-            "
             :title="$t('tooltip.favorite')"
             variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
-          />
+          >
+            <Heart
+              :size="18"
+              :fill="
+                store.curQueueItem?.media_item?.favorite
+                  ? 'currentColor'
+                  : 'none'
+              "
+            />
+          </Icon>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -421,14 +444,17 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
-          <div class="play-btn-wrapper">
+          <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
               class="media-controls-item"
-              :icon="{ staticWidth: '70px', staticHeight: '70px' }"
+              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
+              :size="30"
+              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -436,6 +462,7 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
@@ -447,6 +474,7 @@
             v-if="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
+            :size="18"
           />
         </div>
 
@@ -505,7 +533,10 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -522,6 +553,7 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -542,6 +574,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
+import { Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -555,15 +588,27 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { getSourceName } from "@/plugins/api/helpers";
-import computeElapsedTime from "@/helpers/elapsed";
 
 const { name } = useDisplay();
+
+const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
+const showAlbumSubtitle = computed(
+  () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
+);
 
 interface Props {
   colorPalette: ImageColorPalette;
 }
 const compProps = defineProps<Props>();
+
+const playBtnStyle = computed(() => {
+  const isDark = vuetify.theme.current.value.dark;
+  const color = isDark
+    ? compProps.colorPalette.darkColor
+    : compProps.colorPalette.lightColor;
+  if (!color) return {};
+  return { "--play-icon-color": color };
+});
 
 const playerMarqueeSync = new MarqueeTextSync();
 const hoveredQueueIndex = ref(-1);
@@ -574,51 +619,11 @@ const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
 
-// Lyrics elapsed time computation (similar to PlayerTimeline)
-const nowTick = ref(0);
-let tickTimer: ReturnType<typeof setInterval> | null = null;
+// Badge colors for guest request badges (loaded from party/config)
+const requestBadgeColor = ref("#2196f3");
+const boostBadgeColor = ref("#ff5722");
 
-const startTick = (interval = 250) => {
-  if (!tickTimer) {
-    tickTimer = setInterval(() => (nowTick.value = Date.now()), interval);
-  }
-};
-
-const stopTick = () => {
-  if (tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-};
-
-const lyricsElapsedTime = computed(() => {
-  // Include nowTick.value so this computed re-evaluates periodically
-  void nowTick.value;
-
-  const isPlaying =
-    store.activePlayer?.playback_state === PlaybackState.PLAYING;
-  const queue = store.activePlayerQueue;
-
-  // Start/stop tick based on playback state
-  if (isPlaying && queue?.active) {
-    startTick();
-  } else {
-    stopTick();
-  }
-
-  // Compute elapsed time from queue
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
-    return (
-      computeElapsedTime(
-        queue.elapsed_time,
-        queue.elapsed_time_last_updated,
-        store.activePlayer?.playback_state,
-      ) ?? 0
-    );
-  }
-
-  return 0;
-});
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Computed properties
 
@@ -713,43 +718,81 @@ watch(
 const titleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.2em";
+      return "1.3em";
     case "sm":
       return "1.6em";
     case "md":
-      return "2em";
+      return "1.8em";
     case "lg":
-      return store.showQueueItems ? "1.5em" : "2.5em";
+      return store.showQueueItems ? "1.7em" : "2.1em";
     case "xl":
-      return store.showQueueItems ? "1.6em" : "3em";
+      return store.showQueueItems ? "1.8em" : "2.3em";
     case "xxl":
-      return store.showQueueItems ? "1.7em" : "3.2em";
+      return store.showQueueItems ? "1.9em" : "2.5em";
     default:
-      return "1.0em.";
+      return "1.0em";
   }
 });
 
 const subTitleFontSize = computed(() => {
   switch (name.value) {
     case "xs":
-      return "1.0em";
+      return "0.95em";
     case "sm":
-      return "1.2em";
+      return "1.15em";
     case "md":
-      return "1.7em";
+      return "1.3em";
     case "lg":
-      return store.showQueueItems ? "1.0em" : "1.6em";
+      return store.showQueueItems ? "1.2em" : "1.5em";
     case "xl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.3em" : "1.65em";
     case "xxl":
-      return store.showQueueItems ? "1.2em" : "2em";
+      return store.showQueueItems ? "1.35em" : "1.8em";
     default:
-      return "1.0em.";
+      return "1.0em";
+  }
+});
+
+const queueTitleFontSize = computed(() => {
+  switch (name.value) {
+    case "xs":
+      return "0.875rem";
+    case "sm":
+      return "0.875rem";
+    case "md":
+      return "0.925rem";
+    case "lg":
+      return "0.9rem";
+    case "xl":
+      return "0.925rem";
+    case "xxl":
+      return "0.975rem";
+    default:
+      return "0.875rem";
+  }
+});
+
+const queueSubtitleFontSize = computed(() => {
+  switch (name.value) {
+    case "xs":
+      return "0.775rem";
+    case "sm":
+      return "0.775rem";
+    case "md":
+      return "0.8rem";
+    case "lg":
+      return "0.8rem";
+    case "xl":
+      return "0.8rem";
+    case "xxl":
+      return "0.85rem";
+    default:
+      return "0.775rem";
   }
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > 800;
+  return vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
 });
 
 // methods
@@ -1186,7 +1229,11 @@ const resetItems = async function () {
   tempHide.value = false;
 };
 
-const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
     done("empty");
     return;
@@ -1209,6 +1256,24 @@ const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" |
     done("ok");
   }
 };
+
+// Fetch badge colors from party config
+const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
+
+// React to party config changes (e.g., admin changes badge colors)
+watch(partyConfig, (newConfig) => {
+  if (newConfig) {
+    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
+    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
+  }
+});
+
+onMounted(async () => {
+  // Only fetch badge colors if party provider is loaded
+  if (Object.values(api.providers).some((p) => p.domain === "party")) {
+    await fetchPartyConfig();
+  }
+});
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
@@ -1233,7 +1298,6 @@ onMounted(() => {
   window.addEventListener("keydown", onKeydown);
   onBeforeUnmount(() => {
     window.removeEventListener("keydown", onKeydown);
-    stopTick();
   });
 });
 
@@ -1410,24 +1474,38 @@ watchEffect(() => {
   // Keep color between text and sliders consistent.
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
+  document.documentElement.style.setProperty(
+    "--text-color-inverse",
+    isLight ? DARK_TEXT_COLOR.hex() : LIGHT_TEXT_COLOR.hex(),
+  );
   sliderColor.value = textColor.hex();
-  backgroundColor.value = bgColor.hex();
+  const topColor = bgColor.lighten(0.25);
+  const bottomColor = bgColor.darken(0.25);
+  backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
 });
 </script>
 
 <style scoped>
-.main {
+.fullscreen-player-card {
+  overflow: hidden;
+  height: 100%;
   display: flex;
-  min-height: 50% !important;
-  height: 50% !important;
-  max-height: 65% !important;
-  padding-bottom: 5px;
+  flex-direction: column;
 }
 
-.main-media-details {
+.main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main .main-media-details {
   flex: 50%;
   max-width: 100%;
   width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-queue-items {
@@ -1436,11 +1514,23 @@ watchEffect(() => {
   max-width: 100%;
   padding-right: 10px;
   padding-left: 15px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .queue-items-scroll-box {
-  max-height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: scroll;
+}
+
+.queue-items-scroll-box :deep(.v-list-item-title) {
+  font-size: var(--queue-title-size, 1rem);
+}
+
+.queue-items-scroll-box :deep(.v-list-item-subtitle) {
+  font-size: var(--queue-subtitle-size, 0.875rem);
 }
 
 .v-infinite-scroll--vertical {
@@ -1448,42 +1538,51 @@ watchEffect(() => {
 }
 
 .main-media-details-image {
-  min-height: 50%;
-  max-height: 80%;
-  height: 60%;
-  align-content: center;
+  flex: 1;
+  min-height: 0;
+  max-height: 60%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding-left: 20px;
   padding-right: 20px;
+  container-type: size;
 }
-.main-media-details-image.v-img {
-  width: auto;
+.main-media-details-image .v-img {
+  width: min(100cqi, 100cqh);
+  height: min(100cqi, 100cqh);
+  flex: 0 0 auto;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
 .main-media-details-image-alt {
   height: 100% !important;
   max-height: 100% !important;
-  align-content: center;
-  padding: 0px !important;
+  padding: 10px !important;
 }
 
 .main-media-details-track-info {
-  flex: 1;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   text-align: center;
-  padding: 20px;
+  padding: min(5%, 5vh) 0 10px;
+  overflow: hidden;
+}
+
+.main-media-details-track-info > * {
+  max-width: 100%;
 }
 
 .player-bottom {
-  max-height: 35% !important;
-  min-height: 25% !important;
-  height: 30% !important;
-  margin-top: auto;
-  bottom: 0;
+  flex-shrink: 0;
   position: unset !important;
-  padding-bottom: 5%;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), min(3%, 3vh));
+  width: 100%;
 }
 
 .track-info {
@@ -1594,10 +1693,51 @@ button {
   color: var(--text-color);
 }
 
+.play-btn-wrapper :deep(.play-btn-icon) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-range"]) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-thumb"])::before {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-track"])::before {
+  background-color: color-mix(
+    in srgb,
+    var(--text-color) 24%,
+    transparent
+  ) !important;
+}
+
 .lyrics-wrapper {
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+.lyrics-wrapper :deep(.lyrics-line),
+.lyrics-wrapper :deep(.break-note) {
+  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+}
+
+/* Tablet */
+@media (min-width: 600px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1280px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.4rem, 2vw, 2.2rem);
+  }
 }
 
 .title-row {
@@ -1611,10 +1751,38 @@ button {
   aspect-ratio: 1;
   max-width: 400px;
   margin: 0 auto;
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.guest-request-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 35%, transparent);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--badge-color);
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 540px) {
+  .main-media-details-image {
+    max-height: 75%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .main-media-details-track-info {
+    padding: 8px 0;
+  }
 }
 </style>

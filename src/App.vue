@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
 import { api, ConnectionState } from "@/plugins/api";
-import { CoreState, EventType } from "@/plugins/api/interfaces";
+import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
@@ -46,10 +46,7 @@ import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
-import {
-  companionMode,
-  initializeCompanionIntegration,
-} from "./plugins/companion";
+import { initializeCompanionIntegration } from "./plugins/companion";
 // import {
 //   subscribeToHAProperties,
 //   unsubscribeFromHAProperties,
@@ -59,7 +56,11 @@ import type { User } from "./plugins/api/interfaces";
 import { remoteConnectionManager } from "./plugins/remote";
 import { httpProxyBridge } from "./plugins/remote/http-proxy";
 import type { ITransport } from "./plugins/remote/transport";
-import { webPlayer, WebPlayerMode } from "./plugins/web_player";
+import {
+  initializeWebPlayerModeSync,
+  webPlayer,
+  WebPlayerMode,
+} from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
 const theme = useTheme();
@@ -219,45 +220,37 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
-  await api.fetchState();
-  store.libraryArtistsCount = await api.getLibraryArtistsCount();
-  store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
-  store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
-  store.libraryRadiosCount = await api.getLibraryRadiosCount();
-  store.libraryTracksCount = await api.getLibraryTracksCount();
-  store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
-  store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
-  store.libraryGenresCount = await api.getLibraryGenresCount();
+  const isPartyGuest = authManager.isPartyGuest();
 
-  // Enable Sendspin if available and not explicitly disabled
-  // Sendspin works over WebRTC DataChannel which requires signaling via the API server
-  const webPlayerEnabledPref =
-    localStorage.getItem("frontend.settings.web_player_enabled") || "true";
-  const browserControlsEnabledPref =
-    localStorage.getItem("frontend.settings.enable_browser_controls") || "true";
-  if (companionMode.value) {
-    // the webplayer is completely disabled if we're running companion mode (no sendspin, no controls)
-    webPlayer.setMode(WebPlayerMode.DISABLED);
-  } else if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    // sendspin enabled, browser controls enabled
-    webPlayer.setMode(WebPlayerMode.SENDSPIN_WITH_CONTROLS);
-  } else if (
-    webPlayerEnabledPref !== "false" &&
-    browserControlsEnabledPref === "false"
-  ) {
-    // sendspin enabled but no browser controls
-    webPlayer.setMode(WebPlayerMode.SENDSPIN_ONLY);
-  } else if (
-    webPlayerEnabledPref === "false" &&
-    browserControlsEnabledPref !== "false"
-  ) {
-    // sendspin disabled but browser controls allowed
-    webPlayer.setMode(WebPlayerMode.CONTROLS_ONLY);
+  if (!isPartyGuest) {
+    // Full initialization for regular and non-party guest users
+    await api.fetchState();
+    store.libraryArtistsCount = await api.getLibraryArtistsCount();
+    store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
+    store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
+    store.libraryRadiosCount = await api.getLibraryRadiosCount();
+    store.libraryTracksCount = await api.getLibraryTracksCount();
+    store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
+    store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
+    store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
-    webPlayer.setMode(WebPlayerMode.DISABLED);
+    console.debug("[App] Party guest - skipping full state fetch");
+  }
+
+  // Check if party plugin is enabled
+  try {
+    const partyProviders = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "party",
+    );
+    if (partyProviders.length > 0 && partyProviders[0].enabled) {
+      store.enabledPlugins.add("party");
+    } else {
+      store.enabledPlugins.delete("party");
+    }
+  } catch (error) {
+    console.error("[App] Failed to check party status:", error);
+    store.enabledPlugins.delete("party");
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -267,12 +260,16 @@ const completeInitialization = async () => {
     userInfo.role === "admin"
   ) {
     store.isOnboarding = true;
-    router.push("/settings/providers");
+    router.push("/settings");
+  } else if (isPartyGuest) {
+    // Party guests should always be redirected to the guest view
+    router.push("/guest");
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"
   api.state.value = ConnectionState.INITIALIZED;
   initializationCompleted = true;
+  await initializeWebPlayerModeSync();
 
   // Initialize companion app integration
   if (api.baseUrl) {
@@ -408,6 +405,23 @@ onMounted(async () => {
   ) {
     await completeInitialization();
   }
+
+  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
+  api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    try {
+      const partyProviders = await api.getProviderConfigs(
+        ProviderType.PLUGIN,
+        "party",
+      );
+      if (partyProviders.length > 0 && partyProviders[0].enabled) {
+        store.enabledPlugins.add("party");
+      } else {
+        store.enabledPlugins.delete("party");
+      }
+    } catch (error) {
+      console.error("[App] Failed to update party status:", error);
+    }
+  });
 });
 
 onUnmounted(() => {

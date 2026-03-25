@@ -11,7 +11,7 @@
     :allow-key-hooks="true"
     :show-search-button="true"
     :sort-keys="sortKeys"
-    :icon="Compass"
+    :icon="GenreIcon"
     :restore-state="restoreState"
     :total="total"
     :show-provider-filter="true"
@@ -28,7 +28,8 @@ import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Compass, Plus } from "lucide-vue-next";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { Plus } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -70,16 +71,19 @@ const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
 
-  return await api.getLibraryGenres(
-    params.favoritesOnly || undefined,
-    params.search,
-    params.limit,
-    params.offset,
-    params.sortBy,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
-    params.genreIds,
-    params.hideEmptyFilter ?? true,
-  );
+  return await api.getLibraryGenres({
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    limit: params.limit,
+    offset: params.offset,
+    order_by: params.sortBy,
+    provider:
+      params.provider && params.provider.length > 0
+        ? params.provider
+        : undefined,
+    genre: params.genreIds,
+    hide_empty: params.hideEmptyFilter,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {
@@ -109,11 +113,9 @@ const handleGenreAdded = async () => {
 };
 
 const triggerRefresh = async () => {
-  // Disable restore state temporarily to force fresh data load
   restoreState.value = false;
   updateAvailable.value = true;
   refreshKey.value++;
-  // Re-enable restore state after a short delay
   await new Promise((resolve) => setTimeout(resolve, 50));
   restoreState.value = true;
 };

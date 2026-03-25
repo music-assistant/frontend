@@ -52,6 +52,7 @@ export const useIcon = (props: IconProps) => {
       minWidth,
       minHeight,
       badge,
+      style: _style,
       ...vuetifyProps
     } = props;
 

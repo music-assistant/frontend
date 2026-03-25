@@ -135,7 +135,7 @@ export const kebabize = (str: string) => {
     .join("");
 };
 
-const toSentenceCase = function (str: string): string {
+export const toSentenceCase = function (str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
@@ -906,26 +906,6 @@ export const handleMenuBtnClick = function (
     includePlayMenuItems,
     includePlayMenuItems,
   );
-};
-
-/**
- * Get platform-specific default sync delay for Sendspin player.
- * Based on testing across various platforms/browsers.
- */
-export const getSendspinDefaultSyncDelay = function (): number {
-  const ua = navigator.userAgent;
-  const isAndroid = /android/i.test(ua);
-  const isIOS = /iPad|iPhone|iPod/i.test(ua);
-  const isFirefox = /firefox/i.test(ua);
-
-  if (isIOS) {
-    return -250;
-  } else if (!isAndroid && !isFirefox) {
-    // Desktop Chrome/Chromium/Edge
-    return -300;
-  }
-  // Android, Firefox (desktop/mobile)
-  return -200;
 };
 
 /**

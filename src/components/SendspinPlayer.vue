@@ -10,9 +10,12 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
+import {
+  SendspinPlayer,
+  Codec,
+  getDefaultSyncDelay,
+} from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
@@ -36,6 +39,10 @@ const silentAudioRef = ref<HTMLAudioElement>();
 
 // Detect Android for MediaSession workaround
 const isAndroid = /android/i.test(navigator.userAgent);
+const isIOS =
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isMobileOutput = isAndroid || isIOS;
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
@@ -203,9 +210,9 @@ onMounted(() => {
 
   // Create and initialize player
   if (audioRef.value) {
-    const audioElement = audioRef.value;
+    const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
+    const defaultSyncDelay = getDefaultSyncDelay();
     const syncDelay = parseInt(
       localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
         String(defaultSyncDelay),
@@ -329,28 +336,25 @@ onMounted(() => {
     });
   }
 
-  // Audio element event listeners for Android MediaSession
+  // Audio element event listeners for mobile MediaSession resilience
   if (audioRef.value) {
-    // Ensure audio element doesn't pause unexpectedly
+    // Ensure audio element doesn't stay paused after interruptions while stream should play
     audioRef.value.addEventListener("pause", () => {
       console.debug("Sendspin: Audio element paused");
-      if (isAndroid) {
-        // On Android, ALWAYS keep the silent loop playing to maintain MediaSession
-        console.debug("Sendspin: Restarting silent loop (Android workaround)");
-        if (audioRef.value) {
-          audioRef.value.play().catch((e) => {
-            console.warn("Sendspin: Failed to restart silent loop:", e);
-          });
-        }
-      } else {
-        // On iOS/Desktop with MediaStream, restart only if playing
-        if (isPlaying.value && audioRef.value) {
-          console.debug("Sendspin: Restarting audio element playback");
-          audioRef.value.play().catch((e) => {
-            console.warn("Sendspin: Failed to restart audio:", e);
-          });
-        }
-      }
+      if (!isMobileOutput) return;
+
+      const shouldBePlaying =
+        isPlaying.value &&
+        playerState.value !== "error" &&
+        api.players[props.playerId]?.playback_state === PlaybackState.PLAYING;
+      if (!shouldBePlaying || !audioRef.value) return;
+
+      audioRef.value.play().catch((error) => {
+        console.warn(
+          "Sendspin: Failed to recover audio element playback:",
+          error,
+        );
+      });
     });
   }
 });

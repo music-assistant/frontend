@@ -25,9 +25,9 @@
 <script setup lang="ts">
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
-import PlayerVolume from "./PlayerVolume.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
+import PlayerVolume from "./PlayerVolume.vue";
 
 // properties
 export interface Props {

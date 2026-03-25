@@ -2,7 +2,7 @@
   <div>
     <Toolbar
       :is-discover-page="true"
-      :icon="House"
+      :icon="Compass"
       color="background"
       :title="$t('discover')"
     />
@@ -49,7 +49,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { House } from "lucide-vue-next";
+import { Compass } from "lucide-vue-next";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -57,13 +57,17 @@ const router = useRouter();
 const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
-
-const handleLogout = () => {
-  authManager.logout();
-};
+const erroredProviderType = ref<string | null>(null);
 
 const navigateToProviders = () => {
-  router.push("/settings/providers");
+  if (erroredProviderType.value) {
+    router.push({
+      name: "providersettings",
+      query: { types: erroredProviderType.value },
+    });
+  } else {
+    router.push({ name: "settings" });
+  }
 };
 
 const handleHomescreenEditToggle = () => {
@@ -76,9 +80,11 @@ onMounted(async () => {
   if (authManager.isAdmin()) {
     try {
       const configs = await api.getProviderConfigs();
-      hasProviderErrors.value = configs.some(
+      const firstError = configs.find(
         (config) => config.enabled && config.last_error,
       );
+      hasProviderErrors.value = !!firstError;
+      erroredProviderType.value = firstError?.type ?? null;
     } catch {
       // Ignore errors - this is a best-effort feature
     }

@@ -1,18 +1,19 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
+  Compass,
   Disc3,
   Folder,
-  House,
   ListMusic,
   Music2,
+  PartyPopper,
   Podcast,
   Radio,
   Search,
   Settings,
-  Compass,
 } from "lucide-vue-next";
 import { Component } from "vue";
 
@@ -39,7 +40,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "discover") {
       items.push({
         label: "discover",
-        icon: House,
+        icon: Compass,
         path: "/discover",
         isLibraryNode: false,
       });
@@ -50,6 +51,15 @@ export const getMenuItems = function () {
         icon: Search,
         path: "/search",
         isLibraryNode: false,
+      });
+    }
+    if (enabledMenuItemStr === "party") {
+      items.push({
+        label: "Party",
+        icon: PartyPopper,
+        path: "/party",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("party"),
       });
     }
     if (enabledMenuItemStr === "artists") {
@@ -113,7 +123,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "genres") {
       items.push({
         label: "genres",
-        icon: Compass,
+        icon: GenreIcon,
         path: "/genres",
         isLibraryNode: true,
       });

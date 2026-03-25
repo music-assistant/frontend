@@ -43,6 +43,7 @@ export type Events = {
   deleteGenreDialog: DeleteGenreDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   clearSelection: void;
+  genreExcluded: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
 };

@@ -1,56 +1,71 @@
 <template>
-  <div class="config-panel-content">
-    <p class="text-body-2 text-medium-emphasis mb-4">
-      {{ $t("settings.background_scanner_description") }}
-    </p>
-    <div class="stats-row">
-      <span class="text-medium-emphasis">{{
-        $t("settings.scanner_status")
-      }}</span>
-      <span class="font-weight-bold">
-        <v-icon
-          :icon="status?.running ? 'mdi-loading mdi-spin' : 'mdi-circle'"
-          :color="status?.running ? 'primary' : 'success'"
-          size="12"
-          class="mr-1"
-        />
-        {{
-          status?.running
-            ? $t("settings.scanner_running")
-            : $t("settings.scanner_idle")
-        }}
-      </span>
+  <div class="space-y-4">
+    <div class="space-y-2">
+      <Item variant="outline" size="sm" class="justify-between">
+        <ItemContent>
+          <ItemTitle>{{ $t("settings.scanner_status") }}</ItemTitle>
+        </ItemContent>
+        <ItemContent class="flex-none text-right">
+          <span class="flex items-center gap-1.5 text-sm font-medium">
+            <Loader2
+              v-if="status?.running"
+              class="size-3 animate-spin text-primary"
+            />
+            <span v-else class="size-2 rounded-full bg-green-500"></span>
+            {{
+              status?.running
+                ? $t("settings.scanner_running")
+                : $t("settings.scanner_idle")
+            }}
+          </span>
+        </ItemContent>
+      </Item>
+
+      <Item variant="outline" size="sm" class="justify-between">
+        <ItemContent>
+          <ItemTitle>{{ $t("settings.last_scan") }}</ItemTitle>
+        </ItemContent>
+        <ItemContent class="flex-none text-right">
+          <span class="text-sm font-medium">{{ lastScanDisplay }}</span>
+        </ItemContent>
+      </Item>
+
+      <Item variant="outline" size="sm" class="justify-between">
+        <ItemContent>
+          <ItemTitle>{{ $t("settings.last_scan_mapped") }}</ItemTitle>
+        </ItemContent>
+        <ItemContent class="flex-none text-right">
+          <span class="text-sm font-medium">
+            {{
+              status?.last_scan_mapped != null ? status.last_scan_mapped : "..."
+            }}
+          </span>
+        </ItemContent>
+      </Item>
     </div>
-    <div class="stats-row">
-      <span class="text-medium-emphasis">{{ $t("settings.last_scan") }}</span>
-      <span class="font-weight-bold">{{ lastScanDisplay }}</span>
-    </div>
-    <div class="stats-row">
-      <span class="text-medium-emphasis">{{
-        $t("settings.last_scan_mapped")
-      }}</span>
-      <span class="font-weight-bold">{{
-        status?.last_scan_mapped != null ? status.last_scan_mapped : "..."
-      }}</span>
-    </div>
-    <v-btn
-      class="mt-4"
-      variant="outlined"
-      color="primary"
-      prepend-icon="mdi-refresh"
-      :loading="triggering"
-      :disabled="triggering || status?.running"
+
+    <Button
+      variant="outline"
+      size="sm"
+      :disabled="triggering || !!status?.running"
       @click="$emit('trigger')"
     >
+      <Spinner v-if="triggering" />
+      <RefreshCw v-else class="size-4" />
       {{ $t("settings.scan_now") }}
-    </v-btn>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { formatRelativeTime } from "@/helpers/utils";
+import { Loader2, RefreshCw } from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+
+import { Button } from "@/components/ui/button";
+import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
+import { formatRelativeTime } from "@/helpers/utils";
 
 interface ScannerStatus {
   running: boolean;
@@ -77,20 +92,8 @@ const lastScanDisplay = computed(() => {
   ) {
     return t("settings.scan_never");
   }
-  return formatRelativeTime(props.status.last_scan_ago_seconds) + " ago";
+  return t("settings.scan_ago", [
+    formatRelativeTime(props.status.last_scan_ago_seconds),
+  ]);
 });
 </script>
-
-<style scoped>
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-}
-</style>

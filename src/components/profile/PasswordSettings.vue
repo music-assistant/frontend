@@ -136,7 +136,9 @@ const form = useForm({
         toast.error(t("auth.password_change_failed"));
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t("auth.password_change_failed"));
+      toast.error(
+        err instanceof Error ? err.message : t("auth.password_change_failed"),
+      );
     } finally {
       changing.value = false;
     }

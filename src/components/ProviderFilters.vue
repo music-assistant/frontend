@@ -6,14 +6,8 @@
         <Search />
       </InputGroupAddon>
     </InputGroup>
-    <div class="filter-buttons">
+    <div v-if="showStageFilter" class="filter-buttons">
       <FacetedFilter
-        v-model="selectedProviderTypes"
-        :title="$t('settings.provider_type')"
-        :options="providerTypeOptions"
-      />
-      <FacetedFilter
-        v-if="showStageFilter"
         v-model="selectedProviderStages"
         :title="$t('settings.stage.label')"
         :options="providerStageOptions"
@@ -29,10 +23,10 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { ProviderStage, ProviderType } from "@/plugins/api/interfaces";
+import { ProviderStage } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Search } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 // Props
@@ -44,20 +38,11 @@ const router = useRouter();
 const route = useRoute();
 
 const searchQuery = ref<string>("");
-const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
 let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let stagesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const providerTypeOptions = computed(() => [
-  { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
-  { label: $t("settings.playerprovider"), value: ProviderType.PLAYER },
-  { label: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { label: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
-]);
-
-const providerStageOptions = computed(() => [
+const providerStageOptions = ref([
   { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
   { label: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
   { label: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
@@ -78,18 +63,12 @@ const providerStageOptions = computed(() => [
 // Emits
 const emit = defineEmits<{
   (e: "update:search", value: string): void;
-  (e: "update:types", value: string[]): void;
   (e: "update:stages", value: string[]): void;
 }>();
 
 const initializeFromUrl = function () {
   if (route.query.search) {
     searchQuery.value = route.query.search as string;
-  }
-
-  if (route.query.types) {
-    const types = route.query.types as string;
-    selectedProviderTypes.value = types.split(",");
   }
 
   if (route.query.stages) {
@@ -115,28 +94,6 @@ watch(searchQuery, (newQuery) => {
     router.replace({ query });
   }, 750);
 });
-
-// Watch selected provider types and update URL with debounce
-watch(
-  selectedProviderTypes,
-  (newTypes) => {
-    emit("update:types", newTypes);
-
-    if (typesDebounceTimeout) {
-      clearTimeout(typesDebounceTimeout);
-    }
-    typesDebounceTimeout = setTimeout(() => {
-      const query = { ...route.query };
-      if (newTypes.length > 0) {
-        query.types = newTypes.join(",");
-      } else {
-        delete query.types;
-      }
-      router.replace({ query });
-    }, 750);
-  },
-  { deep: true },
-);
 
 // Watch selected provider stages and update URL with debounce
 watch(

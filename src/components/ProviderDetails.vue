@@ -125,10 +125,19 @@
       </v-list>
     </Container>
   </section>
+  <GenreExclusionManager
+    v-if="
+      itemDetails.provider === 'library' &&
+      itemDetails.media_type !== MediaType.GENRE
+    "
+    :media-type="itemDetails.media_type"
+    :media-id="itemDetails.item_id"
+  />
 </template>
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import GenreExclusionManager from "@/components/genre/GenreExclusionManager.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";

@@ -30,7 +30,11 @@
         :menu-items="menuItems"
         :enforce-overflow-menu="true"
         :icon-action="backButtonClick"
-      />
+      >
+        <template v-if="$slots['toolbar-append']" #append>
+          <slot name="toolbar-append"></slot>
+        </template>
+      </Toolbar>
       <v-layout
         v-if="item"
         style="
@@ -377,6 +381,9 @@
               outlined
               class="cursor-pointer"
               @click="handleMediaItemClick(genre, 0, 0)"
+              @contextmenu.prevent="
+                (e: MouseEvent) => showGenreChipContextMenu(e, genre)
+              "
             >
               {{
                 getGenreDisplayName(genre.name, genre.translation_key, t, te)
@@ -505,6 +512,38 @@ watch(
   },
   { immediate: true },
 );
+
+const showGenreChipContextMenu = (evt: MouseEvent, genre: Genre) => {
+  if (
+    !compProps.item ||
+    !isAdmin.value ||
+    compProps.item.provider !== "library"
+  )
+    return;
+  const mediaItem = compProps.item;
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: "exclude_genre",
+      icon: "mdi-cancel",
+      action: async () => {
+        await api.excludeGenreFromItem(
+          genre.item_id,
+          mediaItem.media_type,
+          mediaItem.item_id,
+        );
+        mappedGenres.value = mappedGenres.value.filter(
+          (g) => g.item_id !== genre.item_id,
+        );
+        eventbus.emit("genreExcluded");
+      },
+    },
+  ];
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: evt.clientX,
+    posY: evt.clientY,
+  });
+};
 
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked

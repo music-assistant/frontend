@@ -210,11 +210,14 @@
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { Eye, EyeClosed, Layers } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -233,6 +236,7 @@ import {
   ProviderType,
   Radio,
   type Album,
+  type Genre,
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
@@ -263,7 +267,7 @@ export interface LoadDataParams {
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
-  hideEmptyFilter?: boolean;
+  hideEmptyFilter?: boolean | null;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
@@ -305,6 +309,7 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   refreshOnParentUpdate?: boolean;
+  forcedViewMode?: "list" | "panel" | "panel_compact";
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -337,12 +342,13 @@ const props = withDefaults(defineProps<Props>(), {
   restoreState: false,
   onTitleClick: undefined,
   refreshOnParentUpdate: false,
+  forcedViewMode: undefined,
 });
 
 // global refs
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
 
@@ -434,13 +440,22 @@ const toggleExpand = function () {
 
 const selectViewMode = function (newMode: string) {
   viewMode.value = newMode;
-  setItemsListingPreference(
-    props.path || props.itemtype,
-    props.itemtype,
-    "viewMode",
-    newMode,
-  );
+  if (!props.forcedViewMode) {
+    setItemsListingPreference(
+      props.path || props.itemtype,
+      props.itemtype,
+      "viewMode",
+      newMode,
+    );
+  }
 };
+
+watch(
+  () => props.forcedViewMode,
+  (newMode) => {
+    if (newMode) viewMode.value = newMode;
+  },
+);
 
 const toggleFavoriteFilter = function () {
   params.value.favoritesOnly = !params.value.favoritesOnly;
@@ -476,7 +491,15 @@ const toggleAlbumArtistsFilter = function () {
 };
 
 const toggleHideEmptyFilter = function () {
-  params.value.hideEmptyFilter = !params.value.hideEmptyFilter;
+  const current = params.value.hideEmptyFilter;
+  // cycle: undefined/false (all) → true (hide empty) → null (defaults only) → false (all)
+  if (current === true) {
+    params.value.hideEmptyFilter = null;
+  } else if (current === null) {
+    params.value.hideEmptyFilter = false;
+  } else {
+    params.value.hideEmptyFilter = true;
+  }
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -680,7 +703,11 @@ const redirectSearch = function () {
   router.push({ name: "search" });
 };
 
-const loadNextPage = async function ({ done }: { done: (status: "ok" | "empty" | "loading" | "error") => void }) {
+const loadNextPage = async function ({
+  done,
+}: {
+  done: (status: "ok" | "empty" | "loading" | "error") => void;
+}) {
   if (allItemsReceived.value) {
     done("empty");
     return;
@@ -849,7 +876,7 @@ const menuItems = computed(() => {
         : [];
     items.push({
       label: "tooltip.filter_genre",
-      icon: "mdi-compass-outline",
+      icon: GenreIcon,
       disabled: loading.value,
       active: activeIds.length > 0,
       closeOnContentClick: false,
@@ -889,17 +916,19 @@ const menuItems = computed(() => {
     });
   }
 
-  // has media mappings filter (hide empty genres)
+  // has media mappings filter (hide empty genres / show only defaults)
   if (props.showHideEmptyFilter === true) {
+    const hef = params.value.hideEmptyFilter;
     items.push({
-      label: params.value.hideEmptyFilter
-        ? "tooltip.show_empty_genres"
-        : "tooltip.hide_empty_genres",
-      icon: params.value.hideEmptyFilter
-        ? "mdi-compass"
-        : "mdi-compass-outline",
+      label:
+        hef === true
+          ? "tooltip.show_only_default_genres"
+          : hef === null
+            ? "tooltip.show_all_genres"
+            : "tooltip.hide_empty_genres",
+      icon: hef === true ? EyeClosed : hef === null ? Layers : Eye,
       action: toggleHideEmptyFilter,
-      active: params.value.hideEmptyFilter,
+      active: hef === true || hef === null,
       overflowAllowed: true,
     });
   }
@@ -1003,38 +1032,39 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle view mode
-  items.push({
-    label: "tooltip.toggle_view_mode",
-    icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
-    overflowAllowed: true,
-    subItems: [
-      {
-        label: "view.list",
-        icon: "mdi-view-list",
-        selected: viewMode.value == "list",
-        action: () => {
-          selectViewMode("list");
+  // toggle view mode (hidden when view mode is controlled externally)
+  if (!props.forcedViewMode)
+    items.push({
+      label: "tooltip.toggle_view_mode",
+      icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
+      overflowAllowed: true,
+      subItems: [
+        {
+          label: "view.list",
+          icon: "mdi-view-list",
+          selected: viewMode.value == "list",
+          action: () => {
+            selectViewMode("list");
+          },
         },
-      },
-      {
-        label: "view.panel",
-        icon: "mdi-grid",
-        selected: viewMode.value == "panel",
-        action: () => {
-          selectViewMode("panel");
+        {
+          label: "view.panel",
+          icon: "mdi-grid",
+          selected: viewMode.value == "panel",
+          action: () => {
+            selectViewMode("panel");
+          },
         },
-      },
-      {
-        label: "view.panel_compact",
-        icon: "mdi-grid",
-        selected: viewMode.value == "panel_compact",
-        action: () => {
-          selectViewMode("panel_compact");
+        {
+          label: "view.panel_compact",
+          icon: "mdi-grid",
+          selected: viewMode.value == "panel_compact",
+          action: () => {
+            selectViewMode("panel_compact");
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
   if (props.extraMenuItems?.length) {
     items.push(...props.extraMenuItems);
@@ -1131,12 +1161,16 @@ const restoreSettings = async function () {
   const prefs = savedPrefs.value;
 
   // get stored/default viewMode for this itemtype
-  if (prefs.viewMode) {
+  if (props.forcedViewMode) {
+    viewMode.value = props.forcedViewMode;
+  } else if (prefs.viewMode) {
     viewMode.value = prefs.viewMode;
   } else if (props.itemtype == "artists") {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";
+  } else if (props.itemtype == "genres") {
+    viewMode.value = "panel_compact";
   } else {
     viewMode.value = "list";
   }
@@ -1166,7 +1200,7 @@ const restoreSettings = async function () {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
-  // get stored/default hideEmptyFilter for this itemtype (default: on)
+  // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
   if (props.showHideEmptyFilter) {
     params.value.hideEmptyFilter =
       prefs.hideEmptyFilter !== undefined ? prefs.hideEmptyFilter : true;
@@ -1294,22 +1328,43 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+const itemtypeToMediaType: Partial<Record<string, MediaType>> = {
+  tracks: MediaType.TRACK,
+  albums: MediaType.ALBUM,
+  artists: MediaType.ARTIST,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+};
+
 const loadGenreOptions = async () => {
   if (!props.showGenreFilter) return;
 
   try {
-    const genres = await api.getLibraryGenres(
-      undefined,
-      undefined,
-      100,
-      0,
-      "name",
-    );
+    const pageSize = 100;
+    const all: { label: string; value: number }[] = [];
+    let offset = 0;
+    let page: Genre[];
+    const mediaType = itemtypeToMediaType[props.itemtype];
 
-    genreOptions.value = genres.map((genre) => ({
-      label: genre.name,
-      value: Number(genre.item_id),
-    }));
+    do {
+      page = await api.getLibraryGenres({
+        limit: pageSize,
+        offset,
+        order_by: "name",
+        hide_empty: true, // always hide empty genres in the filter dropdown
+        media_type: mediaType, // filter to genres relevant for this media type
+      });
+      for (const genre of page) {
+        all.push({
+          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          value: Number(genre.item_id),
+        });
+      }
+      offset += pageSize;
+    } while (page.length === pageSize);
+
+    genreOptions.value = all;
   } catch {
     toast.error(t("error_loading_genres"));
   }
@@ -1380,7 +1435,9 @@ onMounted(async () => {
         if (idx >= 0) {
           const playData = evt.data as Record<string, unknown>;
           if ("fully_played" in pagedItems.value[idx])
-            pagedItems.value[idx].fully_played = playData["fully_played"] as boolean;
+            pagedItems.value[idx].fully_played = playData[
+              "fully_played"
+            ] as boolean;
           if ("resume_position_ms" in pagedItems.value[idx])
             pagedItems.value[idx].resume_position_ms =
               (playData["seconds_played"] as number) * 1000;

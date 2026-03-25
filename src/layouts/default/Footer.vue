@@ -1,3 +1,5 @@
+import { store } from '@/plugins/store';
+
 <template>
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
@@ -38,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import Player from "./PlayerOSD/Player.vue";
-import { store } from "@/plugins/store";
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import { store } from "@/plugins/store";
+import Player from "./PlayerOSD/Player.vue";
 </script>
 
 <style>

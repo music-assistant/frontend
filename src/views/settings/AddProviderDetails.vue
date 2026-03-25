@@ -145,7 +145,16 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(props.domain, values)
     .then(() => {
-      router.push({ name: "providersettings" });
+      const providerType = api.providerManifests[props.domain]?.type;
+      if (providerType) {
+        router.push({
+          name: "providersettings",
+          query: { types: providerType },
+        });
+      } else {
+        // Fallback: navigate without a type filter if the manifest or type is unavailable
+        router.push({ name: "providersettings" });
+      }
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
@@ -160,6 +169,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
 const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
+  _immediateApply: boolean,
 ) {
   loading.value = true;
   // append existing ConfigEntry values to allow
