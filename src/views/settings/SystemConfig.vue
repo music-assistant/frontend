@@ -235,7 +235,7 @@ onMounted(async () => {
 <style scoped>
 .settings-overview {
   padding: 24px;
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 

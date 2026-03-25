@@ -880,7 +880,7 @@ const documentationUrl = computed(() => {
 
 <style scoped>
 .settings-overview {
-  max-width: 800px !important;
+  max-width: 1200px !important;
   margin: 0 auto;
 }
 
@@ -1002,7 +1002,7 @@ const documentationUrl = computed(() => {
 }
 
 .settings-list-view {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
