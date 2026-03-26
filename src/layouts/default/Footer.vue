@@ -4,28 +4,22 @@ import { store } from '@/plugins/store';
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
     v-if="store.mobileLayout"
-    :class="$vuetify.theme.current.dark ? 'gradient-dark' : 'gradient-light'"
-    :style="`
-      position: fixed;
-      width: 100%;
-      height: 180px;
-      bottom: 0px;
-      z-index: 999;
-    `"
+    :class="isDark ? 'gradient-dark' : 'gradient-light'"
+    class="fixed w-full h-[180px] bottom-0"
+    style="z-index: 999"
   ></div>
 
   <!-- bottom navigation for mobile layout -->
   <!-- add a tiny bit of bottom-padding to avoid overlap with (iOS) bottom bar -->
-  <BottomNavigation v-if="store.mobileLayout" app style="height: 60px" />
+  <BottomNavigation v-if="store.mobileLayout" style="height: 60px" />
 
-  <v-footer
-    app
-    color="default"
-    :class="`py-0 px-0 ${
+  <footer
+    :class="[
+      'py-0 px-0',
       store.mobileLayout
         ? 'mediacontrols-player-float'
-        : 'mediacontrols-player-default'
-    }`"
+        : 'mediacontrols-player-default',
+    ]"
     :style="[
       store.mobileLayout && store.showPlayersMenu
         ? 'z-index: 999 !important;'
@@ -36,23 +30,39 @@ import { store } from '@/plugins/store';
     ]"
   >
     <Player :use-floating-player="store.mobileLayout" />
-  </v-footer>
+  </footer>
 </template>
 
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
+import { useIsDark } from "@/composables/useIsDark";
 import { store } from "@/plugins/store";
 import Player from "./PlayerOSD/Player.vue";
+
+const { isDark } = useIsDark();
 </script>
 
 <style>
 .mediacontrols-player-float {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   margin: 5px;
   margin-bottom: 0px;
   width: calc(100% - 10px) !important;
   border-radius: 10px !important;
+  z-index: 2001 !important;
+}
+
+.mediacontrols-player-default {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000 !important;
 }
 
 .gradient-dark {
@@ -70,18 +80,5 @@ import Player from "./PlayerOSD/Player.vue";
     rgba(255, 255, 255, 0.9) 75%,
     rgba(255, 255, 255, 0) 100%
   );
-}
-
-.v-bottom-navigation--active {
-  box-shadow: none;
-  z-index: 2000 !important;
-}
-
-.v-footer {
-  z-index: 1000 !important;
-}
-
-.v-footer.mediacontrols-player-float {
-  z-index: 2001 !important;
 }
 </style>

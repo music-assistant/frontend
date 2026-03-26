@@ -1,27 +1,24 @@
 <template>
-  <v-bottom-navigation
-    app
-    height="60"
-    bg-color="default"
-    grow
+  <nav
+    class="fixed bottom-0 left-0 right-0 z-[2000] flex items-center justify-around bg-background"
+    style="height: 60px"
     role="navigation"
   >
-    <v-btn
+    <button
+      class="nav-btn"
       aria-label="Menu"
       tabindex="0"
-      variant="text"
       @click="handleMenuClick"
     >
       <Menu class="w-5 h-5" />
       <span class="menuButton">Menu</span>
-    </v-btn>
+    </button>
 
-    <v-btn
+    <button
+      class="nav-btn"
+      :class="{ 'nav-btn--active': isActive('discover') }"
       :aria-label="$t('discover')"
       tabindex="0"
-      variant="text"
-      :active="isActive('discover')"
-      active-color="fg"
       @click="handleDiscoverClick"
     >
       <Compass class="w-5 h-5" :stroke-width="isActive('discover') ? 2.5 : 2" />
@@ -30,14 +27,13 @@
         :class="{ 'menuButton--active': isActive('discover') }"
         >{{ $t("discover") }}</span
       >
-    </v-btn>
+    </button>
 
-    <v-btn
+    <button
+      class="nav-btn"
+      :class="{ 'nav-btn--active': isActive('search') }"
       :aria-label="$t('search')"
       tabindex="0"
-      variant="text"
-      :active="isActive('search')"
-      active-color="fg"
       @click="handleSearchClick"
     >
       <Search class="w-5 h-5" :stroke-width="isActive('search') ? 2.5 : 2" />
@@ -46,7 +42,7 @@
         :class="{ 'menuButton--active': isActive('search') }"
         >{{ $t("search") }}</span
       >
-    </v-btn>
+    </button>
 
     <ActivePlayerPopover
       auto-show
@@ -54,17 +50,17 @@
       child-element-id="active-player-popover"
     />
 
-    <v-btn
+    <button
       id="active-player-popover"
+      class="nav-btn"
       :aria-label="$t('players')"
       tabindex="0"
-      variant="text"
       @click="handlePlayersClick"
     >
       <Speaker class="w-5 h-5" />
       <span class="menuButton">{{ $t("players") }}</span>
-    </v-btn>
-  </v-bottom-navigation>
+    </button>
+  </nav>
 </template>
 
 <script setup lang="ts">
@@ -113,7 +109,32 @@ function closePlayersMenu() {
 }
 </script>
 
-<style>
+<style scoped>
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-btn--active {
+  opacity: 1;
+}
+
+.nav-btn:hover {
+  opacity: 1;
+}
+
 .menuButton {
   font-weight: 350;
   font-size: x-small;
@@ -124,13 +145,5 @@ function closePlayersMenu() {
 
 .menuButton--active {
   font-weight: 600;
-}
-
-.v-btn--active > .v-btn__overlay {
-  background: rgb(var(--v-theme-default)) !important;
-}
-
-.v-slide-group-item--active {
-  opacity: 100%;
 }
 </style>

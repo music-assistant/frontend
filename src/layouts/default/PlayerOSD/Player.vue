@@ -8,7 +8,7 @@
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
           :color-palette="coverImageColorPalette"
-          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+          :primary-color="themeColor"
         />
       </div>
       <div class="mediacontrols-bottom-center">
@@ -68,7 +68,7 @@
           :show-quality-details-btn="false"
           :show-only-artist="true"
           :color-palette="coverImageColorPalette"
-          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+          :primary-color="themeColor"
         />
       </div>
       <div class="mediacontrols-bottom-right">
@@ -202,7 +202,7 @@ watch(
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  background-color: rgb(var(--v-theme-overlay));
+  background-color: hsl(var(--muted));
 }
 
 .mediacontrols {
@@ -210,7 +210,7 @@ watch(
   align-items: center;
   width: 100%;
   padding: 10px 15px;
-  background-color: rgb(var(--v-theme-overlay));
+  background-color: hsl(var(--muted));
   .mediacontrols-bottom-center {
     width: 40%;
   }
@@ -273,23 +273,25 @@ watch(
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.volume-slider :deep([data-slot="slider-range"]) {
+.volume-slider--no-safe-area {
+  padding-bottom: 0 !important;
+}
+</style>
+
+<style>
+.volume-slider [data-slot="slider-range"] {
   background-color: v-bind("themeColor") !important;
 }
 
-.volume-slider :deep([data-slot="slider-thumb"])::before {
+.volume-slider [data-slot="slider-thumb"]::before {
   background-color: v-bind("themeColor") !important;
 }
 
-.volume-slider :deep([data-slot="slider-track"])::before {
+.volume-slider [data-slot="slider-track"]::before {
   background-color: color-mix(
     in srgb,
     v-bind("themeColor") 24%,
     transparent
   ) !important;
-}
-
-.volume-slider--no-safe-area {
-  padding-bottom: 0 !important;
 }
 </style>

@@ -1,35 +1,35 @@
 <template>
-  <v-list style="overflow: hidden; padding: 0" lines="two">
+  <div style="overflow: hidden; padding: 0">
     <!-- main (or group) volume/power -->
     <!-- mute btn + player name + optional sync checkbox-->
-    <v-list-item
+    <div
       v-if="showHeadingRow"
       class="volumesliderrow heading"
-      :link="false"
       :style="player.powered == false ? 'opacity: 0.6' : 'opacity: 1'"
     >
-      <template #prepend>
-        <v-icon
-          :size="25"
-          :icon="player.icon"
-          style="margin-left: 6px; opacity: 0.6"
-        />
-      </template>
-      <template #default>
+      <div class="volumesliderrow-prepend">
+        <span
+          class="mdi"
+          :class="player.icon"
+          style="font-size: 25px; margin-left: 6px; opacity: 0.6"
+        ></span>
+      </div>
+      <div class="volumesliderrow-content">
         <h5>{{ getPlayerName(player, 27) }}</h5>
-      </template>
-      <template #append>
+      </div>
+      <div class="volumesliderrow-append">
         <!-- power button -->
         <Button
           v-if="player.power_control != PLAYER_CONTROL_NONE"
           class="powerbtn"
-          variant="icon"
+          variant="ghost"
+          size="icon-sm"
           @click.stop="api.playerCommandPowerToggle(player.player_id)"
         >
-          <v-icon :size="25" icon="mdi-power" />
+          <Power class="h-5 w-5" />
         </Button>
-      </template>
-    </v-list-item>
+      </div>
+    </div>
     <!-- volume slider row with integrated mute + level -->
     <div
       v-if="showVolumeControl"
@@ -45,13 +45,14 @@
         width="100%"
         @click.stop
       />
-      <v-icon
+      <button
         v-if="canExpand"
-        variant="plain"
-        :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
         class="expandbtn"
         @click.stop="$emit('toggle-expand', player)"
-      />
+      >
+        <ChevronUp v-if="showSubPlayers" class="h-5 w-5" />
+        <ChevronDown v-else class="h-5 w-5" />
+      </button>
     </div>
 
     <!-- (child) volume player rows -->
@@ -63,16 +64,15 @@
       "
       @click.stop
     >
-      <v-divider style="margin-top: 4px; margin-bottom: 4px" />
+      <Separator class="my-1" />
 
       <div
         v-for="childPlayer in getChildPlayers(player)"
         :key="childPlayer.player_id"
       >
         <!-- player icon + player name + optional sync checkbox-->
-        <v-list-item
+        <div
           class="volumesliderrow"
-          :link="false"
           :style="
             childPlayer.powered != false || showSyncControls
               ? 'opacity: 0.75'
@@ -80,37 +80,40 @@
           "
           @click.stop
         >
-          <template #prepend>
-            <v-icon
-              :size="30"
-              :icon="childPlayer.icon"
-              style="opacity: 0.6; margin-left: -4px; margin-right: 7px"
-            />
-          </template>
-          <template #default>
+          <div class="volumesliderrow-prepend child-prepend">
+            <span
+              class="mdi"
+              :class="childPlayer.icon"
+              style="
+                font-size: 30px;
+                opacity: 0.6;
+                margin-left: -4px;
+                margin-right: 7px;
+              "
+            ></span>
+          </div>
+          <div class="volumesliderrow-content">
             <h6>{{ truncateString(childPlayer.name, 27) }}</h6>
-          </template>
-          <template #append>
-            <v-checkbox
+          </div>
+          <div class="volumesliderrow-append">
+            <Checkbox
               v-if="showSyncControls"
-              :ripple="false"
+              class="checkbox"
               :disabled="
                 childPlayer.player_id == player.player_id ||
                 (player.static_group_members.includes(childPlayer.player_id) &&
                   player.group_members.includes(childPlayer.player_id))
               "
-              :model-value="
+              :checked="
                 player.group_members.includes(childPlayer.player_id) ||
                 childPlayer.player_id == player.player_id
               "
-              size="22"
-              class="checkbox"
-              @update:model-value="
+              @update:checked="
                 syncCheckBoxChange(childPlayer.player_id, $event)
               "
             />
-          </template>
-        </v-list-item>
+          </div>
+        </div>
         <!-- volume slider with integrated mute + level -->
         <!-- only show if the child player is part of the group and has volume control -->
         <div
@@ -133,11 +136,13 @@
         <div style="height: 6px"></div>
       </div>
     </div>
-  </v-list>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
@@ -147,6 +152,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { ChevronDown, ChevronUp, Power } from "lucide-vue-next";
 import { computed, ref } from "vue";
 
 export interface Props {
@@ -291,6 +297,8 @@ const syncCheckBoxChange = async function (
 
 <style scoped>
 .volumesliderrow {
+  display: flex;
+  align-items: center;
   margin-top: 0px;
   padding-top: 0px;
   padding-bottom: 0px;
@@ -298,11 +306,34 @@ const syncCheckBoxChange = async function (
   min-height: 36px;
 }
 
-.volumesliderrow :deep(.v-list-item__content) {
+.volumesliderrow-prepend {
+  width: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.volumesliderrow-content {
+  flex: 1;
+  min-width: 0;
   height: 36px;
   min-height: 36px;
-  overflow: visible !important;
-  align-content: center;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+}
+
+.volumesliderrow-append {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.child-prepend {
+  margin-left: -12px;
 }
 
 .heading {
@@ -318,11 +349,6 @@ const syncCheckBoxChange = async function (
   min-height: 32px;
 }
 
-.volume-row :deep(.player-volume-container) {
-  flex: 1;
-  min-width: 0;
-}
-
 .child-volume-row {
   padding-left: 2px;
 }
@@ -333,31 +359,31 @@ const syncCheckBoxChange = async function (
   display: flex;
   align-items: center;
   justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
 }
+
 .powerbtn {
   right: 8px;
 }
 
-.volumesliderrow :deep(.v-list-item__prepend) {
-  width: 36px;
-  margin-left: -12px;
-}
-.volumesliderrow :deep(.v-list-item__append) {
-  width: 20px;
-}
-
 .checkbox {
   margin-right: -5px;
-  width: 25px;
-  margin-top: -30px;
-  height: 22px !important;
-  min-height: 22px !important;
-  display: unset;
 }
 
 .syncbtn {
   margin-right: -32px;
   height: 25px !important;
   padding-bottom: 20px;
+}
+</style>
+
+<style>
+.volume-row .player-volume-container {
+  flex: 1;
+  min-width: 0;
 }
 </style>

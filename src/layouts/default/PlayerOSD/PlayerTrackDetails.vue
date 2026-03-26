@@ -1,57 +1,68 @@
 <template>
   <!-- now playing media -->
-  <v-list-item
+  <div
     class="player-track-details"
-    style="height: auto; width: 100%; margin: 0px; padding: 0px"
-    lines="two"
+    style="
+      height: auto;
+      width: 100%;
+      margin: 0px;
+      padding: 0px;
+      display: flex;
+      align-items: center;
+    "
   >
-    <template #prepend>
+    <!-- prepend: album art / player icon -->
+    <div
+      class="media-thumb player-media-thumb"
+      :style="`cursor: pointer;height: ${
+        getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
+      }px; width: ${
+        getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
+      }px; flex-shrink: 0;`"
+      @click="store.showFullscreenPlayer = true"
+    >
+      <!-- player.current_media has content loaded (will work for all sources)  -->
       <div
-        class="media-thumb player-media-thumb"
-        :style="`cursor: pointer;height: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; width: ${
-          getBreakpointValue({ breakpoint: 'phone' }) ? 60 : 64
-        }px; `"
-        @click="store.showFullscreenPlayer = true"
+        v-if="
+          store.activePlayer?.powered != false &&
+          store.activePlayer?.current_media?.image_url
+        "
       >
-        <!-- player.current_media has content loaded (will work for all sources)  -->
-        <div
-          v-if="
-            store.activePlayer?.powered != false &&
-            store.activePlayer?.current_media?.image_url
+        <img
+          class="media-thumb"
+          style="
+            border-radius: 4px;
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
           "
-        >
-          <v-img
-            class="media-thumb"
-            style="border-radius: 4px"
-            size="60"
-            :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
-          />
-        </div>
-        <!-- fallback: display player icon -->
-        <div v-else class="icon-thumb">
-          <v-icon
-            size="32"
-            :icon="
-              store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_members.length
-                ? 'mdi-speaker-multiple'
-                : store.activePlayer?.icon || 'mdi-speaker'
-            "
-          />
-        </div>
+          :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+        />
       </div>
-    </template>
+      <!-- fallback: display player icon -->
+      <div v-else class="icon-thumb">
+        <span
+          class="mdi"
+          :class="
+            store.activePlayer?.type == PlayerType.PLAYER &&
+            store.activePlayer?.group_members.length
+              ? 'mdi-speaker-multiple'
+              : store.activePlayer?.icon || 'mdi-speaker'
+          "
+          style="font-size: 32px"
+        ></span>
+      </div>
+    </div>
 
-    <!-- title -->
-    <template #title>
+    <!-- content: title + subtitle -->
+    <div style="flex: 1; min-width: 0; overflow: hidden">
+      <!-- title -->
       <div
         :style="{
           cursor: 'pointer',
           color: primaryColor,
         }"
-        class="d-flex align-center"
+        class="flex items-center"
       >
         <div v-if="store.activePlayer && store.activePlayer?.powered != false">
           {{ getPlayerName(store.activePlayer) }}
@@ -78,23 +89,7 @@
           icon-style="margin-left: 12px; margin-bottom: 4px;"
         />
       </div>
-    </template>
-    <!-- append chip(s): quality -->
-    <template #append>
-      <!-- format -->
-      <div
-        v-if="
-          streamDetails?.audio_format.content_type &&
-          !getBreakpointValue({ breakpoint: 'phone' }) &&
-          showQualityDetailsBtn
-        "
-        class="pl-4"
-      >
-        <QualityDetailsBtn />
-      </div>
-    </template>
-    <!-- subtitle -->
-    <template #subtitle>
+      <!-- subtitle -->
       <div
         :style="{
           cursor: 'pointer',
@@ -162,8 +157,20 @@
           {{ store.activePlayer?.name }}
         </div>
       </div>
-    </template>
-  </v-list-item>
+    </div>
+
+    <!-- append: quality details -->
+    <div
+      v-if="
+        streamDetails?.audio_format.content_type &&
+        !getBreakpointValue({ breakpoint: 'phone' }) &&
+        showQualityDetailsBtn
+      "
+      class="pl-4 flex-shrink-0"
+    >
+      <QualityDetailsBtn />
+    </div>
+  </div>
   <PlayerFullscreen
     :show-fullscreen="store.showFullscreenPlayer"
     :color-palette="colorPalette"
@@ -234,13 +241,5 @@ const streamDetails = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-</style>
-
-<style>
-/* this fixes missing subtitle items on webkit*/
-.player-track-details .v-list-item-subtitle {
-  -webkit-line-clamp: unset !important;
-  line-clamp: unset !important;
 }
 </style>
