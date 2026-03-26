@@ -1,39 +1,48 @@
 <template>
   <div style="width: auto; height: 24px">
     <div v-if="store.activePlayer" style="width: 100%">
-      <v-slider
-        v-model="curTimeValue"
-        :disabled="!canSeek"
-        style="width: 100%"
-        :min="0"
-        :max="store.activePlayer?.current_media?.duration"
-        hide-details
-        :track-size="4"
-        :thumb-size="isThumbHidden ? 0 : 10"
-        :show-ticks="chapterTicks ? 'always' : false"
-        :ticks="chapterTicks"
-        tick-size="4"
-        :color="color"
-        @touchstart="isThumbHidden = false"
-        @touchend="isThumbHidden = true"
+      <!-- GPU-accelerated custom slider — uses transform: scaleX / translateX
+           instead of Vuetify's width / inset-inline-start to stay on the
+           compositor thread during rAF-driven playback updates. -->
+      <div
+        ref="sliderEl"
+        class="timeline-slider"
+        :class="{ 'timeline-slider--disabled': !canSeek }"
+        @pointerdown="onPointerDown"
+        @pointermove="onPointerMove"
+        @pointerup="onPointerUp"
+        @pointercancel="onPointerUp"
         @mouseenter="isThumbHidden = false"
-        @mouseleave="isThumbHidden = true"
-        @start="startDragging"
-        @end="stopDragging"
+        @mouseleave="onMouseLeave"
+        @touchstart.passive="isThumbHidden = false"
+        @touchend="isThumbHidden = true"
       >
-        <template #tick-label="{ tick }">
-          <a
-            v-if="
-              showLabels &&
-              !isThumbHidden &&
-              Object.values(chapterTicks).length < 6
-            "
-            class="text-caption"
-            @click="chapterClicked(tick.value)"
-            >{{ tick.label }}</a
+        <div class="timeline-track">
+          <div class="timeline-fill" :style="fillStyle"></div>
+          <div
+            v-for="(label, pos) in chapterTicks"
+            :key="pos"
+            class="timeline-tick"
+            :style="{ left: `${tickPercent(Number(pos))}%` }"
+            @click.stop="chapterClicked(Number(pos))"
           >
-        </template>
-      </v-slider>
+            <span
+              v-if="
+                showLabels &&
+                !isThumbHidden &&
+                Object.values(chapterTicks).length < 6
+              "
+              class="timeline-tick-label text-caption"
+              >{{ label }}</span
+            >
+          </div>
+        </div>
+        <div
+          class="timeline-thumb"
+          :class="{ 'timeline-thumb--hidden': isThumbHidden }"
+          :style="thumbStyle"
+        ></div>
+      </div>
 
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->
@@ -72,12 +81,15 @@ export interface Props {
   color?: string;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: undefined,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
+
+// template refs
+const sliderEl = ref<HTMLElement>();
 
 // local refs
 const showRemainingTime = ref(false);
@@ -91,6 +103,7 @@ const tempTime = ref(0);
 const nowTick = ref(0);
 let rafId: number | null = null;
 let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
 
 const startTick = () => {
   if (rafId === null) {
@@ -123,28 +136,40 @@ onUnmounted(() => {
   stopTick();
 });
 
-// computed properties
+// -- Reactive slider styles (GPU-only transforms) ---------------------------
+const progressFraction = computed(() => {
+  const dur = duration.value;
+  return dur > 0 ? Math.min(Math.max(curTimeValue.value / dur, 0), 1) : 0;
+});
+
+const fillStyle = computed(() => ({
+  transform: `scaleX(${progressFraction.value})`,
+  ...(props.color ? { backgroundColor: props.color } : {}),
+}));
+
+const thumbStyle = computed(() => ({
+  left: `${progressFraction.value * 100}%`,
+  ...(props.color ? { backgroundColor: props.color } : {}),
+}));
+
+// -- Computed properties -----------------------------------------------------
 const canSeek = computed(() => {
-  // Check if active source allows seeking
   if (activeSource.value) {
-    // Only allow seeking if the source reports that it supports seeking
-    // (can_seek) AND the current media has a known duration.
     if (store.activePlayer?.powered === false) return false;
     const currentMediaDuration = store.activePlayer?.current_media?.duration;
     const currentMediaHasDuration = !!currentMediaDuration;
-
-    // Disallow seeking for radio streams (or other duration-less streams)
     const isRadio =
       store.activePlayer?.current_media?.media_type == MediaType.RADIO ||
       store.activePlayer?.current_media?.duration == null;
     if (isRadio) return false;
-
-    // If the active source reports can_seek, allow seeking when there is a
-    // duration available.
     if (activeSource.value.can_seek && currentMediaHasDuration) return true;
   }
   return false;
 });
+
+const duration = computed(
+  () => store.activePlayer?.current_media?.duration || 0,
+);
 
 const playerCurTimeStr = computed(() => {
   if (curTimeValue.value != null) {
@@ -162,22 +187,15 @@ const playerCurTimeStr = computed(() => {
 });
 
 const playerTotalTimeStr = computed(() => {
-  const duration = store.activePlayer?.current_media?.duration;
-  // If radio/streaming with unknown duration, don't show
-  if (
-    !duration ||
-    store.activePlayer?.current_media?.media_type == MediaType.RADIO
-  )
+  const dur = store.activePlayer?.current_media?.duration;
+  if (!dur || store.activePlayer?.current_media?.media_type == MediaType.RADIO)
     return "";
-  return formatDuration(duration);
+  return formatDuration(dur);
 });
 
 const computedElapsedTime = computed(() => {
-  // include nowTick.value so this computed re-evaluates periodically while mounted
-  // and updates UI for fallback player-level current_media that relies on Date.now()
   void nowTick.value;
 
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
   const isPlaying = store.activePlayer?.playback_state === "playing";
   const usingQueue = !!(
     store.activePlayerQueue && store.activePlayerQueue.active
@@ -185,7 +203,6 @@ const computedElapsedTime = computed(() => {
   const hasCurrentMedia =
     store.activePlayer?.current_media?.elapsed_time != null;
 
-  // Start ticking when playing and either using queue or external current_media
   if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
   else stopTick();
   if (isDragging.value) {
@@ -194,7 +211,6 @@ const computedElapsedTime = computed(() => {
     return curTimeValue.value;
   }
 
-  // Prefer queue-level elapsed_time if available
   const queue = store.activePlayerQueue;
   if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
     const computed = computeElapsedTime(
@@ -205,10 +221,6 @@ const computedElapsedTime = computed(() => {
     return computed ?? 0;
   }
 
-  // Fallback to player-level elapsed_time. This is used for external/3rd-party
-  // sources currently playing on the player (not for Music Assistant queue
-  // playback). Use the player-level fields when no activePlayerQueue is set.
-  // Prefer current_media timing when available (external source playing on the player)
   if (
     store.activePlayer?.current_media?.elapsed_time != null &&
     store.activePlayer?.current_media?.elapsed_time_last_updated != null
@@ -221,7 +233,6 @@ const computedElapsedTime = computed(() => {
     return computed ?? 0;
   }
 
-  // Fall back to player-level elapsed_time (legacy / provider-level value)
   if (
     store.activePlayer?.elapsed_time != null &&
     store.activePlayer?.elapsed_time_last_updated != null
@@ -247,26 +258,60 @@ const chapterTicks = computed(() => {
   return ticks;
 });
 
-//watch
+// -- Watch ------------------------------------------------------------------
 watch(computedElapsedTime, (newTime) => {
   if (!isDragging.value) {
     curTimeValue.value = newTime;
   }
 });
 
-// methods
-const startDragging = function () {
-  isDragging.value = true;
+// -- Pointer event handlers (drag-to-seek) ----------------------------------
+const fractionFromPointer = (e: PointerEvent): number => {
+  if (!sliderEl.value) return 0;
+  const rect = sliderEl.value.getBoundingClientRect();
+  return Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
 };
 
-const stopDragging = () => {
+const onPointerDown = (e: PointerEvent) => {
+  if (!canSeek.value) return;
+  isDragging.value = true;
+  isThumbHidden.value = false;
+  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  const fraction = fractionFromPointer(e);
+  const time = fraction * duration.value;
+  curTimeValue.value = time;
+  tempTime.value = time;
+};
+
+const onPointerMove = (e: PointerEvent) => {
+  if (!isDragging.value) return;
+  const fraction = fractionFromPointer(e);
+  const time = fraction * duration.value;
+  curTimeValue.value = time;
+  tempTime.value = time;
+};
+
+const onPointerUp = () => {
+  if (!isDragging.value) return;
   isDragging.value = false;
-  if (!isDragging.value && store.activePlayer) {
+  if (store.activePlayer) {
     api.playerCommandSeek(
       store.activePlayer.player_id,
       Math.round(tempTime.value),
     );
   }
+};
+
+const onMouseLeave = () => {
+  if (!isDragging.value) {
+    isThumbHidden.value = true;
+  }
+};
+
+// -- Helpers ----------------------------------------------------------------
+const tickPercent = (pos: number): number => {
+  const dur = duration.value;
+  return dur > 0 ? (pos / dur) * 100 : 0;
 };
 
 const chapterClicked = function (chaperPos: number) {
@@ -287,6 +332,84 @@ const chapterClicked = function (chaperPos: number) {
 </script>
 
 <style scoped>
+/* -- Slider container ------------------------------------------------------ */
+.timeline-slider {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+}
+.timeline-slider--disabled {
+  pointer-events: none;
+  opacity: 0.38;
+}
+
+/* -- Track ----------------------------------------------------------------- */
+.timeline-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.24);
+}
+
+/* -- Fill (GPU-only: transform scaleX) ------------------------------------- */
+.timeline-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgb(var(--v-theme-surface-variant));
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* -- Thumb (GPU-only: transform translateX) -------------------------------- */
+.timeline-thumb {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background-color: rgb(var(--v-theme-surface-variant));
+  transform: translateX(0) translateY(-50%);
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: opacity 0.15s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.timeline-thumb--hidden {
+  opacity: 0;
+}
+
+/* -- Chapter ticks --------------------------------------------------------- */
+.timeline-tick {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: rgba(var(--v-theme-on-surface), 0.38);
+  cursor: pointer;
+}
+.timeline-tick-label {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* -- Time labels ----------------------------------------------------------- */
 .time-text-left {
   text-align: left;
   display: table-cell;
@@ -310,19 +433,5 @@ const chapterClicked = function (chaperPos: number) {
 }
 .time-text-row > div {
   width: calc(100% / 2);
-}
-.v-slider.v-input--horizontal {
-  align-items: center;
-  margin-inline: 0px;
-}
-
-/* Disable Vuetify's CSS transitions on slider internals — the frequent
-   rAF-driven value updates already produce smooth movement, so the
-   extra transition just causes costly width/left layout animations. */
-:deep(.v-slider-track__fill),
-:deep(.v-slider-track__background),
-:deep(.v-slider-thumb),
-:deep(.v-slider-thumb__surface) {
-  transition: none !important;
 }
 </style>

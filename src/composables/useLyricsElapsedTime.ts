@@ -1,9 +1,11 @@
 /**
- * Composable for computing lyrics elapsed time using requestAnimationFrame.
+ * Composable for computing lyrics elapsed time using setInterval.
  *
- * Provides a reactive `elapsedTime` ref that updates at ~60fps while playing,
- * suitable for smooth lyrics synchronization. Automatically starts/stops the
- * rAF loop based on playback state and an optional `enabled` guard.
+ * Provides a reactive `elapsedTime` ref that updates at ~150ms intervals
+ * while playing — enough precision for the 0.5s CSS lead-time on line
+ * transitions and smooth musical-break note fills, without the overhead
+ * of a 60fps rAF loop. Automatically starts/stops the timer based on
+ * playback state and an optional `enabled` guard.
  */
 
 import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
@@ -11,9 +13,12 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computeElapsedTime } from "@/helpers/elapsed";
 
+/** Interval between elapsed-time updates (ms). */
+const TICK_INTERVAL = 150;
+
 export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   const elapsedTime = ref(0);
-  let rafId: number | null = null;
+  let timerId: ReturnType<typeof setInterval> | null = null;
 
   const update = () => {
     const queue = store.activePlayerQueue;
@@ -28,19 +33,19 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
           store.activePlayer?.playback_state,
         ) ?? 0;
     }
-    rafId = requestAnimationFrame(update);
   };
 
   const start = () => {
-    if (!rafId) {
-      rafId = requestAnimationFrame(update);
+    if (!timerId) {
+      update();
+      timerId = setInterval(update, TICK_INTERVAL);
     }
   };
 
   const stop = () => {
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
     }
   };
 

@@ -1,5 +1,6 @@
 <template>
   <v-dialog
+    v-if="mounted"
     v-model="store.showFullscreenPlayer"
     fullscreen
     :scrim="false"
@@ -7,6 +8,7 @@
     z-index="9000"
     :retain-focus="false"
     persistent
+    @after-leave="mounted = false"
   >
     <v-card
       class="fullscreen-player-card"
@@ -601,6 +603,17 @@ interface Props {
 }
 const compProps = defineProps<Props>();
 
+// Lazy mount: only render the dialog once opened, then unmount after the
+// close transition finishes (via @after-leave) so all watchers/timers stop.
+const mounted = ref(false);
+watch(
+  () => store.showFullscreenPlayer,
+  (open) => {
+    if (open) mounted.value = true;
+  },
+  { immediate: true },
+);
+
 const playBtnStyle = computed(() => {
   const isDark = vuetify.theme.current.value.dark;
   const color = isDark
@@ -623,7 +636,8 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
+const lyricsEnabled = computed(() => activeQueuePanel.value === 2);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 // Computed properties
 
