@@ -8,10 +8,10 @@
       "
     >
       <!-- Header card -->
-      <v-card v-if="config" class="header-card mb-4" elevation="0">
+      <Card v-if="config" class="mb-4">
         <div class="header-content">
           <div class="header-icon">
-            <v-icon size="32" color="primary">mdi-speaker</v-icon>
+            <Speaker class="h-8 w-8 text-primary" />
           </div>
           <div class="header-info">
             <div class="header-title-row">
@@ -22,22 +22,22 @@
                   config.default_name
                 }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 class="rename-btn"
                 @click="showRenameDialog = true"
-              />
+              >
+                <Pencil class="h-4 w-4" />
+              </Button>
             </div>
             <div class="header-meta">
               <span class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
+                <Hash class="h-3.5 w-3.5 mr-1" />
                 {{ config.player_id }}
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-information</v-icon>
+                <Info class="h-3.5 w-3.5 mr-1" />
                 {{ api.players[config.player_id].device_info.manufacturer }} /
                 {{ api.players[config.player_id].device_info.model }}
               </span>
@@ -49,7 +49,7 @@
                 "
                 class="meta-item"
               >
-                <v-icon size="14" class="mr-1">mdi-ip-network</v-icon>
+                <Globe class="h-3.5 w-3.5 mr-1" />
                 {{
                   api.players[config.player_id]?.device_info.identifiers[
                     IdentifierType.IP_ADDRESS
@@ -64,7 +64,7 @@
                 "
                 class="meta-item"
               >
-                <v-icon size="14" class="mr-1">mdi-network</v-icon>
+                <Network class="h-3.5 w-3.5 mr-1" />
                 {{
                   api.players[config.player_id]?.device_info.identifiers[
                     IdentifierType.MAC_ADDRESS
@@ -72,7 +72,7 @@
                 }}
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-tag</v-icon>
+                <Tag class="h-3.5 w-3.5 mr-1" />
                 {{ $t(`player_type.${api.players[config.player_id].type}`) }}
               </span>
             </div>
@@ -80,19 +80,20 @@
               v-if="api.players[config.player_id]?.output_protocols?.length"
               class="protocol-chips"
             >
-              <v-chip
+              <Badge
                 v-for="protocol in api.players[config.player_id]
                   .output_protocols"
                 :key="protocol.output_protocol_id"
-                size="x-small"
-                variant="tonal"
-                class="protocol-chip"
-                :class="{
-                  'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain!,
-                  )?.documentation,
-                  'protocol-chip--unavailable': !protocol.available,
-                }"
+                variant="secondary"
+                :class="[
+                  'protocol-chip',
+                  {
+                    'protocol-chip--clickable': api.getProviderManifest(
+                      protocol.protocol_domain!,
+                    )?.documentation,
+                    'protocol-chip--unavailable': !protocol.available,
+                  },
+                ]"
                 @click="
                   api.getProviderManifest(protocol.protocol_domain!)
                     ?.documentation &&
@@ -102,81 +103,81 @@
                   )
                 "
               >
-                <template #prepend>
-                  <ProviderIcon
-                    :domain="protocol.protocol_domain!"
-                    :size="14"
-                    class="chip-icon"
-                  />
-                </template>
+                <ProviderIcon
+                  :domain="protocol.protocol_domain!"
+                  :size="14"
+                  class="chip-icon"
+                />
                 {{
                   api.getProviderManifest(protocol.protocol_domain!)?.name ||
                   protocol.protocol_domain
                 }}
-                <v-icon
+                <ExternalLink
                   v-if="
                     api.getProviderManifest(protocol.protocol_domain!)
                       ?.documentation
                   "
-                  size="12"
-                  class="ml-1"
-                  >mdi-open-in-new</v-icon
-                >
-              </v-chip>
+                  class="h-3 w-3 ml-1"
+                />
+              </Badge>
             </div>
           </div>
         </div>
-      </v-card>
+      </Card>
     </div>
 
     <!-- Disabled banner -->
-    <v-alert
+    <Alert
       v-if="config && !config.enabled"
-      type="warning"
-      variant="tonal"
+      variant="warning"
       class="mb-4"
-      closable
     >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_disabled") }}</span>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          @click="enablePlayer"
-        >
-          {{ $t("settings.enable_player") }}
-        </v-btn>
-      </div>
-    </v-alert>
+      <AlertTriangle class="h-4 w-4" />
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_disabled") }}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            @click="enablePlayer"
+          >
+            {{ $t("settings.enable_player") }}
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <!-- Needs setup banner -->
-    <v-alert
+    <Alert
       v-if="
         config && config.enabled && api.players[config.player_id]?.needs_setup
       "
-      type="warning"
-      variant="tonal"
+      variant="warning"
       class="mb-4"
     >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_needs_setup") }}</span>
-      </div>
-    </v-alert>
+      <AlertTriangle class="h-4 w-4" />
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_needs_setup") }}</span>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <!-- Not available banner -->
-    <v-alert
+    <Alert
       v-else-if="
         config && config.enabled && !api.players[config.player_id]?.available
       "
-      type="warning"
-      variant="tonal"
+      variant="warning"
       class="mb-4"
     >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_not_available") }}</span>
-      </div>
-    </v-alert>
+      <AlertTriangle class="h-4 w-4" />
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_not_available") }}</span>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <edit-config
       v-if="config"
@@ -189,41 +190,35 @@
     />
 
     <!-- Rename dialog -->
-    <v-dialog v-model="showRenameDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("settings.player_name") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editName"
-            :placeholder="
-              api.players[config?.player_id!]?.name || config?.default_name
-            "
-            variant="outlined"
-            density="comfortable"
-            autofocus
-            clearable
-            @keyup.enter="saveRename"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showRenameDialog = false">
+    <Dialog v-model:open="showRenameDialog">
+      <DialogContent class="max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.player_name") }}</DialogTitle>
+        </DialogHeader>
+        <Input
+          v-model="editName"
+          :placeholder="
+            api.players[config?.player_id!]?.name || config?.default_name
+          "
+          autofocus
+          @keyup.enter="saveRename"
+        />
+        <DialogFooter>
+          <Button variant="outline" @click="showRenameDialog = false">
             {{ $t("close") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          </Button>
+          <Button @click="saveRename">
             {{ $t("settings.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Spinner class="h-16 w-16" />
+    </div>
   </section>
 </template>
 
@@ -248,6 +243,31 @@ import { watch } from "vue";
 import { nanoid } from "nanoid";
 import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  AlertTriangle,
+  ExternalLink,
+  Globe,
+  Hash,
+  Info,
+  Network,
+  Pencil,
+  Speaker,
+  Tag,
+} from "lucide-vue-next";
+
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -475,11 +495,6 @@ const onAction = async function (
   padding: 16px;
 }
 
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
 .header-content {
   display: flex;
   gap: 20px;
@@ -491,7 +506,7 @@ const onAction = async function (
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
+  background: hsl(var(--primary) / 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -513,7 +528,7 @@ const onAction = async function (
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: hsl(var(--foreground));
 }
 
 .rename-btn {
@@ -542,7 +557,7 @@ const onAction = async function (
   display: inline-flex;
   align-items: center;
   font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
 }
 
 .protocol-chips {
@@ -573,23 +588,6 @@ const onAction = async function (
 .chip-icon {
   margin: 0 !important;
   width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
 }
 
 @media (max-width: 600px) {

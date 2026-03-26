@@ -19,7 +19,7 @@
     :variant="viewMode === 'list' ? 'default' : 'panel'"
     class="mt-4 px-5"
   >
-    <v-list v-if="viewMode === 'list'" class="providers-list">
+    <div v-if="viewMode === 'list'" role="list" class="flex flex-col">
       <ListItem
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
@@ -52,19 +52,18 @@
               v-if="item.enabled && item.last_error"
               class="provider-error-inline"
             >
-              <v-icon icon="mdi-alert-circle" size="16" color="error" />
+              <AlertCircle class="h-4 w-4 text-destructive" />
               <span class="provider-error-text">{{
                 $t("settings.provider_requires_attention")
               }}</span>
-              <v-btn
-                size="x-small"
-                color="error"
-                variant="tonal"
+              <Button
+                size="sm"
+                variant="destructive"
                 class="ml-2"
                 @click.stop="editProvider(item.instance_id)"
               >
                 {{ $t("settings.reconfigure") }}
-              </v-btn>
+              </Button>
             </div>
             <span
               v-else-if="api.providerManifests[item.domain]"
@@ -80,42 +79,32 @@
 
         <template #append>
           <div class="provider-status-icons">
-            <v-icon
+            <RefreshCw
               v-if="isProviderSyncing(item.instance_id)"
-              icon="mdi-sync"
-              size="20"
-              color="grey"
+              class="h-5 w-5 text-gray-400 animate-spin"
               :title="$t('settings.sync_running')"
             />
-            <v-icon
+            <Ban
               v-if="!item.enabled"
-              icon="mdi-cancel"
-              size="20"
-              color="grey"
+              class="h-5 w-5 text-gray-400"
               :title="$t('settings.provider_disabled')"
             />
-            <v-icon
+            <AlertCircle
               v-else-if="item.last_error"
-              icon="mdi-alert-circle"
-              size="20"
-              color="red"
+              class="h-5 w-5 text-red-500"
               :title="item.last_error"
             />
-            <v-icon
+            <Hourglass
               v-else-if="!api.providers[item.instance_id]?.available"
-              icon="mdi-timer-sand"
-              size="20"
-              color="grey"
+              class="h-5 w-5 text-gray-400"
               :title="$t('settings.not_loaded')"
             />
-            <v-chip
+            <Badge
               v-if="
                 shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
               "
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
+              :variant="getStageBadgeVariant(api.providerManifests[item.domain]?.stage)"
+              class="mx-1 uppercase text-[10px]"
             >
               {{
                 $t(
@@ -124,88 +113,58 @@
                   ).toLowerCase(),
                 )
               }}
-            </v-chip>
+            </Badge>
           </div>
         </template>
       </ListItem>
-    </v-list>
+    </div>
 
-    <v-row v-else>
-      <v-col
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Card
         v-for="item in getAllFilteredProviders()"
         :key="item.instance_id"
-        cols="12"
-        md="6"
-        lg="4"
-        class="d-flex"
+        class="flex flex-col min-h-[200px] cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg"
+        :class="{ 'opacity-60': !item.enabled }"
+        @click="editProvider(item.instance_id)"
       >
-        <v-card
-          class="flex-fill rounded-lg provider-card d-flex flex-column"
-          :class="{ 'player-provider-card': item.type === ProviderType.PLAYER }"
-          min-height="200px"
-          @click="editProvider(item.instance_id)"
-        >
-          <template #prepend>
-            <provider-icon
-              :domain="item.domain"
-              :size="50"
-              class="listitem-media-thumb"
-              style="margin-top: 5px; margin-bottom: 5px"
-            />
-          </template>
-
-          <template #append>
-            <v-btn
+        <CardHeader class="flex flex-row items-start gap-4">
+          <provider-icon
+            :domain="item.domain"
+            :size="50"
+            class="shrink-0"
+          />
+          <div class="flex-1 min-w-0">
+            <CardTitle class="text-base">
+              {{ getProviderName(item) }}
+            </CardTitle>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <RefreshCw
               v-if="isProviderSyncing(item.instance_id)"
-              variant="text"
-              size="small"
-              icon
+              class="h-5 w-5 text-gray-400 animate-spin"
               :title="$t('settings.sync_running')"
-            >
-              <v-icon color="grey"> mdi-sync </v-icon>
-            </v-btn>
-
-            <!-- provider disabled -->
-            <v-btn
+            />
+            <Ban
               v-if="!item.enabled"
-              variant="text"
-              size="small"
-              icon
+              class="h-5 w-5 text-gray-400"
               :title="$t('settings.provider_disabled')"
-            >
-              <v-icon color="grey"> mdi-cancel </v-icon>
-            </v-btn>
-
-            <!-- provider has errors -->
-            <v-btn
+            />
+            <AlertCircle
               v-else-if="item.enabled && item.last_error"
-              variant="text"
-              size="small"
-              icon
+              class="h-5 w-5 text-red-500"
               :title="item.last_error"
-            >
-              <v-icon color="red"> mdi-alert-circle </v-icon>
-            </v-btn>
-
-            <!-- loading (provider not yet available) -->
-            <v-btn
+            />
+            <Hourglass
               v-else-if="!api.providers[item.instance_id]?.available"
-              variant="text"
-              size="small"
-              icon
+              class="h-5 w-5 text-gray-400"
               :title="$t('settings.not_loaded')"
-            >
-              <v-icon icon="mdi-timer-sand" />
-            </v-btn>
-
-            <v-chip
+            />
+            <Badge
               v-if="
                 shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
               "
-              size="x-small"
-              variant="flat"
-              class="mx-1 text-uppercase"
-              :color="getStageColor(api.providerManifests[item.domain]?.stage)"
+              :variant="getStageBadgeVariant(api.providerManifests[item.domain]?.stage)"
+              class="uppercase text-[10px]"
             >
               {{
                 $t(
@@ -214,63 +173,52 @@
                   ).toLowerCase(),
                 )
               }}
-            </v-chip>
-
-            <v-btn
-              icon="mdi-dots-vertical"
-              size="small"
-              variant="text"
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               @click.stop="onMenu($event, item)"
-            />
-          </template>
-
-          <v-card-title>
-            {{ getProviderName(item) }}
-          </v-card-title>
-
-          <!-- Provider error warning for card view -->
-          <v-card-text
-            v-if="item.enabled && item.last_error"
-            class="provider-error-card py-2"
-          >
-            <div class="provider-error-inline">
-              <v-icon icon="mdi-alert-circle" size="16" color="error" />
-              <span class="provider-error-text">{{
-                $t("settings.provider_requires_attention")
-              }}</span>
-            </div>
-            <div class="provider-error-detail mt-1">
-              {{ item.last_error }}
-            </div>
-            <v-btn
-              size="small"
-              color="error"
-              variant="tonal"
-              class="mt-2"
-              block
-              @click.stop="editProvider(item.instance_id)"
             >
-              {{ $t("settings.reconfigure") }}
-            </v-btn>
-          </v-card-text>
+              <MoreVertical class="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
 
-          <v-card-text
-            v-else-if="api.providerManifests[item.domain]"
-            class="provider-description flex-grow-1"
-            :class="{
-              'truncated-text': isTextTruncated(
-                api.providerManifests[item.domain].description,
-              ),
-            }"
+        <!-- Provider error warning for card view -->
+        <CardContent
+          v-if="item.enabled && item.last_error"
+          class="provider-error-card py-2"
+        >
+          <div class="provider-error-inline">
+            <AlertCircle class="h-4 w-4 text-destructive" />
+            <span class="provider-error-text">{{
+              $t("settings.provider_requires_attention")
+            }}</span>
+          </div>
+          <div class="provider-error-detail mt-1">
+            {{ item.last_error }}
+          </div>
+          <Button
+            size="sm"
+            variant="destructive"
+            class="mt-2 w-full"
+            @click.stop="editProvider(item.instance_id)"
           >
-            {{ api.providerManifests[item.domain].description }}
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+            {{ $t("settings.reconfigure") }}
+          </Button>
+        </CardContent>
+
+        <CardContent
+          v-else-if="api.providerManifests[item.domain]"
+          class="provider-description flex-1"
+        >
+          {{ api.providerManifests[item.domain].description }}
+        </CardContent>
+      </Card>
+    </div>
 
     <div v-if="getAllFilteredProviders().length === 0" class="empty-state">
-      <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
+      <Puzzle class="h-16 w-16 text-muted-foreground/30 mb-4" />
       <div class="empty-title">{{ $t("no_content") }}</div>
       <div class="empty-message">
         {{ $t("no_content_filter") }}
@@ -285,7 +233,9 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -298,7 +248,15 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "lucide-vue-next";
+import {
+  AlertCircle,
+  Ban,
+  Hourglass,
+  MoreVertical,
+  Plus,
+  Puzzle,
+  RefreshCw,
+} from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -370,6 +328,12 @@ const editProvider = function (providerInstanceId: string) {
 
 const shouldShowStageBadge = function (stage?: ProviderStage) {
   return !!stage && stage !== ProviderStage.STABLE;
+};
+
+const getStageBadgeVariant = function (stage?: string) {
+  return match(stage)
+    .with("deprecated", () => "destructive" as const)
+    .otherwise(() => "secondary" as const);
 };
 
 onMounted(() => {
@@ -631,37 +595,6 @@ const getAllFilteredProviders = function () {
   max-height: 4.2em;
 }
 
-.provider-description.truncated-text {
-  margin-bottom: 16px !important;
-}
-
-.provider-card {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.provider-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.player-provider-card {
-  cursor: pointer;
-}
-
-.providers-list {
-  background: transparent;
-}
-
-.providers-list :deep(.v-list-item__prepend) {
-  padding-inline-end: 6px;
-}
-
-.providers-list :deep(.v-list-item__content > div) {
-  padding-left: 0;
-}
-
 .provider-name-title {
   font-weight: 500;
   font-size: 16px;
@@ -677,13 +610,13 @@ const getAllFilteredProviders = function () {
 
 .provider-description-text {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.4;
 }
 
 .provider-type-badge {
   font-size: 11px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
@@ -724,7 +657,7 @@ const getAllFilteredProviders = function () {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgb(var(--v-theme-error));
+  color: hsl(var(--destructive));
 }
 
 .provider-error-text {
@@ -733,14 +666,14 @@ const getAllFilteredProviders = function () {
 }
 
 .provider-error-card {
-  background: rgba(var(--v-theme-error), 0.08);
+  background: hsl(var(--destructive) / 0.08);
   border-radius: 8px;
   margin: 0 12px 12px 12px;
 }
 
 .provider-error-detail {
   font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -759,21 +692,16 @@ const getAllFilteredProviders = function () {
   width: 100%;
 }
 
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--muted-foreground));
   line-height: 1.4;
 }
 </style>

@@ -1,56 +1,92 @@
 <template>
   <div>
-    <Toolbar :icon="Settings">
+    <Toolbar :icon="SettingsIcon">
       <template #title>
-        <v-breadcrumbs :items="breadcrumbItems" class="pa-0" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <template v-for="(item, idx) in breadcrumbItems" :key="idx">
+              <BreadcrumbSeparator v-if="idx > 0" />
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  v-if="!item.disabled && item.to"
+                  as-child
+                >
+                  <router-link :to="item.to">
+                    {{ item.title }}
+                  </router-link>
+                </BreadcrumbLink>
+                <BreadcrumbPage v-else>
+                  {{ item.title }}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </template>
+          </BreadcrumbList>
+        </Breadcrumb>
       </template>
       <template #append>
-        <v-btn
+        <Button
           v-if="isOverview"
-          :icon="settingsViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('tooltip.toggle_view_mode')"
           @click="toggleSettingsViewMode()"
-        />
-        <v-btn
+        >
+          <List v-if="settingsViewMode === 'list'" class="h-5 w-5" />
+          <LayoutGrid v-else class="h-5 w-5" />
+        </Button>
+        <Button
           v-if="isPlayersPage"
-          :icon="playersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('tooltip.toggle_view_mode')"
           @click="togglePlayersViewMode()"
-        />
-        <v-btn
+        >
+          <List v-if="playersViewMode === 'list'" class="h-5 w-5" />
+          <LayoutGrid v-else class="h-5 w-5" />
+        </Button>
+        <Button
           v-if="isProvidersPage"
-          :icon="providersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('tooltip.toggle_view_mode')"
           @click="toggleProvidersViewMode()"
-        />
-        <v-btn
+        >
+          <List v-if="providersViewMode === 'list'" class="h-5 w-5" />
+          <LayoutGrid v-else class="h-5 w-5" />
+        </Button>
+        <Button
           v-if="isTasksPage"
-          :icon="tasksViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('tooltip.toggle_view_mode')"
           @click="toggleTasksViewMode()"
-        />
-        <v-btn
+        >
+          <List v-if="tasksViewMode === 'list'" class="h-5 w-5" />
+          <LayoutGrid v-else class="h-5 w-5" />
+        </Button>
+        <Button
           v-if="isSystemPage"
-          :icon="systemViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('tooltip.toggle_view_mode')"
           @click="toggleSystemViewMode()"
-        />
-        <v-btn
+        >
+          <List v-if="systemViewMode === 'list'" class="h-5 w-5" />
+          <LayoutGrid v-else class="h-5 w-5" />
+        </Button>
+        <Button
           v-if="documentationUrl"
-          icon="mdi-help-circle"
-          variant="text"
+          variant="ghost"
+          size="icon"
           :title="t('settings.view_documentation')"
           @click="openLinkInNewTab(documentationUrl)"
-        />
+        >
+          <HelpCircle class="h-5 w-5" />
+        </Button>
       </template>
     </Toolbar>
 
-    <v-divider />
+    <Separator />
 
     <Container
       v-if="isOverview"
@@ -68,27 +104,26 @@
               {{ t("settings.onboarding_subtitle") }}
             </p>
           </div>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            class="onboarding-close"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            class="opacity-60"
             @click="store.isOnboarding = false"
-          />
+          >
+            <X class="h-4 w-4" />
+          </Button>
         </div>
 
         <div class="onboarding-sections">
           <div class="onboarding-section">
             <div class="section-icon music">
-              <v-icon icon="mdi-music" size="24" />
+              <Music class="h-6 w-6" />
             </div>
             <div class="section-content">
               <h3>{{ t("settings.onboarding_music_title") }}</h3>
               <p>{{ t("settings.onboarding_music_desc") }}</p>
             </div>
-            <v-btn
-              color="primary"
-              variant="flat"
+            <Button
               class="section-btn"
               @click="
                 router.push({
@@ -98,20 +133,18 @@
               "
             >
               {{ t("settings.onboarding_add_music") }}
-            </v-btn>
+            </Button>
           </div>
 
           <div class="onboarding-section">
             <div class="section-icon player">
-              <v-icon icon="mdi-speaker" size="24" />
+              <Speaker class="h-6 w-6" />
             </div>
             <div class="section-content">
               <h3>{{ t("settings.onboarding_player_title") }}</h3>
               <p>{{ t("settings.onboarding_player_desc") }}</p>
             </div>
-            <v-btn
-              color="primary"
-              variant="flat"
+            <Button
               class="section-btn"
               @click="
                 router.push({
@@ -121,12 +154,12 @@
               "
             >
               {{ t("settings.onboarding_add_player") }}
-            </v-btn>
+            </Button>
           </div>
         </div>
 
         <p class="onboarding-footer">
-          <v-icon icon="mdi-information-outline" size="16" class="mr-1" />
+          <Info class="h-4 w-4 mr-1" />
           {{ t("settings.onboarding_footer") }}
         </p>
       </div>
@@ -192,7 +225,7 @@
       </div>
 
       <div v-else class="settings-list-view">
-        <v-list class="settings-list">
+        <div role="list" class="flex flex-col">
           <ListItem
             v-for="section in providersSection"
             :key="section.name"
@@ -270,7 +303,7 @@
               <Icon icon="mdi-chevron-right" size="20" />
             </template>
           </ListItem>
-        </v-list>
+        </div>
       </div>
     </Container>
 
@@ -286,29 +319,48 @@ import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Settings } from "lucide-vue-next";
+import {
+  HelpCircle,
+  Info,
+  LayoutGrid,
+  List,
+  Music,
+  Speaker,
+  Settings as SettingsIcon,
+  X,
+} from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, type RouteLocationRaw } from "vue-router";
-import { useDisplay } from "vuetify";
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
 const { getPreference, setPreference } = useUserPreferences();
-const { mobile } = useDisplay();
+const { mobile } = useBreakpoint();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const settingsListPrependGap = computed(() => (mobile.value ? 4 : 24));
@@ -928,7 +980,6 @@ const documentationUrl = computed(() => {
     box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 6px 0 0 0;
 }
 
@@ -937,7 +988,7 @@ const documentationUrl = computed(() => {
   box-shadow:
     0 12px 24px rgba(0, 0, 0, 0.15),
     0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: rgba(var(--v-theme-primary), 0.3);
+  border-color: hsl(var(--primary) / 0.3);
 }
 
 .setting-header-top {
@@ -973,7 +1024,7 @@ const documentationUrl = computed(() => {
 .setting-description {
   font-size: 0.875rem;
   line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin: 0;
 }
 
@@ -990,25 +1041,20 @@ const documentationUrl = computed(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(var(--v-theme-on-surface), 0.05);
+  background: hsl(var(--foreground) / 0.05);
   flex-shrink: 0;
 }
 
 .setting-card:hover .setting-chevron {
   opacity: 1;
   transform: translateX(4px);
-  background: rgba(var(--v-theme-primary), 0.1);
-  color: rgb(var(--v-theme-primary));
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
 }
 
 .settings-list-view {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.settings-list {
-  padding: 0;
-  background: transparent;
 }
 
 .settings-list-item {
@@ -1020,11 +1066,7 @@ const documentationUrl = computed(() => {
 }
 
 .settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.list-item-main {
-  border-radius: 10px !important;
+  background-color: hsl(var(--foreground) / 0.05);
 }
 
 .setting-list-icon {
@@ -1036,40 +1078,6 @@ const documentationUrl = computed(() => {
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
-}
-
-.settings-list-item :deep(.v-list-item__prepend) {
-  padding-inline-end: 6px;
-}
-
-.settings-list-item :deep(.v-list-item__prepend .v-icon) {
-  margin-inline-end: 0 !important;
-}
-
-.settings-list-item :deep(.v-list-item__content > div) {
-  padding-left: 0;
-}
-
-.settings-list-item :deep(.v-list-item-title) {
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.settings-list-item :deep(.v-list-item-subtitle) {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-top: 4px;
-}
-
-.settings-list-item :deep(.v-list-item__append) {
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
-}
-
-.settings-list-item:hover :deep(.v-list-item__append) {
-  opacity: 1;
 }
 
 @media (max-width: 768px) {
@@ -1104,14 +1112,6 @@ const documentationUrl = computed(() => {
     padding: 16px;
     min-height: 72px;
   }
-
-  .settings-list-item :deep(.v-list-item-title) {
-    font-size: 1rem;
-  }
-
-  .settings-list-item :deep(.v-list-item-subtitle) {
-    font-size: 0.813rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1119,36 +1119,19 @@ const documentationUrl = computed(() => {
     padding: 16px 12px;
   }
 
-  .setting-icon-featured {
-    width: 56px;
-    height: 56px;
-  }
-
-  .setting-card-featured .setting-title {
-    font-size: 1.25rem;
-  }
-
   .settings-list-item {
     padding: 16px;
     min-height: 72px;
-  }
-
-  .settings-list-item :deep(.v-list-item-title) {
-    font-size: 1rem;
-  }
-
-  .settings-list-item :deep(.v-list-item-subtitle) {
-    font-size: 0.813rem;
   }
 }
 
 .onboarding-card {
   background: linear-gradient(
     135deg,
-    rgba(var(--v-theme-primary), 0.08) 0%,
-    rgba(var(--v-theme-primary), 0.02) 100%
+    hsl(var(--primary) / 0.08) 0%,
+    hsl(var(--primary) / 0.02) 100%
   );
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  border: 1px solid hsl(var(--primary) / 0.2);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 25px;
@@ -1161,20 +1144,16 @@ const documentationUrl = computed(() => {
   margin-bottom: 16px;
 }
 
-.onboarding-close {
-  opacity: 0.6;
-}
-
 .onboarding-title {
   font-size: 24px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: hsl(var(--foreground));
 }
 
 .onboarding-subtitle {
   font-size: 15px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin: 0 0 24px 0;
   line-height: 1.5;
 }
@@ -1191,9 +1170,9 @@ const documentationUrl = computed(() => {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: rgba(var(--v-theme-surface), 0.6);
+  background: hsl(var(--card) / 0.6);
   border-radius: 12px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 1px solid hsl(var(--foreground) / 0.08);
 }
 
 .section-icon {
@@ -1225,12 +1204,12 @@ const documentationUrl = computed(() => {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: hsl(var(--foreground));
 }
 
 .section-content p {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
   margin: 0;
   line-height: 1.4;
 }
@@ -1241,7 +1220,7 @@ const documentationUrl = computed(() => {
 
 .onboarding-footer {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--muted-foreground));
   margin: 0;
   display: flex;
   align-items: center;

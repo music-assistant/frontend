@@ -15,13 +15,12 @@
               </div>
             </div>
             <div class="setting-chevron">
-              <v-icon
+              <AlertCircle
                 v-if="item.last_error"
-                color="red"
-                icon="mdi-alert-circle"
+                class="h-5 w-5 text-red-500"
                 :title="item.last_error"
               />
-              <v-icon icon="mdi-chevron-right" size="20" />
+              <ChevronRight class="h-5 w-5" />
             </div>
           </div>
           <CardTitle class="setting-title">{{ getItemTitle(item) }}</CardTitle>
@@ -45,10 +44,10 @@
                 v-if="typeof item.icon !== 'string'"
                 class="size-5 text-white"
               />
-              <v-icon v-else :icon="item.icon" size="20" color="white" />
+              <Icon v-else :icon="item.icon" size="20" color="white" />
             </div>
             <div class="setting-chevron">
-              <v-icon icon="mdi-chevron-right" size="20" />
+              <ChevronRight class="h-5 w-5" />
             </div>
           </div>
           <CardTitle class="setting-title">{{ t(item.name) }}</CardTitle>
@@ -59,7 +58,7 @@
       </Card>
     </div>
 
-    <v-list v-else class="settings-list">
+    <div v-else role="list" class="flex flex-col">
       <ListItem
         v-for="item in sortedCoreConfigs"
         :key="item.domain"
@@ -80,14 +79,12 @@
         <template #title>{{ getItemTitle(item) }}</template>
         <template #subtitle>{{ getItemDescription(item) }}</template>
         <template #append>
-          <v-icon
+          <AlertCircle
             v-if="item.last_error"
-            color="red"
-            icon="mdi-alert-circle"
-            class="mr-2"
+            class="h-5 w-5 text-red-500 mr-2"
             :title="item.last_error"
           />
-          <v-icon icon="mdi-chevron-right" size="20" />
+          <ChevronRight class="h-5 w-5" />
         </template>
       </ListItem>
 
@@ -108,21 +105,22 @@
               v-if="typeof item.icon !== 'string'"
               class="size-5 text-white"
             />
-            <v-icon v-else :icon="item.icon" size="20" color="white" />
+            <Icon v-else :icon="item.icon" size="20" color="white" />
           </div>
         </template>
         <template #title>{{ t(item.name) }}</template>
         <template #subtitle>{{ t(item.description) }}</template>
         <template #append>
-          <v-icon icon="mdi-chevron-right" size="20" />
+          <ChevronRight class="h-5 w-5" />
         </template>
       </ListItem>
-    </v-list>
+    </div>
   </Container>
 </template>
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import Icon from "@/components/Icon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -134,6 +132,7 @@ import {
 } from "@/components/ui/card";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
+import { AlertCircle, ChevronRight } from "lucide-vue-next";
 import {
   computed,
   inject,
@@ -239,15 +238,6 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-.settings-list {
-  padding: 0;
-  background: transparent;
-}
-
-.list-item-main {
-  border-radius: 10px !important;
-}
-
 .settings-list-item {
   cursor: pointer;
   padding: 20px 24px;
@@ -257,41 +247,7 @@ onMounted(async () => {
 }
 
 .settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.settings-list-item :deep(.v-list-item__prepend) {
-  padding-inline-end: 6px;
-}
-
-.settings-list-item :deep(.v-list-item__prepend .v-icon) {
-  margin-inline-end: 0 !important;
-}
-
-.settings-list-item :deep(.v-list-item__content > div) {
-  padding-left: 0;
-}
-
-.settings-list-item :deep(.v-list-item-title) {
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.settings-list-item :deep(.v-list-item-subtitle) {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-top: 4px;
-}
-
-.settings-list-item :deep(.v-list-item__append) {
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
-}
-
-.settings-list-item:hover :deep(.v-list-item__append) {
-  opacity: 1;
+  background-color: hsl(var(--foreground) / 0.05);
 }
 
 .setting-list-icon {
@@ -331,7 +287,6 @@ onMounted(async () => {
     box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 6px 0 0 0;
 }
 
@@ -340,7 +295,7 @@ onMounted(async () => {
   box-shadow:
     0 12px 24px rgba(0, 0, 0, 0.15),
     0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: rgba(var(--v-theme-primary), 0.3);
+  border-color: hsl(var(--primary) / 0.3);
 }
 
 .setting-header-top {
@@ -379,15 +334,15 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(var(--v-theme-on-surface), 0.05);
+  background: hsl(var(--foreground) / 0.05);
   flex-shrink: 0;
 }
 
 .setting-card:hover .setting-chevron {
   opacity: 1;
   transform: translateX(4px);
-  background: rgba(var(--v-theme-primary), 0.1);
-  color: rgb(var(--v-theme-primary));
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
 }
 
 .setting-title {
@@ -400,7 +355,7 @@ onMounted(async () => {
 .setting-description {
   font-size: 0.875rem;
   line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin: 0;
 }
 

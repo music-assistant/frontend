@@ -30,7 +30,7 @@
       :variant="viewMode === 'list' ? 'default' : 'panel'"
       class="mt-4 px-5"
     >
-      <v-list v-if="viewMode === 'list'" class="players-list">
+      <div v-if="viewMode === 'list'" role="list" class="flex flex-col">
         <ListItem
           v-for="item in getAllFilteredPlayers()"
           :key="item.player_id"
@@ -47,7 +47,7 @@
         >
           <template #prepend>
             <div class="player-icon-wrapper">
-              <v-icon
+              <Icon
                 :icon="api.players[item.player_id]?.icon || 'mdi-speaker'"
                 :size="20"
                 style="left: 3px"
@@ -68,7 +68,7 @@
                 v-if="item.enabled && api.players[item.player_id]?.needs_setup"
                 class="player-warning-inline"
               >
-                <v-icon icon="mdi-alert-circle" size="16" color="warning" />
+                <AlertCircle class="h-4 w-4 text-yellow-500" />
                 <span class="player-warning-text">{{
                   $t("settings.player_needs_setup")
                 }}</span>
@@ -82,77 +82,64 @@
                 }}
               </span>
               <span class="protocol-chips">
-                <v-chip
+                <Badge
                   v-for="protocol in getOutputProtocols(item.player_id)"
                   :key="protocol.output_protocol_id"
-                  size="x-small"
-                  variant="tonal"
-                  class="protocol-chip"
-                  :class="{ 'protocol-chip--unavailable': !protocol.available }"
+                  variant="secondary"
+                  :class="['protocol-chip', { 'protocol-chip--unavailable': !protocol.available }]"
                 >
-                  <template #prepend>
-                    <ProviderIcon
-                      :domain="protocol.protocol_domain!"
-                      :size="14"
-                      class="chip-icon"
-                    />
-                  </template>
+                  <ProviderIcon
+                    :domain="protocol.protocol_domain!"
+                    :size="14"
+                    class="chip-icon"
+                  />
                   {{
                     api.getProviderManifest(protocol.protocol_domain!)?.name ||
                     protocol.protocol_domain
                   }}
-                </v-chip>
+                </Badge>
               </span>
             </div>
           </template>
 
           <template #append>
             <div class="player-status-icons">
-              <v-icon
+              <Ban
                 v-if="!item.enabled"
-                icon="mdi-cancel"
-                size="20"
-                color="grey"
+                class="h-5 w-5 text-gray-400"
                 :title="$t('settings.player_disabled')"
               />
-              <v-icon
+              <AlertCircle
                 v-else-if="api.players[item.player_id]?.needs_setup"
-                icon="mdi-alert-circle"
-                size="20"
-                color="warning"
+                class="h-5 w-5 text-yellow-500"
                 :title="$t('settings.player_needs_setup')"
               />
-              <v-icon
+              <Hourglass
                 v-else-if="!api.players[item.player_id]?.available"
-                icon="mdi-timer-sand"
-                size="20"
-                color="grey"
+                class="h-5 w-5 text-gray-400"
                 :title="$t('settings.player_not_available')"
               />
             </div>
           </template>
         </ListItem>
-      </v-list>
+      </div>
 
-      <v-row v-else>
-        <v-col
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
           v-for="item in getAllFilteredPlayers()"
           :key="item.player_id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
+          class="flex"
         >
           <SettingsPlayerCard
             :player-config="item"
             @click="(config) => editPlayer(config.player_id, config.provider)"
             @menu="(evt, config) => onMenu(evt, config)"
           />
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
       <div v-if="getAllFilteredPlayers().length === 0" class="empty-state">
-        <v-icon icon="mdi-speaker-off" size="64" class="empty-icon" />
+        <VolumeX class="h-16 w-16 text-muted-foreground/30 mb-4" />
         <div class="empty-title">{{ $t("no_content") }}</div>
         <div class="empty-message">
           {{ $t("no_content_filter") }}
@@ -160,7 +147,7 @@
       </div>
     </Container>
     <div class="missing-players-hint">
-      <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
+      <Info class="h-4 w-4 text-muted-foreground/40 shrink-0" />
       <i18n-t keypath="settings.missing_players_hint" tag="span">
         <router-link
           :to="{ name: 'providersettings', query: { types: 'player' } }"
@@ -176,10 +163,12 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
@@ -191,7 +180,14 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "lucide-vue-next";
+import {
+  AlertCircle,
+  Ban,
+  Hourglass,
+  Info,
+  Plus,
+  VolumeX,
+} from "lucide-vue-next";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -446,14 +442,6 @@ watch(
   margin-top: 0;
 }
 
-.players-header :deep(.filters-container) {
-  align-items: flex-start;
-}
-
-.players-header :deep(.filter-buttons) {
-  align-items: center;
-}
-
 @media (max-width: 960px) {
   .players-header {
     flex-direction: column;
@@ -483,10 +471,6 @@ watch(
     margin-top: 0;
     align-self: flex-end;
   }
-
-  .players-header :deep(.filters-container) {
-    align-items: flex-end;
-  }
 }
 
 .empty-state {
@@ -499,26 +483,17 @@ watch(
   width: 100%;
 }
 
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--muted-foreground));
   line-height: 1.4;
-}
-
-.players-list {
-  background: transparent;
 }
 
 .player-name {
@@ -535,7 +510,7 @@ watch(
 
 .provider-name {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
 }
 
 .protocol-chips {
@@ -559,23 +534,6 @@ watch(
   width: auto !important;
 }
 
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
 @media (max-width: 960px) {
   .protocol-chips {
     display: none;
@@ -595,7 +553,7 @@ watch(
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(var(--v-theme-primary), 0.15);
+  background: hsl(var(--primary) / 0.15);
 }
 
 .player-disabled {
@@ -607,14 +565,14 @@ watch(
 }
 
 .player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
+  border-left: 3px solid hsl(var(--warning, 38 92% 50%));
 }
 
 .player-warning-inline {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgb(var(--v-theme-warning));
+  color: hsl(var(--warning, 38 92% 50%));
 }
 
 .player-warning-text {
@@ -629,16 +587,11 @@ watch(
   gap: 6px;
   padding: 16px 20px;
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-}
-
-.hint-icon {
-  color: rgba(var(--v-theme-on-surface), 0.4);
-  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
 }
 
 .hint-link {
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
   text-decoration: none;
 }
 

@@ -2,7 +2,7 @@
   <section class="add-provider-details">
     <div v-if="api.providerManifests[domain]">
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
+      <Card class="mb-4">
         <div class="header-content">
           <div class="header-icon">
             <provider-icon :domain="domain" :size="48" />
@@ -38,7 +38,7 @@
             ></div>
           </div>
         </div>
-      </v-card>
+      </Card>
     </div>
 
     <edit-config
@@ -47,33 +47,30 @@
       @submit="onSubmit"
       @action="onAction"
     />
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
-        <v-card-title>Authenticating...</v-card-title>
-        <v-card-subtitle
-          >A new tab/popup should be opened where you can
-          authenticate</v-card-subtitle
-        >
-        <v-card-actions>
-          <a id="auth" href="" target="_blank"
-            ><v-btn>Click here if the popup did not open</v-btn></a
-          >
-        </v-card-actions>
-      </v-card>
-      <v-progress-circular v-else indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Card v-if="showAuthLink" class="bg-white p-6">
+        <h3 class="text-lg font-semibold mb-2">Authenticating...</h3>
+        <p class="text-sm text-muted-foreground mb-4">
+          A new tab/popup should be opened where you can authenticate
+        </p>
+        <a id="auth" href="" target="_blank">
+          <Button variant="outline">Click here if the popup did not open</Button>
+        </a>
+      </Card>
+      <Spinner v-else class="h-16 w-16" />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
-import { nanoid } from "nanoid";
-import { useRouter } from "vue-router";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -81,11 +78,11 @@ import {
   EventType,
   EventMessage,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { watch } from "vue";
-import { markdownToHtml } from "@/helpers/utils";
+import { nanoid } from "nanoid";
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
@@ -226,11 +223,6 @@ const getCreditsMarkdown = function (credits: string[]) {
   padding: 16px;
 }
 
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
 .header-content {
   display: flex;
   gap: 20px;
@@ -250,30 +242,34 @@ const getCreditsMarkdown = function (credits: string[]) {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: hsl(var(--foreground));
 }
 
 .header-description {
   font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin: 0 0 12px 0;
   line-height: 1.5;
 }
 
 .header-authors {
   font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
 }
+</style>
 
-.header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
+<style>
+.header-authors a {
+  color: hsl(var(--primary));
   text-decoration: none;
 }
 
-.header-authors :deep(a:hover) {
+.header-authors a:hover {
   text-decoration: underline;
 }
+</style>
 
+<style scoped>
 @media (max-width: 600px) {
   .header-content {
     flex-direction: column;

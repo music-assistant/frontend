@@ -1,5 +1,5 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <form v-if="entries" ref="form" :class="{ 'pointer-events-none opacity-50': disabled }">
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -9,7 +9,7 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
+        <Icon :icon="getCategoryIcon(panel)" :size="20" class="mr-3 text-primary" />
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -37,15 +37,13 @@
             @open-dsp="openDspConfig"
             @open-options="openPlayerOptions"
           />
-          <v-chip
+          <Badge
             v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
+            variant="outline"
             class="advanced-badge"
           >
             {{ $t("settings.advanced") }}
-          </v-chip>
+          </Badge>
           <Button
             v-if="hasDescriptionOrHelpLink(conf_entry)"
             type="button"
@@ -78,7 +76,7 @@
       class="protocol-section"
     >
       <div class="protocol-section-header">
-        <v-icon icon="mdi-swap-horizontal" class="mr-3" size="24" />
+        <Icon icon="mdi-swap-horizontal" :size="24" class="mr-3 text-primary" />
         <span class="protocol-section-title">
           {{ $t("settings.category.protocol_settings") }}
         </span>
@@ -110,15 +108,13 @@
             @open-dsp="openDspConfig"
             @open-options="openPlayerOptions"
           />
-          <v-chip
+          <Badge
             v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
+            variant="outline"
             class="advanced-badge"
           >
             {{ $t("settings.advanced") }}
-          </v-chip>
+          </Badge>
           <Button
             v-if="hasDescriptionOrHelpLink(conf_entry)"
             type="button"
@@ -181,15 +177,13 @@
               @open-dsp="openDspConfig"
               @open-options="openPlayerOptions"
             />
-            <v-chip
+            <Badge
               v-if="conf_entry.advanced"
-              size="x-small"
-              color="grey"
-              variant="outlined"
+              variant="outline"
               class="advanced-badge"
             >
               {{ $t("settings.advanced") }}
-            </v-chip>
+            </Badge>
             <Button
               v-if="hasDescriptionOrHelpLink(conf_entry)"
               type="button"
@@ -211,12 +205,15 @@
         </div>
       </div>
       <!-- Multiple protocols: show as accordion -->
-      <v-expansion-panels
+      <Accordion
         v-else
-        v-model="activeProtocolPanel"
+        type="single"
+        collapsible
+        :model-value="activeProtocolPanel"
         class="protocol-panels"
+        @update:model-value="activeProtocolPanel = $event as string | undefined"
       >
-        <v-expansion-panel
+        <AccordionItem
           v-for="panel of protocolPanels.filter(
             (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
           )"
@@ -224,7 +221,7 @@
           :value="panel"
           class="protocol-panel"
         >
-          <v-expansion-panel-title class="protocol-panel-title">
+          <AccordionTrigger class="protocol-panel-title">
             <div class="protocol-title-content">
               <ProviderIcon
                 v-if="getProtocolDomain(panel)"
@@ -235,39 +232,22 @@
                 {{ getCategoryTranslation(panel) }}
               </span>
             </div>
-            <!-- Show toggle switch for protocol categories -->
-            <template #actions="{ expanded }">
-              <div class="protocol-actions">
-                <v-switch
-                  v-if="getProtocolEnabledEntry(panel)"
-                  :model-value="getProtocolEnabledEntry(panel)?.value"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  @click.stop
-                  @update:model-value="
-                    onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
-                  "
-                />
-                <v-switch
-                  v-else
-                  :model-value="true"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  disabled
-                  @click.stop
-                />
-                <v-icon
-                  :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                  class="protocol-expand-icon"
-                />
-              </div>
-            </template>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
+            <div class="protocol-actions" @click.stop>
+              <Switch
+                v-if="getProtocolEnabledEntry(panel)"
+                :checked="getProtocolEnabledEntry(panel)?.value as boolean"
+                @update:checked="
+                  onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
+                "
+              />
+              <Switch
+                v-else
+                :checked="true"
+                disabled
+              />
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
             <div class="config-panel-content">
               <div
                 v-if="entriesForCategory(panel).length === 0"
@@ -299,15 +279,13 @@
                   @open-dsp="openDspConfig"
                   @open-options="openPlayerOptions"
                 />
-                <v-chip
+                <Badge
                   v-if="conf_entry.advanced"
-                  size="x-small"
-                  color="grey"
-                  variant="outlined"
+                  variant="outline"
                   class="advanced-badge"
                 >
                   {{ $t("settings.advanced") }}
-                </v-chip>
+                </Badge>
                 <Button
                   v-if="hasDescriptionOrHelpLink(conf_entry)"
                   type="button"
@@ -327,9 +305,9 @@
                 </Button>
               </div>
             </div>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
 
     <!-- Other regular settings sections -->
@@ -341,7 +319,7 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
+        <Icon :icon="getCategoryIcon(panel)" :size="20" class="mr-3 text-primary" />
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -369,15 +347,13 @@
             @open-dsp="openDspConfig"
             @open-options="openPlayerOptions"
           />
-          <v-chip
+          <Badge
             v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
+            variant="outline"
             class="advanced-badge"
           >
             {{ $t("settings.advanced") }}
-          </v-chip>
+          </Badge>
           <Button
             v-if="hasDescriptionOrHelpLink(conf_entry)"
             type="button"
@@ -402,48 +378,44 @@
     <div v-if="!disabled" class="config-actions">
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
-        <v-switch
-          v-model="showAdvancedSettings"
-          color="primary"
-          hide-details
-          density="comfortable"
-          :label="$t('settings.show_advanced_settings')"
-          class="advanced-settings-switch"
-        />
+        <div class="flex items-center gap-3">
+          <Switch
+            :checked="showAdvancedSettings"
+            @update:checked="showAdvancedSettings = $event"
+          />
+          <Label>{{ $t('settings.show_advanced_settings') }}</Label>
+        </div>
       </div>
-      <v-btn
-        block
-        color="primary"
-        size="large"
+      <Button
+        class="w-full"
+        size="lg"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
         {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
+      </Button>
+      <Button class="w-full" variant="outline" size="lg" @click="handleClose">
         {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
+      </Button>
+      <Button class="w-full" variant="ghost" size="lg" @click="resetToDefaults">
         {{ $t("settings.reset_to_defaults") }}
-      </v-btn>
+      </Button>
     </div>
-  </v-form>
-  <v-dialog
-    :model-value="showHelpInfo !== undefined"
-    width="auto"
-    @update:model-value="showHelpInfo = undefined"
+  </form>
+  <Dialog
+    :open="showHelpInfo !== undefined"
+    @update:open="(val) => { if (!val) showHelpInfo = undefined }"
   >
-    <v-card>
-      <v-card-text>
-        <h2>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>
           {{
             $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
           }}
-        </h2>
-      </v-card-text>
+        </DialogTitle>
+      </DialogHeader>
       <!-- eslint-disable vue/no-v-html -->
-      <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text
+      <div
         v-html="
           markdownToHtml(
             $t(
@@ -454,54 +426,71 @@
         "
       />
       <!-- eslint-enable vue/no-v-html -->
-      <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-      <v-card-actions>
-        <v-btn
+      <DialogFooter>
+        <Button
           v-if="showHelpInfo?.help_link"
+          variant="outline"
           @click="openLink(showHelpInfo!.help_link!)"
         >
           {{ $t("read_more") }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="showHelpInfo = undefined">
+        </Button>
+        <Button @click="showHelpInfo = undefined">
           {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
-    <v-card>
-      <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
-      <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+  <Dialog :open="showUnsavedDialog" @update:open="(val) => { if (!val) cancelDiscard() }">
+    <DialogContent class="max-w-[400px]">
+      <DialogHeader>
+        <DialogTitle>{{ $t("settings.unsaved_changes") }}</DialogTitle>
+        <DialogDescription>{{ $t("settings.unsaved_changes_message") }}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" @click="cancelDiscard">
           {{ $t("settings.stay") }}
-        </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        </Button>
+        <Button variant="destructive" @click="confirmDiscard">
           {{ $t("settings.discard") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
+import Icon from "@/components/Icon.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
-  ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { HelpCircle } from "lucide-vue-next";
-import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -528,7 +517,7 @@ const emit = defineEmits<{
 // global refs
 const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
-const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
+const form = ref<HTMLFormElement>();
 const activePanel = ref<string[]>([]);
 const activeProtocolPanel = ref<string | undefined>(undefined);
 const showPasswordValues = ref(false);
@@ -717,8 +706,11 @@ watch(
 
 // methods
 const validate = async function () {
-  const { valid } = await form.value!.validate();
-  return valid;
+  // With native form, check validity
+  if (form.value) {
+    return form.value.checkValidity();
+  }
+  return true;
 };
 const submit = async function () {
   // submit button is pressed
@@ -962,15 +954,10 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 </script>
 
 <style scoped>
-/* Config sections */
-.config-section {
-  margin-bottom: 16px;
-}
-
 /* Category sections (non-collapsible) */
 .category-section {
   margin-bottom: 16px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   overflow: hidden;
 }
@@ -979,22 +966,18 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.category-header .v-icon {
-  color: rgb(var(--v-theme-primary));
+  background: hsl(var(--primary) / 0.08);
 }
 
 .category-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
 }
 
 .category-content {
   padding: 20px;
-  background: rgba(var(--v-theme-surface), 1);
+  background: hsl(var(--card));
 }
 
 /* Config entry row */
@@ -1007,14 +990,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 
 .config-entry:last-child {
   margin-bottom: 0;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
 }
 
 /* Help button */
@@ -1030,61 +1005,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   opacity: 1;
 }
 
-@media (min-width: 601px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    margin-top: 0;
-    align-self: center;
-  }
-}
-
-@media (max-width: 600px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    align-self: flex-start;
-    margin-top: 0;
-  }
-}
-
-/* Expansion panels */
-.config-panels {
-  margin-top: 16px;
-}
-
-.config-panel {
-  margin-bottom: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.config-panel::before {
-  display: none;
-}
-
-.config-panel-title {
-  min-height: 52px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.config-panel-title .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.panel-title-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
 /* Action buttons */
 .config-actions {
   display: flex;
@@ -1092,11 +1012,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
-}
-
-.config-actions .v-btn--disabled {
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  color: rgba(var(--v-theme-on-surface), 0.38) !important;
 }
 
 /* Protocol panel actions (toggle + chevron) */
@@ -1111,27 +1026,11 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   flex-shrink: 0;
 }
 
-.protocol-toggle :deep(.v-switch__track) {
-  height: 20px;
-  width: 36px;
-}
-
-.protocol-toggle :deep(.v-switch__thumb) {
-  height: 16px;
-  width: 16px;
-}
-
-.protocol-expand-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  transition: transform 0.2s ease;
-  font-size: 20px;
-}
-
 /* Protocol disabled message */
 .protocol-disabled-message {
   padding: 16px;
   text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
   font-style: italic;
 }
 
@@ -1141,16 +1040,7 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   justify-content: center;
   padding: 8px 0 16px 0;
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.advanced-settings-switch {
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.advanced-settings-switch:hover {
-  opacity: 1;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 /* Advanced badge */
@@ -1176,71 +1066,52 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
+  background: hsl(var(--primary) / 0.08);
   border-radius: 8px 8px 0 0;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid hsl(var(--border));
   border-bottom: none;
 }
 
 /* Protocol general settings (before accordion) */
 .protocol-general-settings {
   padding: 20px;
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-.protocol-section-header .v-icon {
-  color: rgb(var(--v-theme-primary));
+  border-left: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
 }
 
 .protocol-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
 }
 
 /* Single protocol (non-collapsible) */
 .protocol-single-panel {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-left: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
   border-radius: 0 0 8px 8px;
-  background: rgba(var(--v-theme-surface), 1);
+  background: hsl(var(--card));
   padding: 20px;
 }
 
 .protocol-panels {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-left: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
   border-radius: 0 0 8px 8px;
 }
 
 .protocol-panel {
   border: none !important;
-  background: rgba(var(--v-theme-surface), 1);
+  background: hsl(var(--card));
   box-shadow: none !important;
-}
-
-.protocol-panel::before {
-  display: none !important;
-}
-
-.protocol-panel::after {
-  display: none !important;
-}
-
-.protocol-panel + .protocol-panel {
-  border-top: none !important;
-  margin-top: 0 !important;
 }
 
 .protocol-panel-title {
   min-height: 56px;
   padding: 12px 20px;
-  background: rgba(var(--v-theme-surface), 1);
-  border: none !important;
   display: flex;
   align-items: center;
 }
@@ -1252,25 +1123,15 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   gap: 4px;
 }
 
-.protocol-title-content :deep(> div) {
-  display: flex;
-  align-items: center;
-  margin: 0;
-}
-
-.protocol-panel-title .panel-title-text {
+.panel-title-text {
   font-size: 1rem;
   font-weight: 400;
-  color: rgba(var(--v-theme-on-surface), 0.87);
+  color: hsl(var(--foreground) / 0.87);
   line-height: 1.5;
 }
 
-.protocol-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.protocol-panel .config-panel-content {
+.config-panel-content {
   padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-top: 1px solid hsl(var(--border));
 }
 </style>

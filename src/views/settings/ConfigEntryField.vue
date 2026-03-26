@@ -1,91 +1,98 @@
 <template>
-  <div class="config-field">
+  <div class="flex-1 min-w-0">
     <!-- divider value -->
     <div
       v-if="confEntry.type == ConfigEntryType.DIVIDER"
-      class="config-divider"
+      class="py-2"
     >
-      <v-divider />
-      <v-label v-if="confEntry.label" class="divider-label">
+      <Separator />
+      <span
+        v-if="confEntry.label"
+        class="block mt-3 font-semibold text-sm"
+      >
         {{ confEntry.label }}
-      </v-label>
+      </span>
     </div>
 
     <!-- label value -->
-    <v-alert
+    <Alert
       v-else-if="confEntry.type == ConfigEntryType.LABEL"
-      variant="tonal"
-      type="info"
-      density="comfortable"
-      class="config-alert"
+      variant="info"
+      class="my-2"
     >
-      {{ getTranslatedLabel() }}
-    </v-alert>
+      <Info class="h-4 w-4" />
+      <AlertDescription>
+        {{ getTranslatedLabel() }}
+      </AlertDescription>
+    </Alert>
 
     <!-- alert value -->
-    <v-alert
+    <Alert
       v-else-if="confEntry.type == ConfigEntryType.ALERT"
-      density="comfortable"
-      type="warning"
-      variant="tonal"
-      class="config-alert"
+      variant="warning"
+      class="my-2"
     >
-      {{ getTranslatedLabel() }}
-    </v-alert>
+      <AlertTriangle class="h-4 w-4" />
+      <AlertDescription>
+        {{ getTranslatedLabel() }}
+      </AlertDescription>
+    </Alert>
 
     <!-- action type -->
-    <v-btn
+    <Button
       v-else-if="
         confEntry.type == ConfigEntryType.ACTION ||
         (confEntry.action && !confEntry.value)
       "
-      color="primary"
-      class="action-btn"
+      class="my-2 mb-5 w-full h-[50px]"
       :disabled="isFieldDisabled"
       @click="$emit('action')"
     >
       {{ getTranslatedActionLabel() }}
-    </v-btn>
+    </Button>
 
     <!-- DSP Config Button -->
-    <div v-else-if="isDspLinkEntry(confEntry)" class="dsp-config">
-      <span class="dsp-status">
+    <div v-else-if="isDspLinkEntry(confEntry)" class="flex items-center gap-4 py-2">
+      <span class="text-sm text-muted-foreground">
         {{
           confEntry.value
             ? $t("settings.dsp_enabled")
             : $t("settings.dsp_disabled")
         }}
       </span>
-      <v-btn
-        variant="outlined"
+      <Button
+        variant="outline"
         :disabled="isFieldDisabled"
         @click="$emit('openDsp')"
       >
         {{ $t("open_dsp_settings") }}
-      </v-btn>
+      </Button>
     </div>
 
     <!-- Player Options Button -->
     <div
       v-else-if="confEntry.type == ConfigEntryType.OPTIONS"
-      class="dsp-config"
+      class="flex items-center gap-4 py-2"
     >
-      <v-btn variant="outlined" @click="$emit('openOptions')">
+      <Button variant="outline" @click="$emit('openOptions')">
         {{ $t("player_options.open") }}
-      </v-btn>
+      </Button>
     </div>
 
     <!-- boolean value: checkbox -->
-    <v-checkbox
+    <div
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
-      :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
-      color="primary"
-      :disabled="isFieldDisabled"
-      hide-details
-      density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-    />
+      class="flex items-center gap-2 py-1"
+    >
+      <Checkbox
+        :checked="confEntry.value as boolean"
+        :disabled="isFieldDisabled"
+        @update:checked="$emit('update:value', $event)"
+      />
+      <Label class="cursor-pointer" @click="!isFieldDisabled && $emit('update:value', !confEntry.value)">
+        {{ getTranslatedLabel() }}
+      </Label>
+    </div>
 
     <!-- int/float value in range: slider control -->
     <div
@@ -95,26 +102,23 @@
         confEntry.range &&
         confEntry.range.length == 2
       "
-      class="config-slider-wrapper"
+      class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
     >
-      <v-label class="config-slider-label">
+      <span class="text-sm text-muted-foreground shrink-0">
         {{ getTranslatedLabel() }}
-      </v-label>
-      <div class="config-slider-block">
-        <v-slider
-          :model-value="confEntry.value as number"
+      </span>
+      <div class="flex flex-row items-center gap-2 sm:flex-1">
+        <Slider
+          :model-value="[confEntry.value as number]"
           :disabled="isFieldDisabled"
-          :required="confEntry.required"
           :min="confEntry.range[0]"
           :max="confEntry.range[1]"
           :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-          hide-details
-          color="primary"
-          class="config-slider"
-          @update:model-value="$emit('update:value', $event)"
+          class="flex-1"
+          @update:model-value="$emit('update:value', $event[0])"
         />
 
-        <div class="config-slider-input">
+        <div class="shrink-0">
           <NumberField
             :model-value="confEntry.value as number"
             :min="confEntry.range[0]"
@@ -138,131 +142,228 @@
     </div>
 
     <!-- password value -->
-    <v-text-field
+    <div
       v-else-if="confEntry.type == ConfigEntryType.SECURE_STRING"
-      :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
-      :required="confEntry.required"
-      :disabled="isFieldDisabled"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      :type="showPasswordValues ? 'text' : 'password'"
-      :append-inner-icon="
-        showPasswordValues
-          ? 'mdi-eye'
-          : typeof confEntry.value == 'string' &&
-              confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
-            ? ''
-            : 'mdi-eye-off'
-      "
-      variant="outlined"
-      density="comfortable"
-      clearable
-      :readonly="!!confEntry.action"
-      @update:model-value="onUpdateValue($event)"
-      @click:append-inner="emit('togglePassword')"
-      @click:clear="onClear"
-    />
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <div class="relative">
+        <Input
+          :model-value="confEntry.value as string"
+          :required="confEntry.required"
+          :disabled="isFieldDisabled"
+          :type="showPasswordValues ? 'text' : 'password'"
+          :readonly="!!confEntry.action"
+          class="pr-16"
+          @update:model-value="onUpdateValue($event)"
+        />
+        <div class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+          <Button
+            v-if="
+              showPasswordValues ||
+              !(
+                typeof confEntry.value == 'string' &&
+                confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
+              )
+            "
+            variant="ghost"
+            size="icon-sm"
+            @click="emit('togglePassword')"
+          >
+            <Eye v-if="showPasswordValues" class="h-4 w-4" />
+            <EyeOff v-else class="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            @click="onClear"
+          >
+            <X class="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
 
-    <!-- value with dropdown -->
-    <v-select
+    <!-- value with dropdown (multi-value) -->
+    <div
+      v-else-if="confEntry.options && confEntry.options.length > 0 && confEntry.multi_value"
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <Select
+        :model-value="undefined"
+        @update:model-value="onMultiSelectAdd($event)"
+      >
+        <SelectTrigger class="w-full">
+          <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="opt in translatedOptions"
+            :key="String(opt.value)"
+            :value="String(opt.value)"
+          >
+            {{ opt.title }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+      <div v-if="Array.isArray(confEntry.value) && confEntry.value.length > 0" class="flex flex-wrap gap-1 mt-1">
+        <Badge
+          v-for="(val, idx) in (confEntry.value as ConfigValueType[])"
+          :key="idx"
+          variant="secondary"
+          class="gap-1"
+        >
+          {{ getOptionTitle(val) }}
+          <button
+            class="ml-0.5 rounded-full hover:bg-muted p-0.5"
+            @click="onMultiSelectRemove(idx)"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+      </div>
+    </div>
+
+    <!-- value with dropdown (single value) -->
+    <div
       v-else-if="confEntry.options && confEntry.options.length > 0"
-      :model-value="confEntry.value"
-      :chips="confEntry.multi_value"
-      :clearable="true"
-      :multiple="confEntry.multi_value"
-      :items="translatedOptions"
-      :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
-      :required="confEntry.required"
-      :rules="[
-        (v) =>
-          !((v === null || v === undefined) && confEntry.required) ||
-          $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
-    />
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <Select
+        :model-value="confEntry.value != null ? String(confEntry.value) : undefined"
+        @update:model-value="onSelectUpdate($event)"
+      >
+        <SelectTrigger class="w-full">
+          <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="opt in translatedOptions"
+            :key="String(opt.value)"
+            :value="String(opt.value)"
+          >
+            {{ opt.title }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
 
     <!-- int value without range -->
-    <v-text-field
+    <div
       v-else-if="
         confEntry.type == ConfigEntryType.INTEGER ||
         confEntry.type == ConfigEntryType.FLOAT
       "
-      :model-value="confEntry.value"
-      :placeholder="confEntry.default_value?.toString()"
-      :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
-      :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      :clearable="!confEntry.required"
-      type="number"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
-    />
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <div class="relative">
+        <Input
+          :model-value="confEntry.value as string | number"
+          :placeholder="confEntry.default_value?.toString()"
+          :disabled="isFieldDisabled"
+          :required="confEntry.required"
+          type="number"
+          @update:model-value="onUpdateValue($event)"
+        />
+        <Button
+          v-if="!confEntry.required"
+          variant="ghost"
+          size="icon-sm"
+          class="absolute right-1 top-1/2 -translate-y-1/2"
+          @click="onClear"
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
 
     <!-- icon 'picker' -->
-    <v-text-field
+    <div
       v-else-if="confEntry.type == ConfigEntryType.ICON"
-      :model-value="confEntry.value"
-      :placeholder="confEntry.default_value?.toString()"
-      clearable
-      :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
-      :prepend-inner-icon="confEntry.value as string"
-      variant="outlined"
-      density="comfortable"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
-    />
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <div class="relative">
+        <Input
+          :model-value="confEntry.value as string"
+          :placeholder="confEntry.default_value?.toString()"
+          :disabled="isFieldDisabled"
+          class="pl-9"
+          @update:model-value="onUpdateValue($event)"
+        />
+        <span
+          v-if="confEntry.value"
+          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+        >
+          <component
+            :is="resolveIcon(confEntry.value as string)"
+            v-if="resolveIcon(confEntry.value as string)"
+            class="h-4 w-4"
+          />
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="absolute right-1 top-1/2 -translate-y-1/2"
+          @click="onClear"
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
 
     <!-- multi-value string combobox -->
-    <v-combobox
+    <div
       v-else-if="
         confEntry.type == ConfigEntryType.STRING && confEntry.multi_value
       "
-      :model-value="confEntry.value as string[]"
-      multiple
-      chips
-      :clearable="true"
-      :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
-      :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
-    />
+      class="space-y-1.5"
+    >
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <TagsInput
+        :model-value="(confEntry.value as string[]) || []"
+        :disabled="isFieldDisabled"
+        @update:model-value="onUpdateValue($event)"
+      >
+        <TagsInputItem
+          v-for="tag in ((confEntry.value as string[]) || [])"
+          :key="tag"
+          :value="tag"
+        >
+          <TagsInputItemText />
+          <TagsInputItemDelete />
+        </TagsInputItem>
+        <TagsInputInput
+          :placeholder="$t('settings.type_and_enter', 'Type and press Enter')"
+        />
+      </TagsInput>
+    </div>
 
     <!-- all other: textbox with single value -->
-    <v-text-field
-      v-else
-      :model-value="confEntry.value"
-      :placeholder="confEntry.default_value?.toString()"
-      clearable
-      :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
-      :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      :readonly="!!confEntry.action"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
-    />
+    <div v-else class="space-y-1.5">
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <div class="relative">
+        <Input
+          :model-value="confEntry.value as string | number"
+          :placeholder="confEntry.default_value?.toString()"
+          :disabled="isFieldDisabled"
+          :required="confEntry.required"
+          :readonly="!!confEntry.action"
+          @update:model-value="onUpdateValue($event)"
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="absolute right-1 top-1/2 -translate-y-1/2"
+          @click="onClear"
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -274,16 +375,44 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  ConfigEntry,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import {
+  TagsInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+} from "@/components/ui/tags-input";
+import {
   ConfigEntryType,
-  ConfigValueOption,
-  ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
+  type ConfigValueOption,
+  type ConfigValueType,
 } from "@/plugins/api/interfaces";
-import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
+import { type ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
+import {
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Info,
+  X,
+} from "lucide-vue-next";
 
 const props = defineProps<{
   confEntry: ConfigEntryUI;
@@ -356,6 +485,55 @@ const onClear = () => {
   emit("update:value", null);
 };
 
+// Handle single-value select updates - find the original value type
+const onSelectUpdate = (stringValue: string) => {
+  const option = props.confEntry.options?.find(
+    (opt) => String(opt.value) === stringValue,
+  );
+  if (option) {
+    onUpdateValue(option.value);
+  } else {
+    onUpdateValue(stringValue);
+  }
+};
+
+// Handle multi-select add
+const onMultiSelectAdd = (stringValue: string) => {
+  const option = props.confEntry.options?.find(
+    (opt) => String(opt.value) === stringValue,
+  );
+  const actualValue = option ? option.value : stringValue;
+  const currentValues = Array.isArray(props.confEntry.value)
+    ? [...(props.confEntry.value as ConfigValueType[])]
+    : [];
+  if (!currentValues.includes(actualValue)) {
+    currentValues.push(actualValue);
+  }
+  onUpdateValue(currentValues);
+};
+
+// Handle multi-select remove
+const onMultiSelectRemove = (index: number) => {
+  const currentValues = Array.isArray(props.confEntry.value)
+    ? [...(props.confEntry.value as ConfigValueType[])]
+    : [];
+  currentValues.splice(index, 1);
+  onUpdateValue(currentValues);
+};
+
+// Get display title for a multi-select value
+const getOptionTitle = (value: ConfigValueType): string => {
+  const option = translatedOptions.value.find(
+    (opt) => opt.value === value || String(opt.value) === String(value),
+  );
+  return option?.title || String(value);
+};
+
+// Simple icon resolver stub - returns null for MDI icons
+const resolveIcon = (_iconName: string) => {
+  return null;
+};
+
 const translatedOptions = computed(() => {
   if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
@@ -386,84 +564,3 @@ const translatedOptions = computed(() => {
   return options;
 });
 </script>
-
-<style scoped>
-.config-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.config-divider {
-  padding: 8px 0;
-}
-
-.divider-label {
-  display: block;
-  margin-top: 12px;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.config-alert {
-  margin: 8px 0;
-}
-
-.action-btn {
-  margin: 8px 0;
-  margin-bottom: 20px;
-  width: 100%;
-  height: 50px;
-}
-
-.config-slider-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.config-slider-label {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 0;
-}
-
-.config-slider-block {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.config-slider-input {
-  flex-shrink: 0;
-}
-
-@media (min-width: 601px) {
-  .config-slider-wrapper {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .config-slider-label {
-    flex-shrink: 0;
-    margin-bottom: 0;
-  }
-
-  .config-slider-block {
-    flex: 1;
-  }
-}
-
-.dsp-config {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.dsp-status {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-</style>
