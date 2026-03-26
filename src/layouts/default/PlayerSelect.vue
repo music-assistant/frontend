@@ -51,7 +51,7 @@
           :model-value="allPlayersExpanded === 0 ? 'all-players' : ''"
           collapsible
           class="expansion"
-          @update:model-value="(v: string | string[]) => { allPlayersExpanded = v === 'all-players' ? 0 : undefined }"
+          @update:model-value="(v: string | string[] | undefined) => { allPlayersExpanded = v === 'all-players' ? 0 : undefined }"
         >
           <AccordionItem value="all-players" class="border-none">
             <AccordionTrigger class="accordion-trigger">

@@ -16,18 +16,17 @@
       :style="{ marginLeft: `${compProps.playOffset}px` }"
     />
   </Icon>
-  <v-progress-circular
+  <Spinner
     v-if="isVisible && player && isLoading"
     class="play-btn-spinner"
-    indeterminate
     :size="compProps.spinnerSize"
-    :width="2"
   />
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import { Spinner } from "@/components/ui/spinner";
 import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -97,7 +96,7 @@ const isLoading = computed(() => {
   color: var(--play-icon-color, #fff);
 }
 
-.v-theme--dark .play-btn-icon {
+.dark .play-btn-icon {
   background-color: #fff;
   color: var(--play-icon-color, #212121);
 }

@@ -43,7 +43,6 @@ import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import "vue-sonner/style.css";
-import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { initializeCompanionIntegration } from "./plugins/companion";
@@ -63,7 +62,6 @@ import {
 } from "./plugins/web_player";
 import Login from "./views/Login.vue";
 
-const theme = useTheme();
 const router = useRouter();
 const mode = useColorMode();
 
@@ -87,30 +85,14 @@ const showMainApp = computed(() => {
 
 const setTheme = function () {
   const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
-  let themeValue: "light" | "dark";
 
   if (themePref == "dark") {
-    // forced dark mode
-    theme.global.name.value = "dark";
-    themeValue = "dark";
+    mode.value = "dark";
   } else if (themePref == "light") {
-    // forced light mode
-    theme.global.name.value = "light";
-    themeValue = "light";
-  } else if (
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    // dark mode is enabled in browser
-    theme.global.name.value = "dark";
-    themeValue = "dark";
+    mode.value = "light";
   } else {
-    // light mode is enabled in browser
-    theme.global.name.value = "light";
-    themeValue = "light";
+    mode.value = "auto";
   }
-
-  mode.value = themePref === "auto" ? "auto" : themeValue;
 };
 
 const interactedHandler = function () {

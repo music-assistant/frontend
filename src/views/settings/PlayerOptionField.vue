@@ -5,7 +5,7 @@
     <Select
       :model-value="playerOption.value != null ? String(playerOption.value) : undefined"
       :disabled="playerOption.read_only"
-      @update:model-value="onSelectUpdate($event)"
+      @update:model-value="(val: unknown) => onSelectUpdate(String(val))"
     >
       <SelectTrigger class="w-full">
         <SelectValue />
@@ -55,7 +55,7 @@
         :step="playerOption.step"
         :disabled="playerOption.read_only"
         class="flex-1"
-        @update:model-value="uiSetPlayerOption(playerOption.key, $event[0])"
+        @update:model-value="(val: number[] | undefined) => { if (val) uiSetPlayerOption(playerOption.key, val[0]) }"
       />
       <span class="text-sm text-muted-foreground shrink-0">
         {{ playerOption.max_value }}

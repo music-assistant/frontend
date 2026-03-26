@@ -1,34 +1,30 @@
 <template>
-  <v-card flat color="transparent">
-    <v-card-text class="d-flex align-center gap-4">
-      <span style="min-width: 100px" class="v-label pl-2">{{
-        config.label
-      }}</span>
-      <v-slider
-        v-model="sliderModel"
-        :min="sliderMin"
-        :max="sliderMax"
-        :step="sliderStep"
-        hide-details
-        class="flex-grow-1 pr-4"
-        density="compact"
-        color="primary"
-      />
-      <v-text-field
-        v-model="displayValue"
-        type="number"
-        hide-details
-        density="compact"
-        style="max-width: 100px"
-        @focus="isEditing = true"
-        @blur="isEditing = false"
-      />
-      <span style="min-width: 40px" class="pl-2">{{ config.unit }}</span>
-    </v-card-text>
-  </v-card>
+  <div class="flex items-center gap-4 px-4 py-2">
+    <span class="min-w-[100px] pl-2 text-sm font-medium">{{
+      config.label
+    }}</span>
+    <Slider
+      :model-value="[sliderModel]"
+      :min="sliderMin"
+      :max="sliderMax"
+      :step="sliderStep"
+      class="flex-grow pr-4"
+      @update:model-value="(val: number[] | undefined) => { if (val) sliderModel = val[0]; }"
+    />
+    <Input
+      v-model="displayValue"
+      type="number"
+      class="max-w-[100px]"
+      @focus="isEditing = true"
+      @blur="isEditing = false"
+    />
+    <span class="min-w-[40px] pl-2 text-sm">{{ config.unit }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { $t } from "@/plugins/i18n";
 import { ref, computed } from "vue";
 

@@ -1,49 +1,46 @@
 <template>
   <!-- Header -->
-  <v-container>
+  <div class="container mx-auto px-4">
     <div v-if="props.playerId">
       <!-- Settable options -->
       <div v-if="playerOptionsSettable.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.settable', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
+        <Card class="mx-auto my-8 w-full shadow">
+          <CardHeader>
+            <CardTitle>{{ $t('player_options.settable', [playerName]) }}</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div v-for="option in playerOptionsSettable" :key="option.key">
               <PlayerOptionField
                 :player-option="option"
                 :player-id="props.playerId"
               />
             </div>
-          </div>
-        </v-card>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- Read-only options -->
       <div v-if="playerOptionsReadOnly.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.read_only', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
+        <Card class="mx-auto my-8 w-full shadow">
+          <CardHeader>
+            <CardTitle>{{ $t('player_options.read_only', [playerName]) }}</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div v-for="option in playerOptionsReadOnly" :key="option.key">
               <PlayerOptionField
                 :player-option="option"
                 :player-id="props.playerId"
               />
             </div>
-          </div>
-        </v-card>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "@/plugins/api";
 import {
   EventType,

@@ -62,9 +62,7 @@
                   v-if="menuItem.icon && typeof menuItem.icon !== 'string'"
                   class="w-5 h-5"
                 />
-                <span v-else-if="typeof menuItem.icon === 'string'" class="mdi-icon">
-                  <v-icon :icon="menuItem.icon" />
-                </span>
+                <span v-else-if="typeof menuItem.icon === 'string'" class="mdi" :class="menuItem.icon" style="font-size: 20px;" />
               </span>
               <span class="context-menu-item-title">{{ $t(menuItem.label, menuItem.labelArgs || []) }}</span>
               <Check
@@ -114,9 +112,7 @@
                   v-if="subMenuItem.icon && typeof subMenuItem.icon !== 'string'"
                   class="w-5 h-5"
                 />
-                <span v-else-if="typeof subMenuItem.icon === 'string'" class="mdi-icon">
-                  <v-icon :icon="subMenuItem.icon" />
-                </span>
+                <span v-else-if="typeof subMenuItem.icon === 'string'" class="mdi" :class="subMenuItem.icon" style="font-size: 20px;" />
               </span>
               <span class="context-menu-item-title">{{ $t(subMenuItem.label, subMenuItem.labelArgs || []) }}</span>
               <Check

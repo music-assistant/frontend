@@ -5,13 +5,12 @@
     :style="containerStyle"
     @click="handleClick"
   >
-    <v-badge :model-value="badge === true" color="error" dot>
-      <v-icon ref="iconElement" v-bind="iconProps" :class="iconClasses">
-        <template v-for="(_, name) in $slots" #[name]>
-          <slot :name="name"></slot>
-        </template>
-      </v-icon>
-    </v-badge>
+    <div class="icon-badge-wrapper">
+      <span ref="iconElement" :class="iconClasses" :style="iconSizeStyle">
+        <slot></slot>
+      </span>
+      <span v-if="badge === true" class="icon-badge-dot" />
+    </div>
   </div>
 </template>
 
@@ -26,8 +25,7 @@ import {
   type IconEmits,
   type IconProps,
 } from "@/composables/useIcon";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
-import { VIcon } from "vuetify/components";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const props = withDefaults(defineProps<IconProps>(), defaultIconProps);
 
@@ -37,7 +35,16 @@ const { iconProps, containerStyle, containerClasses, iconClasses } =
   useIcon(props);
 
 const iconContainer = ref<HTMLElement>();
-const iconElement = ref<VIcon>();
+const iconElement = ref<HTMLElement>();
+
+const iconSizeStyle = computed(() => {
+  const size = iconProps.value.size;
+  if (size) {
+    const s = typeof size === "number" ? `${size}px` : size;
+    return { fontSize: s, width: s, height: s };
+  }
+  return {};
+});
 
 const adjustIconSize = async () => {
   if (
@@ -55,9 +62,7 @@ const adjustIconSize = async () => {
     const containerHeight = iconContainer.value.offsetHeight;
     const iconSize = Math.min(containerWidth, containerHeight);
 
-    if (iconElement.value.$el) {
-      iconElement.value.$el.style.fontSize = `${iconSize}px`;
-    }
+    iconElement.value.style.fontSize = `${iconSize}px`;
   } catch (error) {
     console.error("Icon sizing adjustment failed:", error);
   }
@@ -100,10 +105,6 @@ onBeforeUnmount(() => {
   transition: opacity 0.2s ease;
 }
 
-.icon-container--button .v-icon {
-  cursor: pointer !important;
-}
-
 .icon-container--button:hover,
 .icon-container--button:focus {
   opacity: 1;
@@ -137,12 +138,26 @@ onBeforeUnmount(() => {
   border-radius: 4px;
 }
 
-/* When icon has size constraints, make container fill available space */
 .icon-container {
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
+}
+
+.icon-badge-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.icon-badge-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--destructive));
 }
 
 .media-controls-item .icon {

@@ -1,94 +1,85 @@
 <template>
-  <v-timeline density="compact" side="end">
+  <div class="dsp-timeline">
     <!-- Input -->
-    <v-timeline-item
-      :dot-color="isDotActive('input')"
-      size="x-small"
-      @click="handleSelect('input')"
-    >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor('input')"
-        :class="getButtonClass('input')"
-        class="dsp-pipeline-card"
+    <div class="dsp-timeline-item" @click="handleSelect('input')">
+      <div class="dsp-timeline-dot" :class="getDotClass('input')" />
+      <div class="dsp-timeline-line" />
+      <button
+        :class="['dsp-pipeline-card', getButtonClass('input')]"
+        :style="getButtonStyle('input')"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t("settings.dsp.input")
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
+        <span class="px-3 py-1">{{ $t("settings.dsp.input") }}</span>
+      </button>
+    </div>
 
-    <v-timeline-item :hide-dot="true" size="x-small" />
+    <!-- Spacer -->
+    <div class="dsp-timeline-item">
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
+      <div class="dsp-timeline-line" />
+    </div>
 
     <!-- DSP Filters -->
-    <v-timeline-item
+    <div
       v-for="(filter, index) in dsp.filters"
       :key="index"
-      :dot-color="isDotActive(index)"
-      size="x-small"
-      :hide-dot="isDisabled(index)"
+      class="dsp-timeline-item"
       @click="handleSelect(index)"
       @contextmenu.prevent="(e: MouseEvent) => openFilterContextMenu(e, index)"
     >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor(index)"
-        :class="getButtonClass(index)"
-        class="dsp-pipeline-card"
+      <div
+        class="dsp-timeline-dot"
+        :class="[getDotClass(index), isDisabled(index) ? 'dsp-timeline-dot--hidden' : '']"
+      />
+      <div class="dsp-timeline-line" />
+      <button
+        :class="['dsp-pipeline-card', getButtonClass(index)]"
+        :style="getButtonStyle(index)"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t(`settings.dsp.types.${filter.type}`)
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
+        <span class="px-3 py-1">{{ $t(`settings.dsp.types.${filter.type}`) }}</span>
+      </button>
+    </div>
 
     <!-- Add Filter Button -->
-    <v-timeline-item dot-color="secondary" size="x-small" :hide-dot="true">
-      <v-btn
-        outlined
-        rounded="pill"
+    <div class="dsp-timeline-item">
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
+      <div class="dsp-timeline-line" />
+      <button
         class="dsp-pipeline-card add-filter-btn"
-        :elevation="0"
         @click="emit('onAddFilter')"
       >
-        <v-card-text class="py-1 d-flex align-center">
-          <v-icon size="small" class="mr-1">mdi-plus</v-icon>
+        <span class="py-1 flex items-center">
+          <Plus class="h-4 w-4 mr-1" />
           {{ $t("settings.dsp.filter.add") }}
-        </v-card-text>
-      </v-btn>
-    </v-timeline-item>
+        </span>
+      </button>
+    </div>
 
-    <v-timeline-item :hide-dot="true" size="x-small" />
+    <!-- Spacer -->
+    <div class="dsp-timeline-item">
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
+      <div class="dsp-timeline-line" />
+    </div>
 
     <!-- Output -->
-    <v-timeline-item
-      :dot-color="isDotActive('output')"
-      size="x-small"
-      @click="handleSelect('output')"
-    >
-      <v-btn
-        flat
-        rounded="pill"
-        :color="getButtonColor('output')"
-        :class="getButtonClass('output')"
-        class="dsp-pipeline-card"
+    <div class="dsp-timeline-item" @click="handleSelect('output')">
+      <div class="dsp-timeline-dot" :class="getDotClass('output')" />
+      <button
+        :class="['dsp-pipeline-card', getButtonClass('output')]"
+        :style="getButtonStyle('output')"
       >
-        <v-card-text class="px-3 py-1">{{
-          $t("settings.dsp.output")
-        }}</v-card-text>
-      </v-btn>
-    </v-timeline-item>
-  </v-timeline>
+        <span class="px-3 py-1">{{ $t("settings.dsp.output") }}</span>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useIsDark } from "@/composables/useIsDark";
 import { DSPConfig } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { useTheme } from "vuetify";
+import { Plus } from "lucide-vue-next";
 
-const theme = useTheme();
+const { isDark } = useIsDark();
 
 type SelectionType = number | "input" | "output";
 
@@ -104,8 +95,10 @@ const emit = defineEmits<{
   (e: "onDeleteFilter", index: number): void;
 }>();
 
-const isDotActive = (value: SelectionType): string =>
-  props.selected === value ? "primary" : "secondary";
+const getDotClass = (value: SelectionType) => ({
+  'dsp-timeline-dot--primary': props.selected === value,
+  'dsp-timeline-dot--secondary': props.selected !== value,
+});
 
 const isDisabled = (value: SelectionType): boolean => {
   if (value === "input" || value === "output") {
@@ -115,11 +108,14 @@ const isDisabled = (value: SelectionType): boolean => {
   }
 };
 
-const getButtonColor = (value: SelectionType): string => {
+const getButtonStyle = (value: SelectionType) => {
   if (props.selected === value) {
-    return "primary";
+    return { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' };
   }
-  return theme.global.current.value.dark ? "grey-darken-3" : "grey-lighten-3";
+  return {
+    background: isDark.value ? 'hsl(var(--muted))' : 'hsl(var(--muted))',
+    color: 'hsl(var(--foreground))',
+  };
 };
 
 const getButtonClass = (value: SelectionType) => ({
@@ -176,9 +172,68 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 </script>
 
 <style scoped>
+.dsp-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-left: 16px;
+}
+
+.dsp-timeline-item {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 24px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.dsp-timeline-dot {
+  position: absolute;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.dsp-timeline-dot--primary {
+  background: hsl(var(--primary));
+}
+
+.dsp-timeline-dot--secondary {
+  background: hsl(var(--muted-foreground));
+}
+
+.dsp-timeline-dot--hidden {
+  visibility: hidden;
+}
+
+.dsp-timeline-line {
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--border));
+}
+
+.dsp-timeline-item:first-child .dsp-timeline-line {
+  top: 50%;
+}
+
+.dsp-timeline-item:last-child .dsp-timeline-line {
+  bottom: 50%;
+}
+
 .dsp-pipeline-card {
   min-width: 160px;
   transition: transform 0.2s ease;
+  border: none;
+  border-radius: 9999px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.875rem;
 }
 
 .dsp-pipeline-card:hover,
@@ -187,17 +242,14 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 }
 
 .add-filter-btn {
-  background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.5);
+  background: transparent !important;
+  border: 1px dashed hsl(var(--muted-foreground) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
   cursor: pointer;
 }
 
-.v-theme--dark .add-filter-btn {
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
 .add-filter-btn:hover {
-  border-color: rgb(var(--v-theme-primary));
+  border-color: hsl(var(--primary)) !important;
   transform: none;
 }
 </style>

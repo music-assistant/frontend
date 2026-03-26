@@ -1,11 +1,11 @@
 <template>
-  <v-app>
+  <div class="min-h-screen bg-background text-foreground">
     <MainView v-if="store.frameless" />
     <template v-else>
       <MainView />
       <Footer />
     </template>
-  </v-app>
+  </div>
   <reload-prompt />
 </template>
 
@@ -58,10 +58,4 @@ watch(
 </script>
 
 <style scoped>
-.centeredoverlay :deep(.v-overlay__content) {
-  left: 50%;
-  right: 50%;
-  top: 50%;
-  bottom: 50%;
-}
 </style>

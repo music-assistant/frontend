@@ -551,9 +551,6 @@ import { AlertCircle, Info } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
-
-const { width: windowWidth, height: windowHeight } = useWindowSize();
 import {
   ContentType,
   DSPFilter,
@@ -562,6 +559,9 @@ import {
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
+
+const { width: windowWidth, height: windowHeight } = useWindowSize();
 
 // computed properties
 const streamDetails = computed(() => {

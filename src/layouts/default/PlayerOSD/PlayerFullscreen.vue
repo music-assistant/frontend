@@ -85,14 +85,15 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <span
+                class="mdi"
+                :class="
                   store.activePlayer?.type == PlayerType.PLAYER &&
                   store.activePlayer?.group_members.length
                     ? 'mdi-speaker-multiple'
                     : store.activePlayer?.icon || 'mdi-speaker'
                 "
+                style="font-size: 128px;"
               />
             </div>
           </div>
@@ -234,19 +235,16 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <v-infinite-scroll
+            <div
               v-if="!tempHide && activeQueuePanel !== 2"
-              :onLoad="loadNextPage"
-              :empty-text="''"
-              height="100%"
+              class="queue-items-list"
+              style="height: 100%; overflow-y: auto;"
             >
               <!-- list view -->
-              <v-virtual-scroll
-                :item-height="70"
-                max-height="100%"
-                :items="activeQueuePanel == 0 ? nextItems : previousItems"
+              <template
+                v-for="(item, index) in activeQueuePanel == 0 ? nextItems : previousItems"
+                :key="item.queue_item_id"
               >
-                <template #default="{ item, index }">
                   <ListItem
                     link
                     :show-menu-btn="true"
@@ -370,9 +368,10 @@
                       </ItemActions>
                     </Item>
                   </div>
-                </template>
-              </v-virtual-scroll>
-            </v-infinite-scroll>
+              </template>
+              <!-- IntersectionObserver sentinel for infinite scroll -->
+              <div ref="infiniteScrollSentinel" class="h-1" />
+            </div>
             <!-- Lyrics view -->
             <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
               <LyricsViewer
@@ -402,14 +401,15 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <span
+                class="mdi"
+                :class="
                   store.activePlayer?.type == PlayerType.PLAYER &&
                   store.activePlayer?.group_members.length
                     ? 'mdi-speaker-multiple'
                     : store.activePlayer?.icon || 'mdi-speaker'
                 "
+                style="font-size: 128px;"
               />
             </div>
           </div>
@@ -526,7 +526,7 @@
               }
             "
           >
-            <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
+            <span class="mdi" :class="store.activePlayer?.icon || 'mdi-speaker'" style="font-size: 20px;" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
         </div>
@@ -619,6 +619,7 @@ const { isDark } = useIsDark();
 const { height: windowHeight } = useWindowSize();
 
 const showRadioMenu = ref(false);
+const infiniteScrollSentinel = ref<HTMLElement>();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 const showAlbumSubtitle = computed(
@@ -1275,23 +1276,25 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
 const resetItems = async function () {
   tempHide.value = true;
   queueItems.value = [];
+  allLoaded.value = false;
   await sleep(100);
   tempHide.value = false;
 };
 
-const loadNextPage = async function ({
-  done,
-}: {
-  done: (status: "ok" | "empty" | "loading" | "error") => void;
-}) {
+const isLoadingMore = ref(false);
+const allLoaded = ref(false);
+
+const loadNextPage = async function () {
+  if (isLoadingMore.value || allLoaded.value) return;
   if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
-    done("empty");
+    allLoaded.value = true;
     return;
   }
   if (queueItems.value.length >= store.activePlayerQueue?.items) {
-    done("empty");
+    allLoaded.value = true;
     return;
   }
+  isLoadingMore.value = true;
   const offset = queueItems.value.length;
   const limit = (store.activePlayerQueue.current_index || 0) + 50;
   const result = await api.getPlayerQueueItems(
@@ -1301,10 +1304,9 @@ const loadNextPage = async function ({
   );
   queueItems.value.push(...result);
   if (result.length < 50) {
-    done("empty");
-  } else {
-    done("ok");
+    allLoaded.value = true;
   }
+  isLoadingMore.value = false;
 };
 
 // Fetch badge colors from party config
@@ -1336,6 +1338,27 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+});
+
+// IntersectionObserver for infinite scroll
+let infiniteScrollObserver: IntersectionObserver | null = null;
+onMounted(() => {
+  watch(infiniteScrollSentinel, (el) => {
+    if (infiniteScrollObserver) infiniteScrollObserver.disconnect();
+    if (!el) return;
+    infiniteScrollObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    infiniteScrollObserver.observe(el);
+  }, { immediate: true });
+  onBeforeUnmount(() => {
+    infiniteScrollObserver?.disconnect();
+  });
 });
 
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
@@ -1603,8 +1626,8 @@ watchEffect(() => {
   font-size: var(--queue-subtitle-size, 0.875rem);
 }
 
-.v-infinite-scroll--vertical {
-  overflow-y: unset;
+.queue-items-list {
+  overflow-y: auto;
 }
 
 .main-media-details-image {

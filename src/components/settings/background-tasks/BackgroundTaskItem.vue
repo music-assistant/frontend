@@ -70,11 +70,10 @@
     </template>
   </ListItem>
 
-  <v-card
+  <Card
     v-else
-    class="flex-fill rounded-lg task-card"
+    class="flex-fill rounded-lg task-card cursor-pointer"
     :class="{ 'task-card--disabled': isScheduled && !task.schedule?.enabled }"
-    min-height="170px"
     @click="emit('click', task)"
   >
     <div class="task-card-content">
@@ -92,13 +91,14 @@
           </div>
         </div>
 
-        <v-btn
-          icon="mdi-dots-vertical"
-          size="small"
-          variant="text"
-          class="task-card-menu"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="task-card-menu h-8 w-8"
           @click.stop="emit('menu', $event, task)"
-        />
+        >
+          <MoreVertical class="h-4 w-4" />
+        </Button>
       </div>
 
       <div v-if="showProgressText" class="task-card-progress-text">
@@ -144,13 +144,16 @@
         </div>
       </div>
     </div>
-  </v-card>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import ListItem from "@/components/ListItem.vue";
+import { MoreVertical } from "lucide-vue-next";
 import { useBackgroundTaskDisplay } from "@/composables/useBackgroundTaskDisplay";
 import type { BackgroundTask } from "@/plugins/api/interfaces";
 import { useI18n } from "vue-i18n";
@@ -212,13 +215,13 @@ const {
 
 .task-summary {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.45;
 }
 
 .task-progress-text {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.45;
 }
 
@@ -236,24 +239,24 @@ const {
   justify-content: space-between;
   gap: 16px;
   font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
 }
 
 .task-progress-value {
   flex-shrink: 0;
   font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
+  color: hsl(var(--foreground));
 }
 
 .task-error {
   font-size: 13px;
-  color: rgb(var(--v-theme-error));
+  color: hsl(var(--destructive));
   line-height: 1.45;
 }
 
 .task-failure {
   font-size: 13px;
-  color: rgb(var(--v-theme-warning));
+  color: hsl(var(--warning, 38 92% 50%));
   line-height: 1.45;
 }
 
@@ -301,7 +304,7 @@ const {
 
 .task-card-summary {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
   line-height: 1.45;
   margin-top: 4px;
 }
@@ -314,7 +317,7 @@ const {
 
 .task-card-progress-text {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.45;
 }
 

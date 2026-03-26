@@ -1,39 +1,55 @@
 <template>
   <div style="width: auto; height: 24px">
     <div v-if="store.activePlayer" style="width: 100%">
-      <v-slider
-        v-model="curTimeValue"
-        :disabled="!canSeek"
-        style="width: 100%"
-        :min="0"
-        :max="store.activePlayer?.current_media?.duration"
-        hide-details
-        :track-size="4"
-        :thumb-size="isThumbHidden ? 0 : 10"
-        :show-ticks="chapterTicks ? 'always' : false"
-        :ticks="chapterTicks"
-        tick-size="4"
-        :color="color"
+      <div
+        class="timeline-slider-wrapper"
         @touchstart="isThumbHidden = false"
         @touchend="isThumbHidden = true"
         @mouseenter="isThumbHidden = false"
         @mouseleave="isThumbHidden = true"
-        @start="startDragging"
-        @end="stopDragging"
       >
-        <template #tick-label="{ tick }">
+        <input
+          type="range"
+          class="timeline-slider"
+          :class="{ 'timeline-slider--no-thumb': isThumbHidden }"
+          :value="curTimeValue"
+          :disabled="!canSeek"
+          :min="0"
+          :max="store.activePlayer?.current_media?.duration || 0"
+          :step="1"
+          :style="sliderStyle"
+          @input="onSliderInput"
+          @mousedown="startDragging"
+          @mouseup="stopDragging"
+          @touchstart="startDragging"
+          @touchend="stopDragging"
+        />
+        <!-- Chapter tick marks -->
+        <div
+          v-if="Object.keys(chapterTicks).length > 0"
+          class="chapter-ticks"
+        >
+          <div
+            v-for="(label, pos) in chapterTicks"
+            :key="pos"
+            class="chapter-tick"
+            :style="{ left: tickPosition(Number(pos)) }"
+          />
+        </div>
+        <!-- Chapter labels -->
+        <div
+          v-if="showLabels && !isThumbHidden && Object.keys(chapterTicks).length > 0 && Object.keys(chapterTicks).length < 6"
+          class="chapter-labels"
+        >
           <a
-            v-if="
-              showLabels &&
-              !isThumbHidden &&
-              Object.values(chapterTicks).length < 6
-            "
-            class="text-caption"
-            @click="chapterClicked(tick.value)"
-            >{{ tick.label }}</a
-          >
-        </template>
-      </v-slider>
+            v-for="(label, pos) in chapterTicks"
+            :key="pos"
+            class="text-caption chapter-label"
+            :style="{ left: tickPosition(Number(pos)) }"
+            @click="chapterClicked(Number(pos))"
+          >{{ label }}</a>
+        </div>
+      </div>
 
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->
@@ -72,7 +88,7 @@ export interface Props {
   color?: string;
 }
 
-withDefaults(defineProps<Props>(), {
+const compProps = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: undefined,
 });
@@ -237,6 +253,25 @@ const computedElapsedTime = computed(() => {
   return 0;
 });
 
+const sliderStyle = computed(() => {
+  const max = store.activePlayer?.current_media?.duration || 1;
+  const pct = max > 0 ? (curTimeValue.value / max) * 100 : 0;
+  return {
+    '--timeline-color': compProps.color || 'currentColor',
+    '--timeline-pct': `${pct}%`,
+  } as Record<string, string>;
+});
+
+const tickPosition = (pos: number) => {
+  const max = store.activePlayer?.current_media?.duration || 1;
+  return `${(pos / max) * 100}%`;
+};
+
+const onSliderInput = (e: Event) => {
+  const val = Number((e.target as HTMLInputElement).value);
+  curTimeValue.value = val;
+};
+
 const chapterTicks = computed(() => {
   const ticks: Record<number, string> = {};
   if (store.curQueueItem?.media_item?.metadata?.chapters) {
@@ -287,6 +322,98 @@ const chapterClicked = function (chaperPos: number) {
 </script>
 
 <style scoped>
+.timeline-slider-wrapper {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.timeline-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--timeline-color, currentColor) var(--timeline-pct, 0%),
+    rgba(128, 128, 128, 0.24) var(--timeline-pct, 0%)
+  );
+}
+
+.timeline-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--timeline-color, currentColor);
+  cursor: pointer;
+  transition: width 0.15s, height 0.15s;
+}
+
+.timeline-slider--no-thumb::-webkit-slider-thumb {
+  width: 0;
+  height: 0;
+}
+
+.timeline-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--timeline-color, currentColor);
+  border: none;
+  cursor: pointer;
+}
+
+.timeline-slider--no-thumb::-moz-range-thumb {
+  width: 0;
+  height: 0;
+}
+
+.chapter-ticks {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.chapter-tick {
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: var(--timeline-color, currentColor);
+  opacity: 0.6;
+  transform: translate(-50%, -50%);
+  top: 50%;
+}
+
+.chapter-labels {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.chapter-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .time-text-left {
   text-align: left;
   display: table-cell;
@@ -310,9 +437,5 @@ const chapterClicked = function (chaperPos: number) {
 }
 .time-text-row > div {
   width: calc(100% / 2);
-}
-.v-slider.v-input--horizontal {
-  align-items: center;
-  margin-inline: 0px;
 }
 </style>

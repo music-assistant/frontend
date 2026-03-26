@@ -1,13 +1,13 @@
 <template>
-  <Button variant="icon" :ripple="false" icon @click="openPlayersMenu">
-    <v-icon
-      :color="color ? color : ''"
-      :size="24"
-      :icon="
+  <Button variant="icon" @click="openPlayersMenu">
+    <span
+      class="mdi"
+      :class="
         store.activePlayer?.group_members.length
           ? 'mdi-speaker-multiple'
           : 'mdi-speaker'
       "
+      :style="{ fontSize: '24px', color: color || undefined }"
     />
   </Button>
 </template>

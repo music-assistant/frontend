@@ -11,8 +11,11 @@ export interface ButtonProps {
    * - `responsive`: Large responsive button for touch interfaces
    * - `icon`: Icon-only button with reduced padding
    * - `list`: Button optimized for use in lists
+   * - `ghost`: Transparent background, visible on hover
+   * - `outline`: Bordered button
+   * - `secondary`: Secondary styled button
    */
-  variant?: "default" | "plain" | "responsive" | "icon" | "list";
+  variant?: "default" | "plain" | "responsive" | "icon" | "list" | "ghost" | "outline" | "secondary";
 
   /**
    * Whether this button is used in navigation (affects styling)
@@ -38,7 +41,7 @@ export interface ButtonProps {
   tag?: string;
   text?: boolean;
   type?: "button" | "submit" | "reset";
-  value?: unknown;
+  value?: string | number | readonly string[];
   active?: boolean;
   append?: boolean;
   exact?: boolean;
@@ -95,6 +98,21 @@ export const useButton = (props: ButtonProps) => {
       .with("plain", () => ({
         ...baseProps,
         variant: "plain" as const,
+        ripple: props.ripple !== false,
+      }))
+      .with("ghost", () => ({
+        ...baseProps,
+        variant: "text" as const,
+        ripple: props.ripple !== false,
+      }))
+      .with("outline", () => ({
+        ...baseProps,
+        variant: "text" as const,
+        ripple: props.ripple !== false,
+      }))
+      .with("secondary", () => ({
+        ...baseProps,
+        variant: "text" as const,
         ripple: props.ripple !== false,
       }))
       .with("default", () => ({

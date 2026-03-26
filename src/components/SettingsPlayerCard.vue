@@ -1,6 +1,6 @@
 <template>
-  <v-card
-    class="flex-fill rounded-lg player-card"
+  <Card
+    class="flex-fill rounded-lg player-card cursor-pointer"
     :class="{
       'player-disabled': !playerConfig.enabled,
       'player-unavailable': !isAvailable,
@@ -11,19 +11,20 @@
     <div class="card-content">
       <div class="card-header">
         <div class="player-icon-wrapper">
-          <v-icon :icon="player?.icon || 'mdi-speaker'" :size="24" />
+          <span class="mdi" :class="player?.icon || 'mdi-speaker'" style="font-size: 24px;" />
         </div>
         <div class="player-info">
           <div class="player-name">{{ playerName }}</div>
           <div class="provider-name">{{ providerName }}</div>
         </div>
-        <v-btn
-          icon="mdi-dots-vertical"
-          size="small"
-          variant="text"
-          class="menu-btn"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="menu-btn h-8 w-8"
           @click.stop="handleMenu"
-        />
+        >
+          <MoreVertical class="h-4 w-4" />
+        </Button>
       </div>
 
       <!-- Player needs setup warning -->
@@ -32,7 +33,7 @@
         class="player-warning-card"
       >
         <div class="player-warning-inline">
-          <v-icon icon="mdi-alert-circle" size="16" color="warning" />
+          <AlertCircle class="h-4 w-4 text-amber-500" />
           <span class="player-warning-text">{{
             $t("settings.player_needs_setup")
           }}</span>
@@ -41,60 +42,57 @@
 
       <div class="card-footer">
         <div class="protocol-chips">
-          <v-chip
+          <Badge
             v-for="protocol in outputProtocols"
             :key="protocol.output_protocol_id"
-            size="x-small"
-            variant="tonal"
-            class="protocol-chip"
+            variant="secondary"
+            class="protocol-chip text-[10px] uppercase tracking-wide"
             :class="{ 'protocol-chip--unavailable': !protocol.available }"
           >
-            <template #prepend>
-              <ProviderIcon
-                :domain="protocol.protocol_domain!"
-                :size="14"
-                class="chip-icon"
-              />
-            </template>
+            <ProviderIcon
+              :domain="protocol.protocol_domain!"
+              :size="14"
+              class="chip-icon mr-1"
+            />
             {{
               api.getProviderManifest(protocol.protocol_domain!)?.name ||
               protocol.protocol_domain
             }}
-          </v-chip>
+          </Badge>
         </div>
         <div class="status-icons">
-          <v-icon
+          <span
             v-if="!playerConfig.enabled"
-            icon="mdi-cancel"
-            size="16"
-            color="grey"
+            class="mdi mdi-cancel text-gray-500"
+            style="font-size: 16px;"
             :title="$t('settings.player_disabled')"
           />
-          <v-icon
+          <AlertCircle
             v-else-if="needsSetup"
-            icon="mdi-alert-circle"
-            size="16"
-            color="warning"
+            class="h-4 w-4 text-amber-500"
             :title="$t('settings.player_needs_setup')"
           />
-          <v-icon
+          <span
             v-else-if="!isAvailable"
-            icon="mdi-timer-sand"
-            size="16"
-            color="grey"
+            class="mdi mdi-timer-sand text-gray-500"
+            style="font-size: 16px;"
             :title="$t('settings.player_not_available')"
           />
         </div>
       </div>
     </div>
-  </v-card>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { AlertCircle, MoreVertical } from "lucide-vue-next";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -169,11 +167,11 @@ const handleMenu = (event: Event) => {
 }
 
 .player-needs-setup {
-  border-left: 3px solid rgb(var(--v-theme-warning));
+  border-left: 3px solid hsl(var(--warning, 38 92% 50%));
 }
 
 .player-warning-card {
-  background: rgba(var(--v-theme-warning), 0.08);
+  background: hsl(var(--warning, 38 92% 50%) / 0.08);
   border-radius: 8px;
   margin: 8px 0 0 0;
   padding: 8px 12px;
@@ -183,7 +181,7 @@ const handleMenu = (event: Event) => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgb(var(--v-theme-warning));
+  color: hsl(var(--warning, 38 92% 50%));
 }
 
 .player-warning-text {
@@ -212,7 +210,7 @@ const handleMenu = (event: Event) => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(var(--v-theme-primary), 0.15);
+  background: hsl(var(--primary) / 0.15);
   flex-shrink: 0;
 }
 
@@ -232,7 +230,7 @@ const handleMenu = (event: Event) => {
 
 .provider-name {
   font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--muted-foreground));
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -278,22 +276,6 @@ const handleMenu = (event: Event) => {
 
 .chip-icon {
   margin: 0 !important;
-  width: auto !important;
-}
-
-.chip-icon :deep(div) {
-  margin-left: 0 !important;
-  margin-right: 4px !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper) {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.chip-icon :deep(.svg-wrapper svg) {
   width: 14px !important;
   height: 14px !important;
 }

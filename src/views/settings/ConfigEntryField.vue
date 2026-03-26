@@ -115,7 +115,7 @@
           :max="confEntry.range[1]"
           :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
           class="flex-1"
-          @update:model-value="$emit('update:value', $event[0])"
+          @update:model-value="(val: number[] | undefined) => { if (val) $emit('update:value', val[0]) }"
         />
 
         <div class="shrink-0">
@@ -192,7 +192,7 @@
       <Label>{{ getTranslatedLabel() }}</Label>
       <Select
         :model-value="undefined"
-        @update:model-value="onMultiSelectAdd($event)"
+        @update:model-value="(val: unknown) => onMultiSelectAdd(String(val))"
       >
         <SelectTrigger class="w-full">
           <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
@@ -233,7 +233,7 @@
       <Label>{{ getTranslatedLabel() }}</Label>
       <Select
         :model-value="confEntry.value != null ? String(confEntry.value) : undefined"
-        @update:model-value="onSelectUpdate($event)"
+        @update:model-value="(val: unknown) => onSelectUpdate(String(val))"
       >
         <SelectTrigger class="w-full">
           <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
@@ -326,7 +326,7 @@
       <TagsInput
         :model-value="(confEntry.value as string[]) || []"
         :disabled="isFieldDisabled"
-        @update:model-value="onUpdateValue($event)"
+        @update:model-value="(val: unknown) => onUpdateValue(val as string[])"
       >
         <TagsInputItem
           v-for="tag in ((confEntry.value as string[]) || [])"
@@ -509,7 +509,7 @@ const onMultiSelectAdd = (stringValue: string) => {
   if (!currentValues.includes(actualValue)) {
     currentValues.push(actualValue);
   }
-  onUpdateValue(currentValues);
+  onUpdateValue(currentValues as ConfigValueType);
 };
 
 // Handle multi-select remove
@@ -518,7 +518,7 @@ const onMultiSelectRemove = (index: number) => {
     ? [...(props.confEntry.value as ConfigValueType[])]
     : [];
   currentValues.splice(index, 1);
-  onUpdateValue(currentValues);
+  onUpdateValue(currentValues as ConfigValueType);
 };
 
 // Get display title for a multi-select value

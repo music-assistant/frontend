@@ -1,5 +1,5 @@
 <template>
-  <v-main
+  <main
     id="cont"
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
@@ -26,7 +26,7 @@
       </SidebarInset>
       <PlayerSelect />
     </SidebarProvider>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>
@@ -48,9 +48,8 @@ import ItemContextMenu from "./ItemContextMenu.vue";
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  /* Reset Vuetify's automatic padding that accounts for drawers */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .content-section {

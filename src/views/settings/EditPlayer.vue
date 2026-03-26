@@ -274,7 +274,7 @@ const config = ref<PlayerConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
 const showRenameDialog = ref(false);
-const editName = ref<string | null>(null);
+const editName = ref<string | undefined>(undefined);
 
 // props
 const props = defineProps<{
@@ -385,7 +385,7 @@ watch(
 
 watch(showRenameDialog, (val) => {
   if (val && config.value) {
-    editName.value = config.value.name || null;
+    editName.value = config.value.name || undefined;
   }
 });
 
