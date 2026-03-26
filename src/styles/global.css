@@ -61,13 +61,18 @@ html {
   /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-/* Auto-hide scrollbars - only visible on hover */
+/* Auto-hide scrollbars - only visible on hover.
+   scrollbar-color is inherited, so set it on :root only
+   to avoid compositing warnings on GPU-accelerated elements. */
 * {
   scrollbar-width: thin;
+}
+
+:root {
   scrollbar-color: transparent transparent;
 }
 
-*:hover {
+:root:hover {
   scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
 }
 

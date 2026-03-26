@@ -8,7 +8,7 @@
           <!-- Logo -->
           <div class="mb-6 text-center max-[500px]:mb-4">
             <img
-              src="@/assets/icon.svg"
+              :src="iconSvg"
               alt="Music Assistant"
               class="mx-auto mb-4 h-20 w-20 max-[500px]:mb-3 max-[500px]:h-15 max-[500px]:w-15"
             />
@@ -393,6 +393,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import iconSvgRaw from "@/assets/icon.svg?raw";
+
+const iconSvg = `data:image/svg+xml;base64,${btoa(iconSvgRaw)}`;
 import {
   Dialog,
   DialogContent,

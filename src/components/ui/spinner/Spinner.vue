@@ -20,6 +20,6 @@ const props = withDefaults(
     role="status"
     aria-label="Loading"
     :size="props.size"
-    :class="cn('size-4 animate-spin', props.class)"
+    :class="cn(props.size ? '' : 'size-4', 'animate-spin', props.class)"
   />
 </template>

@@ -93,7 +93,6 @@ export default defineConfig({
             if (id.includes("@vueuse")) return "vueuse";
             if (id.includes("reka-ui")) return "reka-ui";
             if (id.includes("swiper")) return "swiper";
-            if (id.includes("lucide")) return "lucide";
             if (id.includes("colorthief") || id.includes("color/"))
               return "color";
             if (id.includes("@mdi/js") || id.includes("material-design-icons"))
