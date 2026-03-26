@@ -1,25 +1,27 @@
 <template>
   <section>
     <Container variant="default" style="padding-top: 20px">
-      <v-text-field
-        id="searchInput"
-        v-model="store.globalSearchTerm"
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('type_to_search')"
-        hide-details
-        variant="outlined"
-        @focus="searchHasFocus = true"
-        @blur="searchHasFocus = false"
-      />
+      <div class="relative">
+        <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          id="searchInput"
+          v-model="store.globalSearchTerm"
+          :placeholder="$t('type_to_search')"
+          class="pl-9 pr-9"
+          @focus="searchHasFocus = true"
+          @blur="searchHasFocus = false"
+        />
+        <button
+          v-if="store.globalSearchTerm"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          @click="store.globalSearchTerm = ''"
+        >
+          <XIcon class="h-4 w-4" />
+        </button>
+      </div>
 
-      <v-chip-group
-        v-model="selectedSearchType"
-        style="margin-top: 10px; margin-left: 10px"
-        selected-class="text-primary"
-        mandatory
-      >
-        <v-chip
+      <div class="flex flex-wrap gap-2 mt-2.5 ml-2.5">
+        <Badge
           v-for="item in [
             SEARCH_TYPE_ALL,
             MediaType.TRACK,
@@ -32,20 +34,20 @@
             MediaType.GENRE,
           ]"
           :key="item"
-          :text="$t(item === SEARCH_TYPE_ALL ? 'searchtype_all' : item + 's')"
-          :value="item"
-          filter
-        />
-      </v-chip-group>
+          :variant="selectedSearchType === item ? 'default' : 'outline'"
+          class="cursor-pointer"
+          @click="selectedSearchType = item"
+        >
+          {{ $t(item === SEARCH_TYPE_ALL ? 'searchtype_all' : item + 's') }}
+        </Badge>
+      </div>
 
-      <v-progress-linear
+      <div
         v-if="loading"
-        color="accent"
-        height="4"
-        indeterminate
-        rounded
-        style="margin-top: 15px"
-      />
+        class="mt-4 h-1 w-full overflow-hidden rounded-full bg-primary/20"
+      >
+        <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+      </div>
 
       <!-- compact all-media-types searchresult -->
       <div v-if="!store.globalSearchType">
@@ -149,6 +151,8 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
@@ -157,6 +161,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Search as SearchIcon, X as XIcon } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const SEARCH_TYPE_ALL = "all";
@@ -303,3 +308,10 @@ const filteredItems = function (mediaType: MediaType) {
   return [];
 };
 </script>
+
+<style scoped>
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+</style>

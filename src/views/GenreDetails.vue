@@ -8,7 +8,7 @@
           :title="$t('tooltip.toggle_view_mode')"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
-          <v-icon :icon="viewModeIcon" />
+          <component :is="viewModeIconComponent" class="h-5 w-5" />
         </Button>
       </template>
     </InfoHeader>
@@ -16,7 +16,9 @@
     <!-- Discovery view -->
     <template v-if="viewMode === 'discovery'">
       <div v-if="loadingRows" class="rows-loading">
-        <v-progress-linear color="accent" height="4" indeterminate rounded />
+        <div class="h-1 w-full overflow-hidden rounded-full bg-primary/20">
+          <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+        </div>
       </div>
 
       <div class="overview-container">
@@ -172,7 +174,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { Button } from "@/components/ui/button";
-import { SquareArrowRightEnter } from "lucide-vue-next";
+import { Grid2x2, LayoutDashboard, LayoutGrid, List, SquareArrowRightEnter } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -234,6 +236,13 @@ const viewModeIcon = computed(() => {
   if (viewMode.value === "panel") return "mdi-grid";
   if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
+});
+
+const viewModeIconComponent = computed(() => {
+  if (viewMode.value === "discovery") return LayoutDashboard;
+  if (viewMode.value === "panel") return Grid2x2;
+  if (viewMode.value === "panel_compact") return LayoutGrid;
+  return List;
 });
 
 const openViewModeMenu = (e: MouseEvent) => {
@@ -471,6 +480,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 .rows-loading {
   margin: 20px 0;
 }

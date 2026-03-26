@@ -1,13 +1,16 @@
 <template>
-  <v-img
+  <img
     loading="lazy"
     :height="size || '100%'"
     :width="size || '100%'"
-    aspect-ratio="1"
     :src="imgData"
-    :class="{ rounded: rounded }"
-    contain
-    :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"
+    :class="{ 'rounded': rounded }"
+    class="object-contain aspect-square"
+    :style="{
+      height: typeof size === 'number' ? size + 'px' : size,
+      width: typeof size === 'number' ? size + 'px' : size,
+    }"
+    @error="(e: Event) => { (e.target as HTMLImageElement).src = isDark ? imgCoverDark : imgCoverLight }"
   />
 </template>
 
@@ -19,7 +22,7 @@ import type {
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType } from "@/plugins/api/interfaces";
-import { useTheme } from "vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -43,7 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
   thumbnail: true,
 });
 
-const theme = useTheme();
+const { isDark } = useIsDark();
 
 function getThumbSize() {
   if (typeof props.size == "number") {
@@ -65,7 +68,7 @@ function getFallbackImage() {
   if (!props.item.name) return "";
   return getAvatarImage(
     props.item.name,
-    theme.current.value.dark,
+    isDark.value,
     thumbSize || 256,
   );
 }
@@ -98,10 +101,3 @@ export const getAvatarImage = function (
     }&bold=true&background=a0a0a0&color=cccccc`;
 };
 </script>
-
-<style scoped>
-.v-avatar.v-avatar--density-default {
-  height: 100% !important;
-  width: 100% !important;
-}
-</style>

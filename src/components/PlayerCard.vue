@@ -1,48 +1,43 @@
 <template>
-  <v-card
-    flat
+  <div
     class="panel-item"
     :class="{
       'panel-item-selected': player.player_id == store.activePlayerId,
       'panel-item-idle': player.playback_state == PlaybackState.IDLE,
       'panel-item-off': player.powered == false,
+      'opacity-50 pointer-events-none': !player.available,
     }"
-    :ripple="false"
-    :disabled="!player.available"
     @click="$emit('click', player)"
   >
     <!-- now playing media -->
-    <v-list-item class="panel-item-details" flat :ripple="false">
+    <div class="panel-item-details flex items-center">
       <!-- prepend: media thumb -->
-      <template #prepend>
-        <div class="player-media-thumb">
-          <!-- current media image -->
-          <div
-            v-if="player.powered != false && player.current_media?.image_url"
-          >
-            <v-img
-              class="media-thumb"
-              size="44"
-              :src="getMediaImageUrl(player.current_media.image_url)"
-            />
-          </div>
-          <!-- fallback: display player icon -->
-          <div v-else class="icon-thumb">
-            <v-icon
-              size="24"
-              :icon="
-                player.type == PlayerType.PLAYER && player.group_members.length
-                  ? 'mdi-speaker-multiple'
-                  : player.icon
-              "
-              style="display: table-cell; opacity: 0.8"
-            />
-          </div>
+      <div class="player-media-thumb mr-2.5 shrink-0">
+        <!-- current media image -->
+        <div
+          v-if="player.powered != false && player.current_media?.image_url"
+        >
+          <img
+            class="media-thumb"
+            :src="getMediaImageUrl(player.current_media.image_url)"
+          />
         </div>
-      </template>
+        <!-- fallback: display player icon -->
+        <div v-else class="icon-thumb">
+          <Speaker
+            v-if="player.type == PlayerType.PLAYER && player.group_members.length"
+            class="h-6 w-6 opacity-80"
+          />
+          <Speaker
+            v-else
+            class="h-6 w-6 opacity-80"
+          />
+        </div>
+      </div>
 
+      <!-- content area -->
+      <div class="flex-1 min-w-0">
       <!-- playername -->
-      <template #title>
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="isBuiltinPlayer(player)"
@@ -50,26 +45,26 @@
         >
           <span>{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
-          <v-chip density="compact" size="small" class="ml-2" outlined>
-            <v-icon
-              size="14"
-              :icon="
-                store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
-              "
+          <Badge variant="outline" class="ml-2 text-xs">
+            <Smartphone
+              v-if="store.deviceType == 'phone'"
+              class="h-3.5 w-3.5"
+            />
+            <Monitor
+              v-else
+              class="h-3.5 w-3.5"
             />
             <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
               $t("this_device")
             }}</span>
-          </v-chip>
+          </Badge>
         </div>
         <!-- regular player -->
         <div v-else style="font-size: 0.88rem; line-height: 1.3">
           {{ getPlayerName(player, 27) }}
         </div>
-      </template>
 
       <!-- subtitle: media item title -->
-      <template #subtitle>
         <div
           v-if="player.powered != false"
           style="
@@ -83,12 +78,10 @@
             {{ player.current_media.title }}
           </div>
         </div>
-      </template>
 
       <!-- subtitle -->
-      <template #default>
         <div
-          class="v-list-item-subtitle"
+          class="text-muted-foreground"
           style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
         >
           <!-- player powered off -->
@@ -117,10 +110,10 @@
             {{ $t("queue_empty") }}
           </div>
         </div>
-      </template>
+      </div>
 
       <!-- power/play/pause + menu button -->
-      <template #append>
+      <div class="flex items-center shrink-0 ml-1">
         <!-- power button -->
         <Button
           v-if="
@@ -151,21 +144,18 @@
           class="player-command-btn group-expand-btn"
           @click.stop="$emit('toggle-expand', player)"
         >
-          <v-badge
-            color="primary"
-            :offset-x="-5"
-            :offset-y="-5"
-            :content="
-              player.type == PlayerType.GROUP
-                ? player.group_members.length
-                : player.group_members.length || 1
-            "
-            class="group-badge"
-          >
+          <span class="relative inline-flex group-badge">
             <Speaker
               :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
             />
-          </v-badge>
+            <span class="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center px-1">
+              {{
+                player.type == PlayerType.GROUP
+                  ? player.group_members.length
+                  : player.group_members.length || 1
+              }}
+            </span>
+          </span>
         </Button>
 
         <!-- play/pause button -->
@@ -183,14 +173,12 @@
             store.activePlayerId = player.player_id;
           "
         >
-          <v-progress-circular
+          <Spinner
             v-if="
               api.queues[player.player_id]?.extra_attributes
                 ?.play_action_in_progress === true
             "
-            indeterminate
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
-            :width="2"
+            :class="getBreakpointValue({ breakpoint: 'phone' }) ? 'h-6 w-6' : 'h-[26px] w-[26px]'"
           />
           <component
             :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
@@ -212,8 +200,8 @@
             :size="getBreakpointValue({ breakpoint: 'phone' }) ? 26 : 30"
           />
         </Button>
-      </template>
-    </v-list-item>
+      </div>
+    </div>
     <VolumeControl
       v-if="showVolumeControl"
       :player="player"
@@ -224,7 +212,7 @@
       :allow-wheel="false"
       @toggle-expand="$emit('toggle-expand', player)"
     />
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -232,7 +220,9 @@ import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -254,9 +244,9 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import vuetify from "@/plugins/vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 import { webPlayer } from "@/plugins/web_player";
-import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
+import { Monitor, MoreVertical, Pause, Play, Power, Smartphone, Speaker } from "lucide-vue-next";
 import { computed, ref, toRef, watch } from "vue";
 
 // properties
@@ -325,8 +315,9 @@ const coverImageColorPalette = ref<ImageColorPalette>({
 
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
+const { isDark } = useIsDark();
 const img = new Image();
-img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
+img.src = isDark.value ? imgCoverDark : imgCoverLight;
 img.crossOrigin = "Anonymous";
 img.addEventListener("load", function () {
   coverImageColorPalette.value = getColorPalette(img);
@@ -344,100 +335,42 @@ watch(
 <style scoped>
 .panel-item-details {
   width: 100%;
-  margin: 0px !important;
-  padding: 0px !important;
+  margin: 0px;
+  padding: 0px;
   min-height: 58px;
-}
-
-.panel-item-details :deep(.v-list-item__content) {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 50px;
-  gap: 0px;
-}
-
-.panel-item-details :deep(.v-list-item-title) {
-  padding: 0;
-  margin: 0;
-}
-
-.panel-item-details :deep(.v-list-item-subtitle) {
-  padding: 0;
-  margin: 0;
-}
-
-.panel-item-details :deep(.v-list-item__spacer) {
-  width: 10px;
 }
 
 .player-media-thumb {
   margin-right: 0px;
 }
 
-.volumesliderrow {
-  margin-top: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  height: 24px;
-  min-height: 24px;
-}
-
-.volumecaption {
-  width: 25px;
-  text-align: right;
-  margin-right: 0px;
-}
-
-.volumesliderrow :deep(.v-list-item__prepend) {
-  width: 40px;
-  margin-left: -25px;
-}
-.volumesliderrow :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.media-thumb {
-  width: 65px;
-  height: 65px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.icon-thumb {
-  width: 65px;
-  height: 65px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .media-thumb {
   width: 44px;
   height: 44px;
   border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  background-color: hsl(var(--muted));
+  object-fit: cover;
 }
 .icon-thumb {
   width: 44px;
   height: 44px;
   margin-top: 4px;
   border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: inline-table;
+  background-color: hsl(var(--muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel-item {
   border-style: ridge;
   border-width: thin;
-  border-color: rgba(var(--v-theme-on-surface), 0.12);
+  border-color: hsl(var(--border));
   padding-left: 8px;
   padding-right: 8px;
   padding-top: 4px;
   padding-bottom: 4px;
-  background-color: rgba(var(--v-theme-primary), 0.04);
+  background-color: hsl(var(--primary) / 0.04);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
@@ -447,6 +380,7 @@ watch(
   margin-bottom: 4px;
   height: 100%;
   width: auto;
+  cursor: pointer;
 }
 .panel-item-idle {
   opacity: 0.8;
@@ -455,20 +389,13 @@ watch(
   opacity: 0.6;
 }
 .panel-item-selected {
-  border-color: rgba(var(--v-theme-primary), 0.6);
-  background-color: rgba(var(--v-theme-primary), 0.3);
+  border-color: hsl(var(--primary) / 0.6);
+  background-color: hsl(var(--primary) / 0.3);
 }
 
 .player-command-btn {
   width: 35px;
   min-width: 35px;
   margin-left: 5px;
-}
-
-.group-badge :deep(.v-badge__badge) {
-  font-size: 10px;
-  height: 14px;
-  min-width: 14px;
-  padding: 0 4px 0 4px;
 }
 </style>

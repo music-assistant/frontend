@@ -5,89 +5,67 @@
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
-    <v-divider />
+    <Separator />
     <Container v-if="expanded">
-      <v-row v-for="imgType of ImageType" :key="imgType">
-        <v-col
+      <div v-for="imgType of ImageType" :key="imgType" class="flex flex-wrap">
+        <div
           v-for="(image, idx) in modelValue.filter((x) => x.type == imgType)"
           :key="image.path"
-          cols="12"
-          :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+          :class="`col-${panelViewItemResponsive(windowWidth)}`"
         >
-          <v-hover v-slot="{ props }">
-            <v-card
-              v-hold="
-                (e: PointerEvent | TouchEvent) => {
-                  onMenu(e, image);
-                }
-              "
-              v-bind="props"
-              tile
-              hover
-              class="panel-item"
-              @click="
-                (e: PointerEvent) => {
-                  onClick(e, image);
-                }
-              "
-              @click.right.prevent="
-                (e: PointerEvent | TouchEvent) => {
-                  onMenu(e, image);
-                }
-              "
-            >
-              <v-img
+          <div
+            v-hold="
+              (e: PointerEvent | TouchEvent) => {
+                onMenu(e, image);
+              }
+            "
+            class="panel-item rounded border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+            @click="
+              (e: PointerEvent) => {
+                onClick(e, image);
+              }
+            "
+            @click.right.prevent="
+              (e: PointerEvent | TouchEvent) => {
+                onMenu(e, image);
+              }
+            "
+          >
+            <div class="relative w-full bg-muted">
+              <img
                 :src="getMediaItemImageUrl(image, 256)"
-                class="bg-grey-lighten-2"
-                width="100%"
-              >
-                <template #placeholder>
-                  <v-row
-                    align="center"
-                    class="fill-height ma-0"
-                    justify="center"
-                  >
-                    <v-progress-circular color="grey-lighten-5" indeterminate />
-                  </v-row>
-                </template>
-              </v-img>
+                class="w-full object-cover"
+                loading="lazy"
+              />
+            </div>
 
-              <v-list-item
-                variant="text"
-                slim
-                tile
-                density="compact"
-                class="panel-item-details"
+            <div class="panel-item-details p-1.5 relative">
+              <div class="text-sm font-medium truncate" style="width: 95%">
+                {{ $t("image_type") + ": " + image.type }}
+              </div>
+              <div
+                class="text-xs text-muted-foreground truncate"
+                style="margin-right: 25px"
               >
-                <v-list-item-title width="95%">
-                  {{ $t("image_type") + ": " + image.type }}
-                </v-list-item-title>
-                <v-list-item-subtitle
-                  class="ma-line-clamp-1"
-                  style="margin-right: 25px"
-                >
-                  {{
-                    $t("image_source") + ": " + getProviderName(image.provider)
-                  }}
-                </v-list-item-subtitle>
-                <v-icon
-                  v-if="idx == 0"
-                  size="x-large"
-                  style="position: absolute; right: 0; bottom: 5px"
-                  color="orange"
-                  :title="$t('tooltip.primary_image')"
-                  >mdi-star-box</v-icon
-                >
-              </v-list-item>
-            </v-card>
-          </v-hover>
-        </v-col>
-      </v-row>
+                {{
+                  $t("image_source") + ": " + getProviderName(image.provider)
+                }}
+              </div>
+              <Star
+                v-if="idx == 0"
+                class="absolute right-0 bottom-1 h-6 w-6 text-orange-500"
+                :title="$t('tooltip.primary_image')"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </Container>
   </section>
 </template>
 
 <script setup lang="ts">
+import { Separator } from "@/components/ui/separator";
 import Container from "@/components/Container.vue";
 import { getMediaItemImageUrl } from "@/helpers/utils";
 import Toolbar from "@/components/Toolbar.vue";
@@ -95,7 +73,11 @@ import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { useWindowSize } from "@vueuse/core";
+import { Star } from "lucide-vue-next";
 import { computed, ref } from "vue";
+
+const { width: windowWidth } = useWindowSize();
 
 export interface Props {
   modelValue: MediaItemImage[];
@@ -222,11 +204,7 @@ const toolbarMenuItems = computed(() => {
   padding: 8px;
 }
 
-.v-list-item--density-compact {
-  padding: 5px !important;
-}
-
-panel-item-details :deep(.v-list-item__content) {
-  height: 30px;
+.panel-item-details {
+  min-height: 30px;
 }
 </style>

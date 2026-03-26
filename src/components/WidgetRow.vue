@@ -4,11 +4,11 @@
       widgetRow.settings && !widgetRow.settings.enabled ? 'disabled' : ''
     }`"
   >
-    <v-toolbar class="header" color="transparent" density="compact">
-      <template #title>
+    <div class="header flex items-center h-10 px-1">
+      <div class="flex-1 min-w-0">
         <div class="flex items-center group">
           <span
-            class="mr-3"
+            class="mr-3 text-lg font-bold"
             :class="{
               'cursor-pointer group-hover:opacity-70':
                 showActionIcon && widgetRow.action,
@@ -23,21 +23,21 @@
             @click="handleActionIconClick"
           />
         </div>
-        <v-chip
+        <Badge
           v-if="widgetRow.subtitle && getBreakpointValue('bp6')"
-          inline
-          outlined
-          :text="widgetRow.subtitle"
-          density="compact"
-          size="small"
-        />
-      </template>
-      <template #append>
+          variant="outline"
+          class="text-xs"
+        >
+          {{ widgetRow.subtitle }}
+        </Badge>
+      </div>
+      <div class="flex items-center">
         <div v-if="editMode && widgetRow.settings">
           <!-- up button -->
-          <v-btn
+          <Button
             v-if="widgetRow.settings.position !== 0"
-            icon="mdi-chevron-up"
+            variant="ghost"
+            size="icon"
             class="enabled"
             @click="
               emit('update:settings', {
@@ -45,38 +45,41 @@
                 position: widgetRow.settings.position - 1,
               })
             "
-          />
+          >
+            <ChevronUp class="h-5 w-5" />
+          </Button>
           <!-- down button -->
-          <v-btn
-            icon="mdi-chevron-down"
+          <Button
+            variant="ghost"
+            size="icon"
             @click="
               emit('update:settings', {
                 ...widgetRow.settings,
                 position: widgetRow.settings.position + 1,
               })
             "
-          />
+          >
+            <ChevronDown class="h-5 w-5" />
+          </Button>
           <!-- enable/disable checkbox -->
-          <v-btn
-            :icon="
-              widgetRow.settings.enabled
-                ? 'mdi-checkbox-marked'
-                : 'mdi-checkbox-blank-outline'
-            "
+          <Button
+            variant="ghost"
+            size="icon"
             @click="
               emit('update:settings', {
                 ...widgetRow.settings,
                 enabled: !widgetRow.settings.enabled,
               })
             "
-          />
+          >
+            <CheckSquare v-if="widgetRow.settings.enabled" class="h-5 w-5" />
+            <Square v-else class="h-5 w-5" />
+          </Button>
         </div>
-        <v-btn
+        <Button
           v-else-if="showActionIcon && widgetRow.icon"
-          :icon="
-            typeof widgetRow.icon === 'string' ? widgetRow.icon : undefined
-          "
-          variant="text"
+          variant="ghost"
+          size="icon"
           @click="handleActionIconClick"
         >
           <component
@@ -84,14 +87,14 @@
             v-if="typeof widgetRow.icon !== 'string'"
             class="w-[22px] h-[22px]"
           />
-        </v-btn>
+        </Button>
         <provider-icon
           v-else-if="widgetRow.provider"
           :domain="widgetRow.provider"
           :size="24"
         />
-      </template>
-    </v-toolbar>
+      </div>
+    </div>
 
     <div class="carousel-wrapper">
       <carousel v-if="widgetRow.items.length > 0">
@@ -110,14 +113,17 @@
         </swiper-slide>
       </carousel>
 
-      <v-alert v-else>
+      <Alert v-else>
         {{ $t("no_content") }}
-      </v-alert>
+      </Alert>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Carousel from "@/components/Carousel.vue";
 import PanelviewItemCompact from "@/components/PanelviewItemCompact.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -126,7 +132,7 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { SquareArrowRightEnter } from "lucide-vue-next";
+import { CheckSquare, ChevronDown, ChevronUp, Square, SquareArrowRightEnter } from "lucide-vue-next";
 import type { Component } from "vue";
 import ProviderIcon from "./ProviderIcon.vue";
 
@@ -163,18 +169,8 @@ const handleActionIconClick = () => {
 </script>
 
 <style scoped>
-.header.v-toolbar :deep(.v-toolbar-title) {
-  margin-inline-start: 0px;
-  font-size: large;
-  font-weight: bold;
-}
-
-.header.v-toolbar {
-  padding-inline-start: 4px;
-}
-
 .carousel-wrapper {
-  background-color: rgb(var(--v-theme-panel));
+  background-color: hsl(var(--card));
   padding: 10px;
   padding-right: 0;
   border-radius: 5px 0 0 5px;
@@ -206,22 +202,5 @@ const handleActionIconClick = () => {
 
 .widget-row-panel-item {
   margin-bottom: 10px;
-}
-
-.v-slide-group__prev {
-  min-width: 0px !important;
-}
-
-.v-slide-group__prev.v-slide-group__prev--disabled {
-  visibility: hidden;
-  margin-right: -15px;
-}
-
-.v-slide-group__next {
-  min-width: 15px !important;
-}
-
-.v-slide-group__next.v-slide-group__next--disabled {
-  visibility: hidden;
 }
 </style>

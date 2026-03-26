@@ -1,24 +1,16 @@
 <template>
   <!-- streaming quality details -->
-  <v-menu
-    v-if="streamDetails"
-    location="top center"
-    :close-on-content-click="false"
-    scrim
-    :max-height="$vuetify.display.height - 150"
-  >
-    <template #activator="{ props }">
-      <v-chip
+  <Popover v-if="streamDetails">
+    <PopoverTrigger as-child>
+      <Badge
         v-if="streamDetails"
-        :disabled="
-          !store.activePlayerQueue ||
-          !store.activePlayerQueue?.active ||
-          store.activePlayerQueue?.items == 0
-        "
-        class="mediadetails-content-type-btn"
-        label
-        :ripple="false"
-        v-bind="props"
+        variant="outline"
+        :class="[
+          'mediadetails-content-type-btn cursor-pointer',
+          (!store.activePlayerQueue ||
+            !store.activePlayerQueue?.active ||
+            store.activePlayerQueue?.items == 0) && 'opacity-50 pointer-events-none',
+        ]"
       >
         <div
           class="quality-tier-dot"
@@ -29,10 +21,10 @@
         <div v-if="maxOutputQualityTier == QualityTier.LOW">LQ</div>
         <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">HQ</div>
         <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
-      </v-chip>
-    </template>
-    <v-card class="mx-auto" :width="Math.min($vuetify.display.width - 25, 380)">
-      <v-list style="overflow: hidden">
+      </Badge>
+    </PopoverTrigger>
+    <PopoverContent class="mx-auto p-0" :style="{ width: Math.min(windowWidth - 25, 380) + 'px', maxHeight: (windowHeight - 150) + 'px', overflow: 'auto' }">
+      <div style="overflow: hidden">
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
           <div v-if="dsp_grouped.length >= 2">
@@ -213,12 +205,11 @@
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
-              <v-tooltip location="top" :open-on-click="true" max-width="300">
-                <template #activator="{ props }">
-                  <v-icon class="ml-2" size="small" v-bind="props"
-                    >mdi-information</v-icon
-                  >
-                </template>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info class="ml-2 h-4 w-4 inline" />
+                </TooltipTrigger>
+                <TooltipContent class="max-w-[300px]">
                 {{
                   $t("streamdetails.file_info.container", [
                     streamDetails.audio_format.content_type,
@@ -259,7 +250,8 @@
                 <br />
                 <br />
                 {{ $t("streamdetails.file_info.processing_notice") }}
-              </v-tooltip>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <!-- Volume Normalization -->
             <div v-if="loudness" class="streamdetails-item">
@@ -268,12 +260,11 @@
                 src="@/assets/level.png"
               />
               {{ loudness }}
-              <v-tooltip location="top" :open-on-click="true" max-width="350">
-                <template #activator="{ props }">
-                  <v-icon class="ml-2" size="small" v-bind="props"
-                    >mdi-information</v-icon
-                  >
-                </template>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info class="ml-2 h-4 w-4 inline" />
+                </TooltipTrigger>
+                <TooltipContent class="max-w-[350px]">
                 <span
                   v-if="
                     streamDetails.volume_normalization_mode ==
@@ -332,7 +323,8 @@
                   }}
                   <br />
                 </span>
-              </v-tooltip>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
             <template
@@ -382,14 +374,14 @@
                   src="@/assets/dsp-disabled.svg"
                 />
                 {{ $t("streamdetails.dsp_unsupported") }}
-                <v-tooltip location="top" :open-on-click="true" max-width="300">
-                  <template #activator="{ props }">
-                    <v-icon class="ml-2" size="small" v-bind="props"
-                      >mdi-information</v-icon
-                    >
-                  </template>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info class="ml-2 h-4 w-4 inline" />
+                  </TooltipTrigger>
+                  <TooltipContent class="max-w-[300px]">
                   {{ $t("streamdetails.dsp_disabled_by_unsupported_group") }}
-                </v-tooltip>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div
                 v-for="(filter, i) in dsp.filters"
@@ -423,14 +415,14 @@
                   src="@/assets/dsp.svg"
                 />
                 {{ $t("streamdetails.output_limiter") }}
-                <v-tooltip location="top" :open-on-click="true" max-width="300">
-                  <template #activator="{ props }">
-                    <v-icon class="ml-2" size="small" v-bind="props"
-                      >mdi-information</v-icon
-                    >
-                  </template>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info class="ml-2 h-4 w-4 inline" />
+                  </TooltipTrigger>
+                  <TooltipContent class="max-w-[300px]">
                   {{ $t("streamdetails.output_limiter_info") }}
-                </v-tooltip>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <!-- Player Output format -->
               <div
@@ -453,13 +445,12 @@
                 }}
                 kHz /
                 {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
-                <v-tooltip location="top" :open-on-click="true" max-width="300">
-                  <template #activator="{ props }">
-                    <v-icon class="ml-2" size="small" v-bind="props"
-                      >mdi-information</v-icon
-                    >
-                  </template>
-                  <template
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info class="ml-2 h-4 w-4 inline" />
+                  </TooltipTrigger>
+                  <TooltipContent class="max-w-[300px]">
+                  <span
                     v-if="
                       isPcm(
                         streamDetails.dsp[player_id].output_format.content_type,
@@ -467,8 +458,8 @@
                     "
                   >
                     {{ $t("streamdetails.output_format_pcm_info") }}
-                  </template>
-                  <template v-else>
+                  </span>
+                  <span v-else>
                     {{
                       $t("streamdetails.output_format_info", [
                         streamDetails.dsp[
@@ -476,8 +467,9 @@
                         ].output_format.content_type.toUpperCase(),
                       ])
                     }}
-                  </template>
-                </v-tooltip>
+                  </span>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <!-- Player -->
               <template
@@ -503,9 +495,7 @@
                   </template>
                   <template v-else>
                     <!-- This should not happen -->
-                    <v-icon class="streamdetails-icon"
-                      >mdi-alert-circle-outline</v-icon
-                    >
+                    <AlertCircle class="streamdetails-icon h-5 w-5" />
                     Player not found
                   </template>
                 </div>
@@ -528,37 +518,42 @@
                   <template v-else>
                     {{ api.players[player_id].name }} +
                     {{ players.length - 1 }}
-                    <v-tooltip location="top" max-width="300">
-                      <template #activator="{ props }">
-                        <v-icon class="ml-2" size="small" v-bind="props"
-                          >mdi-information</v-icon
-                        >
-                      </template>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info class="ml-2 h-4 w-4 inline" />
+                      </TooltipTrigger>
+                      <TooltipContent class="max-w-[300px]">
                       {{ $t("streamdetails.click_to_expand") }}
-                    </v-tooltip>
+                      </TooltipContent>
+                    </Tooltip>
                   </template>
                 </template>
                 <template v-else>
                   <!-- This should not happen -->
-                  <v-icon class="streamdetails-icon"
-                    >mdi-alert-circle-outline</v-icon
-                  >
+                  <AlertCircle class="streamdetails-icon h-5 w-5" />
                   Player not found
                 </template>
               </div>
             </template>
           </div>
         </div>
-      </v-list>
-    </v-card>
-  </v-menu>
+      </div>
+    </PopoverContent>
+  </Popover>
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useWindowSize } from "@vueuse/core";
+import { AlertCircle, Info } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
+
+const { width: windowWidth, height: windowHeight } = useWindowSize();
 import {
   ContentType,
   DSPFilter,

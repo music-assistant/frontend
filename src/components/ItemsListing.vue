@@ -15,22 +15,26 @@
       </template>
     </Toolbar>
 
-    <v-divider />
+    <Separator />
 
-    <v-text-field
-      v-if="showSearchInput"
-      id="searchInput"
-      v-model="params.search"
-      clearable
-      prepend-inner-icon="mdi-magnify"
-      :label="$t('search')"
-      hide-details
-      variant="filled"
-      style="width: auto; margin-top: 10px"
-      @focus="searchHasFocus = true"
-      @blur="searchHasFocus = false"
-      @click:clear="onClear"
-    />
+    <div v-if="showSearchInput" class="relative mt-2.5" style="width: auto">
+      <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        id="searchInput"
+        v-model="params.search"
+        :placeholder="$t('search')"
+        class="pl-9 pr-9"
+        @focus="searchHasFocus = true"
+        @blur="searchHasFocus = false"
+      />
+      <button
+        v-if="params.search"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        @click="onClear"
+      >
+        <XIcon class="h-4 w-4" />
+      </button>
+    </div>
 
     <Container
       v-if="expanded"
@@ -42,47 +46,40 @@
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
         </div>
-        <v-row v-else-if="viewMode === 'panel'">
-          <v-col
+        <div v-else-if="viewMode === 'panel'" class="flex flex-wrap">
+          <div
             v-for="n in 12"
             :key="'skeleton-panel-' + n"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${panelViewItemResponsive(windowWidth)}`"
           >
             <PanelViewSkeleton />
-          </v-col>
-        </v-row>
-        <v-row v-else-if="viewMode === 'panel_compact'">
-          <v-col
+          </div>
+        </div>
+        <div v-else-if="viewMode === 'panel_compact'" class="flex flex-wrap">
+          <div
             v-for="n in 12"
             :key="'skeleton-compact-' + n"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${panelViewItemResponsive(windowWidth)}`"
           >
             <PanelViewSkeleton />
-          </v-col>
-        </v-row>
+          </div>
+        </div>
       </template>
 
-      <v-infinite-scroll
+      <div
         v-if="
           !tempHide &&
           !(pagedItems.length == 0 && allItemsReceived) &&
           !(loading && pagedItems.length === 0)
         "
-        :onLoad="loadNextPage"
-        :mode="infiniteScroll ? 'intersect' : 'manual'"
-        :load-more-text="$t('load_more_items')"
-        :empty-text="''"
         style="overflow: hidden"
       >
         <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
-          <v-col
+        <div v-if="viewMode == 'panel'" class="flex flex-wrap">
+          <div
             v-for="item in pagedItems"
             :key="item.uri"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${panelViewItemResponsive(windowWidth)}`"
           >
             <PanelviewItem
               :item="item"
@@ -98,16 +95,15 @@
               :parent-item="parentItem"
               @select="onSelect"
             />
-          </v-col>
-        </v-row>
+          </div>
+        </div>
 
         <!-- compact panel view -->
-        <v-row v-if="viewMode == 'panel_compact'">
-          <v-col
+        <div v-if="viewMode == 'panel_compact'" class="flex flex-wrap">
+          <div
             v-for="item in pagedItems"
             :key="item.uri"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${panelViewItemResponsive(windowWidth)}`"
           >
             <PanelviewItemCompact
               :item="item"
@@ -119,88 +115,94 @@
               :parent-item="parentItem"
               @select="onSelect"
             />
-          </v-col>
-        </v-row>
+          </div>
+        </div>
 
         <!-- list view -->
-        <v-virtual-scroll
+        <div
           v-if="viewMode == 'list'"
-          :item-height="70"
-          height="100%"
-          :items="pagedItems"
           style="height: 100%; overflow: hidden"
         >
-          <template #default="{ item }">
-            <ListviewItem
-              :item="item"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="item.is_playable"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :show-details="itemtype.includes('versions')"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              @select="onSelect"
-            />
-          </template>
-        </v-virtual-scroll>
-      </v-infinite-scroll>
+          <ListviewItem
+            v-for="item in pagedItems"
+            :key="item.uri"
+            :item="item"
+            :show-track-number="showTrackNumber"
+            :show-disc-number="showTrackNumber"
+            :show-duration="showDuration"
+            :show-favorite="showFavoritesOnlyFilter"
+            :show-menu="item.is_playable"
+            :show-provider="showProvider"
+            :show-album="showAlbum"
+            :show-checkboxes="showCheckboxes"
+            :is-selected="isSelected(item)"
+            :is-available="itemIsAvailable(item)"
+            :is-playing="isPlaying(item, itemtype)"
+            :show-details="itemtype.includes('versions')"
+            :disable-play-button="isPlayActionInProgress"
+            :parent-item="parentItem"
+            @select="onSelect"
+          />
+        </div>
+
+        <!-- infinite scroll sentinel -->
+        <div
+          v-if="infiniteScroll && !allItemsReceived"
+          ref="infiniteScrollSentinel"
+          class="h-10"
+        />
+        <div v-if="!infiniteScroll && !allItemsReceived" class="flex justify-center py-4">
+          <Button variant="outline" @click="loadNextPage({ done: () => {} })">
+            {{ $t('load_more_items') }}
+          </Button>
+        </div>
+      </div>
 
       <!-- show alert if no item found -->
       <div v-if="!loading && pagedItems.length == 0">
-        <v-alert
+        <Alert
           v-if="
             !loading &&
             pagedItems.length == 0 &&
             (params.search || params.favoritesOnly)
           "
-          :title="$t('no_content_filter')"
         >
-          <v-btn
+          <AlertTitle>{{ $t('no_content_filter') }}</AlertTitle>
+          <Button
             v-if="params.search"
-            style="margin-top: 15px"
+            variant="outline"
+            class="mt-4"
             @click="redirectSearch"
           >
             {{ $t("try_global_search") }}
-          </v-btn>
-        </v-alert>
-        <v-alert v-else-if="!loading && pagedItems.length == 0">
+          </Button>
+        </Alert>
+        <Alert v-else-if="!loading && pagedItems.length == 0">
           {{ $t("no_content") }}
-        </v-alert>
+        </Alert>
       </div>
 
-      <!-- box shown when item(s) selected -->
-      <v-snackbar
-        :model-value="selectedItems.length > 1"
-        :timeout="-1"
-        style="margin-bottom: 120px"
+      <!-- floating action bar shown when item(s) selected -->
+      <div
+        v-if="selectedItems.length > 1"
+        class="fixed bottom-[120px] left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-card border px-4 py-3 shadow-lg"
       >
         <span>{{ $t("items_selected", [selectedItems.length]) }}</span>
-        <template #actions>
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="
-              (evt: PointerEvent) =>
-                handleMenuBtnClick(
-                  selectedItems,
-                  evt.clientX,
-                  evt.clientY,
-                  parentItem,
-                )
-            "
-          >
-            {{ $t("actions") }}
-          </v-btn>
-        </template>
-      </v-snackbar>
+        <Button
+          variant="link"
+          @click="
+            (evt: PointerEvent) =>
+              handleMenuBtnClick(
+                selectedItems,
+                evt.clientX,
+                evt.clientY,
+                parentItem,
+              )
+          "
+        >
+          {{ $t("actions") }}
+        </Button>
+      </div>
     </Container>
   </section>
 </template>
@@ -209,9 +211,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { Component } from "vue";
 
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed, Layers } from "lucide-vue-next";
+import { Eye, EyeClosed, Layers, Search as SearchIcon, X as XIcon } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -242,6 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { useWindowSize } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -375,6 +382,8 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+const { width: windowWidth } = useWindowSize();
+const infiniteScrollSentinel = ref<HTMLElement | null>(null);
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -1371,9 +1380,12 @@ const loadGenreOptions = async () => {
 };
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
+let _infiniteScrollObserver: IntersectionObserver | undefined;
+
 onBeforeUnmount(() => {
   eventbus.off("clearSelection");
   _unsubscribeMediaEvents?.();
+  _infiniteScrollObserver?.disconnect();
 });
 
 onMounted(async () => {
@@ -1410,6 +1422,25 @@ onMounted(async () => {
     selectedItems.value = [];
     showCheckboxes.value = false;
   });
+
+  // setup IntersectionObserver for infinite scroll
+  _infiniteScrollObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && !loading.value && !allItemsReceived.value) {
+        loadNextPage({ done: () => {} });
+      }
+    },
+    { rootMargin: "200px" },
+  );
+
+  watch(
+    infiniteScrollSentinel,
+    (el) => {
+      _infiniteScrollObserver?.disconnect();
+      if (el) _infiniteScrollObserver?.observe(el);
+    },
+    { immediate: true },
+  );
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(

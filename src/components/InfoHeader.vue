@@ -1,29 +1,38 @@
 <template>
   <div>
-    <v-card
-      variant="flat"
-      :img="imgGradient"
-      style="z-index: 0; border-radius: 0px"
-      height="25vh"
-      max-height="500px"
-      min-height="340px"
+    <div
+      class="relative overflow-hidden"
+      :style="{
+        backgroundImage: `url(${imgGradient})`,
+        backgroundSize: 'cover',
+        zIndex: 0,
+        borderRadius: '0px',
+        height: '25vh',
+        maxHeight: '500px',
+        minHeight: '340px',
+      }"
     >
       <!-- loading animation -->
-      <v-progress-linear v-if="!item" indeterminate />
-      <v-img
-        width="100%"
-        height="100%"
-        cover
-        class="background-image"
-        :src="fanartImage"
-        :gradient="
-          $vuetify.theme.current.dark
-            ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
-            : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
-        "
-        :transition="false"
-        eager
-      />
+      <div v-if="!item" class="h-1 w-full overflow-hidden rounded-full bg-primary/20">
+        <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+      </div>
+      <div
+        class="background-image absolute inset-0 w-full h-full"
+        :style="{
+          backgroundImage: fanartImage ? `url(${fanartImage})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: '50% 20%',
+        }"
+      >
+        <div
+          class="absolute inset-0"
+          :style="{
+            background: isDark
+              ? 'linear-gradient(to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75))'
+              : 'linear-gradient(to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75))',
+          }"
+        />
+      </div>
       <Toolbar
         :icon="ArrowLeft"
         style="position: absolute; z-index: 999999"
@@ -35,23 +44,14 @@
           <slot name="toolbar-append"></slot>
         </template>
       </Toolbar>
-      <v-layout
+      <div
         v-if="item"
-        style="
-          margin: 0;
-          top: 55%;
-          -ms-transform: translateY(-50%);
-          transform: translateY(-50%);
-          padding-left: 15px;
-          align-items: center;
-          padding-right: 15px;
-          display: flex;
-          width: 100%;
-        "
+        class="absolute flex items-center w-full px-4"
+        style="top: 55%; transform: translateY(-50%)"
       >
         <!-- left side: cover image -->
         <div
-          v-if="!$vuetify.display.mobile"
+          v-if="!isMobile"
           xs5
           pa-5
           style="
@@ -65,9 +65,9 @@
           "
         >
           <div v-if="item.media_type && item.media_type == MediaType.ARTIST">
-            <v-avatar size="210" style="margin-bottom: 10%">
+            <div class="w-[210px] h-[210px] rounded-full overflow-hidden mb-[10%]">
               <MediaItemThumb :item="item" size="calc(100%)" />
-            </v-avatar>
+            </div>
           </div>
           <div v-else>
             <MediaItemThumb
@@ -87,63 +87,54 @@
             height="80"
             style="padding-left: 10px"
           />
-          <v-card-title v-else>
+          <div v-else class="text-xl font-semibold px-4 py-1">
             <MarqueeText :sync="marqueeSync">
               <div class="selectable">
                 {{ headerTitle }}
               </div>
             </MarqueeText>
-          </v-card-title>
+          </div>
 
           <!-- other details -->
           <div style="padding-bottom: 10px">
             <!-- version -->
-            <v-card-subtitle
+            <div
               v-if="'version' in item && item.version"
-              class="caption"
+              class="text-sm text-muted-foreground px-4"
             >
               {{ item.version }}
               <!-- explicit icon -->
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-icon
-                    v-if="parseBool(item.metadata.explicit || false)"
-                    v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
-                  />
-                </template>
-                <span>{{ $t("tooltip.explicit") }}</span>
-              </v-tooltip>
-            </v-card-subtitle>
+              <Tooltip v-if="parseBool(item.metadata.explicit || false)">
+                <TooltipTrigger>
+                  <ShieldAlert class="inline h-5 w-5" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>{{ $t("tooltip.explicit") }}</span>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
             <!-- track release date -->
-            <v-card-subtitle
+            <div
               v-if="
                 item.media_type == MediaType.TRACK &&
                 item.metadata?.release_date
               "
-              class="title d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-calendar"
+              <Calendar
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary"
               />
               {{ new Date(item.metadata.release_date).getFullYear() }}
-            </v-card-subtitle>
+            </div>
 
             <!-- item artists -->
-            <v-card-subtitle
+            <div
               v-if="'artists' in item && item.artists"
-              class="title accent--text d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-music"
+              <Mic2
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
                 <span
@@ -161,12 +152,12 @@
                   >
                 </span>
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
             <!-- album type and year -->
-            <v-card-subtitle
+            <div
               v-if="item.media_type == MediaType.ALBUM"
-              class="caption"
+              class="text-sm text-muted-foreground px-4"
             >
               <span
                 v-if="'album_type' in item && item.album_type !== 'unknown'"
@@ -176,18 +167,15 @@
               <span v-if="'year' in item && item.year">
                 • {{ item.year }}
               </span>
-            </v-card-subtitle>
+            </div>
 
             <!-- audiobook author(s) -->
-            <v-card-subtitle
+            <div
               v-if="'authors' in item && item.authors.length > 0"
-              class="title accent--text d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-edit"
+              <Pencil
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
                 <span
@@ -203,18 +191,15 @@
                   >
                 </span>
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
             <!-- audiobook narrator(s) -->
-            <v-card-subtitle
+            <div
               v-if="'narrators' in item && item.narrators.length > 0"
-              class="title accent--text d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                color="primary"
-                icon="mdi-account-voice"
+              <Mic2
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
                 <span
@@ -230,33 +215,27 @@
                   >
                 </span>
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
             <!-- playlist owner -->
-            <v-card-subtitle
+            <div
               v-if="'owner' in item && item.owner"
-              class="title d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                icon="mdi-account-music"
+              <Mic2
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
                 <a style="color: primary">{{ item.owner }}</a>
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
-            <v-card-subtitle
+            <div
               v-if="'album' in item && item.album"
-              class="d-flex"
+              class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <v-icon
-                color="primary"
-                style="margin-left: -3px; margin-right: 3px"
-                small
-                icon="mdi-album"
+              <Disc3
+                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
                 <a
@@ -267,7 +246,7 @@
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
-            </v-card-subtitle>
+            </div>
           </div>
 
           <!-- play/info buttons -->
@@ -352,16 +331,16 @@
             <slot name="after-play"></slot>
           </div>
           <!-- Description/metadata -->
-          <v-card-subtitle
+          <div
             v-if="shortDescription"
-            class="body-2 justify-left description-text"
-            style="padding-bottom: 10px; cursor: pointer"
+            class="text-sm text-muted-foreground px-4 description-text cursor-pointer"
+            style="padding-bottom: 10px"
             @click="showFullInfo = !showFullInfo"
           >
             <!-- eslint-disable vue/no-v-html -->
             <div v-html="shortDescription"></div>
             <!-- eslint-enable vue/no-v-html -->
-          </v-card-subtitle>
+          </div>
 
           <!-- genres/tags -->
           <div
@@ -369,17 +348,14 @@
             class="justify-center"
             style="margin-left: 15px; padding-bottom: 20px"
           >
-            <v-chip
+            <Badge
               v-for="genre of mappedGenres.slice(
                 0,
-                $vuetify.display.mobile ? 15 : 25,
+                isMobile ? 15 : 25,
               )"
               :key="genre.item_id"
-              color="blue-grey lighten-1"
-              style="margin-right: 5px; margin-bottom: 5px"
-              small
-              outlined
-              class="cursor-pointer"
+              variant="outline"
+              class="cursor-pointer mr-1.5 mb-1.5"
               @click="handleMediaItemClick(genre, 0, 0)"
               @contextmenu.prevent="
                 (e: MouseEvent) => showGenreChipContextMenu(e, genre)
@@ -388,30 +364,41 @@
               {{
                 getGenreDisplayName(genre.name, genre.translation_key, t, te)
               }}
-            </v-chip>
+            </Badge>
           </div>
         </div>
-      </v-layout>
-    </v-card>
-    <v-dialog v-model="showFullInfo" max-width="975" width="auto">
-      <v-card>
+      </div>
+    </div>
+    <Dialog v-model:open="showFullInfo">
+      <DialogContent class="max-w-[975px]">
         <!-- eslint-disable vue/no-v-html -->
-        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-        <v-card-text v-html="fullDescription" />
+        <div class="p-4" v-html="fullDescription" />
         <!-- eslint-enable vue/no-v-html -->
-        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-        <v-card-actions>
-          <v-btn color="primary" block @click="showFullInfo = false">
+        <DialogFooter>
+          <Button class="w-full" @click="showFullInfo = false">
             {{ $t("close") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import Toolbar from "@/components/Toolbar.vue";
+import { useIsDark } from "@/composables/useIsDark";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getGenreDescription,
@@ -440,11 +427,11 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
+import { ArrowLeft, Calendar, Disc3, Merge, Mic2, Pencil, ShieldAlert, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useMediaQuery } from "@vueuse/core";
 import { useRouter } from "vue-router";
-import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
@@ -457,7 +444,8 @@ export interface Props {
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
-useDisplay();
+const { isDark } = useIsDark();
+const isMobile = useMediaQuery("(max-width: 600px)");
 const menuItems = ref<ContextMenuItem[]>([]);
 const mappedGenres = ref<Genre[]>([]);
 
@@ -659,34 +647,19 @@ const deleteGenre = () => {
 </script>
 
 <style scoped>
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 .selectable {
   -webkit-user-select: text;
-  /* Safari */
-  -khtml-user-select: text;
-  /* Konqueror HTML */
   -moz-user-select: text;
-  /* Old versions of Firefox */
   -ms-user-select: text;
-  /* Internet Explorer/Edge */
   user-select: text;
-  /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-.background-image {
-  position: absolute;
-}
-
-.background-image .v-img__img--cover {
-  object-position: 50% 20%;
-}
-.v-card--variant-elevated {
-  box-shadow: none;
-  border-width: 1px;
-  border-style: solid;
-  font-size: smaller;
-}
-
-.description-text :deep(div) {
+.description-text div {
   display: -webkit-box;
   -webkit-line-clamp: 5;
   line-clamp: 5;
@@ -698,7 +671,7 @@ const deleteGenre = () => {
 }
 
 @media (max-width: 1280px) {
-  .description-text :deep(div) {
+  .description-text div {
     -webkit-line-clamp: 3;
     line-clamp: 3;
   }

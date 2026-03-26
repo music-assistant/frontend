@@ -33,11 +33,9 @@
             <span v-else class="breadcrumb-text">
               {{ segment.text }}
             </span>
-            <v-icon
+            <ChevronRight
               v-if="index < breadcrumbSegments.length - 1"
-              icon="mdi-chevron-right"
-              size="small"
-              class="breadcrumb-separator"
+              class="h-4 w-4 breadcrumb-separator"
             />
           </span>
         </div>
@@ -51,7 +49,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
 import router from "@/plugins/router";
-import { Folder } from "lucide-vue-next";
+import { ChevronRight, Folder } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

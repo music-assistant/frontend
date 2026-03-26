@@ -1,28 +1,28 @@
 <template>
   <div :class="`widget-row ${settings && !settings.enabled ? 'disabled' : ''}`">
-    <v-toolbar class="header" color="transparent" density="compact">
-      <template #title>
-        <span class="mr-3">{{ $t("players") }}</span>
-      </template>
-      <template #append>
+    <div class="header flex items-center h-10 px-1">
+      <div class="flex-1 min-w-0">
+        <span class="mr-3 text-lg font-bold">{{ $t("players") }}</span>
+      </div>
+      <div class="flex items-center">
         <div v-if="editMode">
           <!-- enable/disable checkbox -->
-          <v-btn
-            :icon="
-              settings.enabled
-                ? 'mdi-checkbox-marked'
-                : 'mdi-checkbox-blank-outline'
-            "
+          <Button
+            variant="ghost"
+            size="icon"
             @click="
               emit('update:settings', {
                 ...settings,
                 enabled: !settings.enabled,
               })
             "
-          />
+          >
+            <CheckSquare v-if="settings.enabled" class="h-5 w-5" />
+            <Square v-else class="h-5 w-5" />
+          </Button>
         </div>
-      </template>
-    </v-toolbar>
+      </div>
+    </div>
 
     <swiper
       :slides-per-view="'auto'"
@@ -55,11 +55,13 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { PlaybackState, Player } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { CheckSquare, Square } from "lucide-vue-next";
 import { computed } from "vue";
 import { WidgetRowSettings } from "./WidgetRow.vue";
 
@@ -98,16 +100,6 @@ function playerSortScore(player: Player) {
 </script>
 
 <style scoped>
-.header.v-toolbar :deep(.v-toolbar-title) {
-  margin-inline-start: 0px;
-  font-size: large;
-  font-weight: bold;
-}
-
-.header.v-toolbar {
-  padding-inline-start: 4px;
-}
-
 .widget-row {
   margin-bottom: 10px;
   margin-left: 0px;
@@ -130,27 +122,5 @@ function playerSortScore(player: Player) {
 
 .widget-row-panel-item {
   margin-bottom: 10px;
-}
-
-.v-slide-group__prev {
-  min-width: 0px !important;
-}
-
-.v-slide-group__prev.v-slide-group__prev--disabled {
-  visibility: hidden;
-  margin-right: -15px;
-}
-
-.v-slide-group__next {
-  min-width: 15px !important;
-}
-
-.v-slide-group__next.v-slide-group__next--disabled {
-  visibility: hidden;
-}
-
-:deep(.swiper-slide) {
-  width: auto;
-  flex-shrink: 0;
 }
 </style>
