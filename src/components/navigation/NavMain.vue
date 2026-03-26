@@ -46,7 +46,7 @@ const handleClick = (item: NavItem, event: Event) => {
 </script>
 
 <template>
-  <SidebarGroup>
+  <SidebarGroup class="nav-main-group">
     <SidebarGroupContent class="flex flex-col gap-0.5">
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">
@@ -82,29 +82,30 @@ const handleClick = (item: NavItem, event: Event) => {
   </SidebarGroup>
 </template>
 
-<style scoped>
-:deep(a) {
+<!-- Unscoped styles for child component overrides -->
+<style>
+.nav-main-group a {
   text-decoration: none !important;
   color: inherit !important;
 }
 
-:deep(a:hover) {
+.nav-main-group a:hover {
   text-decoration: none !important;
 }
 
-:deep(a:visited) {
+.nav-main-group a:visited {
   color: inherit !important;
 }
 
-:deep([data-sidebar="menu-button"] > svg),
-:deep([data-sidebar="menu-button"] svg),
-:deep([data-sidebar="menu-button"] [class*="lucide"]) {
+.nav-main-group [data-sidebar="menu-button"] > svg,
+.nav-main-group [data-sidebar="menu-button"] svg,
+.nav-main-group [data-sidebar="menu-button"] [class*="lucide"] {
   width: 1.2rem !important;
   height: 1.2rem !important;
   padding-right: 3px !important;
 }
 
-:deep([data-sidebar="menu-item"]) {
+.nav-main-group [data-sidebar="menu-item"] {
   display: flex !important;
   flex-direction: column !important;
 }

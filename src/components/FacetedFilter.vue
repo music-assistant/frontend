@@ -175,7 +175,7 @@ const clear = () => {
 }
 
 .faceted-filter-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  background-color: hsl(var(--foreground) / 0.04);
 }
 
 .faceted-filter-clear {
@@ -186,11 +186,11 @@ const clear = () => {
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
   cursor: pointer;
 }
 
 .faceted-filter-clear:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  background-color: hsl(var(--foreground) / 0.04);
 }
 </style>

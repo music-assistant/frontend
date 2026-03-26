@@ -115,38 +115,8 @@ const isCollapsed = computed(() => state.value === "collapsed");
   width: 100%;
 }
 
-.navuser-trigger :deep([data-sidebar="menu-button"]) {
-  margin-left: 0 !important;
-  padding-right: 0;
-}
-
-.trigger-container:not(.trigger-container--collapsed)
-  .navuser-trigger
-  :deep(ul[data-sidebar="menu"]) {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-.trigger-container--collapsed .navuser-trigger :deep(ul[data-sidebar="menu"]) {
-  padding-left: 6px !important;
-  padding-right: 6px !important;
-}
-
-.trigger-container--collapsed
-  .navuser-trigger
-  :deep([data-sidebar="menu-button"]) {
-  width: 100% !important;
-}
-
-.trigger-container--collapsed
-  .navuser-trigger
-  :deep([data-sidebar="menu-button"] .rounded-lg) {
-  width: 2rem !important;
-  height: 2rem !important;
-}
-
 .ha-menu-arrow {
-  color: rgb(var(--v-theme-primary, 3, 169, 244)) !important;
+  color: hsl(var(--primary)) !important;
 }
 
 .trigger-container.flex-col {
@@ -163,5 +133,38 @@ const isCollapsed = computed(() => state.value === "collapsed");
   height: 16px;
   display: block;
   margin: auto;
+}
+</style>
+
+<!-- Unscoped styles for child component overrides -->
+<style>
+.navuser-trigger [data-sidebar="menu-button"] {
+  margin-left: 0 !important;
+  padding-right: 0;
+}
+
+.trigger-container:not(.trigger-container--collapsed)
+  .navuser-trigger
+  ul[data-sidebar="menu"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.trigger-container--collapsed .navuser-trigger ul[data-sidebar="menu"] {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.trigger-container--collapsed
+  .navuser-trigger
+  [data-sidebar="menu-button"] {
+  width: 100% !important;
+}
+
+.trigger-container--collapsed
+  .navuser-trigger
+  [data-sidebar="menu-button"] .rounded-lg {
+  width: 2rem !important;
+  height: 2rem !important;
 }
 </style>

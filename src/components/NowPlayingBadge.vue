@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style>
 .now-playing-badge {
-  background: rgb(var(--v-theme-primary));
+  background: hsl(var(--primary));
   color: #fff;
   padding: 2px 8px;
   border-radius: 999px;
@@ -62,7 +62,7 @@ const props = withDefaults(defineProps<Props>(), {
 .now-playing-icon .bar {
   width: 3px;
   height: 16px;
-  background: rgb(var(--v-theme-primary));
+  background: hsl(var(--primary));
   transform-origin: bottom;
   transform: scaleY(0.25);
   animation: eq 1s infinite ease-in-out;

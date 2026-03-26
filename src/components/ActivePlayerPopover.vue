@@ -129,8 +129,8 @@ onUnmounted(() => {
   max-width: 250px;
   padding: 12px 16px !important;
   text-align: center;
-  background: rgb(var(--v-theme-surface)) !important;
-  border: 1px solid rgb(var(--v-theme-primary)) !important;
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--primary)) !important;
   z-index: 99999 !important;
 }
 
@@ -148,7 +148,7 @@ onUnmounted(() => {
 .player-tip .tip-player-name {
   font-weight: 600;
   font-size: 0.95rem;
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
 }
 
 .player-tip .tip-hint {
@@ -164,7 +164,7 @@ onUnmounted(() => {
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 8px solid rgb(var(--v-theme-primary));
+  border-top: 8px solid hsl(var(--primary));
   transform: translateX(-50%);
 }
 
@@ -222,6 +222,6 @@ onUnmounted(() => {
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 6px solid rgb(var(--v-theme-surface));
+  border-top: 6px solid hsl(var(--card));
 }
 </style>

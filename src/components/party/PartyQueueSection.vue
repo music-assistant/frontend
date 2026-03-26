@@ -154,7 +154,7 @@ defineExpose({ listRef });
 .section-divider {
   flex: 1;
   height: 1px;
-  background: rgba(var(--v-theme-on-surface), 0.12);
+  background: hsl(var(--foreground) / 0.12);
 }
 
 .skip-area {
@@ -173,14 +173,14 @@ defineExpose({ listRef });
 .skip-token-badge {
   margin-left: 0.5rem;
   padding: 0.125rem 0.375rem;
-  background: rgba(var(--v-theme-on-primary), 0.2);
+  background: hsl(var(--primary-foreground) / 0.2);
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .skip-token-badge.no-tokens {
-  background: rgba(var(--v-theme-error), 0.3);
+  background: hsl(var(--destructive) / 0.3);
 }
 
 .skip-btn:disabled {
@@ -192,7 +192,7 @@ defineExpose({ listRef });
   align-items: center;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--foreground) / 0.6);
 }
 
 .queue-list {

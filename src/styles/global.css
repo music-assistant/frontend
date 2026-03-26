@@ -226,20 +226,16 @@ h6 {
   margin-bottom: 0;
 }
 
-/* Workaround for vuetify issue https://github.com/vuetifyjs/vuetify/issues/1197 */
 html {
   overflow-y: hidden !important;
 }
 
 .is-playing {
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
   font-weight: 800;
 }
 
 /* iOS Safari 15 scroll momentum */
-.scroll-container,
-.v-list,
-.v-navigation-drawer__content,
-.v-main__wrap {
+.scroll-container {
   -webkit-overflow-scrolling: touch;
 }

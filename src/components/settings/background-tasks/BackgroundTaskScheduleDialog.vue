@@ -439,7 +439,7 @@ const onSave = () => {
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.8);
+  color: hsl(var(--foreground) / 0.8);
   cursor: pointer;
 }
 

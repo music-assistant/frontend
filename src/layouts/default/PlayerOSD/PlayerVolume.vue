@@ -722,7 +722,7 @@ watch(
 
 @media (pointer: coarse) {
   .volume-slider,
-  .volume-slider :deep(*) {
+  .volume-slider * {
     pointer-events: none;
   }
 }
@@ -741,8 +741,8 @@ watch(
 }
 
 .group-popout {
-  background: rgb(var(--v-theme-surface));
-  border: 1px solid rgba(var(--v-border-color), 0.12);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 12px;
   padding: 8px 18px 16px 18px;
   box-shadow:
@@ -774,7 +774,7 @@ watch(
 
 .group-popout-divider {
   height: 1px;
-  background: rgba(var(--v-border-color), 0.15);
+  background: hsl(var(--border) / 0.5);
   margin: 14px 0 10px 0;
 }
 
@@ -798,12 +798,12 @@ watch(
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(var(--v-border-color), 0.3);
+  background: hsl(var(--border) / 0.7);
   transition: background 0.15s ease;
 }
 
 .group-popout-drag-handle:active .group-popout-drag-handle-pill {
-  background: rgba(var(--v-border-color), 0.5);
+  background: hsl(var(--border));
 }
 
 /* Popout animation */

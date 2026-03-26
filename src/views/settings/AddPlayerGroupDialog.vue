@@ -140,7 +140,7 @@ watch(
 }
 
 .provider-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
+  background-color: hsl(var(--primary) / 0.04);
   transform: translateY(-1px);
 }
 
@@ -162,7 +162,7 @@ watch(
 
 .provider-description {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: hsl(var(--foreground) / 0.6);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -186,20 +186,20 @@ watch(
 .empty-icon {
   width: 48px;
   height: 48px;
-  color: rgba(var(--v-theme-on-surface), 0.3);
+  color: hsl(var(--foreground) / 0.3);
   margin-bottom: 16px;
 }
 
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--foreground) / 0.5);
   line-height: 1.4;
 }
 </style>

@@ -381,13 +381,13 @@ const formatDate = (value: string | undefined) =>
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(var(--v-theme-on-surface), 0.55);
+  color: hsl(var(--foreground) / 0.55);
 }
 
 .detail-value {
   font-size: 14px;
   line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: hsl(var(--foreground) / 0.9);
   word-break: break-word;
 }
 
@@ -406,7 +406,7 @@ const formatDate = (value: string | undefined) =>
 }
 
 .detail-inline-action {
-  color: rgba(var(--v-theme-on-surface), 0.55);
+  color: hsl(var(--foreground) / 0.55);
 }
 
 .detail-link {
@@ -420,7 +420,7 @@ const formatDate = (value: string | undefined) =>
   font-size: inherit;
   font-weight: 400;
   line-height: inherit;
-  color: rgb(var(--v-theme-primary));
+  color: hsl(var(--primary));
   text-decoration: none;
   cursor: pointer;
 }
@@ -430,11 +430,11 @@ const formatDate = (value: string | undefined) =>
 }
 
 .detail-error {
-  color: rgb(var(--v-theme-error));
+  color: hsl(var(--destructive));
 }
 
 .detail-warning {
-  color: rgb(var(--v-theme-warning));
+  color: hsl(var(--chart-3));
 }
 
 .section-title {
@@ -446,7 +446,7 @@ const formatDate = (value: string | undefined) =>
   max-height: 320px;
   overflow: auto;
   border-radius: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
+  background: hsl(var(--foreground) / 0.04);
   padding: 16px;
   font-family:
     ui-monospace,

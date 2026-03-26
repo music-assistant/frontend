@@ -1,6 +1,6 @@
 <template>
   <swiper
-    :slides-per-view="panelViewItemResponsive($vuetify.display.width) + 0.5"
+    :slides-per-view="panelViewItemResponsive(windowWidth) + 0.5"
     :free-mode="true"
     :navigation="false"
     :mousewheel="{
@@ -14,8 +14,10 @@
 
 <script setup lang="ts">
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { getBreakpointValue } from "@/plugins/breakpoint";
+import { useWindowSize } from "@vueuse/core";
 import { onMounted } from "vue";
+
+const { width: windowWidth } = useWindowSize();
 
 onMounted(() => {
   document.documentElement.style.setProperty(
