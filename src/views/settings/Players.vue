@@ -486,13 +486,13 @@ watch(
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.4;
 }
 
@@ -510,7 +510,7 @@ watch(
 
 .provider-name {
   font-size: 14px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .protocol-chips {
@@ -553,7 +553,7 @@ watch(
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: hsl(var(--primary) / 0.15);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 .player-disabled {
@@ -565,14 +565,14 @@ watch(
 }
 
 .player-needs-setup {
-  border-left: 3px solid hsl(var(--warning, 38 92% 50%));
+  border-left: 3px solid var(--warning);
 }
 
 .player-warning-inline {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: hsl(var(--warning, 38 92% 50%));
+  color: var(--warning);
 }
 
 .player-warning-text {
@@ -587,11 +587,11 @@ watch(
   gap: 6px;
   padding: 16px 20px;
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .hint-link {
-  color: hsl(var(--primary));
+  color: var(--primary);
   text-decoration: none;
 }
 

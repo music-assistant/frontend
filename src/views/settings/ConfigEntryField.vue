@@ -405,7 +405,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { type ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
-import { computed } from "vue";
+import { computed, h } from "vue";
 import {
   AlertTriangle,
   Eye,
@@ -529,9 +529,10 @@ const getOptionTitle = (value: ConfigValueType): string => {
   return option?.title || String(value);
 };
 
-// Simple icon resolver stub - returns null for MDI icons
-const resolveIcon = (_iconName: string) => {
-  return null;
+// Resolve MDI icon names to rendered elements
+const resolveIcon = (iconName: string) => {
+  if (!iconName) return null;
+  return h("span", { class: `mdi ${iconName}`, style: "font-size: 1.25rem;" });
 };
 
 const translatedOptions = computed(() => {

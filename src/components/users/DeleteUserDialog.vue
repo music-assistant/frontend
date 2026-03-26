@@ -83,9 +83,11 @@ const handleDelete = async () => {
 </script>
 
 <style scoped>
-.user-name-box {
-  background: hsl(var(--destructive) / 0.08);
-  border-left: 3px solid hsl(var(--destructive));
+/* .user-name-box is inside DialogContent which teleports to <body>,
+   so it needs :global() to bypass scoped attribute matching. */
+:global(.user-name-box) {
+  background: color-mix(in srgb, var(--destructive) 8%, transparent);
+  border-left: 3px solid var(--destructive);
   padding: 12px 16px;
   border-radius: 4px;
   font-weight: 500;

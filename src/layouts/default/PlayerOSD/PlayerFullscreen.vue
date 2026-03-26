@@ -598,7 +598,6 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import { useWindowSize } from "@vueuse/core";
 import Color from "color";
 import { AlertTriangle, ChevronDown, EllipsisVertical, Heart, Radio } from "lucide-vue-next";
 import {
@@ -614,9 +613,8 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
-const { mdAndUp, mobile } = useBreakpoint();
+const { mdAndUp, mobile, height: windowHeight } = useBreakpoint();
 const { isDark } = useIsDark();
-const { height: windowHeight } = useWindowSize();
 
 const showRadioMenu = ref(false);
 const infiniteScrollSentinel = ref<HTMLElement>();
@@ -1559,23 +1557,58 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-.fullscreen-dialog-content {
+:global(.fullscreen-dialog-content) {
   position: fixed !important;
   inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
   max-width: 100% !important;
   width: 100% !important;
   height: 100% !important;
   border-radius: 0 !important;
   border: none !important;
   padding: 0 !important;
-  transform: none !important;
-  top: 0 !important;
-  left: 0 !important;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
   z-index: 9000 !important;
+  /* Reset Tailwind translate so centering offset doesn't apply */
+  --tw-translate-x: 0 !important;
+  --tw-translate-y: 0 !important;
+}
+
+/* Slide up from bottom — matches original Vuetify dialog-bottom-transition */
+:global(.fullscreen-dialog-content[data-state="open"]) {
+  animation: fullscreen-slide-up 300ms ease-out !important;
+}
+
+:global(.fullscreen-dialog-content[data-state="closed"]) {
+  animation: fullscreen-slide-down 200ms ease-in !important;
+}
+
+@keyframes fullscreen-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fullscreen-slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Hide overlay — original Vuetify dialog used scrim="false" */
+:global(.fullscreen-dialog-content ~ [data-slot="dialog-overlay"]),
+:global([data-slot="dialog-overlay"]:has(~ .fullscreen-dialog-content)) {
+  display: none !important;
 }
 
 .fullscreen-toolbar {
@@ -1690,12 +1723,49 @@ watchEffect(() => {
   width: 100%;
 }
 
+.main-queue-items :deep([data-slot="tabs-list"]) {
+  background: rgba(0, 0, 0, 0.3);
+  height: auto;
+  padding: 3px;
+  border-radius: 10px;
+  gap: 0;
+  width: auto;
+}
+
 .queue-tab {
-  opacity: 0.7;
+  opacity: 0.5;
+  font-size: 0.8rem;
+  text-transform: none !important;
+  letter-spacing: normal;
+  padding: 4px 14px !important;
+  height: 32px !important;
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+  border-radius: 8px !important;
+  color: var(--text-color, inherit);
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
 }
 
 .queue-tab[data-state="active"] {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.queue-tab :deep([data-slot="badge"]) {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0 5px;
+  height: 16px;
+  min-width: 16px;
+  line-height: 16px;
+  border-radius: 8px;
+  background: rgba(128, 128, 128, 0.6);
+  color: inherit;
+  border: none;
+  margin-left: 4px;
 }
 
 .media-controls {
@@ -1841,7 +1911,7 @@ button {
   max-width: 400px;
   margin: 0 auto;
   border-radius: 10px;
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1886,8 +1956,8 @@ button {
   top: 56px;
   right: 60px;
   z-index: 999999;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -15px rgba(0, 0, 0, 0.2);
   min-width: 250px;

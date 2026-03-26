@@ -131,8 +131,8 @@ const router = useRouter();
   border-radius: 50%;
   background: radial-gradient(
     circle at 35% 35%,
-    hsl(var(--primary) / 0.9),
-    hsl(var(--primary) / 0.6)
+    color-mix(in srgb, var(--primary) 90%, transparent),
+    color-mix(in srgb, var(--primary) 60%, transparent)
   );
   display: flex;
   flex-direction: column;
@@ -156,7 +156,7 @@ const router = useRouter();
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: hsl(var(--background));
+  background: var(--background);
 }
 
 /* Needle arm */
@@ -173,8 +173,8 @@ const router = useRouter();
   height: 80px;
   background: linear-gradient(
     to bottom,
-    hsl(var(--muted-foreground) / 0.6),
-    hsl(var(--muted-foreground) / 0.3)
+    color-mix(in srgb, var(--muted-foreground) 60%, transparent),
+    color-mix(in srgb, var(--muted-foreground) 30%, transparent)
   );
   border-radius: 2px;
   transform: rotate(28deg);
@@ -189,8 +189,8 @@ const router = useRouter();
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: hsl(var(--primary));
-  box-shadow: 0 0 6px hsl(var(--primary));
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
 }
 
 @keyframes vinyl-spin {
@@ -221,7 +221,7 @@ const router = useRouter();
 }
 
 .error-code span {
-  color: hsl(var(--primary));
+  color: var(--primary);
   animation: digit-pulse 2s ease-in-out infinite;
 }
 
@@ -254,7 +254,7 @@ const router = useRouter();
 
 .subtext {
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
 }
 
@@ -269,7 +269,7 @@ const router = useRouter();
 .eq-bar {
   width: 6px;
   border-radius: 3px 3px 0 0;
-  background: hsl(var(--primary) / 0.7);
+  background: color-mix(in srgb, var(--primary) 70%, transparent);
   animation: eq-bounce calc(0.5s + var(--i) * 0.07s) ease-in-out infinite
     alternate;
   animation-delay: calc(var(--i) * 0.06s);

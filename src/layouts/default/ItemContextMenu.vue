@@ -150,17 +150,35 @@ const playerIcon = computed(() => {
   return store.activePlayer ? store.activePlayer.icon : undefined;
 });
 
-const menuStyle = computed(() => {
+/** Clamp a menu position so the menu stays within the viewport. */
+const clampToViewport = (
+  x: number,
+  y: number,
+  menuWidth = 300,
+  menuHeight = 450,
+) => {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const pad = 8;
   return {
-    left: `${posX.value}px`,
-    top: `${posY.value}px`,
+    left: Math.min(x, vw - menuWidth - pad) < pad ? pad : Math.min(x, vw - menuWidth - pad),
+    top: Math.min(y, vh - menuHeight - pad) < pad ? pad : Math.min(y, vh - menuHeight - pad),
+  };
+};
+
+const menuStyle = computed(() => {
+  const { left, top } = clampToViewport(posX.value, posY.value);
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
   };
 });
 
 const subMenuStyle = computed(() => {
+  const { left, top } = clampToViewport(subMenuPosX.value, subMenuPosY.value);
   return {
-    left: `${subMenuPosX.value}px`,
-    top: `${subMenuPosY.value}px`,
+    left: `${left}px`,
+    top: `${top}px`,
   };
 });
 
@@ -1171,8 +1189,8 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   min-width: 300px;
   max-height: 450px;
   overflow-y: auto;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -15px rgba(0, 0, 0, 0.2);
   padding: 4px;
@@ -1186,7 +1204,7 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   padding: 8px 12px;
   border: none;
   background: transparent;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   font-size: 0.875rem;
   line-height: 1.25rem;
   text-align: left;
@@ -1196,7 +1214,7 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
 }
 
 .context-menu-item:hover:not(:disabled) {
-  background: hsl(var(--accent));
+  background: var(--accent);
 }
 
 .context-menu-item:disabled {
@@ -1225,11 +1243,11 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
 
 .context-menu-item-subtitle {
   font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .menu-item-error .context-menu-item {
-  color: hsl(var(--destructive));
+  color: var(--destructive);
 }
 
 .fade-enter-active,

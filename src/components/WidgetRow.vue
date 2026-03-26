@@ -80,6 +80,7 @@
           v-else-if="showActionIcon && widgetRow.icon"
           variant="ghost"
           size="icon"
+          :icon="typeof widgetRow.icon === 'string' ? widgetRow.icon : undefined"
           @click="handleActionIconClick"
         >
           <component
@@ -170,7 +171,7 @@ const handleActionIconClick = () => {
 
 <style scoped>
 .carousel-wrapper {
-  background-color: hsl(var(--card));
+  background-color: var(--card);
   padding: 10px;
   padding-right: 0;
   border-radius: 5px 0 0 5px;

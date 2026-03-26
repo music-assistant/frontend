@@ -159,7 +159,7 @@ const badgeLabel = computed(() =>
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: hsl(var(--muted) / 0.05);
+  background: color-mix(in srgb, var(--muted) 5%, transparent);
   border-radius: 12px;
   min-height: 72px;
   transition: background 0.2s ease;
@@ -170,11 +170,11 @@ const badgeLabel = computed(() =>
 }
 
 .queue-item--clickable:hover {
-  background: hsl(var(--muted) / 0.12);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
 }
 
 .queue-item--expanded {
-  background: hsl(var(--primary) / 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .queue-item-info {
@@ -197,17 +197,17 @@ const badgeLabel = computed(() =>
   text-transform: none;
   letter-spacing: 0.5px;
   background-color: var(--btn-bg) !important;
-  color: hsl(var(--primary-foreground)) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .queue-item-current {
-  background: hsl(var(--primary) / 0.15);
-  border-left: 6px solid hsl(var(--primary));
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-left: 6px solid var(--primary);
   padding-left: calc(0.75rem - 3px);
 }
 
 .queue-item-played {
-  background: hsl(var(--foreground) / 0.08);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
   opacity: 0.5;
 }
 
@@ -236,7 +236,7 @@ const badgeLabel = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--primary) / 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .queue-info {
@@ -293,7 +293,7 @@ const badgeLabel = computed(() =>
   }
 
   .queue-item-actions {
-    border-top: 1px solid hsl(var(--foreground) / 0.1);
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
     width: 100%;
     margin-left: 0;
   }

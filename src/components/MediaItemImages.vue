@@ -73,11 +73,11 @@ import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ImageType, type MediaItemImage } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { useWindowSize } from "@vueuse/core";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import { Star } from "lucide-vue-next";
 import { computed, ref } from "vue";
 
-const { width: windowWidth } = useWindowSize();
+const { width: windowWidth } = useBreakpoint();
 
 export interface Props {
   modelValue: MediaItemImage[];

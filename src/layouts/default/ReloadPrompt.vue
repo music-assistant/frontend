@@ -29,12 +29,13 @@ const close = async () => {
   bottom: 0;
   margin: 16px;
   padding: 12px;
-  border: 1px solid #8885;
+  border: 1px solid var(--border);
   border-radius: 4px;
   z-index: 1;
   text-align: left;
-  box-shadow: 3px 4px 5px 0 #8885;
-  background-color: white;
+  box-shadow: 3px 4px 5px 0 rgba(0, 0, 0, 0.15);
+  background-color: var(--card);
+  color: var(--card-foreground);
 }
 .pwa-toast .message {
   margin-bottom: 8px;

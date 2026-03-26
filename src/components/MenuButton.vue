@@ -1,5 +1,5 @@
 <template>
-  <div :style="`width: ${width}px; height: 30px;`">
+  <div class="relative" :style="`width: ${width}px; height: 30px;`">
     <Button
       variant="outline"
       :style="`
@@ -59,9 +59,9 @@ const emit = defineEmits<{
   (e: "menu"): void;
 }>();
 
-// Simple icon resolver - returns a placeholder for mdi icons
+// Resolve MDI icon names to rendered elements
 const resolveIcon = (iconName: string) => {
-  // Return a simple span element as fallback for mdi icon names
-  return h("span", { class: "size-5" });
+  if (!iconName) return h("span", { class: "size-5" });
+  return h("span", { class: `mdi ${iconName} size-5` });
 };
 </script>

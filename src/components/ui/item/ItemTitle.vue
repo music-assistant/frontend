@@ -12,7 +12,7 @@ const props = defineProps<{
     data-slot="item-title"
     :class="
       cn(
-        'flex w-fit items-center gap-2 text-sm leading-snug font-medium',
+        'flex items-center gap-2 text-sm leading-snug font-medium truncate',
         props.class,
       )
     "

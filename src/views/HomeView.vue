@@ -121,7 +121,7 @@ onUnmounted(() => {
 }
 
 .user-avatar {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
 }
 
 .provider-warning-content {
@@ -137,7 +137,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   padding: 4px;
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-mix(in srgb, var(--muted) 30%, transparent);
   border-radius: calc(var(--radius) - 2px);
   margin-bottom: 4px;
 }

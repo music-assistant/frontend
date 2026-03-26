@@ -167,11 +167,11 @@ const handleMenu = (event: Event) => {
 }
 
 .player-needs-setup {
-  border-left: 3px solid hsl(var(--warning, 38 92% 50%));
+  border-left: 3px solid var(--warning);
 }
 
 .player-warning-card {
-  background: hsl(var(--warning, 38 92% 50%) / 0.08);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
   border-radius: 8px;
   margin: 8px 0 0 0;
   padding: 8px 12px;
@@ -181,7 +181,7 @@ const handleMenu = (event: Event) => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: hsl(var(--warning, 38 92% 50%));
+  color: var(--warning);
 }
 
 .player-warning-text {
@@ -210,7 +210,7 @@ const handleMenu = (event: Event) => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: hsl(var(--primary) / 0.15);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
   flex-shrink: 0;
 }
 
@@ -230,7 +230,7 @@ const handleMenu = (event: Event) => {
 
 .provider-name {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;

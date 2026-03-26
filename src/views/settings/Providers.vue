@@ -598,6 +598,9 @@ const getAllFilteredProviders = function () {
 .provider-name-title {
   font-weight: 500;
   font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .provider-meta {
@@ -610,13 +613,13 @@ const getAllFilteredProviders = function () {
 
 .provider-description-text {
   font-size: 14px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.4;
 }
 
 .provider-type-badge {
   font-size: 11px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
@@ -657,7 +660,7 @@ const getAllFilteredProviders = function () {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: hsl(var(--destructive));
+  color: var(--destructive);
 }
 
 .provider-error-text {
@@ -666,14 +669,14 @@ const getAllFilteredProviders = function () {
 }
 
 .provider-error-card {
-  background: hsl(var(--destructive) / 0.08);
+  background: color-mix(in srgb, var(--destructive) 8%, transparent);
   border-radius: 8px;
   margin: 0 12px 12px 12px;
 }
 
 .provider-error-detail {
   font-size: 12px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -695,13 +698,13 @@ const getAllFilteredProviders = function () {
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.4;
 }
 </style>

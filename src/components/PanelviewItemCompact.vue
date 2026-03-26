@@ -242,7 +242,7 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .panel-card {
   position: relative;
-  background-color: hsl(var(--card));
+  background-color: var(--card);
   transition: opacity 0.4s ease-in-out;
   border-radius: 3px;
   padding: 10px;

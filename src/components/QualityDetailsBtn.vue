@@ -546,7 +546,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useWindowSize } from "@vueuse/core";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import { AlertCircle, Info } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -561,7 +561,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
-const { width: windowWidth, height: windowHeight } = useWindowSize();
+const { width: windowWidth, height: windowHeight } = useBreakpoint();
 
 // computed properties
 const streamDetails = computed(() => {
@@ -857,7 +857,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   filter: none;
 }
 
-.v-theme--light .invert-on-light-mode {
+:not(.dark) .invert-on-light-mode {
   filter: invert(100%);
 }
 
@@ -865,7 +865,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   filter: none;
 }
 
-.v-theme--dark .invert-on-dark-mode {
+.dark .invert-on-dark-mode {
   filter: invert(100%);
 }
 
@@ -1086,7 +1086,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   margin-top: 25px;
   height: 14px;
   width: 14px;
-  background-color: hsl(var(--foreground));
+  background-color: var(--foreground);
   border-radius: 50%;
 }
 
@@ -1097,7 +1097,7 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   margin-top: 25px;
   height: 10px;
   width: 10px;
-  background-color: hsl(var(--secondary));
+  background-color: var(--secondary);
   border-radius: 50%;
 }
 

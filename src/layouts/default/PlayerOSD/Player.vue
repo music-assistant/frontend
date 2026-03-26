@@ -122,7 +122,7 @@ import {
 import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import vuetify from "@/plugins/vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 import { computed, ref, watch } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
@@ -134,6 +134,8 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
+
+const { isDark } = useIsDark();
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -150,14 +152,14 @@ const coverImageColorPalette = ref<ImageColorPalette>({
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
 const img = new Image();
-img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
+img.src = isDark.value ? imgCoverDark : imgCoverLight;
 img.crossOrigin = "Anonymous";
 img.addEventListener("load", function () {
   coverImageColorPalette.value = getColorPalette(img);
 });
 
 const backgroundColor = computed(() => {
-  if (vuetify.theme.current.value.dark) {
+  if (isDark.value) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
       return coverImageColorPalette.value.darkColor;
     return "#CCCCCC26";
@@ -168,11 +170,11 @@ const backgroundColor = computed(() => {
 });
 
 const themeColor = computed(() =>
-  vuetify.theme.current.value.dark ? "#fff" : "#000",
+  isDark.value ? "#fff" : "#000",
 );
 
 const playIconStyle = computed(() => ({
-  "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
+  "--play-icon-color": isDark.value ? "#212121" : "#fff",
 }));
 
 // watchers
@@ -202,15 +204,15 @@ watch(
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
 }
 
 .mediacontrols {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 10px 15px;
-  background-color: hsl(var(--muted));
   .mediacontrols-bottom-center {
     width: 40%;
   }

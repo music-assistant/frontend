@@ -302,28 +302,30 @@ watch(
 </script>
 
 <style scoped>
-.add-provider-dialog {
+/* All classes below are inside DialogContent which teleports to <body>,
+   so they need :global() to bypass scoped attribute matching. */
+:global(.add-provider-dialog) {
   display: flex;
   flex-direction: column;
 }
 
-.search-field {
+:global(.search-field) {
   width: 100%;
 }
 
-.filter-buttons {
+:global(.filter-buttons) {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.provider-list {
+:global(.provider-list) {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.provider-item {
+:global(.provider-item) {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -335,30 +337,33 @@ watch(
   cursor: pointer;
 }
 
-.provider-item:hover {
-  background-color: hsl(var(--primary) / 0.04);
+:global(.provider-item:hover) {
+  background-color: color-mix(in srgb, var(--primary) 4%, transparent);
   transform: translateY(-1px);
 }
 
-.provider-icon {
+:global(.provider-icon) {
   flex-shrink: 0;
 }
 
-.provider-content {
+:global(.provider-content) {
   flex: 1;
   min-width: 0;
 }
 
-.provider-name {
+:global(.provider-name) {
   font-weight: 500;
   font-size: 16px;
   line-height: 1.2;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.provider-description {
+:global(.provider-description) {
   font-size: 14px;
-  color: hsl(var(--foreground) / 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -369,14 +374,14 @@ watch(
   max-height: 2.6em;
 }
 
-.provider-actions {
+:global(.provider-actions) {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.empty-state {
+:global(.empty-state) {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -386,28 +391,28 @@ watch(
   padding: 40px 20px;
 }
 
-.empty-icon {
+:global(.empty-icon) {
   width: 48px;
   height: 48px;
-  color: hsl(var(--foreground) / 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
   margin-bottom: 16px;
 }
 
-.empty-title {
+:global(.empty-title) {
   font-size: 18px;
   font-weight: 500;
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   margin-bottom: 8px;
 }
 
-.empty-message {
+:global(.empty-message) {
   font-size: 14px;
-  color: hsl(var(--foreground) / 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   line-height: 1.4;
 }
 
 @media (max-width: 600px) {
-  .add-provider-dialog {
+  :global(.add-provider-dialog) {
     max-height: 500px;
   }
 }

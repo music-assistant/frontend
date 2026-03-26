@@ -583,20 +583,20 @@ const getPriority = (task: BackgroundTask) => {
 }
 
 .empty-icon {
-  color: hsl(var(--foreground) / 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
   margin-bottom: 16px;
 }
 
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: hsl(var(--foreground) / 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   line-height: 1.4;
 }
 

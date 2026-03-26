@@ -248,7 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { useWindowSize } from "@vueuse/core";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import {
   computed,
   nextTick,
@@ -382,7 +382,7 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
-const { width: windowWidth } = useWindowSize();
+const { width: windowWidth } = useBreakpoint();
 const infiniteScrollSentinel = ref<HTMLElement | null>(null);
 
 // methods

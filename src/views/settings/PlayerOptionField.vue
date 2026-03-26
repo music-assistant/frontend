@@ -43,7 +43,12 @@
     "
     class="space-y-2"
   >
-    <Label>{{ getTranslatedLabel() }}</Label>
+    <div class="flex items-center justify-between">
+      <Label>{{ getTranslatedLabel() }}</Label>
+      <span class="text-sm font-medium tabular-nums">
+        {{ playerOption.value }}
+      </span>
+    </div>
     <div class="flex items-center gap-3">
       <span class="text-sm text-muted-foreground shrink-0">
         {{ playerOption.min_value }}

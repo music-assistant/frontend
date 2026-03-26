@@ -957,7 +957,7 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 /* Category sections (non-collapsible) */
 .category-section {
   margin-bottom: 16px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -966,18 +966,18 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  background: hsl(var(--primary) / 0.08);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .category-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 .category-content {
   padding: 20px;
-  background: hsl(var(--card));
+  background: var(--card);
 }
 
 /* Config entry row */
@@ -1030,7 +1030,7 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 .protocol-disabled-message {
   padding: 16px;
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-style: italic;
 }
 
@@ -1040,7 +1040,7 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   justify-content: center;
   padding: 8px 0 16px 0;
   margin-bottom: 8px;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--border);
 }
 
 /* Advanced badge */
@@ -1066,46 +1066,46 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  background: hsl(var(--primary) / 0.08);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
   border-radius: 8px 8px 0 0;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-bottom: none;
 }
 
 /* Protocol general settings (before accordion) */
 .protocol-general-settings {
   padding: 20px;
-  border-left: 1px solid hsl(var(--border));
-  border-right: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--card);
 }
 
 .protocol-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 /* Single protocol (non-collapsible) */
 .protocol-single-panel {
-  border-left: 1px solid hsl(var(--border));
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   border-radius: 0 0 8px 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 20px;
 }
 
 .protocol-panels {
-  border-left: 1px solid hsl(var(--border));
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   border-radius: 0 0 8px 8px;
 }
 
 .protocol-panel {
   border: none !important;
-  background: hsl(var(--card));
+  background: var(--card);
   box-shadow: none !important;
 }
 
@@ -1126,12 +1126,12 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 .panel-title-text {
   font-size: 1rem;
   font-weight: 400;
-  color: hsl(var(--foreground) / 0.87);
+  color: color-mix(in srgb, var(--foreground) 87%, transparent);
   line-height: 1.5;
 }
 
 .config-panel-content {
   padding: 16px 20px 20px;
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid var(--border);
 }
 </style>

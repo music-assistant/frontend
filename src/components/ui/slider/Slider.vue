@@ -53,7 +53,7 @@ const forwarded = computed(() => ({
       v-for="(_, key) in modelValue"
       :key="key"
       data-slot="slider-thumb"
-      class="grid place-items-center bg-transparent size-[32px] shrink-0 rounded-full transition-[color,box-shadow] focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 before:block before:size-[10px] before:rounded-full before:bg-accent before:shadow-[0_1px_3px_rgba(0,0,0,0.35)] hover:before:shadow-[0_0_0_5px_hsl(var(--accent)/0.05)]"
+      class="grid place-items-center bg-transparent size-[32px] shrink-0 rounded-full transition-[color,box-shadow] focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 before:block before:size-[10px] before:rounded-full before:bg-accent before:shadow-[0_1px_3px_rgba(0,0,0,0.35)] hover:before:shadow-[0_0_0_5px_color-mix(in srgb, var(--accent) 5%, transparent)]"
     />
   </SliderRoot>
 </template>

@@ -1839,9 +1839,9 @@ onMounted(() => {
 
 <style scoped>
 .login-background {
-  background: hsl(var(--background));
+  background: var(--background);
   min-height: 100vh;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   opacity: 0;
   animation: fadeIn 0.3s ease-in forwards;
   height: 100vh;
@@ -1893,8 +1893,8 @@ onMounted(() => {
   }
 }
 
-/* QR Scanner */
-.qr-scanner-wrapper video {
+/* QR Scanner - inside DialogContent which teleports to <body> */
+:global(.qr-scanner-wrapper video) {
   width: 100%;
   height: 100%;
   object-fit: cover;

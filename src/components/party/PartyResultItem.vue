@@ -143,7 +143,7 @@ const artistName = computed(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: hsl(var(--accent) / 0.07);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
   border-radius: 12px;
   min-height: 72px;
   transition: background 0.2s ease;
@@ -154,11 +154,11 @@ const artistName = computed(() => {
 }
 
 .result-item--clickable:hover:not(.result-item--expanded) {
-  background: hsl(var(--accent) / 0.14);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .result-item--expanded {
-  background: hsl(var(--primary) / 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .result-info {
@@ -180,7 +180,7 @@ const artistName = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--primary) / 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .result-text {
@@ -231,7 +231,7 @@ const artistName = computed(() => {
 .action-btn.boost-btn,
 .action-btn.add-btn {
   background-color: var(--btn-bg) !important;
-  color: hsl(var(--primary-foreground)) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .action-btn:disabled {

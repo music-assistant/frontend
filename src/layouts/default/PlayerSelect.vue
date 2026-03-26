@@ -322,9 +322,9 @@ const selectDefaultPlayer = function () {
   transform: translateX(100%);
   transition: transform 0.5s;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  border-left: 1px solid hsl(var(--border));
+  background: var(--card);
+  color: var(--foreground);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
@@ -373,7 +373,7 @@ const selectDefaultPlayer = function () {
   background: linear-gradient(
     to bottom,
     transparent,
-    hsl(var(--card)) 80%
+    var(--card) 80%
   );
   pointer-events: none;
   z-index: 1;

@@ -37,7 +37,7 @@ const label = computed(() =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: hsl(var(--primary-foreground));
+  color: var(--primary-foreground);
   margin-right: 0.5rem;
 }
 </style>

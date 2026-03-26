@@ -364,52 +364,54 @@ const formatDate = (value: string | undefined) =>
 </script>
 
 <style scoped>
-.details-grid {
+/* All classes below are inside DialogContent which teleports to <body>,
+   so they need :global() to bypass scoped attribute matching. */
+:global(.details-grid) {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 18px 32px;
 }
 
-.detail-row {
+:global(.detail-row) {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.detail-label {
+:global(.detail-label) {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: hsl(var(--foreground) / 0.55);
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
 }
 
-.detail-value {
+:global(.detail-value) {
   font-size: 14px;
   line-height: 1.5;
-  color: hsl(var(--foreground) / 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
   word-break: break-word;
 }
 
-.detail-value--stacked {
+:global(.detail-value--stacked) {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
 }
 
-.detail-inline {
+:global(.detail-inline) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
-.detail-inline-action {
-  color: hsl(var(--foreground) / 0.55);
+:global(.detail-inline-action) {
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
 }
 
-.detail-link {
+:global(.detail-link) {
   display: inline;
   margin: 0;
   border: 0;
@@ -420,33 +422,33 @@ const formatDate = (value: string | undefined) =>
   font-size: inherit;
   font-weight: 400;
   line-height: inherit;
-  color: hsl(var(--primary));
+  color: var(--primary);
   text-decoration: none;
   cursor: pointer;
 }
 
-.detail-link:hover {
+:global(.detail-link:hover) {
   text-decoration: underline;
 }
 
-.detail-error {
-  color: hsl(var(--destructive));
+:global(.detail-error) {
+  color: var(--destructive);
 }
 
-.detail-warning {
-  color: hsl(var(--chart-3));
+:global(.detail-warning) {
+  color: var(--chart-3);
 }
 
-.section-title {
+:global(.section-title) {
   font-size: 15px;
   font-weight: 600;
 }
 
-.log-output {
+:global(.log-output) {
   max-height: 320px;
   overflow: auto;
   border-radius: 12px;
-  background: hsl(var(--foreground) / 0.04);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
   padding: 16px;
   font-family:
     ui-monospace,
@@ -465,7 +467,7 @@ const formatDate = (value: string | undefined) =>
 }
 
 @media (min-width: 900px) {
-  .details-grid {
+  :global(.details-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

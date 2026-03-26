@@ -382,7 +382,7 @@ const chromeOnAlbumArt = computed(
   () => useAlbumArtBackground.value && !!albumArtUrl.value,
 );
 const chromeTextColor = computed(() =>
-  chromeOnAlbumArt.value ? "#FFFFFF" : "hsl(var(--foreground) / 0.9)",
+  chromeOnAlbumArt.value ? "#FFFFFF" : "color-mix(in srgb, var(--foreground) 90%, transparent)",
 );
 const maLogoSrc = computed(() =>
   chromeOnAlbumArt.value ? logoSrc : logoDarkSrc,
@@ -1032,12 +1032,12 @@ watch(
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: hsl(var(--foreground) / 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
 }
 
 .empty-message {
   font-size: 1.25rem;
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   max-width: 500px;
 }
 
@@ -1147,12 +1147,12 @@ watch(
 .access-error-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: hsl(var(--foreground) / 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
 }
 
 .access-error-message {
   font-size: 1rem;
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   max-width: 400px;
 }
 

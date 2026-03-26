@@ -320,7 +320,7 @@ const onPlayClick = function (evt: PointerEvent) {
   padding: 10px;
   border: none;
   border-radius: 3px;
-  background-color: hsl(var(--card));
+  background-color: var(--card);
   transition: opacity 0.4s ease-in-out;
   cursor: pointer;
 }

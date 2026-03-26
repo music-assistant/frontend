@@ -934,7 +934,7 @@ onMounted(() => {
   position: relative;
   aspect-ratio: 7/2;
   width: 100%;
-  background: hsl(var(--muted));
+  background: var(--muted);
   border-radius: 4px;
   overflow: hidden;
 }

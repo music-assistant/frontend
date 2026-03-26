@@ -741,8 +741,8 @@ watch(
 }
 
 .group-popout {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 8px 18px 16px 18px;
   box-shadow:
@@ -774,7 +774,7 @@ watch(
 
 .group-popout-divider {
   height: 1px;
-  background: hsl(var(--border) / 0.5);
+  background: color-mix(in srgb, var(--border) 50%, transparent);
   margin: 14px 0 10px 0;
 }
 
@@ -798,12 +798,12 @@ watch(
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: hsl(var(--border) / 0.7);
+  background: color-mix(in srgb, var(--border) 70%, transparent);
   transition: background 0.15s ease;
 }
 
 .group-popout-drag-handle:active .group-popout-drag-handle-pill {
-  background: hsl(var(--border));
+  background: var(--border);
 }
 
 /* Popout animation */

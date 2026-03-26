@@ -154,7 +154,7 @@ defineExpose({ listRef });
 .section-divider {
   flex: 1;
   height: 1px;
-  background: hsl(var(--foreground) / 0.12);
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
 .skip-area {
@@ -173,14 +173,14 @@ defineExpose({ listRef });
 .skip-token-badge {
   margin-left: 0.5rem;
   padding: 0.125rem 0.375rem;
-  background: hsl(var(--primary-foreground) / 0.2);
+  background: color-mix(in srgb, var(--primary-foreground) 20%, transparent);
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .skip-token-badge.no-tokens {
-  background: hsl(var(--destructive) / 0.3);
+  background: color-mix(in srgb, var(--destructive) 30%, transparent);
 }
 
 .skip-btn:disabled {
@@ -192,7 +192,7 @@ defineExpose({ listRef });
   align-items: center;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: hsl(var(--foreground) / 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
 }
 
 .queue-list {

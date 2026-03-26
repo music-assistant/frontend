@@ -116,7 +116,7 @@ const isCollapsed = computed(() => state.value === "collapsed");
 }
 
 .ha-menu-arrow {
-  color: hsl(var(--primary)) !important;
+  color: var(--primary) !important;
 }
 
 .trigger-container.flex-col {

@@ -236,7 +236,7 @@ html {
 }
 
 .is-playing {
-  color: hsl(var(--primary));
+  color: var(--primary);
   font-weight: 800;
 }
 

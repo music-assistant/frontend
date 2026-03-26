@@ -155,7 +155,7 @@ const sizeClass = computed(() => {
   gap: 1.5vh;
   padding: 1vh;
   border-radius: 1.2vh;
-  background: hsl(var(--foreground) / 0.08);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
   backdrop-filter: blur(1vh);
   width: 95%;
   box-sizing: border-box;
@@ -188,7 +188,7 @@ const sizeClass = computed(() => {
   --scale: 1;
   --opacity: 1;
   --z-index: 3;
-  background: hsl(var(--foreground) / 0.1);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
   box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.2);
 }
 
@@ -229,7 +229,7 @@ const sizeClass = computed(() => {
   background: color-mix(in srgb, var(--badge-color) 35%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
   border-radius: 999px;
-  color: hsl(var(--foreground) / 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
   font-size: clamp(0.65rem, 1.2vh, 1.1rem);
   font-weight: 600;
   text-transform: uppercase;
@@ -260,13 +260,13 @@ const sizeClass = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--card) / 0.4);
+  background: color-mix(in srgb, var(--card) 40%, transparent);
   border-radius: 6px;
   padding: 0.3vh;
 }
 
 .now-playing-overlay {
-  --now-playing-bar-color: hsl(var(--primary));
+  --now-playing-bar-color: var(--primary);
 }
 
 .track-artwork.size-medium {
@@ -294,12 +294,12 @@ const sizeClass = computed(() => {
   font-weight: 600;
   margin-bottom: 0.3em;
   font-size: clamp(1.4rem, 3vh, 3.5rem);
-  color: hsl(var(--foreground) / 0.95);
+  color: color-mix(in srgb, var(--foreground) 95%, transparent);
 }
 
 .track-artist {
   font-size: clamp(1.1rem, 2.2vh, 2.5rem);
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
 
 .white-text .track-name {

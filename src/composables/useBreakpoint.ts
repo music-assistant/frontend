@@ -1,12 +1,19 @@
-import { useMediaQuery } from "@vueuse/core";
-import { computed } from "vue";
+import { computed, toRef } from "vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
+import { state } from "@/plugins/breakpoint";
 
+/**
+ * Composable wrapping the existing breakpoint plugin.
+ * Uses the single global resize listener instead of @vueuse/core.
+ */
 export function useBreakpoint() {
-  const smAndUp = useMediaQuery("(min-width: 340px)");
-  const mdAndUp = useMediaQuery("(min-width: 540px)");
-  const lgAndUp = useMediaQuery("(min-width: 800px)");
-  const xlAndUp = useMediaQuery("(min-width: 1280px)");
+  const width = toRef(state, "width");
+  const height = toRef(state, "height");
+  const smAndUp = computed(() => width.value >= 340);
+  const mdAndUp = computed(() => width.value >= 540);
+  const lgAndUp = computed(() => width.value >= 800);
+  const xlAndUp = computed(() => width.value >= 1280);
   const mobile = computed(() => !mdAndUp.value);
 
-  return { smAndUp, mdAndUp, lgAndUp, xlAndUp, mobile };
+  return { width, height, smAndUp, mdAndUp, lgAndUp, xlAndUp, mobile };
 }

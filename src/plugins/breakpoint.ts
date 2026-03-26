@@ -36,10 +36,11 @@ const breakpoints: { [key in Breakpoints]: number } = {
   bp12: 415,
 };
 
-const state = reactive({ width: window.innerWidth });
+export const state = reactive({ width: window.innerWidth, height: window.innerHeight });
 
 window.addEventListener("resize", () => {
   state.width = window.innerWidth;
+  state.height = window.innerHeight;
 });
 
 type Condition = "lt" | "gt";

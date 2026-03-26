@@ -247,7 +247,7 @@ onMounted(async () => {
 }
 
 .settings-list-item:hover {
-  background-color: hsl(var(--foreground) / 0.05);
+  background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .setting-list-icon {
@@ -295,7 +295,7 @@ onMounted(async () => {
   box-shadow:
     0 12px 24px rgba(0, 0, 0, 0.15),
     0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: hsl(var(--primary) / 0.3);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .setting-header-top {
@@ -334,15 +334,15 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: hsl(var(--foreground) / 0.05);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
   flex-shrink: 0;
 }
 
 .setting-card:hover .setting-chevron {
   opacity: 1;
   transform: translateX(4px);
-  background: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
 }
 
 .setting-title {
@@ -355,7 +355,7 @@ onMounted(async () => {
 .setting-description {
   font-size: 0.875rem;
   line-height: 1.5;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
 }
 

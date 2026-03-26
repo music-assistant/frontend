@@ -609,7 +609,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
   margin: 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid hsl(var(--primary) / 0.2);
+  border-bottom: 2px solid color-mix(in srgb, var(--primary) 20%, transparent);
   flex: 1;
 }
 

@@ -103,9 +103,8 @@ const isLoading = computed(() => {
 
 .play-btn-spinner {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: auto;
   pointer-events: none;
   z-index: 1;
 }

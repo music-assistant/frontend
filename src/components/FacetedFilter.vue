@@ -146,14 +146,16 @@ const clear = () => {
 </script>
 
 <style scoped>
-.faceted-filter-content {
+/* All classes below are inside PopoverContent which teleports to <body>,
+   so they need :global() to bypass scoped attribute matching. */
+:global(.faceted-filter-content) {
   padding: 8px 10px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.faceted-filter-list {
+:global(.faceted-filter-list) {
   max-height: 260px;
   overflow-y: auto;
   display: flex;
@@ -161,7 +163,7 @@ const clear = () => {
   gap: 4px;
 }
 
-.faceted-filter-item {
+:global(.faceted-filter-item) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -174,11 +176,11 @@ const clear = () => {
   text-align: left;
 }
 
-.faceted-filter-item:hover {
-  background-color: hsl(var(--foreground) / 0.04);
+:global(.faceted-filter-item:hover) {
+  background-color: color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
-.faceted-filter-clear {
+:global(.faceted-filter-clear) {
   margin-top: 4px;
   width: 100%;
   padding: 4px 6px;
@@ -186,11 +188,11 @@ const clear = () => {
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   cursor: pointer;
 }
 
-.faceted-filter-clear:hover {
-  background-color: hsl(var(--foreground) / 0.04);
+:global(.faceted-filter-clear:hover) {
+  background-color: color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 </style>

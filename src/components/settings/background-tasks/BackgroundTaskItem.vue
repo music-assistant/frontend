@@ -215,13 +215,13 @@ const {
 
 .task-summary {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.45;
 }
 
 .task-progress-text {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.45;
 }
 
@@ -239,24 +239,24 @@ const {
   justify-content: space-between;
   gap: 16px;
   font-size: 12px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .task-progress-value {
   flex-shrink: 0;
   font-weight: 500;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .task-error {
   font-size: 13px;
-  color: hsl(var(--destructive));
+  color: var(--destructive);
   line-height: 1.45;
 }
 
 .task-failure {
   font-size: 13px;
-  color: hsl(var(--warning, 38 92% 50%));
+  color: var(--warning);
   line-height: 1.45;
 }
 
@@ -304,7 +304,7 @@ const {
 
 .task-card-summary {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.45;
   margin-top: 4px;
 }
@@ -317,7 +317,7 @@ const {
 
 .task-card-progress-text {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.45;
 }
 

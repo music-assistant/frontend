@@ -41,9 +41,10 @@
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="isBuiltinPlayer(player)"
+          class="flex items-center"
           style="font-size: 0.88rem; line-height: 1.3"
         >
-          <span>{{ getPlayerName(player, 12) }}</span>
+          <span class="truncate">{{ getPlayerName(player, 12) }}</span>
           <!-- append small icon to the title -->
           <Badge variant="outline" class="ml-2 text-xs">
             <Smartphone
@@ -60,7 +61,7 @@
           </Badge>
         </div>
         <!-- regular player -->
-        <div v-else style="font-size: 0.88rem; line-height: 1.3">
+        <div v-else class="truncate" style="font-size: 0.88rem; line-height: 1.3">
           {{ getPlayerName(player, 27) }}
         </div>
 
@@ -71,10 +72,12 @@
             font-size: 0.8rem;
             font-weight: 500;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             line-height: 1.3;
           "
         >
-          <div v-if="player.current_media?.title">
+          <div v-if="player.current_media?.title" class="truncate">
             {{ player.current_media.title }}
           </div>
         </div>
@@ -82,7 +85,7 @@
       <!-- subtitle -->
         <div
           class="text-muted-foreground"
-          style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
+          style="font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3"
         >
           <!-- player powered off -->
           <div v-if="player.powered == false">
@@ -93,16 +96,17 @@
             v-else-if="
               player.current_media?.artist && player.current_media?.album
             "
+            class="truncate"
           >
             {{ player.current_media.artist }} •
             {{ player.current_media.album }}
           </div>
           <!-- artist only -->
-          <div v-else-if="player.current_media?.artist">
+          <div v-else-if="player.current_media?.artist" class="truncate">
             {{ player.current_media.artist }}
           </div>
           <!-- album only -->
-          <div v-else-if="player.current_media?.album">
+          <div v-else-if="player.current_media?.album" class="truncate">
             {{ player.current_media.album }}
           </div>
           <!-- queue empty message -->
@@ -348,7 +352,7 @@ watch(
   width: 44px;
   height: 44px;
   border-radius: 4px;
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
   object-fit: cover;
 }
 .icon-thumb {
@@ -356,7 +360,7 @@ watch(
   height: 44px;
   margin-top: 4px;
   border-radius: 4px;
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -365,12 +369,12 @@ watch(
 .panel-item {
   border-style: ridge;
   border-width: thin;
-  border-color: hsl(var(--border));
+  border-color: var(--border);
   padding-left: 8px;
   padding-right: 8px;
   padding-top: 4px;
   padding-bottom: 4px;
-  background-color: hsl(var(--primary) / 0.04);
+  background-color: color-mix(in srgb, var(--primary) 4%, transparent);
   opacity: 1;
   transition: opacity 0.4s ease-in-out;
   border-radius: 6px;
@@ -389,8 +393,8 @@ watch(
   opacity: 0.6;
 }
 .panel-item-selected {
-  border-color: hsl(var(--primary) / 0.6);
-  background-color: hsl(var(--primary) / 0.3);
+  border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  background-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .player-command-btn {

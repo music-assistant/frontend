@@ -381,7 +381,7 @@ const saveRename = function () {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .rename-btn {
@@ -402,20 +402,20 @@ const saveRename = function () {
 
 .header-description {
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0 0 12px 0;
   line-height: 1.5;
 }
 
 .header-authors {
   font-size: 0.813rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 </style>
 
 <style>
 .header-authors a {
-  color: hsl(var(--primary));
+  color: var(--primary);
   text-decoration: none;
 }
 

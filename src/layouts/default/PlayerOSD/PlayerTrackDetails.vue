@@ -62,20 +62,21 @@
           cursor: 'pointer',
           color: primaryColor,
         }"
-        class="flex items-center"
+        class="flex items-center min-w-0 overflow-hidden"
       >
-        <div v-if="store.activePlayer && store.activePlayer?.powered != false">
+        <div v-if="store.activePlayer && store.activePlayer?.powered != false" class="ma-line-clamp-1">
           {{ getPlayerName(store.activePlayer) }}
         </div>
         <!-- player name as title if its powered off-->
         <div
           v-else-if="store.activePlayer?.powered == false"
+          class="ma-line-clamp-1"
           @click="store.showPlayersMenu = true"
         >
           {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
-        <div v-else @click="store.showPlayersMenu = true">
+        <div v-else class="ma-line-clamp-1" @click="store.showPlayersMenu = true">
           {{ $t("no_player") }}
         </div>
         <NowPlayingBadge

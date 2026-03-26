@@ -63,6 +63,7 @@ const { isDark } = useIsDark();
   left: 0;
   right: 0;
   z-index: 1000 !important;
+  background-color: var(--muted);
 }
 
 .gradient-dark {

@@ -398,6 +398,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Toolbar from "@/components/Toolbar.vue";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import { useIsDark } from "@/composables/useIsDark";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
@@ -430,7 +431,6 @@ import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { ArrowLeft, Calendar, Disc3, Merge, Mic2, Pencil, ShieldAlert, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useMediaQuery } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
@@ -445,7 +445,8 @@ const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 const { isDark } = useIsDark();
-const isMobile = useMediaQuery("(max-width: 600px)");
+const { width: _windowWidth } = useBreakpoint();
+const isMobile = computed(() => _windowWidth.value <= 600);
 const menuItems = ref<ContextMenuItem[]>([]);
 const mappedGenres = ref<Genre[]>([]);
 

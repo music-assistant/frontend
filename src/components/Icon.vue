@@ -7,7 +7,9 @@
   >
     <div class="icon-badge-wrapper">
       <span ref="iconElement" :class="iconClasses" :style="iconSizeStyle">
-        <slot></slot>
+        <slot>
+          <span v-if="icon" class="mdi" :class="icon" />
+        </slot>
       </span>
       <span v-if="badge === true" class="icon-badge-dot" />
     </div>
@@ -157,7 +159,7 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: hsl(var(--destructive));
+  background-color: var(--destructive);
 }
 
 .media-controls-item .icon {

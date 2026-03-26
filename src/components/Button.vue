@@ -4,6 +4,7 @@
     :class="buttonClasses"
     @click="$emit('click', $event)"
   >
+    <span v-if="icon && typeof icon === 'string'" class="mdi" :class="icon" />
     <slot></slot>
   </button>
 </template>
@@ -29,7 +30,7 @@ const { buttonProps, buttonClasses } = useButton(props);
 
 <style scoped>
 .button:focus-visible {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 

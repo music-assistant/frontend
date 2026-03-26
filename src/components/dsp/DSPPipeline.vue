@@ -110,11 +110,11 @@ const isDisabled = (value: SelectionType): boolean => {
 
 const getButtonStyle = (value: SelectionType) => {
   if (props.selected === value) {
-    return { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' };
+    return { background: 'var(--primary)', color: 'var(--primary-foreground)' };
   }
   return {
-    background: isDark.value ? 'hsl(var(--muted))' : 'hsl(var(--muted))',
-    color: 'hsl(var(--foreground))',
+    background: isDark.value ? 'var(--muted)' : 'var(--muted)',
+    color: 'var(--foreground)',
   };
 };
 
@@ -198,11 +198,11 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 }
 
 .dsp-timeline-dot--primary {
-  background: hsl(var(--primary));
+  background: var(--primary);
 }
 
 .dsp-timeline-dot--secondary {
-  background: hsl(var(--muted-foreground));
+  background: var(--muted-foreground);
 }
 
 .dsp-timeline-dot--hidden {
@@ -215,7 +215,7 @@ const openFilterContextMenu = function (evt: Event, index: number) {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: hsl(var(--border));
+  background: var(--border);
 }
 
 .dsp-timeline-item:first-child .dsp-timeline-line {
@@ -243,13 +243,13 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 
 .add-filter-btn {
   background: transparent !important;
-  border: 1px dashed hsl(var(--muted-foreground) / 0.5) !important;
-  color: hsl(var(--foreground)) !important;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 50%, transparent) !important;
+  color: var(--foreground) !important;
   cursor: pointer;
 }
 
 .add-filter-btn:hover {
-  border-color: hsl(var(--primary)) !important;
+  border-color: var(--primary) !important;
   transform: none;
 }
 </style>

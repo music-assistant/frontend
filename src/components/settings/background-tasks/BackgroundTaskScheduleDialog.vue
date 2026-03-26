@@ -428,23 +428,25 @@ const onSave = () => {
 </script>
 
 <style scoped>
-.weekday-grid {
+/* All classes below are inside DialogContent which teleports to <body>,
+   so they need :global() to bypass scoped attribute matching. */
+:global(.weekday-grid) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 14px;
 }
 
-.weekday-option {
+:global(.weekday-option) {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: hsl(var(--foreground) / 0.8);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
   cursor: pointer;
 }
 
 @media (min-width: 640px) {
-  .weekday-grid {
+  :global(.weekday-grid) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

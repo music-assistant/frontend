@@ -14,10 +14,10 @@
 
 <script setup lang="ts">
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { useWindowSize } from "@vueuse/core";
+import { useBreakpoint } from "@/composables/useBreakpoint";
 import { onMounted } from "vue";
 
-const { width: windowWidth } = useWindowSize();
+const { width: windowWidth } = useBreakpoint();
 
 onMounted(() => {
   document.documentElement.style.setProperty(

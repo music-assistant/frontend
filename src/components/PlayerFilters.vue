@@ -217,9 +217,9 @@ initializeFromUrl();
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: hsl(var(--primary));
+  background-color: var(--primary);
   z-index: 1;
-  box-shadow: 0 0 0 2px hsl(var(--card));
+  box-shadow: 0 0 0 2px var(--card);
 }
 
 @media (max-width: 960px) {

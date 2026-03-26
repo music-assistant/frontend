@@ -198,7 +198,7 @@ const onAction = async function (
 }
 
 .header-card {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -213,7 +213,7 @@ const onAction = async function (
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: hsl(var(--primary) / 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -228,12 +228,12 @@ const onAction = async function (
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .header-description {
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
   line-height: 1.5;
 }

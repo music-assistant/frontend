@@ -988,7 +988,7 @@ const documentationUrl = computed(() => {
   box-shadow:
     0 12px 24px rgba(0, 0, 0, 0.15),
     0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: hsl(var(--primary) / 0.3);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .setting-header-top {
@@ -1024,7 +1024,7 @@ const documentationUrl = computed(() => {
 .setting-description {
   font-size: 0.875rem;
   line-height: 1.5;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
 }
 
@@ -1041,15 +1041,15 @@ const documentationUrl = computed(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: hsl(var(--foreground) / 0.05);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
   flex-shrink: 0;
 }
 
 .setting-card:hover .setting-chevron {
   opacity: 1;
   transform: translateX(4px);
-  background: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
 }
 
 .settings-list-view {
@@ -1066,7 +1066,7 @@ const documentationUrl = computed(() => {
 }
 
 .settings-list-item:hover {
-  background-color: hsl(var(--foreground) / 0.05);
+  background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .setting-list-icon {
@@ -1128,10 +1128,10 @@ const documentationUrl = computed(() => {
 .onboarding-card {
   background: linear-gradient(
     135deg,
-    hsl(var(--primary) / 0.08) 0%,
-    hsl(var(--primary) / 0.02) 100%
+    color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+    color-mix(in srgb, var(--primary) 2%, transparent) 100%
   );
-  border: 1px solid hsl(var(--primary) / 0.2);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 25px;
@@ -1148,12 +1148,12 @@ const documentationUrl = computed(() => {
   font-size: 24px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .onboarding-subtitle {
   font-size: 15px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0 0 24px 0;
   line-height: 1.5;
 }
@@ -1170,9 +1170,9 @@ const documentationUrl = computed(() => {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: hsl(var(--card) / 0.6);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
   border-radius: 12px;
-  border: 1px solid hsl(var(--foreground) / 0.08);
+  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .section-icon {
@@ -1204,12 +1204,12 @@ const documentationUrl = computed(() => {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .section-content p {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
   line-height: 1.4;
 }
@@ -1220,7 +1220,7 @@ const documentationUrl = computed(() => {
 
 .onboarding-footer {
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin: 0;
   display: flex;
   align-items: center;

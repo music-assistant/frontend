@@ -56,9 +56,11 @@
       ></div>
     </div>
     <!-- material design icon (fallback for providers that only specify an mdi name) -->
-    <ListMusic
+    <span
       v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
-      :size="size"
+      class="mdi"
+      :class="api.providerManifests[providerDomain].icon"
+      :style="`font-size: ${size}px; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
     />
     <!-- fallback icon -->
