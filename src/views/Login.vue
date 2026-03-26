@@ -1,401 +1,371 @@
 <template>
-  <v-app>
-    <v-main v-show="showLoginUI" class="login-background">
-      <v-container class="fill-height login-container" fluid>
-        <v-row align="center" justify="center">
-          <v-col cols="12" sm="10" md="6" lg="5" xl="4">
-            <v-card class="login-card" elevation="12" rounded="xl">
-              <!-- Logo -->
-              <div class="text-center login-header">
-                <img
-                  src="@/assets/icon.svg"
-                  alt="Music Assistant"
-                  class="login-logo"
-                />
-                <h1 class="login-title font-weight-bold">Music Assistant</h1>
-                <p class="login-subtitle text-medium-emphasis">
-                  Your Music, Your Way
-                </p>
-              </div>
+  <div v-show="showLoginUI" class="login-background">
+    <div
+      class="flex min-h-screen items-center justify-center p-3 max-[500px]:p-2"
+    >
+      <div class="w-full max-w-md">
+        <Card class="border-border/50 p-6 shadow-xl max-[500px]:p-5">
+          <!-- Logo -->
+          <div class="mb-6 text-center max-[500px]:mb-4">
+            <img
+              src="@/assets/icon.svg"
+              alt="Music Assistant"
+              class="mx-auto mb-4 h-20 w-20 max-[500px]:mb-3 max-[500px]:h-15 max-[500px]:w-15"
+            />
+            <h1 class="text-2xl font-bold text-foreground max-[500px]:text-xl">
+              Music Assistant
+            </h1>
+            <p
+              class="mt-2 text-sm text-muted-foreground max-[500px]:mt-1 max-[500px]:text-[0.8125rem]"
+            >
+              Your Music, Your Way
+            </p>
+          </div>
 
-              <!-- Auto-connecting State -->
-              <template v-if="step === 'auto-connect'">
-                <div class="text-center py-6">
-                  <v-progress-circular
-                    indeterminate
-                    color="primary"
-                    size="64"
-                    class="mb-4"
-                  />
-                  <p class="text-body-2 text-medium-emphasis">
-                    {{ connectionStatusMessage }}
-                  </p>
-                </div>
-              </template>
-
-              <!-- Connection Mode Selector -->
-              <template v-if="step === 'select-mode'">
-                <!-- Remote-only mode -->
-                <div v-if="isRemoteOnlyMode" class="mb-4 text-center">
-                  <v-icon color="primary" size="48" class="mb-2"
-                    >mdi-cloud</v-icon
-                  >
-                  <p class="text-body-2 text-medium-emphasis mb-4">
-                    {{
-                      $t(
-                        "login.remote_only_info",
-                        "Connect to your Music Assistant server remotely",
-                      )
-                    }}
-                  </p>
-                </div>
-
-                <!-- Local Server Input (only for development with vite dev server) -->
-                <div v-if="showServerAddressInput" class="mb-4">
-                  <label class="text-body-2 font-weight-medium mb-2 d-block">
-                    {{ $t("login.server_address", "Server Address") }}
-                  </label>
-                  <v-text-field
-                    v-model="serverAddress"
-                    :placeholder="
-                      $t(
-                        'login.server_address_placeholder',
-                        'http://192.168.1.100:8095',
-                      )
-                    "
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details="auto"
-                    :error-messages="connectionError"
-                    :disabled="isConnecting"
-                    @keyup.enter="connectToLocal"
-                  />
-                  <p class="text-caption text-medium-emphasis mt-2">
-                    {{
-                      $t(
-                        "login.server_address_hint",
-                        "Enter the full URL of your Music Assistant server",
-                      )
-                    }}
-                  </p>
-                </div>
-
-                <!-- Remote ID Input (for remote-only mode) -->
-                <div v-if="isRemoteOnlyMode" class="mb-4">
-                  <div class="d-flex align-center justify-space-between mb-2">
-                    <label class="text-body-2 font-weight-medium">
-                      {{ $t("login.remote_id", "Remote ID") }}
-                    </label>
-                    <v-btn
-                      variant="text"
-                      size="small"
-                      color="primary"
-                      class="text-none"
-                      :disabled="isConnecting"
-                      @click="openQrScanner"
-                    >
-                      <v-icon start size="small">mdi-qrcode-scan</v-icon>
-                      {{ $t("login.scan_qr", "Scan QR") }}
-                    </v-btn>
-                  </div>
-                  <div class="remote-id-inputs">
-                    <v-text-field
-                      v-for="(_, index) in 4"
-                      :key="index"
-                      :ref="setRemoteIdRef(index)"
-                      :model-value="remoteIdParts[index]"
-                      :maxlength="remoteIdLengths[index]"
-                      variant="outlined"
-                      density="comfortable"
-                      hide-details
-                      :disabled="isConnecting"
-                      bg-color="surface-light"
-                      class="remote-id-input"
-                      :class="`remote-id-input-${index}`"
-                      @input="handleRemoteIdInput(index, $event)"
-                      @keydown="handleRemoteIdKeydown(index, $event)"
-                      @paste="handleRemoteIdPaste(index, $event)"
-                    />
-                  </div>
-                  <p
-                    v-if="connectionError"
-                    class="text-caption text-error mt-2"
-                  >
-                    {{ connectionError }}
-                  </p>
-                  <p class="text-caption text-medium-emphasis mt-2">
-                    {{
-                      $t(
-                        "login.remote_id_hint",
-                        'Find this in your server settings under "Remote Access"',
-                      )
-                    }}
-                  </p>
-                </div>
-
-                <!-- Connect Button -->
-                <v-btn
-                  color="primary"
-                  size="x-large"
-                  block
-                  rounded="lg"
-                  class="mb-4 text-none"
-                  :loading="isConnecting"
-                  :disabled="
-                    (isRemoteOnlyMode &&
-                      !remoteIdParts.every(
-                        (p, i) => p.length === remoteIdLengths[i],
-                      )) ||
-                    (showServerAddressInput && !serverAddress.trim())
-                  "
-                  @click="
-                    isRemoteOnlyMode ? connectToRemote() : connectToLocal()
-                  "
-                >
-                  {{ $t("login.connect", "Connect") }}
-                </v-btn>
-              </template>
-
-              <!-- Login Form (after connection) -->
-              <template v-if="step === 'login'">
-                <!-- Connected server info (only show for remote connections) -->
-                <div
-                  v-if="
-                    connectedServerName &&
-                    (isRemoteConnection || !isHostedWithAPI)
-                  "
-                  class="text-center mb-4"
-                >
-                  <v-chip color="success" variant="tonal" size="small">
-                    <v-icon start size="small">mdi-check-circle</v-icon>
-                    {{ connectedServerName }}
-                  </v-chip>
-                </div>
-
-                <!-- Username Field -->
-                <div class="mb-4">
-                  <label class="text-body-2 font-weight-medium mb-2 d-block">
-                    {{ $t("login.username", "Username") }}
-                  </label>
-                  <v-text-field
-                    v-model="username"
-                    :placeholder="
-                      $t('login.username_placeholder', 'Enter your username')
-                    "
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details="auto"
-                    :disabled="isAuthenticating"
-                    autofocus
-                  />
-                </div>
-
-                <!-- Password Field -->
-                <div class="mb-6">
-                  <label class="text-body-2 font-weight-medium mb-2 d-block">
-                    {{ $t("login.password", "Password") }}
-                  </label>
-                  <v-text-field
-                    v-model="password"
-                    :placeholder="
-                      $t('login.password_placeholder', 'Enter your password')
-                    "
-                    :type="showPassword ? 'text' : 'password'"
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details="auto"
-                    :append-inner-icon="
-                      showPassword ? 'mdi-eye-off' : 'mdi-eye'
-                    "
-                    :error-messages="loginError"
-                    :disabled="isAuthenticating"
-                    @click:append-inner="showPassword = !showPassword"
-                    @keyup.enter="login"
-                  />
-                </div>
-
-                <!-- Sign In Button -->
-                <v-btn
-                  color="primary"
-                  size="x-large"
-                  block
-                  rounded="lg"
-                  class="mb-6 text-none"
-                  :loading="isAuthenticating"
-                  :disabled="!username.trim() || !password.trim()"
-                  @click="login"
-                >
-                  {{ $t("login.sign_in", "Sign In") }}
-                </v-btn>
-
-                <!-- Home Assistant OAuth Button -->
-                <v-btn
-                  v-if="hasHomeAssistantAuth"
-                  variant="outlined"
-                  size="x-large"
-                  block
-                  rounded="lg"
-                  class="text-none oauth-btn mt-4"
-                  :loading="isAuthenticating"
-                  @click="loginWithHomeAssistant"
-                >
-                  <img
-                    src="@/assets/home-assistant-logo.svg"
-                    alt="Home Assistant"
-                    width="24"
-                    height="24"
-                    style="margin-right: 8px"
-                  />
-                  {{
-                    $t("login.sign_in_with_ha", "Sign in with Home Assistant")
-                  }}
-                </v-btn>
-
-                <!-- Back button (only show for remote connections or when not hosted with API) -->
-                <v-btn
-                  v-if="isRemoteConnection || !isHostedWithAPI"
-                  variant="text"
-                  class="mt-4"
-                  block
-                  :disabled="isAuthenticating"
-                  @click="goBack"
-                >
-                  {{ $t("login.different_server", "Use different server") }}
-                </v-btn>
-              </template>
-
-              <!-- Connecting State -->
-              <template v-if="step === 'connecting'">
-                <div class="text-center py-6">
-                  <v-progress-circular
-                    indeterminate
-                    color="primary"
-                    size="64"
-                    class="mb-4"
-                  />
-                  <p class="text-h6 mb-2">
-                    {{ $t("login.connecting", "Connecting...") }}
-                  </p>
-                  <p class="text-body-2 text-medium-emphasis">
-                    {{ connectionStatusMessage }}
-                  </p>
-                </div>
-                <v-btn variant="text" block @click="cancelConnection">
-                  {{ $t("login.cancel", "Cancel") }}
-                </v-btn>
-              </template>
-
-              <!-- Error State -->
-              <template v-if="step === 'error'">
-                <div class="text-center py-6">
-                  <v-icon color="error" size="64" class="mb-4"
-                    >mdi-alert-circle</v-icon
-                  >
-                  <p class="text-h6 mb-2">
-                    {{ $t("login.connection_failed", "Connection Failed") }}
-                  </p>
-                  <p class="text-body-2 text-medium-emphasis">
-                    {{ connectionError }}
-                  </p>
-                </div>
-                <v-btn color="primary" block rounded="lg" @click="retry">
-                  {{ $t("login.try_again", "Try Again") }}
-                </v-btn>
-              </template>
-
-              <!-- Reconnecting State -->
-              <template v-if="step === 'reconnecting'">
-                <div class="text-center py-6">
-                  <v-progress-circular
-                    indeterminate
-                    color="warning"
-                    size="64"
-                    class="mb-4"
-                  />
-                  <p class="text-h6 mb-2">
-                    {{ $t("login.reconnecting", "Connection Lost") }}
-                  </p>
-                  <p class="text-body-2 text-medium-emphasis">
-                    {{
-                      $t(
-                        "login.reconnecting_message",
-                        "Attempting to reconnect to the server...",
-                      )
-                    }}
-                  </p>
-                </div>
-              </template>
-            </v-card>
-
-            <!-- QR Scanner Dialog -->
-            <v-dialog v-model="showQrScanner" max-width="400" persistent>
-              <v-card class="qr-scanner-card" rounded="xl">
-                <v-card-title class="d-flex align-center justify-space-between">
-                  <span>{{ $t("login.scan_qr_code", "Scan QR Code") }}</span>
-                  <v-btn
-                    icon="mdi-close"
-                    variant="text"
-                    size="small"
-                    @click="closeQrScanner"
-                  />
-                </v-card-title>
-                <v-card-text class="qr-scanner-content">
-                  <p class="text-body-2 text-medium-emphasis mb-4">
-                    {{
-                      $t(
-                        "login.scan_qr_hint",
-                        "Point your camera at the QR code shown in your Music Assistant server settings.",
-                      )
-                    }}
-                  </p>
-                  <div class="qr-scanner-wrapper">
-                    <QrcodeStream
-                      :paused="!showQrScanner"
-                      @detect="onQrCodeDetected"
-                      @error="onQrScannerError"
-                    />
-                  </div>
-                  <v-alert
-                    v-if="qrScannerError"
-                    type="error"
-                    variant="tonal"
-                    density="compact"
-                    class="mt-4"
-                  >
-                    {{ qrScannerError }}
-                  </v-alert>
-                </v-card-text>
-              </v-card>
-            </v-dialog>
-
-            <!-- Footer -->
-            <div class="text-center login-footer">
-              <a
-                href="https://www.openhomefoundation.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="ohf-footer-link"
-              >
-                <p
-                  class="text-caption text-medium-emphasis d-flex align-center justify-center"
-                >
-                  <img
-                    src="@/assets/open-home-foundation-icon.svg"
-                    alt="Open Home Foundation"
-                    class="ohf-icon"
-                  />
-                  <span class="ohf-text"
-                    >Music Assistant is a product from the Open Home
-                    Foundation</span
-                  >
-                </p>
-              </a>
+          <!-- Auto-connecting State -->
+          <template v-if="step === 'auto-connect'">
+            <div class="py-6 text-center">
+              <Spinner :size="64" class="mx-auto mb-4 text-primary" />
+              <p class="text-sm text-muted-foreground">
+                {{ connectionStatusMessage }}
+              </p>
             </div>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-main>
-  </v-app>
+          </template>
+
+          <!-- Connection Mode Selector -->
+          <template v-if="step === 'select-mode'">
+            <!-- Remote-only mode -->
+            <div v-if="isRemoteOnlyMode" class="mb-4 text-center">
+              <Cloud class="mx-auto mb-2 h-12 w-12 text-primary" />
+              <p class="mb-4 text-sm text-muted-foreground">
+                {{
+                  $t(
+                    "login.remote_only_info",
+                    "Connect to your Music Assistant server remotely",
+                  )
+                }}
+              </p>
+            </div>
+
+            <!-- Local Server Input (only for development with vite dev server) -->
+            <div v-if="showServerAddressInput" class="mb-4">
+              <label class="mb-2 block text-sm font-medium text-foreground">
+                {{ $t("login.server_address", "Server Address") }}
+              </label>
+              <Input
+                v-model="serverAddress"
+                :placeholder="
+                  $t(
+                    'login.server_address_placeholder',
+                    'http://192.168.1.100:8095',
+                  )
+                "
+                class="rounded-[10px]"
+                :class="connectionError ? 'border-destructive' : ''"
+                :disabled="isConnecting"
+                @keyup.enter="connectToLocal"
+              />
+              <p v-if="connectionError" class="mt-1 text-xs text-destructive">
+                {{ connectionError }}
+              </p>
+              <p class="mt-2 text-xs text-muted-foreground">
+                {{
+                  $t(
+                    "login.server_address_hint",
+                    "Enter the full URL of your Music Assistant server",
+                  )
+                }}
+              </p>
+            </div>
+
+            <!-- Remote ID Input (for remote-only mode) -->
+            <div v-if="isRemoteOnlyMode" class="mb-4">
+              <div class="mb-2 flex items-center justify-between">
+                <label class="text-sm font-medium text-foreground">
+                  {{ $t("login.remote_id", "Remote ID") }}
+                </label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  :disabled="isConnecting"
+                  @click="openQrScanner"
+                >
+                  <QrCode class="mr-1 h-4 w-4" />
+                  {{ $t("login.scan_qr", "Scan QR") }}
+                </Button>
+              </div>
+              <div class="remote-id-inputs">
+                <Input
+                  v-for="(_, index) in 4"
+                  :key="index"
+                  :ref="setRemoteIdRef(index)"
+                  :model-value="remoteIdParts[index]"
+                  :maxlength="remoteIdLengths[index]"
+                  :disabled="isConnecting"
+                  class="remote-id-input rounded-[10px] text-center font-mono uppercase tracking-wider"
+                  :class="`remote-id-input-${index}`"
+                  @input="handleRemoteIdInput(index, $event)"
+                  @keydown="handleRemoteIdKeydown(index, $event)"
+                  @paste="handleRemoteIdPaste(index, $event)"
+                />
+              </div>
+              <p v-if="connectionError" class="mt-2 text-xs text-destructive">
+                {{ connectionError }}
+              </p>
+              <p class="mt-2 text-xs text-muted-foreground">
+                {{
+                  $t(
+                    "login.remote_id_hint",
+                    'Find this in your server settings under "Remote Access"',
+                  )
+                }}
+              </p>
+            </div>
+
+            <!-- Connect Button -->
+            <Button
+              size="lg"
+              class="mb-4 h-12 w-full rounded-lg text-base max-[500px]:h-12 max-[500px]:text-[0.9375rem]"
+              :disabled="
+                (isRemoteOnlyMode &&
+                  !remoteIdParts.every(
+                    (p, i) => p.length === remoteIdLengths[i],
+                  )) ||
+                (showServerAddressInput && !serverAddress.trim()) ||
+                isConnecting
+              "
+              @click="isRemoteOnlyMode ? connectToRemote() : connectToLocal()"
+            >
+              <Spinner v-if="isConnecting" class="mr-2" />
+              {{ $t("login.connect", "Connect") }}
+            </Button>
+          </template>
+
+          <!-- Login Form (after connection) -->
+          <template v-if="step === 'login'">
+            <!-- Connected server info (only show for remote connections) -->
+            <div
+              v-if="
+                connectedServerName && (isRemoteConnection || !isHostedWithAPI)
+              "
+              class="mb-4 text-center"
+            >
+              <Badge
+                variant="secondary"
+                class="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+              >
+                <CheckCircle class="mr-1 h-3 w-3" />
+                {{ connectedServerName }}
+              </Badge>
+            </div>
+
+            <!-- Username Field -->
+            <div class="mb-4">
+              <label class="mb-2 block text-sm font-medium text-foreground">
+                {{ $t("login.username", "Username") }}
+              </label>
+              <Input
+                v-model="username"
+                :placeholder="
+                  $t('login.username_placeholder', 'Enter your username')
+                "
+                class="rounded-[10px]"
+                :disabled="isAuthenticating"
+                autofocus
+              />
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-6">
+              <label class="mb-2 block text-sm font-medium text-foreground">
+                {{ $t("login.password", "Password") }}
+              </label>
+              <div class="relative">
+                <Input
+                  v-model="password"
+                  :placeholder="
+                    $t('login.password_placeholder', 'Enter your password')
+                  "
+                  :type="showPassword ? 'text' : 'password'"
+                  class="rounded-[10px] pr-10"
+                  :class="loginError ? 'border-destructive' : ''"
+                  :disabled="isAuthenticating"
+                  @keyup.enter="login"
+                />
+                <button
+                  type="button"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  @click="showPassword = !showPassword"
+                >
+                  <EyeOff v-if="showPassword" class="h-4 w-4" />
+                  <Eye v-else class="h-4 w-4" />
+                </button>
+              </div>
+              <p v-if="loginError" class="mt-1 text-xs text-destructive">
+                {{ loginError }}
+              </p>
+            </div>
+
+            <!-- Sign In Button -->
+            <Button
+              size="lg"
+              class="mb-6 h-12 w-full rounded-lg text-base max-[500px]:h-12 max-[500px]:text-[0.9375rem]"
+              :disabled="
+                !username.trim() || !password.trim() || isAuthenticating
+              "
+              @click="login"
+            >
+              <Spinner v-if="isAuthenticating" class="mr-2" />
+              {{ $t("login.sign_in", "Sign In") }}
+            </Button>
+
+            <!-- Home Assistant OAuth Button -->
+            <Button
+              v-if="hasHomeAssistantAuth"
+              variant="outline"
+              size="lg"
+              class="mt-4 h-12 w-full rounded-lg border-border text-base hover:border-primary hover:bg-primary/5 max-[500px]:h-12 max-[500px]:text-[0.9375rem]"
+              :disabled="isAuthenticating"
+              @click="loginWithHomeAssistant"
+            >
+              <Spinner v-if="isAuthenticating" class="mr-2" />
+              <img
+                v-else
+                src="@/assets/home-assistant-logo.svg"
+                alt="Home Assistant"
+                width="24"
+                height="24"
+                class="mr-2"
+              />
+              {{ $t("login.sign_in_with_ha", "Sign in with Home Assistant") }}
+            </Button>
+
+            <!-- Back button (only show for remote connections or when not hosted with API) -->
+            <Button
+              v-if="isRemoteConnection || !isHostedWithAPI"
+              variant="ghost"
+              class="mt-4 w-full"
+              :disabled="isAuthenticating"
+              @click="goBack"
+            >
+              {{ $t("login.different_server", "Use different server") }}
+            </Button>
+          </template>
+
+          <!-- Connecting State -->
+          <template v-if="step === 'connecting'">
+            <div class="py-6 text-center">
+              <Spinner :size="64" class="mx-auto mb-4 text-primary" />
+              <p class="mb-2 text-lg font-semibold text-foreground">
+                {{ $t("login.connecting", "Connecting...") }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ connectionStatusMessage }}
+              </p>
+            </div>
+            <Button variant="ghost" class="w-full" @click="cancelConnection">
+              {{ $t("login.cancel", "Cancel") }}
+            </Button>
+          </template>
+
+          <!-- Error State -->
+          <template v-if="step === 'error'">
+            <div class="py-6 text-center">
+              <AlertCircle class="mx-auto mb-4 h-16 w-16 text-destructive" />
+              <p class="mb-2 text-lg font-semibold text-foreground">
+                {{ $t("login.connection_failed", "Connection Failed") }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ connectionError }}
+              </p>
+            </div>
+            <Button class="w-full rounded-lg" @click="retry">
+              {{ $t("login.try_again", "Try Again") }}
+            </Button>
+          </template>
+
+          <!-- Reconnecting State -->
+          <template v-if="step === 'reconnecting'">
+            <div class="py-6 text-center">
+              <Spinner :size="64" class="mx-auto mb-4 text-yellow-500" />
+              <p class="mb-2 text-lg font-semibold text-foreground">
+                {{ $t("login.reconnecting", "Connection Lost") }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{
+                  $t(
+                    "login.reconnecting_message",
+                    "Attempting to reconnect to the server...",
+                  )
+                }}
+              </p>
+            </div>
+          </template>
+        </Card>
+
+        <!-- QR Scanner Dialog -->
+        <Dialog v-model:open="showQrScanner">
+          <DialogContent
+            class="max-w-[400px] rounded-xl"
+            @interact-outside.prevent
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {{ $t("login.scan_qr_code", "Scan QR Code") }}
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <p class="mb-4 text-sm text-muted-foreground">
+                {{
+                  $t(
+                    "login.scan_qr_hint",
+                    "Point your camera at the QR code shown in your Music Assistant server settings.",
+                  )
+                }}
+              </p>
+              <div
+                class="qr-scanner-wrapper aspect-square w-full overflow-hidden rounded-xl bg-black"
+              >
+                <QrcodeStream
+                  :paused="!showQrScanner"
+                  @detect="onQrCodeDetected"
+                  @error="onQrScannerError"
+                />
+              </div>
+              <Alert v-if="qrScannerError" variant="destructive" class="mt-4">
+                <AlertCircle class="h-4 w-4" />
+                <AlertDescription>{{ qrScannerError }}</AlertDescription>
+              </Alert>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <!-- Footer -->
+        <div class="mt-6 text-center max-[500px]:mt-4">
+          <a
+            href="https://www.openhomefoundation.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-inherit no-underline transition-opacity hover:opacity-70"
+          >
+            <p
+              class="flex items-center justify-center text-xs text-muted-foreground max-[500px]:flex-wrap max-[500px]:text-[0.6875rem]"
+            >
+              <img
+                src="@/assets/open-home-foundation-icon.svg"
+                alt="Open Home Foundation"
+                class="h-4 w-auto shrink-0 max-[500px]:h-3.5"
+              />
+              <span class="ml-1 max-[500px]:ml-0.5"
+                >Music Assistant is a product from the Open Home
+                Foundation</span
+              >
+            </p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -418,6 +388,26 @@ import {
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Cloud,
+  QrCode,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from "lucide-vue-next";
 
 const { t } = useI18n();
 
@@ -1845,23 +1835,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* CSS Variables matching Music Assistant server styling */
 .login-background {
-  --fg: #000000;
-  --background: #f5f5f5;
-  --panel: #ffffff;
-  --primary: #03a9f4;
-  --text-secondary: rgba(0, 0, 0, 0.6);
-  --text-tertiary: rgba(0, 0, 0, 0.4);
-  --border: rgba(0, 0, 0, 0.1);
-  --input-bg: rgba(0, 0, 0, 0.03);
-  --input-focus-bg: rgba(3, 169, 244, 0.05);
-  --error-text: #d32f2f;
-  --success: #4caf50;
-
-  background: var(--background);
+  background: hsl(var(--background));
   min-height: 100vh;
-  color: var(--fg);
+  color: hsl(var(--foreground));
   opacity: 0;
   animation: fadeIn 0.3s ease-in forwards;
   height: 100vh;
@@ -1878,101 +1855,6 @@ onMounted(() => {
   }
 }
 
-.login-container {
-  padding: 12px;
-}
-
-@media (max-width: 500px) {
-  .login-container {
-    padding: 8px;
-  }
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .login-background {
-    --fg: #ffffff;
-    --background: #181818;
-    --panel: #232323;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --text-tertiary: rgba(255, 255, 255, 0.4);
-    --border: rgba(255, 255, 255, 0.08);
-    --input-bg: rgba(255, 255, 255, 0.05);
-    --input-focus-bg: rgba(3, 169, 244, 0.08);
-    --error-text: #ff6b6b;
-    --success: #66bb6a;
-  }
-}
-
-.login-card {
-  background: var(--panel) !important;
-  border: 1px solid var(--border);
-  padding: 2rem;
-}
-
-/* Mobile responsive padding */
-@media (max-width: 500px) {
-  .login-card {
-    padding: 1.25rem;
-  }
-}
-
-.login-header {
-  margin-bottom: 1.5rem;
-}
-
-@media (max-width: 500px) {
-  .login-header {
-    margin-bottom: 1rem;
-  }
-}
-
-.login-logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 1rem;
-}
-
-/* Smaller logo on mobile */
-@media (max-width: 500px) {
-  .login-logo {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 0.75rem;
-  }
-}
-
-.login-title {
-  font-size: 1.5rem;
-}
-
-@media (max-width: 500px) {
-  .login-title {
-    font-size: 1.25rem;
-  }
-}
-
-.login-subtitle {
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 500px) {
-  .login-subtitle {
-    font-size: 0.8125rem;
-    margin-top: 0.25rem;
-  }
-}
-
-.oauth-btn {
-  border-color: var(--border) !important;
-}
-
-.oauth-btn:hover {
-  border-color: var(--primary) !important;
-  background: var(--input-focus-bg) !important;
-}
-
 /* Remote ID segmented input */
 .remote-id-inputs {
   display: flex;
@@ -1983,14 +1865,6 @@ onMounted(() => {
 .remote-id-input {
   flex: 1;
   min-width: 0;
-}
-
-.remote-id-input :deep(input) {
-  text-align: center;
-  font-family: monospace;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 /* Adjust widths proportionally based on character count (8, 5, 5, 8) */
@@ -2009,167 +1883,15 @@ onMounted(() => {
     gap: 4px;
   }
 
-  .remote-id-input :deep(input) {
+  .remote-id-input {
     font-size: 0.875rem;
     padding: 0 4px;
-  }
-
-  .remote-id-input :deep(.v-field__input) {
     min-height: 44px;
-    padding: 0 8px;
   }
 }
 
-:deep(.v-field) {
-  border-radius: 10px !important;
-}
-
-:deep(.v-field--variant-outlined .v-field__outline__start) {
-  border-radius: 10px 0 0 10px !important;
-}
-
-:deep(.v-field--variant-outlined .v-field__outline__end) {
-  border-radius: 0 10px 10px 0 !important;
-}
-
-:deep(.v-card) {
-  color: var(--fg) !important;
-}
-
-:deep(.v-card-title),
-:deep(.v-card-text),
-:deep(.text-h4),
-:deep(.text-h6),
-:deep(.text-body-2) {
-  color: var(--fg) !important;
-}
-
-:deep(.text-medium-emphasis) {
-  color: var(--text-secondary) !important;
-}
-
-:deep(.v-tab) {
-  color: var(--text-secondary) !important;
-}
-
-:deep(.v-tab--selected) {
-  color: var(--primary) !important;
-}
-
-:deep(.v-field__input) {
-  color: var(--fg) !important;
-}
-
-:deep(.v-label) {
-  color: var(--text-secondary) !important;
-}
-
-:deep(.v-field__field) {
-  background: var(--input-bg) !important;
-}
-
-:deep(.v-field--focused .v-field__field) {
-  background: var(--input-focus-bg) !important;
-}
-
-/* Responsive button sizing */
-@media (max-width: 500px) {
-  :deep(.v-btn.v-btn--size-x-large) {
-    font-size: 0.9375rem;
-    min-height: 48px;
-    padding: 0 20px;
-  }
-}
-
-.login-footer {
-  margin-top: 1.5rem;
-}
-
-@media (max-width: 500px) {
-  .login-footer {
-    margin-top: 1rem;
-  }
-
-  .login-footer .text-caption {
-    font-size: 0.6875rem;
-    flex-wrap: wrap;
-  }
-}
-
-.ohf-footer-link {
-  text-decoration: none;
-  color: inherit;
-  transition: opacity 0.2s;
-}
-
-.ohf-footer-link:hover {
-  opacity: 0.7;
-}
-
-.ohf-icon {
-  height: 16px;
-  width: auto;
-  flex-shrink: 0;
-}
-
-@media (max-width: 500px) {
-  .ohf-icon {
-    height: 14px;
-  }
-}
-
-.ohf-text {
-  margin-left: 4px;
-}
-
-@media (max-width: 500px) {
-  .ohf-text {
-    margin-left: 3px;
-  }
-}
-
-/* QR Scanner styles */
-.qr-scanner-card {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
-
-.qr-scanner-card :deep(.v-card-title) {
-  color: #000000 !important;
-}
-
-.qr-scanner-card :deep(.text-medium-emphasis) {
-  color: rgba(0, 0, 0, 0.6) !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  .qr-scanner-card {
-    background: #232323 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
-
-  .qr-scanner-card :deep(.v-card-title) {
-    color: #ffffff !important;
-  }
-
-  .qr-scanner-card :deep(.text-medium-emphasis) {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-}
-
-.qr-scanner-content {
-  padding: 16px 24px 24px;
-}
-
-.qr-scanner-wrapper {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #000;
-}
-
-.qr-scanner-wrapper :deep(video) {
+/* QR Scanner */
+.qr-scanner-wrapper video {
   width: 100%;
   height: 100%;
   object-fit: cover;
