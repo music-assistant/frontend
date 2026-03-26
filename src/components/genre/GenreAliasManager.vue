@@ -5,8 +5,8 @@
       :menu-items="aliasToolbarMenuItems"
       @title-clicked="toggleAliasSection"
     />
-    <v-divider />
-    <v-list v-if="aliasSectionExpanded">
+    <Separator />
+    <div v-if="aliasSectionExpanded" role="list">
       <ListItem v-for="alias in aliases" :key="alias">
         <template #prepend>
           <Route :size="20" />
@@ -34,7 +34,7 @@
           </Button>
         </template>
       </ListItem>
-    </v-list>
+    </div>
   </Container>
 
   <LinkAliasDialog
@@ -73,6 +73,7 @@ import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";

@@ -1,89 +1,107 @@
 <template>
   <section>
-    <v-card-text>
+    <div class="p-4 space-y-4">
       <!-- header -->
-      <div style="margin-left: -5px; margin-right: -5px">
-        <v-card-title>
+      <div class="space-y-2">
+        <h2 class="text-xl font-semibold">
           {{ $t("settings.add_group_player") }}
-        </v-card-title>
-        <v-card-subtitle
+        </h2>
+        <p
           v-if="providerDetails?.domain === 'universal_group'"
-          style="white-space: break-spaces"
+          class="text-sm text-muted-foreground whitespace-pre-wrap"
           v-html="
             markdownToHtml($t('settings.add_group_player_desc_universal'))
           "
         />
-        <v-card-subtitle
+        <p
           v-else-if="providerDetails?.domain === 'sync_group'"
-          style="white-space: break-spaces"
+          class="text-sm text-muted-foreground whitespace-pre-wrap"
           v-html="markdownToHtml($t('settings.add_group_player_desc_sync'))"
         />
-        <v-card-subtitle
+        <p
           v-else
-          style="white-space: break-spaces"
+          class="text-sm text-muted-foreground whitespace-pre-wrap"
           v-html="
             markdownToHtml(
               $t('settings.add_group_player_desc', [providerDetails?.name]),
             )
           "
         />
-        <br />
-        <v-divider />
-        <br />
-        <br />
-        <v-form ref="form" v-model="valid" style="margin-right: 10px">
-          <!-- name field -->
-          <v-text-field
+      </div>
+
+      <Separator />
+
+      <form class="space-y-4" @submit.prevent="onSubmit">
+        <!-- name field -->
+        <div class="space-y-1.5">
+          <Label for="player-name">{{ $t("settings.player_name") }}</Label>
+          <Input
+            id="player-name"
             v-model="name"
-            :label="$t('settings.player_name')"
-            variant="outlined"
-            clearable
             required
-            :rules="[(v) => v.length > 0 || $t('settings.invalid_input')]"
           />
-          <!-- dropdown with group members -->
-          <v-select
-            v-model="members"
-            clearable
-            multiple
-            :items="syncPlayers"
-            item-title="name"
-            item-value="player_id"
-            :label="$t('settings.group_members')"
-          />
-          <!-- dynamic mode -->
-          <v-switch
-            v-model="dynamic"
-            color="primary"
-            :label="$t('settings.dynamic_members.label')"
-          />
-          <v-card-subtitle
+        </div>
+
+        <!-- dropdown with group members -->
+        <div class="space-y-1.5">
+          <Label>{{ $t("settings.group_members") }}</Label>
+          <div class="rounded-md border max-h-60 overflow-y-auto">
+            <div
+              v-for="player in syncPlayers"
+              :key="player.player_id"
+              class="flex items-center gap-3 px-3 py-2 hover:bg-accent/50 cursor-pointer"
+              @click="toggleMember(player.player_id)"
+            >
+              <Checkbox
+                :checked="members.includes(player.player_id)"
+                @update:checked="toggleMember(player.player_id)"
+              />
+              <span class="text-sm">{{ player.name }}</span>
+            </div>
+            <div
+              v-if="syncPlayers.length === 0"
+              class="px-3 py-4 text-sm text-muted-foreground text-center"
+            >
+              {{ $t("no_items") }}
+            </div>
+          </div>
+        </div>
+
+        <!-- dynamic mode -->
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-3">
+            <Switch
+              :checked="dynamic"
+              @update:checked="dynamic = $event"
+            />
+            <Label>{{ $t("settings.dynamic_members.label") }}</Label>
+          </div>
+          <p
             v-if="providerDetails?.domain !== 'universal_group'"
-            style="
-              white-space: break-spaces;
-              padding-left: 0;
-              margin-top: -25px;
-              margin-bottom: 35px;
-            "
+            class="text-xs text-muted-foreground"
           >
             {{ $t("settings.dynamic_members.description") }}
-          </v-card-subtitle>
-          <br />
-          <v-btn
-            block
-            color="primary"
-            :disabled="!valid || (members.length == 0 && !dynamic)"
+          </p>
+        </div>
+
+        <div class="space-y-2 pt-2">
+          <Button
+            class="w-full"
+            :disabled="name.length === 0 || (members.length === 0 && !dynamic)"
             @click="onSubmit"
           >
             {{ $t("settings.save") }}
-          </v-btn>
-        </v-form>
-        <br />
-        <v-btn block @click="router.back()">
-          {{ $t("close") }}
-        </v-btn>
-      </div>
-    </v-card-text>
+          </Button>
+          <Button
+            variant="outline"
+            class="w-full"
+            @click="router.back()"
+          >
+            {{ $t("close") }}
+          </Button>
+        </div>
+      </form>
+    </div>
   </section>
 </template>
 
@@ -93,13 +111,18 @@ import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
 import { markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
+import Button from "@/components/Button.vue";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 // global refs
 const router = useRouter();
 const name = ref<string>("");
 const members = ref<string[]>([]);
 const dynamic = ref<boolean>(true);
-const valid = ref<boolean>(false);
 
 // props
 const props = defineProps<{
@@ -164,6 +187,15 @@ const syncPlayers = computed(() => {
 });
 
 // methods
+const toggleMember = (playerId: string) => {
+  const idx = members.value.indexOf(playerId);
+  if (idx >= 0) {
+    members.value.splice(idx, 1);
+  } else {
+    members.value.push(playerId);
+  }
+};
+
 const onSubmit = async function () {
   api.createPlayerGroup(
     props.provider,

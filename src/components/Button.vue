@@ -1,14 +1,11 @@
 <template>
-  <v-btn
+  <button
     v-bind="buttonProps"
     :class="buttonClasses"
     @click="$emit('click', $event)"
   >
-    <v-icon v-if="icon && typeof icon === 'string'" :icon="icon" />
-    <template v-for="(_, name) in $slots" #[name]>
-      <slot :name="name"></slot>
-    </template>
-  </v-btn>
+    <slot></slot>
+  </button>
 </template>
 
 <script lang="ts">
@@ -32,7 +29,7 @@ const { buttonProps, buttonClasses } = useButton(props);
 
 <style scoped>
 .button:focus-visible {
-  outline: 2px solid var(--v-theme-primary);
+  outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
 
@@ -56,15 +53,6 @@ const { buttonProps, buttonClasses } = useButton(props);
 .button--icon {
   min-height: 40px;
   min-width: 40px;
-}
-
-.button--icon :deep(.v-ripple__container) {
-  border-radius: 50% !important;
-  transform: scale(0.7) !important;
-}
-
-.button--icon :deep(.v-ripple__animation) {
-  border-radius: 50% !important;
 }
 
 .button--nav {

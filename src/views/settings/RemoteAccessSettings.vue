@@ -1,52 +1,52 @@
 <template>
   <Container>
     <div v-if="loading" class="loading-wrapper">
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <Spinner class="size-16 text-primary" />
     </div>
     <div v-else-if="remoteAccessInfo" class="remote-access-wrapper">
-      <v-card class="hero-card mb-6" elevation="0" rounded="lg">
-        <v-card-item class="hero-content">
+      <Card class="hero-card mb-6">
+        <CardContent class="hero-content">
           <div class="hero-icon-wrapper">
-            <v-icon size="48" color="primary">mdi-cloud-lock</v-icon>
+            <ShieldCheck class="size-12 text-primary" />
           </div>
-          <v-card-title class="hero-title">
+          <CardTitle class="hero-title">
             {{ $t("settings.remote_access_title") }}
-          </v-card-title>
+          </CardTitle>
           <p class="hero-description">
             {{ $t("settings.remote_access_explanation_intro") }}
           </p>
           <div class="feature-grid">
             <div class="feature-item">
-              <v-icon size="20" color="primary">mdi-check-circle</v-icon>
+              <CheckCircle class="size-5 text-primary shrink-0" />
               <span>{{ $t("settings.remote_access_feature_webrtc") }}</span>
             </div>
             <div class="feature-item">
-              <v-icon size="20" color="primary">mdi-check-circle</v-icon>
+              <CheckCircle class="size-5 text-primary shrink-0" />
               <span>{{ $t("settings.remote_access_feature_encrypted") }}</span>
             </div>
             <div class="feature-item">
-              <v-icon size="20" color="primary">mdi-check-circle</v-icon>
+              <CheckCircle class="size-5 text-primary shrink-0" />
               <span>
                 {{ $t("settings.remote_access_feature_no_port_forwarding") }}
               </span>
             </div>
             <div class="feature-item">
-              <v-icon size="20" color="primary">mdi-check-circle</v-icon>
+              <CheckCircle class="size-5 text-primary shrink-0" />
               <span>
                 {{ $t("settings.remote_access_explanation_ha_cloud") }}
               </span>
             </div>
           </div>
-        </v-card-item>
-      </v-card>
+        </CardContent>
+      </Card>
 
-      <v-card class="status-card mb-6" elevation="0" rounded="lg">
-        <v-card-item class="status-header">
-          <div class="d-flex align-center justify-space-between w-100">
+      <Card class="status-card mb-6">
+        <CardContent class="status-header">
+          <div class="flex items-center justify-between w-full">
             <div>
-              <v-card-title class="status-title">
+              <CardTitle class="status-title">
                 {{ $t("settings.remote_access_status") }}
-              </v-card-title>
+              </CardTitle>
               <div class="status-text">
                 {{
                   remoteAccessInfo.enabled
@@ -55,22 +55,17 @@
                 }}
               </div>
             </div>
-            <v-switch
-              :model-value="remoteAccessInfo.enabled"
-              :loading="switching"
+            <Switch
+              :checked="remoteAccessInfo.enabled"
               :disabled="switching"
-              color="primary"
-              hide-details
               class="status-switch"
-              @update:model-value="toggleRemoteAccess"
+              @update:checked="toggleRemoteAccess"
             />
           </div>
-        </v-card-item>
-        <v-card-text v-if="remoteAccessInfo.enabled" class="status-badges">
-          <v-chip
-            :color="remoteAccessInfo.connected ? 'success' : 'warning'"
-            size="default"
-            variant="flat"
+        </CardContent>
+        <CardContent v-if="remoteAccessInfo.enabled" class="status-badges">
+          <Badge
+            :variant="remoteAccessInfo.connected ? 'default' : 'warning'"
             class="status-chip"
           >
             {{
@@ -78,11 +73,9 @@
                 ? $t("settings.remote_access_connected")
                 : $t("settings.remote_access_connecting")
             }}
-          </v-chip>
-          <v-chip
-            :color="remoteAccessInfo.using_ha_cloud ? 'success' : 'default'"
-            size="default"
-            variant="outlined"
+          </Badge>
+          <Badge
+            :variant="remoteAccessInfo.using_ha_cloud ? 'default' : 'outline'"
             class="status-chip"
           >
             {{
@@ -90,39 +83,34 @@
                 ? $t("settings.remote_access_mode_optimized")
                 : $t("settings.remote_access_mode_basic")
             }}
-          </v-chip>
-        </v-card-text>
-      </v-card>
+          </Badge>
+        </CardContent>
+      </Card>
 
-      <v-card
+      <Card
         v-if="remoteAccessInfo.enabled && !remoteAccessInfo.using_ha_cloud"
         class="upgrade-card mb-6"
-        elevation="0"
-        rounded="lg"
       >
-        <v-card-item class="upgrade-content">
-          <v-icon size="60" color="primary" class="upgrade-icon">
-            mdi-cloud-alert
-          </v-icon>
-          <v-card-title class="upgrade-title">
+        <CardContent class="upgrade-content">
+          <CloudAlert class="size-16 text-primary upgrade-icon" />
+          <CardTitle class="upgrade-title">
             {{ $t("settings.remote_access_mode_basic") }}
-          </v-card-title>
+          </CardTitle>
           <p class="upgrade-description">
             {{ $t("settings.remote_access_mode_basic_description") }}
           </p>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            size="large"
+          <Button
+            size="lg"
             class="upgrade-button"
+            as="a"
             href="https://www.nabucasa.com"
             target="_blank"
           >
             {{ $t("settings.remote_access_upgrade_to_optimized") }}
-            <v-icon end>mdi-open-in-new</v-icon>
-          </v-btn>
-        </v-card-item>
-      </v-card>
+            <ExternalLink class="size-4 ml-2" />
+          </Button>
+        </CardContent>
+      </Card>
 
       <!-- Two-card layout for ID and QR code -->
       <div
@@ -130,16 +118,14 @@
         class="remote-id-grid mb-6"
       >
         <!-- Text ID Card -->
-        <v-card class="remote-id-card" elevation="0" rounded="lg">
-          <v-card-item class="remote-id-header">
-            <v-icon size="28" color="primary" class="mr-2"
-              >mdi-identifier</v-icon
-            >
-            <v-card-title class="remote-id-title">
+        <Card class="remote-id-card">
+          <CardContent class="remote-id-header">
+            <Hash class="size-7 text-primary mr-2" />
+            <CardTitle class="remote-id-title">
               {{ $t("settings.remote_access_your_id") }}
-            </v-card-title>
-          </v-card-item>
-          <v-card-text class="remote-id-content">
+            </CardTitle>
+          </CardContent>
+          <CardContent class="remote-id-content">
             <p class="remote-id-explanation">
               {{ $t("settings.remote_access_id_explanation") }}
             </p>
@@ -154,28 +140,27 @@
                   <code class="remote-id-box-text">{{ part }}</code>
                 </div>
               </div>
-              <v-btn
-                icon="mdi-content-copy"
-                variant="text"
-                size="small"
-                color="primary"
-                class="copy-button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 :title="$t('settings.remote_access_copy_id')"
                 @click="copyRemoteId"
-              />
+              >
+                <Copy class="size-4 text-primary" />
+              </Button>
             </div>
-          </v-card-text>
-        </v-card>
+          </CardContent>
+        </Card>
 
         <!-- QR Code Card -->
-        <v-card class="remote-id-card" elevation="0" rounded="lg">
-          <v-card-item class="remote-id-header">
-            <v-icon size="28" color="primary" class="mr-2">mdi-qrcode</v-icon>
-            <v-card-title class="remote-id-title">
+        <Card class="remote-id-card">
+          <CardContent class="remote-id-header">
+            <QrCode class="size-7 text-primary mr-2" />
+            <CardTitle class="remote-id-title">
               {{ $t("settings.remote_access_qr_code") }}
-            </v-card-title>
-          </v-card-item>
-          <v-card-text class="remote-id-content">
+            </CardTitle>
+          </CardContent>
+          <CardContent class="remote-id-content">
             <p class="remote-id-explanation">
               {{ $t("settings.remote_access_qr_code_description") }}
             </p>
@@ -186,24 +171,17 @@
                 alt="Remote ID QR Code"
                 class="qr-code-image"
               />
-              <v-progress-circular
-                v-else
-                indeterminate
-                size="32"
-                color="primary"
-              />
+              <Spinner v-else class="size-8 text-primary" />
             </div>
-          </v-card-text>
-        </v-card>
+          </CardContent>
+        </Card>
       </div>
 
-      <v-card
+      <Card
         v-if="remoteAccessInfo.enabled && remoteAccessInfo.remote_id"
         class="usage-card mb-6"
-        elevation="0"
-        rounded="lg"
       >
-        <v-card-text class="usage-content">
+        <CardContent class="usage-content">
           <div>
             <div class="usage-title">
               {{ $t("settings.remote_access_how_to_use") }}
@@ -213,17 +191,14 @@
                 <div class="step-number">1</div>
                 <div class="step-content">
                   {{ $t("settings.remote_access_step_1") }}
-                  <v-btn
-                    color="primary"
-                    variant="text"
-                    size="small"
+                  <a
                     href="https://app.music-assistant.io"
                     target="_blank"
-                    class="step-link"
+                    class="text-primary text-sm ml-1 inline-flex items-center gap-1"
                   >
                     app.music-assistant.io
-                    <v-icon end size="small">mdi-open-in-new</v-icon>
-                  </v-btn>
+                    <ExternalLink class="size-3" />
+                  </a>
                 </div>
               </div>
               <div class="step-item">
@@ -240,45 +215,44 @@
               </div>
             </div>
           </div>
-        </v-card-text>
-      </v-card>
+        </CardContent>
+      </Card>
 
       <!-- Technical Details -->
-      <v-expansion-panels
+      <Accordion
         v-if="remoteAccessInfo.enabled"
+        type="single"
+        collapsible
         class="technical-panels"
       >
-        <v-expansion-panel>
-          <v-expansion-panel-title>
-            <v-icon start>mdi-information-outline</v-icon>
-            {{ $t("settings.remote_access_technical_details") }}
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
+        <AccordionItem value="technical">
+          <AccordionTrigger>
+            <div class="flex items-center gap-2">
+              <Info class="size-5" />
+              {{ $t("settings.remote_access_technical_details") }}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
             <!-- Connection Flow Diagram -->
             <div class="diagram-section">
               <div class="diagram-title">
                 {{ $t("settings.remote_access_connection_flow") }}
               </div>
-              <v-card variant="outlined" class="diagram-card">
+              <Card variant="outline" class="diagram-card">
                 <img
                   :src="remoteAccessDiagram"
                   alt="Remote Access Connection Flow"
                   class="diagram-image"
                 />
-              </v-card>
+              </Card>
             </div>
 
             <!-- Technical Specifications -->
             <div class="specs-section">
               <div class="spec-item">
-                <v-avatar
-                  size="48"
-                  color="primary"
-                  variant="tonal"
-                  class="spec-icon"
-                >
-                  <v-icon>mdi-access-point-network</v-icon>
-                </v-avatar>
+                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                  <Network class="size-6" />
+                </div>
                 <div class="spec-content">
                   <div class="spec-title">
                     {{ $t("settings.remote_access_signaling_server") }}
@@ -291,14 +265,9 @@
                 </div>
               </div>
               <div class="spec-item">
-                <v-avatar
-                  size="48"
-                  color="primary"
-                  variant="tonal"
-                  class="spec-icon"
-                >
-                  <v-icon>mdi-lan-connect</v-icon>
-                </v-avatar>
+                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                  <Cable class="size-6" />
+                </div>
                 <div class="spec-content">
                   <div class="spec-title">
                     {{ $t("settings.remote_access_protocol") }}
@@ -314,14 +283,9 @@
                 </div>
               </div>
               <div class="spec-item">
-                <v-avatar
-                  size="48"
-                  color="primary"
-                  variant="tonal"
-                  class="spec-icon"
-                >
-                  <v-icon>mdi-lock</v-icon>
-                </v-avatar>
+                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                  <Lock class="size-6" />
+                </div>
                 <div class="spec-content">
                   <div class="spec-title">
                     {{ $t("settings.remote_access_encryption") }}
@@ -332,24 +296,48 @@
                 </div>
               </div>
             </div>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
 
     <!-- Error state -->
-    <v-alert v-else type="error" variant="tonal" class="error-alert">
+    <div v-else class="error-alert rounded-lg border border-destructive/50 bg-destructive/10 p-4 m-6 text-destructive">
       {{ $t("settings.remote_access_error_loading") }}
-    </v-alert>
+    </div>
   </Container>
 </template>
 
 <script setup lang="ts">
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
 import Container from "@/components/Container.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { RemoteAccessInfo } from "@/plugins/api/interfaces";
+import {
+  Cable,
+  CheckCircle,
+  ShieldCheck,
+  CloudAlert,
+  Copy,
+  ExternalLink,
+  Hash,
+  Info,
+  Lock,
+  Network,
+  QrCode,
+} from "lucide-vue-next";
 import QRCode from "qrcode";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -407,8 +395,8 @@ const loadRemoteAccessInfo = async (silent = false) => {
   }
 };
 
-const toggleRemoteAccess = async (enabled: boolean | null) => {
-  if (!remoteAccessInfo.value || enabled === null) return;
+const toggleRemoteAccess = async (enabled: boolean) => {
+  if (!remoteAccessInfo.value) return;
 
   switching.value = true;
   try {
@@ -492,10 +480,6 @@ watch(
   padding: 24px 0;
 }
 
-.hero-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-}
-
 .hero-content {
   padding: 32px;
   position: relative;
@@ -510,13 +494,12 @@ watch(
   font-size: 1.75rem;
   font-weight: 600;
   margin-bottom: 12px;
-  color: rgb(var(--v-theme-on-surface));
 }
 
 .hero-description {
   font-size: 1rem;
   line-height: 1.6;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 24px;
 }
 
@@ -532,20 +515,12 @@ watch(
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.feature-item .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.status-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  color: hsl(var(--muted-foreground));
 }
 
 .status-header {
   padding: 24px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .status-title {
@@ -556,7 +531,7 @@ watch(
 
 .status-text {
   font-size: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
 }
 
 .status-switch {
@@ -574,10 +549,6 @@ watch(
   font-weight: 500;
 }
 
-.upgrade-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-}
-
 .upgrade-content {
   padding: 32px;
   text-align: center;
@@ -587,7 +558,6 @@ watch(
 
 .upgrade-icon {
   margin-bottom: 16px;
-  color: rgb(var(--v-theme-primary));
 }
 
 .upgrade-title {
@@ -599,7 +569,7 @@ watch(
 .upgrade-description {
   font-size: 1rem;
   line-height: 1.6;
-  color: rgba(var(--v-theme-on-surface), 0.8);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 24px;
   max-width: 600px;
   margin-left: auto;
@@ -614,10 +584,6 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-}
-
-.remote-id-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .remote-id-header {
@@ -637,13 +603,9 @@ watch(
 
 .remote-id-explanation {
   font-size: 0.9rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 16px;
   line-height: 1.5;
-}
-
-.usage-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .usage-content {
@@ -662,8 +624,8 @@ watch(
 }
 
 .remote-id-box {
-  background: rgba(var(--v-theme-surface), 0.8);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 10px;
   padding: 12px 8px;
   display: flex;
@@ -676,8 +638,7 @@ watch(
 }
 
 .remote-id-box:hover {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-  background: rgba(var(--v-theme-surface), 1);
+  border-color: hsl(var(--primary) / 0.3);
 }
 
 /* Adjust widths proportionally based on character count (8, 5, 5, 8) */
@@ -696,7 +657,6 @@ watch(
   font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.05em;
-  color: rgb(var(--v-theme-on-surface));
   text-align: center;
   white-space: nowrap;
 }
@@ -724,7 +684,6 @@ watch(
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 20px;
-  color: rgb(var(--v-theme-on-surface));
 }
 
 .steps-list {
@@ -743,8 +702,8 @@ watch(
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgb(var(--v-theme-primary));
-  color: white;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -757,12 +716,8 @@ watch(
   flex: 1;
   font-size: 0.95rem;
   line-height: 1.6;
-  color: rgba(var(--v-theme-on-surface), 0.8);
+  color: hsl(var(--muted-foreground));
   padding-top: 6px;
-}
-
-.step-link {
-  margin-left: 4px;
 }
 
 .technical-panels {
@@ -777,7 +732,6 @@ watch(
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 16px;
-  color: rgb(var(--v-theme-on-surface));
 }
 
 .diagram-card {
@@ -806,21 +760,17 @@ watch(
   gap: 16px;
   align-items: flex-start;
   padding: 16px;
-  background: rgba(var(--v-theme-surface), 0.3);
+  background: hsl(var(--muted) / 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 1px solid hsl(var(--border));
   transition:
     border-color 0.2s ease,
     background 0.2s ease;
 }
 
 .spec-item:hover {
-  background: rgba(var(--v-theme-surface), 0.5);
-  border-color: rgba(var(--v-theme-primary), 0.2);
-}
-
-.spec-icon {
-  flex-shrink: 0;
+  background: hsl(var(--muted) / 0.5);
+  border-color: hsl(var(--primary) / 0.2);
 }
 
 .spec-content {
@@ -831,17 +781,12 @@ watch(
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 4px;
-  color: rgb(var(--v-theme-on-surface));
 }
 
 .spec-description {
   font-size: 0.9rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--muted-foreground));
   line-height: 1.5;
-}
-
-.error-alert {
-  margin: 24px;
 }
 
 @media (max-width: 1160px) {

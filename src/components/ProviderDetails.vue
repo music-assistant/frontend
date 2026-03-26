@@ -5,9 +5,9 @@
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
-    <v-divider />
+    <Separator />
     <Container v-if="expanded">
-      <v-list>
+      <div role="list">
         <ListItem
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
@@ -26,15 +26,14 @@
           </template>
           <template #title>
             {{ getProviderName(providerMapping) }}
-            <v-chip
+            <Badge
               v-if="providerMapping.in_library"
-              size="x-small"
-              density="compact"
+              variant="secondary"
               class="ml-2"
               :title="$t('tooltip.in_provider_library')"
             >
               {{ $t("library") }}
-            </v-chip>
+            </Badge>
           </template>
           <template #subtitle>
             <span
@@ -64,35 +63,37 @@
           </template>
           <template #append>
             <!-- hi res icon -->
-            <v-img
+            <img
               v-if="
                 providerMapping.audio_format &&
                 providerMapping.audio_format.bit_depth > 16
               "
               :src="iconHiRes"
               width="30"
-              :class="
-                $vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'
-              "
+              :class="isDark ? 'hiresicondark' : 'hiresicon'"
             />
             <!-- play sample button -->
-            <div class="d-flex align-center ga-2">
-              <v-btn
+            <div class="flex items-center gap-2">
+              <Button
                 v-if="
                   getBreakpointValue('bp1') &&
                   itemDetails.media_type == MediaType.TRACK
                 "
-                variant="plain"
-                :icon="
-                  demoPlayer[
-                    `${providerMapping.provider_instance}.${providerMapping.item_id}`
-                  ]
-                    ? 'mdi-pause'
-                    : 'mdi-play-circle'
-                "
+                variant="ghost"
+                size="icon-sm"
                 :title="$t('tooltip.play_sample')"
                 @click="playBtnClick(providerMapping)"
-              />
+              >
+                <Pause
+                  v-if="
+                    demoPlayer[
+                      `${providerMapping.provider_instance}.${providerMapping.item_id}`
+                    ]
+                  "
+                  class="size-5"
+                />
+                <PlayCircle v-else class="size-5" />
+              </Button>
             </div>
           </template>
         </ListItem>
@@ -122,7 +123,7 @@
             >
           </template>
         </ListItem>
-      </v-list>
+      </div>
     </Container>
   </section>
   <GenreExclusionManager
@@ -142,6 +143,10 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { iconHiRes } from "@/components/QualityDetailsBtn.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useIsDark } from "@/composables/useIsDark";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -152,6 +157,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
+import { Pause, PlayCircle } from "lucide-vue-next";
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -162,6 +168,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
+const { isDark } = useIsDark();
 const expanded = ref(false);
 const mappingSearchInProgress = ref(false);
 

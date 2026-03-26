@@ -326,9 +326,9 @@ import {
 } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useTheme } from "vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 
-const theme = useTheme();
+const { isDark } = useIsDark();
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
@@ -382,7 +382,7 @@ const chromeOnAlbumArt = computed(
   () => useAlbumArtBackground.value && !!albumArtUrl.value,
 );
 const chromeTextColor = computed(() =>
-  chromeOnAlbumArt.value ? "#FFFFFF" : "rgba(var(--v-theme-on-surface), 0.9)",
+  chromeOnAlbumArt.value ? "#FFFFFF" : "hsl(var(--foreground) / 0.9)",
 );
 const maLogoSrc = computed(() =>
   chromeOnAlbumArt.value ? logoSrc : logoDarkSrc,
@@ -497,7 +497,7 @@ const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
   albumArtUrl.value
     ? "#FFFFFF"
-    : theme.current.value.dark
+    : isDark.value
       ? "#FFFFFF"
       : "#000000",
 );
@@ -655,8 +655,8 @@ watch(
         "2": "",
         "3": "",
         "4": "",
-        lightColor: theme.current.value.dark ? "#1a1a1a" : "#f5f5f5",
-        darkColor: theme.current.value.dark ? "#0a0a0a" : "#e0e0e0",
+        lightColor: isDark.value ? "#1a1a1a" : "#f5f5f5",
+        darkColor: isDark.value ? "#0a0a0a" : "#e0e0e0",
       };
     }
   },
@@ -681,7 +681,7 @@ const gradientBackgroundStyle = computed(() => {
   const MIN_CONTRAST = 5;
   const ADJUSTMENT_INCREMENT = 0.05;
 
-  const coverImageColorCode = theme.current.value.dark
+  const coverImageColorCode = isDark.value
     ? colorPalette.value.darkColor || "#1a1a1a"
     : colorPalette.value.lightColor || "#f5f5f5";
 
@@ -987,9 +987,6 @@ watch(
   flex: 1 1 100%;
 }
 
-.lyrics-section :deep(.synced-content) {
-  padding: 15vh 0;
-}
 
 .track-stack {
   flex: 1;
@@ -1035,12 +1032,12 @@ watch(
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: hsl(var(--foreground) / 0.9);
 }
 
 .empty-message {
   font-size: 1.25rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
   max-width: 500px;
 }
 
@@ -1071,9 +1068,6 @@ watch(
   max-width: 20vw;
 }
 
-.karaoke-qr :deep(.qr-display) {
-  padding: clamp(0.5rem, 1vw, 1.5rem);
-}
 
 .karaoke-lyrics {
   flex: 1;
@@ -1091,13 +1085,6 @@ watch(
   padding-right: var(--karaoke-pad-right);
 }
 
-.karaoke-lyrics :deep(.synced-content) {
-  padding: 20vh 0;
-}
-
-.karaoke-lyrics :deep(.lyrics-line) {
-  font-size: clamp(2rem, 4vw, 4rem);
-}
 
 .karaoke-track-stack {
   flex: 0 0 auto;
@@ -1108,10 +1095,6 @@ watch(
   padding-bottom: 1rem;
 }
 
-.karaoke-track-stack :deep(.track-artwork) {
-  width: 10vh;
-  height: 10vh;
-}
 
 .track-list--karaoke {
   flex-direction: column;
@@ -1164,12 +1147,12 @@ watch(
 .access-error-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: hsl(var(--foreground) / 0.9);
 }
 
 .access-error-message {
   font-size: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
   max-width: 400px;
 }
 
@@ -1276,9 +1259,6 @@ watch(
     padding-right: 0;
   }
 
-  .karaoke-lyrics :deep(.synced-content) {
-    padding: 10vh 0;
-  }
 
   .karaoke-track-stack {
     max-width: 100%;
@@ -1334,5 +1314,33 @@ watch(
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
+}
+
+/* Child component style overrides (previously :deep()) */
+.lyrics-section .synced-content {
+  padding: 15vh 0;
+}
+
+.karaoke-qr .qr-display {
+  padding: clamp(0.5rem, 1vw, 1.5rem);
+}
+
+.karaoke-lyrics .synced-content {
+  padding: 20vh 0;
+}
+
+.karaoke-lyrics .lyrics-line {
+  font-size: clamp(2rem, 4vw, 4rem);
+}
+
+.karaoke-track-stack .track-artwork {
+  width: 10vh;
+  height: 10vh;
+}
+
+@media (max-width: 768px) {
+  .karaoke-lyrics .synced-content {
+    padding: 10vh 0;
+  }
 }
 </style>

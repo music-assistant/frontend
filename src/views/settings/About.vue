@@ -158,7 +158,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500"
             >
-              <v-icon icon="mdi-text-box-outline" size="24" />
+              <FileText class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -169,11 +169,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -185,7 +181,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500"
             >
-              <v-icon icon="mdi-bookshelf" size="24" />
+              <BookOpen class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -196,11 +192,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -213,7 +205,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500"
             >
-              <v-icon icon="mdi-api" size="24" />
+              <Cable class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -224,11 +216,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -240,7 +228,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500"
             >
-              <v-icon icon="mdi-lightbulb-outline" size="24" />
+              <Lightbulb class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -251,11 +239,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -267,7 +251,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500"
             >
-              <v-icon icon="mdi-bug" size="24" />
+              <Bug class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -278,11 +262,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -294,7 +274,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500"
             >
-              <v-icon icon="mdi-forum" size="24" />
+              <MessageSquare class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -305,11 +285,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
 
         <a
@@ -321,7 +297,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500"
             >
-              <v-icon icon="mdi-license" size="24" />
+              <Scale class="size-6" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -332,11 +308,7 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
-          />
+          <ExternalLink class="size-5 text-primary shrink-0" />
         </a>
       </CardContent>
     </Card>
@@ -357,6 +329,16 @@ import {
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
+import {
+  BookOpen,
+  Bug,
+  Cable,
+  ExternalLink,
+  FileText,
+  Lightbulb,
+  MessageSquare,
+  Scale,
+} from "lucide-vue-next";
 import { computed, onMounted } from "vue";
 
 const changelogUrl = computed(() => {

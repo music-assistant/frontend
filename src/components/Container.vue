@@ -1,9 +1,7 @@
 <template>
-  <v-container v-bind="containerProps" :class="containerClasses">
-    <template v-for="(_, name) in $slots" #[name]>
-      <slot :name="name"></slot>
-    </template>
-  </v-container>
+  <div v-bind="containerProps" :class="containerClasses">
+    <slot></slot>
+  </div>
 </template>
 
 <script lang="ts">
@@ -20,8 +18,7 @@ import {
   type ContainerEmits,
   type ContainerProps,
 } from "@/composables/useContainer";
-import { computed } from "vue";
-import { useTheme } from "vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 
 const props = withDefaults(
   defineProps<ContainerProps>(),
@@ -30,8 +27,7 @@ const props = withDefaults(
 
 defineEmits<ContainerEmits>();
 
-const theme = useTheme();
-const isDark = computed(() => theme.current.value.dark);
+const { isDark } = useIsDark();
 
 const { containerProps, containerClasses } = useContainer(props, isDark.value);
 </script>

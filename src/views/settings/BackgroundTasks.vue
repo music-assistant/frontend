@@ -28,11 +28,12 @@
       class="mt-4 px-5"
     >
       <div v-if="showInitialLoading" class="empty-state">
-        <v-progress-circular indeterminate color="primary" size="48" />
+        <Spinner class="size-12 text-primary" />
       </div>
 
-      <v-list
+      <div
         v-else-if="viewMode === 'list' && filteredTasks.length"
+        role="list"
         class="tasks-list"
       >
         <BackgroundTaskItem
@@ -43,16 +44,13 @@
           @click="showTaskDetails"
           @menu="onMenu"
         />
-      </v-list>
+      </div>
 
-      <v-row v-else-if="filteredTasks.length">
-        <v-col
+      <div v-else-if="filteredTasks.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
           v-for="task in filteredTasks"
           :key="task.id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
+          class="flex"
         >
           <BackgroundTaskItem
             :task="task"
@@ -60,11 +58,11 @@
             @click="showTaskDetails"
             @menu="onMenu"
           />
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
       <div v-else class="empty-state">
-        <v-icon icon="mdi-list-status" size="64" class="empty-icon" />
+        <ListChecks class="size-16 empty-icon" />
         <div class="empty-title">{{ emptyTitle }}</div>
         <div class="empty-message">
           {{ emptyDescription }}
@@ -119,7 +117,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Trash2 } from "lucide-vue-next";
+import { Spinner } from "@/components/ui/spinner";
+import { ListChecks, Trash2 } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -569,10 +568,6 @@ const getPriority = (task: BackgroundTask) => {
   align-self: center;
 }
 
-.tasks-header :deep(.filters-container) {
-  align-items: flex-start;
-}
-
 .tasks-list {
   background: transparent;
 }
@@ -588,20 +583,20 @@ const getPriority = (task: BackgroundTask) => {
 }
 
 .empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
+  color: hsl(var(--foreground) / 0.3);
   margin-bottom: 16px;
 }
 
 .empty-title {
   font-size: 18px;
   font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
   margin-bottom: 8px;
 }
 
 .empty-message {
   font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: hsl(var(--foreground) / 0.5);
   line-height: 1.4;
 }
 

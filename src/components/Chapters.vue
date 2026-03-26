@@ -5,32 +5,29 @@
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleExpand"
     />
-    <v-divider />
+    <Separator />
     <Container v-if="expanded">
-      <v-list>
-        <v-list-item
+      <div role="list">
+        <Item
           v-for="chapter in itemDetails?.metadata?.chapters"
           :key="chapter.position"
           :disabled="!itemIsAvailable(itemDetails)"
+          class="cursor-pointer"
           @click="chapterClicked(chapter)"
         >
-          <template #prepend>
-            <div style="width: 50px">
-              <v-chip>
-                {{ chapter.position }}
-              </v-chip>
-            </div>
-          </template>
-          <template #title>
-            <div>{{ chapter.name }}</div>
-          </template>
-          <template #append>
-            <span v-if="chapter.end" class="text-caption"
-              >{{ formatDuration(chapter.end - chapter.start) }}
-            </span>
-          </template>
-        </v-list-item>
-      </v-list>
+          <ItemMedia>
+            <Badge variant="secondary">
+              {{ chapter.position }}
+            </Badge>
+          </ItemMedia>
+          <ItemContent class="flex-1">
+            <ItemTitle>{{ chapter.name }}</ItemTitle>
+          </ItemContent>
+          <span v-if="chapter.end" class="text-xs text-muted-foreground ml-auto shrink-0"
+            >{{ formatDuration(chapter.end - chapter.start) }}
+          </span>
+        </Item>
+      </div>
     </Container>
   </section>
 </template>
@@ -38,6 +35,9 @@
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Badge } from "@/components/ui/badge";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";

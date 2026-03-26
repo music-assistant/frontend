@@ -1,6 +1,7 @@
 <template>
   <span class="party-badge">
-    <v-icon size="x-small">{{ icon }}</v-icon>
+    <Rocket v-if="props.type === 'boost'" class="size-3" />
+    <UserRound v-else class="size-3" />
     {{ label }}
   </span>
 </template>
@@ -8,6 +9,7 @@
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
+import { Rocket, UserRound } from "lucide-vue-next";
 
 interface Props {
   type: "request" | "boost";
@@ -15,10 +17,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-
-const icon = computed(() =>
-  props.type === "boost" ? "mdi-rocket-launch" : "mdi-account-music",
-);
 
 const label = computed(() =>
   props.type === "boost"
@@ -39,7 +37,7 @@ const label = computed(() =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: rgb(var(--v-theme-on-primary));
+  color: hsl(var(--primary-foreground));
   margin-right: 0.5rem;
 }
 </style>

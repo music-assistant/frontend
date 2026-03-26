@@ -155,7 +155,7 @@ const sizeClass = computed(() => {
   gap: 1.5vh;
   padding: 1vh;
   border-radius: 1.2vh;
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  background: hsl(var(--foreground) / 0.08);
   backdrop-filter: blur(1vh);
   width: 95%;
   box-sizing: border-box;
@@ -188,7 +188,7 @@ const sizeClass = computed(() => {
   --scale: 1;
   --opacity: 1;
   --z-index: 3;
-  background: rgba(var(--v-theme-on-surface), 0.1);
+  background: hsl(var(--foreground) / 0.1);
   box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.2);
 }
 
@@ -229,7 +229,7 @@ const sizeClass = computed(() => {
   background: color-mix(in srgb, var(--badge-color) 35%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
   border-radius: 999px;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: hsl(var(--foreground) / 0.9);
   font-size: clamp(0.65rem, 1.2vh, 1.1rem);
   font-weight: 600;
   text-transform: uppercase;
@@ -260,13 +260,13 @@ const sizeClass = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--v-theme-surface), 0.4);
+  background: hsl(var(--card) / 0.4);
   border-radius: 6px;
   padding: 0.3vh;
 }
 
-.now-playing-overlay :deep(.now-playing-icon .bar) {
-  background: rgb(var(--v-theme-primary));
+.now-playing-overlay {
+  --now-playing-bar-color: hsl(var(--primary));
 }
 
 .track-artwork.size-medium {
@@ -294,12 +294,12 @@ const sizeClass = computed(() => {
   font-weight: 600;
   margin-bottom: 0.3em;
   font-size: clamp(1.4rem, 3vh, 3.5rem);
-  color: rgba(var(--v-theme-on-surface), 0.95);
+  color: hsl(var(--foreground) / 0.95);
 }
 
 .track-artist {
   font-size: clamp(1.1rem, 2.2vh, 2.5rem);
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: hsl(var(--foreground) / 0.7);
 }
 
 .white-text .track-name {

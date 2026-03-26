@@ -229,11 +229,11 @@ import {
   watch,
 } from "vue";
 import { toast } from "vue-sonner";
-import { useTheme } from "vuetify";
+import { useIsDark } from "@/composables/useIsDark";
 const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
-const theme = useTheme();
+const { isDark } = useIsDark();
 const logoSrc = computed(() =>
-  theme.current.value.dark
+  isDark.value
     ? new URL("@/assets/logo/logo.svg", import.meta.url).href
     : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
 );
@@ -609,7 +609,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
   margin: 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+  border-bottom: 2px solid hsl(var(--primary) / 0.2);
   flex: 1;
 }
 

@@ -2,47 +2,51 @@
   Dialog to Add (or edit) a custom Radio or Track link
 -->
 <template>
-  <v-dialog v-model="model" transition="dialog-bottom-transition">
-    <v-card>
-      <Toolbar icon="mdi-playlist-plus" :title="$t('add_url_item')" />
-      <v-divider />
-      <br />
-      <div style="padding: 15px">
-        <v-text-field
-          v-model="url"
-          variant="outlined"
-          :label="$t('enter_url')"
-          :disabled="loading"
-          @blur="fetchItemDetails"
-        />
-        <v-text-field
-          v-model="name"
-          variant="outlined"
-          :label="$t('enter_name')"
-          :disabled="loading"
-        />
-        <v-text-field
-          v-model="image"
-          variant="outlined"
-          :label="$t('image_url')"
-          :disabled="loading"
-        />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="outlined" @click="model = false">{{
-            $t("cancel")
-          }}</v-btn>
-          <v-btn
-            variant="flat"
-            color="primary"
+  <Dialog v-model:open="model">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{{ $t("add_url_item") }}</DialogTitle>
+      </DialogHeader>
+      <Separator />
+      <div class="space-y-4 pt-2">
+        <div class="space-y-2">
+          <label class="text-sm font-medium">{{ $t("enter_url") }}</label>
+          <Input
+            v-model="url"
+            :placeholder="$t('enter_url')"
             :disabled="loading"
-            @click="save"
-            >{{ $t("save") }}</v-btn
-          >
-        </v-card-actions>
+            @blur="fetchItemDetails"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">{{ $t("enter_name") }}</label>
+          <Input
+            v-model="name"
+            :placeholder="$t('enter_name')"
+            :disabled="loading"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">{{ $t("image_url") }}</label>
+          <Input
+            v-model="image"
+            :placeholder="$t('image_url')"
+            :disabled="loading"
+          />
+        </div>
       </div>
-    </v-card>
-  </v-dialog>
+      <DialogFooter>
+        <Button variant="outline" @click="model = false">{{
+          $t("cancel")
+        }}</Button>
+        <Button
+          :disabled="loading"
+          @click="save"
+          >{{ $t("save") }}</Button
+        >
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -51,7 +55,16 @@ import type { Radio, Track } from "@/plugins/api/interfaces";
 import { ref, watch } from "vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 export interface Props {
   type: MediaType;

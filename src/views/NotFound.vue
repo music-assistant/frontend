@@ -1,6 +1,6 @@
 <template>
-  <v-app>
-    <v-main>
+  <div class="min-h-screen bg-background text-foreground">
+    <main>
       <div class="not-found">
         <div class="content">
           <!-- Vinyl + needle -->
@@ -54,8 +54,8 @@
           </div>
         </div>
       </div>
-    </v-main>
-  </v-app>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">

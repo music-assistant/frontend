@@ -159,7 +159,7 @@ const badgeLabel = computed(() =>
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(var(--v-theme-surface-variant), 0.05);
+  background: hsl(var(--muted) / 0.05);
   border-radius: 12px;
   min-height: 72px;
   transition: background 0.2s ease;
@@ -170,11 +170,11 @@ const badgeLabel = computed(() =>
 }
 
 .queue-item--clickable:hover {
-  background: rgba(var(--v-theme-surface-variant), 0.12);
+  background: hsl(var(--muted) / 0.12);
 }
 
 .queue-item--expanded {
-  background: rgba(var(--v-theme-primary), 0.1);
+  background: hsl(var(--primary) / 0.1);
 }
 
 .queue-item-info {
@@ -197,17 +197,17 @@ const badgeLabel = computed(() =>
   text-transform: none;
   letter-spacing: 0.5px;
   background-color: var(--btn-bg) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
 }
 
 .queue-item-current {
-  background: rgba(var(--v-theme-primary), 0.15);
-  border-left: 6px solid rgb(var(--v-theme-primary));
+  background: hsl(var(--primary) / 0.15);
+  border-left: 6px solid hsl(var(--primary));
   padding-left: calc(0.75rem - 3px);
 }
 
 .queue-item-played {
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  background: hsl(var(--foreground) / 0.08);
   opacity: 0.5;
 }
 
@@ -219,10 +219,6 @@ const badgeLabel = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.queue-position :deep(.now-playing-icon) {
-  margin: 0;
 }
 
 .queue-number {
@@ -240,7 +236,7 @@ const badgeLabel = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--v-theme-primary), 0.1);
+  background: hsl(var(--primary) / 0.1);
 }
 
 .queue-info {
@@ -297,7 +293,7 @@ const badgeLabel = computed(() =>
   }
 
   .queue-item-actions {
-    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+    border-top: 1px solid hsl(var(--foreground) / 0.1);
     width: 100%;
     margin-left: 0;
   }
@@ -305,5 +301,12 @@ const badgeLabel = computed(() =>
   .queue-item-actions .boost-btn {
     flex: 1;
   }
+}
+</style>
+
+<style>
+/* Override NowPlayingBadge's unscoped margin inside queue position */
+.queue-position .now-playing-icon {
+  margin: 0;
 }
 </style>

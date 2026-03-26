@@ -5,9 +5,9 @@
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleSection"
     />
-    <v-divider />
+    <Separator />
     <Container v-if="sectionExpanded">
-      <v-list>
+      <div role="list">
         <ListItem
           v-for="genre in exclusions"
           :key="genre.item_id"
@@ -31,7 +31,7 @@
             getGenreDisplayName(genre.name, genre.translation_key, t, te)
           }}</template>
         </ListItem>
-      </v-list>
+      </div>
     </Container>
   </section>
 </template>
@@ -45,6 +45,7 @@ import { api } from "@/plugins/api";
 import { Genre, MediaType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { Separator } from "@/components/ui/separator";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import GenreIcon from "@/components/icons/GenreIcon.vue";

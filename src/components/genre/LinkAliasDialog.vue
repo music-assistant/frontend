@@ -8,18 +8,37 @@
       <DialogHeader>
         <DialogTitle>{{ $t("link_alias") }}</DialogTitle>
       </DialogHeader>
-      <v-autocomplete
-        v-model="selectedAlias"
-        v-model:search="aliasSearch"
-        :items="availableAliases"
-        :item-title="(alias: string) => formatAliasName(alias)"
-        :item-value="(alias: string) => alias"
-        clearable
-        hide-details
-        :label="$t('link_alias')"
-        :loading="aliasLoading"
-        :menu-props="{ zIndex: 10000 }"
-      />
+      <div class="relative">
+        <Command v-model:search-term="aliasSearch" class="border rounded-lg">
+          <CommandInput
+            :placeholder="$t('link_alias')"
+          />
+          <CommandList>
+            <CommandEmpty v-if="!aliasLoading">
+              {{ aliasSearch ? $t("no_content") : $t("link_alias") }}
+            </CommandEmpty>
+            <CommandEmpty v-else>
+              <Spinner class="mx-auto size-5" />
+            </CommandEmpty>
+            <CommandItem
+              v-for="alias in availableAliases"
+              :key="alias"
+              :value="alias"
+              @select="selectedAlias = alias"
+            >
+              {{ formatAliasName(alias) }}
+            </CommandItem>
+          </CommandList>
+        </Command>
+        <div v-if="selectedAlias" class="mt-2">
+          <Badge variant="secondary" class="text-sm">
+            {{ formatAliasName(selectedAlias) }}
+            <button class="ml-1 hover:text-foreground" @click="selectedAlias = null">
+              <X class="size-3" />
+            </button>
+          </Badge>
+        </div>
+      </div>
       <DialogFooter>
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
@@ -33,7 +52,15 @@
 </template>
 
 <script setup lang="ts">
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -41,8 +68,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { X } from "lucide-vue-next";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
