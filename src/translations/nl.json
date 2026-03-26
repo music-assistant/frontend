@@ -693,7 +693,7 @@
         "genre_management_description": "Standaardgenres beheren en standaardgenres herstellen",
         "restore_missing_defaults": "Herstel ontbrekende standaardwaarden",
         "restore_missing_defaults_description": "Voegt ontbrekende standaardgenres toe zonder je bestaande genres of aangepaste toewijzingen te beïnvloeden.",
-        "full_restore_genres": "Volledig herstellen (alles terugzetten)",
+        "full_restore_genres": "Volledig herstel (alles terugzetten)",
         "full_restore_genres_description": "Verwijdert alle genres en aliassen, maakt de standaardwaarden opnieuw aan en zal alle bestaande media-items een nieuwe koppeling geven. Gebruik dit voorzichtig!",
         "confirm_restore_defaults": "Ontbrekende standaardgenres herstellen? Hiermee worden alle ontbrekende standaardgenres toegevoegd zonder je bestaande genres te verwijderen of te wijzigen.",
         "confirm_full_restore": "Hiermee worden ALLE bestaande genres en aliassen VERWIJDERD, alleen de standaard genres en aliassen worden opnieuw gemaakt, alle bestaande media-items zullen worden toegewezen aan de nieuwe genres. Alle aangepaste genres, alias-toewijzingen en media-associaties gaan verloren.",
@@ -732,7 +732,14 @@
         "metadata_providers_description": "Beheer metadataproviders voor albumhoezen en aanvullende informatie",
         "plugin_providers_description": "Plugins beheren die de functionaliteit van Music Assistant uitbreiden",
         "restore_genres": "Herstel Genres",
-        "scan_ago": "{0} geleden"
+        "scan_ago": "{0} geleden",
+        "genre_statistics_description": "Blader door en filter alle genres in je bibliotheek. Genres kunnen globaal worden uitgesloten en weer worden toegevoegd.",
+        "excluded_genres": "Uitgesloten genres",
+        "excluded_genres_description": "De hier vermelde genres zijn globaal uitgesloten van je bibliotheek en zullen in geen enkele weergave verschijnen.",
+        "genre_table_rows_per_page": "Rijen per pagina",
+        "genre_table_page_info": "{0}–{1} van de {2}",
+        "missing_players_hint": "Ontbrekende spelers? {0}",
+        "add_player_providers": "Voeg meer spelerproviders toe"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -1255,7 +1262,7 @@
         "pop": "Pop",
         "psychedelic": "Psychedelisch",
         "punk": "Punk",
-        "r_b": "R&b",
+        "r_b": "R&B",
         "ragtime": "Ragtime",
         "rai": "Rai",
         "reggae": "Reggae",
@@ -1435,7 +1442,14 @@
             "qr_failed": "QR-code genereren mislukt",
             "request": "Aanvragen",
             "link_copy_fail": "Link kopiëren mislukt.",
-            "link_copy_success": "Link gekopieerd!"
+            "link_copy_success": "Link gekopieerd!",
+            "confirm_disable_guest_access": "Weet je zeker dat je gasttoegang wilt uitschakelen? Gasten kunnen dan niet langer deelnemen aan de party, door muziek bladeren of nummers aan de wachtrij toevoegen.",
+            "confirm_enable_guest_access": "Weet je zeker dat je gasttoegang wilt inschakelen? Hiermee kan iedereen met de link of QR-code deelnemen aan de party, door muziek bladeren en nummers aan de wachtrij toevoegen.",
+            "disable_guest_access": "Gasttoegang uitschakelen",
+            "enable_guest_access": "Gasttoegang inschakelen",
+            "guest_access_enabled": "Gasttoegang ingeschakeld",
+            "guest_access_toggle_failed": "Gasttoegang inschakelen mislukt",
+            "powered_by": "Mogelijk gemaakt door"
         }
     },
     "no_lyrics_available": "Geen songtekst beschikbaar",
@@ -1572,5 +1586,9 @@
         "update_metadata": "Metadata bijwerken"
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
-    "not_found_subtext": "Het nummer dat je zoekt is tussen de verschillende providers verdwenen. Ga terug of ga op zoek naar iets nieuws."
+    "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
+    "radiobrowser_by_popularity": "Op populariteit",
+    "radiobrowser_by_category": "Op categorie",
+    "restore_genre": "Herstel",
+    "genre_name": "Genrenaam"
 }

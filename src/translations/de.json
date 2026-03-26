@@ -701,7 +701,7 @@
         "restore_success": "{0} fehlende(s) Genre(s) wiederhergestellt.",
         "restore_all_present": "Alle Standardgenres sind bereits vorhanden.",
         "full_restore_success": "Vollständige Wiederherstellung abgeschlossen. {0} Standardgenre(s) wiederhergestellt.",
-        "genre_statistics": "Genre-Statistik",
+        "genre_statistics": "Genre Bibliotheksverwaltung",
         "total_genres": "Genres insgesamt",
         "view_all_genres": "Alle Genres anzeigen",
         "background_scanner": "Hintergrund-Scanner",
@@ -732,7 +732,14 @@
         "metadata_providers_description": "Metadatenanbieter für Kunstwerke und zusätzliche Informationen verwalten",
         "plugin_providers_description": "Verwalte Plugins, die die Funktionalität des Musikassistenten erweitern.",
         "restore_genres": "Genres wiederherstellen",
-        "scan_ago": "vor {0}"
+        "scan_ago": "vor {0}",
+        "genre_statistics_description": "Durchsuche und filtere alle Genres in deiner Bibliothek. Genres können global ausgeschlossen und wieder hinzugefügt werden.",
+        "excluded_genres": "Ausgeschlossene Genres",
+        "excluded_genres_description": "Die hier aufgeführten Genres sind global von deiner Bibliothek ausgeschlossen und werden in keiner Ansicht angezeigt.",
+        "genre_table_rows_per_page": "Zeilen pro Seite",
+        "genre_table_page_info": "{0}–{1} von {2}",
+        "missing_players_hint": "Fehlende Wiedergabegeräte? {0}",
+        "add_player_providers": "Weitere Wiedergabegeräte-Anbieter hinzufügen"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1435,7 +1442,14 @@
             "qr_failed": "QR-Code konnte nicht generiert werden",
             "request": "Anfragen",
             "link_copy_fail": "Link konnte nicht kopiert werden",
-            "link_copy_success": "Link kopiert!"
+            "link_copy_success": "Link kopiert!",
+            "confirm_disable_guest_access": "Möchtest du den Gastzugang wirklich deaktivieren? Gäste können dann weder der Party beitreten, noch Musik durchsuchen oder Lieder zur Warteschlange hinzufügen.",
+            "confirm_enable_guest_access": "Möchtest du wirklich den Gastzugang aktivieren? Dadurch kann jeder mit dem Link oder QR-Code an der Party teilnehmen, Musik durchsuchen und Songs zur Warteschlange hinzufügen.",
+            "disable_guest_access": "Gastzugang deaktivieren",
+            "enable_guest_access": "Gastzugang aktivieren",
+            "guest_access_enabled": "Gastzugang aktiviert",
+            "guest_access_toggle_failed": "Gastzugang konnte nicht aktiviert werden",
+            "powered_by": "Powered by"
         }
     },
     "no_lyrics_available": "Keine Liedtexte verfügbar",
@@ -1572,5 +1586,9 @@
         "update_metadata": "Aktualisiere Metadaten"
     },
     "not_found_headline": "Ups, diese Seite gehört nicht zur Setlist.",
-    "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem."
+    "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem.",
+    "radiobrowser_by_popularity": "Nach Beliebtheit",
+    "radiobrowser_by_category": "Nach Kategorie",
+    "restore_genre": "Wiederherstellen",
+    "genre_name": "Genre-Name"
 }
