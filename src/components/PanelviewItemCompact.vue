@@ -1,131 +1,127 @@
 <template>
-  <v-hover v-slot="{ isHovering, props }">
-    <v-card
-      v-hold="onMenu"
-      v-bind="props"
-      :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
-      elevation="0"
-      :disabled="disabled"
-      @click="onClick"
-      @click.right.prevent="onMenu"
+  <div
+    v-hold="onMenu"
+    class="panel-card group"
+    :class="{ 'on-hover': isHovering, unavailable: !isAvailable }"
+    :disabled="disabled"
+    @click="onClick"
+    @click.right.prevent="onMenu"
+    @mouseenter="isHovering = true"
+    @mouseleave="isHovering = false"
+  >
+    <!-- checkbox overlay -->
+    <div
+      v-if="showCheckboxes"
+      class="absolute inset-0 z-10 flex items-center justify-center"
+      :class="
+        isSelected
+          ? isDark
+            ? 'bg-black/75'
+            : 'bg-white/75'
+          : 'bg-transparent'
+      "
     >
-      <v-overlay
-        v-if="showCheckboxes"
-        :model-value="showCheckboxes"
-        contained
-        :scrim="
-          isSelected
-            ? $vuetify.theme.current.dark
-              ? 'rgba(0,0,0,.75)'
-              : 'rgba(255,255,255,.75)'
-            : '#ffffff00'
-        "
-      >
-        <v-checkbox
-          class="panel-item-checkbox"
-          :ripple="false"
-          :model-value="isSelected"
-        />
-      </v-overlay>
-      <div class="thumb-container">
-        <MediaItemThumb :item="isAvailable ? item : undefined" />
-        <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
-          <ProviderIcon
-            v-if="
-              (showProviderOnCover || item.media_type === MediaType.PLAYLIST) &&
-              'provider_mappings' in item
-            "
-            :domain="
-              item.media_type == MediaType.PLAYLIST
-                ? item.provider_mappings[0].provider_domain
-                : item.provider
-            "
-            :size="20"
-          />
-        </div>
-        <!-- Now Playing Badge -->
-        <NowPlayingBadge
-          v-if="isPlaying"
-          icon-style="position: absolute; right: 5px; bottom: 5px"
-          :show-badge="false"
-        />
-        <!-- play button -->
-        <div
+      <Checkbox
+        class="panel-item-checkbox"
+        :checked="isSelected"
+      />
+    </div>
+    <div class="thumb-container">
+      <MediaItemThumb :item="isAvailable ? item : undefined" />
+      <div style="position: absolute; left: -10px; top: 0px; z-index: 2">
+        <ProviderIcon
           v-if="
-            (isHovering || store.isTouchscreen) &&
-            isAvailable &&
-            item.is_playable
+            (showProviderOnCover || item.media_type === MediaType.PLAYLIST) &&
+            'provider_mappings' in item
           "
-          class="play-button-overlay"
-        >
-          <v-btn
-            icon="mdi-play"
-            color="white"
-            fab
-            :disabled="disablePlayButton"
-            style="opacity: 0.6; font-size: 20px"
-            @click.stop="onPlayClick"
-          />
-        </div>
+          :domain="
+            item.media_type == MediaType.PLAYLIST
+              ? item.provider_mappings[0].provider_domain
+              : item.provider
+          "
+          :size="20"
+        />
       </div>
-      <v-list-item
-        variant="text"
-        slim
-        tile
-        density="compact"
-        class="panel-item-details"
+      <!-- Now Playing Badge -->
+      <NowPlayingBadge
+        v-if="isPlaying"
+        icon-style="position: absolute; right: 5px; bottom: 5px"
+        :show-badge="false"
+      />
+      <!-- play button -->
+      <div
+        v-if="
+          (isHovering || store.isTouchscreen) &&
+          isAvailable &&
+          item.is_playable
+        "
+        class="play-button-overlay"
       >
-        <v-list-item-title>
-          <span v-if="item.media_type == MediaType.FOLDER">
-            <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
-          </span>
-          <span v-else :class="{ 'is-playing': isPlaying }">{{
-            displayName
-          }}</span>
-          <span
-            v-if="'version' in item && item.version"
-            :class="{ 'is-playing': isPlaying }"
-          >
-            - {{ item.version }}</span
-          >
-        </v-list-item-title>
-        <v-list-item-subtitle
-          v-if="'artists' in item && item.artists"
-          class="ma-line-clamp-1"
+        <Button
+          variant="default"
+          size="icon"
+          :disabled="disablePlayButton"
+          class="opacity-60 text-xl pointer-events-auto"
+          @click.stop="onPlayClick"
         >
-          {{ getArtistsString(item.artists, 1) }}
-        </v-list-item-subtitle>
-        <v-list-item-subtitle
-          v-if="'authors' in item && item.authors"
-          class="ma-line-clamp-1"
+          <Play class="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+    <div class="panel-item-details">
+      <div class="text-sm font-medium leading-snug line-clamp-1">
+        <span v-if="item.media_type == MediaType.FOLDER">
+          <span>{{ getBrowseFolderName(item as BrowseFolder, $t) }}</span>
+        </span>
+        <span v-else :class="{ 'is-playing': isPlaying }">{{
+          displayName
+        }}</span>
+        <span
+          v-if="'version' in item && item.version"
+          :class="{ 'is-playing': isPlaying }"
         >
-          {{ item.authors.join(" / ") }}
-        </v-list-item-subtitle>
-        <v-list-item-subtitle
-          v-else-if="'publisher' in item && item.publisher"
-          class="ma-line-clamp-1"
+          - {{ item.version }}</span
         >
-          {{ item.publisher }}
-        </v-list-item-subtitle>
-        <v-list-item-subtitle
-          v-else-if="'owner' in item && item.owner"
-          class="ma-line-clamp-1"
-        >
-          {{ item.owner }}
-        </v-list-item-subtitle>
-        <v-list-item-subtitle
-          v-else-if="!('provider_mappings' in item)"
-          class="ma-line-clamp-1"
-        >
-          {{ $t(item.media_type) }}
-        </v-list-item-subtitle>
-      </v-list-item>
-    </v-card>
-  </v-hover>
+      </div>
+      <div
+        v-if="'artists' in item && item.artists"
+        class="text-muted-foreground text-xs ma-line-clamp-1"
+      >
+        {{ getArtistsString(item.artists, 1) }}
+      </div>
+      <div
+        v-if="'authors' in item && item.authors"
+        class="text-muted-foreground text-xs ma-line-clamp-1"
+      >
+        {{ item.authors.join(" / ") }}
+      </div>
+      <div
+        v-else-if="'publisher' in item && item.publisher"
+        class="text-muted-foreground text-xs ma-line-clamp-1"
+      >
+        {{ item.publisher }}
+      </div>
+      <div
+        v-else-if="'owner' in item && item.owner"
+        class="text-muted-foreground text-xs ma-line-clamp-1"
+      >
+        {{ item.owner }}
+      </div>
+      <div
+        v-else-if="!('provider_mappings' in item)"
+        class="text-muted-foreground text-xs ma-line-clamp-1"
+      >
+        {{ $t(item.media_type) }}
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useIsDark } from "@/composables/useIsDark";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -141,10 +137,14 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { computed } from "vue";
+import { Play } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
+
+const isHovering = ref(false);
+const { isDark } = useIsDark();
 
 // properties
 export interface Props {
@@ -238,20 +238,19 @@ const onPlayClick = function (evt: PointerEvent) {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-
-  .v-btn {
-    pointer-events: all;
-  }
 }
-.v-card {
-  background-color: rgb(var(--v-theme-panel));
+
+.panel-card {
+  position: relative;
+  background-color: hsl(var(--card));
   transition: opacity 0.4s ease-in-out;
   border-radius: 3px;
   padding: 10px;
+  cursor: pointer;
 }
 
 @media (max-width: 575px) {
-  .v-card {
+  .panel-card {
     padding: 6px;
   }
 
@@ -260,28 +259,12 @@ const onPlayClick = function (evt: PointerEvent) {
   }
 }
 
-.v-card.unavailable {
+.panel-card.unavailable {
   opacity: 0.3;
 }
 
 .panel-item-details {
-  padding: 0px !important;
+  padding: 0;
   margin-top: 10px;
-}
-
-.hiresicon {
-  margin-left: 10px;
-  margin-right: 10px;
-}
-
-.hiresiconinverted {
-  margin-left: 10px;
-  margin-right: 10px;
-  filter: invert(100%);
-}
-
-.v-list-item-subtitle {
-  color: rgb(var(--v-theme-on-panel), 0.6) !important;
-  font-size: small !important;
 }
 </style>

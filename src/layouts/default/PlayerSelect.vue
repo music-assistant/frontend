@@ -25,7 +25,7 @@
       <!-- scrollable content -->
       <div class="player-content">
         <!-- preferred/active players on top -->
-        <v-list flat style="margin: 0px 10px; padding: 0">
+        <div style="margin: 0px 10px; padding: 0">
           <PlayerCard
             v-for="player in preferredPlayers"
             :id="player.player_id"
@@ -42,21 +42,22 @@
             @click="playerClicked(player)"
             @toggle-expand="toggleGroupExpand"
           />
-        </v-list>
+        </div>
 
         <!-- collapsible section with all players (only shown if more than 3 players) -->
-        <v-expansion-panels
+        <Accordion
           v-if="allPlayers.length > 3"
-          v-model="allPlayersExpanded"
-          variant="accordion"
-          flat
+          type="single"
+          :model-value="allPlayersExpanded === 0 ? 'all-players' : ''"
+          collapsible
           class="expansion"
+          @update:model-value="(v: string | string[]) => { allPlayersExpanded = v === 'all-players' ? 0 : undefined }"
         >
-          <v-expansion-panel style="padding: 0">
-            <v-expansion-panel-title>
+          <AccordionItem value="all-players" class="border-none">
+            <AccordionTrigger class="accordion-trigger">
               <h3>{{ $t("all_players") }}</h3>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text style="padding: 0">
+            </AccordionTrigger>
+            <AccordionContent>
               <div style="margin: 0 8px 24px 8px">
                 <InputGroup>
                   <InputGroupInput
@@ -69,7 +70,7 @@
                   </InputGroupAddon>
                 </InputGroup>
               </div>
-              <v-list flat style="margin: -20px 3px 5px 3px">
+              <div style="margin: -20px 3px 5px 3px">
                 <PlayerCard
                   v-for="player in filteredPlayers"
                   :id="player.player_id"
@@ -90,10 +91,10 @@
                   @click="playerClicked(player)"
                   @toggle-expand="toggleGroupExpand"
                 />
-              </v-list>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   </div>
@@ -101,6 +102,12 @@
 
 <script setup lang="ts">
 import PlayerCard from "@/components/PlayerCard.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   InputGroup,
   InputGroupAddon,
@@ -315,9 +322,9 @@ const selectDefaultPlayer = function () {
   transform: translateX(100%);
   transition: transform 0.5s;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  border-left: 1px solid rgba(var(--v-border-color), 0.12);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-left: 1px solid hsl(var(--border));
   display: flex;
   flex-direction: column;
 }
@@ -366,7 +373,7 @@ const selectDefaultPlayer = function () {
   background: linear-gradient(
     to bottom,
     transparent,
-    rgb(var(--v-theme-surface)) 80%
+    hsl(var(--card)) 80%
   );
   pointer-events: none;
   z-index: 1;
@@ -425,20 +432,11 @@ const selectDefaultPlayer = function () {
   padding-bottom: 100px;
 }
 
-/* Force Vuetify children to inherit the panel background */
-.player-content :deep(.v-list),
-.player-content :deep(.v-expansion-panels),
-.player-content :deep(.v-expansion-panel),
-.player-content :deep(.v-expansion-panel-title),
-.player-content :deep(.v-expansion-panel-text) {
-  background: transparent !important;
-}
-
-.expansion :deep(.v-expansion-panel-title) {
+.accordion-trigger {
   padding: 10px 16px;
 }
 
-.expansion :deep(.v-expansion-panel-text__wrapper) {
-  padding: 10px 5px;
+.expansion {
+  background: transparent;
 }
 </style>

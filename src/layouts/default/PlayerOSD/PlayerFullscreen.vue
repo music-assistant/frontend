@@ -1,60 +1,65 @@
 <template>
-  <v-dialog
-    v-model="store.showFullscreenPlayer"
-    fullscreen
-    :scrim="false"
-    transition="dialog-bottom-transition"
-    z-index="9000"
-    :retain-focus="false"
-    persistent
+  <Dialog
+    :open="store.showFullscreenPlayer"
+    @update:open="(v: boolean) => { store.showFullscreenPlayer = v; }"
   >
-    <v-card
-      class="fullscreen-player-card"
+    <DialogContent
+      :show-close-button="false"
+      class="fullscreen-dialog-content"
       :style="{ background: backgroundColor }"
+      @escape-key-down.prevent
     >
-      <v-toolbar class="v-toolbar-default" color="transparent">
-        <template #prepend>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-chevron-down" />
-          </Button>
-        </template>
-        <template #append>
-          <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
-            <template #activator="{ props }">
-              <Button v-bind="props" icon>
-                <v-icon color="accent" icon="mdi-radio-tower" />
-              </Button>
-            </template>
+      <!-- visually hidden title for accessibility -->
+      <DialogTitle class="sr-only">{{ $t('now_playing') || 'Now Playing' }}</DialogTitle>
+      <DialogDescription class="sr-only">Fullscreen player view</DialogDescription>
 
-            <v-card
-              :title="$t('queue_radio_enabled')"
-              :subtitle="$t('queue_radio_based_on')"
-            >
-              <template #text>
+      <!-- toolbar -->
+      <div class="fullscreen-toolbar">
+        <Button variant="ghost" size="icon" @click="store.showFullscreenPlayer = false">
+          <ChevronDown class="h-6 w-6" />
+        </Button>
+
+        <div class="flex-1" />
+
+        <!-- radio source menu -->
+        <div v-if="store.activePlayerQueue?.radio_source.length" class="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            @click="showRadioMenu = !showRadioMenu"
+          >
+            <Radio class="h-5 w-5 text-accent" />
+          </Button>
+          <Teleport to="body">
+            <div v-if="showRadioMenu" class="radio-menu-scrim" @click="showRadioMenu = false" />
+            <div v-if="showRadioMenu" class="radio-menu-card">
+              <div class="font-semibold text-sm px-4 pt-3 pb-1">{{ $t('queue_radio_enabled') }}</div>
+              <div class="text-xs text-muted-foreground px-4 pb-2">{{ $t('queue_radio_based_on') }}</div>
+              <div class="px-4 pb-3">
                 <div
                   v-for="source in store.activePlayerQueue?.radio_source"
                   :key="source.uri"
                 >
-                  <a @click="itemClick(source)">{{ source.name }}</a>
+                  <a class="text-sm cursor-pointer hover:underline" @click="itemClick(source)">{{ source.name }}</a>
                 </div>
-              </template>
-            </v-card>
-          </v-menu>
+              </div>
+            </div>
+          </Teleport>
+        </div>
 
-          <SpeakerBtn
-            v-if="!showExpandedPlayerSelectButton"
-            @click="
-              () => {
-                store.showFullscreenPlayer = false;
-              }
-            "
-          />
+        <SpeakerBtn
+          v-if="!showExpandedPlayerSelectButton"
+          @click="
+            () => {
+              store.showFullscreenPlayer = false;
+            }
+          "
+        />
 
-          <Button icon @click.stop="openQueueMenu">
-            <v-icon icon="mdi-dots-vertical" />
-          </Button>
-        </template>
-      </v-toolbar>
+        <Button variant="ghost" size="icon" @click.stop="openQueueMenu">
+          <EllipsisVertical class="h-5 w-5" />
+        </Button>
+      </div>
 
       <!-- content -->
       <div class="main">
@@ -64,15 +69,16 @@
           class="main-media-details"
         >
           <div
-            v-if="$vuetify.display.height > 600"
+            v-if="windowHeight > 600"
             class="main-media-details-image"
           >
             <!-- current media image -->
-            <v-img
+            <img
               v-if="
                 store.activePlayer?.powered != false &&
                 store.activePlayer?.current_media?.image_url
               "
+              class="media-cover-img"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -92,89 +98,94 @@
           </div>
           <div class="main-media-details-track-info">
             <!-- player name as title if its powered off-->
-            <v-card-title
+            <div
               v-if="store.activePlayer?.powered == false"
+              class="track-title"
               :style="`font-size: ${titleFontSize};`"
             >
               {{ store.activePlayer?.name }}
-            </v-card-title>
+            </div>
             <!-- current media title -->
-            <v-card-title
+            <div
               v-else-if="store.activePlayer?.current_media?.title"
+              class="track-title"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="onTitleClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.title }}
               </MarqueeText>
-            </v-card-title>
+            </div>
             <!-- no player selected message -->
-            <v-card-title
+            <div
               v-else
+              class="track-title"
               :style="`font-size: ${titleFontSize};cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer?.name || $t("no_player") }}
               </MarqueeText>
-            </v-card-title>
+            </div>
 
             <!-- SUBTITLE -->
 
             <!-- SUBTITLE: player powered off -->
-            <v-card-subtitle
+            <div
               v-if="store.activePlayer?.powered == false"
-              class="text-h6 text-md-h5 text-lg-h4"
+              class="track-subtitle"
             >
               {{ $t("off") }}
-            </v-card-subtitle>
+            </div>
 
             <!-- subtitle: album -->
-            <v-card-subtitle
+            <div
               v-else-if="
                 store.activePlayer?.current_media?.album && showAlbumSubtitle
               "
+              class="track-subtitle"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onAlbumClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.album }}
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
             <!-- subtitle: artist -->
-            <v-card-subtitle
+            <div
               v-if="store.activePlayer?.current_media?.artist"
+              class="track-subtitle"
               :style="`font-size: ${subTitleFontSize};cursor:pointer;`"
               @click="onArtistClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
                 {{ store.activePlayer.current_media.artist }}
               </MarqueeText>
-            </v-card-subtitle>
+            </div>
 
             <!-- subtitle: queue empty or other source active -->
             <!-- 3rd party source active -->
-            <v-card-subtitle
+            <div
               v-if="
                 !store.activePlayerQueue && store.activePlayer?.active_source
               "
-              class="caption"
+              class="track-subtitle caption"
             >
               {{
                 $t("external_source_active", [
                   getSourceName(store.activePlayer),
                 ])
               }}
-            </v-card-subtitle>
-            <v-card-subtitle
+            </div>
+            <div
               v-else-if="
                 store.activePlayerQueue && store.activePlayerQueue.items == 0
               "
-              class="caption"
+              class="track-subtitle caption"
             >
               {{ $t("queue_empty") }}
-            </v-card-subtitle>
+            </div>
 
             <!-- streamdetails/contenttype button-->
             <div
@@ -194,35 +205,31 @@
           v-if="store.showQueueItems && store.activePlayerQueue"
           class="main-queue-items"
         >
-          <v-tabs
-            v-model="activeQueuePanel"
-            hide-slider
-            density="compact"
-            @click="activeQueuePanelClick"
+          <Tabs
+            :model-value="activeQueuePanelStr"
+            @update:model-value="onTabChange"
           >
-            <v-tab :value="0">
-              {{ $t("queue") }}
-              <v-badge
-                color="grey"
-                :content="
-                  (store.activePlayerQueue?.items || 0) -
-                  (store.activePlayerQueue?.current_index || 0)
-                "
-                inline
-              />
-            </v-tab>
-            <v-tab :value="1">
-              {{ $t("played") }}
-              <v-badge
-                color="grey"
-                :content="store.activePlayerQueue?.current_index"
-                inline
-              />
-            </v-tab>
-            <v-tab v-if="hasLyrics" :value="2">
-              {{ $t("lyrics") }}
-            </v-tab>
-          </v-tabs>
+            <TabsList>
+              <TabsTrigger value="queue" class="queue-tab">
+                {{ $t("queue") }}
+                <Badge variant="secondary" class="ml-1">
+                  {{
+                    (store.activePlayerQueue?.items || 0) -
+                    (store.activePlayerQueue?.current_index || 0)
+                  }}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="played" class="queue-tab">
+                {{ $t("played") }}
+                <Badge variant="secondary" class="ml-1">
+                  {{ store.activePlayerQueue?.current_index }}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger v-if="hasLyrics" value="lyrics" class="queue-tab">
+                {{ $t("lyrics") }}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
@@ -283,7 +290,7 @@
                       </div>
                     </template>
                     <template #subtitle>
-                      <div class="d-flex">
+                      <div class="flex">
                         <span style="white-space: nowrap" class="pr-1">
                           {{ formatDuration(item.duration) }} |
                         </span>
@@ -335,7 +342,7 @@
                         "
                         :show-badge="getBreakpointValue('bp4')"
                       />
-                      <v-icon v-if="!item.available">mdi-alert</v-icon>
+                      <AlertTriangle v-if="!item.available" class="h-5 w-5" />
                     </template>
                   </ListItem>
                   <!-- Show chapters -->
@@ -346,20 +353,22 @@
                     "
                     style="margin-left: 50px"
                   >
-                    <v-list-item
+                    <Item
                       v-for="chapter in item.media_item.metadata?.chapters"
                       :key="chapter.position"
+                      size="sm"
+                      class="cursor-pointer"
                       @click.stop="chapterClicked(item.media_item, chapter)"
                     >
-                      <template #title>
-                        <div>{{ chapter.name }}</div>
-                      </template>
-                      <template #append>
-                        <span v-if="chapter.end" class="text-caption"
+                      <ItemContent>
+                        <ItemTitle>{{ chapter.name }}</ItemTitle>
+                      </ItemContent>
+                      <ItemActions>
+                        <span v-if="chapter.end" class="text-xs text-muted-foreground"
                           >{{ formatDuration(chapter.end - chapter.start) }}
                         </span>
-                      </template>
-                    </v-list-item>
+                      </ItemActions>
+                    </Item>
                   </div>
                 </template>
               </v-virtual-scroll>
@@ -380,12 +389,13 @@
 
         <!-- right column: media image (on small but wide screens)-->
         <div
-          v-if="!store.showQueueItems && $vuetify.display.height <= 600"
+          v-if="!store.showQueueItems && windowHeight <= 600"
           class="main-queue-items"
         >
           <div class="main-media-details-image main-media-details-image-alt">
-            <v-img
+            <img
               v-if="store.activePlayer?.current_media?.image_url"
+              class="media-cover-img"
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
@@ -434,7 +444,7 @@
             />
           </Icon>
           <ShuffleBtn
-            v-if="$vuetify.display.mdAndUp"
+            v-if="mdAndUp"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
@@ -465,7 +475,7 @@
             :size="28"
           />
           <RepeatBtn
-            v-if="$vuetify.display.mdAndUp"
+            v-if="mdAndUp"
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="35px"
@@ -506,9 +516,9 @@
             padding-top: 15px;
           "
         >
-          <v-btn
+          <Button
+            variant="outline"
             class="responsive-icon-holder-btn"
-            variant="outlined"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -518,11 +528,11 @@
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          </Button>
         </div>
       </div>
-    </v-card>
-  </v-dialog>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -535,6 +545,22 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBreakpoint } from "@/composables/useBreakpoint";
+import { useIsDark } from "@/composables/useIsDark";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -572,9 +598,9 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import vuetify from "@/plugins/vuetify";
+import { useWindowSize } from "@vueuse/core";
 import Color from "color";
-import { Heart } from "lucide-vue-next";
+import { AlertTriangle, ChevronDown, EllipsisVertical, Heart, Radio } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -583,17 +609,20 @@ import {
   watch,
   watchEffect,
 } from "vue";
-import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
-const { name } = useDisplay();
+const { mdAndUp, mobile } = useBreakpoint();
+const { isDark } = useIsDark();
+const { height: windowHeight } = useWindowSize();
+
+const showRadioMenu = ref(false);
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 const showAlbumSubtitle = computed(
-  () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
+  () => windowHeight.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
 
 interface Props {
@@ -602,8 +631,8 @@ interface Props {
 const compProps = defineProps<Props>();
 
 const playBtnStyle = computed(() => {
-  const isDark = vuetify.theme.current.value.dark;
-  const color = isDark
+  const dark = isDark.value;
+  const color = dark
     ? compProps.colorPalette.darkColor
     : compProps.colorPalette.lightColor;
   if (!color) return {};
@@ -624,6 +653,26 @@ const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
+
+// Map between numeric panel index and string tab values
+const activeQueuePanelStr = computed(() => {
+  switch (activeQueuePanel.value) {
+    case 0: return "queue";
+    case 1: return "played";
+    case 2: return "lyrics";
+    default: return "queue";
+  }
+});
+
+const onTabChange = (value: string | number) => {
+  const strVal = String(value);
+  switch (strVal) {
+    case "queue": activeQueuePanel.value = 0; break;
+    case "played": activeQueuePanel.value = 1; break;
+    case "lyrics": activeQueuePanel.value = 2; break;
+  }
+  activeQueuePanelClick();
+};
 
 // Computed properties
 
@@ -715,71 +764,72 @@ watch(
   },
 );
 
+// Breakpoint name for font size calculations
+const breakpointName = computed(() => {
+  if (!mobile.value && windowHeight.value >= 1280) return "xxl";
+  if (!mobile.value && windowHeight.value >= 800) return "xl";
+  if (mdAndUp.value) return "lg";
+  if (!mobile.value) return "md";
+  return "sm";
+});
+
 const titleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "1.3em";
+  switch (breakpointName.value) {
     case "sm":
-      return "1.6em";
+      return "1.3em";
     case "md":
-      return "1.8em";
+      return "1.6em";
     case "lg":
-      return store.showQueueItems ? "1.7em" : "2.1em";
+      return "1.8em";
     case "xl":
-      return store.showQueueItems ? "1.8em" : "2.3em";
+      return store.showQueueItems ? "1.7em" : "2.1em";
     case "xxl":
-      return store.showQueueItems ? "1.9em" : "2.5em";
+      return store.showQueueItems ? "1.8em" : "2.3em";
     default:
       return "1.0em";
   }
 });
 
 const subTitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.95em";
+  switch (breakpointName.value) {
     case "sm":
-      return "1.15em";
+      return "0.95em";
     case "md":
-      return "1.3em";
+      return "1.15em";
     case "lg":
-      return store.showQueueItems ? "1.2em" : "1.5em";
+      return "1.3em";
     case "xl":
-      return store.showQueueItems ? "1.3em" : "1.65em";
+      return store.showQueueItems ? "1.2em" : "1.5em";
     case "xxl":
-      return store.showQueueItems ? "1.35em" : "1.8em";
+      return store.showQueueItems ? "1.3em" : "1.65em";
     default:
       return "1.0em";
   }
 });
 
 const queueTitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.875rem";
+  switch (breakpointName.value) {
     case "sm":
       return "0.875rem";
     case "md":
-      return "0.925rem";
+      return "0.875rem";
     case "lg":
-      return "0.9rem";
-    case "xl":
       return "0.925rem";
+    case "xl":
+      return "0.9rem";
     case "xxl":
-      return "0.975rem";
+      return "0.925rem";
     default:
       return "0.875rem";
   }
 });
 
 const queueSubtitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.775rem";
+  switch (breakpointName.value) {
     case "sm":
       return "0.775rem";
     case "md":
-      return "0.8rem";
+      return "0.775rem";
     case "lg":
       return "0.8rem";
     case "xl":
@@ -792,7 +842,7 @@ const queueSubtitleFontSize = computed(() => {
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
+  return windowHeight.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
 });
 
 // methods
@@ -1438,7 +1488,7 @@ watchEffect(() => {
   const ADJUSTMENT_INCREMENT = 0.05;
 
   // Determine the base color from palette or fallback to theme default
-  const coverImageColorCode = vuetify.theme.current.value.dark
+  const coverImageColorCode = isDark.value
     ? compProps.colorPalette.darkColor || "#000"
     : compProps.colorPalette.lightColor || "#fff";
 
@@ -1486,11 +1536,31 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-.fullscreen-player-card {
+.fullscreen-dialog-content {
+  position: fixed !important;
+  inset: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  transform: none !important;
+  top: 0 !important;
+  left: 0 !important;
   overflow: hidden;
-  height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  z-index: 9000 !important;
+}
+
+.fullscreen-toolbar {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 8px;
+  flex-shrink: 0;
 }
 
 .main {
@@ -1525,11 +1595,11 @@ watchEffect(() => {
   overflow-y: scroll;
 }
 
-.queue-items-scroll-box :deep(.v-list-item-title) {
+.queue-items-scroll-box [data-slot="item-title"] {
   font-size: var(--queue-title-size, 1rem);
 }
 
-.queue-items-scroll-box :deep(.v-list-item-subtitle) {
+.queue-items-scroll-box [data-slot="item-description"] {
   font-size: var(--queue-subtitle-size, 0.875rem);
 }
 
@@ -1548,13 +1618,15 @@ watchEffect(() => {
   padding-right: 20px;
   container-type: size;
 }
-.main-media-details-image .v-img {
+
+.media-cover-img {
   width: min(100cqi, 100cqh);
   height: min(100cqi, 100cqh);
   flex: 0 0 auto;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   overflow: hidden;
+  object-fit: cover;
 }
 
 .main-media-details-image-alt {
@@ -1578,6 +1650,16 @@ watchEffect(() => {
   max-width: 100%;
 }
 
+.track-title {
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.track-subtitle {
+  opacity: 0.7;
+  line-height: 1.3;
+}
+
 .player-bottom {
   flex-shrink: 0;
   position: unset !important;
@@ -1585,23 +1667,11 @@ watchEffect(() => {
   width: 100%;
 }
 
-.track-info {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  padding-top: 2vh;
-  padding-bottom: 2vh;
-  text-align: center;
-  line-height: 10%;
+.queue-tab {
+  opacity: 0.7;
 }
 
-.track-info-subtitle {
-  opacity: 0.5;
-}
-
-.v-tab {
-  opacity: 0.5;
-}
-.v-tab-item--selected {
+.queue-tab[data-state="active"] {
   opacity: 1;
 }
 
@@ -1669,10 +1739,6 @@ watchEffect(() => {
 .mediacontrols-right > div {
   display: inline-flex;
   align-items: center;
-}
-
-.v-toolbar :deep(.v-toolbar-title) {
-  text-align: center;
 }
 
 .responsive-icon-holder-btn {
@@ -1752,7 +1818,7 @@ button {
   max-width: 400px;
   margin: 0 auto;
   border-radius: 10px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  background-color: hsl(var(--muted));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1784,5 +1850,23 @@ button {
   .main-media-details-track-info {
     padding: 8px 0;
   }
+}
+
+.radio-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+}
+
+.radio-menu-card {
+  position: fixed;
+  top: 56px;
+  right: 60px;
+  z-index: 999999;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -15px rgba(0, 0, 0, 0.2);
+  min-width: 250px;
 }
 </style>

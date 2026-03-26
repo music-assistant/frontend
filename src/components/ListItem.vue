@@ -1,16 +1,25 @@
 <template>
-  <v-list-item
+  <Item
     v-hold="(v: Event) => $emit('menu', v)"
-    v-bind="listItemProps"
     :class="listItemClasses"
+    size="sm"
+    class="cursor-pointer"
     @click="$emit('click', $event)"
     @click.right.prevent="(v: Event) => $emit('menu', v)"
-    @input="(v: Event) => $emit('input', v)"
   >
-    <template v-for="(_, name) in $slots" #[name]>
-      <slot :name="name"></slot>
-    </template>
-    <template v-if="$slots.append || showMenuBtn" #append>
+    <ItemMedia v-if="$slots.prepend">
+      <slot name="prepend"></slot>
+    </ItemMedia>
+    <ItemContent>
+      <ItemTitle v-if="$slots.title">
+        <slot name="title"></slot>
+      </ItemTitle>
+      <ItemDescription v-if="$slots.subtitle">
+        <slot name="subtitle"></slot>
+      </ItemDescription>
+      <slot></slot>
+    </ItemContent>
+    <ItemActions v-if="$slots.append || showMenuBtn">
       <slot name="append"></slot>
       <Button
         v-if="showMenuBtn"
@@ -19,8 +28,8 @@
         aria-label="Show context menu"
         @click.stop="(v: Event) => $emit('menu', v)"
       />
-    </template>
-  </v-list-item>
+    </ItemActions>
+  </Item>
 </template>
 
 <script lang="ts">
@@ -29,6 +38,14 @@ export type { ListItemEmits, ListItemProps } from "@/composables/useListItem";
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import {
   defaultListItemProps,
   useListItem,
@@ -40,7 +57,7 @@ const props = withDefaults(defineProps<ListItemProps>(), defaultListItemProps);
 
 defineEmits<ListItemEmits>();
 
-const { listItemProps, listItemClasses } = useListItem(props);
+const { listItemClasses } = useListItem(props);
 </script>
 
 <style scoped>
@@ -49,27 +66,6 @@ const { listItemProps, listItemClasses } = useListItem(props);
   padding: 7px !important;
   padding-right: 0 !important;
   margin-right: -18px !important;
-}
-
-.list-item-main :deep(.v-list-item__append) {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0;
-}
-
-.list-item-main :deep(.v-list-item__prepend .v-icon) {
-  margin-inline-end: 5px !important;
-}
-
-.list-item-main :deep(.v-list-item__prepend > div) {
-  display: flex !important;
-  align-items: center !important;
-}
-
-.list-item-main :deep(.v-list-item__content > div) {
-  padding-left: 4px;
-  padding-right: 10px;
 }
 
 .list-item--compact {

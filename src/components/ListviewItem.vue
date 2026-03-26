@@ -9,12 +9,12 @@
   >
     <template #prepend>
       <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
-        <v-checkbox
-          :model-value="isSelected"
+        <Checkbox
+          :checked="isSelected"
           @click.stop
-          @update:model-value="
-            (x: boolean | null) => {
-              if (x != null) emit('select', item, x);
+          @update:checked="
+            (x: boolean) => {
+              emit('select', item, x);
             }
           "
         />
@@ -43,17 +43,19 @@
         >
       </span>
       <!-- explicit icon -->
-      <v-tooltip v-if="item && item.metadata" location="bottom">
-        <template #activator="{ props }">
-          <v-icon
+      <Tooltip v-if="item && item.metadata">
+        <TooltipTrigger as-child>
+          <span
             v-if="parseBool(item.metadata.explicit || false)"
-            v-bind="props"
-            icon="mdi-alpha-e-box"
-            width="35"
-          />
-        </template>
-        <span>{{ $t("tooltip.explicit") }}</span>
-      </v-tooltip>
+            class="inline-flex items-center"
+          >
+            <SquareLetterE class="h-5 w-5" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>{{ $t("tooltip.explicit") }}</span>
+        </TooltipContent>
+      </Tooltip>
     </template>
 
     <!-- subtitle -->
@@ -63,50 +65,50 @@
         v-if="item.media_type == MediaType.TRACK && 'provider_mappings' in item"
         class="ma-line-clamp-1"
       >
-        <v-item-group>
-          <v-item v-if="'artists' in item">
+        <span>
+          <span v-if="'artists' in item">
             {{ getArtistsString(item.artists, 2) }}
-          </v-item>
-          <v-item v-if="showAlbum && 'album' in item && item.album">
-            • {{ item.album.name
+          </span>
+          <span v-if="showAlbum && 'album' in item && item.album">
+            &bull; {{ item.album.name
             }}<span v-if="'year' in item.album && item.album.year">
-              • {{ item.album.year }}</span
+              &bull; {{ item.album.year }}</span
             >
-          </v-item>
-          <v-item
+          </span>
+          <span
             v-if="showDiscNumber && 'disc_number' in item && item.disc_number"
           >
-            <v-icon style="margin-left: 5px" icon="md:album" />
+            <Disc class="inline-block ml-1 h-4 w-4" />
             {{ item.disc_number }}
-          </v-item>
-          <v-item
+          </span>
+          <span
             v-if="
               showTrackNumber && 'track_number' in item && item.track_number
             "
           >
-            <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
+            <Music class="inline-block ml-1 h-4 w-4" />
             {{ item.track_number }}
-          </v-item>
-          <v-item
+          </span>
+          <span
             v-else-if="showPosition && 'position' in item && item.position"
           >
-            <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
+            <Music class="inline-block ml-1 h-4 w-4" />
             {{ item.position }}
-          </v-item>
+          </span>
           <!-- track duration -->
-          <v-item v-if="showDuration && 'duration' in item && item.duration">
-            <span> • [{{ formatDuration(item.duration) }}]</span>
-          </v-item>
-        </v-item-group>
+          <span v-if="showDuration && 'duration' in item && item.duration">
+            <span> &bull; [{{ formatDuration(item.duration) }}]</span>
+          </span>
+        </span>
       </div>
 
       <!-- album: albumtype + artists + year -->
       <div v-else-if="item.media_type == MediaType.ALBUM && 'year' in item">
         <span v-if="item.album_type != AlbumType.UNKNOWN"
-          >{{ $t("album_type." + item.album_type) }} •
+          >{{ $t("album_type." + item.album_type) }} &bull;
         </span>
         <span>{{ getArtistsString(item.artists) }}</span>
-        <span v-if="item.year"> • {{ item.year }}</span>
+        <span v-if="item.year"> &bull; {{ item.year }}</span>
       </div>
       <!-- track/album fallback: artist present -->
       <div v-else-if="'artists' in item && item.artists">
@@ -150,16 +152,18 @@
         :show-badge="getBreakpointValue('bp7')"
       />
       <!-- hi res icon -->
-      <v-img
-        v-if="HiResDetails && getBreakpointValue('bp3')"
-        :src="iconHiRes"
-        width="30"
-        :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
-      >
-        <v-tooltip activator="parent" location="bottom">
+      <Tooltip v-if="HiResDetails && getBreakpointValue('bp3')">
+        <TooltipTrigger as-child>
+          <img
+            :src="iconHiRes"
+            width="30"
+            :class="isDark ? 'hiresicondark' : 'hiresicon'"
+          />
+        </TooltipTrigger>
+        <TooltipContent>
           {{ HiResDetails }}
-        </v-tooltip>
-      </v-img>
+        </TooltipContent>
+      </Tooltip>
 
       <!-- provider icon -->
       <provider-icon
@@ -174,16 +178,16 @@
 
       <!-- fully played or in progress icon -->
       <!-- only used for podcast-episodes and audiobook-chapters -->
-      <v-icon
+      <Check
         v-if="'fully_played' in item && item.fully_played"
+        class="h-5 w-5"
         :title="$t('item_fully_played')"
-        >mdi-check</v-icon
-      >
-      <v-icon
+      />
+      <Clock
         v-else-if="'resume_position_ms' in item && item.resume_position_ms"
+        class="h-5 w-5"
         :title="$t('item_in_progress')"
-        >mdi-clock-fast</v-icon
-      >
+      />
 
       <!-- favorite (heart) icon -->
       <div
@@ -191,23 +195,22 @@
           getBreakpointValue('bp3') &&
           'favorite' in item &&
           showFavorite &&
-          !$vuetify.display.mobile
+          !mobile
         "
       >
         <FavouriteButton :item="item" />
       </div>
 
       <!-- play button -->
-      <v-btn
+      <Button
         v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
-        icon
-        variant="text"
-        size="small"
+        variant="ghost"
+        size="icon-sm"
         :disabled="disablePlayButton"
         @click.stop="onPlayClick"
       >
-        <v-icon size="24">mdi-play-circle-outline</v-icon>
-      </v-btn>
+        <PlayCircle class="h-6 w-6" />
+      </Button>
     </template>
   </ListItem>
 </template>
@@ -216,6 +219,15 @@
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useBreakpoint } from "@/composables/useBreakpoint";
+import { useIsDark } from "@/composables/useIsDark";
 import {
   formatDuration,
   getArtistsString,
@@ -235,9 +247,9 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { Check, Clock, Disc, Music, PlayCircle, SquareAsterisk as SquareLetterE } from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
@@ -266,6 +278,8 @@ export interface Props {
 
 // global refs
 const { t, te } = useI18n();
+const { isDark } = useIsDark();
+const { mobile } = useBreakpoint();
 
 const displayName = computed(() => {
   if (compProps.item.media_type === MediaType.GENRE) {
