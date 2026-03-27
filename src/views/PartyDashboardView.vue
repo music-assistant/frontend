@@ -329,7 +329,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useColorMode } from "@vueuse/core";
 
-
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
@@ -509,11 +508,7 @@ const fetchLyrics = async () => {
 
 const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
-  albumArtUrl.value
-    ? "#FFFFFF"
-    : isDark.value
-      ? "#FFFFFF"
-      : "#000000",
+  albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
