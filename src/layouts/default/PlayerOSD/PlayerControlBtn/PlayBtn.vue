@@ -94,6 +94,11 @@ const isLoading = computed(() => {
   border-radius: 50%;
   background-color: var(--foreground);
   color: var(--play-icon-color, var(--background));
+  opacity: 1 !important;
+}
+
+.play-btn-icon:hover {
+  opacity: 0.85 !important;
 }
 
 .play-btn-spinner {
