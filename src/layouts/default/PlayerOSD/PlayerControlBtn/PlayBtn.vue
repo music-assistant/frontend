@@ -92,13 +92,8 @@ const isLoading = computed(() => {
 .play-btn-icon {
   position: relative;
   border-radius: 50%;
-  background-color: #212121;
-  color: var(--play-icon-color, #fff);
-}
-
-.dark .play-btn-icon {
-  background-color: #fff;
-  color: var(--play-icon-color, #212121);
+  background-color: var(--foreground);
+  color: var(--play-icon-color, var(--background));
 }
 
 .play-btn-spinner {

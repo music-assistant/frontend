@@ -27,9 +27,7 @@
         <div
           class="absolute inset-0"
           :style="{
-            background: isDark
-              ? 'linear-gradient(to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75))'
-              : 'linear-gradient(to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75))',
+            background: `linear-gradient(to bottom, color-mix(in srgb, var(--background) 90%, transparent), color-mix(in srgb, var(--background) 75%, transparent))`,
           }"
         />
       </div>
@@ -406,7 +404,6 @@ import {
 } from "@/components/ui/tooltip";
 import Toolbar from "@/components/Toolbar.vue";
 import { useBreakpoint } from "@/composables/useBreakpoint";
-import { useIsDark } from "@/composables/useIsDark";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getGenreDescription,
@@ -451,7 +448,6 @@ export interface Props {
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
-const { isDark } = useIsDark();
 const { width: _windowWidth } = useBreakpoint();
 const isMobile = computed(() => _windowWidth.value <= 600);
 const menuItems = ref<ContextMenuItem[]>([]);

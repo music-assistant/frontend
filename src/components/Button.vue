@@ -29,6 +29,10 @@ const { buttonProps, buttonClasses } = useButton(props);
 </script>
 
 <style scoped>
+.button {
+  color: var(--foreground);
+}
+
 .button:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
