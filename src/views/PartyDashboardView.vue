@@ -1093,7 +1093,8 @@ watch(
 .karaoke-track-stack {
   flex: 0 0 auto;
   width: 100%;
-  max-width: 60vw;
+  min-width: 300px;
+  max-width: 50vw;
   display: flex;
   justify-content: center;
   padding-bottom: 1rem;
@@ -1173,10 +1174,6 @@ watch(
 
   .karaoke-lyrics {
     max-width: 100%;
-  }
-
-  .karaoke-track-stack {
-    max-width: 80vw;
   }
 
   /* General layout */
