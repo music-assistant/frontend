@@ -5,6 +5,7 @@
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.add_provider_browse') }}</DialogDescription>
       </DialogHeader>
 
       <div class="px-6 pb-2 flex-shrink-0">
@@ -82,6 +83,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";

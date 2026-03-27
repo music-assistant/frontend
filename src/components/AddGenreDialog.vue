@@ -3,6 +3,7 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("add_genre") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.add_genre') }}</DialogDescription>
       </DialogHeader>
       <form id="form-add-genre" @submit.prevent="form.handleSubmit">
         <FieldGroup>
@@ -110,6 +111,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

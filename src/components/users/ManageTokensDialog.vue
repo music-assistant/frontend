@@ -6,6 +6,7 @@
           {{ $t("auth.tokens") }} -
           {{ user?.display_name || user?.username }}
         </DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.manage_tokens') }}</DialogDescription>
       </DialogHeader>
 
       <div class="space-y-6">
@@ -274,6 +275,7 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

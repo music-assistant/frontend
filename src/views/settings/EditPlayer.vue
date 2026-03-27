@@ -194,6 +194,7 @@
       <DialogContent class="max-w-[400px]">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.player_name") }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ $t('aria.rename_player') }}</DialogDescription>
         </DialogHeader>
         <Input
           v-model="editName"
@@ -250,6 +251,7 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

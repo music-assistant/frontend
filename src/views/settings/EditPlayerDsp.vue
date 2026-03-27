@@ -174,6 +174,7 @@
       <DialogContent class="max-w-sm">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.dsp.presets.save") }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ $t('aria.save_dsp_preset') }}</DialogDescription>
         </DialogHeader>
         <div class="space-y-2 py-2">
           <Input
@@ -200,6 +201,7 @@
       <DialogContent class="max-w-sm">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.dsp.filter.add") }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ $t('aria.add_dsp_filter') }}</DialogDescription>
         </DialogHeader>
         <div class="space-y-2 py-2">
           <Select
@@ -265,6 +267,7 @@ import Button from "@/components/Button.vue";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

@@ -11,6 +11,7 @@
               : t("background_tasks.details_title")
           }}
         </DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.background_task_details') }}</DialogDescription>
       </DialogHeader>
 
       <ScrollArea class="max-h-[78vh]">
@@ -216,6 +217,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";

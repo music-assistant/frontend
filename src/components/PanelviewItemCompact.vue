@@ -15,9 +15,7 @@
       class="absolute inset-0 z-10 flex items-center justify-center"
       :class="
         isSelected
-          ? isDark
-            ? 'bg-black/75'
-            : 'bg-white/75'
+          ? 'bg-background/75'
           : 'bg-transparent'
       "
     >
@@ -121,7 +119,6 @@
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useIsDark } from "@/composables/useIsDark";
 import {
   getArtistsString,
   getBrowseFolderName,
@@ -144,8 +141,6 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 
 const isHovering = ref(false);
-const { isDark } = useIsDark();
-
 // properties
 export interface Props {
   item: MediaItemType | ItemMapping;

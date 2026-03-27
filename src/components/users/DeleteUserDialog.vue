@@ -6,6 +6,7 @@
     <DialogContent class="max-w-[480px]">
       <DialogHeader>
         <DialogTitle>{{ $t("auth.delete_user") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.confirm_delete_user') }}</DialogDescription>
       </DialogHeader>
       <div class="py-2">
         <p class="text-sm mb-4">
@@ -36,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

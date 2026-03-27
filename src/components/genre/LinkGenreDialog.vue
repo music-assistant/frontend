@@ -3,6 +3,7 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("link_to_genre_title") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.link_genre') }}</DialogDescription>
       </DialogHeader>
       <div class="space-y-4">
         <p class="text-sm text-muted-foreground">
@@ -76,6 +77,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

@@ -114,7 +114,7 @@ onBeforeUnmount(() => {
 
 .icon-container--button:focus {
   outline: none;
-  color: #00ff00;
+  color: var(--primary);
 }
 
 .icon-container--button:active {

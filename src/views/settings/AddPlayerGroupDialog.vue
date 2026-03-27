@@ -5,6 +5,7 @@
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.add_player_group') }}</DialogDescription>
       </DialogHeader>
 
       <div
@@ -49,6 +50,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";

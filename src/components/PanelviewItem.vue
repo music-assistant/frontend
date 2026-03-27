@@ -14,9 +14,7 @@
       class="absolute inset-0 z-10 flex items-center justify-center"
       :class="
         isSelected
-          ? isDark
-            ? 'bg-black/75'
-            : 'bg-white/75'
+          ? 'bg-background/75'
           : 'bg-transparent'
       "
     >

@@ -3,6 +3,7 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("add_alias") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.create_genre_alias') }}</DialogDescription>
       </DialogHeader>
       <Input v-model="newAliasName" :placeholder="$t('add_alias')" />
       <DialogFooter>
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

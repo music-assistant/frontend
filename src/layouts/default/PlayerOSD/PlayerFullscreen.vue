@@ -11,7 +11,7 @@
     >
       <!-- visually hidden title for accessibility -->
       <DialogTitle class="sr-only">{{ $t('now_playing') || 'Now Playing' }}</DialogTitle>
-      <DialogDescription class="sr-only">Fullscreen player view</DialogDescription>
+      <DialogDescription class="sr-only">{{ $t('aria.fullscreen_player') }}</DialogDescription>
 
       <!-- toolbar -->
       <div class="fullscreen-toolbar">
@@ -233,7 +233,7 @@
           </Tabs>
           <div
             class="queue-items-scroll-box"
-            :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
+            :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize}; ${activeQueuePanel === 2 ? 'overflow: hidden;' : ''}`"
           >
             <div
               v-if="!tempHide && activeQueuePanel !== 2"
@@ -1724,7 +1724,7 @@ watchEffect(() => {
 }
 
 .main-queue-items :deep([data-slot="tabs-list"]) {
-  background: rgba(0, 0, 0, 0.3);
+  background: color-mix(in srgb, var(--text-color, #fff) 10%, transparent);
   height: auto;
   padding: 3px;
   border-radius: 10px;
@@ -1743,15 +1743,15 @@ watchEffect(() => {
   flex: 0 0 auto !important;
   border-radius: 8px !important;
   color: var(--text-color, inherit);
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: color-mix(in srgb, var(--text-color, #fff) 6%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--text-color, #fff) 10%, transparent) !important;
   box-shadow: none !important;
 }
 
 .queue-tab[data-state="active"] {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.14) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: color-mix(in srgb, var(--text-color, #fff) 14%, transparent) !important;
+  border-color: color-mix(in srgb, var(--text-color, #fff) 18%, transparent) !important;
 }
 
 .queue-tab :deep([data-slot="badge"]) {
@@ -1762,7 +1762,7 @@ watchEffect(() => {
   min-width: 16px;
   line-height: 16px;
   border-radius: 8px;
-  background: rgba(128, 128, 128, 0.6);
+  background: color-mix(in srgb, var(--text-color, #888) 40%, transparent);
   color: inherit;
   border: none;
   margin-left: 4px;

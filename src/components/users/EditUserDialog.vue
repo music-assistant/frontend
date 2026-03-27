@@ -3,6 +3,7 @@
     <DialogContent class="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
       <DialogHeader class="px-6 pt-6 pb-4">
         <DialogTitle>{{ $t("auth.edit_user") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.edit_user') }}</DialogDescription>
       </DialogHeader>
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">
         <form id="form-edit-user" @submit.prevent="handleFormSubmit">
@@ -259,6 +260,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

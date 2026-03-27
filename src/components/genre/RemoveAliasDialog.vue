@@ -3,6 +3,7 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("remove_alias") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.remove_genre_alias') }}</DialogDescription>
       </DialogHeader>
       <p>{{ $t("confirm_remove_alias", [alias || ""]) }}</p>
       <DialogFooter>
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

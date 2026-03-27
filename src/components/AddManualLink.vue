@@ -6,6 +6,7 @@
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ $t("add_url_item") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.add_url_item') }}</DialogDescription>
       </DialogHeader>
       <Separator />
       <div class="space-y-4 pt-2">
@@ -59,6 +60,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

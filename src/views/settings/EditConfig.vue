@@ -413,6 +413,7 @@
             $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
           }}
         </DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.help_info') }}</DialogDescription>
       </DialogHeader>
       <!-- eslint-disable vue/no-v-html -->
       <div

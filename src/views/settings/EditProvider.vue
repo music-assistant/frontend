@@ -90,6 +90,7 @@
       <DialogContent class="max-w-[400px]">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.provider_name") }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ $t('aria.rename_provider') }}</DialogDescription>
         </DialogHeader>
         <Input
           v-model="editName"
@@ -114,7 +115,7 @@
       v-if="loading"
       class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <Card v-if="showAuthLink" class="bg-white p-6">
+      <Card v-if="showAuthLink" class="bg-card p-6">
         <h3 class="text-lg font-semibold mb-2">Authenticating...</h3>
         <p class="text-sm text-muted-foreground mb-4">
           A new tab/popup should be opened where you can authenticate
@@ -136,6 +137,7 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

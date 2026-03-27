@@ -7,6 +7,7 @@
     >
       <DialogHeader>
         <DialogTitle>{{ $t("link_alias") }}</DialogTitle>
+        <DialogDescription class="sr-only">{{ $t('aria.link_genre_alias') }}</DialogDescription>
       </DialogHeader>
       <div class="relative">
         <Command v-model:search-term="aliasSearch" class="border rounded-lg">
@@ -64,6 +65,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

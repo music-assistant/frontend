@@ -141,13 +141,13 @@
                   v-for="(artist, artistindex) in item.artists"
                   :key="artist.item_id"
                 >
-                  <a style="color: accent" @click="artistClick(artist)">{{
+                  <a class="text-accent-foreground cursor-pointer" @click="artistClick(artist)">{{
                     artist.name
                   }}</a>
                   <span
                     v-if="artistindex + 1 < item.artists.length"
                     :key="artistindex"
-                    style="color: accent"
+                    class="text-accent-foreground"
                     >{{ " / " }}</span
                   >
                 </span>
@@ -182,11 +182,11 @@
                   v-for="(author, authorindex) in item.authors"
                   :key="author"
                 >
-                  <span style="color: accent">{{ author }}</span>
+                  <span class="text-accent-foreground">{{ author }}</span>
                   <span
                     v-if="authorindex + 1 < item.authors.length"
                     :key="authorindex"
-                    style="color: accent"
+                    class="text-accent-foreground"
                     >{{ " / " }}</span
                   >
                 </span>
@@ -206,11 +206,11 @@
                   v-for="(narrator, narratorIndex) in item.narrators"
                   :key="narrator"
                 >
-                  <span style="color: accent">{{ narrator }}</span>
+                  <span class="text-accent-foreground">{{ narrator }}</span>
                   <span
                     v-if="narratorIndex + 1 < item.narrators.length"
                     :key="narratorIndex"
-                    style="color: accent"
+                    class="text-accent-foreground"
                     >{{ " / " }}</span
                   >
                 </span>
@@ -226,7 +226,7 @@
                 class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <a class="text-primary">{{ item.owner }}</a>
               </MarqueeText>
             </div>
 
@@ -239,7 +239,7 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <a
-                  style="color: secondary"
+                  class="text-secondary-foreground cursor-pointer"
                   @click="albumClick((item as Track)?.album)"
                   >{{ item.album.name }}</a
                 ><span v-if="'year' in item.album && item.album.year">
@@ -371,6 +371,10 @@
     </div>
     <Dialog v-model:open="showFullInfo">
       <DialogContent class="max-w-[975px]">
+        <DialogHeader>
+          <DialogTitle>{{ headerTitle }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ $t("aria.item_description") }}</DialogDescription>
+        </DialogHeader>
         <!-- eslint-disable vue/no-v-html -->
         <div class="p-4" v-html="fullDescription" />
         <!-- eslint-enable vue/no-v-html -->
@@ -390,7 +394,10 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
