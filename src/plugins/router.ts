@@ -32,8 +32,6 @@ const routes: RouteRecordRaw[] = [
   // Placed at top level so it renders without navigation/player controls
   {
     path: "/party",
-    // Party only displays the dashboard and doesn't need the player.
-    meta: { disableWebPlayer: true },
     component: () => import("@/layouts/default/Default.vue"),
     children: [
       {

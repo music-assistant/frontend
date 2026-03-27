@@ -100,9 +100,7 @@
         <div
           v-show="qrAvailable"
           class="karaoke-qr"
-          :style="
-            swapped ? { left: 'auto', right: '2vw', bottom: '4vw' } : undefined
-          "
+          :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
         >
           <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
         </div>
@@ -110,8 +108,16 @@
         <div
           class="karaoke-lyrics"
           :style="{
-            '--karaoke-pad-left': 'clamp(1rem, 2vw, 2rem)',
-            '--karaoke-pad-right': 'clamp(1rem, 2vw, 2rem)',
+            '--karaoke-pad-left': !qrAvailable
+              ? 'clamp(1rem, 2vw, 2rem)'
+              : swapped
+                ? 'clamp(1rem, 2vw, 2rem)'
+                : 'clamp(6rem, 22vw, 20rem)',
+            '--karaoke-pad-right': !qrAvailable
+              ? 'clamp(1rem, 2vw, 2rem)'
+              : swapped
+                ? 'clamp(6rem, 22vw, 20rem)'
+                : 'clamp(1rem, 2vw, 2rem)',
           }"
         >
           <LyricsViewer
@@ -168,7 +174,11 @@
             },
           ]"
         >
-          <div v-show="qrAvailable" class="qr-wrapper">
+          <div
+            v-show="qrAvailable"
+            class="qr-wrapper"
+            :style="swapped && displayLyrics ? { order: 1 } : undefined"
+          >
             <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
           </div>
           <div
@@ -1044,7 +1054,7 @@ watch(
 
 .karaoke-qr {
   position: absolute;
-  bottom: 2vw;
+  top: 5vw;
   left: 2vw;
   z-index: 6;
   max-width: 20vw;
@@ -1071,7 +1081,7 @@ watch(
 }
 
 .karaoke-lyrics :deep(.synced-content) {
-  padding: 20vh 0 30vh;
+  padding: 20vh 0;
 }
 
 .karaoke-lyrics :deep(.lyrics-line) {
@@ -1081,8 +1091,7 @@ watch(
 .karaoke-track-stack {
   flex: 0 0 auto;
   width: 100%;
-  min-width: 300px;
-  max-width: 50vw;
+  max-width: 60vw;
   display: flex;
   justify-content: center;
   padding-bottom: 1rem;
@@ -1162,6 +1171,10 @@ watch(
 
   .karaoke-lyrics {
     max-width: 100%;
+  }
+
+  .karaoke-track-stack {
+    max-width: 80vw;
   }
 
   /* General layout */
