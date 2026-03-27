@@ -39,6 +39,10 @@
             'lyrics-line',
             {
               active: activeLyricIndex === index,
+              'lyrics-line--far':
+                activeLyricIndex >= 0 &&
+                (index === activeLyricIndex + 2 ||
+                  index === activeLyricIndex - 1),
               'lyrics-line--hidden':
                 activeLyricIndex >= 0
                   ? index < activeLyricIndex - 1 || index > activeLyricIndex + 2
@@ -540,6 +544,10 @@ onBeforeUnmount(() => {
   margin: 8px 0;
   will-change: opacity;
   transition: opacity v-bind(transitionDuration) ease;
+}
+
+.lyrics-line.lyrics-line--far {
+  opacity: 0.15;
 }
 
 .lyrics-line.lyrics-line--hidden {

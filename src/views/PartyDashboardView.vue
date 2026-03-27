@@ -110,16 +110,8 @@
         <div
           class="karaoke-lyrics"
           :style="{
-            '--karaoke-pad-left': !qrAvailable
-              ? 'clamp(1rem, 2vw, 2rem)'
-              : swapped
-                ? 'clamp(1rem, 2vw, 2rem)'
-                : 'clamp(6rem, 22vw, 20rem)',
-            '--karaoke-pad-right': !qrAvailable
-              ? 'clamp(1rem, 2vw, 2rem)'
-              : swapped
-                ? 'clamp(6rem, 22vw, 20rem)'
-                : 'clamp(1rem, 2vw, 2rem)',
+            '--karaoke-pad-left': 'clamp(1rem, 2vw, 2rem)',
+            '--karaoke-pad-right': 'clamp(1rem, 2vw, 2rem)',
           }"
         >
           <LyricsViewer
@@ -176,11 +168,7 @@
             },
           ]"
         >
-          <div
-            v-show="qrAvailable"
-            class="qr-wrapper"
-            :style="swapped && displayLyrics ? { order: 1 } : undefined"
-          >
+          <div v-show="qrAvailable" class="qr-wrapper">
             <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
           </div>
           <div
@@ -1083,7 +1071,7 @@ watch(
 }
 
 .karaoke-lyrics :deep(.synced-content) {
-  padding: 20vh 0;
+  padding: 20vh 0 30vh;
 }
 
 .karaoke-lyrics :deep(.lyrics-line) {
