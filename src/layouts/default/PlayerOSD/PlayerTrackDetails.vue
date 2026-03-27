@@ -173,7 +173,7 @@
     </div>
   </div>
   <PlayerFullscreen
-    :show-fullscreen="store.showFullscreenPlayer"
+    v-if="store.showFullscreenPlayer"
     :color-palette="colorPalette"
   />
 </template>

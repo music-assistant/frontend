@@ -651,7 +651,8 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
+const lyricsEnabled = computed(() => activeQueuePanel.value === 2);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 // Map between numeric panel index and string tab values
 const activeQueuePanelStr = computed(() => {
@@ -702,15 +703,9 @@ const hasLyrics = computed(() => {
   );
 });
 
-// Fetch lyrics for the current track (only when fullscreen player is open)
 const fetchLyrics = async () => {
   // Clear lyrics immediately
   currentLyrics.value = { plain: null, synced: null };
-
-  // Only fetch lyrics when fullscreen player is open
-  if (!store.showFullscreenPlayer) {
-    return;
-  }
 
   const mediaItem = store.curQueueItem?.media_item;
 
@@ -752,16 +747,6 @@ const fetchLyrics = async () => {
 watch(() => store.curQueueItem?.media_item?.item_id, fetchLyrics, {
   immediate: true,
 });
-
-// Also fetch lyrics when fullscreen player is opened
-watch(
-  () => store.showFullscreenPlayer,
-  (isOpen) => {
-    if (isOpen) {
-      fetchLyrics();
-    }
-  },
-);
 
 // Breakpoint name for font size calculations
 const breakpointName = computed(() => {
@@ -1361,7 +1346,7 @@ onMounted(() => {
 
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
+  if (e.key === "Escape" && !store.dialogActive) {
     store.showFullscreenPlayer = false;
   }
 };
