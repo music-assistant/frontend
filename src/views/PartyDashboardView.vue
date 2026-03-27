@@ -100,7 +100,9 @@
         <div
           v-show="qrAvailable"
           class="karaoke-qr"
-          :style="swapped ? { left: 'auto', right: '2vw' } : undefined"
+          :style="
+            swapped ? { left: 'auto', right: '2vw', bottom: '4vw' } : undefined
+          "
         >
           <PartyQR :qr-dark="qrDarkColor" @available="qrAvailable = $event" />
         </div>
@@ -332,8 +334,6 @@ const theme = useTheme();
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
-const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
-  .href;
 
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
@@ -378,18 +378,9 @@ const toggleGuestAccess = async () => {
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
 const isFullscreen = computed(() => store.frameless);
-const chromeOnAlbumArt = computed(
-  () => useAlbumArtBackground.value && !!albumArtUrl.value,
-);
-const chromeTextColor = computed(() =>
-  chromeOnAlbumArt.value ? "#FFFFFF" : "rgba(var(--v-theme-on-surface), 0.9)",
-);
-const maLogoSrc = computed(() =>
-  chromeOnAlbumArt.value ? logoSrc : logoDarkSrc,
-);
-const qrDarkColor = computed(() =>
-  chromeOnAlbumArt.value ? "#FFFFFF" : "#000000",
-);
+const chromeTextColor = computed(() => "#FFFFFF");
+const maLogoSrc = computed(() => logoSrc);
+const qrDarkColor = computed(() => "#FFFFFF");
 
 const partyName = computed(() => partyConfig.value?.party_name ?? null);
 const hideBackButton = computed(
@@ -924,8 +915,8 @@ watch(
   transition: background-image 0.8s ease-in-out;
 }
 
-.party-content--album-art,
-.party-content--album-art * {
+.party-content,
+.party-content * {
   color: white !important;
 }
 
@@ -1035,12 +1026,12 @@ watch(
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: white;
 }
 
 .empty-message {
   font-size: 1.25rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: rgba(255, 255, 255, 0.7);
   max-width: 500px;
 }
 
@@ -1065,7 +1056,7 @@ watch(
 
 .karaoke-qr {
   position: absolute;
-  top: 5vw;
+  bottom: 2vw;
   left: 2vw;
   z-index: 6;
   max-width: 20vw;
@@ -1164,12 +1155,12 @@ watch(
 .access-error-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: rgba(var(--v-theme-on-surface), 0.9);
+  color: white;
 }
 
 .access-error-message {
   font-size: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: rgba(255, 255, 255, 0.7);
   max-width: 400px;
 }
 
