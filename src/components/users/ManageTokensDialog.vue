@@ -6,7 +6,9 @@
           {{ $t("auth.tokens") }} -
           {{ user?.display_name || user?.username }}
         </DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.manage_tokens') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.manage_tokens")
+        }}</DialogDescription>
       </DialogHeader>
 
       <div class="space-y-6">

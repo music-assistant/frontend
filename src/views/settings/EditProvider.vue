@@ -2,20 +2,12 @@
   <section class="edit-provider">
     <div v-if="config && api.providerManifests[config.domain]">
       <!-- Disabled banner -->
-      <Alert
-        v-if="!config.enabled"
-        variant="warning"
-        class="mb-4"
-      >
+      <Alert v-if="!config.enabled" variant="warning" class="mb-4">
         <AlertTriangle class="h-4 w-4" />
         <AlertDescription>
           <div class="disabled-banner">
             <span>{{ $t("settings.provider_disabled") }}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              @click="config.enabled = true"
-            >
+            <Button size="sm" variant="outline" @click="config.enabled = true">
               {{ $t("settings.enable_provider") }}
             </Button>
           </div>
@@ -90,7 +82,9 @@
       <DialogContent class="max-w-[400px]">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.provider_name") }}</DialogTitle>
-          <DialogDescription class="sr-only">{{ $t('aria.rename_provider') }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.rename_provider")
+          }}</DialogDescription>
         </DialogHeader>
         <Input
           v-model="editName"
@@ -121,7 +115,9 @@
           A new tab/popup should be opened where you can authenticate
         </p>
         <a id="auth" href="" target="_blank">
-          <Button variant="outline">Click here if the popup did not open</Button>
+          <Button variant="outline"
+            >Click here if the popup did not open</Button
+          >
         </a>
       </Card>
       <Spinner v-else class="h-16 w-16" />

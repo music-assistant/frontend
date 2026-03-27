@@ -57,8 +57,8 @@
     </div>
     <!-- icon (fallback for providers that only specify an icon name) -->
     <component
-      v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
       :is="resolveIconHelper(api.providerManifests[providerDomain].icon!)"
+      v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
       :size="size"
       :style="`width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
@@ -91,8 +91,6 @@ const providerDomain = computed(() => {
   if (props.domain in api.providerManifests) return props.domain;
   return undefined;
 });
-
-
 </script>
 <style>
 .svg-wrapper svg {

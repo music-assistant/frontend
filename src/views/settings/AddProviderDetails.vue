@@ -57,7 +57,9 @@
           A new tab/popup should be opened where you can authenticate
         </p>
         <a id="auth" href="" target="_blank">
-          <Button variant="outline">Click here if the popup did not open</Button>
+          <Button variant="outline"
+            >Click here if the popup did not open</Button
+          >
         </a>
       </Card>
       <Spinner v-else class="h-16 w-16" />

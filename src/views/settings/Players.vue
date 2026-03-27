@@ -86,7 +86,10 @@
                   v-for="protocol in getOutputProtocols(item.player_id)"
                   :key="protocol.output_protocol_id"
                   variant="secondary"
-                  :class="['protocol-chip', { 'protocol-chip--unavailable': !protocol.available }]"
+                  :class="[
+                    'protocol-chip',
+                    { 'protocol-chip--unavailable': !protocol.available },
+                  ]"
                 >
                   <ProviderIcon
                     :domain="protocol.protocol_domain!"

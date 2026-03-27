@@ -3,7 +3,9 @@
     <DialogContent class="max-h-[70vh] flex flex-col p-0">
       <DialogHeader class="px-6 pt-6 pb-4">
         <DialogTitle>{{ $t("auth.create_user") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.create_user') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.create_user")
+        }}</DialogDescription>
       </DialogHeader>
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-6">
         <form id="form-create-user" @submit.prevent="handleFormSubmit">

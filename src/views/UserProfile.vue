@@ -26,7 +26,9 @@
                 : $t("auth.revoke_session")
             }}
           </DialogTitle>
-          <DialogDescription class="sr-only">{{ $t('aria.confirm_revoke_token') }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.confirm_revoke_token")
+          }}</DialogDescription>
         </DialogHeader>
         <div class="py-4">
           <p class="text-sm text-muted-foreground mb-4">

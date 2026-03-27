@@ -236,7 +236,6 @@ initializeFromUrl();
   .filter-buttons {
     width: 100%;
   }
-
 }
 
 .provider-filter-list {

@@ -42,12 +42,14 @@
       <!-- fallback: display player icon -->
       <div v-else class="icon-thumb">
         <component
-          :is="resolveIconHelper(
-            store.activePlayer?.type == PlayerType.PLAYER &&
-            store.activePlayer?.group_members.length
-              ? 'mdi-speaker-multiple'
-              : store.activePlayer?.icon || 'mdi-speaker'
-          )"
+          :is="
+            resolveIconHelper(
+              store.activePlayer?.type == PlayerType.PLAYER &&
+                store.activePlayer?.group_members.length
+                ? 'mdi-speaker-multiple'
+                : store.activePlayer?.icon || 'mdi-speaker',
+            )
+          "
           :size="32"
         />
       </div>
@@ -63,7 +65,10 @@
         }"
         class="flex items-center min-w-0 overflow-hidden"
       >
-        <div v-if="store.activePlayer && store.activePlayer?.powered != false" class="ma-line-clamp-1">
+        <div
+          v-if="store.activePlayer && store.activePlayer?.powered != false"
+          class="ma-line-clamp-1"
+        >
           {{ getPlayerName(store.activePlayer) }}
         </div>
         <!-- player name as title if its powered off-->
@@ -75,7 +80,11 @@
           {{ store.activePlayer?.name }}
         </div>
         <!-- no player selected message -->
-        <div v-else class="ma-line-clamp-1" @click="store.showPlayersMenu = true">
+        <div
+          v-else
+          class="ma-line-clamp-1"
+          @click="store.showPlayersMenu = true"
+        >
           {{ $t("no_player") }}
         </div>
         <NowPlayingBadge
@@ -171,10 +180,7 @@
       <QualityDetailsBtn />
     </div>
   </div>
-  <PlayerFullscreen
-    v-if="store.showFullscreenPlayer"
-    :color-palette="colorPalette"
-  />
+  <PlayerFullscreen v-if="store.activePlayer" :color-palette="colorPalette" />
 </template>
 
 <script setup lang="ts">

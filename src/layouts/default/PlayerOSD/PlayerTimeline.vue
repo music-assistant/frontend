@@ -25,20 +25,22 @@
           @touchend="stopDragging"
         />
         <!-- Chapter tick marks -->
-        <div
-          v-if="Object.keys(chapterTicks).length > 0"
-          class="chapter-ticks"
-        >
+        <div v-if="Object.keys(chapterTicks).length > 0" class="chapter-ticks">
           <div
             v-for="(label, pos) in chapterTicks"
             :key="pos"
             class="chapter-tick"
             :style="{ left: tickPosition(Number(pos)) }"
-          />
+          ></div>
         </div>
         <!-- Chapter labels -->
         <div
-          v-if="showLabels && !isThumbHidden && Object.keys(chapterTicks).length > 0 && Object.keys(chapterTicks).length < 6"
+          v-if="
+            showLabels &&
+            !isThumbHidden &&
+            Object.keys(chapterTicks).length > 0 &&
+            Object.keys(chapterTicks).length < 6
+          "
           class="chapter-labels"
         >
           <a
@@ -47,7 +49,8 @@
             class="text-caption chapter-label"
             :style="{ left: tickPosition(Number(pos)) }"
             @click="chapterClicked(Number(pos))"
-          >{{ label }}</a>
+            >{{ label }}</a
+          >
         </div>
       </div>
 
@@ -257,8 +260,8 @@ const sliderStyle = computed(() => {
   const max = store.activePlayer?.current_media?.duration || 1;
   const pct = max > 0 ? (curTimeValue.value / max) * 100 : 0;
   return {
-    '--timeline-color': compProps.color || 'currentColor',
-    '--timeline-pct': `${pct}%`,
+    "--timeline-color": compProps.color || "currentColor",
+    "--timeline-pct": `${pct}%`,
   } as Record<string, string>;
 });
 
@@ -358,7 +361,9 @@ const chapterClicked = function (chaperPos: number) {
   border-radius: 50%;
   background: var(--timeline-color, currentColor);
   cursor: pointer;
-  transition: width 0.15s, height 0.15s;
+  transition:
+    width 0.15s,
+    height 0.15s;
 }
 
 .timeline-slider--no-thumb::-webkit-slider-thumb {

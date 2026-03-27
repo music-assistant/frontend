@@ -18,7 +18,9 @@
     <Separator />
 
     <div v-if="showSearchInput" class="relative mt-2.5" style="width: auto">
-      <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <SearchIcon
+        class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+      />
       <Input
         id="searchInput"
         v-model="params.search"
@@ -118,31 +120,47 @@
           </div>
         </div>
 
-        <!-- list view -->
+        <!-- list view (virtualized) -->
         <div
           v-if="viewMode == 'list'"
-          style="height: 100%; overflow: hidden"
+          ref="listScrollContainer"
+          :style="{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }"
         >
-          <ListviewItem
-            v-for="item in pagedItems"
-            :key="item.uri"
-            :item="item"
-            :show-track-number="showTrackNumber"
-            :show-disc-number="showTrackNumber"
-            :show-duration="showDuration"
-            :show-favorite="showFavoritesOnlyFilter"
-            :show-menu="item.is_playable"
-            :show-provider="showProvider"
-            :show-album="showAlbum"
-            :show-checkboxes="showCheckboxes"
-            :is-selected="isSelected(item)"
-            :is-available="itemIsAvailable(item)"
-            :is-playing="isPlaying(item, itemtype)"
-            :show-details="itemtype.includes('versions')"
-            :disable-play-button="isPlayActionInProgress"
-            :parent-item="parentItem"
-            @select="onSelect"
-          />
+          <div
+            v-for="virtualRow in rowVirtualizer.getVirtualItems()"
+            :key="pagedItems[virtualRow.index]?.uri ?? virtualRow.index"
+            :style="{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: `${virtualRow.size}px`,
+              transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+            }"
+          >
+            <ListviewItem
+              :item="pagedItems[virtualRow.index]"
+              :show-track-number="showTrackNumber"
+              :show-disc-number="showTrackNumber"
+              :show-duration="showDuration"
+              :show-favorite="showFavoritesOnlyFilter"
+              :show-menu="pagedItems[virtualRow.index]?.is_playable"
+              :show-provider="showProvider"
+              :show-album="showAlbum"
+              :show-checkboxes="showCheckboxes"
+              :is-selected="isSelected(pagedItems[virtualRow.index])"
+              :is-available="itemIsAvailable(pagedItems[virtualRow.index])"
+              :is-playing="isPlaying(pagedItems[virtualRow.index], itemtype)"
+              :show-details="itemtype.includes('versions')"
+              :disable-play-button="isPlayActionInProgress"
+              :parent-item="parentItem"
+              @select="onSelect"
+            />
+          </div>
         </div>
 
         <!-- infinite scroll sentinel -->
@@ -150,10 +168,13 @@
           v-if="infiniteScroll && !allItemsReceived"
           ref="infiniteScrollSentinel"
           class="h-10"
-        />
-        <div v-if="!infiniteScroll && !allItemsReceived" class="flex justify-center py-4">
+        ></div>
+        <div
+          v-if="!infiniteScroll && !allItemsReceived"
+          class="flex justify-center py-4"
+        >
           <Button variant="outline" @click="loadNextPage({ done: () => {} })">
-            {{ $t('load_more_items') }}
+            {{ $t("load_more_items") }}
           </Button>
         </div>
       </div>
@@ -167,7 +188,7 @@
             (params.search || params.favoritesOnly)
           "
         >
-          <AlertTitle>{{ $t('no_content_filter') }}</AlertTitle>
+          <AlertTitle>{{ $t("no_content_filter") }}</AlertTitle>
           <Button
             v-if="params.search"
             variant="outline"
@@ -211,13 +232,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { Component } from "vue";
 
+import { useVirtualizer } from "@tanstack/vue-virtual";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed, Layers, Search as SearchIcon, X as XIcon } from "lucide-vue-next";
+import {
+  Eye,
+  EyeClosed,
+  Layers,
+  Search as SearchIcon,
+  X as XIcon,
+} from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -384,6 +412,36 @@ const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
 const { width: windowWidth } = useBreakpoint();
 const infiniteScrollSentinel = ref<HTMLElement | null>(null);
+const listScrollContainer = ref<HTMLElement | null>(null);
+const virtualScrollParent = ref<HTMLElement | null>(null);
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: pagedItems.value.length,
+    getScrollElement: () => virtualScrollParent.value,
+    estimateSize: () => 70,
+    overscan: 10,
+    scrollMargin: listScrollContainer.value?.offsetTop ?? 0,
+  })),
+);
+
+// Trigger infinite scroll when user scrolls near the bottom of the virtual list
+watch(
+  () => rowVirtualizer.value.getVirtualItems(),
+  (items) => {
+    if (
+      !items.length ||
+      !props.infiniteScroll ||
+      allItemsReceived.value ||
+      loading.value
+    )
+      return;
+    const lastItem = items[items.length - 1];
+    if (lastItem && lastItem.index >= pagedItems.value.length - 5) {
+      loadNextPage({ done: () => {} });
+    }
+  },
+);
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -1426,7 +1484,11 @@ onMounted(async () => {
   // setup IntersectionObserver for infinite scroll
   _infiniteScrollObserver = new IntersectionObserver(
     (entries) => {
-      if (entries[0]?.isIntersecting && !loading.value && !allItemsReceived.value) {
+      if (
+        entries[0]?.isIntersecting &&
+        !loading.value &&
+        !allItemsReceived.value
+      ) {
         loadNextPage({ done: () => {} });
       }
     },
@@ -1441,6 +1503,11 @@ onMounted(async () => {
     },
     { immediate: true },
   );
+
+  // Set up virtual scroll parent (the main scrolling container)
+  virtualScrollParent.value = document.querySelector(
+    ".content-section",
+  ) as HTMLElement;
 
   // signal if/when items get played/updated/removed
   _unsubscribeMediaEvents = api.subscribe_multi(

@@ -13,16 +13,9 @@
     <div
       v-if="showCheckboxes"
       class="absolute inset-0 z-10 flex items-center justify-center"
-      :class="
-        isSelected
-          ? 'bg-background/75'
-          : 'bg-transparent'
-      "
+      :class="isSelected ? 'bg-background/75' : 'bg-transparent'"
     >
-      <Checkbox
-        class="panel-item-checkbox"
-        :model-value="isSelected"
-      />
+      <Checkbox class="panel-item-checkbox" :model-value="isSelected" />
     </div>
     <div class="thumb-container">
       <MediaItemThumb :item="isAvailable ? item : undefined" />
@@ -49,9 +42,7 @@
       <!-- play button -->
       <div
         v-if="
-          (isHovering || store.isTouchscreen) &&
-          isAvailable &&
-          item.is_playable
+          (isHovering || store.isTouchscreen) && isAvailable && item.is_playable
         "
         class="play-button-overlay"
       >

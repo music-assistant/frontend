@@ -250,7 +250,9 @@
             <!-- Technical Specifications -->
             <div class="specs-section">
               <div class="spec-item">
-                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                <div
+                  class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0"
+                >
                   <Network class="size-6" />
                 </div>
                 <div class="spec-content">
@@ -265,7 +267,9 @@
                 </div>
               </div>
               <div class="spec-item">
-                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                <div
+                  class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0"
+                >
                   <Cable class="size-6" />
                 </div>
                 <div class="spec-content">
@@ -283,7 +287,9 @@
                 </div>
               </div>
               <div class="spec-item">
-                <div class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0">
+                <div
+                  class="spec-icon flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary shrink-0"
+                >
                   <Lock class="size-6" />
                 </div>
                 <div class="spec-content">
@@ -302,7 +308,10 @@
     </div>
 
     <!-- Error state -->
-    <div v-else class="error-alert rounded-lg border border-destructive/50 bg-destructive/10 p-4 m-6 text-destructive">
+    <div
+      v-else
+      class="error-alert rounded-lg border border-destructive/50 bg-destructive/10 p-4 m-6 text-destructive"
+    >
       {{ $t("settings.remote_access_error_loading") }}
     </div>
   </Container>

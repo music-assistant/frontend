@@ -3,7 +3,9 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("merge_genres") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.merge_genres') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.merge_genres")
+        }}</DialogDescription>
       </DialogHeader>
       <div class="space-y-4">
         <p class="text-sm text-muted-foreground">

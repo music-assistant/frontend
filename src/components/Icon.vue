@@ -15,7 +15,7 @@
           />
         </slot>
       </span>
-      <span v-if="badge === true" class="icon-badge-dot" />
+      <span v-if="badge === true" class="icon-badge-dot"></span>
     </div>
   </div>
 </template>
@@ -70,6 +70,7 @@ const adjustIconSize = async () => {
   await nextTick();
 
   try {
+    if (!iconContainer.value || !iconElement.value) return;
     const containerWidth = iconContainer.value.offsetWidth;
     const containerHeight = iconContainer.value.offsetHeight;
     const iconSize = Math.min(containerWidth, containerHeight);

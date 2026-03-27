@@ -84,11 +84,7 @@
             <component
               :is="resolveIconHelper(childPlayer.icon)"
               :size="30"
-              style="
-                opacity: 0.6;
-                margin-left: -4px;
-                margin-right: 7px;
-              "
+              style="opacity: 0.6; margin-left: -4px; margin-right: 7px"
             />
           </div>
           <div class="volumesliderrow-content">

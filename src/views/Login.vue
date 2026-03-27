@@ -313,7 +313,9 @@
               <DialogTitle>
                 {{ $t("login.scan_qr_code", "Scan QR Code") }}
               </DialogTitle>
-              <DialogDescription class="sr-only">{{ $t('aria.scan_qr_code') }}</DialogDescription>
+              <DialogDescription class="sr-only">{{
+                $t("aria.scan_qr_code")
+              }}</DialogDescription>
             </DialogHeader>
             <div>
               <p class="mb-4 text-sm text-muted-foreground">

@@ -103,7 +103,9 @@
               v-if="
                 shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
               "
-              :variant="getStageBadgeVariant(api.providerManifests[item.domain]?.stage)"
+              :variant="
+                getStageBadgeVariant(api.providerManifests[item.domain]?.stage)
+              "
               class="mx-1 uppercase text-[10px]"
             >
               {{
@@ -128,11 +130,7 @@
         @click="editProvider(item.instance_id)"
       >
         <CardHeader class="flex flex-row items-start gap-4">
-          <provider-icon
-            :domain="item.domain"
-            :size="50"
-            class="shrink-0"
-          />
+          <provider-icon :domain="item.domain" :size="50" class="shrink-0" />
           <div class="flex-1 min-w-0">
             <CardTitle class="text-base">
               {{ getProviderName(item) }}
@@ -163,7 +161,9 @@
               v-if="
                 shouldShowStageBadge(api.providerManifests[item.domain]?.stage)
               "
-              :variant="getStageBadgeVariant(api.providerManifests[item.domain]?.stage)"
+              :variant="
+                getStageBadgeVariant(api.providerManifests[item.domain]?.stage)
+              "
               class="uppercase text-[10px]"
             >
               {{

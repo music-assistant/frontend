@@ -382,7 +382,9 @@ const chromeOnAlbumArt = computed(
   () => useAlbumArtBackground.value && !!albumArtUrl.value,
 );
 const chromeTextColor = computed(() =>
-  chromeOnAlbumArt.value ? "#FFFFFF" : "color-mix(in srgb, var(--foreground) 90%, transparent)",
+  chromeOnAlbumArt.value
+    ? "#FFFFFF"
+    : "color-mix(in srgb, var(--foreground) 90%, transparent)",
 );
 const maLogoSrc = computed(() =>
   chromeOnAlbumArt.value ? logoSrc : logoDarkSrc,
@@ -495,11 +497,7 @@ const fetchLyrics = async () => {
 
 const lyricsEnabled = computed(() => karaokeMode.value);
 const lyricsTextColor = computed(() =>
-  albumArtUrl.value
-    ? "#FFFFFF"
-    : isDark.value
-      ? "#FFFFFF"
-      : "#000000",
+  albumArtUrl.value ? "#FFFFFF" : isDark.value ? "#FFFFFF" : "#000000",
 );
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
@@ -987,7 +985,6 @@ watch(
   flex: 1 1 100%;
 }
 
-
 .track-stack {
   flex: 1;
   display: flex;
@@ -1068,7 +1065,6 @@ watch(
   max-width: 20vw;
 }
 
-
 .karaoke-lyrics {
   flex: 1;
   width: 100%;
@@ -1085,7 +1081,6 @@ watch(
   padding-right: var(--karaoke-pad-right);
 }
 
-
 .karaoke-track-stack {
   flex: 0 0 auto;
   width: 100%;
@@ -1094,7 +1089,6 @@ watch(
   justify-content: center;
   padding-bottom: 1rem;
 }
-
 
 .track-list--karaoke {
   flex-direction: column;
@@ -1258,7 +1252,6 @@ watch(
     padding-left: 0;
     padding-right: 0;
   }
-
 
   .karaoke-track-stack {
     max-width: 100%;

@@ -9,7 +9,8 @@
           'mediadetails-content-type-btn cursor-pointer',
           (!store.activePlayerQueue ||
             !store.activePlayerQueue?.active ||
-            store.activePlayerQueue?.items == 0) && 'opacity-50 pointer-events-none',
+            store.activePlayerQueue?.items == 0) &&
+            'opacity-50 pointer-events-none',
         ]"
       >
         <div
@@ -23,7 +24,14 @@
         <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </Badge>
     </PopoverTrigger>
-    <PopoverContent class="mx-auto p-0" :style="{ width: Math.min(windowWidth - 25, 380) + 'px', maxHeight: (windowHeight - 150) + 'px', overflow: 'auto' }">
+    <PopoverContent
+      class="mx-auto p-0"
+      :style="{
+        width: Math.min(windowWidth - 25, 380) + 'px',
+        maxHeight: windowHeight - 150 + 'px',
+        overflow: 'auto',
+      }"
+    >
       <div style="overflow: hidden">
         <div class="d-flex ml-2 mr-2">
           <!-- Second line showing audio stream shared by multiple players -->
@@ -210,46 +218,48 @@
                   <Info class="ml-2 h-4 w-4 inline" />
                 </TooltipTrigger>
                 <TooltipContent class="max-w-[300px]">
-                {{
-                  $t("streamdetails.file_info.container", [
-                    streamDetails.audio_format.content_type,
-                  ])
-                }}
-                <br />
-                {{
-                  $t("streamdetails.file_info.codec", [
-                    streamDetails.audio_format.codec_type,
-                  ])
-                }}
-                <br />
-                {{
-                  $t("streamdetails.file_info.bit_depth", [
-                    streamDetails.audio_format.bit_depth,
-                  ])
-                }}
-                <br />
-                {{
-                  $t("streamdetails.file_info.sample_rate", [
-                    (streamDetails.audio_format.sample_rate / 1000).toFixed(1),
-                  ])
-                }}
-                <br />
-                {{
-                  $t("streamdetails.file_info.channels", [
-                    streamDetails.audio_format.channels,
-                  ])
-                }}
-                <span v-if="streamDetails.audio_format.bit_rate">
-                  <br />
                   {{
-                    $t("streamdetails.file_info.bit_rate", [
-                      streamDetails.audio_format.bit_rate.toFixed(0),
+                    $t("streamdetails.file_info.container", [
+                      streamDetails.audio_format.content_type,
                     ])
                   }}
-                </span>
-                <br />
-                <br />
-                {{ $t("streamdetails.file_info.processing_notice") }}
+                  <br />
+                  {{
+                    $t("streamdetails.file_info.codec", [
+                      streamDetails.audio_format.codec_type,
+                    ])
+                  }}
+                  <br />
+                  {{
+                    $t("streamdetails.file_info.bit_depth", [
+                      streamDetails.audio_format.bit_depth,
+                    ])
+                  }}
+                  <br />
+                  {{
+                    $t("streamdetails.file_info.sample_rate", [
+                      (streamDetails.audio_format.sample_rate / 1000).toFixed(
+                        1,
+                      ),
+                    ])
+                  }}
+                  <br />
+                  {{
+                    $t("streamdetails.file_info.channels", [
+                      streamDetails.audio_format.channels,
+                    ])
+                  }}
+                  <span v-if="streamDetails.audio_format.bit_rate">
+                    <br />
+                    {{
+                      $t("streamdetails.file_info.bit_rate", [
+                        streamDetails.audio_format.bit_rate.toFixed(0),
+                      ])
+                    }}
+                  </span>
+                  <br />
+                  <br />
+                  {{ $t("streamdetails.file_info.processing_notice") }}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -265,64 +275,66 @@
                   <Info class="ml-2 h-4 w-4 inline" />
                 </TooltipTrigger>
                 <TooltipContent class="max-w-[350px]">
-                <span
-                  v-if="
-                    streamDetails.volume_normalization_mode ==
-                      VolumeNormalizationMode.MEASUREMENT_ONLY &&
-                    streamDetails.prefer_album_loudness &&
-                    streamDetails.loudness_album != null
-                  "
-                >
+                  <span
+                    v-if="
+                      streamDetails.volume_normalization_mode ==
+                        VolumeNormalizationMode.MEASUREMENT_ONLY &&
+                      streamDetails.prefer_album_loudness &&
+                      streamDetails.loudness_album != null
+                    "
+                  >
+                    {{
+                      $t(
+                        "streamdetails.volume_normalization.mode.measurement_album",
+                      )
+                    }}
+                  </span>
+                  <span v-else>
+                    {{
+                      $t(
+                        `streamdetails.volume_normalization.mode.${streamDetails.volume_normalization_mode}`,
+                      )
+                    }}
+                  </span>
+                  <br />
+                  <br />
                   {{
-                    $t(
-                      "streamdetails.volume_normalization.mode.measurement_album",
-                    )
-                  }}
-                </span>
-                <span v-else>
-                  {{
-                    $t(
-                      `streamdetails.volume_normalization.mode.${streamDetails.volume_normalization_mode}`,
-                    )
-                  }}
-                </span>
-                <br />
-                <br />
-                {{
-                  $t("streamdetails.volume_normalization.target_level", [
-                    streamDetails.target_loudness,
-                  ])
-                }}
-                <br />
-                <span v-if="streamDetails.loudness != null">
-                  {{
-                    $t(
-                      "streamdetails.volume_normalization.integrated_loudness",
-                      [streamDetails.loudness],
-                    )
+                    $t("streamdetails.volume_normalization.target_level", [
+                      streamDetails.target_loudness,
+                    ])
                   }}
                   <br />
-                </span>
-                <span v-if="streamDetails.loudness_album != null">
-                  {{
-                    $t(
-                      "streamdetails.volume_normalization.integrated_album_loudness",
-                      [streamDetails.loudness_album],
-                    )
-                  }}
-                  <br />
-                </span>
-                <span
-                  v-if="streamDetails.volume_normalization_gain_correct != null"
-                >
-                  {{
-                    $t(
-                      "streamdetails.volume_normalization.applied_gain_correction",
-                      [streamDetails.volume_normalization_gain_correct],
-                    )
-                  }}
-                  <br />
-                </span>
+                  <span v-if="streamDetails.loudness != null">
+                    {{
+                      $t(
+                        "streamdetails.volume_normalization.integrated_loudness",
+                        [streamDetails.loudness],
+                      )
+                    }}
+                    <br />
+                  </span>
+                  <span v-if="streamDetails.loudness_album != null">
+                    {{
+                      $t(
+                        "streamdetails.volume_normalization.integrated_album_loudness",
+                        [streamDetails.loudness_album],
+                      )
+                    }}
+                    <br />
+                  </span>
+                  <span
+                    v-if="
+                      streamDetails.volume_normalization_gain_correct != null
+                    "
+                  >
+                    {{
+                      $t(
+                        "streamdetails.volume_normalization.applied_gain_correction",
+                        [streamDetails.volume_normalization_gain_correct],
+                      )
+                    }}
+                    <br />
+                  </span>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -379,7 +391,7 @@
                     <Info class="ml-2 h-4 w-4 inline" />
                   </TooltipTrigger>
                   <TooltipContent class="max-w-[300px]">
-                  {{ $t("streamdetails.dsp_disabled_by_unsupported_group") }}
+                    {{ $t("streamdetails.dsp_disabled_by_unsupported_group") }}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -420,7 +432,7 @@
                     <Info class="ml-2 h-4 w-4 inline" />
                   </TooltipTrigger>
                   <TooltipContent class="max-w-[300px]">
-                  {{ $t("streamdetails.output_limiter_info") }}
+                    {{ $t("streamdetails.output_limiter_info") }}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -450,24 +462,25 @@
                     <Info class="ml-2 h-4 w-4 inline" />
                   </TooltipTrigger>
                   <TooltipContent class="max-w-[300px]">
-                  <span
-                    v-if="
-                      isPcm(
-                        streamDetails.dsp[player_id].output_format.content_type,
-                      )
-                    "
-                  >
-                    {{ $t("streamdetails.output_format_pcm_info") }}
-                  </span>
-                  <span v-else>
-                    {{
-                      $t("streamdetails.output_format_info", [
-                        streamDetails.dsp[
-                          player_id
-                        ].output_format.content_type.toUpperCase(),
-                      ])
-                    }}
-                  </span>
+                    <span
+                      v-if="
+                        isPcm(
+                          streamDetails.dsp[player_id].output_format
+                            .content_type,
+                        )
+                      "
+                    >
+                      {{ $t("streamdetails.output_format_pcm_info") }}
+                    </span>
+                    <span v-else>
+                      {{
+                        $t("streamdetails.output_format_info", [
+                          streamDetails.dsp[
+                            player_id
+                          ].output_format.content_type.toUpperCase(),
+                        ])
+                      }}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -523,7 +536,7 @@
                         <Info class="ml-2 h-4 w-4 inline" />
                       </TooltipTrigger>
                       <TooltipContent class="max-w-[300px]">
-                      {{ $t("streamdetails.click_to_expand") }}
+                        {{ $t("streamdetails.click_to_expand") }}
                       </TooltipContent>
                     </Tooltip>
                   </template>
@@ -544,8 +557,16 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useBreakpoint } from "@/composables/useBreakpoint";
 import { AlertCircle, Info } from "lucide-vue-next";
 import { computed, ref } from "vue";

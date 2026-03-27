@@ -127,20 +127,12 @@
     </div>
 
     <!-- Disabled banner -->
-    <Alert
-      v-if="config && !config.enabled"
-      variant="warning"
-      class="mb-4"
-    >
+    <Alert v-if="config && !config.enabled" variant="warning" class="mb-4">
       <AlertTriangle class="h-4 w-4" />
       <AlertDescription>
         <div class="disabled-banner">
           <span>{{ $t("settings.player_disabled") }}</span>
-          <Button
-            size="sm"
-            variant="outline"
-            @click="enablePlayer"
-          >
+          <Button size="sm" variant="outline" @click="enablePlayer">
             {{ $t("settings.enable_player") }}
           </Button>
         </div>
@@ -194,7 +186,9 @@
       <DialogContent class="max-w-[400px]">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.player_name") }}</DialogTitle>
-          <DialogDescription class="sr-only">{{ $t('aria.rename_player') }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.rename_player")
+          }}</DialogDescription>
         </DialogHeader>
         <Input
           v-model="editName"

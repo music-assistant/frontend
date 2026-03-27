@@ -11,7 +11,10 @@
     <div class="card-content">
       <div class="card-header">
         <div class="player-icon-wrapper">
-          <component :is="resolveIconHelper(player?.icon || 'mdi-speaker')" :size="24" />
+          <component
+            :is="resolveIconHelper(player?.icon || 'mdi-speaker')"
+            :size="24"
+          />
         </div>
         <div class="player-info">
           <div class="player-name">{{ playerName }}</div>

@@ -5,7 +5,10 @@
       <Card class="header-card mb-4">
         <div class="header-content">
           <div class="header-icon">
-            <component :is="getCoreIcon(config.domain)" class="size-8 text-primary" />
+            <component
+              :is="getCoreIcon(config.domain)"
+              class="size-8 text-primary"
+            />
           </div>
           <div class="header-info">
             <h2 class="header-title">
@@ -28,10 +31,7 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <div
-      v-if="loading"
-      class="loading-overlay"
-    >
+    <div v-if="loading" class="loading-overlay">
       <Spinner class="size-16 text-primary" />
     </div>
   </section>

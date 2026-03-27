@@ -2,7 +2,9 @@
   <section>
     <Container variant="default" style="padding-top: 20px">
       <div class="relative">
-        <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <SearchIcon
+          class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+        />
         <Input
           id="searchInput"
           v-model="store.globalSearchTerm"
@@ -38,7 +40,7 @@
           class="cursor-pointer"
           @click="selectedSearchType = item"
         >
-          {{ $t(item === SEARCH_TYPE_ALL ? 'searchtype_all' : item + 's') }}
+          {{ $t(item === SEARCH_TYPE_ALL ? "searchtype_all" : item + "s") }}
         </Badge>
       </div>
 
@@ -46,7 +48,9 @@
         v-if="loading"
         class="mt-4 h-1 w-full overflow-hidden rounded-full bg-primary/20"
       >
-        <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+        <div
+          class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]"
+        ></div>
       </div>
 
       <!-- compact all-media-types searchresult -->
@@ -311,7 +315,11 @@ const filteredItems = function (mediaType: MediaType) {
 
 <style scoped>
 @keyframes indeterminate {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
 }
 </style>

@@ -23,7 +23,9 @@
           <ItemContent class="flex-1">
             <ItemTitle>{{ chapter.name }}</ItemTitle>
           </ItemContent>
-          <span v-if="chapter.end" class="text-xs text-muted-foreground ml-auto shrink-0"
+          <span
+            v-if="chapter.end"
+            class="text-xs text-muted-foreground ml-auto shrink-0"
             >{{ formatDuration(chapter.end - chapter.start) }}
           </span>
         </Item>

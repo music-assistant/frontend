@@ -46,12 +46,11 @@
         />
       </div>
 
-      <div v-else-if="filteredTasks.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          v-for="task in filteredTasks"
-          :key="task.id"
-          class="flex"
-        >
+      <div
+        v-else-if="filteredTasks.length"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        <div v-for="task in filteredTasks" :key="task.id" class="flex">
           <BackgroundTaskItem
             :task="task"
             variant="card"

@@ -6,7 +6,9 @@
       <div v-if="playerOptionsSettable.length > 0">
         <Card class="mx-auto my-8 w-full shadow">
           <CardHeader>
-            <CardTitle>{{ $t('player_options.settable', [playerName]) }}</CardTitle>
+            <CardTitle>{{
+              $t("player_options.settable", [playerName])
+            }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div v-for="option in playerOptionsSettable" :key="option.key">
@@ -23,7 +25,9 @@
       <div v-if="playerOptionsReadOnly.length > 0">
         <Card class="mx-auto my-8 w-full shadow">
           <CardHeader>
-            <CardTitle>{{ $t('player_options.read_only', [playerName]) }}</CardTitle>
+            <CardTitle>{{
+              $t("player_options.read_only", [playerName])
+            }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div v-for="option in playerOptionsReadOnly" :key="option.key">

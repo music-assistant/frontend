@@ -1,12 +1,11 @@
 <template>
-  <Dialog
-    :open="modelValue"
-    @update:open="emit('update:modelValue', $event)"
-  >
+  <Dialog :open="modelValue" @update:open="emit('update:modelValue', $event)">
     <DialogContent class="max-w-[480px]">
       <DialogHeader>
         <DialogTitle>{{ $t("auth.delete_user") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.confirm_delete_user') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.confirm_delete_user")
+        }}</DialogDescription>
       </DialogHeader>
       <div class="py-2">
         <p class="text-sm mb-4">
@@ -20,11 +19,7 @@
         <Button variant="outline" @click="emit('update:modelValue', false)">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          variant="destructive"
-          :loading="loading"
-          @click="handleDelete"
-        >
+        <Button variant="destructive" :loading="loading" @click="handleDelete">
           {{ $t("auth.delete_user") }}
         </Button>
       </DialogFooter>

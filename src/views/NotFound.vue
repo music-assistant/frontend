@@ -139,7 +139,8 @@ const router = useRouter();
   align-items: center;
   justify-content: center;
   gap: 3px;
-  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--foreground) 30%, transparent);
+  box-shadow: inset 0 1px 3px
+    color-mix(in srgb, var(--foreground) 30%, transparent);
   position: relative;
   z-index: 1;
 }

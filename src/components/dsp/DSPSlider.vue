@@ -9,7 +9,11 @@
       :max="sliderMax"
       :step="sliderStep"
       class="flex-grow pr-4"
-      @update:model-value="(val: number[] | undefined) => { if (val) sliderModel = val[0]; }"
+      @update:model-value="
+        (val: number[] | undefined) => {
+          if (val) sliderModel = val[0];
+        }
+      "
     />
     <Input
       v-model="displayValue"

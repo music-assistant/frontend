@@ -7,13 +7,13 @@
     >
       <DialogHeader>
         <DialogTitle>{{ $t("link_alias") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.link_genre_alias') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.link_genre_alias")
+        }}</DialogDescription>
       </DialogHeader>
       <div class="relative">
         <Command v-model:search-term="aliasSearch" class="border rounded-lg">
-          <CommandInput
-            :placeholder="$t('link_alias')"
-          />
+          <CommandInput :placeholder="$t('link_alias')" />
           <CommandList>
             <CommandEmpty v-if="!aliasLoading">
               {{ aliasSearch ? $t("no_content") : $t("link_alias") }}
@@ -34,7 +34,10 @@
         <div v-if="selectedAlias" class="mt-2">
           <Badge variant="secondary" class="text-sm">
             {{ formatAliasName(selectedAlias) }}
-            <button class="ml-1 hover:text-foreground" @click="selectedAlias = null">
+            <button
+              class="ml-1 hover:text-foreground"
+              @click="selectedAlias = null"
+            >
               <X class="size-3" />
             </button>
           </Badge>

@@ -11,7 +11,9 @@
               : t("background_tasks.details_title")
           }}
         </DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.background_task_details') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.background_task_details")
+        }}</DialogDescription>
       </DialogHeader>
 
       <ScrollArea class="max-h-[78vh]">

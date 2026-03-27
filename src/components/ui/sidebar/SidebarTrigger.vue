@@ -155,15 +155,14 @@ const isCollapsed = computed(() => state.value === "collapsed");
   padding-right: 6px !important;
 }
 
-.trigger-container--collapsed
-  .navuser-trigger
-  [data-sidebar="menu-button"] {
+.trigger-container--collapsed .navuser-trigger [data-sidebar="menu-button"] {
   width: 100% !important;
 }
 
 .trigger-container--collapsed
   .navuser-trigger
-  [data-sidebar="menu-button"] .rounded-lg {
+  [data-sidebar="menu-button"]
+  .rounded-lg {
   width: 2rem !important;
   height: 2rem !important;
 }

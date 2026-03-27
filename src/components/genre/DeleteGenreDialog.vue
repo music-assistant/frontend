@@ -7,7 +7,9 @@
             ? $t("delete_genres", [genreIds.length])
             : $t("delete_genre")
         }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.confirm_delete_genre') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.confirm_delete_genre")
+        }}</DialogDescription>
       </DialogHeader>
       <div class="py-4">
         <p class="text-sm text-muted-foreground">

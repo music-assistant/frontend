@@ -14,9 +14,7 @@
       <!-- prepend: media thumb -->
       <div class="player-media-thumb mr-2.5 shrink-0">
         <!-- current media image -->
-        <div
-          v-if="player.powered != false && player.current_media?.image_url"
-        >
+        <div v-if="player.powered != false && player.current_media?.image_url">
           <img
             class="media-thumb"
             :src="getMediaImageUrl(player.current_media.image_url)"
@@ -24,16 +22,13 @@
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
-          <component
-            :is="resolvedPlayerIcon"
-            class="h-6 w-6 opacity-80"
-          />
+          <component :is="resolvedPlayerIcon" class="h-6 w-6 opacity-80" />
         </div>
       </div>
 
       <!-- content area -->
       <div class="flex-1 min-w-0">
-      <!-- playername -->
+        <!-- playername -->
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="isBuiltinPlayer(player)"
@@ -47,21 +42,22 @@
               v-if="store.deviceType == 'phone'"
               class="h-3.5 w-3.5"
             />
-            <Monitor
-              v-else
-              class="h-3.5 w-3.5"
-            />
+            <Monitor v-else class="h-3.5 w-3.5" />
             <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
               $t("this_device")
             }}</span>
           </Badge>
         </div>
         <!-- regular player -->
-        <div v-else class="truncate" style="font-size: 0.88rem; line-height: 1.3">
+        <div
+          v-else
+          class="truncate"
+          style="font-size: 0.88rem; line-height: 1.3"
+        >
           {{ getPlayerName(player, 27) }}
         </div>
 
-      <!-- subtitle: media item title -->
+        <!-- subtitle: media item title -->
         <div
           v-if="player.powered != false"
           style="
@@ -78,10 +74,16 @@
           </div>
         </div>
 
-      <!-- subtitle -->
+        <!-- subtitle -->
         <div
           class="text-muted-foreground"
-          style="font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3"
+          style="
+            font-size: 0.78rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+          "
         >
           <!-- player powered off -->
           <div v-if="player.powered == false">
@@ -148,7 +150,9 @@
             <Speaker
               :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
             />
-            <span class="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center px-1">
+            <span
+              class="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center px-1"
+            >
               {{
                 player.type == PlayerType.GROUP
                   ? player.group_members.length
@@ -178,7 +182,11 @@
               api.queues[player.player_id]?.extra_attributes
                 ?.play_action_in_progress === true
             "
-            :class="getBreakpointValue({ breakpoint: 'phone' }) ? 'h-6 w-6' : 'h-[26px] w-[26px]'"
+            :class="
+              getBreakpointValue({ breakpoint: 'phone' })
+                ? 'h-6 w-6'
+                : 'h-[26px] w-[26px]'
+            "
           />
           <component
             :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
@@ -247,7 +255,16 @@ import { store } from "@/plugins/store";
 import { useIsDark } from "@/composables/useIsDark";
 import { webPlayer } from "@/plugins/web_player";
 import { resolveMdiIcon } from "@/helpers/iconMapping";
-import { AudioLines, Monitor, MoreVertical, Pause, Play, Power, Smartphone, Speaker } from "lucide-vue-next";
+import {
+  AudioLines,
+  Monitor,
+  MoreVertical,
+  Pause,
+  Play,
+  Power,
+  Smartphone,
+  Speaker,
+} from "lucide-vue-next";
 import { computed, ref, toRef, watch } from "vue";
 
 // properties

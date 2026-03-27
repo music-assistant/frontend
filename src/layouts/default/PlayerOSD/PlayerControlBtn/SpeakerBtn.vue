@@ -1,11 +1,13 @@
 <template>
   <Button variant="icon" @click="openPlayersMenu">
     <component
-      :is="resolveIconHelper(
-        store.activePlayer?.group_members.length
-          ? 'mdi-speaker-multiple'
-          : 'mdi-speaker'
-      )"
+      :is="
+        resolveIconHelper(
+          store.activePlayer?.group_members.length
+            ? 'mdi-speaker-multiple'
+            : 'mdi-speaker',
+        )
+      "
       :size="24"
       :style="{ color: color || undefined }"
     />

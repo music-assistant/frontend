@@ -21,7 +21,10 @@
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <div v-if="dspPresets.length === 0" class="px-3 py-2 text-sm text-muted-foreground">
+          <div
+            v-if="dspPresets.length === 0"
+            class="px-3 py-2 text-sm text-muted-foreground"
+          >
             {{ $t("settings.dsp.presets.empty_warning") }}
           </div>
           <DropdownMenuItem
@@ -43,7 +46,11 @@
       </DropdownMenu>
 
       <!-- Save Preset Button -->
-      <Button variant="secondary" size="sm" @click="showSavePresetDialog = true">
+      <Button
+        variant="secondary"
+        size="sm"
+        @click="showSavePresetDialog = true"
+      >
         <Save class="size-4 md:-ml-1 md:mr-2" />
         <span class="hidden md:inline">
           {{ $t("settings.dsp.presets.save") }}
@@ -53,7 +60,10 @@
 
     <div class="p-4">
       <!-- Disabled message -->
-      <div v-if="!dsp.enabled" class="rounded-md border border-blue-500/20 bg-blue-500/5 p-4 mt-4 text-sm text-muted-foreground">
+      <div
+        v-if="!dsp.enabled"
+        class="rounded-md border border-blue-500/20 bg-blue-500/5 p-4 mt-4 text-sm text-muted-foreground"
+      >
         {{ $t("settings.dsp.disabled_message") }}
       </div>
 
@@ -89,7 +99,9 @@
             >
               <ArrowLeft class="size-5" />
             </Button>
-            <span class="flex-1 text-sm font-medium truncate">{{ stageTitle(selectedStage) }}</span>
+            <span class="flex-1 text-sm font-medium truncate">{{
+              stageTitle(selectedStage)
+            }}</span>
             <Button
               v-if="
                 typeof selectedStage === 'number' &&
@@ -148,10 +160,7 @@
           </div>
 
           <!-- Settings of the selected DSP Filter -->
-          <div
-            v-else
-            :class="isDark ? 'bg-card' : 'bg-muted/30'"
-          >
+          <div v-else :class="isDark ? 'bg-card' : 'bg-muted/30'">
             <DSPParametricEQ
               v-if="
                 dsp.filters[selectedStage].type === DSPFilterType.PARAMETRIC_EQ
@@ -170,11 +179,16 @@
     </div>
 
     <!-- Save DSP Preset Dialog -->
-    <Dialog :open="showSavePresetDialog" @update:open="showSavePresetDialog = $event">
+    <Dialog
+      :open="showSavePresetDialog"
+      @update:open="showSavePresetDialog = $event"
+    >
       <DialogContent class="max-w-sm">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.dsp.presets.save") }}</DialogTitle>
-          <DialogDescription class="sr-only">{{ $t('aria.save_dsp_preset') }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.save_dsp_preset")
+          }}</DialogDescription>
         </DialogHeader>
         <div class="space-y-2 py-2">
           <Input
@@ -186,10 +200,7 @@
           <Button variant="outline" @click="showSavePresetDialog = false">
             {{ $t("cancel") }}
           </Button>
-          <Button
-            :disabled="!newPresetName.trim()"
-            @click="savePreset"
-          >
+          <Button :disabled="!newPresetName.trim()" @click="savePreset">
             {{ $t("settings.dsp.presets.save") }}
           </Button>
         </DialogFooter>
@@ -197,11 +208,16 @@
     </Dialog>
 
     <!-- Add Filter Dialog -->
-    <Dialog :open="showAddFilterDialog" @update:open="showAddFilterDialog = $event">
+    <Dialog
+      :open="showAddFilterDialog"
+      @update:open="showAddFilterDialog = $event"
+    >
       <DialogContent class="max-w-sm">
         <DialogHeader>
           <DialogTitle>{{ $t("settings.dsp.filter.add") }}</DialogTitle>
-          <DialogDescription class="sr-only">{{ $t('aria.add_dsp_filter') }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.add_dsp_filter")
+          }}</DialogDescription>
         </DialogHeader>
         <div class="space-y-2 py-2">
           <Select
@@ -236,13 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  onBeforeUnmount,
-  onMounted,
-} from "vue";
+import { ref, computed, watch, onBeforeUnmount, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useBreakpoint } from "@/composables/useBreakpoint";

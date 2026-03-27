@@ -3,7 +3,9 @@
     <DialogContent class="sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>{{ $t("promote_alias") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.promote_genre_alias') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.promote_genre_alias")
+        }}</DialogDescription>
       </DialogHeader>
       <p>{{ $t("confirm_promote_alias", [alias || ""]) }}</p>
       <DialogFooter>

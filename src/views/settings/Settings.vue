@@ -7,10 +7,7 @@
             <template v-for="(item, idx) in breadcrumbItems" :key="idx">
               <BreadcrumbSeparator v-if="idx > 0" />
               <BreadcrumbItem>
-                <BreadcrumbLink
-                  v-if="!item.disabled && item.to"
-                  as-child
-                >
+                <BreadcrumbLink v-if="!item.disabled && item.to" as-child>
                   <router-link :to="item.to">
                     {{ item.title }}
                   </router-link>

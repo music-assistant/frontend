@@ -12,12 +12,12 @@
           v-html="
             markdownToHtml($t('settings.add_group_player_desc_universal'))
           "
-        />
+        ></p>
         <p
           v-else-if="providerDetails?.domain === 'sync_group'"
           class="text-sm text-muted-foreground whitespace-pre-wrap"
           v-html="markdownToHtml($t('settings.add_group_player_desc_sync'))"
-        />
+        ></p>
         <p
           v-else
           class="text-sm text-muted-foreground whitespace-pre-wrap"
@@ -26,7 +26,7 @@
               $t('settings.add_group_player_desc', [providerDetails?.name]),
             )
           "
-        />
+        ></p>
       </div>
 
       <Separator />
@@ -35,11 +35,7 @@
         <!-- name field -->
         <div class="space-y-1.5">
           <Label for="player-name">{{ $t("settings.player_name") }}</Label>
-          <Input
-            id="player-name"
-            v-model="name"
-            required
-          />
+          <Input id="player-name" v-model="name" required />
         </div>
 
         <!-- dropdown with group members -->
@@ -70,11 +66,10 @@
         <!-- dynamic mode -->
         <div class="space-y-1.5">
           <div class="flex items-center gap-3">
-            <Switch
-              id="dynamic-members"
-              v-model="dynamic"
-            />
-            <Label for="dynamic-members" class="cursor-pointer">{{ $t("settings.dynamic_members.label") }}</Label>
+            <Switch id="dynamic-members" v-model="dynamic" />
+            <Label for="dynamic-members" class="cursor-pointer">{{
+              $t("settings.dynamic_members.label")
+            }}</Label>
           </div>
           <p
             v-if="providerDetails?.domain !== 'universal_group'"
@@ -92,11 +87,7 @@
           >
             {{ $t("settings.save") }}
           </Button>
-          <Button
-            variant="outline"
-            class="w-full"
-            @click="router.back()"
-          >
+          <Button variant="outline" class="w-full" @click="router.back()">
             {{ $t("close") }}
           </Button>
         </div>

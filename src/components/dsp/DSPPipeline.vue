@@ -2,8 +2,8 @@
   <div class="dsp-timeline">
     <!-- Input -->
     <div class="dsp-timeline-item" @click="handleSelect('input')">
-      <div class="dsp-timeline-dot" :class="getDotClass('input')" />
-      <div class="dsp-timeline-line" />
+      <div class="dsp-timeline-dot" :class="getDotClass('input')"></div>
+      <div class="dsp-timeline-line"></div>
       <button
         :class="['dsp-pipeline-card', getButtonClass('input')]"
         :style="getButtonStyle('input')"
@@ -14,8 +14,8 @@
 
     <!-- Spacer -->
     <div class="dsp-timeline-item">
-      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
-      <div class="dsp-timeline-line" />
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden"></div>
+      <div class="dsp-timeline-line"></div>
     </div>
 
     <!-- DSP Filters -->
@@ -28,21 +28,26 @@
     >
       <div
         class="dsp-timeline-dot"
-        :class="[getDotClass(index), isDisabled(index) ? 'dsp-timeline-dot--hidden' : '']"
-      />
-      <div class="dsp-timeline-line" />
+        :class="[
+          getDotClass(index),
+          isDisabled(index) ? 'dsp-timeline-dot--hidden' : '',
+        ]"
+      ></div>
+      <div class="dsp-timeline-line"></div>
       <button
         :class="['dsp-pipeline-card', getButtonClass(index)]"
         :style="getButtonStyle(index)"
       >
-        <span class="px-3 py-1">{{ $t(`settings.dsp.types.${filter.type}`) }}</span>
+        <span class="px-3 py-1">{{
+          $t(`settings.dsp.types.${filter.type}`)
+        }}</span>
       </button>
     </div>
 
     <!-- Add Filter Button -->
     <div class="dsp-timeline-item">
-      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
-      <div class="dsp-timeline-line" />
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden"></div>
+      <div class="dsp-timeline-line"></div>
       <button
         class="dsp-pipeline-card add-filter-btn"
         @click="emit('onAddFilter')"
@@ -56,13 +61,13 @@
 
     <!-- Spacer -->
     <div class="dsp-timeline-item">
-      <div class="dsp-timeline-dot dsp-timeline-dot--hidden" />
-      <div class="dsp-timeline-line" />
+      <div class="dsp-timeline-dot dsp-timeline-dot--hidden"></div>
+      <div class="dsp-timeline-line"></div>
     </div>
 
     <!-- Output -->
     <div class="dsp-timeline-item" @click="handleSelect('output')">
-      <div class="dsp-timeline-dot" :class="getDotClass('output')" />
+      <div class="dsp-timeline-dot" :class="getDotClass('output')"></div>
       <button
         :class="['dsp-pipeline-card', getButtonClass('output')]"
         :style="getButtonStyle('output')"
@@ -96,8 +101,8 @@ const emit = defineEmits<{
 }>();
 
 const getDotClass = (value: SelectionType) => ({
-  'dsp-timeline-dot--primary': props.selected === value,
-  'dsp-timeline-dot--secondary': props.selected !== value,
+  "dsp-timeline-dot--primary": props.selected === value,
+  "dsp-timeline-dot--secondary": props.selected !== value,
 });
 
 const isDisabled = (value: SelectionType): boolean => {
@@ -110,11 +115,11 @@ const isDisabled = (value: SelectionType): boolean => {
 
 const getButtonStyle = (value: SelectionType) => {
   if (props.selected === value) {
-    return { background: 'var(--primary)', color: 'var(--primary-foreground)' };
+    return { background: "var(--primary)", color: "var(--primary-foreground)" };
   }
   return {
-    background: isDark.value ? 'var(--muted)' : 'var(--muted)',
-    color: 'var(--foreground)',
+    background: isDark.value ? "var(--muted)" : "var(--muted)",
+    color: "var(--foreground)",
   };
 };
 
@@ -243,7 +248,8 @@ const openFilterContextMenu = function (evt: Event, index: number) {
 
 .add-filter-btn {
   background: transparent !important;
-  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 50%, transparent) !important;
+  border: 1px dashed
+    color-mix(in srgb, var(--muted-foreground) 50%, transparent) !important;
   color: var(--foreground) !important;
   cursor: pointer;
 }

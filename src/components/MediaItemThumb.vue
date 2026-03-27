@@ -4,7 +4,7 @@
     :height="size || '100%'"
     :width="size || '100%'"
     :src="imgData"
-    :class="{ 'rounded': rounded }"
+    :class="{ rounded: rounded }"
     class="object-contain aspect-square"
     :style="{
       height: typeof size === 'number' ? size + 'px' : size,
@@ -66,11 +66,7 @@ function getFallbackImage() {
     return iconFolder;
   if (!props.item) return "";
   if (!props.item.name) return "";
-  return getAvatarImage(
-    props.item.name,
-    isDark.value,
-    thumbSize || 256,
-  );
+  return getAvatarImage(props.item.name, isDark.value, thumbSize || 256);
 }
 const fallbackImage = getFallbackImage();
 
@@ -78,7 +74,9 @@ let fallbackApplied = false;
 const onImgError = (e: Event) => {
   if (fallbackApplied) return;
   fallbackApplied = true;
-  (e.target as HTMLImageElement).src = isDark.value ? imgCoverDark : imgCoverLight;
+  (e.target as HTMLImageElement).src = isDark.value
+    ? imgCoverDark
+    : imgCoverLight;
 };
 
 const imgData = computed(() =>

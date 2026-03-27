@@ -13,8 +13,13 @@
       }"
     >
       <!-- loading animation -->
-      <div v-if="!item" class="h-1 w-full overflow-hidden rounded-full bg-primary/20">
-        <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+      <div
+        v-if="!item"
+        class="h-1 w-full overflow-hidden rounded-full bg-primary/20"
+      >
+        <div
+          class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]"
+        ></div>
       </div>
       <div
         class="background-image absolute inset-0 w-full h-full"
@@ -29,7 +34,7 @@
           :style="{
             background: `linear-gradient(to bottom, color-mix(in srgb, var(--background) 90%, transparent), color-mix(in srgb, var(--background) 75%, transparent))`,
           }"
-        />
+        ></div>
       </div>
       <Toolbar
         :icon="ArrowLeft"
@@ -63,7 +68,9 @@
           "
         >
           <div v-if="item.media_type && item.media_type == MediaType.ARTIST">
-            <div class="w-[210px] h-[210px] rounded-full overflow-hidden mb-[10%]">
+            <div
+              class="w-[210px] h-[210px] rounded-full overflow-hidden mb-[10%]"
+            >
               <MediaItemThumb :item="item" size="calc(100%)" />
             </div>
           </div>
@@ -120,9 +127,7 @@
               "
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Calendar
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary"
-              />
+              <Calendar class="h-4 w-4 -ml-0.5 mr-1 text-primary" />
               {{ new Date(item.metadata.release_date).getFullYear() }}
             </div>
 
@@ -131,17 +136,17 @@
               v-if="'artists' in item && item.artists"
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Mic2
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
-              />
+              <Mic2 class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0" />
               <MarqueeText :sync="marqueeSync">
                 <span
                   v-for="(artist, artistindex) in item.artists"
                   :key="artist.item_id"
                 >
-                  <a class="text-accent-foreground cursor-pointer" @click="artistClick(artist)">{{
-                    artist.name
-                  }}</a>
+                  <a
+                    class="text-accent-foreground cursor-pointer"
+                    @click="artistClick(artist)"
+                    >{{ artist.name }}</a
+                  >
                   <span
                     v-if="artistindex + 1 < item.artists.length"
                     :key="artistindex"
@@ -172,9 +177,7 @@
               v-if="'authors' in item && item.authors.length > 0"
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Pencil
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
-              />
+              <Pencil class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0" />
               <MarqueeText :sync="marqueeSync">
                 <span
                   v-for="(author, authorindex) in item.authors"
@@ -196,9 +199,7 @@
               v-if="'narrators' in item && item.narrators.length > 0"
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Mic2
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
-              />
+              <Mic2 class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0" />
               <MarqueeText :sync="marqueeSync">
                 <span
                   v-for="(narrator, narratorIndex) in item.narrators"
@@ -220,9 +221,7 @@
               v-if="'owner' in item && item.owner"
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Mic2
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
-              />
+              <Mic2 class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0" />
               <MarqueeText :sync="marqueeSync">
                 <a class="text-primary">{{ item.owner }}</a>
               </MarqueeText>
@@ -232,9 +231,7 @@
               v-if="'album' in item && item.album"
               class="flex items-center text-sm text-muted-foreground px-4"
             >
-              <Disc3
-                class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0"
-              />
+              <Disc3 class="h-4 w-4 -ml-0.5 mr-1 text-primary shrink-0" />
               <MarqueeText :sync="marqueeSync">
                 <a
                   class="text-secondary-foreground cursor-pointer"
@@ -347,10 +344,7 @@
             style="margin-left: 15px; padding-bottom: 20px"
           >
             <Badge
-              v-for="genre of mappedGenres.slice(
-                0,
-                isMobile ? 15 : 25,
-              )"
+              v-for="genre of mappedGenres.slice(0, isMobile ? 15 : 25)"
               :key="genre.item_id"
               variant="outline"
               class="cursor-pointer mr-1.5 mb-1.5"
@@ -371,10 +365,12 @@
       <DialogContent class="max-w-[975px]">
         <DialogHeader>
           <DialogTitle>{{ headerTitle }}</DialogTitle>
-          <DialogDescription class="sr-only">{{ $t("aria.item_description") }}</DialogDescription>
+          <DialogDescription class="sr-only">{{
+            $t("aria.item_description")
+          }}</DialogDescription>
         </DialogHeader>
         <!-- eslint-disable vue/no-v-html -->
-        <div class="p-4" v-html="fullDescription" />
+        <div class="p-4" v-html="fullDescription"></div>
         <!-- eslint-enable vue/no-v-html -->
         <DialogFooter>
           <Button class="w-full" @click="showFullInfo = false">
@@ -432,7 +428,16 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Calendar, Disc3, Merge, Mic2, Pencil, ShieldAlert, Trash2 } from "lucide-vue-next";
+import {
+  ArrowLeft,
+  Calendar,
+  Disc3,
+  Merge,
+  Mic2,
+  Pencil,
+  ShieldAlert,
+  Trash2,
+} from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -652,8 +657,12 @@ const deleteGenre = () => {
 
 <style scoped>
 @keyframes indeterminate {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
 }
 
 .selectable {

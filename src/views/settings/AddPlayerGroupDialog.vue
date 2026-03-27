@@ -5,7 +5,9 @@
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
         <DialogTitle>{{ $t("settings.add_group_player") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.add_player_group') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.add_player_group")
+        }}</DialogDescription>
       </DialogHeader>
 
       <div

@@ -11,14 +11,10 @@
         v-if="show && !store.showPlayersMenu"
         class="context-menu-scrim"
         @click="closeMenu"
-      />
+      ></div>
     </Transition>
     <Transition name="fade">
-      <div
-        v-if="show"
-        class="context-menu"
-        :style="menuStyle"
-      >
+      <div v-if="show" class="context-menu" :style="menuStyle">
         <div class="context-menu-card">
           <!-- play menu header -->
           <div v-if="showPlayMenuHeader" class="menurow">
@@ -28,23 +24,26 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="typeof playerIcon === 'string' ? resolveIconHelper(playerIcon) : playerIcon"
+                  :is="
+                    typeof playerIcon === 'string'
+                      ? resolveIconHelper(playerIcon)
+                      : playerIcon
+                  "
                   v-if="playerIcon"
                   class="w-5 h-5"
                 />
                 <Speaker v-else class="w-10 h-10 -ml-2" />
               </span>
               <span class="context-menu-item-content">
-                <span class="context-menu-item-title">{{ $t('play_on') }}</span>
-                <span class="context-menu-item-subtitle">{{ store.activePlayer?.name || $t('no_player') }}</span>
+                <span class="context-menu-item-title">{{ $t("play_on") }}</span>
+                <span class="context-menu-item-subtitle">{{
+                  store.activePlayer?.name || $t("no_player")
+                }}</span>
               </span>
               <ChevronRight class="h-4 w-4 ml-auto opacity-50" />
             </button>
           </div>
-          <Separator
-            v-if="showPlayMenuHeader"
-            class="my-1"
-          />
+          <Separator v-if="showPlayMenuHeader" class="my-1" />
           <div
             v-for="menuItem of items.filter((x) => !x.hide)"
             :key="menuItem.label"
@@ -58,16 +57,19 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+                  :is="
+                    typeof menuItem.icon === 'string'
+                      ? resolveIconHelper(menuItem.icon)
+                      : menuItem.icon
+                  "
                   v-if="menuItem.icon"
                   class="w-5 h-5"
                 />
               </span>
-              <span class="context-menu-item-title">{{ $t(menuItem.label, menuItem.labelArgs || []) }}</span>
-              <Check
-                v-if="menuItem.selected"
-                class="h-4 w-4 ml-auto"
-              />
+              <span class="context-menu-item-title">{{
+                $t(menuItem.label, menuItem.labelArgs || [])
+              }}</span>
+              <Check v-if="menuItem.selected" class="h-4 w-4 ml-auto" />
               <ChevronRight
                 v-else-if="menuItem.subItems?.length"
                 class="h-4 w-4 ml-auto opacity-50"
@@ -85,14 +87,10 @@
         v-if="showSubmenu"
         class="context-menu-scrim"
         @click="showSubmenu = false"
-      />
+      ></div>
     </Transition>
     <Transition name="fade">
-      <div
-        v-if="showSubmenu"
-        class="context-menu"
-        :style="subMenuStyle"
-      >
+      <div v-if="showSubmenu" class="context-menu" :style="subMenuStyle">
         <div class="context-menu-card" style="min-width: 260px">
           <div
             v-for="subMenuItem of subMenuItems.filter((x) => !x.hide)"
@@ -107,16 +105,19 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="typeof subMenuItem.icon === 'string' ? resolveIconHelper(subMenuItem.icon) : subMenuItem.icon"
+                  :is="
+                    typeof subMenuItem.icon === 'string'
+                      ? resolveIconHelper(subMenuItem.icon)
+                      : subMenuItem.icon
+                  "
                   v-if="subMenuItem.icon"
                   class="w-5 h-5"
                 />
               </span>
-              <span class="context-menu-item-title">{{ $t(subMenuItem.label, subMenuItem.labelArgs || []) }}</span>
-              <Check
-                v-if="subMenuItem.selected"
-                class="h-4 w-4 ml-auto"
-              />
+              <span class="context-menu-item-title">{{
+                $t(subMenuItem.label, subMenuItem.labelArgs || [])
+              }}</span>
+              <Check v-if="subMenuItem.selected" class="h-4 w-4 ml-auto" />
             </button>
           </div>
         </div>
@@ -160,8 +161,14 @@ const clampToViewport = (
   const vh = window.innerHeight;
   const pad = 8;
   return {
-    left: Math.min(x, vw - menuWidth - pad) < pad ? pad : Math.min(x, vw - menuWidth - pad),
-    top: Math.min(y, vh - menuHeight - pad) < pad ? pad : Math.min(y, vh - menuHeight - pad),
+    left:
+      Math.min(x, vw - menuWidth - pad) < pad
+        ? pad
+        : Math.min(x, vw - menuWidth - pad),
+    top:
+      Math.min(y, vh - menuHeight - pad) < pad
+        ? pad
+        : Math.min(y, vh - menuHeight - pad),
   };
 };
 

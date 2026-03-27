@@ -6,7 +6,9 @@
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ $t("add_url_item") }}</DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.add_url_item') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.add_url_item")
+        }}</DialogDescription>
       </DialogHeader>
       <Separator />
       <div class="space-y-4 pt-2">
@@ -40,11 +42,7 @@
         <Button variant="outline" @click="model = false">{{
           $t("cancel")
         }}</Button>
-        <Button
-          :disabled="loading"
-          @click="save"
-          >{{ $t("save") }}</Button
-        >
+        <Button :disabled="loading" @click="save">{{ $t("save") }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

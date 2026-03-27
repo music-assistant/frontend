@@ -1,5 +1,10 @@
 <template>
-  <form v-if="entries" ref="form" :class="{ 'pointer-events-none opacity-50': disabled }" @submit.prevent>
+  <form
+    v-if="entries"
+    ref="form"
+    :class="{ 'pointer-events-none opacity-50': disabled }"
+    @submit.prevent
+  >
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -9,7 +14,11 @@
       class="category-section"
     >
       <div class="category-header">
-        <Icon :icon="getCategoryIcon(panel)" :size="20" class="mr-3 text-primary" />
+        <Icon
+          :icon="getCategoryIcon(panel)"
+          :size="20"
+          class="mr-3 text-primary"
+        />
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -240,11 +249,7 @@
                   onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
                 "
               />
-              <Switch
-                v-else
-                :model-value="true"
-                disabled
-              />
+              <Switch v-else :model-value="true" disabled />
             </div>
           </AccordionTrigger>
           <AccordionContent>
@@ -319,7 +324,11 @@
       class="category-section"
     >
       <div class="category-header">
-        <Icon :icon="getCategoryIcon(panel)" :size="20" class="mr-3 text-primary" />
+        <Icon
+          :icon="getCategoryIcon(panel)"
+          :size="20"
+          class="mr-3 text-primary"
+        />
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -379,11 +388,10 @@
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
         <div class="flex items-center gap-3">
-          <Switch
-            id="show-advanced-settings"
-            v-model="showAdvancedSettings"
-          />
-          <Label for="show-advanced-settings" class="cursor-pointer">{{ $t('settings.show_advanced_settings') }}</Label>
+          <Switch id="show-advanced-settings" v-model="showAdvancedSettings" />
+          <Label for="show-advanced-settings" class="cursor-pointer">{{
+            $t("settings.show_advanced_settings")
+          }}</Label>
         </div>
       </div>
       <Button
@@ -404,7 +412,11 @@
   </form>
   <Dialog
     :open="showHelpInfo !== undefined"
-    @update:open="(val) => { if (!val) showHelpInfo = undefined }"
+    @update:open="
+      (val) => {
+        if (!val) showHelpInfo = undefined;
+      }
+    "
   >
     <DialogContent>
       <DialogHeader>
@@ -413,7 +425,9 @@
             $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
           }}
         </DialogTitle>
-        <DialogDescription class="sr-only">{{ $t('aria.help_info') }}</DialogDescription>
+        <DialogDescription class="sr-only">{{
+          $t("aria.help_info")
+        }}</DialogDescription>
       </DialogHeader>
       <!-- eslint-disable vue/no-v-html -->
       <div
@@ -425,7 +439,7 @@
             ),
           )
         "
-      />
+      ></div>
       <!-- eslint-enable vue/no-v-html -->
       <DialogFooter>
         <Button
@@ -442,11 +456,20 @@
     </DialogContent>
   </Dialog>
   <!-- Unsaved changes confirmation dialog -->
-  <Dialog :open="showUnsavedDialog" @update:open="(val) => { if (!val) cancelDiscard() }">
+  <Dialog
+    :open="showUnsavedDialog"
+    @update:open="
+      (val) => {
+        if (!val) cancelDiscard();
+      }
+    "
+  >
     <DialogContent class="max-w-[400px]">
       <DialogHeader>
         <DialogTitle>{{ $t("settings.unsaved_changes") }}</DialogTitle>
-        <DialogDescription>{{ $t("settings.unsaved_changes_message") }}</DialogDescription>
+        <DialogDescription>{{
+          $t("settings.unsaved_changes_message")
+        }}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="outline" @click="cancelDiscard">

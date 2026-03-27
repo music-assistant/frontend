@@ -80,7 +80,9 @@
           v-else-if="showActionIcon && widgetRow.icon"
           variant="ghost"
           size="icon"
-          :icon="typeof widgetRow.icon === 'string' ? widgetRow.icon : undefined"
+          :icon="
+            typeof widgetRow.icon === 'string' ? widgetRow.icon : undefined
+          "
           @click="handleActionIconClick"
         >
           <component
@@ -133,7 +135,13 @@ import {
   MediaType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { CheckSquare, ChevronDown, ChevronUp, Square, SquareArrowRightEnter } from "lucide-vue-next";
+import {
+  CheckSquare,
+  ChevronDown,
+  ChevronUp,
+  Square,
+  SquareArrowRightEnter,
+} from "lucide-vue-next";
 import type { Component } from "vue";
 import ProviderIcon from "./ProviderIcon.vue";
 

@@ -12,16 +12,9 @@
     <div
       v-if="showCheckboxes"
       class="absolute inset-0 z-10 flex items-center justify-center"
-      :class="
-        isSelected
-          ? 'bg-background/75'
-          : 'bg-transparent'
-      "
+      :class="isSelected ? 'bg-background/75' : 'bg-transparent'"
     >
-      <Checkbox
-        class="panel-item-checkbox"
-        :model-value="isSelected"
-      />
+      <Checkbox class="panel-item-checkbox" :model-value="isSelected" />
     </div>
 
     <div class="thumb-container">
@@ -31,8 +24,7 @@
       />
       <div
         v-if="
-          item.media_type === MediaType.PLAYLIST &&
-          'provider_mappings' in item
+          item.media_type === MediaType.PLAYLIST && 'provider_mappings' in item
         "
         class="provider-icon-overlay"
       >
@@ -88,7 +80,7 @@
       >
         {{ $t(item.media_type) }}
       </div>
-      <div v-else class="text-muted-foreground text-xs ma-line-clamp-1" />
+      <div v-else class="text-muted-foreground text-xs ma-line-clamp-1"></div>
     </div>
 
     <!-- play button -->
@@ -133,9 +125,7 @@
         </Tooltip>
         <!-- disc/track number-->
         <span
-          v-if="
-            showTrackNumber && 'track_number' in item && item.track_number
-          "
+          v-if="showTrackNumber && 'track_number' in item && item.track_number"
           class="flex items-center text-xs"
         >
           <Music class="h-4 w-4" />
@@ -157,7 +147,7 @@
 
       <!-- Now Playing Badge -->
       <NowPlayingBadge v-if="isPlaying" :show-badge="false" />
-      <div class="flex-1" />
+      <div class="flex-1"></div>
       <Button
         v-if="isHovering || mobile"
         variant="ghost"

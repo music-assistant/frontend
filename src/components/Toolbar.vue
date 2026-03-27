@@ -1,5 +1,8 @@
 <template>
-  <div class="header flex items-center h-[55px] px-0" :style="color !== 'transparent' ? { backgroundColor: color } : undefined">
+  <div
+    class="header flex items-center h-[55px] px-0"
+    :style="color !== 'transparent' ? { backgroundColor: color } : undefined"
+  >
     <div v-if="icon" class="ml-3 mr-0">
       <Button
         variant="ghost"
@@ -23,7 +26,10 @@
       </slot>
     </div>
 
-    <div v-if="$slots.append || menuItems?.length" class="flex items-center mr-1.5">
+    <div
+      v-if="$slots.append || menuItems?.length"
+      class="flex items-center mr-1.5"
+    >
       <slot name="append"></slot>
       <Button
         v-for="menuItem of menuItems?.filter(
@@ -42,14 +48,18 @@
       >
         <span class="relative inline-flex">
           <component
-            :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+            :is="
+              typeof menuItem.icon === 'string'
+                ? resolveIconHelper(menuItem.icon)
+                : menuItem.icon
+            "
             v-if="menuItem.icon"
             class="w-[22px] h-[22px]"
           />
           <span
             v-if="menuItem.active == true"
             class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary"
-          />
+          ></span>
         </span>
       </Button>
 
@@ -64,11 +74,7 @@
         v-model:open="overflowMenuOpen"
       >
         <DropdownMenuTrigger as-child>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="w-4 -ml-2.5"
-          >
+          <Button variant="ghost" size="icon" class="w-4 -ml-2.5">
             <MoreVertical class="w-[22px] h-[22px]" />
           </Button>
         </DropdownMenuTrigger>
@@ -85,17 +91,24 @@
           >
             <span v-if="menuItem.icon" class="relative inline-flex mr-2">
               <component
-                :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+                :is="
+                  typeof menuItem.icon === 'string'
+                    ? resolveIconHelper(menuItem.icon)
+                    : menuItem.icon
+                "
                 v-if="menuItem.icon"
                 class="w-[22px] h-[22px]"
               />
               <span
                 v-if="menuItem.active == true"
                 class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary"
-              />
+              ></span>
             </span>
             <span>{{ $t(menuItem.label, menuItem.labelArgs || []) }}</span>
-            <ChevronRight v-if="menuItem.subItems?.length" class="ml-auto h-4 w-4" />
+            <ChevronRight
+              v-if="menuItem.subItems?.length"
+              class="ml-auto h-4 w-4"
+            />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

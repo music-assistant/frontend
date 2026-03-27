@@ -14,12 +14,11 @@
         <AudioLines class="mr-2" :size="18" />
         {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
       </Button>
-      <Select
-        v-else
-        v-model="editedChannel"
-      >
+      <Select v-else v-model="editedChannel">
         <SelectTrigger class="p-2" style="min-width: 250px">
-          <SelectValue :placeholder="$t('settings.dsp.parametric_eq.edited_channel')" />
+          <SelectValue
+            :placeholder="$t('settings.dsp.parametric_eq.edited_channel')"
+          />
         </SelectTrigger>
         <SelectContent>
           <SelectItem
@@ -65,7 +64,12 @@
       <div class="p-2">
         <div class="flex flex-wrap gap-2 mb-0 p-2">
           <Badge
-            :class="['cursor-pointer', selectedBandIndex === -1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground']"
+            :class="[
+              'cursor-pointer',
+              selectedBandIndex === -1
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground',
+            ]"
             @click="selectedBandIndex = -1"
           >
             {{ $t("settings.dsp.parametric_eq.preamp", { index: 100 }) }}
@@ -75,7 +79,9 @@
             :key="index"
             :class="[
               'cursor-pointer',
-              selectedBandIndex === index ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+              selectedBandIndex === index
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground',
               !band.enabled ? 'opacity-50' : '',
             ]"
             @click="selectedBandIndex = index"
@@ -91,11 +97,7 @@
                   })
             }}
           </Badge>
-          <Badge
-            variant="outline"
-            class="cursor-pointer"
-            @click="addBand"
-          >
+          <Badge variant="outline" class="cursor-pointer" @click="addBand">
             <Plus class="h-3 w-3 mr-1" />
             {{
               editedChannel === AudioChannel.ALL
@@ -137,15 +139,16 @@
           <label class="flex items-center gap-2 cursor-pointer">
             <Switch
               :model-value="selectedBand.enabled"
-              @update:model-value="(val: boolean) => { selectedBand.enabled = val; }"
+              @update:model-value="
+                (val: boolean) => {
+                  selectedBand.enabled = val;
+                }
+              "
             />
-            <span>{{ $t('settings.dsp.parametric_eq.enable_band') }}</span>
+            <span>{{ $t("settings.dsp.parametric_eq.enable_band") }}</span>
           </label>
-          <div class="flex-1" />
-          <Button
-            variant="destructive"
-            @click="removeBand(selectedBandIndex)"
-          >
+          <div class="flex-1"></div>
+          <Button variant="destructive" @click="removeBand(selectedBandIndex)">
             <Trash2 class="h-4 w-4 mr-2" />
             {{ $t("settings.dsp.parametric_eq.delete_band") }}
           </Button>
@@ -156,7 +159,9 @@
       <div class="p-4">
         <Select v-model="selectedBand.type">
           <SelectTrigger>
-            <SelectValue :placeholder="$t('settings.dsp.parametric_eq.filter_type')" />
+            <SelectValue
+              :placeholder="$t('settings.dsp.parametric_eq.filter_type')"
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectItem
@@ -183,7 +188,9 @@
       <div v-if="showMultiChannelControls" class="p-4">
         <Select v-model="selectedBand.channel">
           <SelectTrigger>
-            <SelectValue :placeholder="$t('settings.dsp.parametric_eq.channel')" />
+            <SelectValue
+              :placeholder="$t('settings.dsp.parametric_eq.channel')"
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectItem
@@ -202,7 +209,13 @@
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useIsDark } from "@/composables/useIsDark";
 import { FileDown, FileUp, Plus, AudioLines, Trash2 } from "lucide-vue-next";

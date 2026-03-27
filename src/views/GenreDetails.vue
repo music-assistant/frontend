@@ -17,7 +17,9 @@
     <template v-if="viewMode === 'discovery'">
       <div v-if="loadingRows" class="rows-loading">
         <div class="h-1 w-full overflow-hidden rounded-full bg-primary/20">
-          <div class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]" />
+          <div
+            class="h-full w-1/3 rounded-full bg-primary animate-[indeterminate_1.5s_ease-in-out_infinite]"
+          ></div>
         </div>
       </div>
 
@@ -174,7 +176,13 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { Button } from "@/components/ui/button";
-import { Grid2x2, LayoutDashboard, LayoutGrid, List, SquareArrowRightEnter } from "lucide-vue-next";
+import {
+  Grid2x2,
+  LayoutDashboard,
+  LayoutGrid,
+  List,
+  SquareArrowRightEnter,
+} from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -481,8 +489,12 @@ onMounted(() => {
 
 <style scoped>
 @keyframes indeterminate {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
 }
 
 .rows-loading {

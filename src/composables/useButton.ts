@@ -15,7 +15,15 @@ export interface ButtonProps {
    * - `outline`: Bordered button
    * - `secondary`: Secondary styled button
    */
-  variant?: "default" | "plain" | "responsive" | "icon" | "list" | "ghost" | "outline" | "secondary";
+  variant?:
+    | "default"
+    | "plain"
+    | "responsive"
+    | "icon"
+    | "list"
+    | "ghost"
+    | "outline"
+    | "secondary";
 
   /**
    * Whether this button is used in navigation (affects styling)

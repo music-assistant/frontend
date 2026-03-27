@@ -1,7 +1,11 @@
 <template>
   <Dialog
     :open="store.showFullscreenPlayer"
-    @update:open="(v: boolean) => { store.showFullscreenPlayer = v; }"
+    @update:open="
+      (v: boolean) => {
+        store.showFullscreenPlayer = v;
+      }
+    "
   >
     <DialogContent
       :show-close-button="false"
@@ -10,19 +14,30 @@
       @escape-key-down.prevent
     >
       <!-- visually hidden title for accessibility -->
-      <DialogTitle class="sr-only">{{ $t('now_playing') || 'Now Playing' }}</DialogTitle>
-      <DialogDescription class="sr-only">{{ $t('aria.fullscreen_player') }}</DialogDescription>
+      <DialogTitle class="sr-only">{{
+        $t("now_playing") || "Now Playing"
+      }}</DialogTitle>
+      <DialogDescription class="sr-only">{{
+        $t("aria.fullscreen_player")
+      }}</DialogDescription>
 
       <!-- toolbar -->
       <div class="fullscreen-toolbar">
-        <Button variant="ghost" size="icon" @click="store.showFullscreenPlayer = false">
+        <Button
+          variant="ghost"
+          size="icon"
+          @click="store.showFullscreenPlayer = false"
+        >
           <ChevronDown class="h-6 w-6" />
         </Button>
 
-        <div class="flex-1" />
+        <div class="flex-1"></div>
 
         <!-- radio source menu -->
-        <div v-if="store.activePlayerQueue?.radio_source.length" class="relative">
+        <div
+          v-if="store.activePlayerQueue?.radio_source.length"
+          class="relative"
+        >
           <Button
             variant="ghost"
             size="icon"
@@ -31,16 +46,28 @@
             <Radio class="h-5 w-5 text-accent" />
           </Button>
           <Teleport to="body">
-            <div v-if="showRadioMenu" class="radio-menu-scrim" @click="showRadioMenu = false" />
+            <div
+              v-if="showRadioMenu"
+              class="radio-menu-scrim"
+              @click="showRadioMenu = false"
+            ></div>
             <div v-if="showRadioMenu" class="radio-menu-card">
-              <div class="font-semibold text-sm px-4 pt-3 pb-1">{{ $t('queue_radio_enabled') }}</div>
-              <div class="text-xs text-muted-foreground px-4 pb-2">{{ $t('queue_radio_based_on') }}</div>
+              <div class="font-semibold text-sm px-4 pt-3 pb-1">
+                {{ $t("queue_radio_enabled") }}
+              </div>
+              <div class="text-xs text-muted-foreground px-4 pb-2">
+                {{ $t("queue_radio_based_on") }}
+              </div>
               <div class="px-4 pb-3">
                 <div
                   v-for="source in store.activePlayerQueue?.radio_source"
                   :key="source.uri"
                 >
-                  <a class="text-sm cursor-pointer hover:underline" @click="itemClick(source)">{{ source.name }}</a>
+                  <a
+                    class="text-sm cursor-pointer hover:underline"
+                    @click="itemClick(source)"
+                    >{{ source.name }}</a
+                  >
                 </div>
               </div>
             </div>
@@ -68,10 +95,7 @@
           v-if="getBreakpointValue('bp7') || !store.showQueueItems"
           class="main-media-details"
         >
-          <div
-            v-if="windowHeight > 600"
-            class="main-media-details-image"
-          >
+          <div v-if="windowHeight > 600" class="main-media-details-image">
             <!-- current media image -->
             <img
               v-if="
@@ -86,12 +110,14 @@
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
               <component
-                :is="resolveIconHelper(
-                  store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
-                )"
+                :is="
+                  resolveIconHelper(
+                    store.activePlayer?.type == PlayerType.PLAYER &&
+                      store.activePlayer?.group_members.length
+                      ? 'mdi-speaker-multiple'
+                      : store.activePlayer?.icon || 'mdi-speaker',
+                  )
+                "
                 :size="128"
               />
             </div>
@@ -237,139 +263,142 @@
             <div
               v-if="!tempHide && activeQueuePanel !== 2"
               class="queue-items-list"
-              style="height: 100%; overflow-y: auto;"
+              style="height: 100%; overflow-y: auto"
             >
               <!-- list view -->
               <template
-                v-for="(item, index) in activeQueuePanel == 0 ? nextItems : previousItems"
+                v-for="(item, index) in activeQueuePanel == 0
+                  ? nextItems
+                  : previousItems"
                 :key="item.queue_item_id"
               >
-                  <ListItem
-                    link
-                    :show-menu-btn="true"
-                    :disabled="!item.available"
-                    @click.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @mouseenter="hoveredQueueIndex = index"
-                    @mouseleave="hoveredQueueIndex = -1"
-                  >
-                    <template #prepend>
-                      <div class="media-thumb listitem-media-thumb">
-                        <MediaItemThumb size="50" :item="item" />
-                      </div>
-                    </template>
-                    <template #title>
-                      <div class="title-row">
-                        <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
+                <ListItem
+                  link
+                  :show-menu-btn="true"
+                  :disabled="!item.available"
+                  @click.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @mouseenter="hoveredQueueIndex = index"
+                  @mouseleave="hoveredQueueIndex = -1"
+                >
+                  <template #prepend>
+                    <div class="media-thumb listitem-media-thumb">
+                      <MediaItemThumb size="50" :item="item" />
+                    </div>
+                  </template>
+                  <template #title>
+                    <div class="title-row">
+                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          :class="{
+                            'is-playing':
+                              item.queue_item_id ===
+                              store.curQueueItem?.queue_item_id,
+                          }"
+                        >
+                          {{ item.name }}
+                        </span>
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="flex">
+                      <span style="white-space: nowrap" class="pr-1">
+                        {{ formatDuration(item.duration) }} |
+                      </span>
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          v-if="
+                            item.media_item &&
+                            'album' in item.media_item &&
+                            item.media_item.album
                           "
                         >
-                          <span
-                            :class="{
-                              'is-playing':
-                                item.queue_item_id ===
-                                store.curQueueItem?.queue_item_id,
-                            }"
-                          >
-                            {{ item.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
-                    </template>
-                    <template #subtitle>
-                      <div class="flex">
-                        <span style="white-space: nowrap" class="pr-1">
-                          {{ formatDuration(item.duration) }} |
+                          {{ item.media_item.album.name }}
                         </span>
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
-                          "
-                        >
-                          <span
-                            v-if="
-                              item.media_item &&
-                              'album' in item.media_item &&
-                              item.media_item.album
-                            "
-                          >
-                            {{ item.media_item.album.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
-                    </template>
-                    <template #append>
-                      <PartyPlayerBadge
-                        v-if="item.extra_attributes?.party_guest === true"
-                        :type="
-                          item.extra_attributes?.party_boosted === true
-                            ? 'boost'
-                            : 'request'
-                        "
-                        :badge-color="
-                          item.extra_attributes?.party_boosted === true
-                            ? boostBadgeColor
-                            : requestBadgeColor
-                        "
-                      />
-                      <NowPlayingBadge
-                        v-if="
-                          item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id &&
-                          store.activePlayer?.playback_state !=
-                            PlaybackState.IDLE
-                        "
-                        :show-badge="getBreakpointValue('bp4')"
-                      />
-                      <AlertTriangle v-if="!item.available" class="h-5 w-5" />
-                    </template>
-                  </ListItem>
-                  <!-- Show chapters -->
-                  <div
-                    v-if="
-                      item.queue_item_id == store.curQueueItem?.queue_item_id &&
-                      item.media_item?.metadata?.chapters?.length
-                    "
-                    style="margin-left: 50px"
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #append>
+                    <PartyPlayerBadge
+                      v-if="item.extra_attributes?.party_guest === true"
+                      :type="
+                        item.extra_attributes?.party_boosted === true
+                          ? 'boost'
+                          : 'request'
+                      "
+                      :badge-color="
+                        item.extra_attributes?.party_boosted === true
+                          ? boostBadgeColor
+                          : requestBadgeColor
+                      "
+                    />
+                    <NowPlayingBadge
+                      v-if="
+                        item.queue_item_id ===
+                          store.curQueueItem?.queue_item_id &&
+                        store.activePlayer?.playback_state != PlaybackState.IDLE
+                      "
+                      :show-badge="getBreakpointValue('bp4')"
+                    />
+                    <AlertTriangle v-if="!item.available" class="h-5 w-5" />
+                  </template>
+                </ListItem>
+                <!-- Show chapters -->
+                <div
+                  v-if="
+                    item.queue_item_id == store.curQueueItem?.queue_item_id &&
+                    item.media_item?.metadata?.chapters?.length
+                  "
+                  style="margin-left: 50px"
+                >
+                  <Item
+                    v-for="chapter in item.media_item.metadata?.chapters"
+                    :key="chapter.position"
+                    size="sm"
+                    class="cursor-pointer"
+                    @click.stop="chapterClicked(item.media_item, chapter)"
                   >
-                    <Item
-                      v-for="chapter in item.media_item.metadata?.chapters"
-                      :key="chapter.position"
-                      size="sm"
-                      class="cursor-pointer"
-                      @click.stop="chapterClicked(item.media_item, chapter)"
-                    >
-                      <ItemContent>
-                        <ItemTitle>{{ chapter.name }}</ItemTitle>
-                      </ItemContent>
-                      <ItemActions>
-                        <span v-if="chapter.end" class="text-xs text-muted-foreground"
-                          >{{ formatDuration(chapter.end - chapter.start) }}
-                        </span>
-                      </ItemActions>
-                    </Item>
-                  </div>
+                    <ItemContent>
+                      <ItemTitle>{{ chapter.name }}</ItemTitle>
+                    </ItemContent>
+                    <ItemActions>
+                      <span
+                        v-if="chapter.end"
+                        class="text-xs text-muted-foreground"
+                        >{{ formatDuration(chapter.end - chapter.start) }}
+                      </span>
+                    </ItemActions>
+                  </Item>
+                </div>
               </template>
               <!-- IntersectionObserver sentinel for infinite scroll -->
-              <div ref="infiniteScrollSentinel" class="h-1" />
+              <div ref="infiniteScrollSentinel" class="h-1"></div>
             </div>
             <!-- Lyrics view -->
             <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
@@ -401,12 +430,14 @@
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
               <component
-                :is="resolveIconHelper(
-                  store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
-                )"
+                :is="
+                  resolveIconHelper(
+                    store.activePlayer?.type == PlayerType.PLAYER &&
+                      store.activePlayer?.group_members.length
+                      ? 'mdi-speaker-multiple'
+                      : store.activePlayer?.icon || 'mdi-speaker',
+                  )
+                "
                 :size="128"
               />
             </div>
@@ -524,7 +555,10 @@
               }
             "
           >
-            <component :is="resolveIconHelper(store.activePlayer?.icon || 'mdi-speaker')" :size="20" />
+            <component
+              :is="resolveIconHelper(store.activePlayer?.icon || 'mdi-speaker')"
+              :size="20"
+            />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
         </div>
@@ -598,7 +632,13 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import Color from "color";
 import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
-import { AlertTriangle, ChevronDown, EllipsisVertical, Heart, Radio } from "lucide-vue-next";
+import {
+  AlertTriangle,
+  ChevronDown,
+  EllipsisVertical,
+  Heart,
+  Radio,
+} from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -650,25 +690,37 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-const lyricsEnabled = computed(() => activeQueuePanel.value === 2);
+const lyricsEnabled = computed(
+  () => store.showFullscreenPlayer && activeQueuePanel.value === 2,
+);
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 // Map between numeric panel index and string tab values
 const activeQueuePanelStr = computed(() => {
   switch (activeQueuePanel.value) {
-    case 0: return "queue";
-    case 1: return "played";
-    case 2: return "lyrics";
-    default: return "queue";
+    case 0:
+      return "queue";
+    case 1:
+      return "played";
+    case 2:
+      return "lyrics";
+    default:
+      return "queue";
   }
 });
 
 const onTabChange = (value: string | number) => {
   const strVal = String(value);
   switch (strVal) {
-    case "queue": activeQueuePanel.value = 0; break;
-    case "played": activeQueuePanel.value = 1; break;
-    case "lyrics": activeQueuePanel.value = 2; break;
+    case "queue":
+      activeQueuePanel.value = 0;
+      break;
+    case "played":
+      activeQueuePanel.value = 1;
+      break;
+    case "lyrics":
+      activeQueuePanel.value = 2;
+      break;
   }
   activeQueuePanelClick();
 };
@@ -1322,22 +1374,31 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
+// Eagerly load queue items so they're ready when the dialog opens
+onMounted(() => {
+  loadNextPage();
+});
+
 // IntersectionObserver for infinite scroll
 let infiniteScrollObserver: IntersectionObserver | null = null;
 onMounted(() => {
-  watch(infiniteScrollSentinel, (el) => {
-    if (infiniteScrollObserver) infiniteScrollObserver.disconnect();
-    if (!el) return;
-    infiniteScrollObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          loadNextPage();
-        }
-      },
-      { rootMargin: "200px" },
-    );
-    infiniteScrollObserver.observe(el);
-  }, { immediate: true });
+  watch(
+    infiniteScrollSentinel,
+    (el) => {
+      if (infiniteScrollObserver) infiniteScrollObserver.disconnect();
+      if (!el) return;
+      infiniteScrollObserver = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            loadNextPage();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      infiniteScrollObserver.observe(el);
+    },
+    { immediate: true },
+  );
   onBeforeUnmount(() => {
     infiniteScrollObserver?.disconnect();
   });
@@ -1727,15 +1788,27 @@ watchEffect(() => {
   flex: 0 0 auto !important;
   border-radius: 8px !important;
   color: var(--text-color, inherit);
-  background: color-mix(in srgb, var(--text-color, #fff) 6%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--text-color, #fff) 6%,
+    transparent
+  ) !important;
   border: 1px solid color-mix(in srgb, var(--text-color, #fff) 10%, transparent) !important;
   box-shadow: none !important;
 }
 
 .queue-tab[data-state="active"] {
   opacity: 1;
-  background: color-mix(in srgb, var(--text-color, #fff) 14%, transparent) !important;
-  border-color: color-mix(in srgb, var(--text-color, #fff) 18%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--text-color, #fff) 14%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--text-color, #fff) 18%,
+    transparent
+  ) !important;
 }
 
 .queue-tab :deep([data-slot="badge"]) {

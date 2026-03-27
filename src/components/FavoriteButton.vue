@@ -20,9 +20,6 @@ const props = defineProps<Props>();
     @click.prevent
     @click.stop
   >
-    <Heart
-      :size="20"
-      :fill="item?.favorite ? 'currentColor' : 'none'"
-    />
+    <Heart :size="20" :fill="item?.favorite ? 'currentColor' : 'none'" />
   </Button>
 </template>

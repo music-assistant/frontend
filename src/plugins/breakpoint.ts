@@ -36,7 +36,10 @@ const breakpoints: { [key in Breakpoints]: number } = {
   bp12: 415,
 };
 
-export const state = reactive({ width: window.innerWidth, height: window.innerHeight });
+export const state = reactive({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
 
 window.addEventListener("resize", () => {
   state.width = window.innerWidth;

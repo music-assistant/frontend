@@ -36,10 +36,7 @@ export const useContainer = (props: ContainerProps) => {
 
   const containerClasses = computed(() => {
     const variantClasses = match(props.variant)
-      .with("panel", () => [
-        "container-main",
-        "container-panel",
-      ])
+      .with("panel", () => ["container-main", "container-panel"])
       .with("compact", () => ["container-main", "container-compact"])
       .with("comfortable", () => ["container-main", "container-comfortable"])
       .with("default", () => ["container-main", "container-default"])

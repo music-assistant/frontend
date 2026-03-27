@@ -189,7 +189,8 @@ const sizeClass = computed(() => {
   --opacity: 1;
   --z-index: 3;
   background: color-mix(in srgb, var(--foreground) 10%, transparent);
-  box-shadow: 0 0.8vh 3.2vh color-mix(in srgb, var(--foreground) 15%, transparent);
+  box-shadow: 0 0.8vh 3.2vh
+    color-mix(in srgb, var(--foreground) 15%, transparent);
 }
 
 .track-card.position-next-1 {

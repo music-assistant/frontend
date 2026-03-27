@@ -13,10 +13,5 @@ import swiper from "./swiper";
 import type { App } from "vue";
 
 export function registerPlugins(app: App) {
-  app
-    .use(router)
-    .use(i18n)
-    .use(touchEvents)
-    .use(breakpoint)
-    .use(swiper);
+  app.use(router).use(i18n).use(touchEvents).use(breakpoint).use(swiper);
 }

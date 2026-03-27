@@ -89,9 +89,7 @@
             <Music class="inline-block ml-1 h-4 w-4" />
             {{ item.track_number }}
           </span>
-          <span
-            v-else-if="showPosition && 'position' in item && item.position"
-          >
+          <span v-else-if="showPosition && 'position' in item && item.position">
             <Music class="inline-block ml-1 h-4 w-4" />
             {{ item.position }}
           </span>
@@ -247,7 +245,14 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import { Check, Clock, Disc, Music, PlayCircle, SquareAsterisk as SquareLetterE } from "lucide-vue-next";
+import {
+  Check,
+  Clock,
+  Disc,
+  Music,
+  PlayCircle,
+  SquareAsterisk as SquareLetterE,
+} from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import MediaItemThumb from "./MediaItemThumb.vue";

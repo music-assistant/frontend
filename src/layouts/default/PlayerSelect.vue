@@ -51,7 +51,11 @@
           :model-value="allPlayersExpanded === 0 ? 'all-players' : ''"
           collapsible
           class="expansion"
-          @update:model-value="(v: string | string[] | undefined) => { allPlayersExpanded = v === 'all-players' ? 0 : undefined }"
+          @update:model-value="
+            (v: string | string[] | undefined) => {
+              allPlayersExpanded = v === 'all-players' ? 0 : undefined;
+            }
+          "
         >
           <AccordionItem value="all-players" class="border-none">
             <AccordionTrigger class="accordion-trigger">
@@ -370,11 +374,7 @@ const selectDefaultPlayer = function () {
   left: 0;
   right: 0;
   height: 20px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--card) 80%
-  );
+  background: linear-gradient(to bottom, transparent, var(--card) 80%);
   pointer-events: none;
   z-index: 1;
   border-radius: 0 0 0 6px;
