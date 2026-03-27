@@ -2,6 +2,7 @@
 import Button from "@/components/Button.vue";
 import api from "@/plugins/api";
 import { type MediaItemType } from "@/plugins/api/interfaces";
+import { Heart } from "lucide-vue-next";
 
 interface Props {
   item: MediaItemType;
@@ -14,10 +15,14 @@ const props = defineProps<Props>();
   <Button
     v-bind="props"
     variant="icon"
-    :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
     @click="api.toggleFavorite(item)"
     @click.prevent
     @click.stop
-  />
+  >
+    <Heart
+      :size="20"
+      :fill="item?.favorite ? 'currentColor' : 'none'"
+    />
+  </Button>
 </template>

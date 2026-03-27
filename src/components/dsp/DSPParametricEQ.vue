@@ -11,7 +11,7 @@
           }
         "
       >
-        <span class="mdi mdi-speaker-multiple mr-2" style="font-size: 18px;" />
+        <AudioLines class="mr-2" :size="18" />
         {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
       </Button>
       <Select
@@ -34,12 +34,12 @@
 
       <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
       <Button variant="outline" @click="openApoFileImport">
-        <span class="mdi mdi-file-import mr-2" style="font-size: 18px;" />
+        <FileDown class="mr-2" :size="18" />
         {{ $t("settings.dsp.parametric_eq.import_apo") }}
       </Button>
 
       <Button variant="outline" @click="exportApoSettings">
-        <span class="mdi mdi-file-export mr-2" style="font-size: 18px;" />
+        <FileUp class="mr-2" :size="18" />
         {{ $t("settings.dsp.parametric_eq.export_apo") }}
       </Button>
 
@@ -205,7 +205,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useIsDark } from "@/composables/useIsDark";
-import { Plus, Trash2 } from "lucide-vue-next";
+import { FileDown, FileUp, Plus, AudioLines, Trash2 } from "lucide-vue-next";
 import { ref, onMounted, watch, computed, nextTick, watchEffect } from "vue";
 import {
   ParametricEQBand,

@@ -3,17 +3,22 @@
     v-if="isVisible"
     v-bind="props.icon"
     :disabled="disabled || !item"
-    :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
     :title="$t('tooltip.favorite')"
     variant="button"
     @click="onClick"
-  />
+  >
+    <Heart
+      :size="Number(props.icon?.size) || 24"
+      :fill="item?.favorite ? 'currentColor' : 'none'"
+    />
+  </Icon>
 </template>
 
 <script setup lang="ts">
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { type MediaItemType } from "@/plugins/api/interfaces";
+import { Heart } from "lucide-vue-next";
 
 // properties
 export interface Props {

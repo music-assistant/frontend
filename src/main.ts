@@ -22,10 +22,6 @@ if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
   };
 }
 
-// Icon fonts
-import "@mdi/font/css/materialdesignicons.css";
-import "material-design-icons-iconfont/dist/material-design-icons.css";
-
 // Global styles
 import "@/styles/global.css";
 import "@/styles/style.css";

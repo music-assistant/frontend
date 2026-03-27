@@ -3,7 +3,7 @@
     <Toolbar
       :is-discover-page="true"
       :icon="Compass"
-      color="background"
+      color="transparent"
       :title="$t('discover')"
     />
 

@@ -24,7 +24,7 @@
         <Spinner class="size-4 mr-2" />
       </template>
       <template v-else-if="icon && text!.length < 12">
-        <component :is="resolveIcon(icon)" class="size-5 mr-2" />
+        <component :is="resolvedIconComponent" class="size-5 mr-2" />
       </template>
       {{ text }}
     </Button>
@@ -34,8 +34,9 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronDown } from "lucide-vue-next";
-import { h } from "vue";
+import { resolveMdiIcon } from "@/helpers/iconMapping";
+import { ChevronDown, HelpCircle } from "lucide-vue-next";
+import { computed } from "vue";
 
 // properties
 export interface Props {
@@ -45,7 +46,7 @@ export interface Props {
   width?: number;
   loading?: boolean;
 }
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   text: undefined,
   disabled: false,
@@ -59,9 +60,8 @@ const emit = defineEmits<{
   (e: "menu"): void;
 }>();
 
-// Resolve MDI icon names to rendered elements
-const resolveIcon = (iconName: string) => {
-  if (!iconName) return h("span", { class: "size-5" });
-  return h("span", { class: `mdi ${iconName} size-5` });
-};
+const resolvedIconComponent = computed(() => {
+  if (!props.icon) return undefined;
+  return resolveMdiIcon(props.icon) || HelpCircle;
+});
 </script>

@@ -8,11 +8,11 @@
       :style="player.powered == false ? 'opacity: 0.6' : 'opacity: 1'"
     >
       <div class="volumesliderrow-prepend">
-        <span
-          class="mdi"
-          :class="player.icon"
-          style="font-size: 25px; margin-left: 6px; opacity: 0.6"
-        ></span>
+        <component
+          :is="resolveIconHelper(player.icon)"
+          :size="25"
+          style="margin-left: 6px; opacity: 0.6"
+        />
       </div>
       <div class="volumesliderrow-content">
         <h5>{{ getPlayerName(player, 27) }}</h5>
@@ -81,16 +81,15 @@
           @click.stop
         >
           <div class="volumesliderrow-prepend child-prepend">
-            <span
-              class="mdi"
-              :class="childPlayer.icon"
+            <component
+              :is="resolveIconHelper(childPlayer.icon)"
+              :size="30"
               style="
-                font-size: 30px;
                 opacity: 0.6;
                 margin-left: -4px;
                 margin-right: 7px;
               "
-            ></span>
+            />
           </div>
           <div class="volumesliderrow-content">
             <h6>{{ truncateString(childPlayer.name, 27) }}</h6>
@@ -143,6 +142,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import { getPlayerName, truncateString } from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";

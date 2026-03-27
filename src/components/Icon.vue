@@ -8,7 +8,11 @@
     <div class="icon-badge-wrapper">
       <span ref="iconElement" :class="iconClasses" :style="iconSizeStyle">
         <slot>
-          <span v-if="icon" class="mdi" :class="icon" />
+          <component
+            :is="resolvedIcon"
+            v-if="resolvedIcon"
+            :style="iconSizeStyle"
+          />
         </slot>
       </span>
       <span v-if="badge === true" class="icon-badge-dot" />
@@ -27,6 +31,7 @@ import {
   type IconEmits,
   type IconProps,
 } from "@/composables/useIcon";
+import { resolveMdiIcon } from "@/helpers/iconMapping";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const props = withDefaults(defineProps<IconProps>(), defaultIconProps);
@@ -38,6 +43,11 @@ const { iconProps, containerStyle, containerClasses, iconClasses } =
 
 const iconContainer = ref<HTMLElement>();
 const iconElement = ref<HTMLElement>();
+
+const resolvedIcon = computed(() => {
+  if (!props.icon) return undefined;
+  return resolveMdiIcon(props.icon);
+});
 
 const iconSizeStyle = computed(() => {
   const size = iconProps.value.size;

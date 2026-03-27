@@ -169,13 +169,11 @@ const backgroundColor = computed(() => {
   return "#CCCCCC26";
 });
 
-const themeColor = computed(() =>
-  isDark.value ? "#fff" : "#000",
-);
+const themeColor = "var(--foreground)";
 
-const playIconStyle = computed(() => ({
-  "--play-icon-color": isDark.value ? "#212121" : "#fff",
-}));
+const playIconStyle = {
+  "--play-icon-color": "var(--background)",
+};
 
 // watchers
 watch(

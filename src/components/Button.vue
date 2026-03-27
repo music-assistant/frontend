@@ -4,7 +4,7 @@
     :class="buttonClasses"
     @click="$emit('click', $event)"
   >
-    <span v-if="icon && typeof icon === 'string'" class="mdi" :class="icon" />
+    <component :is="resolvedIcon" v-if="resolvedIcon" class="icon-in-button" />
     <slot></slot>
   </button>
 </template>
@@ -20,12 +20,19 @@ import {
   type ButtonEmits,
   type ButtonProps,
 } from "@/composables/useButton";
+import { resolveMdiIcon } from "@/helpers/iconMapping";
+import { computed } from "vue";
 
 const props = withDefaults(defineProps<ButtonProps>(), defaultButtonProps);
 
 defineEmits<ButtonEmits>();
 
 const { buttonProps, buttonClasses } = useButton(props);
+
+const resolvedIcon = computed(() => {
+  if (!props.icon || typeof props.icon !== "string") return undefined;
+  return resolveMdiIcon(props.icon);
+});
 </script>
 
 <style scoped>

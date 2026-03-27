@@ -85,15 +85,14 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <span
-                class="mdi"
-                :class="
+              <component
+                :is="resolveIconHelper(
                   store.activePlayer?.type == PlayerType.PLAYER &&
                   store.activePlayer?.group_members.length
                     ? 'mdi-speaker-multiple'
                     : store.activePlayer?.icon || 'mdi-speaker'
-                "
-                style="font-size: 128px;"
+                )"
+                :size="128"
               />
             </div>
           </div>
@@ -401,15 +400,14 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <span
-                class="mdi"
-                :class="
+              <component
+                :is="resolveIconHelper(
                   store.activePlayer?.type == PlayerType.PLAYER &&
                   store.activePlayer?.group_members.length
                     ? 'mdi-speaker-multiple'
                     : store.activePlayer?.icon || 'mdi-speaker'
-                "
-                style="font-size: 128px;"
+                )"
+                :size="128"
               />
             </div>
           </div>
@@ -526,7 +524,7 @@
               }
             "
           >
-            <span class="mdi" :class="store.activePlayer?.icon || 'mdi-speaker'" style="font-size: 20px;" />
+            <component :is="resolveIconHelper(store.activePlayer?.icon || 'mdi-speaker')" :size="20" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
         </div>
@@ -599,6 +597,7 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import Color from "color";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import { AlertTriangle, ChevronDown, EllipsisVertical, Heart, Radio } from "lucide-vue-next";
 import {
   computed,

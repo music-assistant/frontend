@@ -11,7 +11,7 @@
     <div class="card-content">
       <div class="card-header">
         <div class="player-icon-wrapper">
-          <span class="mdi" :class="player?.icon || 'mdi-speaker'" style="font-size: 24px;" />
+          <component :is="resolveIconHelper(player?.icon || 'mdi-speaker')" :size="24" />
         </div>
         <div class="player-info">
           <div class="player-name">{{ playerName }}</div>
@@ -61,10 +61,9 @@
           </Badge>
         </div>
         <div class="status-icons">
-          <span
+          <Ban
             v-if="!playerConfig.enabled"
-            class="mdi mdi-cancel text-gray-500"
-            style="font-size: 16px;"
+            class="h-4 w-4 text-gray-500"
             :title="$t('settings.player_disabled')"
           />
           <AlertCircle
@@ -72,10 +71,9 @@
             class="h-4 w-4 text-amber-500"
             :title="$t('settings.player_needs_setup')"
           />
-          <span
+          <History
             v-else-if="!isAvailable"
-            class="mdi mdi-timer-sand text-gray-500"
-            style="font-size: 16px;"
+            class="h-4 w-4 text-gray-500"
             :title="$t('settings.player_not_available')"
           />
         </div>
@@ -92,7 +90,8 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AlertCircle, MoreVertical } from "lucide-vue-next";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
+import { AlertCircle, Ban, History, MoreVertical } from "lucide-vue-next";
 import { computed } from "vue";
 
 const props = defineProps<{

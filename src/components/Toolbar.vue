@@ -42,8 +42,8 @@
       >
         <span class="relative inline-flex">
           <component
-            :is="menuItem.icon"
-            v-if="menuItem.icon && typeof menuItem.icon !== 'string'"
+            :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+            v-if="menuItem.icon"
             class="w-[22px] h-[22px]"
           />
           <span
@@ -85,8 +85,8 @@
           >
             <span v-if="menuItem.icon" class="relative inline-flex mr-2">
               <component
-                :is="menuItem.icon"
-                v-if="typeof menuItem.icon !== 'string'"
+                :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+                v-if="menuItem.icon"
                 class="w-[22px] h-[22px]"
               />
               <span
@@ -116,6 +116,7 @@ import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { getBreakpointValue } from "../plugins/breakpoint";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import { ChevronRight, MoreVertical } from "lucide-vue-next";
 
 import type { Component } from "vue";

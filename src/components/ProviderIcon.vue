@@ -55,12 +55,12 @@
         v-html="api.providerManifests[providerDomain].icon_svg"
       ></div>
     </div>
-    <!-- material design icon (fallback for providers that only specify an mdi name) -->
-    <span
+    <!-- icon (fallback for providers that only specify an icon name) -->
+    <component
       v-else-if="providerDomain && api.providerManifests[providerDomain].icon"
-      class="mdi"
-      :class="api.providerManifests[providerDomain].icon"
-      :style="`font-size: ${size}px; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;`"
+      :is="resolveIconHelper(api.providerManifests[providerDomain].icon!)"
+      :size="size"
+      :style="`width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;`"
       :title="api.providerManifests[providerDomain]!.name"
     />
     <!-- fallback icon -->
@@ -72,6 +72,7 @@
 import { computed } from "vue";
 import { api } from "@/plugins/api";
 import { useIsDark } from "@/composables/useIsDark";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import { Library, ListMusic } from "lucide-vue-next";
 
 export interface Props {

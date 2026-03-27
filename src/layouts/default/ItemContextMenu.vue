@@ -28,8 +28,8 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="typeof playerIcon === 'string' ? undefined : playerIcon"
-                  v-if="playerIcon && typeof playerIcon !== 'string'"
+                  :is="typeof playerIcon === 'string' ? resolveIconHelper(playerIcon) : playerIcon"
+                  v-if="playerIcon"
                   class="w-5 h-5"
                 />
                 <Speaker v-else class="w-10 h-10 -ml-2" />
@@ -58,11 +58,10 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="menuItem.icon"
-                  v-if="menuItem.icon && typeof menuItem.icon !== 'string'"
+                  :is="typeof menuItem.icon === 'string' ? resolveIconHelper(menuItem.icon) : menuItem.icon"
+                  v-if="menuItem.icon"
                   class="w-5 h-5"
                 />
-                <span v-else-if="typeof menuItem.icon === 'string'" class="mdi" :class="menuItem.icon" style="font-size: 20px;" />
               </span>
               <span class="context-menu-item-title">{{ $t(menuItem.label, menuItem.labelArgs || []) }}</span>
               <Check
@@ -108,11 +107,10 @@
             >
               <span class="context-menu-item-icon">
                 <component
-                  :is="subMenuItem.icon"
-                  v-if="subMenuItem.icon && typeof subMenuItem.icon !== 'string'"
+                  :is="typeof subMenuItem.icon === 'string' ? resolveIconHelper(subMenuItem.icon) : subMenuItem.icon"
+                  v-if="subMenuItem.icon"
                   class="w-5 h-5"
                 />
-                <span v-else-if="typeof subMenuItem.icon === 'string'" class="mdi" :class="subMenuItem.icon" style="font-size: 20px;" />
               </span>
               <span class="context-menu-item-title">{{ $t(subMenuItem.label, subMenuItem.labelArgs || []) }}</span>
               <Check
@@ -129,6 +127,7 @@
 
 <script setup lang="ts">
 import { Separator } from "@/components/ui/separator";
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";

@@ -375,6 +375,7 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
+import { resolveMdiIcon as resolveMdiIconHelper } from "@/helpers/iconMapping";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -405,7 +406,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { type ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
-import { computed, h } from "vue";
+import { computed } from "vue";
 import {
   AlertTriangle,
   Eye,
@@ -529,10 +530,10 @@ const getOptionTitle = (value: ConfigValueType): string => {
   return option?.title || String(value);
 };
 
-// Resolve MDI icon names to rendered elements
+// Resolve MDI icon names to lucide components
 const resolveIcon = (iconName: string) => {
   if (!iconName) return null;
-  return h("span", { class: `mdi ${iconName}`, style: "font-size: 1.25rem;" });
+  return resolveMdiIconHelper(iconName) || null;
 };
 
 const translatedOptions = computed(() => {

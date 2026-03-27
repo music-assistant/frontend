@@ -85,8 +85,6 @@ export default defineConfig({
             if (id.includes("swiper")) return "swiper";
             if (id.includes("colorthief") || id.includes("color/"))
               return "color";
-            if (id.includes("@mdi/js") || id.includes("material-design-icons"))
-              return "mdi";
             if (id.includes("marked")) return "marked";
             if (id.includes("qrcode")) return "qrcode";
           }

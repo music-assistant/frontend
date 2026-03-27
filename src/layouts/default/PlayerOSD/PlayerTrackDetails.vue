@@ -41,16 +41,15 @@
       </div>
       <!-- fallback: display player icon -->
       <div v-else class="icon-thumb">
-        <span
-          class="mdi"
-          :class="
+        <component
+          :is="resolveIconHelper(
             store.activePlayer?.type == PlayerType.PLAYER &&
             store.activePlayer?.group_members.length
               ? 'mdi-speaker-multiple'
               : store.activePlayer?.icon || 'mdi-speaker'
-          "
-          style="font-size: 32px"
-        ></span>
+          )"
+          :size="32"
+        />
       </div>
     </div>
 
@@ -179,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveIcon as resolveIconHelper } from "@/helpers/iconMapping";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";

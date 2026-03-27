@@ -6,7 +6,7 @@
       <div class="w-full max-w-md">
         <Card class="border-border/50 p-6 shadow-xl max-[500px]:p-5">
           <!-- Logo -->
-          <div class="mb-6 text-center max-[500px]:mb-4">
+          <div class="text-center">
             <img
               :src="iconSvg"
               alt="Music Assistant"
@@ -24,7 +24,7 @@
 
           <!-- Auto-connecting State -->
           <template v-if="step === 'auto-connect'">
-            <div class="py-6 text-center">
+            <div class="py-2 text-center">
               <Spinner :size="64" class="mx-auto mb-4 text-primary" />
               <p class="text-sm text-muted-foreground">
                 {{ connectionStatusMessage }}
@@ -254,7 +254,7 @@
 
           <!-- Connecting State -->
           <template v-if="step === 'connecting'">
-            <div class="py-6 text-center">
+            <div class="py-2 text-center">
               <Spinner :size="64" class="mx-auto mb-4 text-primary" />
               <p class="mb-2 text-lg font-semibold text-foreground">
                 {{ $t("login.connecting", "Connecting...") }}
@@ -270,7 +270,7 @@
 
           <!-- Error State -->
           <template v-if="step === 'error'">
-            <div class="py-6 text-center">
+            <div class="py-2 text-center">
               <AlertCircle class="mx-auto mb-4 h-16 w-16 text-destructive" />
               <p class="mb-2 text-lg font-semibold text-foreground">
                 {{ $t("login.connection_failed", "Connection Failed") }}
@@ -286,7 +286,7 @@
 
           <!-- Reconnecting State -->
           <template v-if="step === 'reconnecting'">
-            <div class="py-6 text-center">
+            <div class="py-2 text-center">
               <Spinner :size="64" class="mx-auto mb-4 text-yellow-500" />
               <p class="mb-2 text-lg font-semibold text-foreground">
                 {{ $t("login.reconnecting", "Connection Lost") }}
