@@ -91,9 +91,9 @@ const isLoading = computed(() => {
 <style>
 .play-btn-icon {
   position: relative;
-  border-radius: 50%;
-  background-color: var(--foreground);
-  color: var(--play-icon-color, var(--background));
+  border-radius: 50% !important;
+  background-color: var(--foreground) !important;
+  color: var(--play-icon-color, var(--background)) !important;
   opacity: 1 !important;
 }
 
