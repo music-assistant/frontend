@@ -50,7 +50,7 @@
             class="faceted-filter-item"
           >
             <Checkbox
-              :checked="selectedSet.has(option.value)"
+              :model-value="selectedSet.has(option.value)"
               :default-value="selectedSet.has(option.value)"
               class="mr-2"
               @click.stop="toggle(option.value)"

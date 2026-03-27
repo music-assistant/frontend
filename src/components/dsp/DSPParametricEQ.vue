@@ -136,8 +136,8 @@
         <div class="flex items-center pl-1">
           <label class="flex items-center gap-2 cursor-pointer">
             <Switch
-              :checked="selectedBand.enabled"
-              @update:checked="(val: boolean) => { selectedBand.enabled = val; }"
+              :model-value="selectedBand.enabled"
+              @update:model-value="(val: boolean) => { selectedBand.enabled = val; }"
             />
             <span>{{ $t('settings.dsp.parametric_eq.enable_band') }}</span>
           </label>
@@ -466,7 +466,7 @@ const exportApoSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 const peq = defineModel<ParametricEQFilter>({ required: true });
 

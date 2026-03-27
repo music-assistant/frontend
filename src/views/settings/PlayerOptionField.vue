@@ -1,9 +1,14 @@
 <template>
   <!-- drop down for multiple options -->
-  <div v-if="playerOption.options && playerOption.options.length > 0" class="space-y-1.5">
+  <div
+    v-if="playerOption.options && playerOption.options.length > 0"
+    class="space-y-1.5"
+  >
     <Label>{{ getTranslatedLabel() }}</Label>
     <Select
-      :model-value="playerOption.value != null ? String(playerOption.value) : undefined"
+      :model-value="
+        playerOption.value != null ? String(playerOption.value) : undefined
+      "
       :disabled="playerOption.read_only"
       @update:model-value="(val: unknown) => onSelectUpdate(String(val))"
     >
@@ -23,13 +28,19 @@
   </div>
 
   <!-- toggle for boolean values -->
-  <div v-else-if="playerOption.type === PlayerOptionType.BOOLEAN" class="flex items-center gap-3">
+  <div
+    v-else-if="playerOption.type === PlayerOptionType.BOOLEAN"
+    class="flex items-center gap-3"
+  >
     <Switch
-      :checked="playerOption.value as boolean"
+      :id="`player-option-${playerOption.key}`"
+      :model-value="playerOption.value as boolean"
       :disabled="playerOption.read_only"
-      @update:checked="uiSetPlayerOption(playerOption.key, $event)"
+      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
     />
-    <Label>{{ getTranslatedLabel() }}</Label>
+    <Label :for="`player-option-${playerOption.key}`" class="cursor-pointer">{{
+      getTranslatedLabel()
+    }}</Label>
   </div>
 
   <!-- slider for int/ float with min/max -->
@@ -60,7 +71,11 @@
         :step="playerOption.step"
         :disabled="playerOption.read_only"
         class="flex-1"
-        @update:model-value="(val: number[] | undefined) => { if (val) uiSetPlayerOption(playerOption.key, val[0]) }"
+        @update:model-value="
+          (val: number[] | undefined) => {
+            if (val) uiSetPlayerOption(playerOption.key, val[0]);
+          }
+        "
       />
       <span class="text-sm text-muted-foreground shrink-0">
         {{ playerOption.max_value }}
@@ -78,7 +93,7 @@
   >
     <Label>{{ getTranslatedLabel() }}</Label>
     <Input
-      :model-value="playerOption.value as string | number"
+      :model-value="String(playerOption.value ?? '')"
       :min="playerOption.min_value"
       :max="playerOption.max_value"
       :step="playerOption.step"
@@ -89,7 +104,10 @@
   </div>
 
   <!-- text field for string -->
-  <div v-else-if="playerOption.type === PlayerOptionType.STRING" class="space-y-1.5">
+  <div
+    v-else-if="playerOption.type === PlayerOptionType.STRING"
+    class="space-y-1.5"
+  >
     <Label>{{ getTranslatedLabel() }}</Label>
     <Input
       :model-value="playerOption.value as string"

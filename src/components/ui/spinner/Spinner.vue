@@ -9,7 +9,6 @@ const props = withDefaults(
     size?: number;
   }>(),
   {
-    class: undefined,
     size: undefined,
   },
 );

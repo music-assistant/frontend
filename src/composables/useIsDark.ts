@@ -35,5 +35,5 @@ export function useIsDark() {
     refCount--;
     if (refCount === 0) stopObserver();
   });
-  return { isDark };
+  return isDark;
 }

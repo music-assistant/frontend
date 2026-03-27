@@ -135,7 +135,7 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -200,7 +200,7 @@ watch(
   width: 100%;
   border-radius: 10px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   background-color: var(--muted);
 }

@@ -103,11 +103,11 @@
                 (player.static_group_members.includes(childPlayer.player_id) &&
                   player.group_members.includes(childPlayer.player_id))
               "
-              :checked="
+              :model-value="
                 player.group_members.includes(childPlayer.player_id) ||
                 childPlayer.player_id == player.player_id
               "
-              @update:checked="
+              @update:model-value="
                 syncCheckBoxChange(childPlayer.player_id, $event)
               "
             />
@@ -231,7 +231,7 @@ const getChildPlayers = function (player: Player) {
 
 const syncCheckBoxChange = async function (
   syncPlayerId: string,
-  value: boolean | null,
+  value: boolean | "indeterminate" | null,
 ) {
   const parentPlayerId = compProps.player.player_id;
 

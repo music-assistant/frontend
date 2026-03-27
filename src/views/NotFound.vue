@@ -107,7 +107,7 @@ const router = useRouter();
     repeating-conic-gradient(#1c1c1c 0deg, #2a2a2a 1deg, #1c1c1c 2deg);
   box-shadow:
     0 0 0 1px #333,
-    0 12px 40px rgba(0, 0, 0, 0.6),
+    0 12px 40px color-mix(in srgb, var(--foreground) 40%, transparent),
     inset 0 0 20px rgba(255, 255, 255, 0.03);
   display: flex;
   align-items: center;
@@ -139,7 +139,7 @@ const router = useRouter();
   align-items: center;
   justify-content: center;
   gap: 3px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--foreground) 30%, transparent);
   position: relative;
   z-index: 1;
 }
@@ -148,7 +148,7 @@ const router = useRouter();
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: #ffffff;
+  color: var(--primary-foreground);
   line-height: 1;
 }
 

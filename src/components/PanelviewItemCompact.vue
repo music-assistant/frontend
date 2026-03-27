@@ -21,7 +21,7 @@
     >
       <Checkbox
         class="panel-item-checkbox"
-        :checked="isSelected"
+        :model-value="isSelected"
       />
     </div>
     <div class="thumb-container">

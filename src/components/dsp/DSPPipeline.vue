@@ -79,7 +79,7 @@ import { DSPConfig } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { Plus } from "lucide-vue-next";
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 type SelectionType = number | "input" | "output";
 

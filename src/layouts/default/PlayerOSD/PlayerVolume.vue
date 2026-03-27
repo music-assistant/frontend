@@ -746,8 +746,8 @@ watch(
   border-radius: 12px;
   padding: 8px 18px 16px 18px;
   box-shadow:
-    0 -4px 16px rgba(0, 0, 0, 0.15),
-    0 -1px 4px rgba(0, 0, 0, 0.08);
+    0 -4px 16px color-mix(in srgb, var(--foreground) 10%, transparent),
+    0 -1px 4px color-mix(in srgb, var(--foreground) 6%, transparent);
   z-index: 10001;
 }
 

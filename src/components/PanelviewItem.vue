@@ -20,7 +20,7 @@
     >
       <Checkbox
         class="panel-item-checkbox"
-        :checked="isSelected"
+        :model-value="isSelected"
       />
     </div>
 
@@ -208,7 +208,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 const isHovering = ref(false);
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const { mobile } = useBreakpoint();
 
 // properties

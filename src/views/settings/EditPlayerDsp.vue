@@ -3,8 +3,8 @@
     <!-- Toolbar -->
     <div class="flex items-center gap-2 border-b px-4 py-2">
       <Switch
-        :checked="dsp.enabled"
-        @update:checked="dsp.enabled = $event"
+        :model-value="dsp.enabled"
+        @update:model-value="dsp.enabled = $event"
       />
       <span class="flex-1 text-sm font-medium truncate">{{
         $t("settings.dsp.configure_on", { name: playerName })
@@ -117,9 +117,9 @@
 
             <Switch
               v-if="typeof selectedStage === 'number'"
-              :checked="dsp.filters[selectedStage].enabled"
+              :model-value="dsp.filters[selectedStage].enabled"
               class="mr-2"
-              @update:checked="dsp.filters[selectedStage].enabled = $event"
+              @update:model-value="dsp.filters[selectedStage].enabled = $event"
             />
             <Button
               v-if="typeof selectedStage === 'number'"
@@ -298,7 +298,7 @@ import {
 
 const { t } = useI18n();
 const router = useRouter();
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const { mobile } = useBreakpoint();
 
 const props = defineProps<{

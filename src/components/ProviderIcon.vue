@@ -83,7 +83,7 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 const providerDomain = computed(() => {
   // handle case where provider domain is provided as instance id.

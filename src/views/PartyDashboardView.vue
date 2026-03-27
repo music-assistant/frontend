@@ -328,7 +328,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useIsDark } from "@/composables/useIsDark";
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;

@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .copy-toast-enter-active {
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
 .qr-display canvas {
   display: block;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .qr-error {

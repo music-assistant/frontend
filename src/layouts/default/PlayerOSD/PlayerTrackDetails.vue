@@ -238,7 +238,7 @@ const streamDetails = computed(() => {
   width: 60px;
   height: 60px;
   border-radius: 3px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: color-mix(in srgb, var(--foreground) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;

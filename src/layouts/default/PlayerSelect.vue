@@ -343,7 +343,7 @@ const selectDefaultPlayer = function () {
 }
 
 .player-panel--overlay.player-panel--open {
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+  box-shadow: -4px 0 24px color-mix(in srgb, var(--foreground) 15%, transparent);
 }
 
 @media (max-width: 769px) {
@@ -385,7 +385,7 @@ const selectDefaultPlayer = function () {
   position: fixed;
   inset: 0;
   z-index: 1999;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 .player-scrim-enter-active,

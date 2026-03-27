@@ -53,8 +53,8 @@
               @click="toggleMember(player.player_id)"
             >
               <Checkbox
-                :checked="members.includes(player.player_id)"
-                @update:checked="toggleMember(player.player_id)"
+                :model-value="members.includes(player.player_id)"
+                @update:model-value="toggleMember(player.player_id)"
               />
               <span class="text-sm">{{ player.name }}</span>
             </div>
@@ -71,10 +71,10 @@
         <div class="space-y-1.5">
           <div class="flex items-center gap-3">
             <Switch
-              :checked="dynamic"
-              @update:checked="dynamic = $event"
+              id="dynamic-members"
+              v-model="dynamic"
             />
-            <Label>{{ $t("settings.dynamic_members.label") }}</Label>
+            <Label for="dynamic-members" class="cursor-pointer">{{ $t("settings.dynamic_members.label") }}</Label>
           </div>
           <p
             v-if="providerDetails?.domain !== 'universal_group'"

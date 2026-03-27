@@ -16,7 +16,6 @@ const props = withDefaults(
   >(),
   {
     as: "div",
-    class: undefined,
     variant: "default",
     size: "default",
   },

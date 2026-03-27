@@ -10,11 +10,11 @@
     <template #prepend>
       <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
         <Checkbox
-          :checked="isSelected"
+          :model-value="isSelected"
           @click.stop
-          @update:checked="
-            (x: boolean) => {
-              emit('select', item, x);
+          @update:model-value="
+            (x: boolean | 'indeterminate') => {
+              if (typeof x === 'boolean') emit('select', item, x);
             }
           "
         />
@@ -278,7 +278,7 @@ export interface Props {
 
 // global refs
 const { t, te } = useI18n();
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const { mobile } = useBreakpoint();
 
 const displayName = computed(() => {

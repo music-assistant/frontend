@@ -1,15 +1,9 @@
 <template>
   <div class="flex-1 min-w-0">
     <!-- divider value -->
-    <div
-      v-if="confEntry.type == ConfigEntryType.DIVIDER"
-      class="py-2"
-    >
+    <div v-if="confEntry.type == ConfigEntryType.DIVIDER" class="py-2">
       <Separator />
-      <span
-        v-if="confEntry.label"
-        class="block mt-3 font-semibold text-sm"
-      >
+      <span v-if="confEntry.label" class="block mt-3 font-semibold text-sm">
         {{ confEntry.label }}
       </span>
     </div>
@@ -52,7 +46,10 @@
     </Button>
 
     <!-- DSP Config Button -->
-    <div v-else-if="isDspLinkEntry(confEntry)" class="flex items-center gap-4 py-2">
+    <div
+      v-else-if="isDspLinkEntry(confEntry)"
+      class="flex items-center gap-4 py-2"
+    >
       <span class="text-sm text-muted-foreground">
         {{
           confEntry.value
@@ -85,11 +82,12 @@
       class="flex items-center gap-2 py-1"
     >
       <Checkbox
-        :checked="confEntry.value as boolean"
+        :id="`config-${confEntry.key}`"
+        :model-value="confEntry.value as boolean"
         :disabled="isFieldDisabled"
-        @update:checked="$emit('update:value', $event)"
+        @update:model-value="$emit('update:value', $event)"
       />
-      <Label class="cursor-pointer" @click="!isFieldDisabled && $emit('update:value', !confEntry.value)">
+      <Label :for="`config-${confEntry.key}`" class="cursor-pointer">
         {{ getTranslatedLabel() }}
       </Label>
     </div>
@@ -115,7 +113,11 @@
           :max="confEntry.range[1]"
           :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
           class="flex-1"
-          @update:model-value="(val: number[] | undefined) => { if (val) $emit('update:value', val[0]) }"
+          @update:model-value="
+            (val: number[] | undefined) => {
+              if (val) $emit('update:value', val[0]);
+            }
+          "
         />
 
         <div class="shrink-0">
@@ -157,7 +159,9 @@
           class="pr-16"
           @update:model-value="onUpdateValue($event)"
         />
-        <div class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+        <div
+          class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5"
+        >
           <Button
             v-if="
               showPasswordValues ||
@@ -173,11 +177,7 @@
             <Eye v-if="showPasswordValues" class="h-4 w-4" />
             <EyeOff v-else class="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            @click="onClear"
-          >
+          <Button variant="ghost" size="icon-sm" @click="onClear">
             <X class="h-4 w-4" />
           </Button>
         </div>
@@ -186,7 +186,11 @@
 
     <!-- value with dropdown (multi-value) -->
     <div
-      v-else-if="confEntry.options && confEntry.options.length > 0 && confEntry.multi_value"
+      v-else-if="
+        confEntry.options &&
+        confEntry.options.length > 0 &&
+        confEntry.multi_value
+      "
       class="space-y-1.5"
     >
       <Label>{{ getTranslatedLabel() }}</Label>
@@ -195,7 +199,9 @@
         @update:model-value="(val: unknown) => onMultiSelectAdd(String(val))"
       >
         <SelectTrigger class="w-full">
-          <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
+          <SelectValue
+            :placeholder="$t('settings.select_option', 'Select...')"
+          />
         </SelectTrigger>
         <SelectContent>
           <SelectItem
@@ -207,9 +213,12 @@
           </SelectItem>
         </SelectContent>
       </Select>
-      <div v-if="Array.isArray(confEntry.value) && confEntry.value.length > 0" class="flex flex-wrap gap-1 mt-1">
+      <div
+        v-if="Array.isArray(confEntry.value) && confEntry.value.length > 0"
+        class="flex flex-wrap gap-1 mt-1"
+      >
         <Badge
-          v-for="(val, idx) in (confEntry.value as ConfigValueType[])"
+          v-for="(val, idx) in confEntry.value as ConfigValueType[]"
           :key="idx"
           variant="secondary"
           class="gap-1"
@@ -232,11 +241,15 @@
     >
       <Label>{{ getTranslatedLabel() }}</Label>
       <Select
-        :model-value="confEntry.value != null ? String(confEntry.value) : undefined"
+        :model-value="
+          confEntry.value != null ? String(confEntry.value) : undefined
+        "
         @update:model-value="(val: unknown) => onSelectUpdate(String(val))"
       >
         <SelectTrigger class="w-full">
-          <SelectValue :placeholder="$t('settings.select_option', 'Select...')" />
+          <SelectValue
+            :placeholder="$t('settings.select_option', 'Select...')"
+          />
         </SelectTrigger>
         <SelectContent>
           <SelectItem
@@ -261,7 +274,7 @@
       <Label>{{ getTranslatedLabel() }}</Label>
       <div class="relative">
         <Input
-          :model-value="confEntry.value as string | number"
+          :model-value="String(confEntry.value ?? '')"
           :placeholder="confEntry.default_value?.toString()"
           :disabled="isFieldDisabled"
           :required="confEntry.required"
@@ -281,10 +294,7 @@
     </div>
 
     <!-- icon 'picker' -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.ICON"
-      class="space-y-1.5"
-    >
+    <div v-else-if="confEntry.type == ConfigEntryType.ICON" class="space-y-1.5">
       <Label>{{ getTranslatedLabel() }}</Label>
       <div class="relative">
         <Input
@@ -329,7 +339,7 @@
         @update:model-value="(val: unknown) => onUpdateValue(val as string[])"
       >
         <TagsInputItem
-          v-for="tag in ((confEntry.value as string[]) || [])"
+          v-for="tag in (confEntry.value as string[]) || []"
           :key="tag"
           :value="tag"
         >
@@ -347,7 +357,7 @@
       <Label>{{ getTranslatedLabel() }}</Label>
       <div class="relative">
         <Input
-          :model-value="confEntry.value as string | number"
+          :model-value="String(confEntry.value ?? '')"
           :placeholder="confEntry.default_value?.toString()"
           :disabled="isFieldDisabled"
           :required="confEntry.required"
@@ -407,13 +417,7 @@ import {
 import { type ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
-import {
-  AlertTriangle,
-  Eye,
-  EyeOff,
-  Info,
-  X,
-} from "lucide-vue-next";
+import { AlertTriangle, Eye, EyeOff, Info, X } from "lucide-vue-next";
 
 const props = defineProps<{
   confEntry: ConfigEntryUI;

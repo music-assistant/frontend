@@ -985,9 +985,7 @@ const documentationUrl = computed(() => {
 
 .setting-card:hover {
   transform: translateY(-4px);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.15),
-    0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-xl);
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
@@ -1006,7 +1004,7 @@ const documentationUrl = computed(() => {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   flex-shrink: 0;
 }
 
@@ -1076,7 +1074,7 @@ const documentationUrl = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   flex-shrink: 0;
 }
 

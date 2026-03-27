@@ -1,5 +1,5 @@
 <template>
-  <form v-if="entries" ref="form" :class="{ 'pointer-events-none opacity-50': disabled }">
+  <form v-if="entries" ref="form" :class="{ 'pointer-events-none opacity-50': disabled }" @submit.prevent>
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -235,14 +235,14 @@
             <div class="protocol-actions" @click.stop>
               <Switch
                 v-if="getProtocolEnabledEntry(panel)"
-                :checked="getProtocolEnabledEntry(panel)?.value as boolean"
-                @update:checked="
+                :model-value="getProtocolEnabledEntry(panel)?.value as boolean"
+                @update:model-value="
                   onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
                 "
               />
               <Switch
                 v-else
-                :checked="true"
+                :model-value="true"
                 disabled
               />
             </div>
@@ -380,10 +380,10 @@
       <div class="advanced-toggle-wrapper">
         <div class="flex items-center gap-3">
           <Switch
-            :checked="showAdvancedSettings"
-            @update:checked="showAdvancedSettings = $event"
+            id="show-advanced-settings"
+            v-model="showAdvancedSettings"
           />
-          <Label>{{ $t('settings.show_advanced_settings') }}</Label>
+          <Label for="show-advanced-settings" class="cursor-pointer">{{ $t('settings.show_advanced_settings') }}</Label>
         </div>
       </div>
       <Button

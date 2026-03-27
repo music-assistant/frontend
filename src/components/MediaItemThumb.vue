@@ -10,7 +10,7 @@
       height: typeof size === 'number' ? size + 'px' : size,
       width: typeof size === 'number' ? size + 'px' : size,
     }"
-    @error="(e: Event) => { (e.target as HTMLImageElement).src = isDark ? imgCoverDark : imgCoverLight }"
+    @error="onImgError"
   />
 </template>
 
@@ -46,7 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
   thumbnail: true,
 });
 
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 function getThumbSize() {
   if (typeof props.size == "number") {
@@ -73,6 +73,13 @@ function getFallbackImage() {
   );
 }
 const fallbackImage = getFallbackImage();
+
+let fallbackApplied = false;
+const onImgError = (e: Event) => {
+  if (fallbackApplied) return;
+  fallbackApplied = true;
+  (e.target as HTMLImageElement).src = isDark.value ? imgCoverDark : imgCoverLight;
+};
 
 const imgData = computed(() =>
   props.item

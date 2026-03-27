@@ -11,7 +11,6 @@ const props = withDefaults(
   defineProps<ListboxRootProps & { class?: HTMLAttributes["class"] }>(),
   {
     modelValue: "",
-    class: undefined,
   },
 );
 

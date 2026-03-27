@@ -231,7 +231,7 @@ import {
 import { toast } from "vue-sonner";
 import { useIsDark } from "@/composables/useIsDark";
 const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const logoSrc = computed(() =>
   isDark.value
     ? new URL("@/assets/logo/logo.svg", import.meta.url).href

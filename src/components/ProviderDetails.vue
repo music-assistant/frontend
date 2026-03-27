@@ -168,7 +168,7 @@ export interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const expanded = ref(false);
 const mappingSearchInProgress = ref(false);
 

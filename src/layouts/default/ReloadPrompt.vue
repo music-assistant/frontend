@@ -33,7 +33,7 @@ const close = async () => {
   border-radius: 4px;
   z-index: 1;
   text-align: left;
-  box-shadow: 3px 4px 5px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   background-color: var(--card);
   color: var(--card-foreground);
 }

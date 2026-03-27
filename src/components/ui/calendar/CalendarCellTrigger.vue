@@ -10,7 +10,6 @@ const props = withDefaults(
   defineProps<CalendarCellTriggerProps & { class?: HTMLAttributes["class"] }>(),
   {
     as: "button",
-    class: undefined,
   },
 );
 

@@ -1174,7 +1174,7 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   position: fixed;
   inset: 0;
   z-index: 999998;
-  background: rgba(0, 0, 0, 0.3);
+  background: color-mix(in srgb, var(--foreground) 30%, transparent);
 }
 
 .context-menu {
@@ -1191,7 +1191,7 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -15px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   padding: 4px;
 }
 

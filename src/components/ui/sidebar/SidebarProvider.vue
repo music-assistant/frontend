@@ -30,7 +30,6 @@ const props = withDefaults(
       `${SIDEBAR_COOKIE_NAME}=false`,
     ),
     open: undefined,
-    class: undefined,
   },
 );
 

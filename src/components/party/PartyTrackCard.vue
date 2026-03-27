@@ -189,7 +189,7 @@ const sizeClass = computed(() => {
   --opacity: 1;
   --z-index: 3;
   background: color-mix(in srgb, var(--foreground) 10%, transparent);
-  box-shadow: 0 0.8vh 3.2vh rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0.8vh 3.2vh color-mix(in srgb, var(--foreground) 15%, transparent);
 }
 
 .track-card.position-next-1 {
@@ -216,7 +216,7 @@ const sizeClass = computed(() => {
   background: color-mix(in srgb, var(--guest-color) 25%, transparent);
   border: 2px solid color-mix(in srgb, var(--guest-color) 50%, transparent);
   box-shadow:
-    0 0.8vh 3.2vh rgba(0, 0, 0, 0.3),
+    0 0.8vh 3.2vh color-mix(in srgb, var(--foreground) 20%, transparent),
     0 0 2vh color-mix(in srgb, var(--guest-color) 30%, transparent);
 }
 
@@ -303,11 +303,11 @@ const sizeClass = computed(() => {
 }
 
 .white-text .track-name {
-  color: rgba(255, 255, 255, 0.95);
+  color: color-mix(in srgb, white 95%, transparent);
 }
 
 .white-text .track-artist {
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, white 70%, transparent);
 }
 
 @media (max-width: 768px) {

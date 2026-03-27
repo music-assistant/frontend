@@ -156,7 +156,7 @@
                 class="weekday-option"
               >
                 <Checkbox
-                  :checked="selectedDays.includes(day.value)"
+                  :model-value="selectedDays.includes(day.value)"
                   @click.stop="toggleDay(day.value)"
                 />
                 <span @click.stop="toggleDay(day.value)">

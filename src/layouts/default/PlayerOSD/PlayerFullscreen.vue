@@ -613,7 +613,7 @@ import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { mdAndUp, mobile, height: windowHeight } = useBreakpoint();
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 
 const showRadioMenu = ref(false);
 const infiniteScrollSentinel = ref<HTMLElement>();
@@ -1664,7 +1664,7 @@ watchEffect(() => {
   height: min(100cqi, 100cqh);
   flex: 0 0 auto;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   object-fit: cover;
 }
@@ -1836,7 +1836,7 @@ button {
   color: var(--text-color);
 }
 
-.play-btn-wrapper :deep(.play-btn-icon) {
+.play-btn-wrapper .play-btn-icon {
   background-color: var(--text-color) !important;
 }
 
@@ -1943,7 +1943,7 @@ button {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 10px 38px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -15px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   min-width: 250px;
 }
 </style>

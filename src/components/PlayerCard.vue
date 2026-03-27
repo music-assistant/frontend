@@ -24,12 +24,8 @@
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
-          <Speaker
-            v-if="player.type == PlayerType.PLAYER && player.group_members.length"
-            class="h-6 w-6 opacity-80"
-          />
-          <Speaker
-            v-else
+          <component
+            :is="resolvedPlayerIcon"
             class="h-6 w-6 opacity-80"
           />
         </div>
@@ -250,7 +246,8 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { useIsDark } from "@/composables/useIsDark";
 import { webPlayer } from "@/plugins/web_player";
-import { Monitor, MoreVertical, Pause, Play, Power, Smartphone, Speaker } from "lucide-vue-next";
+import { resolveMdiIcon } from "@/helpers/iconMapping";
+import { AudioLines, Monitor, MoreVertical, Pause, Play, Power, Smartphone, Speaker } from "lucide-vue-next";
 import { computed, ref, toRef, watch } from "vue";
 
 // properties
@@ -271,6 +268,14 @@ defineEmits<{
   (e: "click", player: Player): void;
   (e: "toggle-expand", player: Player): void;
 }>();
+
+const resolvedPlayerIcon = computed(() => {
+  const p = compProps.player;
+  if (p.type === PlayerType.PLAYER && p.group_members.length) {
+    return AudioLines;
+  }
+  return (p.icon ? resolveMdiIcon(p.icon) : undefined) || Speaker;
+});
 
 const playerQueue = computed(() => {
   if (
@@ -319,7 +324,7 @@ const coverImageColorPalette = ref<ImageColorPalette>({
 
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD
-const { isDark } = useIsDark();
+const isDark = useIsDark();
 const img = new Image();
 img.src = isDark.value ? imgCoverDark : imgCoverLight;
 img.crossOrigin = "Anonymous";

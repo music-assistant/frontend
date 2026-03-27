@@ -9,7 +9,6 @@ const props = withDefaults(
   defineProps<ProgressRootProps & { class?: HTMLAttributes["class"] }>(),
   {
     modelValue: 0,
-    class: undefined,
   },
 );
 
