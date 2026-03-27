@@ -218,10 +218,10 @@ onMounted(() => {
     let syncDelay: number;
     if (savedSyncDelay !== null) {
       const parsed = parseInt(savedSyncDelay, 10);
-      // Old convention: negative = play earlier = same as sendspin-js convention
-      syncDelay = isNaN(parsed) ? -defaultStaticDelay : parsed;
+      // Old convention: negative = play earlier. New: positive = play earlier.
+      syncDelay = isNaN(parsed) ? defaultStaticDelay : -parsed;
     } else {
-      syncDelay = -defaultStaticDelay;
+      syncDelay = defaultStaticDelay;
     }
 
     // Output latency compensation - enabled by default
