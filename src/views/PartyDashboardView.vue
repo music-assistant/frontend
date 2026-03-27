@@ -26,6 +26,7 @@
         {
           'party-content--karaoke': karaokeMode,
           'party-content--album-art': useAlbumArtBackground && !!albumArtUrl,
+          'party-content--light-text': useLightChrome,
         },
       ]"
     >
@@ -155,7 +156,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
-              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
+              :force-white-text="useLightChrome"
             />
           </TransitionGroup>
         </div>
@@ -234,7 +235,7 @@
               :is-playing="isPlaying"
               :request-badge-color="requestBadgeColor"
               :boost-badge-color="boostBadgeColor"
-              :force-white-text="useAlbumArtBackground && !!albumArtUrl"
+              :force-white-text="useLightChrome"
             />
           </TransitionGroup>
         </div>
@@ -332,6 +333,8 @@ const theme = useTheme();
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();
 const logoSrc = new URL("@/assets/logo/logo.svg", import.meta.url).href;
+const logoDarkSrc = new URL("@/assets/logo/logo-dark.svg", import.meta.url)
+  .href;
 
 const refreshPartyPlayer = async () => {
   const partyPlayerId = await api.sendCommand<string | null>("party/player");
@@ -376,9 +379,29 @@ const toggleGuestAccess = async () => {
 const requestBadgeColor = ref("");
 const boostBadgeColor = ref("");
 const isFullscreen = computed(() => store.frameless);
-const chromeTextColor = computed(() => "#FFFFFF");
-const maLogoSrc = computed(() => logoSrc);
-const qrDarkColor = computed(() => "#FFFFFF");
+const darkBackground = computed(
+  () => useAlbumArtBackground.value && !!albumArtUrl.value,
+);
+const gradientNeedsLightText = computed(() => {
+  if (darkBackground.value) return false;
+  const coverImageColorCode = theme.current.value.dark
+    ? colorPalette.value.darkColor || "#1a1a1a"
+    : colorPalette.value.lightColor || "#f5f5f5";
+  const bgColor = Color(coverImageColorCode);
+  return Color("white").contrast(bgColor) >= Color("black").contrast(bgColor);
+});
+const useLightChrome = computed(
+  () => darkBackground.value || gradientNeedsLightText.value,
+);
+const chromeTextColor = computed(() =>
+  useLightChrome.value ? "#FFFFFF" : "rgba(var(--v-theme-on-surface), 0.9)",
+);
+const maLogoSrc = computed(() =>
+  useLightChrome.value ? logoSrc : logoDarkSrc,
+);
+const qrDarkColor = computed(() =>
+  useLightChrome.value ? "#FFFFFF" : "#000000",
+);
 
 const partyName = computed(() => partyConfig.value?.party_name ?? null);
 const hideBackButton = computed(
@@ -913,8 +936,10 @@ watch(
   transition: background-image 0.8s ease-in-out;
 }
 
-.party-content,
-.party-content * {
+.party-content--album-art,
+.party-content--album-art *,
+.party-content--light-text,
+.party-content--light-text * {
   color: white !important;
 }
 
@@ -1024,12 +1049,12 @@ watch(
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: white;
+  color: rgba(var(--v-theme-on-surface), 0.9);
 }
 
 .empty-message {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   max-width: 500px;
 }
 
@@ -1153,12 +1178,12 @@ watch(
 .access-error-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: white;
+  color: rgba(var(--v-theme-on-surface), 0.9);
 }
 
 .access-error-message {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   max-width: 400px;
 }
 
