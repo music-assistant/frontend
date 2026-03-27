@@ -4,34 +4,24 @@ import { useContainer, type ContainerProps } from "@/composables/useContainer";
 describe("useContainer", () => {
   it("returns default props for default variant", () => {
     const props: ContainerProps = { variant: "default" };
-    const { containerProps, containerClasses } = useContainer(props, false);
+    const { containerProps, containerClasses } = useContainer(props);
 
     expect(containerProps.value.fluid).toBe(true);
     expect(containerClasses.value).toContain("container-main");
     expect(containerClasses.value).toContain("container-default");
   });
 
-  it("returns panel styling for panel variant in light mode", () => {
+  it("returns panel styling for panel variant", () => {
     const props: ContainerProps = { variant: "panel" };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("container-main");
     expect(containerClasses.value).toContain("container-panel");
-    expect(containerClasses.value).toContain("container-panel--light");
-  });
-
-  it("returns panel styling for panel variant in dark mode", () => {
-    const props: ContainerProps = { variant: "panel" };
-    const { containerClasses } = useContainer(props, true);
-
-    expect(containerClasses.value).toContain("container-main");
-    expect(containerClasses.value).toContain("container-panel");
-    expect(containerClasses.value).toContain("container-panel--dark");
   });
 
   it("returns compact styling for compact variant", () => {
     const props: ContainerProps = { variant: "compact" };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("container-main");
     expect(containerClasses.value).toContain("container-compact");
@@ -39,7 +29,7 @@ describe("useContainer", () => {
 
   it("returns comfortable styling for comfortable variant", () => {
     const props: ContainerProps = { variant: "comfortable" };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("container-main");
     expect(containerClasses.value).toContain("container-comfortable");
@@ -50,7 +40,7 @@ describe("useContainer", () => {
       variant: "default",
       class: "custom-class",
     };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("custom-class");
   });
@@ -60,7 +50,7 @@ describe("useContainer", () => {
       variant: "default",
       class: ["class1", "class2"],
     };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("class1");
     expect(containerClasses.value).toContain("class2");
@@ -71,19 +61,19 @@ describe("useContainer", () => {
       variant: "default",
       class: { active: true, disabled: false },
     };
-    const { containerClasses } = useContainer(props, false);
+    const { containerClasses } = useContainer(props);
 
     expect(containerClasses.value).toContain("active");
     expect(containerClasses.value).not.toContain("disabled");
   });
 
-  it("preserves vuetify props", () => {
+  it("preserves element props", () => {
     const props: ContainerProps = {
       variant: "default",
       fluid: false,
       tag: "section",
     };
-    const { containerProps } = useContainer(props, false);
+    const { containerProps } = useContainer(props);
 
     expect(containerProps.value.fluid).toBe(false);
     expect(containerProps.value.tag).toBe("section");
@@ -91,7 +81,7 @@ describe("useContainer", () => {
 
   it("defaults fluid to true when not specified", () => {
     const props: ContainerProps = { variant: "default" };
-    const { containerProps } = useContainer(props, false);
+    const { containerProps } = useContainer(props);
 
     expect(containerProps.value.fluid).toBe(true);
   });

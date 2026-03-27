@@ -6,26 +6,17 @@ import { fileURLToPath, URL } from "node:url";
 import path from "path";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import webfontDownload from "vite-plugin-webfont-dl";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
   plugins: [
-    vue({
-      template: { transformAssetUrls },
-    }),
+    vue(),
     tailwindcss(),
     webfontDownload([
       "https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap",
     ]),
-    vuetify({
-      autoImport: true,
-      styles: {
-        configFile: "src/styles/settings.scss",
-      },
-    }),
     VitePWA({
       strategies: "injectManifest",
       srcDir: "public",
@@ -86,7 +77,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("vuetify")) return "vuetify";
             if (id.includes("vue-i18n") || id.includes("@intlify"))
               return "vue-i18n";
             if (id.includes("vue-router")) return "vue-router";

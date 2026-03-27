@@ -16,7 +16,7 @@ export interface ListItemProps {
    */
   variant?: "default" | "compact" | "comfortable";
 
-  // Pass through all Vuetify v-list-item props
+  // List item element props
   active?: boolean;
   disabled?: boolean;
   link?: boolean;
@@ -52,10 +52,10 @@ export interface ListItemEmits {
 
 export const useListItem = (props: ListItemProps) => {
   const listItemProps = computed(() => {
-    const { variant, showMenuBtn, ...vuetifyProps } = props;
+    const { variant, showMenuBtn, ...restProps } = props;
 
     const baseProps = {
-      ...vuetifyProps,
+      ...restProps,
       "aria-label": props["aria-label"],
     };
 

@@ -4,8 +4,7 @@ import { store } from '@/plugins/store';
   <!-- gradient background panel to make the footer player more elevated (and hide content behind it)-->
   <div
     v-if="store.mobileLayout"
-    :class="isDark ? 'gradient-dark' : 'gradient-light'"
-    class="fixed w-full h-[180px] bottom-0"
+    class="footer-gradient fixed w-full h-[180px] bottom-0"
     style="z-index: 999"
   ></div>
 
@@ -35,11 +34,8 @@ import { store } from '@/plugins/store';
 
 <script setup lang="ts">
 import BottomNavigation from "@/components/navigation/BottomNavigation.vue";
-import { useIsDark } from "@/composables/useIsDark";
 import { store } from "@/plugins/store";
 import Player from "./PlayerOSD/Player.vue";
-
-const { isDark } = useIsDark();
 </script>
 
 <style>
@@ -66,20 +62,12 @@ const { isDark } = useIsDark();
   background-color: var(--muted);
 }
 
-.gradient-dark {
+.footer-gradient {
   background: linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.9) 75%,
-    rgba(255, 255, 255, 0) 100%
-  );
-}
-.gradient-light {
-  background: linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(255, 255, 255, 0.9) 75%,
-    rgba(255, 255, 255, 0) 100%
+    color-mix(in srgb, var(--background) 90%, transparent) 0%,
+    color-mix(in srgb, var(--background) 90%, transparent) 75%,
+    transparent 100%
   );
 }
 </style>

@@ -22,7 +22,7 @@ export interface ButtonProps {
    */
   nav?: boolean;
 
-  // Vuetify button props
+  // Button element props
   icon?: string | boolean;
   ripple?: boolean;
   height?: string | number;
@@ -59,10 +59,10 @@ export interface ButtonEmits {
 
 export const useButton = (props: ButtonProps) => {
   const buttonProps = computed(() => {
-    const { variant, nav, ...vuetifyProps } = props;
+    const { variant, nav, ...restProps } = props;
 
     const baseProps = {
-      ...vuetifyProps,
+      ...restProps,
       "aria-label": props.title || props["aria-label"],
     };
 

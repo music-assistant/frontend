@@ -1,7 +1,7 @@
 /**
  * main.ts
  *
- * Bootstraps Vuetify and other plugins then mounts the App`
+ * Bootstraps plugins then mounts the App
  */
 
 // Polyfill for Safari 15 / iOS 15 (AbortSignal.timeout not supported)
@@ -21,6 +21,10 @@ if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
     return controller.signal;
   };
 }
+
+// Icon fonts
+import "@mdi/font/css/materialdesignicons.css";
+import "material-design-icons-iconfont/dist/material-design-icons.css";
 
 // Global styles
 import "@/styles/global.css";

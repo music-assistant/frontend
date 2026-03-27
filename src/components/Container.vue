@@ -18,7 +18,6 @@ import {
   type ContainerEmits,
   type ContainerProps,
 } from "@/composables/useContainer";
-import { useIsDark } from "@/composables/useIsDark";
 
 const props = withDefaults(
   defineProps<ContainerProps>(),
@@ -27,9 +26,7 @@ const props = withDefaults(
 
 defineEmits<ContainerEmits>();
 
-const { isDark } = useIsDark();
-
-const { containerProps, containerClasses } = useContainer(props, isDark.value);
+const { containerProps, containerClasses } = useContainer(props);
 </script>
 
 <style scoped>
@@ -49,8 +46,8 @@ const { containerProps, containerClasses } = useContainer(props, isDark.value);
   padding: 10px;
 }
 
-.container-panel--light {
-  background: #f5f5f5;
+.container-panel {
+  background: var(--card);
 }
 
 @media (min-width: 1920px) {

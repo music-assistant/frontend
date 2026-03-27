@@ -200,7 +200,7 @@
             <!-- Fileinfo -->
             <div class="streamdetails-item">
               <img
-                class="streamdetails-icon invert-on-light-mode"
+                class="streamdetails-icon invert dark:invert-0"
                 :src="inputFileIcon"
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
@@ -256,7 +256,7 @@
             <!-- Volume Normalization -->
             <div v-if="loudness" class="streamdetails-item">
               <img
-                class="streamdetails-icon invert-on-light-mode"
+                class="streamdetails-icon invert dark:invert-0"
                 src="@/assets/level.png"
               />
               {{ loudness }}
@@ -357,7 +357,7 @@
                 class="streamdetails-item"
               >
                 <img
-                  class="streamdetails-icon invert-on-dark-mode"
+                  class="streamdetails-icon dark:invert"
                   src="@/assets/dsp.svg"
                 />
                 {{
@@ -370,7 +370,7 @@
                 class="streamdetails-item"
               >
                 <img
-                  class="streamdetails-icon invert-on-dark-mode"
+                  class="streamdetails-icon dark:invert"
                   src="@/assets/dsp-disabled.svg"
                 />
                 {{ $t("streamdetails.dsp_unsupported") }}
@@ -390,7 +390,7 @@
                 class="streamdetails-item"
               >
                 <img
-                  class="streamdetails-icon invert-on-dark-mode"
+                  class="streamdetails-icon dark:invert"
                   src="@/assets/dsp.svg"
                 />
                 {{ dspFilterText(filter) }}
@@ -401,7 +401,7 @@
                 class="streamdetails-item"
               >
                 <img
-                  class="streamdetails-icon invert-on-dark-mode"
+                  class="streamdetails-icon dark:invert"
                   src="@/assets/dsp.svg"
                 />
                 {{
@@ -411,7 +411,7 @@
               <!-- Output limiter-->
               <div v-if="dsp.output_limiter" class="streamdetails-item">
                 <img
-                  class="streamdetails-icon invert-on-dark-mode"
+                  class="streamdetails-icon dark:invert"
                   src="@/assets/dsp.svg"
                 />
                 {{ $t("streamdetails.output_limiter") }}
@@ -433,7 +433,7 @@
                 class="streamdetails-item"
               >
                 <img
-                  class="streamdetails-icon invert-on-light-mode"
+                  class="streamdetails-icon invert dark:invert-0"
                   :src="
                     getContentTypeIcon(
                       streamDetails.dsp[player_id].output_format.content_type,
@@ -851,22 +851,6 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   width: 50px;
   contain: contain;
   object-fit: contain;
-}
-
-.invert-on-light-mode {
-  filter: none;
-}
-
-:not(.dark) .invert-on-light-mode {
-  filter: invert(100%);
-}
-
-.invert-on-dark-mode {
-  filter: none;
-}
-
-.dark .invert-on-dark-mode {
-  filter: invert(100%);
 }
 
 .streamdetails-separator {

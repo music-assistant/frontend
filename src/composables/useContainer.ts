@@ -11,7 +11,7 @@ export interface ContainerProps {
    */
   variant?: "default" | "panel" | "compact" | "comfortable";
 
-  // Pass through all Vuetify v-container props
+  // Pass through container element props
   fluid?: boolean;
   tag?: string;
 
@@ -22,12 +22,12 @@ export interface ContainerProps {
 
 export interface ContainerEmits {}
 
-export const useContainer = (props: ContainerProps, isDark: boolean) => {
+export const useContainer = (props: ContainerProps) => {
   const containerProps = computed(() => {
-    const { variant, ...vuetifyProps } = props;
+    const { variant, ...restProps } = props;
 
     const baseProps = {
-      ...vuetifyProps,
+      ...restProps,
       fluid: props.fluid !== false,
     };
 
@@ -39,7 +39,6 @@ export const useContainer = (props: ContainerProps, isDark: boolean) => {
       .with("panel", () => [
         "container-main",
         "container-panel",
-        isDark ? "container-panel--dark" : "container-panel--light",
       ])
       .with("compact", () => ["container-main", "container-compact"])
       .with("comfortable", () => ["container-main", "container-comfortable"])

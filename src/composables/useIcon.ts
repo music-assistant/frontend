@@ -21,7 +21,7 @@ export interface IconProps {
   minWidth?: string;
   minHeight?: string;
 
-  // Vuetify icon props
+  // Icon props
   icon?: string;
   color?: string;
   disabled?: boolean;
@@ -53,11 +53,11 @@ export const useIcon = (props: IconProps) => {
       minHeight,
       badge,
       style: _style,
-      ...vuetifyProps
+      ...restProps
     } = props;
 
     const baseProps = {
-      ...vuetifyProps,
+      ...restProps,
       size:
         props.size ||
         (staticWidth ? staticWidth : undefined) ||

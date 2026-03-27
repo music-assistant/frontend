@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 <style>
 .now-playing-badge {
   background: var(--primary);
-  color: #fff;
+  color: var(--primary-foreground);
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 0.55rem;
