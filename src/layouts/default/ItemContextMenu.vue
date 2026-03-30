@@ -780,7 +780,7 @@ export const getContextMenuItems = async function (
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${playlist.name}.m3u8`;
+        link.download = `${playlist.name.replace(/[\\/:*?"<>|]/g, "_")}.m3u8`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
