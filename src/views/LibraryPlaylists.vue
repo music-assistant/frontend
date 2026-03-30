@@ -162,14 +162,14 @@ const triggerFileImport = () => {
     if (!file) return;
     const text = await file.text();
     if (!text.trimStart().startsWith("#EXTM3U")) {
-      toast.error($t("error"));
+      toast.error($t("import_playlist_invalid_file"));
       return;
     }
     // extract playlist name from #PLAYLIST: tag, fall back to filename
     const playlistMatch = text.match(/^#PLAYLIST:(.+)$/m);
     const playlistName = playlistMatch
       ? playlistMatch[1].trim()
-      : file.name.replace(/\.(m3u8?|M3U8?)$/, "");
+      : file.name.replace(/\.m3u8?$/i, "");
     eventbus.emit("importPlaylistDialog", {
       m3uData: text,
       playlistName,

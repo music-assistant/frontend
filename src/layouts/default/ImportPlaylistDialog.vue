@@ -138,13 +138,17 @@ const doImport = async () => {
       },
     });
   } catch (e) {
-    toast.error(
-      typeof e === "string" && e.trim()
-        ? e
-        : e instanceof Error && e.message.trim()
-          ? e.message
-          : $t("error"),
-    );
+    toast.error(getErrorMessage(e));
   }
+};
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return $t("error");
 };
 </script>

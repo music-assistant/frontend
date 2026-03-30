@@ -40,6 +40,7 @@
     "items_total": "{0} total item(s)",
     "import_playlist": "Import playlist",
     "import_playlist_title": "Import playlist",
+    "import_playlist_invalid_file": "Invalid playlist file",
     "import_playlist_search_providers": "Search for tracks on",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
