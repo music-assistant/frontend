@@ -65,7 +65,7 @@
         "@vitest/ui": "3.2.4",
         "@vue/eslint-config-typescript": "13.0.0",
         "@vue/test-utils": "^2.4.6",
-        "@vue/tsconfig": "0.9.0",
+        "@vue/tsconfig": "0.9.1",
         "eslint": "8.57.1",
         "eslint-config-prettier": "10.1.8",
         "eslint-plugin-prettier": "5.5.5",
