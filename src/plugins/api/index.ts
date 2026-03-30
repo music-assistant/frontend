@@ -785,6 +785,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public importPlaylist(
+    m3u_data: string,
+    library_matching: boolean = true,
+    match_providers?: string[],
+  ): Promise<Playlist> {
+    return this.sendCommand("music/playlists/import_playlist", {
+      m3u_data,
+      library_matching,
+      match_providers,
+    });
+  }
+
   /**
    * Get Radio stations listing from the server.
    * @param favorite - Filter by favorite status
