@@ -8,46 +8,55 @@
           class="inline-flex items-center text-2xl font-semibold tracking-tight"
         >
           <Sparkles class="mr-2 h-5 w-5" />
-          AI Radio
+          {{ $t("providers.ai_radio.title") }}
         </h1>
         <p class="text-sm text-muted-foreground">
-          Run, create, and manage AI Radio stations and reusable sections.
+          {{ $t("providers.ai_radio.header.subtitle") }}
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <Button variant="outline" @click="tutorialOpen = true">
-          Show Tutorial
+          {{ $t("providers.ai_radio.actions.show_tutorial") }}
         </Button>
         <Button
           variant="outline"
           :disabled="isRefreshing"
           @click="handleRefresh"
         >
-          {{ isRefreshing ? "Refreshing..." : "Refresh" }}
+          {{
+            isRefreshing
+              ? $t("providers.ai_radio.actions.refreshing")
+              : $t("providers.ai_radio.actions.refresh")
+          }}
         </Button>
       </div>
     </header>
 
     <Tabs v-model:model-value="activeTab" class="w-full">
       <TabsList class="grid w-full grid-cols-3 md:w-[480px]">
-        <TabsTrigger value="run">Run</TabsTrigger>
-        <TabsTrigger value="stations">Stations</TabsTrigger>
-        <TabsTrigger value="sections">Sections</TabsTrigger>
+        <TabsTrigger value="run">{{ $t("providers.ai_radio.tabs.run") }}</TabsTrigger>
+        <TabsTrigger value="stations">{{
+          $t("providers.ai_radio.tabs.stations")
+        }}</TabsTrigger>
+        <TabsTrigger value="sections">{{
+          $t("providers.ai_radio.tabs.sections")
+        }}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="run" class="mt-4 space-y-4">
         <div class="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Start Run</CardTitle>
+              <CardTitle>{{ $t("providers.ai_radio.run.title") }}</CardTitle>
               <CardDescription>
-                Select a station, then start playlist generation or live queue
-                injection.
+                {{ $t("providers.ai_radio.run.description") }}
               </CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
               <div class="space-y-2">
-                <Label for="ai-radio-run-station">Station</Label>
+                <Label for="ai-radio-run-station">{{
+                  $t("providers.ai_radio.fields.station")
+                }}</Label>
                 <Select
                   :model-value="selectedRunStationId"
                   @update:model-value="
@@ -55,7 +64,9 @@
                   "
                 >
                   <SelectTrigger id="ai-radio-run-station" class="w-full">
-                    <SelectValue placeholder="Select station" />
+                    <SelectValue
+                      :placeholder="$t('providers.ai_radio.placeholders.station')"
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
@@ -73,10 +84,11 @@
                 v-if="hasSourcePlaylistOverride"
                 class="space-y-2 rounded-md border border-dashed p-3"
               >
-                <div class="text-sm font-medium">Source Playlist Override</div>
+                <div class="text-sm font-medium">
+                  {{ $t("providers.ai_radio.run.source_playlist_override") }}
+                </div>
                 <p class="text-xs text-muted-foreground">
-                  This run will use the selected playlist from the playlist
-                  context menu.
+                  {{ $t("providers.ai_radio.run.source_playlist_override_help") }}
                 </p>
                 <div class="text-sm">
                   {{ sourcePlaylistOverrideName || sourcePlaylistOverrideId }}
@@ -92,14 +104,14 @@
                   class="h-auto justify-start px-0"
                   @click="clearSourcePlaylistOverride"
                 >
-                  Use station source playlist
+                  {{ $t("providers.ai_radio.run.use_station_source_playlist") }}
                 </Button>
               </div>
 
               <div class="space-y-2">
-                <Label for="ai-radio-run-player"
-                  >Playback Device Override (optional)</Label
-                >
+                <Label for="ai-radio-run-player">{{
+                  $t("providers.ai_radio.run.playback_device_override")
+                }}</Label>
                 <Select
                   :model-value="selectedRunPlayerSelectValue"
                   @update:model-value="
@@ -107,11 +119,15 @@
                   "
                 >
                   <SelectTrigger id="ai-radio-run-player" class="w-full">
-                    <SelectValue placeholder="Use station default" />
+                    <SelectValue
+                      :placeholder="
+                        $t('providers.ai_radio.placeholders.use_station_default')
+                      "
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem :value="DEFAULT_PLAYER_SELECT_VALUE">
-                      Use station default
+                      {{ $t("providers.ai_radio.placeholders.use_station_default") }}
                     </SelectItem>
                     <SelectItem
                       v-for="player in availableRunPlayers"
@@ -126,29 +142,33 @@
 
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="space-y-2">
-                  <Label for="ai-radio-run-source-cap"
-                    >Source Playtime Cap Override (minutes)</Label
-                  >
+                  <Label for="ai-radio-run-source-cap">{{
+                    $t("providers.ai_radio.run.source_playtime_cap_override")
+                  }}</Label>
                   <Input
                     id="ai-radio-run-source-cap"
                     v-model="runSourcePlaytimeCapOverrideInput"
                     type="number"
                     min="0"
                     step="1"
-                    placeholder="Use station default"
+                    :placeholder="
+                      $t('providers.ai_radio.placeholders.use_station_default')
+                    "
                   />
                 </div>
                 <div class="space-y-2">
-                  <Label for="ai-radio-run-batch-size"
-                    >Dynamic Batch Size Override</Label
-                  >
+                  <Label for="ai-radio-run-batch-size">{{
+                    $t("providers.ai_radio.run.dynamic_batch_size_override")
+                  }}</Label>
                   <Input
                     id="ai-radio-run-batch-size"
                     v-model="runDynamicBatchSizeOverrideInput"
                     type="number"
                     min="1"
                     step="1"
-                    placeholder="Use station default"
+                    :placeholder="
+                      $t('providers.ai_radio.placeholders.use_station_default')
+                    "
                   />
                 </div>
               </div>
@@ -159,7 +179,11 @@
                   @click="startPlaylistRun"
                 >
                   <Sparkles class="mr-1 h-4 w-4" />
-                  {{ startingRun ? "Starting..." : "Create Playlist" }}
+                  {{
+                    startingRun
+                      ? $t("providers.ai_radio.actions.starting")
+                      : $t("providers.ai_radio.actions.create_playlist")
+                  }}
                 </Button>
                 <Button
                   :disabled="!selectedRunStationId || startingRun"
@@ -167,17 +191,20 @@
                 >
                   <Sparkles class="mr-1 h-4 w-4" />
                   <Radio class="mr-1 h-4 w-4" />
-                  {{ startingRun ? "Starting..." : "Start Live Radio" }}
+                  {{
+                    startingRun
+                      ? $t("providers.ai_radio.actions.starting")
+                      : $t("providers.ai_radio.actions.start_live_radio")
+                  }}
                 </Button>
               </div>
 
               <div class="border-t pt-3">
                 <Button variant="outline" @click="openGuidedStationCreator">
-                  Create Station (Guided)
+                  {{ $t("providers.ai_radio.actions.create_station_guided") }}
                 </Button>
                 <p class="mt-2 text-xs text-muted-foreground">
-                  Recommended for first setup. Advanced settings can be edited
-                  later in the Stations tab.
+                  {{ $t("providers.ai_radio.run.guided_hint") }}
                 </p>
               </div>
             </CardContent>
@@ -185,9 +212,9 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>Sessions</CardTitle>
+              <CardTitle>{{ $t("providers.ai_radio.sessions.title") }}</CardTitle>
               <CardDescription>
-                Latest AI Radio sessions for this server.
+                {{ $t("providers.ai_radio.sessions.description") }}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -195,7 +222,7 @@
                 v-if="sessions.length === 0"
                 class="text-sm text-muted-foreground"
               >
-                No sessions yet.
+                {{ $t("providers.ai_radio.sessions.empty") }}
               </div>
               <ul v-else class="space-y-3">
                 <li
@@ -213,7 +240,7 @@
                     <Badge variant="outline">{{ session.mode }}</Badge>
                   </div>
                   <div class="mt-2 text-xs text-muted-foreground">
-                    Started:
+                    {{ $t("providers.ai_radio.sessions.started") }}:
                     {{
                       formatTimestamp(session.started_at || session.created_at)
                     }}
@@ -245,7 +272,11 @@
                       :disabled="stoppingRun"
                       @click="stopSession(session.session_id)"
                     >
-                      {{ stoppingRun ? "Stopping..." : "Stop" }}
+                      {{
+                        stoppingRun
+                          ? $t("providers.ai_radio.actions.stopping")
+                          : $t("providers.ai_radio.actions.stop")
+                      }}
                     </Button>
                   </div>
                 </li>
@@ -259,27 +290,29 @@
         <div class="grid gap-4 lg:grid-cols-[300px_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle>Stations</CardTitle>
-              <CardDescription
-                >Select and manage station profiles.</CardDescription
-              >
+              <CardTitle>{{ $t("providers.ai_radio.stations.title") }}</CardTitle>
+              <CardDescription>{{
+                $t("providers.ai_radio.stations.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent class="space-y-3">
               <div class="flex flex-wrap gap-2">
-                <Button size="sm" @click="createNewStationDraft">New</Button>
+                <Button size="sm" @click="createNewStationDraft">{{
+                  $t("providers.ai_radio.actions.new")
+                }}</Button>
                 <Button
                   size="sm"
                   variant="outline"
                   @click="openGuidedStationCreator"
                 >
-                  Guided
+                  {{ $t("providers.ai_radio.actions.guided") }}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   @click="triggerStationImport"
                 >
-                  Import
+                  {{ $t("providers.ai_radio.actions.import") }}
                 </Button>
               </div>
               <input
@@ -313,27 +346,32 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>Station Editor</CardTitle>
+              <CardTitle>{{ $t("providers.ai_radio.station_editor.title") }}</CardTitle>
               <CardDescription>
-                Configure source playlist, section selection, flow rules, and
-                runtime profile.
+                {{ $t("providers.ai_radio.station_editor.description") }}
               </CardDescription>
             </CardHeader>
             <CardContent v-if="stationDraft" class="space-y-6">
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="station-name">Station Name</Label>
+                  <Label for="station-name">{{
+                    $t("providers.ai_radio.fields.station_name")
+                  }}</Label>
                   <Input id="station-name" v-model="stationDraft.name" />
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-source-select">Source Playlist</Label>
+                  <Label for="station-source-select">{{
+                    $t("providers.ai_radio.fields.source_playlist")
+                  }}</Label>
                   <select
                     id="station-source-select"
                     v-model="stationSourcePlaylistSelectValue"
                     class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
-                    <option value="">-- Select --</option>
+                    <option value="">
+                      {{ $t("providers.ai_radio.placeholders.select") }}
+                    </option>
                     <option
                       v-for="playlist in playlists"
                       :key="
@@ -347,20 +385,24 @@
                         playlist.item_id
                       }})
                     </option>
-                    <option value="__custom__">Custom source playlist</option>
+                    <option value="__custom__">
+                      {{ $t("providers.ai_radio.station_editor.custom_source_playlist") }}
+                    </option>
                   </select>
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-default-player"
-                    >Default Playback Device (optional)</Label
-                  >
+                  <Label for="station-default-player">{{
+                    $t("providers.ai_radio.fields.default_playback_device")
+                  }}</Label>
                   <select
                     id="station-default-player"
                     v-model="stationDraft.default_player_id"
                     class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
-                    <option value="">-- None --</option>
+                    <option value="">
+                      {{ $t("providers.ai_radio.placeholders.none") }}
+                    </option>
                     <option
                       v-for="player in players"
                       :key="player.player_id"
@@ -368,7 +410,9 @@
                     >
                       {{ player.name
                       }}{{
-                        player.available === false ? " (Not available)" : ""
+                        player.available === false
+                          ? ` (${$t("providers.ai_radio.misc.not_available")})`
+                          : ""
                       }}
                     </option>
                   </select>
@@ -378,9 +422,9 @@
                   v-if="stationSourcePlaylistSelectValue === '__custom__'"
                   class="space-y-2"
                 >
-                  <Label for="station-source-provider"
-                    >Source Playlist Provider</Label
-                  >
+                  <Label for="station-source-provider">{{
+                    $t("providers.ai_radio.fields.source_playlist_provider")
+                  }}</Label>
                   <Input
                     id="station-source-provider"
                     v-model="stationDraft.source_playlist_provider"
@@ -391,7 +435,9 @@
                   v-if="stationSourcePlaylistSelectValue === '__custom__'"
                   class="space-y-2"
                 >
-                  <Label for="station-source-id">Source Playlist ID</Label>
+                  <Label for="station-source-id">{{
+                    $t("providers.ai_radio.fields.source_playlist_id")
+                  }}</Label>
                   <Input
                     id="station-source-id"
                     v-model="stationDraft.source_playlist_id"
@@ -399,9 +445,9 @@
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-duration-cap"
-                    >Source Playtime Cap (minutes)</Label
-                  >
+                  <Label for="station-duration-cap">{{
+                    $t("providers.ai_radio.fields.source_playtime_cap")
+                  }}</Label>
                   <Input
                     id="station-duration-cap"
                     v-model="stationMaxDurationInput"
@@ -412,9 +458,9 @@
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="station-target-provider"
-                    >Target Playlist Provider</Label
-                  >
+                  <Label for="station-target-provider">{{
+                    $t("providers.ai_radio.fields.target_playlist_provider")
+                  }}</Label>
                   <Input
                     id="station-target-provider"
                     v-model="stationDraft.target_playlist_provider"
@@ -422,9 +468,9 @@
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="station-sections"
-                    >Selected Sections (shared library)</Label
-                  >
+                  <Label for="station-sections">{{
+                    $t("providers.ai_radio.fields.selected_sections")
+                  }}</Label>
                   <select
                     id="station-sections"
                     class="min-h-[180px] w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -441,20 +487,22 @@
                     </option>
                   </select>
                   <p class="text-xs text-muted-foreground">
-                    Cmd/Ctrl-click for multi-select.
+                    {{ $t("providers.ai_radio.station_editor.multiselect_hint") }}
                   </p>
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="station-merge-section"
-                    >Merge Section (optional)</Label
-                  >
+                  <Label for="station-merge-section">{{
+                    $t("providers.ai_radio.fields.merge_section")
+                  }}</Label>
                   <select
                     id="station-merge-section"
                     v-model="stationDraft.merge_section_id"
                     class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
-                    <option value="">-- None --</option>
+                    <option value="">
+                      {{ $t("providers.ai_radio.placeholders.none") }}
+                    </option>
                     <option
                       v-for="option in mergeSectionOptions"
                       :key="option.id"
@@ -464,8 +512,7 @@
                     </option>
                   </select>
                   <p class="text-xs text-muted-foreground">
-                    Used when one between-song slot generates multiple spoken
-                    sections.
+                    {{ $t("providers.ai_radio.station_editor.merge_section_help") }}
                   </p>
                 </div>
               </div>
@@ -473,22 +520,23 @@
               <div class="space-y-3 rounded-md border p-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h3 class="text-base font-semibold">Playback Flow Rules</h3>
+                    <h3 class="text-base font-semibold">
+                      {{ $t("providers.ai_radio.flow.title") }}
+                    </h3>
                     <p class="text-xs text-muted-foreground">
-                      MUST always includes, ALTERNATIVE picks one weighted
-                      choice, OPTIONAL runs by chance and guards.
+                      {{ $t("providers.ai_radio.flow.description") }}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" @click="addOrderRule"
-                    >Add Placement Rule</Button
-                  >
+                  <Button size="sm" variant="outline" @click="addOrderRule">{{
+                    $t("providers.ai_radio.flow.add_rule")
+                  }}</Button>
                 </div>
 
                 <div
                   v-if="!stationDraft.section_order?.length"
                   class="rounded-md border border-dashed p-3 text-sm text-muted-foreground"
                 >
-                  No flow rules configured yet.
+                  {{ $t("providers.ai_radio.flow.empty") }}
                 </div>
 
                 <div
@@ -497,45 +545,51 @@
                   class="space-y-3 rounded-md border p-3"
                 >
                   <div class="flex flex-wrap items-center gap-2">
-                    <Label class="sr-only">Placement</Label>
+                    <Label class="sr-only">{{
+                      $t("providers.ai_radio.flow.placement")
+                    }}</Label>
                     <select
                       :value="rule.when"
                       class="h-9 rounded-md border bg-background px-3 text-sm"
                       @change="onOrderPlacementChange(ruleIndex, $event)"
                     >
                       <option value="start_of_playlist">
-                        Start of Playlist
+                        {{ $t("providers.ai_radio.placement.start") }}
                       </option>
-                      <option value="between_songs">Between Songs</option>
-                      <option value="end_of_playlist">End of Playlist</option>
+                      <option value="between_songs">
+                        {{ $t("providers.ai_radio.placement.between") }}
+                      </option>
+                      <option value="end_of_playlist">
+                        {{ $t("providers.ai_radio.placement.end") }}
+                      </option>
                     </select>
                     <Button
                       size="sm"
                       variant="outline"
                       @click="moveOrderRule(ruleIndex, -1)"
                     >
-                      Up
+                      {{ $t("providers.ai_radio.actions.up") }}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       @click="moveOrderRule(ruleIndex, 1)"
                     >
-                      Down
+                      {{ $t("providers.ai_radio.actions.down") }}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       @click="addFlowItem(ruleIndex)"
                     >
-                      Add Flow Item
+                      {{ $t("providers.ai_radio.flow.add_item") }}
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
                       @click="removeOrderRule(ruleIndex)"
                     >
-                      Remove Rule
+                      {{ $t("providers.ai_radio.flow.remove_rule") }}
                     </Button>
                   </div>
 
@@ -562,7 +616,7 @@
                           variant="outline"
                           @click="removeFlowItem(ruleIndex, flowIndex)"
                         >
-                          Remove
+                          {{ $t("providers.ai_radio.actions.remove") }}
                         </Button>
                       </div>
 
@@ -570,7 +624,9 @@
                         v-if="getFlowType(flowItem) === 'MUST'"
                         class="space-y-2"
                       >
-                        <Label class="text-xs">Section</Label>
+                        <Label class="text-xs">{{
+                          $t("providers.ai_radio.fields.section")
+                        }}</Label>
                         <select
                           :value="getMustSection(flowItem)"
                           class="h-9 w-full rounded-md border bg-background px-3 text-sm"
@@ -578,7 +634,9 @@
                             onMustSectionChange(ruleIndex, flowIndex, $event)
                           "
                         >
-                          <option value="">-- Select section --</option>
+                          <option value="">
+                            {{ $t("providers.ai_radio.placeholders.select_section") }}
+                          </option>
                           <option
                             v-for="section in stationSelectedSections"
                             :key="`must-${section.id}`"
@@ -594,13 +652,15 @@
                         class="space-y-2"
                       >
                         <div class="flex items-center justify-between gap-2">
-                          <Label class="text-xs">Weighted Choices</Label>
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.flow.weighted_choices")
+                          }}</Label>
                           <Button
                             size="sm"
                             variant="outline"
                             @click="addAlternativeChoice(ruleIndex, flowIndex)"
                           >
-                            Add Choice
+                            {{ $t("providers.ai_radio.flow.add_choice") }}
                           </Button>
                         </div>
                         <div
@@ -622,7 +682,9 @@
                               )
                             "
                           >
-                            <option value="">-- Select section --</option>
+                            <option value="">
+                              {{ $t("providers.ai_radio.placeholders.select_section") }}
+                            </option>
                             <option
                               v-for="section in stationSelectedSections"
                               :key="`alt-${section.id}`"
@@ -657,14 +719,16 @@
                               )
                             "
                           >
-                            Remove
+                            {{ $t("providers.ai_radio.actions.remove") }}
                           </Button>
                         </div>
                       </div>
 
                       <div v-else class="grid gap-2 md:grid-cols-2">
                         <div class="space-y-2">
-                          <Label class="text-xs">Section</Label>
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.fields.section")
+                          }}</Label>
                           <select
                             :value="getOptionalSection(flowItem)"
                             class="h-9 w-full rounded-md border bg-background px-3 text-sm"
@@ -676,7 +740,9 @@
                               )
                             "
                           >
-                            <option value="">-- Select section --</option>
+                            <option value="">
+                              {{ $t("providers.ai_radio.placeholders.select_section") }}
+                            </option>
                             <option
                               v-for="section in stationSelectedSections"
                               :key="`opt-${section.id}`"
@@ -687,7 +753,9 @@
                           </select>
                         </div>
                         <div class="space-y-2">
-                          <Label class="text-xs">Chance (%)</Label>
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.fields.chance_percent")
+                          }}</Label>
                           <Input
                             :model-value="
                               String(getOptionalChancePercent(flowItem))
@@ -707,7 +775,9 @@
                           />
                         </div>
                         <div class="space-y-2">
-                          <Label class="text-xs">Guard: Minimum Song Gap</Label>
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.fields.guard_min_song_gap")
+                          }}</Label>
                           <Input
                             :model-value="String(getOptionalMinGap(flowItem))"
                             type="number"
@@ -724,9 +794,9 @@
                           />
                         </div>
                         <div class="space-y-2">
-                          <Label class="text-xs"
-                            >Guard: Max Per 60 Minutes</Label
-                          >
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.fields.guard_max_per_60")
+                          }}</Label>
                           <Input
                             :model-value="String(getOptionalMaxPer60(flowItem))"
                             type="number"
@@ -743,10 +813,9 @@
                           />
                         </div>
                         <div class="space-y-2 md:col-span-2">
-                          <Label class="text-xs"
-                            >Guard: Required Placeholders (comma
-                            separated)</Label
-                          >
+                          <Label class="text-xs">{{
+                            $t("providers.ai_radio.fields.guard_placeholders")
+                          }}</Label>
                           <Input
                             :model-value="getOptionalPlaceholders(flowItem)"
                             @update:model-value="
@@ -767,19 +836,21 @@
 
               <details class="rounded-md border p-4">
                 <summary class="cursor-pointer select-none text-sm font-medium">
-                  Advanced Runtime and Provider Settings
+                  {{ $t("providers.ai_radio.station_editor.advanced") }}
                 </summary>
                 <div
                   class="mt-5 grid gap-x-6 gap-y-5 md:grid-cols-2 md:gap-x-8 [&>div]:min-w-0"
                 >
                   <div class="space-y-2">
-                    <Label for="station-id">Station ID (technical key)</Label>
+                    <Label for="station-id">{{
+                      $t("providers.ai_radio.fields.station_id")
+                    }}</Label>
                     <Input id="station-id" v-model="stationDraft.id" />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-clear-queue"
-                      >Clear Queue on Dynamic Start</Label
-                    >
+                    <Label for="station-clear-queue">{{
+                      $t("providers.ai_radio.fields.clear_queue_on_dynamic_start")
+                    }}</Label>
                     <div class="flex h-10 items-center rounded-md border px-3">
                       <input
                         id="station-clear-queue"
@@ -791,9 +862,9 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-dynamic-batch"
-                      >Dynamic Batch Size</Label
-                    >
+                    <Label for="station-dynamic-batch">{{
+                      $t("providers.ai_radio.fields.dynamic_batch_size")
+                    }}</Label>
                     <Input
                       id="station-dynamic-batch"
                       v-model="stationDynamicBatchSizeInput"
@@ -803,9 +874,9 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-dynamic-prefetch"
-                      >Dynamic Prefetch Remaining Tracks</Label
-                    >
+                    <Label for="station-dynamic-prefetch">{{
+                      $t("providers.ai_radio.fields.dynamic_prefetch_remaining")
+                    }}</Label>
                     <Input
                       id="station-dynamic-prefetch"
                       v-model="stationDynamicPrefetchInput"
@@ -816,9 +887,9 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-dynamic-poll"
-                      >Dynamic Poll Seconds</Label
-                    >
+                    <Label for="station-dynamic-poll">{{
+                      $t("providers.ai_radio.fields.dynamic_poll_seconds")
+                    }}</Label>
                     <Input
                       id="station-dynamic-poll"
                       v-model="stationDynamicPollInput"
@@ -829,14 +900,18 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-general-model">Model</Label>
+                    <Label for="station-general-model">{{
+                      $t("providers.ai_radio.fields.model")
+                    }}</Label>
                     <Input
                       id="station-general-model"
                       v-model="stationDraft.general.model"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-temp">Temperature</Label>
+                    <Label for="station-general-temp">{{
+                      $t("providers.ai_radio.fields.temperature")
+                    }}</Label>
                     <Input
                       id="station-general-temp"
                       v-model="stationTemperatureInput"
@@ -847,7 +922,9 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-max-tokens">Max Tokens</Label>
+                    <Label for="station-general-max-tokens">{{
+                      $t("providers.ai_radio.fields.max_tokens")
+                    }}</Label>
                     <Input
                       id="station-general-max-tokens"
                       v-model="stationMaxTokensInput"
@@ -857,39 +934,45 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-timezone">Timezone</Label>
+                    <Label for="station-general-timezone">{{
+                      $t("providers.ai_radio.fields.timezone")
+                    }}</Label>
                     <Input
                       id="station-general-timezone"
                       v-model="stationDraft.general.timezone"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-city">Weather City</Label>
+                    <Label for="station-general-city">{{
+                      $t("providers.ai_radio.fields.weather_city")
+                    }}</Label>
                     <Input
                       id="station-general-city"
                       v-model="stationDraft.general.location.city"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-country">Weather Country</Label>
+                    <Label for="station-general-country">{{
+                      $t("providers.ai_radio.fields.weather_country")
+                    }}</Label>
                     <Input
                       id="station-general-country"
                       v-model="stationDraft.general.location.country"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-weather-provider"
-                      >Weather Provider</Label
-                    >
+                    <Label for="station-general-weather-provider">{{
+                      $t("providers.ai_radio.fields.weather_provider")
+                    }}</Label>
                     <Input
                       id="station-general-weather-provider"
                       v-model="stationDraft.general.weather_provider"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-weather-timeout"
-                      >Weather Timeout Seconds</Label
-                    >
+                    <Label for="station-general-weather-timeout">{{
+                      $t("providers.ai_radio.fields.weather_timeout_seconds")
+                    }}</Label>
                     <Input
                       id="station-general-weather-timeout"
                       v-model="stationWeatherTimeoutInput"
@@ -899,27 +982,27 @@
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-url"
-                      >OpenAI Base URL</Label
-                    >
+                    <Label for="station-general-openai-url">{{
+                      $t("providers.ai_radio.fields.openai_base_url")
+                    }}</Label>
                     <Input
                       id="station-general-openai-url"
                       v-model="stationDraft.general.openai_base_url"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-section-store"
-                      >Section Store Path</Label
-                    >
+                    <Label for="station-general-section-store">{{
+                      $t("providers.ai_radio.fields.section_store_path")
+                    }}</Label>
                     <Input
                       id="station-general-section-store"
                       v-model="stationDraft.general.section_store_path"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-tts-provider"
-                      >TTS Provider</Label
-                    >
+                    <Label for="station-general-tts-provider">{{
+                      $t("providers.ai_radio.fields.tts_provider")
+                    }}</Label>
                     <select
                       id="station-general-tts-provider"
                       v-model="stationDraft.general.tts_provider"
@@ -930,45 +1013,45 @@
                     </select>
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-tts-model"
-                      >OpenAI TTS Model</Label
-                    >
+                    <Label for="station-general-openai-tts-model">{{
+                      $t("providers.ai_radio.fields.openai_tts_model")
+                    }}</Label>
                     <Input
                       id="station-general-openai-tts-model"
                       v-model="stationDraft.general.openai_tts_model"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-openai-tts-voice"
-                      >OpenAI TTS Voice</Label
-                    >
+                    <Label for="station-general-openai-tts-voice">{{
+                      $t("providers.ai_radio.fields.openai_tts_voice")
+                    }}</Label>
                     <Input
                       id="station-general-openai-tts-voice"
                       v-model="stationDraft.general.openai_tts_voice"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-eleven-model"
-                      >ElevenLabs Model</Label
-                    >
+                    <Label for="station-general-eleven-model">{{
+                      $t("providers.ai_radio.fields.elevenlabs_model")
+                    }}</Label>
                     <Input
                       id="station-general-eleven-model"
                       v-model="stationDraft.general.elevenlabs_model"
                     />
                   </div>
                   <div class="space-y-2">
-                    <Label for="station-general-eleven-voice"
-                      >ElevenLabs Voice ID</Label
-                    >
+                    <Label for="station-general-eleven-voice">{{
+                      $t("providers.ai_radio.fields.elevenlabs_voice_id")
+                    }}</Label>
                     <Input
                       id="station-general-eleven-voice"
                       v-model="stationDraft.general.elevenlabs_voice_id"
                     />
                   </div>
                   <div class="space-y-2 md:col-span-2">
-                    <Label for="station-general-instructions"
-                      >Host and Program Instructions</Label
-                    >
+                    <Label for="station-general-instructions">{{
+                      $t("providers.ai_radio.fields.host_program_instructions")
+                    }}</Label>
                     <Textarea
                       id="station-general-instructions"
                       v-model="stationDraft.general.instructions"
@@ -977,7 +1060,9 @@
                   </div>
                   <div class="space-y-2 md:col-span-2">
                     <Label for="station-general-openai-tts-instructions">
-                      OpenAI TTS Delivery Instructions
+                      {{
+                        $t("providers.ai_radio.fields.openai_tts_delivery_instructions")
+                      }}
                     </Label>
                     <Textarea
                       id="station-general-openai-tts-instructions"
@@ -990,26 +1075,34 @@
 
               <div class="flex flex-wrap gap-2">
                 <Button :disabled="savingStation" @click="saveStationDraft">
-                  {{ savingStation ? "Saving..." : "Save Station" }}
+                  {{
+                    savingStation
+                      ? $t("providers.ai_radio.actions.saving")
+                      : $t("providers.ai_radio.actions.save_station")
+                  }}
                 </Button>
                 <Button variant="outline" @click="validateStationDraftOnServer">
-                  Validate
+                  {{ $t("providers.ai_radio.actions.validate") }}
                 </Button>
-                <Button variant="outline" @click="exportStationDraft"
-                  >Export</Button
-                >
+                <Button variant="outline" @click="exportStationDraft">{{
+                  $t("providers.ai_radio.actions.export")
+                }}</Button>
                 <Button
                   variant="destructive"
                   :disabled="!selectedEditorStationId || deletingStation"
                   @click="removeSelectedStation"
                 >
-                  {{ deletingStation ? "Deleting..." : "Delete" }}
+                  {{
+                    deletingStation
+                      ? $t("providers.ai_radio.actions.deleting")
+                      : $t("providers.ai_radio.actions.delete")
+                  }}
                 </Button>
               </div>
             </CardContent>
             <CardContent v-else>
               <p class="text-sm text-muted-foreground">
-                No station selected. Create a new station to begin.
+                {{ $t("providers.ai_radio.station_editor.empty") }}
               </p>
             </CardContent>
           </Card>
@@ -1020,20 +1113,22 @@
         <div class="grid gap-4 lg:grid-cols-[300px_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle>Sections</CardTitle>
-              <CardDescription
-                >Reusable prompt blocks shared across stations.</CardDescription
-              >
+              <CardTitle>{{ $t("providers.ai_radio.sections.title") }}</CardTitle>
+              <CardDescription>{{
+                $t("providers.ai_radio.sections.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent class="space-y-3">
               <div class="flex flex-wrap gap-2">
-                <Button size="sm" @click="createNewSectionDraft">New</Button>
+                <Button size="sm" @click="createNewSectionDraft">{{
+                  $t("providers.ai_radio.actions.new")
+                }}</Button>
                 <Button
                   size="sm"
                   variant="outline"
                   @click="triggerSectionImport"
                 >
-                  Import
+                  {{ $t("providers.ai_radio.actions.import") }}
                 </Button>
               </div>
               <input
@@ -1067,21 +1162,24 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>Section Editor</CardTitle>
+              <CardTitle>{{ $t("providers.ai_radio.section_editor.title") }}</CardTitle>
               <CardDescription>
-                Define prompt templates, web-search mode, and section
-                constraints.
+                {{ $t("providers.ai_radio.section_editor.description") }}
               </CardDescription>
             </CardHeader>
             <CardContent v-if="sectionDraft" class="space-y-4">
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="section-name">Section Name</Label>
+                  <Label for="section-name">{{
+                    $t("providers.ai_radio.fields.section_name")
+                  }}</Label>
                   <Input id="section-name" v-model="sectionDraft.name" />
                 </div>
 
                 <div class="space-y-2">
-                  <Label for="section-type">Section Type</Label>
+                  <Label for="section-type">{{
+                    $t("providers.ai_radio.fields.section_type")
+                  }}</Label>
                   <select
                     id="section-type"
                     v-model="sectionDraft.type"
@@ -1096,16 +1194,24 @@
                   class="space-y-2"
                   :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }"
                 >
-                  <Label for="section-web-search">Web Search Mode</Label>
+                  <Label for="section-web-search">{{
+                    $t("providers.ai_radio.fields.web_search_mode")
+                  }}</Label>
                   <select
                     id="section-web-search"
                     v-model="sectionDraft.web_search"
                     :disabled="sectionDraft.type !== 'ai_text'"
                     class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
-                    <option value="disabled">disabled (no web tool)</option>
-                    <option value="allow">allow (model may use web)</option>
-                    <option value="force">force (web search required)</option>
+                    <option value="disabled">
+                      {{ $t("providers.ai_radio.web_search.disabled") }}
+                    </option>
+                    <option value="allow">
+                      {{ $t("providers.ai_radio.web_search.allow") }}
+                    </option>
+                    <option value="force">
+                      {{ $t("providers.ai_radio.web_search.force") }}
+                    </option>
                   </select>
                 </div>
 
@@ -1113,7 +1219,9 @@
                   class="space-y-2"
                   :class="{ 'opacity-60': sectionDraft.type !== 'ai_text' }"
                 >
-                  <Label for="section-max-chars">Character Limit</Label>
+                  <Label for="section-max-chars">{{
+                    $t("providers.ai_radio.fields.character_limit")
+                  }}</Label>
                   <Input
                     id="section-max-chars"
                     :model-value="
@@ -1128,7 +1236,9 @@
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="section-prompt">Prompt</Label>
+                  <Label for="section-prompt">{{
+                    $t("providers.ai_radio.fields.prompt")
+                  }}</Label>
                   <Textarea
                     id="section-prompt"
                     v-model="sectionDraft.prompt"
@@ -1139,33 +1249,43 @@
 
               <details class="rounded-md border p-4">
                 <summary class="cursor-pointer select-none text-sm font-medium">
-                  Advanced
+                  {{ $t("providers.ai_radio.section_editor.advanced") }}
                 </summary>
                 <div class="mt-4 space-y-2">
-                  <Label for="section-id">Section ID (technical key)</Label>
+                  <Label for="section-id">{{
+                    $t("providers.ai_radio.fields.section_id")
+                  }}</Label>
                   <Input id="section-id" v-model="sectionDraft.id" />
                 </div>
               </details>
 
               <div class="flex flex-wrap gap-2">
                 <Button :disabled="savingSection" @click="saveSectionDraft">
-                  {{ savingSection ? "Saving..." : "Save Section" }}
+                  {{
+                    savingSection
+                      ? $t("providers.ai_radio.actions.saving")
+                      : $t("providers.ai_radio.actions.save_section")
+                  }}
                 </Button>
-                <Button variant="outline" @click="exportSectionDraft"
-                  >Export</Button
-                >
+                <Button variant="outline" @click="exportSectionDraft">{{
+                  $t("providers.ai_radio.actions.export")
+                }}</Button>
                 <Button
                   variant="destructive"
                   :disabled="!selectedEditorSectionId || deletingSection"
                   @click="removeSelectedSection"
                 >
-                  {{ deletingSection ? "Deleting..." : "Delete" }}
+                  {{
+                    deletingSection
+                      ? $t("providers.ai_radio.actions.deleting")
+                      : $t("providers.ai_radio.actions.delete")
+                  }}
                 </Button>
               </div>
             </CardContent>
             <CardContent v-else>
               <p class="text-sm text-muted-foreground">
-                No section selected. Create a new section to begin.
+                {{ $t("providers.ai_radio.section_editor.empty") }}
               </p>
             </CardContent>
           </Card>
@@ -1176,36 +1296,41 @@
     <Dialog v-model:open="guidedWizardOpen">
       <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-[760px]">
         <DialogHeader>
-          <DialogTitle>Create Station (Guided)</DialogTitle>
+          <DialogTitle>{{ $t("providers.ai_radio.wizard.title") }}</DialogTitle>
           <DialogDescription>
-            Step-by-step setup for a working station. You can fine-tune all
-            advanced options later.
+            {{ $t("providers.ai_radio.wizard.description") }}
           </DialogDescription>
         </DialogHeader>
 
         <div class="space-y-4">
           <div class="text-xs text-muted-foreground">
-            Step {{ guidedWizardStep }} of 3
+            {{ $t("providers.ai_radio.wizard.step", [guidedWizardStep]) }}
           </div>
 
           <div v-if="guidedWizardStep === 1" class="space-y-4">
             <div class="space-y-2">
-              <Label for="guided-station-name">Station Name</Label>
+              <Label for="guided-station-name">{{
+                $t("providers.ai_radio.fields.station_name")
+              }}</Label>
               <Input
                 id="guided-station-name"
                 v-model="guidedWizardStationName"
-                placeholder="My AI Radio Station"
+                :placeholder="$t('providers.ai_radio.wizard.station_name_placeholder')"
               />
             </div>
 
             <div class="space-y-2">
-              <Label for="guided-source-playlist">Source Playlist</Label>
+              <Label for="guided-source-playlist">{{
+                $t("providers.ai_radio.fields.source_playlist")
+              }}</Label>
               <select
                 id="guided-source-playlist"
                 v-model="guidedWizardSourcePlaylistSelectValue"
                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">-- Select --</option>
+                <option value="">
+                  {{ $t("providers.ai_radio.placeholders.select") }}
+                </option>
                 <option
                   v-for="playlist in playlists"
                   :key="
@@ -1223,22 +1348,26 @@
             </div>
 
             <div class="space-y-2">
-              <Label for="guided-default-player"
-                >Default Playback Device (optional)</Label
-              >
+              <Label for="guided-default-player">{{
+                $t("providers.ai_radio.fields.default_playback_device")
+              }}</Label>
               <select
                 id="guided-default-player"
                 v-model="guidedWizardDefaultPlayerId"
                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">-- None --</option>
+                <option value="">{{ $t("providers.ai_radio.placeholders.none") }}</option>
                 <option
                   v-for="player in players"
                   :key="player.player_id"
                   :value="player.player_id"
                 >
                   {{ player.name
-                  }}{{ player.available === false ? " (Not available)" : "" }}
+                  }}{{
+                    player.available === false
+                      ? ` (${$t("providers.ai_radio.misc.not_available")})`
+                      : ""
+                  }}
                 </option>
               </select>
             </div>
@@ -1246,10 +1375,11 @@
 
           <div v-else-if="guidedWizardStep === 2" class="space-y-5">
             <div class="space-y-2">
-              <Label>Choose Existing Sections</Label>
+              <Label>{{
+                $t("providers.ai_radio.wizard.choose_existing_sections")
+              }}</Label>
               <p class="text-xs text-muted-foreground">
-                Select spoken sections and assign where each should be inserted
-                in the generated flow.
+                {{ $t("providers.ai_radio.wizard.choose_existing_sections_help") }}
               </p>
               <div
                 class="max-h-[240px] space-y-2 overflow-y-auto rounded-md border p-3"
@@ -1273,33 +1403,47 @@
             </div>
 
             <div class="space-y-2 rounded-md border p-3">
-              <Label>Add New Section</Label>
+              <Label>{{ $t("providers.ai_radio.wizard.add_new_section") }}</Label>
               <p class="text-xs text-muted-foreground">
-                Create a new section here and add it to this station instantly.
+                {{ $t("providers.ai_radio.wizard.add_new_section_help") }}
               </p>
               <div class="grid gap-3 md:grid-cols-2">
                 <div class="space-y-2">
-                  <Label for="guided-new-section-name">Section Name</Label>
+                  <Label for="guided-new-section-name">{{
+                    $t("providers.ai_radio.fields.section_name")
+                  }}</Label>
                   <Input
                     id="guided-new-section-name"
                     v-model="guidedNewSectionName"
-                    placeholder="Artist Fact"
+                    :placeholder="
+                      $t('providers.ai_radio.wizard.section_name_placeholder')
+                    "
                   />
                 </div>
                 <div class="space-y-2">
-                  <Label for="guided-new-section-placement">Insert At</Label>
+                  <Label for="guided-new-section-placement">{{
+                    $t("providers.ai_radio.fields.insert_at")
+                  }}</Label>
                   <select
                     id="guided-new-section-placement"
                     v-model="guidedNewSectionPlacement"
                     class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
-                    <option value="start_of_playlist">Start of Playlist</option>
-                    <option value="between_songs">Between Songs</option>
-                    <option value="end_of_playlist">End of Playlist</option>
+                    <option value="start_of_playlist">
+                      {{ $t("providers.ai_radio.placement.start") }}
+                    </option>
+                    <option value="between_songs">
+                      {{ $t("providers.ai_radio.placement.between") }}
+                    </option>
+                    <option value="end_of_playlist">
+                      {{ $t("providers.ai_radio.placement.end") }}
+                    </option>
                   </select>
                 </div>
                 <div class="space-y-2 md:col-span-2">
-                  <Label for="guided-new-section-prompt">Prompt</Label>
+                  <Label for="guided-new-section-prompt">{{
+                    $t("providers.ai_radio.fields.prompt")
+                  }}</Label>
                   <Textarea
                     id="guided-new-section-prompt"
                     v-model="guidedNewSectionPrompt"
@@ -1313,17 +1457,21 @@
                 :disabled="creatingGuidedSection"
                 @click="createGuidedSection"
               >
-                {{ creatingGuidedSection ? "Adding..." : "Add Section" }}
+                {{
+                  creatingGuidedSection
+                    ? $t("providers.ai_radio.actions.adding")
+                    : $t("providers.ai_radio.actions.add_section")
+                }}
               </Button>
             </div>
 
             <div class="space-y-2">
-              <Label>Selected Sections and Placement</Label>
+              <Label>{{ $t("providers.ai_radio.wizard.selected_sections") }}</Label>
               <div
                 v-if="guidedWizardSelectedSections.length === 0"
                 class="rounded-md border border-dashed p-3 text-xs text-muted-foreground"
               >
-                No sections selected yet.
+                {{ $t("providers.ai_radio.wizard.no_sections_selected") }}
               </div>
               <div v-else class="space-y-2">
                 <div
@@ -1340,22 +1488,30 @@
                     class="h-9 rounded-md border bg-background px-3 text-sm"
                     @change="onGuidedSectionPlacementChange(section.id, $event)"
                   >
-                    <option value="start_of_playlist">Start of Playlist</option>
-                    <option value="between_songs">Between Songs</option>
-                    <option value="end_of_playlist">End of Playlist</option>
+                    <option value="start_of_playlist">
+                      {{ $t("providers.ai_radio.placement.start") }}
+                    </option>
+                    <option value="between_songs">
+                      {{ $t("providers.ai_radio.placement.between") }}
+                    </option>
+                    <option value="end_of_playlist">
+                      {{ $t("providers.ai_radio.placement.end") }}
+                    </option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div class="space-y-2">
-              <Label for="guided-merge-section">Merge Section (optional)</Label>
+              <Label for="guided-merge-section">{{
+                $t("providers.ai_radio.fields.merge_section")
+              }}</Label>
               <select
                 id="guided-merge-section"
                 v-model="guidedWizardMergeSectionId"
                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">-- None --</option>
+                <option value="">{{ $t("providers.ai_radio.placeholders.none") }}</option>
                 <option
                   v-for="section in guidedWizardMergeSectionOptions"
                   :key="`guided-merge-${section.id}`"
@@ -1365,7 +1521,7 @@
                 </option>
               </select>
               <p class="text-xs text-muted-foreground">
-                Used when a between-song slot contains multiple spoken sections.
+                {{ $t("providers.ai_radio.wizard.merge_section_help") }}
               </p>
             </div>
           </div>
@@ -1373,57 +1529,73 @@
           <div v-else class="space-y-3 text-sm">
             <div class="rounded-md border p-3">
               <div>
-                <span class="font-medium">Name:</span>
+                <span class="font-medium"
+                  >{{ $t("providers.ai_radio.wizard.summary_name") }}:</span
+                >
                 {{ guidedWizardStationName }}
               </div>
               <div>
-                <span class="font-medium">Source:</span>
+                <span class="font-medium"
+                  >{{ $t("providers.ai_radio.wizard.summary_source") }}:</span
+                >
                 {{ guidedWizardSourcePlaylistLabel }}
               </div>
               <div>
-                <span class="font-medium">Sections:</span>
-                {{ guidedWizardSelectedSectionNames.join(", ") || "None" }}
+                <span class="font-medium"
+                  >{{ $t("providers.ai_radio.wizard.summary_sections") }}:</span
+                >
+                {{
+                  guidedWizardSelectedSectionNames.join(", ") ||
+                  $t("providers.ai_radio.placeholders.none")
+                }}
               </div>
               <div v-if="guidedWizardSectionPlacementSummary.length">
-                <span class="font-medium">Placement:</span>
+                <span class="font-medium"
+                  >{{ $t("providers.ai_radio.wizard.summary_placement") }}:</span
+                >
                 {{ guidedWizardSectionPlacementSummary.join(" | ") }}
               </div>
               <div v-if="guidedWizardMergeSectionName">
-                <span class="font-medium">Merge Section:</span>
+                <span class="font-medium"
+                  >{{ $t("providers.ai_radio.wizard.summary_merge_section") }}:</span
+                >
                 {{ guidedWizardMergeSectionName }}
               </div>
             </div>
             <p class="text-xs text-muted-foreground">
-              The wizard will generate a sensible default section flow. You can
-              edit the exact flow in the Station Editor afterwards.
+              {{ $t("providers.ai_radio.wizard.summary_help") }}
             </p>
           </div>
         </div>
 
         <DialogFooter class="gap-2">
           <Button variant="outline" @click="guidedWizardOpen = false">
-            Cancel
+            {{ $t("providers.ai_radio.actions.cancel") }}
           </Button>
           <Button
             v-if="guidedWizardStep > 1"
             variant="outline"
             @click="guidedWizardStep = guidedWizardStep - 1"
           >
-            Back
+            {{ $t("providers.ai_radio.actions.back") }}
           </Button>
           <Button
             v-if="guidedWizardStep < 3"
             :disabled="!canProceedGuidedWizardStep"
             @click="guidedWizardStep = guidedWizardStep + 1"
           >
-            Next
+            {{ $t("providers.ai_radio.actions.next") }}
           </Button>
           <Button
             v-else
             :disabled="creatingGuidedStation"
             @click="createGuidedStation"
           >
-            {{ creatingGuidedStation ? "Creating..." : "Create Station" }}
+            {{
+              creatingGuidedStation
+                ? $t("providers.ai_radio.actions.creating")
+                : $t("providers.ai_radio.actions.create_station")
+            }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1432,52 +1604,54 @@
     <Dialog v-model:open="tutorialOpen">
       <DialogContent class="sm:max-w-[760px]">
         <DialogHeader>
-          <DialogTitle>AI Radio Tutorial</DialogTitle>
+          <DialogTitle>{{ $t("providers.ai_radio.tutorial.title") }}</DialogTitle>
           <DialogDescription>
-            Quick overview of sections, stations, and flow rules.
+            {{ $t("providers.ai_radio.tutorial.description") }}
           </DialogDescription>
         </DialogHeader>
 
         <div class="space-y-3 text-sm">
           <div class="rounded-md border p-3">
-            <div class="font-medium">What is a Station?</div>
+            <div class="font-medium">
+              {{ $t("providers.ai_radio.tutorial.station_title") }}
+            </div>
             <p class="mt-1 text-muted-foreground">
-              A station is the complete profile for a run: source playlist,
-              chosen sections, and flow rules that define where spoken segments
-              are inserted.
+              {{ $t("providers.ai_radio.tutorial.station_text") }}
             </p>
           </div>
 
           <div class="rounded-md border p-3">
-            <div class="font-medium">What is a Section?</div>
+            <div class="font-medium">
+              {{ $t("providers.ai_radio.tutorial.section_title") }}
+            </div>
             <p class="mt-1 text-muted-foreground">
-              A section is a reusable prompt template. Stations reference
-              sections so you can reuse the same intro/news/weather blocks
-              across multiple stations.
+              {{ $t("providers.ai_radio.tutorial.section_text") }}
             </p>
           </div>
 
           <div class="rounded-md border p-3">
-            <div class="font-medium">How Flow Rules Work</div>
+            <div class="font-medium">
+              {{ $t("providers.ai_radio.tutorial.flow_title") }}
+            </div>
             <p class="mt-1 text-muted-foreground">
-              Flow rules are evaluated per placement (start, between songs,
-              end). MUST always inserts a section. ALTERNATIVE picks one
-              weighted option. OPTIONAL inserts by chance and guard conditions.
+              {{ $t("providers.ai_radio.tutorial.flow_text") }}
             </p>
           </div>
 
           <div class="rounded-md border p-3">
-            <div class="font-medium">Run Modes</div>
+            <div class="font-medium">
+              {{ $t("providers.ai_radio.tutorial.run_modes_title") }}
+            </div>
             <p class="mt-1 text-muted-foreground">
-              Create Playlist generates a prepared playlist first. Start Live
-              Radio generates in dynamic batches and injects directly into a
-              player queue.
+              {{ $t("providers.ai_radio.tutorial.run_modes_text") }}
             </p>
           </div>
         </div>
 
         <DialogFooter>
-          <Button @click="closeTutorial">Done</Button>
+          <Button @click="closeTutorial">{{
+            $t("providers.ai_radio.actions.done")
+          }}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1529,6 +1703,7 @@ import type {
   Player,
   Playlist,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Radio, Sparkles } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
@@ -1763,10 +1938,10 @@ const guidedWizardSectionPlacementSummary = computed(() => {
       guidedWizardSectionPlacements.value[section.id] || "between_songs";
     const placementLabel =
       placement === "start_of_playlist"
-        ? "Start"
+        ? $t("providers.ai_radio.placement.start")
         : placement === "end_of_playlist"
-          ? "End"
-          : "Between";
+          ? $t("providers.ai_radio.placement.end")
+          : $t("providers.ai_radio.placement.between");
     return `${section.name} → ${placementLabel}`;
   });
 });
@@ -1983,15 +2158,15 @@ const asProgressNumber = (value: unknown): number | null => {
 
 const progressPhaseLabel = (phase: string): string => {
   const labels: Record<AIRadioProgressPhase, string> = {
-    fetch_source_tracks: "Loading source playlist",
-    initializing_queue: "Preparing player queue",
-    planning_sections: "Planning station sections",
-    generating_llm: "Generating AI text",
-    generating_tts: "Generating voice audio",
-    publishing_playlist: "Publishing generated playlist",
-    queueing_batch: "Queueing next dynamic batch",
-    waiting_for_playback: "Waiting for playback progress",
-    running: "Running",
+    fetch_source_tracks: $t("providers.ai_radio.progress.phase.fetch_source_tracks"),
+    initializing_queue: $t("providers.ai_radio.progress.phase.initializing_queue"),
+    planning_sections: $t("providers.ai_radio.progress.phase.planning_sections"),
+    generating_llm: $t("providers.ai_radio.progress.phase.generating_llm"),
+    generating_tts: $t("providers.ai_radio.progress.phase.generating_tts"),
+    publishing_playlist: $t("providers.ai_radio.progress.phase.publishing_playlist"),
+    queueing_batch: $t("providers.ai_radio.progress.phase.queueing_batch"),
+    waiting_for_playback: $t("providers.ai_radio.progress.phase.waiting_for_playback"),
+    running: $t("providers.ai_radio.progress.phase.running"),
   };
   return labels[phase as AIRadioProgressPhase] || phase;
 };
@@ -2022,39 +2197,58 @@ const sessionProgressDetails = (session: AIRadioSession): string => {
   }
   if (phase === "generating_llm") {
     if (sectionsPlanned !== null && batchIndex !== null) {
-      return `Batch ${batchIndex}: ${sectionsPlanned} section(s) to generate`;
+      return $t("providers.ai_radio.progress.details.llm_batch", [
+        batchIndex,
+        sectionsPlanned,
+      ]);
     }
     if (sectionsPlanned !== null) {
-      return `${sectionsPlanned} section(s) to generate`;
+      return $t("providers.ai_radio.progress.details.llm_sections", [sectionsPlanned]);
     }
   }
   if (phase === "generating_tts") {
     if (sections !== null && batchIndex !== null) {
-      return `Batch ${batchIndex}: ${sections} section(s) to synthesize`;
+      return $t("providers.ai_radio.progress.details.tts_batch", [batchIndex, sections]);
     }
     if (sections !== null) {
-      return `${sections} section(s) to synthesize`;
+      return $t("providers.ai_radio.progress.details.tts_sections", [sections]);
     }
   }
   if (phase === "queueing_batch") {
     if (batchIndex !== null && queueEntries !== null) {
-      return `Batch ${batchIndex}: ${queueEntries} queue entries total`;
+      return $t("providers.ai_radio.progress.details.queue_batch", [
+        batchIndex,
+        queueEntries,
+      ]);
     }
   }
   if (phase === "waiting_for_playback") {
     if (queuedTracks !== null && totalTracks !== null && batchIndex !== null) {
-      return `Batch ${batchIndex} queued, waiting (${queuedTracks}/${totalTracks} tracks prepared)`;
+      return $t("providers.ai_radio.progress.details.waiting", [
+        batchIndex,
+        queuedTracks,
+        totalTracks,
+      ]);
     }
   }
   if (phase === "publishing_playlist") {
     if (entries !== null || tracks !== null) {
-      const entryText = entries !== null ? `${entries} entries` : "";
-      const trackText = tracks !== null ? `${tracks} source tracks` : "";
+      const entryText =
+        entries !== null
+          ? $t("providers.ai_radio.progress.details.entries", [entries])
+          : "";
+      const trackText =
+        tracks !== null
+          ? $t("providers.ai_radio.progress.details.source_tracks", [tracks])
+          : "";
       return [entryText, trackText].filter(Boolean).join(" · ");
     }
   }
   if (queuedTracks !== null && totalTracks !== null) {
-    return `${queuedTracks}/${totalTracks} source tracks processed`;
+    return $t("providers.ai_radio.progress.details.source_processed", [
+      queuedTracks,
+      totalTracks,
+    ]);
   }
   return "";
 };
@@ -2300,7 +2494,7 @@ const onSelectRunPlayer = (value: string) => {
 
 const runStart = async (mode: AIRadioMode) => {
   if (!selectedRunStationId.value) {
-    toast.error("Select a station first");
+    toast.error($t("providers.ai_radio.validation.select_station_first"));
     return;
   }
   try {
@@ -2318,7 +2512,7 @@ const runStart = async (mode: AIRadioMode) => {
     });
     await loadStatus(true);
   } catch (error) {
-    toast.error(`Failed to start run: ${errorMessage(error)}`);
+    toast.error($t("providers.ai_radio.toast.run_start_failed", [errorMessage(error)]));
   }
 };
 
@@ -2334,7 +2528,7 @@ const stopSession = async (sessionId: string) => {
   try {
     await stopRun(sessionId);
   } catch (error) {
-    toast.error(`Failed to stop session: ${errorMessage(error)}`);
+    toast.error($t("providers.ai_radio.toast.stop_failed", [errorMessage(error)]));
   }
 };
 
@@ -2342,9 +2536,9 @@ const handleRefresh = async () => {
   try {
     await Promise.all([refreshEditor(true), loadStatus(true)]);
     applyRouteOverrides();
-    toast.success("AI Radio data refreshed");
+    toast.success($t("providers.ai_radio.toast.data_refreshed"));
   } catch (error) {
-    toast.error(`Refresh failed: ${errorMessage(error)}`);
+    toast.error($t("providers.ai_radio.toast.refresh_failed", [errorMessage(error)]));
   }
 };
 
@@ -2441,11 +2635,11 @@ const onGuidedSectionPlacementChange = (sectionId: string, event: Event) => {
 
 const createGuidedSection = async () => {
   if (!guidedNewSectionName.value.trim()) {
-    toast.error("Section name is required");
+    toast.error($t("providers.ai_radio.validation.section_name_required"));
     return;
   }
   if (!guidedNewSectionPrompt.value.trim()) {
-    toast.error("Section prompt is required");
+    toast.error($t("providers.ai_radio.validation.section_prompt_required"));
     return;
   }
 
@@ -2476,9 +2670,11 @@ const createGuidedSection = async () => {
     guidedNewSectionName.value = "";
     guidedNewSectionPrompt.value = "";
     guidedNewSectionPlacement.value = "between_songs";
-    toast.success("Section added to station setup");
+    toast.success($t("providers.ai_radio.toast.section_added_to_setup"));
   } catch (error) {
-    toast.error(`Failed to create section: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.section_create_failed", [errorMessage(error)]),
+    );
   } finally {
     creatingGuidedSection.value = false;
   }
@@ -2534,21 +2730,21 @@ const buildGuidedSectionOrder = (
 
 const createGuidedStation = async () => {
   if (!canProceedGuidedWizardStep.value && guidedWizardStep.value < 3) {
-    toast.error("Please complete the current step first");
+    toast.error($t("providers.ai_radio.validation.complete_current_step"));
     return;
   }
   if (!guidedWizardStationName.value.trim()) {
-    toast.error("Station name is required");
+    toast.error($t("providers.ai_radio.validation.station_name_required"));
     guidedWizardStep.value = 1;
     return;
   }
   if (!guidedWizardSourcePlaylistSelectValue.value) {
-    toast.error("Source playlist is required");
+    toast.error($t("providers.ai_radio.validation.source_playlist_required"));
     guidedWizardStep.value = 1;
     return;
   }
   if (!guidedWizardSectionIds.value.length) {
-    toast.error("Select at least one section");
+    toast.error($t("providers.ai_radio.validation.select_section"));
     guidedWizardStep.value = 2;
     return;
   }
@@ -2590,9 +2786,11 @@ const createGuidedStation = async () => {
     applyRunStationDefaults(saved.id);
     activeTab.value = "run";
     guidedWizardOpen.value = false;
-    toast.success("Station created. You can now start AI Radio.");
+    toast.success($t("providers.ai_radio.toast.station_created"));
   } catch (error) {
-    toast.error(`Failed to create guided station: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.guided_station_create_failed", [errorMessage(error)]),
+    );
   } finally {
     creatingGuidedStation.value = false;
   }
@@ -2615,32 +2813,37 @@ const selectStationForEdit = async (stationId: string) => {
     selectedEditorStationId.value = station.id;
     stationDraft.value = normalizeStationDraft(station);
   } catch (error) {
-    toast.error(`Failed to load station: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.station_load_failed", [errorMessage(error)]),
+    );
   }
 };
 
 const validateStationDraftLocal = (station: AIRadioStation): string | null => {
   if (!station.name.trim()) {
-    return "Station name is required";
+    return $t("providers.ai_radio.validation.station_name_required");
   }
   if (!station.source_playlist_id.trim()) {
-    return "Station source playlist is required";
+    return $t("providers.ai_radio.validation.station_source_playlist_required");
   }
   if (!station.section_ids?.length) {
-    return "Select at least one section";
+    return $t("providers.ai_radio.validation.select_section");
   }
   if (!station.section_order?.length) {
-    return "Section order requires at least one rule";
+    return $t("providers.ai_radio.validation.section_order_required");
   }
 
   for (const [ruleIndex, rule] of station.section_order.entries()) {
     if (!Array.isArray(rule.flow) || !rule.flow.length) {
-      return `Rule ${ruleIndex + 1} requires at least one flow item`;
+      return $t("providers.ai_radio.validation.rule_requires_flow", [ruleIndex + 1]);
     }
     for (const [flowIndex, item] of rule.flow.entries()) {
       const type = getFlowType(item);
       if (type === "MUST" && !getMustSection(item)) {
-        return `Rule ${ruleIndex + 1}, flow ${flowIndex + 1}: MUST needs a section`;
+        return $t("providers.ai_radio.validation.must_needs_section", [
+          ruleIndex + 1,
+          flowIndex + 1,
+        ]);
       }
       if (type === "ALTERNATIVE") {
         const choices = getAlternativeChoices(item).filter(
@@ -2648,11 +2851,17 @@ const validateStationDraftLocal = (station: AIRadioStation): string | null => {
             choice.section.trim() && parseOptionalNumber(choice.weight) > 0,
         );
         if (!choices.length) {
-          return `Rule ${ruleIndex + 1}, flow ${flowIndex + 1}: ALTERNATIVE needs at least one valid choice`;
+          return $t("providers.ai_radio.validation.alternative_needs_choice", [
+            ruleIndex + 1,
+            flowIndex + 1,
+          ]);
         }
       }
       if (type === "OPTIONAL" && !getOptionalSection(item)) {
-        return `Rule ${ruleIndex + 1}, flow ${flowIndex + 1}: OPTIONAL needs a section`;
+        return $t("providers.ai_radio.validation.optional_needs_section", [
+          ruleIndex + 1,
+          flowIndex + 1,
+        ]);
       }
     }
   }
@@ -2689,7 +2898,9 @@ const saveStationDraft = async () => {
       applyRunStationDefaults(saved.id);
     }
   } catch (error) {
-    toast.error(`Failed to save station: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.station_save_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2706,9 +2917,11 @@ const validateStationDraftOnServer = async () => {
   try {
     const normalized = await validateStation(payload);
     stationDraft.value = normalizeStationDraft(normalized);
-    toast.success("Station validation passed");
+    toast.success($t("providers.ai_radio.toast.station_validation_passed"));
   } catch (error) {
-    toast.error(`Station validation failed: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.station_validation_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2716,7 +2929,7 @@ const removeSelectedStation = async () => {
   if (!selectedEditorStationId.value) {
     return;
   }
-  if (!window.confirm("Delete this station?")) {
+  if (!window.confirm($t("providers.ai_radio.confirm.delete_station"))) {
     return;
   }
   try {
@@ -2729,7 +2942,9 @@ const removeSelectedStation = async () => {
       stationDraft.value = null;
     }
   } catch (error) {
-    toast.error(`Failed to delete station: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.station_delete_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2754,9 +2969,11 @@ const onStationImport = async (event: Event) => {
     stationDraft.value = normalizeStationDraft(imported);
     selectedEditorStationId.value = stationDraft.value.id || "";
     activeTab.value = "stations";
-    toast.success("Station imported into editor");
+    toast.success($t("providers.ai_radio.toast.station_imported"));
   } catch (error) {
-    toast.error(`Failed to import station: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.station_import_failed", [errorMessage(error)]),
+    );
   } finally {
     target.value = "";
   }
@@ -2776,13 +2993,13 @@ const exportJson = (filename: string, payload: unknown) => {
 
 const exportStationDraft = () => {
   if (!stationDraft.value) {
-    toast.error("No station loaded");
+    toast.error($t("providers.ai_radio.validation.no_station_loaded"));
     return;
   }
   const payload = buildStationPayload(stationDraft.value);
   const fileName = `${payload.id || slugify(payload.name)}.json`;
   exportJson(fileName, payload);
-  toast.success("Station exported");
+  toast.success($t("providers.ai_radio.toast.station_exported"));
 };
 
 const createNewSectionDraft = () => {
@@ -2801,7 +3018,9 @@ const selectSectionForEdit = async (sectionId: string) => {
     selectedEditorSectionId.value = section.id;
     sectionDraft.value = normalizeSectionDraft(section);
   } catch (error) {
-    toast.error(`Failed to load section: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.section_load_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2811,14 +3030,14 @@ const saveSectionDraft = async () => {
   }
   const payload = normalizeSectionDraft(deepClone(sectionDraft.value));
   if (!payload.name.trim()) {
-    toast.error("Section name is required");
+    toast.error($t("providers.ai_radio.validation.section_name_required"));
     return;
   }
   if (!payload.id.trim()) {
     payload.id = slugify(payload.name);
   }
   if (!payload.prompt.trim()) {
-    toast.error("Section prompt is required");
+    toast.error($t("providers.ai_radio.validation.section_prompt_required"));
     return;
   }
   if (payload.type !== "ai_text") {
@@ -2830,7 +3049,9 @@ const saveSectionDraft = async () => {
     selectedEditorSectionId.value = saved.id;
     sectionDraft.value = normalizeSectionDraft(saved);
   } catch (error) {
-    toast.error(`Failed to save section: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.section_save_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2838,7 +3059,7 @@ const removeSelectedSection = async () => {
   if (!selectedEditorSectionId.value) {
     return;
   }
-  if (!window.confirm("Delete this section?")) {
+  if (!window.confirm($t("providers.ai_radio.confirm.delete_section"))) {
     return;
   }
   try {
@@ -2851,7 +3072,9 @@ const removeSelectedSection = async () => {
       sectionDraft.value = null;
     }
   } catch (error) {
-    toast.error(`Failed to delete section: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.section_delete_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2876,9 +3099,11 @@ const onSectionImport = async (event: Event) => {
     sectionDraft.value = normalizeSectionDraft(imported);
     selectedEditorSectionId.value = sectionDraft.value.id || "";
     activeTab.value = "sections";
-    toast.success("Section imported into editor");
+    toast.success($t("providers.ai_radio.toast.section_imported"));
   } catch (error) {
-    toast.error(`Failed to import section: ${errorMessage(error)}`);
+    toast.error(
+      $t("providers.ai_radio.toast.section_import_failed", [errorMessage(error)]),
+    );
   } finally {
     target.value = "";
   }
@@ -2886,13 +3111,13 @@ const onSectionImport = async (event: Event) => {
 
 const exportSectionDraft = () => {
   if (!sectionDraft.value) {
-    toast.error("No section loaded");
+    toast.error($t("providers.ai_radio.validation.no_section_loaded"));
     return;
   }
   const payload = normalizeSectionDraft(sectionDraft.value);
   const fileName = `${payload.id || slugify(payload.name)}.json`;
   exportJson(fileName, payload);
-  toast.success("Section exported");
+  toast.success($t("providers.ai_radio.toast.section_exported"));
 };
 
 const onSectionMaxCharsChange = (value: string | number) => {
@@ -3275,7 +3500,7 @@ onMounted(async () => {
       void loadStatus(true).catch(() => undefined);
     }, AUTO_REFRESH_MS);
   } catch (error) {
-    toast.error(`Failed to initialize AI Radio view: ${errorMessage(error)}`);
+    toast.error($t("providers.ai_radio.toast.init_failed", [errorMessage(error)]));
   }
 });
 

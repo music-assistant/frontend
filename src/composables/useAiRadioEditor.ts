@@ -5,6 +5,7 @@ import type {
   Player,
   Playlist,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -42,12 +43,12 @@ async function loadStations(silent = false): Promise<AIRadioStation[]> {
     );
     stations.value = sortByName(result || []);
     if (!silent) {
-      toast.success("AI Radio stations loaded");
+      toast.success($t("providers.ai_radio.toast.stations_loaded"));
     }
     return stations.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load AI Radio stations");
+      toast.error($t("providers.ai_radio.toast.stations_load_failed"));
     }
     throw error;
   } finally {
@@ -63,12 +64,12 @@ async function loadSections(silent = false): Promise<AIRadioSection[]> {
     );
     sections.value = sortByName(result || []);
     if (!silent) {
-      toast.success("AI Radio sections loaded");
+      toast.success($t("providers.ai_radio.toast.sections_loaded"));
     }
     return sections.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load AI Radio sections");
+      toast.error($t("providers.ai_radio.toast.sections_load_failed"));
     }
     throw error;
   } finally {
@@ -86,11 +87,11 @@ async function loadTemplates(silent = false): Promise<void> {
     stationTemplate.value = station;
     sectionTemplate.value = section;
     if (!silent) {
-      toast.success("AI Radio templates loaded");
+      toast.success($t("providers.ai_radio.toast.templates_loaded"));
     }
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load AI Radio templates");
+      toast.error($t("providers.ai_radio.toast.templates_load_failed"));
     }
     throw error;
   } finally {
@@ -104,12 +105,12 @@ async function loadPlayers(silent = false): Promise<Player[]> {
     const result = await api.getPlayers();
     players.value = [...result].sort((a, b) => a.name.localeCompare(b.name));
     if (!silent) {
-      toast.success("Players loaded");
+      toast.success($t("providers.ai_radio.toast.players_loaded"));
     }
     return players.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load players");
+      toast.error($t("providers.ai_radio.toast.players_load_failed"));
     }
     throw error;
   } finally {
@@ -138,12 +139,12 @@ async function loadPlaylists(silent = false): Promise<Playlist[]> {
     }
     playlists.value = sortByName(allItems);
     if (!silent) {
-      toast.success("Playlists loaded");
+      toast.success($t("providers.ai_radio.toast.playlists_loaded"));
     }
     return playlists.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load playlists");
+      toast.error($t("providers.ai_radio.toast.playlists_load_failed"));
     }
     throw error;
   } finally {
@@ -160,11 +161,11 @@ async function saveStation(station: AIRadioStation): Promise<AIRadioStation> {
         station,
       },
     );
-    toast.success("Station saved");
+    toast.success($t("providers.ai_radio.toast.station_saved"));
     await loadStations(true);
     return saved;
   } catch (error) {
-    toast.error("Failed to save station");
+    toast.error($t("providers.ai_radio.toast.station_save_failed"));
     throw error;
   } finally {
     savingStation.value = false;
@@ -177,10 +178,10 @@ async function deleteStation(stationId: string): Promise<void> {
     await api.sendCommand("ai_radio/stations/delete", {
       station_id: stationId,
     });
-    toast.success("Station deleted");
+    toast.success($t("providers.ai_radio.toast.station_deleted"));
     await loadStations(true);
   } catch (error) {
-    toast.error("Failed to delete station");
+    toast.error($t("providers.ai_radio.toast.station_delete_failed"));
     throw error;
   } finally {
     deletingStation.value = false;
@@ -210,11 +211,11 @@ async function saveSection(section: AIRadioSection): Promise<AIRadioSection> {
         section,
       },
     );
-    toast.success("Section saved");
+    toast.success($t("providers.ai_radio.toast.section_saved"));
     await Promise.all([loadSections(true), loadStations(true)]);
     return saved;
   } catch (error) {
-    toast.error("Failed to save section");
+    toast.error($t("providers.ai_radio.toast.section_save_failed"));
     throw error;
   } finally {
     savingSection.value = false;
@@ -227,10 +228,10 @@ async function deleteSection(sectionId: string): Promise<void> {
     await api.sendCommand("ai_radio/sections/delete", {
       section_id: sectionId,
     });
-    toast.success("Section deleted");
+    toast.success($t("providers.ai_radio.toast.section_deleted"));
     await Promise.all([loadSections(true), loadStations(true)]);
   } catch (error) {
-    toast.error("Failed to delete section");
+    toast.error($t("providers.ai_radio.toast.section_delete_failed"));
     throw error;
   } finally {
     deletingSection.value = false;

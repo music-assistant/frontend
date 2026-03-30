@@ -431,7 +431,7 @@ export const getContextMenuItems = async function (
     store.enabledPlugins.has("ai_radio")
   ) {
     contextMenuItems.push({
-      label: "Run with AI Radio",
+      label: "providers.ai_radio.context.run_with",
       labelArgs: [],
       action: () => {
         router.push({

@@ -5,6 +5,7 @@ import type {
   AIRadioStation,
   AIRadioStatus,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -39,12 +40,12 @@ async function loadStations(silent = false): Promise<AIRadioStation[]> {
     );
     stations.value = sortByName(result);
     if (!silent) {
-      toast.success("AI Radio stations loaded");
+      toast.success($t("providers.ai_radio.toast.stations_loaded"));
     }
     return stations.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load AI Radio stations");
+      toast.error($t("providers.ai_radio.toast.stations_load_failed"));
     }
     throw error;
   } finally {
@@ -58,12 +59,12 @@ async function loadStatus(silent = false): Promise<AIRadioSession[]> {
     const result = await api.sendCommand<AIRadioStatus>("ai_radio/status");
     sessions.value = sortSessions(result.sessions || []);
     if (!silent) {
-      toast.success("AI Radio status refreshed");
+      toast.success($t("providers.ai_radio.toast.status_refreshed"));
     }
     return sessions.value;
   } catch (error) {
     if (!silent) {
-      toast.error("Failed to load AI Radio status");
+      toast.error($t("providers.ai_radio.toast.status_load_failed"));
     }
     throw error;
   } finally {
@@ -105,16 +106,16 @@ async function startRun(
     );
     toast.success(
       mode === "playlist"
-        ? "Playlist generation started"
-        : "Live radio started",
+        ? $t("providers.ai_radio.toast.playlist_starting")
+        : $t("providers.ai_radio.toast.live_starting"),
     );
     await loadStatus(true);
     return result;
   } catch (error) {
     toast.error(
       mode === "playlist"
-        ? "Failed to start playlist generation"
-        : "Failed to start live radio",
+        ? $t("providers.ai_radio.toast.playlist_start_failed")
+        : $t("providers.ai_radio.toast.live_start_failed"),
     );
     throw error;
   } finally {
@@ -126,10 +127,10 @@ async function stopRun(sessionId: string): Promise<void> {
   stoppingRun.value = true;
   try {
     await api.sendCommand("ai_radio/stop", { session_id: sessionId });
-    toast.success("AI Radio session stopped");
+    toast.success($t("providers.ai_radio.toast.session_stopped"));
     await loadStatus(true);
   } catch (error) {
-    toast.error("Failed to stop AI Radio session");
+    toast.error($t("providers.ai_radio.toast.session_stop_failed"));
     throw error;
   } finally {
     stoppingRun.value = false;
