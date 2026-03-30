@@ -65,7 +65,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import api from "@/plugins/api";
-import { ProviderType } from "@/plugins/api/interfaces";
+import { ProviderFeature, ProviderType } from "@/plugins/api/interfaces";
 import { type ImportPlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -79,7 +79,12 @@ const selectedProviders = ref<string[]>([]);
 
 const musicProviders = computed(() => {
   return Object.values(api.providers)
-    .filter((x) => x.available && x.type === ProviderType.MUSIC)
+    .filter(
+      (x) =>
+        x.available &&
+        x.type === ProviderType.MUSIC &&
+        x.supported_features.includes(ProviderFeature.SEARCH),
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
