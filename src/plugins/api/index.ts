@@ -785,6 +785,14 @@ export class MusicAssistantApi {
     });
   }
 
+  public exportPlaylist(
+    db_playlist_id: string | number,
+  ): Promise<string> {
+    return this.sendCommand("music/playlists/export_playlist", {
+      db_playlist_id,
+    });
+  }
+
   /**
    * Get Radio stations listing from the server.
    * @param favorite - Filter by favorite status
