@@ -34,7 +34,9 @@
 
     <Tabs v-model:model-value="activeTab" class="w-full">
       <TabsList class="grid w-full grid-cols-3 md:w-[480px]">
-        <TabsTrigger value="run">{{ $t("providers.ai_radio.tabs.run") }}</TabsTrigger>
+        <TabsTrigger value="run">{{
+          $t("providers.ai_radio.tabs.run")
+        }}</TabsTrigger>
         <TabsTrigger value="stations">{{
           $t("providers.ai_radio.tabs.stations")
         }}</TabsTrigger>
@@ -65,7 +67,9 @@
                 >
                   <SelectTrigger id="ai-radio-run-station" class="w-full">
                     <SelectValue
-                      :placeholder="$t('providers.ai_radio.placeholders.station')"
+                      :placeholder="
+                        $t('providers.ai_radio.placeholders.station')
+                      "
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -88,7 +92,9 @@
                   {{ $t("providers.ai_radio.run.source_playlist_override") }}
                 </div>
                 <p class="text-xs text-muted-foreground">
-                  {{ $t("providers.ai_radio.run.source_playlist_override_help") }}
+                  {{
+                    $t("providers.ai_radio.run.source_playlist_override_help")
+                  }}
                 </p>
                 <div class="text-sm">
                   {{ sourcePlaylistOverrideName || sourcePlaylistOverrideId }}
@@ -121,13 +127,19 @@
                   <SelectTrigger id="ai-radio-run-player" class="w-full">
                     <SelectValue
                       :placeholder="
-                        $t('providers.ai_radio.placeholders.use_station_default')
+                        $t(
+                          'providers.ai_radio.placeholders.use_station_default',
+                        )
                       "
                     />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem :value="DEFAULT_PLAYER_SELECT_VALUE">
-                      {{ $t("providers.ai_radio.placeholders.use_station_default") }}
+                      {{
+                        $t(
+                          "providers.ai_radio.placeholders.use_station_default",
+                        )
+                      }}
                     </SelectItem>
                     <SelectItem
                       v-for="player in availableRunPlayers"
@@ -212,7 +224,9 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>{{ $t("providers.ai_radio.sessions.title") }}</CardTitle>
+              <CardTitle>{{
+                $t("providers.ai_radio.sessions.title")
+              }}</CardTitle>
               <CardDescription>
                 {{ $t("providers.ai_radio.sessions.description") }}
               </CardDescription>
@@ -290,7 +304,9 @@
         <div class="grid gap-4 lg:grid-cols-[300px_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle>{{ $t("providers.ai_radio.stations.title") }}</CardTitle>
+              <CardTitle>{{
+                $t("providers.ai_radio.stations.title")
+              }}</CardTitle>
               <CardDescription>{{
                 $t("providers.ai_radio.stations.description")
               }}</CardDescription>
@@ -346,7 +362,9 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>{{ $t("providers.ai_radio.station_editor.title") }}</CardTitle>
+              <CardTitle>{{
+                $t("providers.ai_radio.station_editor.title")
+              }}</CardTitle>
               <CardDescription>
                 {{ $t("providers.ai_radio.station_editor.description") }}
               </CardDescription>
@@ -386,7 +404,11 @@
                       }})
                     </option>
                     <option value="__custom__">
-                      {{ $t("providers.ai_radio.station_editor.custom_source_playlist") }}
+                      {{
+                        $t(
+                          "providers.ai_radio.station_editor.custom_source_playlist",
+                        )
+                      }}
                     </option>
                   </select>
                 </div>
@@ -487,7 +509,9 @@
                     </option>
                   </select>
                   <p class="text-xs text-muted-foreground">
-                    {{ $t("providers.ai_radio.station_editor.multiselect_hint") }}
+                    {{
+                      $t("providers.ai_radio.station_editor.multiselect_hint")
+                    }}
                   </p>
                 </div>
 
@@ -512,7 +536,9 @@
                     </option>
                   </select>
                   <p class="text-xs text-muted-foreground">
-                    {{ $t("providers.ai_radio.station_editor.merge_section_help") }}
+                    {{
+                      $t("providers.ai_radio.station_editor.merge_section_help")
+                    }}
                   </p>
                 </div>
               </div>
@@ -635,7 +661,11 @@
                           "
                         >
                           <option value="">
-                            {{ $t("providers.ai_radio.placeholders.select_section") }}
+                            {{
+                              $t(
+                                "providers.ai_radio.placeholders.select_section",
+                              )
+                            }}
                           </option>
                           <option
                             v-for="section in stationSelectedSections"
@@ -683,7 +713,11 @@
                             "
                           >
                             <option value="">
-                              {{ $t("providers.ai_radio.placeholders.select_section") }}
+                              {{
+                                $t(
+                                  "providers.ai_radio.placeholders.select_section",
+                                )
+                              }}
                             </option>
                             <option
                               v-for="section in stationSelectedSections"
@@ -741,7 +775,11 @@
                             "
                           >
                             <option value="">
-                              {{ $t("providers.ai_radio.placeholders.select_section") }}
+                              {{
+                                $t(
+                                  "providers.ai_radio.placeholders.select_section",
+                                )
+                              }}
                             </option>
                             <option
                               v-for="section in stationSelectedSections"
@@ -849,7 +887,9 @@
                   </div>
                   <div class="space-y-2">
                     <Label for="station-clear-queue">{{
-                      $t("providers.ai_radio.fields.clear_queue_on_dynamic_start")
+                      $t(
+                        "providers.ai_radio.fields.clear_queue_on_dynamic_start",
+                      )
                     }}</Label>
                     <div class="flex h-10 items-center rounded-md border px-3">
                       <input
@@ -1061,7 +1101,9 @@
                   <div class="space-y-2 md:col-span-2">
                     <Label for="station-general-openai-tts-instructions">
                       {{
-                        $t("providers.ai_radio.fields.openai_tts_delivery_instructions")
+                        $t(
+                          "providers.ai_radio.fields.openai_tts_delivery_instructions",
+                        )
                       }}
                     </Label>
                     <Textarea
@@ -1113,7 +1155,9 @@
         <div class="grid gap-4 lg:grid-cols-[300px_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle>{{ $t("providers.ai_radio.sections.title") }}</CardTitle>
+              <CardTitle>{{
+                $t("providers.ai_radio.sections.title")
+              }}</CardTitle>
               <CardDescription>{{
                 $t("providers.ai_radio.sections.description")
               }}</CardDescription>
@@ -1162,7 +1206,9 @@
 
           <Card>
             <CardHeader>
-              <CardTitle>{{ $t("providers.ai_radio.section_editor.title") }}</CardTitle>
+              <CardTitle>{{
+                $t("providers.ai_radio.section_editor.title")
+              }}</CardTitle>
               <CardDescription>
                 {{ $t("providers.ai_radio.section_editor.description") }}
               </CardDescription>
@@ -1315,7 +1361,9 @@
               <Input
                 id="guided-station-name"
                 v-model="guidedWizardStationName"
-                :placeholder="$t('providers.ai_radio.wizard.station_name_placeholder')"
+                :placeholder="
+                  $t('providers.ai_radio.wizard.station_name_placeholder')
+                "
               />
             </div>
 
@@ -1356,7 +1404,9 @@
                 v-model="guidedWizardDefaultPlayerId"
                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">{{ $t("providers.ai_radio.placeholders.none") }}</option>
+                <option value="">
+                  {{ $t("providers.ai_radio.placeholders.none") }}
+                </option>
                 <option
                   v-for="player in players"
                   :key="player.player_id"
@@ -1379,7 +1429,9 @@
                 $t("providers.ai_radio.wizard.choose_existing_sections")
               }}</Label>
               <p class="text-xs text-muted-foreground">
-                {{ $t("providers.ai_radio.wizard.choose_existing_sections_help") }}
+                {{
+                  $t("providers.ai_radio.wizard.choose_existing_sections_help")
+                }}
               </p>
               <div
                 class="max-h-[240px] space-y-2 overflow-y-auto rounded-md border p-3"
@@ -1403,7 +1455,9 @@
             </div>
 
             <div class="space-y-2 rounded-md border p-3">
-              <Label>{{ $t("providers.ai_radio.wizard.add_new_section") }}</Label>
+              <Label>{{
+                $t("providers.ai_radio.wizard.add_new_section")
+              }}</Label>
               <p class="text-xs text-muted-foreground">
                 {{ $t("providers.ai_radio.wizard.add_new_section_help") }}
               </p>
@@ -1466,7 +1520,9 @@
             </div>
 
             <div class="space-y-2">
-              <Label>{{ $t("providers.ai_radio.wizard.selected_sections") }}</Label>
+              <Label>{{
+                $t("providers.ai_radio.wizard.selected_sections")
+              }}</Label>
               <div
                 v-if="guidedWizardSelectedSections.length === 0"
                 class="rounded-md border border-dashed p-3 text-xs text-muted-foreground"
@@ -1511,7 +1567,9 @@
                 v-model="guidedWizardMergeSectionId"
                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">{{ $t("providers.ai_radio.placeholders.none") }}</option>
+                <option value="">
+                  {{ $t("providers.ai_radio.placeholders.none") }}
+                </option>
                 <option
                   v-for="section in guidedWizardMergeSectionOptions"
                   :key="`guided-merge-${section.id}`"
@@ -1551,13 +1609,17 @@
               </div>
               <div v-if="guidedWizardSectionPlacementSummary.length">
                 <span class="font-medium"
-                  >{{ $t("providers.ai_radio.wizard.summary_placement") }}:</span
+                  >{{
+                    $t("providers.ai_radio.wizard.summary_placement")
+                  }}:</span
                 >
                 {{ guidedWizardSectionPlacementSummary.join(" | ") }}
               </div>
               <div v-if="guidedWizardMergeSectionName">
                 <span class="font-medium"
-                  >{{ $t("providers.ai_radio.wizard.summary_merge_section") }}:</span
+                  >{{
+                    $t("providers.ai_radio.wizard.summary_merge_section")
+                  }}:</span
                 >
                 {{ guidedWizardMergeSectionName }}
               </div>
@@ -1604,7 +1666,9 @@
     <Dialog v-model:open="tutorialOpen">
       <DialogContent class="sm:max-w-[760px]">
         <DialogHeader>
-          <DialogTitle>{{ $t("providers.ai_radio.tutorial.title") }}</DialogTitle>
+          <DialogTitle>{{
+            $t("providers.ai_radio.tutorial.title")
+          }}</DialogTitle>
           <DialogDescription>
             {{ $t("providers.ai_radio.tutorial.description") }}
           </DialogDescription>
@@ -2158,14 +2222,24 @@ const asProgressNumber = (value: unknown): number | null => {
 
 const progressPhaseLabel = (phase: string): string => {
   const labels: Record<AIRadioProgressPhase, string> = {
-    fetch_source_tracks: $t("providers.ai_radio.progress.phase.fetch_source_tracks"),
-    initializing_queue: $t("providers.ai_radio.progress.phase.initializing_queue"),
-    planning_sections: $t("providers.ai_radio.progress.phase.planning_sections"),
+    fetch_source_tracks: $t(
+      "providers.ai_radio.progress.phase.fetch_source_tracks",
+    ),
+    initializing_queue: $t(
+      "providers.ai_radio.progress.phase.initializing_queue",
+    ),
+    planning_sections: $t(
+      "providers.ai_radio.progress.phase.planning_sections",
+    ),
     generating_llm: $t("providers.ai_radio.progress.phase.generating_llm"),
     generating_tts: $t("providers.ai_radio.progress.phase.generating_tts"),
-    publishing_playlist: $t("providers.ai_radio.progress.phase.publishing_playlist"),
+    publishing_playlist: $t(
+      "providers.ai_radio.progress.phase.publishing_playlist",
+    ),
     queueing_batch: $t("providers.ai_radio.progress.phase.queueing_batch"),
-    waiting_for_playback: $t("providers.ai_radio.progress.phase.waiting_for_playback"),
+    waiting_for_playback: $t(
+      "providers.ai_radio.progress.phase.waiting_for_playback",
+    ),
     running: $t("providers.ai_radio.progress.phase.running"),
   };
   return labels[phase as AIRadioProgressPhase] || phase;
@@ -2203,12 +2277,17 @@ const sessionProgressDetails = (session: AIRadioSession): string => {
       ]);
     }
     if (sectionsPlanned !== null) {
-      return $t("providers.ai_radio.progress.details.llm_sections", [sectionsPlanned]);
+      return $t("providers.ai_radio.progress.details.llm_sections", [
+        sectionsPlanned,
+      ]);
     }
   }
   if (phase === "generating_tts") {
     if (sections !== null && batchIndex !== null) {
-      return $t("providers.ai_radio.progress.details.tts_batch", [batchIndex, sections]);
+      return $t("providers.ai_radio.progress.details.tts_batch", [
+        batchIndex,
+        sections,
+      ]);
     }
     if (sections !== null) {
       return $t("providers.ai_radio.progress.details.tts_sections", [sections]);
@@ -2512,7 +2591,9 @@ const runStart = async (mode: AIRadioMode) => {
     });
     await loadStatus(true);
   } catch (error) {
-    toast.error($t("providers.ai_radio.toast.run_start_failed", [errorMessage(error)]));
+    toast.error(
+      $t("providers.ai_radio.toast.run_start_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2528,7 +2609,9 @@ const stopSession = async (sessionId: string) => {
   try {
     await stopRun(sessionId);
   } catch (error) {
-    toast.error($t("providers.ai_radio.toast.stop_failed", [errorMessage(error)]));
+    toast.error(
+      $t("providers.ai_radio.toast.stop_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2538,7 +2621,9 @@ const handleRefresh = async () => {
     applyRouteOverrides();
     toast.success($t("providers.ai_radio.toast.data_refreshed"));
   } catch (error) {
-    toast.error($t("providers.ai_radio.toast.refresh_failed", [errorMessage(error)]));
+    toast.error(
+      $t("providers.ai_radio.toast.refresh_failed", [errorMessage(error)]),
+    );
   }
 };
 
@@ -2673,7 +2758,9 @@ const createGuidedSection = async () => {
     toast.success($t("providers.ai_radio.toast.section_added_to_setup"));
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.section_create_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.section_create_failed", [
+        errorMessage(error),
+      ]),
     );
   } finally {
     creatingGuidedSection.value = false;
@@ -2789,7 +2876,9 @@ const createGuidedStation = async () => {
     toast.success($t("providers.ai_radio.toast.station_created"));
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.guided_station_create_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.guided_station_create_failed", [
+        errorMessage(error),
+      ]),
     );
   } finally {
     creatingGuidedStation.value = false;
@@ -2835,7 +2924,9 @@ const validateStationDraftLocal = (station: AIRadioStation): string | null => {
 
   for (const [ruleIndex, rule] of station.section_order.entries()) {
     if (!Array.isArray(rule.flow) || !rule.flow.length) {
-      return $t("providers.ai_radio.validation.rule_requires_flow", [ruleIndex + 1]);
+      return $t("providers.ai_radio.validation.rule_requires_flow", [
+        ruleIndex + 1,
+      ]);
     }
     for (const [flowIndex, item] of rule.flow.entries()) {
       const type = getFlowType(item);
@@ -2920,7 +3011,9 @@ const validateStationDraftOnServer = async () => {
     toast.success($t("providers.ai_radio.toast.station_validation_passed"));
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.station_validation_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.station_validation_failed", [
+        errorMessage(error),
+      ]),
     );
   }
 };
@@ -2943,7 +3036,9 @@ const removeSelectedStation = async () => {
     }
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.station_delete_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.station_delete_failed", [
+        errorMessage(error),
+      ]),
     );
   }
 };
@@ -2972,7 +3067,9 @@ const onStationImport = async (event: Event) => {
     toast.success($t("providers.ai_radio.toast.station_imported"));
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.station_import_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.station_import_failed", [
+        errorMessage(error),
+      ]),
     );
   } finally {
     target.value = "";
@@ -3073,7 +3170,9 @@ const removeSelectedSection = async () => {
     }
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.section_delete_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.section_delete_failed", [
+        errorMessage(error),
+      ]),
     );
   }
 };
@@ -3102,7 +3201,9 @@ const onSectionImport = async (event: Event) => {
     toast.success($t("providers.ai_radio.toast.section_imported"));
   } catch (error) {
     toast.error(
-      $t("providers.ai_radio.toast.section_import_failed", [errorMessage(error)]),
+      $t("providers.ai_radio.toast.section_import_failed", [
+        errorMessage(error),
+      ]),
     );
   } finally {
     target.value = "";
@@ -3500,7 +3601,9 @@ onMounted(async () => {
       void loadStatus(true).catch(() => undefined);
     }, AUTO_REFRESH_MS);
   } catch (error) {
-    toast.error($t("providers.ai_radio.toast.init_failed", [errorMessage(error)]));
+    toast.error(
+      $t("providers.ai_radio.toast.init_failed", [errorMessage(error)]),
+    );
   }
 });
 
