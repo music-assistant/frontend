@@ -264,6 +264,12 @@ onMounted(() => {
             playerState.value = state.playerState;
           },
           correctionMode: correctionMode.value,
+          onDelayCommand: (delayMs: number) => {
+            localStorage.setItem(
+              "frontend.settings.sendspin_sync_delay",
+              String(delayMs),
+            );
+          },
         });
 
         return player.connect();
