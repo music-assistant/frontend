@@ -1,71 +1,29 @@
 <template>
-  <v-card class="header-card mb-4" elevation="0">
-    <div class="header-content">
-      <div class="header-icon">
-        <GenreIcon class="size-8 text-primary" />
+  <Card>
+    <CardHeader>
+      <div class="flex items-center gap-4">
+        <div
+          class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+        >
+          <GenreIcon class="size-6 text-primary" />
+        </div>
+        <div>
+          <CardTitle>{{ $t("settings.genre_management") }}</CardTitle>
+          <CardDescription>
+            {{ $t("settings.genre_management_description") }}
+          </CardDescription>
+        </div>
       </div>
-      <div class="header-info">
-        <h2 class="header-title">
-          {{ $t("settings.genre_management") }}
-        </h2>
-        <p class="header-description">
-          {{ $t("settings.genre_management_description") }}
-        </p>
-      </div>
-    </div>
-  </v-card>
+    </CardHeader>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 </script>
-
-<style scoped>
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-</style>

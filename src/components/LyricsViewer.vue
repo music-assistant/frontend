@@ -39,6 +39,10 @@
             'lyrics-line',
             {
               active: activeLyricIndex === index,
+              'lyrics-line--far':
+                activeLyricIndex >= 0 &&
+                (index === activeLyricIndex + 2 ||
+                  index === activeLyricIndex - 1),
               'lyrics-line--hidden':
                 activeLyricIndex >= 0
                   ? index < activeLyricIndex - 1 || index > activeLyricIndex + 2
@@ -159,11 +163,9 @@ const beforeFirstLyric = computed(() => {
     return false;
   }
   const firstTime = displayLines.value[0].time;
+  if (firstTime < 2) return false;
   const currentPosition = props.position || 0;
-  return (
-    activeLyricIndex.value === -1 &&
-    currentPosition < firstTime - props.anticipation
-  );
+  return currentPosition < firstTime - props.anticipation;
 });
 
 const artistName = computed(() => {
@@ -427,10 +429,22 @@ watch(
     );
     const newActiveIndex = findActiveLineIndex(highlightPositionMs);
 
-    if (newActiveIndex !== activeLyricIndex.value && newActiveIndex >= 0) {
-      contentTransitionEnabled.value = true;
-      activeLyricIndex.value = newActiveIndex;
-      nextTick(() => computeTranslateY(newActiveIndex));
+    if (newActiveIndex !== activeLyricIndex.value) {
+      if (newActiveIndex >= 0) {
+        contentTransitionEnabled.value = true;
+        activeLyricIndex.value = newActiveIndex;
+        nextTick(() => computeTranslateY(newActiveIndex));
+      } else {
+        // Rewound before the first lyric — scroll content back out of view
+        activeLyricIndex.value = -1;
+        contentTransitionEnabled.value = true;
+        const firstEl = lineRefs.get(0);
+        const container = syncedContainerRef.value;
+        if (firstEl && container) {
+          contentTranslateY.value =
+            container.clientHeight - firstEl.offsetTop + 40;
+        }
+      }
     }
   },
 );
@@ -530,6 +544,10 @@ onBeforeUnmount(() => {
   margin: 8px 0;
   will-change: opacity;
   transition: opacity v-bind(transitionDuration) ease;
+}
+
+.lyrics-line.lyrics-line--far {
+  opacity: 0.15;
 }
 
 .lyrics-line.lyrics-line--hidden {

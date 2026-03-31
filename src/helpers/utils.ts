@@ -135,7 +135,7 @@ export const kebabize = (str: string) => {
     .join("");
 };
 
-const toSentenceCase = function (str: string): string {
+export const toSentenceCase = function (str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };

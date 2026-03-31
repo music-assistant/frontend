@@ -12,7 +12,11 @@
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import { getSendspinDefaultStaticDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
-import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
+import {
+  SendspinPlayer,
+  Codec,
+  getDefaultSyncDelay,
+} from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";

@@ -649,7 +649,6 @@
     },
     "play_replace": "Afspil nu (ryd køen)",
     "played": "Afspillet",
-    "background_task_added": "Handlingen udføres af serveren i baggrunden og kan tage lidt tid at gennemføre. Hold øje med serverloggen for at se, hvordan det går.",
     "images": "Billeder",
     "image_type": "Type",
     "image_source": "Kilde",

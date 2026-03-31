@@ -27,7 +27,6 @@ const navItems = computed(() => {
       url: item.path,
       icon: item.icon,
       disabled: item.disabled,
-      openInNewTab: item.openInNewTab,
     }));
 });
 

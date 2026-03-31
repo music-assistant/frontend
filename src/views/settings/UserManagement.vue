@@ -151,9 +151,10 @@ import {
   Trash2,
   User as UserIcon,
 } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
+import { useRoute, useRouter } from "vue-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +179,8 @@ import type { AuthToken, User } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 const users = ref<User[]>([]);
 const searchQuery = ref("");
@@ -190,6 +193,7 @@ const showRevokeTokenDialog = ref(false);
 const userToModify = ref<User | null>(null);
 const userTokens = ref<AuthToken[]>([]);
 const tokenToRevoke = ref<AuthToken | null>(null);
+const lastOpenedQueryUserId = ref<string | null>(null);
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) {
@@ -214,6 +218,25 @@ const loadUsers = async () => {
   } catch (error) {
     toast.error(t("auth.users_load_failed"));
   }
+};
+
+const openUserFromRouteQuery = async () => {
+  const queryUserId =
+    typeof route.query.user_id === "string" ? route.query.user_id : null;
+  if (!queryUserId) {
+    lastOpenedQueryUserId.value = null;
+    return;
+  }
+  if (queryUserId === lastOpenedQueryUserId.value) {
+    return;
+  }
+  const user = users.value.find((item) => item.user_id === queryUserId);
+  if (!user) {
+    return;
+  }
+  editUser(user);
+  lastOpenedQueryUserId.value = queryUserId;
+  await router.replace({ name: "usersettings", query: {} });
 };
 
 const editUser = (user: User) => {
@@ -278,6 +301,14 @@ const enableUser = async (user: User) => {
 };
 
 onMounted(() => {
-  loadUsers();
+  void loadUsers();
 });
+
+watch(
+  () => [route.query.user_id, users.value.length] as const,
+  () => {
+    void openUserFromRouteQuery();
+  },
+  { immediate: true },
+);
 </script>

@@ -406,14 +406,13 @@ const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
   // Immediately apply a config value change to the backend
+  // and refresh the local config with the server response
   loading.value = true;
   api
     .savePlayerConfig(props.playerId!, values)
     .then((updatedConfig) => {
-      // update local config values without overwriting the entire object
-      // because the action may have added new entries
+      // update local config values with the server response
       for (const [key, entry] of Object.entries(updatedConfig.values)) {
-        if (config.value!.values[key] != null) continue;
         config.value!.values[key] = entry;
       }
     })
@@ -425,6 +424,7 @@ const onImmediateApply = async function (
 const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
+  immediateApply: boolean,
 ) {
   loading.value = true;
   // append existing ConfigEntry values to allow
@@ -438,10 +438,26 @@ const onAction = async function (
   values["session_id"] = sessionId;
   api
     .getPlayerConfigEntries(config.value!.player_id, action, values)
-    .then((entries) => {
+    .then(async (entries) => {
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;
+      }
+      // If the action has immediate_apply, save the updated values right away
+      if (immediateApply) {
+        const saveValues: Record<string, ConfigValueType> = {};
+        for (const entry of entries) {
+          if (entry.value !== undefined) {
+            saveValues[entry.key] = entry.value;
+          }
+        }
+        const updatedConfig = await api.savePlayerConfig(
+          props.playerId!,
+          saveValues,
+        );
+        for (const [key, entry] of Object.entries(updatedConfig.values)) {
+          config.value!.values[key] = entry;
+        }
       }
     })
     .catch((err) => {

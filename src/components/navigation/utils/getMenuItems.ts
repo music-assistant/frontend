@@ -4,9 +4,9 @@ import { DEFAULT_MENU_ITEMS } from "@/constants";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
+  Compass,
   Disc3,
   Folder,
-  House,
   ListMusic,
   Music2,
   PartyPopper,
@@ -24,7 +24,6 @@ export interface MenuItem {
   isLibraryNode: boolean;
   hidden?: boolean;
   disabled?: boolean;
-  openInNewTab?: boolean;
 }
 
 export const getMenuItems = function () {
@@ -41,7 +40,7 @@ export const getMenuItems = function () {
     if (enabledMenuItemStr === "discover") {
       items.push({
         label: "discover",
-        icon: House,
+        icon: Compass,
         path: "/discover",
         isLibraryNode: false,
       });
@@ -61,7 +60,6 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
-        openInNewTab: true,
       });
     }
     if (enabledMenuItemStr === "artists") {

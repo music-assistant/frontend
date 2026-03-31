@@ -21,10 +21,10 @@
 </g>
 <defs>
 <clipPath id="clip0_3_51">
-<rect width="1762" height="240" fill="white"/>
+<rect width="1762" height="240" fill="currentColor"/>
 </clipPath>
 <clipPath id="clip1_3_51">
-<rect width="1426" height="154" fill="white" transform="translate(336 43)"/>
+<rect width="1426" height="154" fill="currentColor" transform="translate(336 43)"/>
 </clipPath>
 </defs>
 </svg>

@@ -4,7 +4,7 @@
       variant="ghost"
       size="icon"
       class="back-arrow"
-      :class="{ active: showBack }"
+      :disabled="!showBack"
       :aria-label="$t('back')"
       @click="$emit('back')"
     >
@@ -16,6 +16,7 @@
         <Search />
       </InputGroupAddon>
       <InputGroupInput
+        ref="inputRef"
         :model-value="searchQuery"
         :placeholder="$t('providers.party.guest_page.search_placeholder')"
         autofocus
@@ -34,10 +35,6 @@
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-
-    <div class="filter-toggle">
-      <!-- TODO -->
-    </div>
   </div>
 
   <!-- Search Filter Chips -->
@@ -59,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +82,14 @@ defineEmits<{
   submit: [];
 }>();
 
+const inputRef = ref<InstanceType<typeof InputGroupInput> | null>(null);
+
+const focus = () => {
+  inputRef.value?.focus();
+};
+
+defineExpose({ focus });
+
 const filters = computed(() => [
   { value: "all", label: $t("searchtype_all"), icon: null },
   {
@@ -106,23 +111,15 @@ const filters = computed(() => [
 }
 
 .back-arrow {
-  opacity: 0;
-  pointer-events: none;
   flex-shrink: 0;
 }
 
-.back-arrow.active {
-  opacity: 1;
-  pointer-events: auto;
+.back-arrow:disabled {
+  opacity: 0.4;
 }
 
 .search-input-group {
   flex: 1;
-}
-
-.filter-toggle {
-  width: 24px;
-  height: 24px;
 }
 
 .filter-section {

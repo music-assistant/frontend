@@ -49,7 +49,7 @@ watch(
 watch(
   () => route.query.frameless,
   (frameless) => {
-    if (frameless) {
+    if (frameless !== undefined) {
       store.frameless = true;
     }
   },

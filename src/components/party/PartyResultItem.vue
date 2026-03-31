@@ -3,7 +3,8 @@
     class="result-item"
     :class="{
       'result-item--expanded': isExpanded,
-      'result-item--clickable': item.media_type === 'track',
+      'result-item--clickable':
+        item.media_type === 'track' || item.media_type === 'artist',
     }"
     @click="onItemClick"
   >
@@ -26,7 +27,6 @@
 
     <!-- Actions for tracks (shown when expanded) -->
     <template v-if="item.media_type === 'track' && isExpanded">
-      <div class="result-spacer"></div>
       <div class="result-actions">
         <Button
           v-if="boostEnabled"
@@ -61,13 +61,11 @@
 
     <!-- Actions for artists -->
     <template v-else-if="item.media_type === 'artist'">
-      <div class="result-spacer"></div>
       <div class="result-actions">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          class="action-btn"
-          @click.stop="$emit('selectArtist', item)"
+          @click.stop="$emit('selectArtist', item as Artist)"
         >
           <Music :size="16" />
           {{ $t("providers.party.guest_page.view_songs") }}
@@ -78,16 +76,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { Artist, Track } from "@/plugins/api/interfaces";
-import { MediaType } from "@/plugins/api/interfaces";
-import { getMediaItemImageUrl } from "@/helpers/utils";
-import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { getMediaItemImageUrl } from "@/helpers/utils";
+import type { Artist, Track } from "@/plugins/api/interfaces";
+import { MediaType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { ListPlus, Music, Rocket } from "lucide-vue-next";
+import { computed } from "vue";
 
 const props = defineProps<{
   item: Track | Artist;
@@ -104,7 +102,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   addToQueue: [item: Track | Artist, position: "next" | "end"];
-  selectArtist: [item: Track | Artist];
+  selectArtist: [item: Artist];
   toggleExpand: [itemId: string];
 }>();
 
@@ -118,6 +116,8 @@ const isAddLoading = computed(() =>
 const onItemClick = () => {
   if (props.item.media_type === MediaType.TRACK) {
     emit("toggleExpand", `${props.item.media_type}-${props.item.item_id}`);
+  } else if (props.item.media_type === MediaType.ARTIST) {
+    emit("selectArtist", props.item);
   }
 };
 
@@ -151,6 +151,10 @@ const artistName = computed(() => {
 
 .result-item--clickable {
   cursor: pointer;
+}
+
+.result-item--clickable:hover:not(.result-item--expanded) {
+  background: rgba(var(--v-theme-surface-variant), 0.14);
 }
 
 .result-item--expanded {
@@ -187,11 +191,18 @@ const artistName = computed(() => {
   justify-content: center;
 }
 
-.result-name,
-.result-artist {
+.result-name {
   font-size: 1rem;
-  font-weight: 500;
-  opacity: 0.7;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-artist {
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.6;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -200,10 +211,6 @@ const artistName = computed(() => {
 .result-type {
   text-transform: capitalize;
   opacity: 0.7;
-}
-
-.result-spacer {
-  display: none;
 }
 
 .result-actions {
@@ -229,41 +236,5 @@ const artistName = computed(() => {
 
 .action-btn:disabled {
   opacity: 0.3;
-}
-
-@media (max-width: 768px) {
-  .result-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-    min-height: auto;
-    padding: 0.75rem;
-  }
-
-  .result-info {
-    width: 100%;
-    overflow: visible;
-  }
-
-  .result-text {
-    overflow: hidden;
-  }
-
-  .result-spacer {
-    display: block;
-    background: rgba(var(--v-theme-on-surface), 0.15);
-    height: 1px;
-    margin: 6px 16px;
-  }
-
-  .result-actions {
-    width: 100%;
-    flex-direction: row;
-    margin-left: 0;
-  }
-
-  .result-actions button {
-    flex: 1;
-  }
 }
 </style>

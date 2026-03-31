@@ -83,13 +83,12 @@ watch(
       }
       aliasLoading.value = true;
       try {
-        const genres = await api.getLibraryGenres(
-          undefined,
-          aliasSearch.value,
-          SEARCH_RESULT_LIMIT,
-          0,
-          "name",
-        );
+        const genres = await api.getLibraryGenres({
+          search: aliasSearch.value,
+          limit: SEARCH_RESULT_LIMIT,
+          offset: 0,
+          order_by: "name",
+        });
         const allAliases = new Set<string>();
         for (const genre of genres) {
           for (const alias of genre.genre_aliases || []) {

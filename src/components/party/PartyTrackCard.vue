@@ -4,7 +4,7 @@
     :class="[
       'track-card',
       `position-${position}`,
-      { 'guest-request': isGuestRequest },
+      { 'guest-request': isGuestRequest, 'white-text': forceWhiteText },
     ]"
     :style="isGuestRequest ? { '--guest-color': badgeColor } : {}"
   >
@@ -57,6 +57,7 @@ export interface Props {
   isPlaying?: boolean;
   requestBadgeColor?: string;
   boostBadgeColor?: string;
+  forceWhiteText?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -64,6 +65,7 @@ const props = withDefaults(defineProps<Props>(), {
   isPlaying: false,
   requestBadgeColor: "#2196F3", // Default: Blue
   boostBadgeColor: "#FF5722", // Default: Orange
+  forceWhiteText: false,
 });
 
 // Check if this is a guest request (party sets party_guest=true)
@@ -298,6 +300,14 @@ const sizeClass = computed(() => {
 .track-artist {
   font-size: clamp(1.1rem, 2.2vh, 2.5rem);
   color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.white-text .track-name {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.white-text .track-artist {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 @media (max-width: 768px) {

@@ -4,10 +4,11 @@
     v-if="isVisible && player"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!canNext || isLoading"
-    icon="mdi-skip-next-outline"
     variant="button"
     @click="api.playerCommandNext(player.player_id)"
-  />
+  >
+    <SkipForward :size="size" />
+  </Icon>
 </template>
 
 <script setup lang="ts">
@@ -17,6 +18,7 @@ import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { useActiveSource } from "@/composables/activeSource";
 import { computed, toRef } from "vue";
+import { SkipForward } from "lucide-vue-next";
 
 // properties
 export interface Props {
@@ -24,11 +26,13 @@ export interface Props {
   playerQueue?: PlayerQueue;
   isVisible?: boolean;
   icon?: IconProps;
+  size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
   isVisible: true,
   icon: undefined,
+  size: 20,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));

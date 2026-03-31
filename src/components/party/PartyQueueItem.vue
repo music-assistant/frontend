@@ -5,6 +5,7 @@
       'queue-item-current': absoluteIndex === currentQueueIndex,
       'queue-item-played': absoluteIndex < currentQueueIndex,
       'queue-item--expanded': isExpanded,
+      'queue-item--clickable': absoluteIndex > currentQueueIndex,
     }"
     @click="onItemClick"
   >
@@ -44,7 +45,6 @@
 
     <!-- Boost action (shown when expanded on upcoming items) -->
     <template v-if="isExpanded && canBoost">
-      <div class="queue-item-spacer"></div>
       <div class="queue-item-actions">
         <Button
           size="sm"
@@ -163,7 +163,14 @@ const badgeLabel = computed(() =>
   border-radius: 12px;
   min-height: 72px;
   transition: background 0.2s ease;
+}
+
+.queue-item--clickable {
   cursor: pointer;
+}
+
+.queue-item--clickable:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.12);
 }
 
 .queue-item--expanded {
@@ -176,10 +183,6 @@ const badgeLabel = computed(() =>
   gap: 1rem;
   flex: 1;
   min-width: 0;
-}
-
-.queue-item-spacer {
-  display: none;
 }
 
 .queue-item-actions {
@@ -248,11 +251,18 @@ const badgeLabel = computed(() =>
   justify-content: center;
 }
 
-.queue-name,
-.queue-artist {
+.queue-name {
   font-size: 1rem;
-  font-weight: 500;
-  opacity: 0.7;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-artist {
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.6;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -286,14 +296,8 @@ const badgeLabel = computed(() =>
     min-height: auto;
   }
 
-  .queue-item-spacer {
-    display: block;
-    height: 1px;
-    background: rgba(var(--v-theme-on-surface), 0.1);
-    margin: 0 0.5rem;
-  }
-
   .queue-item-actions {
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
     width: 100%;
     margin-left: 0;
   }

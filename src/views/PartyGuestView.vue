@@ -1,12 +1,18 @@
 <template>
   <div class="guest-view">
+    <!-- Logo -->
+    <div class="guest-logo">
+      <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
+    </div>
+
     <!-- Search Section -->
     <PartySearchBar
+      ref="searchBarRef"
       v-model:search-query="searchQuery"
       v-model:search-filter="searchFilter"
       :has-searched="hasSearched"
       :show-back="hasSearched || !!selectedArtist"
-      @clear="clearSearch"
+      @clear="handleClear"
       @back="goBack"
       @submit="performSearch"
     />
@@ -164,7 +170,11 @@
 
     <!-- Current Queue Section -->
     <PartyQueueSection
-      v-if="!selectedArtist && (!searchQuery || searchResults.length === 0)"
+      v-if="
+        !selectedArtist &&
+        !searching &&
+        (!searchQuery || searchResults.length === 0)
+      "
       ref="queueSectionRef"
       :queue-items="queueItems"
       :queue-fetch-offset="queueFetchOffset"
@@ -189,16 +199,17 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  nextTick,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-} from "vue";
+import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
+import PartyResultItem from "@/components/party/PartyResultItem.vue";
+import PartySearchBar from "@/components/party/PartySearchBar.vue";
+import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestSearch } from "@/composables/useGuestSearch";
+import { usePartyConfig } from "@/composables/usePartyConfig";
+import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
-import { store } from "@/plugins/store";
 import {
   type Artist,
   EventType,
@@ -207,18 +218,25 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { toast } from "vue-sonner";
-import { usePartyConfig } from "@/composables/usePartyConfig";
-import { useRateLimiting } from "@/composables/useRateLimiting";
-import { useGuestQueue } from "@/composables/useGuestQueue";
-import { useGuestSearch } from "@/composables/useGuestSearch";
-import PartySearchBar from "@/components/party/PartySearchBar.vue";
-import PartyResultItem from "@/components/party/PartyResultItem.vue";
-import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
-import PartyTokensBadge from "@/components/party/PartyTokensBadge.vue";
-import { Button } from "@/components/ui/button";
-import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { store } from "@/plugins/store";
 import { ArrowLeft, Music, Search } from "lucide-vue-next";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
+import { toast } from "vue-sonner";
+import { useTheme } from "vuetify";
+const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
+const theme = useTheme();
+const logoSrc = computed(() =>
+  theme.current.value.dark
+    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
+    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
+);
 
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyConfig();
@@ -294,25 +312,32 @@ const queueSectionRef = ref<InstanceType<typeof PartyQueueSection> | null>(
   null,
 );
 
-// Sync the queue section's listRef to the composable's queueListRef for auto-scroll
+// Sync the queue section's listRef to the composable's queueListRef for auto-scroll.
+// Also scroll to the current item whenever the list becomes available (e.g. after
+// search is cleared and PartyQueueSection remounts).
 watch(
   () => queueSectionRef.value?.listRef,
   (el) => {
     queue.queueListRef.value = el ?? null;
+    if (el) {
+      nextTick(() => queue.scrollToCurrentItem());
+    }
   },
 );
 
 // --- Back navigation ---
-const goBack = async () => {
+const goBack = () => {
   if (selectedArtist.value) {
     clearArtistSelection();
     return;
   }
   clearSearch();
-  // Wait for the queue section to mount and expose its listRef
-  // before attempting to scroll to the current item.
-  await nextTick();
-  queue.scrollToCurrentItem();
+  // Scroll is triggered by the watcher above when PartyQueueSection remounts
+};
+
+const handleClear = () => {
+  clearSearch();
+  // Scroll is triggered by the watcher above when PartyQueueSection remounts
 };
 
 const handleBack = (event: PopStateEvent) => {
@@ -360,6 +385,7 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
   }
 
   const key = `${item.media_type}-${item.item_id}-${position}`;
+  if (addingItems.value.has(key)) return;
   addingItems.value.add(key);
 
   try {
@@ -407,6 +433,7 @@ const boostQueueItem = async (item: QueueItem) => {
     return;
   }
 
+  if (boostingQueueItemId.value === item.queue_item_id) return;
   boostingQueueItemId.value = item.queue_item_id;
   try {
     const result = (await api.sendCommand("party/boost_queue_item", {
@@ -467,6 +494,13 @@ const skipCurrentSong = async () => {
     skippingSong.value = false;
   }
 };
+
+// Restore focus to search input after search completes
+watch(searching, (isSearching) => {
+  if (!isSearching) {
+    searchBarRef.value?.focus();
+  }
+});
 
 // React to party config changes (e.g., admin changes rate limits or badge colors)
 watch(partyConfig, (newConfig) => {
@@ -533,6 +567,20 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.guest-logo {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  height: 28px;
+  width: auto;
+  opacity: 0.85;
+  margin-bottom: 1rem;
+}
+
 .guest-view {
   width: 100%;
   max-width: 1200px;
@@ -630,6 +678,11 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .logo-img {
+    height: 25px;
+    margin-bottom: 0.2rem;
+  }
+
   .guest-view {
     padding: 0.75rem;
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
