@@ -785,6 +785,14 @@ export class MusicAssistantApi {
     });
   }
 
+  public exportPlaylist(
+    db_playlist_id: string | number,
+  ): Promise<string> {
+    return this.sendCommand("music/playlists/export_playlist", {
+      db_playlist_id,
+    });
+  }
+
   public importPlaylist(
     m3u_data: string,
     library_matching: boolean = true,

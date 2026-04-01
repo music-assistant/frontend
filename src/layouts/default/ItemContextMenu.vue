@@ -763,6 +763,32 @@ export const getContextMenuItems = async function (
       icon: "mdi-refresh",
     });
   }
+  // export playlist
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    items[0].provider === "library"
+  ) {
+    contextMenuItems.push({
+      label: "export_playlist",
+      labelArgs: [],
+      action: async () => {
+        const playlist = items[0] as Playlist;
+        const m3uData = await api.exportPlaylist(playlist.item_id);
+        const blob = new Blob([m3uData], { type: "audio/x-mpegurl" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${playlist.name.replace(/[\\/:*?"<>|]/g, "_")}.m3u8`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+      icon: "mdi-export",
+    });
+  }
   // map to main item (add provider mapping)
   if (
     items.length === 1 &&
