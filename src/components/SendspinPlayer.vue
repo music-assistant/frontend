@@ -214,16 +214,13 @@ onMounted(() => {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
     const defaultStaticDelay = getSendspinDefaultStaticDelay();
-    // Read from old localStorage key for backwards compat.
-    // Old values used opposite sign convention (negative = play earlier).
     const savedSyncDelay = localStorage.getItem(
       "frontend.settings.sendspin_sync_delay",
     );
     let syncDelay: number;
     if (savedSyncDelay !== null) {
       const parsed = parseInt(savedSyncDelay, 10);
-      // Old convention: negative = play earlier. New: positive = play earlier.
-      syncDelay = isNaN(parsed) ? defaultStaticDelay : -parsed;
+      syncDelay = isNaN(parsed) ? defaultStaticDelay : parsed;
     } else {
       syncDelay = defaultStaticDelay;
     }
