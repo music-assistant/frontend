@@ -35,6 +35,11 @@ export type LinkGenreDialogEvent = {
   items: MediaItemType[];
 };
 
+export type ImportPlaylistEvent = {
+  m3uData: string;
+  playlistName: string;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -42,6 +47,7 @@ export type Events = {
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
+  importPlaylistDialog: ImportPlaylistEvent;
   clearSelection: void;
   genreExcluded: void;
   "homescreen-edit-toggle": void;

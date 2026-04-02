@@ -1995,10 +1995,10 @@
   resolved "https://registry.npmjs.org/@scure/base/-/base-2.0.0.tgz"
   integrity sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==
 
-"@sendspin/sendspin-js@2.0.4":
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/@sendspin/sendspin-js/-/sendspin-js-2.0.4.tgz#bc8e8054109c4f04670724ad322ea519429eae35"
-  integrity sha512-cP8vRTA7cx8Vi/hQ8/mspvUe1vcZrvRwGEYRWNwAyrBxT9r+EtPQr6t7E6n2mupFnwVyCqH2iTxCv23WQOxySA==
+"@sendspin/sendspin-js@2.0.5":
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/@sendspin/sendspin-js/-/sendspin-js-2.0.5.tgz#7bcd64340f36d1027a59d949199873a5771c0c02"
+  integrity sha512-bfCV4EDWTnRO+C5anWktKP2pSLKBCPrQkN9vwLhwq2OC8VFAwaEFgfWDjtYQ6AIfk25PQtqc6Rs5cnEebB1jYg==
   dependencies:
     opus-encdec "^0.1.1"
 
@@ -4673,10 +4673,10 @@ handle-thing@^2.0.0:
   resolved "https://registry.npmjs.org/handle-thing/-/handle-thing-2.0.1.tgz"
   integrity sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg==
 
-happy-dom@^20.8.4:
-  version "20.8.4"
-  resolved "https://registry.npmjs.org/happy-dom/-/happy-dom-20.8.4.tgz"
-  integrity sha512-GKhjq4OQCYB4VLFBzv8mmccUadwlAusOZOI7hC1D9xDIT5HhzkJK17c4el2f6R6C715P9xB4uiMxeKUa2nHMwQ==
+happy-dom@^20.8.9:
+  version "20.8.9"
+  resolved "https://registry.yarnpkg.com/happy-dom/-/happy-dom-20.8.9.tgz#aeacc9ab9aacada379bce0ba37b2f02dabbba286"
+  integrity sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==
   dependencies:
     "@types/node" ">=20.0.0"
     "@types/whatwg-mimetype" "^3.0.2"
@@ -5370,9 +5370,9 @@ lodash.sortby@^4.7.0:
   integrity sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==
 
 lodash@^4.17.20, lodash@^4.17.21:
-  version "4.17.23"
-  resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz"
-  integrity sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==
+  version "4.18.1"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.18.1.tgz#ff2b66c1f6326d59513de2407bf881439812771c"
+  integrity sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
 
 loupe@^3.1.0, loupe@^3.1.4:
   version "3.2.1"
@@ -7658,9 +7658,9 @@ yaml-eslint-parser@^1.2.2:
     yaml "^2.0.0"
 
 yaml@^2.0.0, yaml@^2.8.2:
-  version "2.8.2"
-  resolved "https://registry.npmjs.org/yaml/-/yaml-2.8.2.tgz"
-  integrity sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==
+  version "2.8.3"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.8.3.tgz#a0d6bd2efb3dd03c59370223701834e60409bd7d"
+  integrity sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg==
 
 yargs-parser@^18.1.2:
   version "18.1.3"

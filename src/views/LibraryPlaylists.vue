@@ -31,7 +31,9 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { toast } from "vue-sonner";
 import { ListMusic } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
@@ -121,6 +123,15 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
+  // import playlist from file
+  extraMenuItems.value.push({
+    label: "import_playlist",
+    action: () => {
+      triggerFileImport();
+    },
+    icon: "mdi-file-import",
+    overflowAllowed: true,
+  });
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [
@@ -140,5 +151,30 @@ onMounted(() => {
 
 const newPlaylist = function (provId: string) {
   eventbus.emit("createPlaylist", { providerId: provId });
+};
+
+const triggerFileImport = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".m3u,.m3u8";
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    if (!text.trimStart().startsWith("#EXTM3U")) {
+      toast.error($t("import_playlist_invalid_file"));
+      return;
+    }
+    // extract playlist name from #PLAYLIST: tag, fall back to filename
+    const playlistMatch = text.match(/^#PLAYLIST:(.+)$/m);
+    const playlistName = playlistMatch
+      ? playlistMatch[1].trim()
+      : file.name.replace(/\.m3u8?$/i, "");
+    eventbus.emit("importPlaylistDialog", {
+      m3uData: text,
+      playlistName,
+    });
+  };
+  input.click();
 };
 </script>
