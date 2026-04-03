@@ -113,6 +113,11 @@
           <div v-else-if="player.current_media?.album">
             {{ player.current_media.album }}
           </div>
+          <!-- queue empty (hidden visually, announced by screen readers) -->
+          <div
+            v-else-if="playerQueue?.items == 0"
+            :aria-label="$t('queue_empty')"
+          ></div>
         </div>
       </template>
 
@@ -473,10 +478,5 @@ watch(
   height: 16px;
   min-width: 16px;
   padding: 0 4px 0 4px;
-  background-color: #20272a !important;
-}
-
-.panel-item-selected .group-badge :deep(.v-badge__badge) {
-  background-color: #1c4a5e !important;
 }
 </style>
