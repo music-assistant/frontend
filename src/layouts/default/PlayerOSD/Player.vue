@@ -12,23 +12,30 @@
         />
       </div>
       <div class="mediacontrols-bottom-center">
-        <!-- player control buttons -->
-        <PlayerControls
-          :style="playIconStyle"
-          :visible-components="{
-            repeat: { isVisible: getBreakpointValue('bp3') },
-            shuffle: { isVisible: getBreakpointValue('bp3') },
-            play: {
-              isVisible: true,
-              icon: {
-                staticWidth: '48px',
-                staticHeight: '48px',
+        <div class="mediacontrols-center-controls">
+          <!-- favorite button for current track -->
+          <FavoriteButton
+            v-if="store.curQueueItem?.media_item && getBreakpointValue('bp3')"
+            :item="store.curQueueItem.media_item"
+          />
+          <!-- player control buttons -->
+          <PlayerControls
+            :style="playIconStyle"
+            :visible-components="{
+              repeat: { isVisible: getBreakpointValue('bp3') },
+              shuffle: { isVisible: getBreakpointValue('bp3') },
+              play: {
+                isVisible: true,
+                icon: {
+                  staticWidth: '48px',
+                  staticHeight: '48px',
+                },
               },
-            },
-            previous: { isVisible: getBreakpointValue('bp3') },
-            next: { isVisible: getBreakpointValue('bp3') },
-          }"
-        />
+              previous: { isVisible: getBreakpointValue('bp3') },
+              next: { isVisible: getBreakpointValue('bp3') },
+            }"
+          />
+        </div>
         <!-- progress bar -->
         <PlayerTimeline
           v-if="getBreakpointValue('bp6')"
@@ -42,11 +49,6 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
-          <!-- favorite button for current track -->
-          <FavoriteButton
-            v-if="store.curQueueItem?.media_item && getBreakpointValue('bp3')"
-            :item="store.curQueueItem.media_item"
-          />
           <!-- player extended control buttons -->
           <PlayerExtendedControls
             :queue="{
@@ -219,6 +221,12 @@ watch(
   background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {
     width: 40%;
+  }
+
+  .mediacontrols-center-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &[data-mobile="true"] {
