@@ -223,14 +223,6 @@ watch(
     width: 40%;
   }
 
-  .mediacontrols-favorite {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-inline-start: auto;
-    margin-inline-end: auto;
-  }
-
   &[data-mobile="true"] {
     background-color: transparent;
     padding: 8px 10px;
@@ -268,11 +260,17 @@ watch(
 }
 
 .mediacontrols-left {
-  margin-inline-end: auto;
   width: 20%;
   > div {
     padding: 0px !important;
   }
+}
+
+.mediacontrols-favorite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline-end: auto;
 }
 
 .mediacontrols-bottom-right {
