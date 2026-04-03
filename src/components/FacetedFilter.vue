@@ -50,13 +50,17 @@
             v-for="option in filteredOptions"
             :key="option.value"
             class="faceted-filter-item"
-            @click.stop.prevent="toggle(option.value)"
+            role="checkbox"
+            :aria-checked="selectedSet.has(option.value)"
+            tabindex="0"
+            @click="toggle(option.value)"
+            @keydown.space.prevent="toggle(option.value)"
           >
             <Checkbox
               :model-value="selectedSet.has(option.value)"
-              class="mr-2"
-              @click.stop
-              @update:model-value="toggle(option.value)"
+              class="mr-2 pointer-events-none"
+              tabindex="-1"
+              aria-hidden="true"
             />
             <span class="truncate">
               {{ option.label }}
