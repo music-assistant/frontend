@@ -4,7 +4,10 @@
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
-      !playerQueue.active || playerQueue.items == 0 || isLoading || isDynamic
+      !playerQueue.active ||
+      playerQueue.items == 0 ||
+      isLoading ||
+      isSingleDynamicPlaylist
     "
     :color="
       getValueFromSources(icon?.color, [
