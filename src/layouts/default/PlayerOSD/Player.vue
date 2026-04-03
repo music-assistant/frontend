@@ -11,31 +11,31 @@
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
       </div>
+      <!-- favorite button for current track -->
+      <div class="mediacontrols-favorite">
+        <FavoriteButton
+          v-if="store.curQueueItem?.media_item && getBreakpointValue('bp3')"
+          :item="store.curQueueItem.media_item"
+        />
+      </div>
       <div class="mediacontrols-bottom-center">
-        <div class="mediacontrols-center-controls">
-          <!-- favorite button for current track -->
-          <FavoriteButton
-            v-if="store.curQueueItem?.media_item && getBreakpointValue('bp3')"
-            :item="store.curQueueItem.media_item"
-          />
-          <!-- player control buttons -->
-          <PlayerControls
-            :style="playIconStyle"
-            :visible-components="{
-              repeat: { isVisible: getBreakpointValue('bp3') },
-              shuffle: { isVisible: getBreakpointValue('bp3') },
-              play: {
-                isVisible: true,
-                icon: {
-                  staticWidth: '48px',
-                  staticHeight: '48px',
-                },
+        <!-- player control buttons -->
+        <PlayerControls
+          :style="playIconStyle"
+          :visible-components="{
+            repeat: { isVisible: getBreakpointValue('bp3') },
+            shuffle: { isVisible: getBreakpointValue('bp3') },
+            play: {
+              isVisible: true,
+              icon: {
+                staticWidth: '48px',
+                staticHeight: '48px',
               },
-              previous: { isVisible: getBreakpointValue('bp3') },
-              next: { isVisible: getBreakpointValue('bp3') },
-            }"
-          />
-        </div>
+            },
+            previous: { isVisible: getBreakpointValue('bp3') },
+            next: { isVisible: getBreakpointValue('bp3') },
+          }"
+        />
         <!-- progress bar -->
         <PlayerTimeline
           v-if="getBreakpointValue('bp6')"
@@ -223,10 +223,12 @@ watch(
     width: 40%;
   }
 
-  .mediacontrols-center-controls {
+  .mediacontrols-favorite {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-inline-start: auto;
+    margin-inline-end: auto;
   }
 
   &[data-mobile="true"] {
