@@ -4,7 +4,10 @@
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
-      !playerQueue.active || playerQueue.items == 0 || isLoading || isDynamic
+      !playerQueue.active ||
+      playerQueue.items == 0 ||
+      isLoading ||
+      isSingleDynamicPlaylist
     "
     :color="
       getValueFromSources(icon?.color, [
@@ -70,12 +73,12 @@ const isLoading = computed(() => {
   );
 });
 
-const isDynamic = computed(() => {
+const isSingleDynamicPlaylist = computed(() => {
+  const items = compProps.playerQueue?.enqueued_media_items;
   return (
-    compProps.playerQueue?.enqueued_media_items?.some(
-      (item) =>
-        item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic,
-    ) ?? false
+    items?.length === 1 &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    (items[0] as Playlist).is_dynamic
   );
 });
 </script>
