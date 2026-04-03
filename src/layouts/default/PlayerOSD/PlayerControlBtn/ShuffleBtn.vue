@@ -3,7 +3,9 @@
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="!playerQueue.active || playerQueue.items == 0 || isLoading"
+    :disabled="
+      !playerQueue.active || playerQueue.items == 0 || isLoading || isDynamic
+    "
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.shuffle_enabled, 'primary', ''],
@@ -27,7 +29,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { PlayerQueue } from "@/plugins/api/interfaces";
+import { MediaType, Playlist, PlayerQueue } from "@/plugins/api/interfaces";
 import { IconArrowsRight } from "@tabler/icons-vue";
 import { Shuffle } from "lucide-vue-next";
 import { computed } from "vue";
@@ -48,6 +50,15 @@ const compProps = withDefaults(defineProps<Props>(), {
 const isLoading = computed(() => {
   return (
     compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
+});
+
+const isDynamic = computed(() => {
+  return (
+    compProps.playerQueue?.enqueued_media_items?.some(
+      (item) =>
+        item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic,
+    ) ?? false
   );
 });
 </script>

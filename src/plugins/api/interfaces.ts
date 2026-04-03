@@ -694,6 +694,7 @@ export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
   supported_mediatypes: MediaType[];
+  is_dynamic: boolean;
 }
 
 export interface Radio extends MediaItem {}
@@ -859,6 +860,7 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  enqueued_media_items: MediaItemType[];
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
