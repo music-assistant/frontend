@@ -42,6 +42,11 @@
       </div>
       <div class="mediacontrols-bottom-right">
         <div>
+          <!-- favorite button for current track -->
+          <FavoriteButton
+            v-if="store.curQueueItem?.media_item && getBreakpointValue('bp3')"
+            :item="store.curQueueItem.media_item"
+          />
           <!-- player extended control buttons -->
           <PlayerExtendedControls
             :queue="{
@@ -124,6 +129,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { computed, ref, watch } from "vue";
+import FavoriteButton from "@/components/FavoriteButton.vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
