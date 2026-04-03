@@ -5,7 +5,7 @@
  */
 
 import { ref, type Ref } from "vue";
-import type { PartyModeConfig } from "@/plugins/api/interfaces";
+import type { PartyConfig } from "@/plugins/api/interfaces";
 
 interface TokenBucket {
   tokens: number;
@@ -238,9 +238,9 @@ export function useRateLimiting() {
 
   /**
    * Apply server config to rate limiting parameters.
-   * Called after fetching party_mode/config from the server.
+   * Called after fetching party/config from the server.
    */
-  const configure = (config: PartyModeConfig) => {
+  const configure = (config: PartyConfig) => {
     rateLimitingEnabled.value = config.enable_rate_limiting ?? true;
     addQueueEnabled.value = config.enable_add_queue ?? true;
     boostEnabled.value = config.enable_boost ?? true;

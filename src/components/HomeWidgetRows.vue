@@ -111,13 +111,13 @@ onMounted(() => {
 });
 
 watch(
-  () => store.currentUser?.preferences,
-  (newPrefs) => {
-    if (newPrefs) {
+  savedSettings,
+  (newVal) => {
+    if (newVal) {
       loadData();
     }
   },
-  { immediate: false },
+  { immediate: false, deep: true },
 );
 
 const onUpdateSettings = function (uri: string, settings: WidgetRowSettings) {

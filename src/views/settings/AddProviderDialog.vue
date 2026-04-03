@@ -4,7 +4,7 @@
       class="add-provider-dialog h-[60vh] max-h-[60vh] flex flex-col p-0"
     >
       <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
-        <DialogTitle>{{ $t("settings.add_provider") }}</DialogTitle>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
       <div class="px-6 pb-2 flex-shrink-0">
@@ -22,11 +22,6 @@
 
       <div class="px-6 flex-shrink-0">
         <div class="filter-buttons">
-          <FacetedFilter
-            v-model="selectedProviderTypes"
-            :title="$t('settings.provider_type')"
-            :options="providerTypeOptions"
-          />
           <FacetedFilter
             v-model="selectedProviderStages"
             :title="$t('settings.stage.label')"
@@ -107,11 +102,10 @@ import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
-  initialType?: string;
 }>();
 
 const POPULAR_PROVIDERS = [
@@ -130,18 +124,22 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
 const searchQuery = ref("");
-const selectedProviderTypes = ref<string[]>([]);
 const selectedProviderStages = ref<string[]>([]);
 const searchInput = ref<{ focus: () => void } | null>(null);
 
-const providerTypeOptions = computed(() => [
-  { label: $t("settings.musicprovider"), value: ProviderType.MUSIC },
-  { label: $t("settings.playerprovider"), value: ProviderType.PLAYER },
-  { label: $t("settings.metadataprovider"), value: ProviderType.METADATA },
-  { label: $t("settings.pluginprovider"), value: ProviderType.PLUGIN },
-]);
+const activeTypeFilter = computed(() => (route.query.types as string) || null);
+
+const dialogTitle = computed(() =>
+  match(activeTypeFilter.value)
+    .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+    .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
+    .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
+    .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+    .otherwise(() => $t("settings.add_provider")),
+);
 
 const providerStageOptions = computed(() => [
   { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
@@ -206,10 +204,17 @@ const filteredProviders = computed(() => {
     );
   }
 
-  if (selectedProviderTypes.value.length > 0) {
-    providers = providers.filter((x) =>
-      selectedProviderTypes.value.includes(x.type),
-    );
+  if (activeTypeFilter.value) {
+    const activeTypes = Array.isArray(activeTypeFilter.value)
+      ? activeTypeFilter.value
+      : String(activeTypeFilter.value)
+          .split(",")
+          .map((type) => type.trim())
+          .filter((type) => type.length > 0);
+
+    if (activeTypes.length > 0) {
+      providers = providers.filter((x) => activeTypes.includes(x.type));
+    }
   }
 
   if (selectedProviderStages.value.length > 0) {
@@ -280,11 +285,7 @@ watch(
 watch(
   () => props.show,
   (isOpen) => {
-    if (isOpen && props.initialType) {
-      selectedProviderTypes.value = [props.initialType];
-      searchQuery.value = "";
-    } else if (!isOpen) {
-      selectedProviderTypes.value = [];
+    if (!isOpen) {
       selectedProviderStages.value = [];
       searchQuery.value = "";
     }

@@ -1,24 +1,24 @@
 /**
- * Shared composable for party mode configuration.
- * Fetches party_mode/config once and shares reactive state across components,
+ * Shared composable for party configuration.
+ * Fetches party/config once and shares reactive state across components,
  * avoiding redundant API calls when multiple components need the same config.
  */
 
 import { ref } from "vue";
 import api from "@/plugins/api";
-import { EventType, type PartyModeConfig } from "@/plugins/api/interfaces";
+import { EventType, type PartyConfig } from "@/plugins/api/interfaces";
 
-const config = ref<PartyModeConfig | null>(null);
+const config = ref<PartyConfig | null>(null);
 const loading = ref(false);
 const loaded = ref(false);
 
-let fetchPromise: Promise<PartyModeConfig | null> | null = null;
+let fetchPromise: Promise<PartyConfig | null> | null = null;
 
 /**
- * Fetch party mode config, deduplicating concurrent requests.
+ * Fetch party config, deduplicating concurrent requests.
  * Returns the cached config if already loaded, unless force is true.
  */
-async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
+async function fetchConfig(force = false): Promise<PartyConfig | null> {
   if (loaded.value && !force) {
     return config.value;
   }
@@ -31,9 +31,7 @@ async function fetchConfig(force = false): Promise<PartyModeConfig | null> {
   loading.value = true;
   fetchPromise = (async () => {
     try {
-      const result = (await api.sendCommand(
-        "party_mode/config",
-      )) as PartyModeConfig;
+      const result = (await api.sendCommand("party/config")) as PartyConfig;
       config.value = result;
       loaded.value = true;
       return result;
@@ -63,7 +61,7 @@ let subscribed = false;
 
 /**
  * Subscribe to PROVIDERS_UPDATED and CORE_STATE_UPDATED so the shared
- * config ref auto-refreshes whenever the party_mode provider is reloaded
+ * config ref auto-refreshes whenever the party provider is reloaded
  * or remote access is toggled.
  */
 function ensureSubscribed() {
@@ -71,10 +69,10 @@ function ensureSubscribed() {
   subscribed = true;
 
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
-    const hasPartyMode = Object.values(api.providers).some(
-      (p) => p.domain === "party_mode",
+    const hasParty = Object.values(api.providers).some(
+      (p) => p.domain === "party",
     );
-    if (hasPartyMode) {
+    if (hasParty) {
       invalidate();
       await fetchConfig(true);
     } else {
@@ -86,17 +84,17 @@ function ensureSubscribed() {
   // Remote access toggle fires CORE_STATE_UPDATED; refresh config so the
   // join URL switches between local and remote.
   api.subscribe(EventType.CORE_STATE_UPDATED, async () => {
-    const hasPartyMode = Object.values(api.providers).some(
-      (p) => p.domain === "party_mode",
+    const hasParty = Object.values(api.providers).some(
+      (p) => p.domain === "party",
     );
-    if (hasPartyMode) {
+    if (hasParty) {
       invalidate();
       await fetchConfig(true);
     }
   });
 }
 
-export function usePartyModeConfig() {
+export function usePartyConfig() {
   ensureSubscribed();
   return {
     config,

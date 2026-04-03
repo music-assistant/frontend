@@ -5,10 +5,11 @@
       'queue-item-current': absoluteIndex === currentQueueIndex,
       'queue-item-played': absoluteIndex < currentQueueIndex,
       'queue-item--expanded': isExpanded,
+      'queue-item--clickable': absoluteIndex > currentQueueIndex,
     }"
     @click="onItemClick"
   >
-    <div class="queue-item-row">
+    <div class="queue-item-info">
       <div class="queue-position">
         <NowPlayingBadge
           v-if="absoluteIndex === currentQueueIndex && isPlaying"
@@ -16,15 +17,12 @@
         />
         <span v-else class="queue-number">{{ absoluteIndex + 1 }}</span>
       </div>
-      <v-avatar size="48" rounded class="queue-avatar">
-        <v-img :src="imageUrl" :alt="item.name" cover>
-          <template #placeholder>
-            <div class="avatar-placeholder">
-              <v-icon>mdi-music</v-icon>
-            </div>
-          </template>
-        </v-img>
-      </v-avatar>
+      <Avatar class="queue-avatar size-12 rounded-md">
+        <AvatarImage :src="imageUrl" :alt="item.name" />
+        <AvatarFallback class="avatar-placeholder rounded-md">
+          <Music :size="20" />
+        </AvatarFallback>
+      </Avatar>
       <div class="queue-info">
         <MarqueeText class="queue-name">
           {{ title }}
@@ -36,30 +34,31 @@
 
       <!-- Guest request badge -->
       <span
-        v-if="item.extra_attributes?.party_mode_guest === true"
+        v-if="item.extra_attributes?.party_guest === true"
         class="guest-request-badge"
         :style="{ '--badge-color': badgeColor }"
       >
-        <v-icon size="x-small">{{ badgeIcon }}</v-icon>
+        <component :is="badgeIconComponent" :size="10" />
         <span>{{ badgeLabel }}</span>
       </span>
     </div>
 
     <!-- Boost action (shown when expanded on upcoming items) -->
-    <div v-if="isExpanded && canBoost" class="queue-item-actions">
-      <v-btn
-        variant="elevated"
-        size="small"
-        :loading="boosting"
-        :disabled="boostDisabled"
-        class="boost-btn"
-        :style="{ backgroundColor: boostBadgeColor }"
-        @click.stop="$emit('boost', item)"
-      >
-        <v-icon start size="small">mdi-rocket-launch</v-icon>
-        {{ $t("providers.party_mode.boost") }}
-      </v-btn>
-    </div>
+    <template v-if="isExpanded && canBoost">
+      <div class="queue-item-actions">
+        <Button
+          size="sm"
+          :disabled="boostDisabled || boosting"
+          class="boost-btn"
+          :style="{ '--btn-bg': boostBadgeColor }"
+          @click.stop="$emit('boost', item)"
+        >
+          <Spinner v-if="boosting" :size="16" />
+          <Rocket v-else :size="16" />
+          {{ $t("providers.party.boost") }}
+        </Button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -70,6 +69,10 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner/Spinner.vue";
+import { Music, Rocket, UserRound } from "lucide-vue-next";
 
 const props = defineProps<{
   item: QueueItem;
@@ -130,63 +133,71 @@ const subtitle = computed(() => {
 
   return parts.length > 0
     ? parts.join(" • ")
-    : $t("providers.party_mode.guest_page.unknown_artist");
+    : $t("providers.party.guest_page.unknown_artist");
 });
 
 const isBoosted = computed(
-  () => props.item.extra_attributes?.party_mode_boosted === true,
+  () => props.item.extra_attributes?.party_boosted === true,
 );
 
 const badgeColor = computed(() =>
   isBoosted.value ? props.boostBadgeColor : props.requestBadgeColor,
 );
 
-const badgeIcon = computed(() =>
-  isBoosted.value ? "mdi-rocket-launch" : "mdi-account-music",
+const badgeIconComponent = computed(() =>
+  isBoosted.value ? Rocket : UserRound,
 );
 
 const badgeLabel = computed(() =>
-  isBoosted.value
-    ? $t("providers.party_mode.boost")
-    : $t("providers.party_mode.request"),
+  isBoosted.value ? $t("providers.party.boost") : $t("providers.party.request"),
 );
 </script>
 
 <style scoped>
 .queue-item {
   display: flex;
-  flex-direction: column;
-  padding: 0 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
   background: rgba(var(--v-theme-surface-variant), 0.05);
-  border-radius: 8px;
-  min-height: 80px;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  min-height: 72px;
+  transition: background 0.2s ease;
+}
+
+.queue-item--clickable {
   cursor: pointer;
+}
+
+.queue-item--clickable:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.12);
 }
 
 .queue-item--expanded {
   background: rgba(var(--v-theme-primary), 0.1);
 }
 
-.queue-item-row {
+.queue-item-info {
   display: flex;
   align-items: center;
   gap: 1rem;
-  min-height: 80px;
+  flex: 1;
+  min-width: 0;
 }
 
 .queue-item-actions {
   display: flex;
   justify-content: center;
-  padding: 0 0 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .queue-item-actions .boost-btn {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0.5px;
-  color: white;
-  flex: 1;
+  background-color: var(--btn-bg) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
 }
 
 .queue-item-current {
@@ -196,7 +207,7 @@ const badgeLabel = computed(() =>
 }
 
 .queue-item-played {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(var(--v-theme-on-surface), 0.08);
   opacity: 0.5;
 }
 
@@ -240,11 +251,18 @@ const badgeLabel = computed(() =>
   justify-content: center;
 }
 
-.queue-name,
-.queue-artist {
+.queue-name {
   font-size: 1rem;
-  font-weight: 500;
-  opacity: 0.7;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-artist {
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.6;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -265,5 +283,27 @@ const badgeLabel = computed(() =>
   color: var(--badge-color);
   flex-shrink: 0;
   margin-left: auto;
+  max-width: 6rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .queue-item--expanded {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+
+  .queue-item-actions {
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .queue-item-actions .boost-btn {
+    flex: 1;
+  }
 }
 </style>

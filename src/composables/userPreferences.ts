@@ -8,7 +8,7 @@ export interface ItemsListingPreferences {
   favoriteFilter?: boolean;
   libraryFilter?: boolean;
   albumArtistsFilter?: boolean;
-  hideEmptyFilter?: boolean;
+  hideEmptyFilter?: boolean | null;
   albumType?: string[];
   providerFilter?: string[];
   expand?: boolean;
@@ -24,6 +24,8 @@ export function useUserPreferences() {
   /**
    * Get a preference value from user preferences as a computed ref
    */
+  function getPreference<T>(key: string, defaultValue: T): ComputedRef<T>;
+  function getPreference<T>(key: string): ComputedRef<T | undefined>;
   function getPreference<T>(
     key: string,
     defaultValue?: T,

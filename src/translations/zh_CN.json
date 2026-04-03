@@ -796,7 +796,6 @@
     },
     "play_replace": "立即播放(清除播放列表)",
     "played": "已播放",
-    "background_task_added": "该操作由服务器在后台执行，可能需要一些时间才能完成。请密切关注服务器日志以了解进度。",
     "images": "图片",
     "image_type": "类型",
     "image_source": "源",

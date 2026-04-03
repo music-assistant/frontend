@@ -74,7 +74,7 @@ export function useGuestSearch() {
       displayedResultsCount.value = 10;
     } catch (error) {
       console.error("Search failed:", error);
-      toast.error($t("providers.party_mode.guest_page.search_failed"));
+      toast.error($t("providers.party.guest_page.search_failed"));
     } finally {
       searching.value = false;
     }
@@ -140,9 +140,7 @@ export function useGuestSearch() {
       artistTracks.value = tracks;
     } catch (error) {
       console.error("Failed to fetch artist tracks:", error);
-      toast.error(
-        $t("providers.party_mode.guest_page.load_artist_tracks_failed"),
-      );
+      toast.error($t("providers.party.guest_page.load_artist_tracks_failed"));
       selectedArtist.value = null;
     } finally {
       loadingArtistTracks.value = false;

@@ -5,7 +5,7 @@
 -->
 <template>
   <Sheet v-model:open="show">
-    <SheetContent side="bottom" class="h-[55vh] flex flex-col p-0">
+    <SheetContent side="bottom" class="h-[85vh] flex flex-col p-0">
       <SheetHeader class="flex-row items-center gap-3 border-b px-4 py-3">
         <ListPlus class="size-5 shrink-0 opacity-80" />
         <SheetTitle>{{ $t("add_playlist") }}</SheetTitle>
@@ -102,7 +102,6 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ListPlus } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { toast } from "vue-sonner";
 
 const show = ref<boolean>(false);
 const playlists = ref<Playlist[]>([]);
@@ -159,7 +158,11 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
-    if (!playlist.supported_mediatypes.includes(refItem.media_type)) {
+    let _supported_mediatypes = playlist.supported_mediatypes;
+    if (_supported_mediatypes.includes(MediaType.TRACK))
+      // backend unwraps albums to individual tracks
+      _supported_mediatypes.push(MediaType.ALBUM);
+    if (!_supported_mediatypes.includes(refItem.media_type)) {
       // target playlist doesn't support media type
       continue;
     }
@@ -183,7 +186,9 @@ const fetchPlaylists = async function () {
   for (const provider of Object.values(api.providers)) {
     // filter suitable create provider base on media_type
     if (
-      refItem.media_type == MediaType.TRACK &&
+      // album is unwrapped to individual tracks by backend
+      (refItem.media_type == MediaType.TRACK ||
+        refItem.media_type == MediaType.ALBUM) &&
       !provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) &&
       !provider.supported_features.includes(
         ProviderFeature.PLAYLIST_CREATE_TRACKS,
@@ -236,7 +241,6 @@ const addToPlaylist = async function (value: MediaItemType) {
     selectedItems.value.map((x) => x.uri),
   );
   close();
-  toast.info($t("background_task_added"));
 };
 const newPlaylist = async function (provId: string) {
   let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;

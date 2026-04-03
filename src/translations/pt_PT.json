@@ -790,7 +790,6 @@
     },
     "play_replace": "Reproduzir Agora (limpar fila)",
     "played": "Reproduzido",
-    "background_task_added": "A ação é executada pelo servidor em segundo plano e pode demorar algum tempo a ser concluída. Esteja atento ao progresso no registo do servidor.",
     "images": "Imagens",
     "image_type": "Tipo",
     "image_source": "Fonte",

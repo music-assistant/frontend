@@ -59,7 +59,7 @@ interface Store {
   isIngressSession: boolean;
   isOnboarding: boolean;
   enabledPlugins: Set<string>;
-  isPartyModeGuest: boolean;
+  isPartyGuest: boolean;
   companionPlayerId?: string;
 }
 
@@ -132,5 +132,5 @@ export const store: Store = reactive({
   isIngressSession: window.location.pathname.includes("/hassio_ingress/"),
   isOnboarding: false,
   enabledPlugins: new Set(),
-  isPartyModeGuest: false,
+  isPartyGuest: false,
 });

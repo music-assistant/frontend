@@ -27,7 +27,8 @@
           }"
         ></div>
         <div v-if="maxOutputQualityTier == QualityTier.LOW">LQ</div>
-        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">HQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.GOOD">SQ</div>
+        <div v-else-if="maxOutputQualityTier == QualityTier.LOSSLESS">HQ</div>
         <div v-else-if="maxOutputQualityTier == QualityTier.HIRES">HR</div>
       </v-chip>
     </template>
@@ -494,7 +495,7 @@
                 >
                   <template v-if="api.players[player]">
                     <ProviderIcon
-                      :domain="api.players[player].provider"
+                      :domain="outputProtocolDomain(api.players[player_id])"
                       :size="30"
                       class="streamdetails-icon"
                       :monochrome="true"
@@ -517,7 +518,7 @@
               >
                 <template v-if="api.players[player_id]">
                   <ProviderIcon
-                    :domain="api.players[player_id].provider"
+                    :domain="outputProtocolDomain(api.players[player_id])"
                     :size="30"
                     class="streamdetails-icon"
                     :monochrome="true"
@@ -560,10 +561,12 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
+  AudioFormat,
   ContentType,
   DSPFilter,
   DSPFilterType,
   DSPState,
+  Player,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -665,12 +668,15 @@ const inputFileIcon = computed(() => {
 });
 
 enum QualityTier {
-  LOW = 0,
-  GOOD = 1,
-  HIRES = 3,
+  UNKNOWN = 0,
+  LOW = 1,
+  GOOD = 2,
+  LOSSLESS = 3,
+  HIRES = 4,
 }
 
 const isContentTypeLossless = function (contentType: ContentType) {
+  if (isPcm(contentType)) return true;
   return [
     ContentType.DSF,
     ContentType.FLAC,
@@ -689,44 +695,50 @@ const isContentTypeLossless = function (contentType: ContentType) {
   ].includes(contentType);
 };
 
+const isHiResFormat = function (audioFormat: AudioFormat) {
+  if (!isContentTypeLossless(audioFormat.content_type)) return false;
+  return audioFormat.bit_depth > 16 || audioFormat.sample_rate > 48000;
+};
+
 const inputQualityTier = computed(() => {
   const sd = streamDetails.value;
-  if (!sd) return QualityTier.LOW;
+  if (!sd || sd.audio_format.content_type === ContentType.UNKNOWN)
+    return QualityTier.UNKNOWN;
 
+  // Prefer making this decision based on codec type
   let content_type = sd.audio_format.content_type;
-  if (sd.audio_format.codec_type !== ContentType.UNKNOWN) {
-    // Prefer making this decision based on codec type
-    content_type = sd.audio_format.codec_type;
-  }
 
-  if (sd.audio_format.bit_depth > 16 || sd.audio_format.sample_rate > 48000) {
+  if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;
   } else if (isContentTypeLossless(content_type)) {
+    return QualityTier.LOSSLESS;
+  } else if (sd.audio_format.bit_rate >= 256) {
     return QualityTier.GOOD;
   } else {
     return QualityTier.LOW;
   }
 });
+
 const outputQualityTiers = computed(() => {
   const tiers: Record<string, QualityTier> = {};
   if (!streamDetails.value?.dsp) {
     return tiers;
   }
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
-    // Default to good/lossless
-    let player_tier = QualityTier.GOOD;
     if (
-      dsp.output_format &&
-      (dsp.output_format.bit_depth > 16 ||
-        dsp.output_format.sample_rate > 48000)
+      !dsp.output_format ||
+      dsp.output_format.content_type === ContentType.UNKNOWN
     ) {
-      player_tier = QualityTier.HIRES;
+      continue;
     }
-    if (
-      dsp.output_format &&
-      dsp.output_format.content_type == ContentType.MP3
-    ) {
-      // MP3 is always low quality
+    let player_tier = QualityTier.UNKNOWN;
+    if (isHiResFormat(dsp.output_format)) {
+      player_tier = QualityTier.HIRES;
+    } else if (isContentTypeLossless(dsp.output_format.content_type)) {
+      player_tier = QualityTier.LOSSLESS;
+    } else if (dsp.output_format.bit_rate >= 256) {
+      player_tier = QualityTier.GOOD;
+    } else {
       player_tier = QualityTier.LOW;
     }
     tiers[player_id] = player_tier;
@@ -740,9 +752,27 @@ const qualityTierToColor = function (tier: QualityTier) {
       return "orange";
     case QualityTier.GOOD:
       return "lightgreen";
+    case QualityTier.LOSSLESS:
+      return "green";
     case QualityTier.HIRES:
       return "cyan";
+    default:
+      return "gray";
   }
+};
+
+const outputProtocolDomain = function (player: Player) {
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol != "native"
+  ) {
+    for (const protocol of player.output_protocols || []) {
+      if (protocol.output_protocol_id == player.active_output_protocol) {
+        return protocol.protocol_domain!;
+      }
+    }
+  }
+  return player.provider.split("--")[0];
 };
 
 const combinedOutputQualityTiers = computed(() => {

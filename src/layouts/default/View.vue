@@ -4,12 +4,13 @@
     :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
   >
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar v-if="!store.frameless" />
       <SidebarInset>
         <div
           :class="[
             'content-section',
             { 'content-section--mobile': store.mobileLayout },
+            { 'content-section--frameless': store.frameless },
           ]"
         >
           <router-view v-slot="{ Component }">
@@ -17,6 +18,7 @@
           </router-view>
           <add-to-playlist-dialog />
           <create-playlist-dialog />
+          <import-playlist-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
@@ -38,6 +40,7 @@ import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 </script>
 
@@ -61,5 +64,9 @@ import ItemContextMenu from "./ItemContextMenu.vue";
 
 .content-section--mobile {
   padding-bottom: 230px;
+}
+
+.content-section--frameless {
+  padding-bottom: 0;
 }
 </style>

@@ -500,7 +500,6 @@
     },
     "play_replace": "Reproducir Ahora (borrar cola)",
     "played": "Reproducido",
-    "background_task_added": "Esta acción es realizada por el servidor en segundo plano y puede tardar algún tiempo en completarse. Mantén un ojo en el registro del servidor para seguir el progreso.",
     "images": "Imágenes",
     "image_type": "Tipo",
     "image_source": "Fuente",

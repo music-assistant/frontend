@@ -27,7 +27,6 @@ const navItems = computed(() => {
       url: item.path,
       icon: item.icon,
       disabled: item.disabled,
-      openInNewTab: item.openInNewTab,
     }));
 });
 
@@ -155,6 +154,12 @@ onUnmounted(() => {
 :deep([data-sidebar="menu-button"] > svg.artist-icon) {
   width: 1.2rem !important;
   height: 1.2rem !important;
+  margin-right: 0.3rem !important;
+}
+
+:deep([data-sidebar="menu-button"] > svg.genre-icon) {
+  width: auto !important;
+  height: auto !important;
   margin-right: 0.3rem !important;
 }
 

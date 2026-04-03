@@ -1,6 +1,22 @@
-import { MediaType } from "@/plugins/api/interfaces";
-import { Compass, Route } from "lucide-vue-next";
 import type { Component } from "vue";
+import { Route } from "lucide-vue-next";
+
+import GenreIcon from "@/components/icons/GenreIcon.vue";
+import { api } from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
+
+// Module-level timer so the debounce survives component unmount / navigation.
+let scanDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function scheduleGenreScan(delay = 10_000) {
+  if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
+  scanDebounceTimer = setTimeout(() => {
+    scanDebounceTimer = null;
+    api.triggerGenreScan().catch(() => {
+      // fire-and-forget; GenreTable and LibraryGenres refresh via genre event subscription
+    });
+  }, delay);
+}
 
 // Icon mapping for different media types in genre overview
 export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
@@ -11,7 +27,7 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.RADIO]: "mdi-radio",
   [MediaType.AUDIOBOOK]: "mdi-book-music",
   [MediaType.PODCAST]: "mdi-podcast",
-  [MediaType.GENRE]: Compass,
+  [MediaType.GENRE]: GenreIcon,
   [MediaType.GENRE_ALIAS]: Route,
   [MediaType.PODCAST_EPISODE]: "mdi-podcast",
   [MediaType.FOLDER]: "mdi-folder",

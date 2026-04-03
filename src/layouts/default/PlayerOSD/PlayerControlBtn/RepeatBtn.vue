@@ -11,14 +11,6 @@
         [playerQueue.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
-    :icon="
-      getValueFromSources(icon?.icon, [
-        [playerQueue.repeat_mode == RepeatMode.OFF, 'mdi-repeat-off'],
-        [playerQueue.repeat_mode == RepeatMode.ALL, 'mdi-repeat'],
-        [playerQueue.repeat_mode == RepeatMode.ONE, 'mdi-repeat-once'],
-        [true, 'mdi-repeat-off'],
-      ])
-    "
     variant="button"
     @click="
       api.queueCommandRepeat(
@@ -30,7 +22,17 @@
         ]) ?? RepeatMode.OFF,
       )
     "
-  />
+  >
+    <IconRepeatOff
+      v-if="playerQueue.repeat_mode == RepeatMode.OFF"
+      :size="size"
+    />
+    <IconRepeat
+      v-else-if="playerQueue.repeat_mode == RepeatMode.ALL"
+      :size="size"
+    />
+    <IconRepeatOnce v-else :size="size" />
+  </Icon>
 </template>
 
 <script setup lang="ts">
@@ -40,16 +42,19 @@ import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
 import { computed } from "vue";
+import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   isVisible?: boolean;
   icon?: IconProps;
+  size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
+  size: 20,
 });
 
 const isLoading = computed(() => {

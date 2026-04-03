@@ -1,19 +1,46 @@
 import { useRateLimiting } from "@/composables/useRateLimiting";
-import type { PartyModeConfig } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PartyConfig } from "@/plugins/api/interfaces";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const BOOST_STORAGE_KEY = "guest_boost_bucket";
 const ADD_QUEUE_STORAGE_KEY = "guest_add_queue_bucket";
 const SKIP_SONG_STORAGE_KEY = "guest_skip_song_bucket";
 
+const createLocalStorageMock = (): Storage => {
+  const store = new Map<string, string>();
+  return {
+    get length() {
+      return store.size;
+    },
+    clear() {
+      store.clear();
+    },
+    getItem(key: string) {
+      return store.get(key) ?? null;
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null;
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    setItem(key: string, value: string) {
+      store.set(key, value);
+    },
+  };
+};
+
 describe("useRateLimiting", () => {
   beforeEach(() => {
     vi.useRealTimers();
-    if (typeof localStorage !== "undefined") {
-      localStorage.removeItem(BOOST_STORAGE_KEY);
-      localStorage.removeItem(ADD_QUEUE_STORAGE_KEY);
-      localStorage.removeItem(SKIP_SONG_STORAGE_KEY);
-    }
+    vi.stubGlobal("localStorage", createLocalStorageMock());
+    localStorage.removeItem(BOOST_STORAGE_KEY);
+    localStorage.removeItem(ADD_QUEUE_STORAGE_KEY);
+    localStorage.removeItem(SKIP_SONG_STORAGE_KEY);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("initializes with default values", () => {
@@ -69,7 +96,7 @@ describe("useRateLimiting", () => {
   it("applies configuration from server", () => {
     const rateLimiting = useRateLimiting();
 
-    const config: PartyModeConfig = {
+    const config: PartyConfig = {
       enable_rate_limiting: false,
       enable_add_queue: false,
       enable_boost: false,
@@ -80,12 +107,14 @@ describe("useRateLimiting", () => {
       boost_refill_minutes: 10,
       skip_song_limit: 2,
       skip_song_refill_minutes: 30,
-      album_art_background: false,
-      show_player_controls: true,
+      karaoke_mode: false,
+      highlight_ahead: true,
       request_badge_color: "#000000",
       boost_badge_color: "#ffffff",
-      qr_show_instruction_text: false,
-      qr_instruction_text: "",
+      anti_burn_in: false,
+      party_name: "Test Party",
+      qr_text: "Test QR",
+      hide_back_button: false,
     };
 
     rateLimiting.configure(config);
