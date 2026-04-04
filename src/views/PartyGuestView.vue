@@ -216,6 +216,7 @@ import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
 import {
   type Artist,
+  type EventMessage,
   EventType,
   PlaybackState,
   type QueueItem,
@@ -528,6 +529,7 @@ watch(partyConfig, (newConfig) => {
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
+let cleanupQueueUpdatedSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
   try {
@@ -570,6 +572,21 @@ onMounted(async () => {
     },
   );
   cleanupProvidersSub = unsubProviders;
+
+  // Re-resolve party player when a different queue starts playing (auto mode)
+  const unsubQueueUpdated = api.subscribe(
+    EventType.QUEUE_UPDATED,
+    async (evt: EventMessage) => {
+      if (evt.object_id !== partyQueueId.value) {
+        const updatedQueue = api.queues[evt.object_id as string];
+        if (updatedQueue?.state === PlaybackState.PLAYING) {
+          await refreshPartyPlayer();
+          fetchQueueItems(true);
+        }
+      }
+    },
+  );
+  cleanupQueueUpdatedSub = unsubQueueUpdated;
 });
 
 onBeforeUnmount(() => {
@@ -577,6 +594,7 @@ onBeforeUnmount(() => {
   cleanupQueueEvents?.();
   cleanupCountdown?.();
   cleanupProvidersSub?.();
+  cleanupQueueUpdatedSub?.();
   search.cleanup();
 });
 </script>
