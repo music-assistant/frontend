@@ -267,10 +267,8 @@ watch(
 }
 
 .mediacontrols-bottom-right {
-  flex: 1 1 0;
+  margin-inline-start: auto;
   min-width: 0;
-  display: flex;
-  justify-content: flex-end;
   > div {
     display: inline-flex;
     align-items: center;

@@ -12,8 +12,14 @@
     </template>
     <v-list>
       <v-list-item
-        :prepend-icon="currentTrack?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-        :title="currentTrack?.favorite ? $t('favorites_remove') : $t('tooltip.favorite')"
+        :prepend-icon="
+          currentTrack?.favorite ? 'mdi-heart' : 'mdi-heart-outline'
+        "
+        :title="
+          currentTrack?.favorite
+            ? $t('favorites_remove')
+            : $t('tooltip.favorite')
+        "
         @click="onToggleFavorite"
       />
       <v-list-item
