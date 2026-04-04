@@ -78,6 +78,8 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :added-items="addedItems"
+          :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${track.media_type}-${track.item_id}`
           "
@@ -139,6 +141,8 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :added-items="addedItems"
+          :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${item.media_type}-${item.item_id}`
           "
@@ -298,8 +302,17 @@ const {
   handleScroll,
 } = search;
 
+const queuedUris = computed(() => {
+  const uris = new Set<string>();
+  for (const item of queueItems.value) {
+    if (item.media_item?.uri) uris.add(item.media_item.uri);
+  }
+  return uris;
+});
+
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
+const addedItems = ref(new Set<string>());
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
 const expandedResultItemId = ref("");
@@ -405,6 +418,8 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
         consumeAddQueueToken();
       }
     }
+
+    addedItems.value.add(item.uri);
 
     const message =
       position === "next"

@@ -1442,6 +1442,8 @@
                 "boost_limit_reached": "Boost limit reached. Next use available in {0} minutes.",
                 "current_queue": "Current Queue",
                 "filter_songs": "Songs",
+                "added": "Added",
+                "already_in_queue": "Already in queue",
                 "item_added_to_queue": "\"{0}\" added to queue",
                 "item_boosted": "\"{0}\" boosted",
                 "load_artist_tracks_failed": "Failed to load artist tracks. Please try again.",

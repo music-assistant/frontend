@@ -27,7 +27,17 @@
 
     <!-- Actions for tracks (shown when expanded) -->
     <template v-if="item.media_type === 'track' && isExpanded">
-      <div class="result-actions">
+      <div v-if="isAdded || isInQueue" class="result-actions">
+        <span class="added-label">
+          <CircleCheck :size="16" />
+          {{
+            isAdded
+              ? $t("providers.party.guest_page.added")
+              : $t("providers.party.guest_page.already_in_queue")
+          }}
+        </span>
+      </div>
+      <div v-else class="result-actions">
         <Button
           v-if="boostEnabled"
           size="sm"
@@ -84,7 +94,7 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 import type { Artist, Track } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ListPlus, Music, Rocket } from "lucide-vue-next";
+import { CircleCheck, ListPlus, Music, Rocket } from "lucide-vue-next";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -97,6 +107,8 @@ const props = defineProps<{
   boostBadgeColor: string;
   requestBadgeColor: string;
   addingItems: Set<string>;
+  addedItems: Set<string>;
+  queuedUris: Set<string>;
   isExpanded: boolean;
 }>();
 
@@ -106,6 +118,12 @@ const emit = defineEmits<{
   toggleExpand: [itemId: string];
 }>();
 
+const isAdded = computed(() =>
+  "uri" in props.item ? props.addedItems.has(props.item.uri) : false,
+);
+const isInQueue = computed(() =>
+  "uri" in props.item ? props.queuedUris.has(props.item.uri) : false,
+);
 const isBoostLoading = computed(() =>
   props.addingItems.has(`${props.item.media_type}-${props.item.item_id}-next`),
 );
@@ -236,5 +254,15 @@ const artistName = computed(() => {
 
 .action-btn:disabled {
   opacity: 0.3;
+}
+
+.added-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  opacity: 0.8;
 }
 </style>
