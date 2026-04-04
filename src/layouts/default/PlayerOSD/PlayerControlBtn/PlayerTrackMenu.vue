@@ -7,7 +7,7 @@
         variant="button"
         icon="mdi-dots-horizontal"
         :title="$t('more_options')"
-        style="padding-left: 15px; padding-right: 20px"
+        style="padding-left: 15px; padding-right: 15px"
       />
     </template>
     <v-list>
