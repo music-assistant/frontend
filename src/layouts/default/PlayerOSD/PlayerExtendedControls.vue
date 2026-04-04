@@ -5,7 +5,7 @@
     align="end"
     child-element-id="extended-controls-speaker-button"
   />
-  <PlayerTrackMenu />
+  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
 
   <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
 
@@ -49,6 +49,9 @@ export interface Props {
     responsiveVolumeSize?: boolean;
     color?: string;
   };
+  contextMenu?: {
+    isVisible?: boolean;
+  };
 }
 
 withDefaults(defineProps<Props>(), {
@@ -59,5 +62,6 @@ withDefaults(defineProps<Props>(), {
     volumeSize: "150px",
     responsiveVolumeSize: false,
   }),
+  contextMenu: () => ({ isVisible: true }),
 });
 </script>
