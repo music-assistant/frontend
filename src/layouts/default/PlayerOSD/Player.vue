@@ -254,11 +254,11 @@ watch(
 }
 
 .mediacontrols-left {
+  flex: 1 1 0;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-inline-end: auto;
   > div {
     padding: 0px !important;
     min-width: 0;
@@ -266,8 +266,10 @@ watch(
 }
 
 .mediacontrols-bottom-right {
-  margin-inline-start: auto;
+  flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  justify-content: flex-end;
   > div {
     display: inline-flex;
     align-items: center;
