@@ -11,8 +11,9 @@
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="queue.color"
-    style="padding-left: 15px; padding-right: 20px"
+    style="padding-left: 15px"
   />
+  <PlayerTrackMenu />
   <PlayerVolume
     v-if="volume && volume.isVisible && store.activePlayer"
     :player="store.activePlayer"
@@ -25,6 +26,7 @@
 <script setup lang="ts">
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
+import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerVolume from "./PlayerVolume.vue";
