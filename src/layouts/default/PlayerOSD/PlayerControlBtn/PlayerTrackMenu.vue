@@ -2,6 +2,7 @@
   <v-menu v-if="currentTrack">
     <template #activator="{ props: menuProps }">
       <Icon
+        v-if="currentTrack"
         v-bind="menuProps"
         variant="button"
         icon="mdi-dots-horizontal"
@@ -10,6 +11,11 @@
       />
     </template>
     <v-list>
+      <v-list-item
+        :prepend-icon="currentTrack?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
+        :title="currentTrack?.favorite ? $t('favorites_remove') : $t('tooltip.favorite')"
+        @click="onToggleFavorite"
+      />
       <v-list-item
         :title="$t('add_playlist')"
         prepend-icon="mdi-plus-circle-outline"
@@ -84,6 +90,11 @@ const onShowInfo = () => {
     params: { itemId: item.item_id, provider: item.provider },
     query: { album: item.album?.uri ?? "" },
   });
+};
+
+const onToggleFavorite = () => {
+  if (!currentTrack.value) return;
+  api.toggleFavorite(currentTrack.value);
 };
 
 const onStartRadio = () => {
