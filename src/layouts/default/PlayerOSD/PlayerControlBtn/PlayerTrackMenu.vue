@@ -1,8 +1,8 @@
 <template>
-  <v-menu v-if="currentTrack">
+  <v-menu v-if="currentItem">
     <template #activator="{ props: menuProps }">
       <Icon
-        v-if="currentTrack"
+        v-if="currentItem"
         v-bind="menuProps"
         variant="button"
         icon="mdi-dots-horizontal"
@@ -13,16 +13,17 @@
     <v-list>
       <v-list-item
         :prepend-icon="
-          currentTrack?.favorite ? 'mdi-heart' : 'mdi-heart-outline'
+          currentItem?.favorite ? 'mdi-heart' : 'mdi-heart-outline'
         "
         :title="
-          currentTrack?.favorite
+          currentItem?.favorite
             ? $t('favorites_remove')
             : $t('tooltip.favorite')
         "
         @click="onToggleFavorite"
       />
       <v-list-item
+        v-if="currentTrack"
         :title="$t('add_playlist')"
         prepend-icon="mdi-plus-circle-outline"
         @click="onAddToPlaylist"
@@ -49,6 +50,7 @@ import {
   MediaType,
   ProviderFeature,
   QueueOption,
+  type Radio,
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -61,6 +63,14 @@ const currentTrack = computed(() => {
   if (item?.media_type === MediaType.TRACK) return item as Track;
   return undefined;
 });
+
+const currentRadio = computed(() => {
+  const item = store.curQueueItem?.media_item;
+  if (item?.media_type === MediaType.RADIO) return item as Radio;
+  return undefined;
+});
+
+const currentItem = computed(() => currentTrack.value ?? currentRadio.value);
 
 const radioModeSupported = computed(() => {
   const item = currentTrack.value;
@@ -89,18 +99,21 @@ const onAddToPlaylist = () => {
 };
 
 const onShowInfo = () => {
-  const item = currentTrack.value;
+  const item = currentItem.value;
   if (!item) return;
+  const query = currentTrack.value?.album?.uri
+    ? { album: currentTrack.value.album.uri }
+    : {};
   router.push({
     name: item.media_type,
     params: { itemId: item.item_id, provider: item.provider },
-    query: { album: item.album?.uri ?? "" },
+    query,
   });
 };
 
 const onToggleFavorite = () => {
-  if (!currentTrack.value) return;
-  api.toggleFavorite(currentTrack.value);
+  if (!currentItem.value) return;
+  api.toggleFavorite(currentItem.value);
 };
 
 const onStartRadio = () => {
