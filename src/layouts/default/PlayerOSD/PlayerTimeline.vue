@@ -1,49 +1,62 @@
 <template>
   <div style="width: auto; height: 24px">
     <div v-if="store.activePlayer" style="width: 100%">
-      <v-slider
-        v-model="curTimeValue"
-        :disabled="!canSeek"
-        style="width: 100%"
-        :min="0"
-        :max="store.activePlayer?.current_media?.duration"
-        hide-details
-        :track-size="4"
-        :thumb-size="isThumbHidden ? 0 : 10"
-        :show-ticks="chapterTicks ? 'always' : false"
-        :ticks="chapterTicks"
-        tick-size="4"
-        :color="color"
-        @touchstart="isThumbHidden = false"
-        @touchend="isThumbHidden = true"
+      <div
+        ref="trackRef"
+        class="timeline-track"
+        :class="{ 'timeline-track--disabled': !canSeek }"
         @mouseenter="isThumbHidden = false"
         @mouseleave="isThumbHidden = true"
-        @start="startDragging"
-        @end="stopDragging"
+        @touchstart.passive="onPointerDown"
+        @mousedown="onPointerDown"
       >
-        <template #tick-label="{ tick }">
-          <a
-            v-if="
-              showLabels &&
-              !isThumbHidden &&
-              Object.values(chapterTicks).length < 6
-            "
-            class="text-caption"
-            @click="chapterClicked(tick.value)"
-            >{{ tick.label }}</a
+        <!-- background track -->
+        <div class="timeline-rail"></div>
+        <!-- filled portion: GPU-composited via scaleX -->
+        <div
+          class="timeline-fill"
+          :style="{
+            transform: `scaleX(${progress})`,
+            backgroundColor: fillColor,
+          }"
+        ></div>
+        <!-- chapter ticks -->
+        <template v-if="chapterTicks && Object.keys(chapterTicks).length">
+          <div
+            v-for="(label, pos) in chapterTicks"
+            :key="pos"
+            class="timeline-tick"
+            :style="{ left: `${(Number(pos) / duration) * 100}%` }"
+            @click.stop="chapterClicked(Number(pos))"
           >
+            <span
+              v-if="
+                showLabels &&
+                !isThumbHidden &&
+                Object.values(chapterTicks).length < 6
+              "
+              class="timeline-tick-label text-caption"
+            >
+              {{ label }}
+            </span>
+          </div>
         </template>
-      </v-slider>
+        <!-- thumb: GPU-composited via translateX -->
+        <div
+          class="timeline-thumb"
+          :class="{ 'timeline-thumb--hidden': isThumbHidden }"
+          :style="{
+            transform: `translateX(${thumbX}px)`,
+            backgroundColor: fillColor,
+          }"
+        ></div>
+      </div>
 
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->
         <div
           class="text-caption time-text-left"
-          @click="
-            showRemainingTime
-              ? (showRemainingTime = false)
-              : (showRemainingTime = true)
-          "
+          @click="showRemainingTime = !showRemainingTime"
         >
           {{ playerCurTimeStr }}
         </div>
@@ -65,6 +78,7 @@ import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
+import { useTheme } from "vuetify";
 
 // properties
 export interface Props {
@@ -72,14 +86,17 @@ export interface Props {
   color?: string;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: undefined,
 });
 
+const theme = useTheme();
+
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
 
 // local refs
+const trackRef = ref<HTMLElement | null>(null);
 const showRemainingTime = ref(false);
 const isThumbHidden = ref(true);
 const isDragging = ref(false);
@@ -252,6 +269,24 @@ const chapterTicks = computed(() => {
   return ticks;
 });
 
+const duration = computed(
+  () => store.activePlayer?.current_media?.duration || 1,
+);
+
+const progress = computed(() => {
+  return Math.min(Math.max(curTimeValue.value / duration.value, 0), 1);
+});
+
+const thumbX = computed(() => {
+  if (!trackRef.value) return 0;
+  return progress.value * trackRef.value.clientWidth;
+});
+
+const fillColor = computed(() => {
+  if (props.color) return props.color;
+  return theme.current.value.colors.fg;
+});
+
 //watch
 watch(computedElapsedTime, (newTime) => {
   if (!isDragging.value) {
@@ -260,18 +295,46 @@ watch(computedElapsedTime, (newTime) => {
 });
 
 // methods
-const startDragging = function () {
-  isDragging.value = true;
+const seekToPosition = (clientX: number) => {
+  if (!trackRef.value || !canSeek.value) return;
+  const rect = trackRef.value.getBoundingClientRect();
+  const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+  curTimeValue.value = ratio * duration.value;
+  tempTime.value = curTimeValue.value;
 };
 
-const stopDragging = () => {
-  isDragging.value = false;
-  if (!isDragging.value && store.activePlayer) {
-    api.playerCommandSeek(
-      store.activePlayer.player_id,
-      Math.round(tempTime.value),
-    );
-  }
+const onPointerDown = (e: MouseEvent | TouchEvent) => {
+  if (!canSeek.value) return;
+  isDragging.value = true;
+  isThumbHidden.value = false;
+
+  const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+  seekToPosition(clientX);
+
+  const onMove = (ev: MouseEvent | TouchEvent) => {
+    const x = "touches" in ev ? ev.touches[0].clientX : ev.clientX;
+    seekToPosition(x);
+  };
+
+  const onUp = () => {
+    isDragging.value = false;
+    isThumbHidden.value = true;
+    if (store.activePlayer) {
+      api.playerCommandSeek(
+        store.activePlayer.player_id,
+        Math.round(tempTime.value),
+      );
+    }
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    document.removeEventListener("touchmove", onMove);
+    document.removeEventListener("touchend", onUp);
+  };
+
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+  document.addEventListener("touchmove", onMove, { passive: true });
+  document.addEventListener("touchend", onUp);
 };
 
 const chapterClicked = function (chaperPos: number) {
@@ -292,6 +355,73 @@ const chapterClicked = function (chaperPos: number) {
 </script>
 
 <style scoped>
+.timeline-track {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.timeline-track--disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.timeline-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.timeline-fill {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.timeline-thumb {
+  position: absolute;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  will-change: transform;
+  transition: opacity 0.15s ease;
+}
+
+.timeline-thumb--hidden {
+  opacity: 0;
+}
+
+.timeline-tick {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 4px;
+  margin-top: -2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.timeline-tick-label {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
 .time-text-left {
   text-align: left;
   display: table-cell;
@@ -315,9 +445,5 @@ const chapterClicked = function (chaperPos: number) {
 }
 .time-text-row > div {
   width: calc(100% / 2);
-}
-.v-slider.v-input--horizontal {
-  align-items: center;
-  margin-inline: 0px;
 }
 </style>
