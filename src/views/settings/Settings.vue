@@ -681,7 +681,8 @@ const activeTab = computed(() => {
       if (provider.type === ProviderType.PLAYER) return "player_providers";
       if (provider.type === ProviderType.METADATA) return "metadata_providers";
       if (provider.type === ProviderType.PLUGIN) return "plugin_providers";
-      if (provider.type === ProviderType.AUDIO_ANALYSIS) return "audio_analysis_providers";
+      if (provider.type === ProviderType.AUDIO_ANALYSIS)
+        return "audio_analysis_providers";
     }
   }
 
@@ -693,7 +694,8 @@ const activeTab = computed(() => {
       if (manifest.type === ProviderType.PLAYER) return "player_providers";
       if (manifest.type === ProviderType.METADATA) return "metadata_providers";
       if (manifest.type === ProviderType.PLUGIN) return "plugin_providers";
-      if (manifest.type === ProviderType.AUDIO_ANALYSIS) return "audio_analysis_providers";
+      if (manifest.type === ProviderType.AUDIO_ANALYSIS)
+        return "audio_analysis_providers";
     }
   }
   return "music_providers";
