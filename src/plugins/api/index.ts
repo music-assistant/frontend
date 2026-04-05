@@ -80,6 +80,12 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
+  public queueElapsedTime = reactive<{
+    [queue_id: string]: {
+      elapsed_time: number;
+      elapsed_time_last_updated: number;
+    };
+  }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
@@ -377,6 +383,9 @@ export class MusicAssistantApi {
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
     Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.queueElapsedTime).forEach(
+      (key) => delete this.queueElapsedTime[key],
+    );
     Object.keys(this.providers).forEach((key) => delete this.providers[key]);
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
@@ -2153,16 +2162,33 @@ export class MusicAssistantApi {
     if (msg.event == EventType.QUEUE_ADDED) {
       const queue = msg.data as PlayerQueue;
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_UPDATED) {
       const queue = msg.data as PlayerQueue;
       if (queue.queue_id in this.queues)
         Object.assign(this.queues[queue.queue_id], queue);
       else this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        this.queues[queueId].elapsed_time = msg.data as unknown as number;
-        this.queues[queueId].elapsed_time_last_updated = Date.now() / 1000;
+        const now = Date.now() / 1000;
+        const elapsed = msg.data as unknown as number;
+        if (queueId in this.queueElapsedTime) {
+          this.queueElapsedTime[queueId].elapsed_time = elapsed;
+          this.queueElapsedTime[queueId].elapsed_time_last_updated = now;
+        } else {
+          this.queueElapsedTime[queueId] = {
+            elapsed_time: elapsed,
+            elapsed_time_last_updated: now,
+          };
+        }
       }
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
@@ -2175,6 +2201,7 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.PLAYER_REMOVED) {
       delete this.players[msg.object_id!];
       delete this.queues[msg.object_id!];
+      delete this.queueElapsedTime[msg.object_id!];
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
@@ -2731,6 +2758,10 @@ export class MusicAssistantApi {
     }
     for (const queue of await this.getPlayerQueues()) {
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     }
 
     for (const prov of await this.sendCommand<ProviderManifest[]>(

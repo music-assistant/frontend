@@ -67,6 +67,7 @@ import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Rocket, UserRound } from "lucide-vue-next";
 import { store } from "@/plugins/store";
+import api from "@/plugins/api";
 import computeElapsedTime from "@/helpers/elapsed";
 
 const { config: partyConfig } = usePartyConfig();
@@ -230,14 +231,19 @@ const progressPercentage = computed(() => {
     return 0;
   }
 
-  // Get elapsed time from the active player queue
+  // Get elapsed time from the isolated reactive map
   const queue = store.activePlayerQueue;
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+  const queueId = queue?.queue_id;
+  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+  if (
+    queueTime?.elapsed_time != null &&
+    queueTime?.elapsed_time_last_updated != null
+  ) {
     const elapsed =
       computeElapsedTime(
-        queue.elapsed_time,
-        queue.elapsed_time_last_updated,
-        queue.state,
+        queueTime.elapsed_time,
+        queueTime.elapsed_time_last_updated,
+        queue!.state,
       ) ?? 0;
     return Math.min((elapsed / duration) * 100, 100);
   }

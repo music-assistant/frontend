@@ -317,7 +317,9 @@ onMounted(() => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
       const newPos = Math.round(elapsed + offset);
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -328,7 +330,9 @@ onMounted(() => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
       const newPos = Math.round(Math.max(0, elapsed - offset));
       lastSeekPos = newPos;
       resetLastSeekPos();
