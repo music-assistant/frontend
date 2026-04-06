@@ -6122,10 +6122,10 @@ regjsparser@^0.11.0:
   dependencies:
     jsesc "~3.0.2"
 
-reka-ui@^2.0.0, reka-ui@^2.9.2:
-  version "2.9.2"
-  resolved "https://registry.npmjs.org/reka-ui/-/reka-ui-2.9.2.tgz"
-  integrity sha512-/t4e6y1hcG+uDuRfpg6tbMz3uUEvRzNco6NeYTufoJeUghy5Iosxos5YL/p+ieAsid84sdMX9OrgDqpEuCJhBw==
+reka-ui@^2.0.0, reka-ui@^2.9.3:
+  version "2.9.3"
+  resolved "https://registry.yarnpkg.com/reka-ui/-/reka-ui-2.9.3.tgz#c3f984cb24884bdbeec96c73aa326cfa68892391"
+  integrity sha512-C9lCVxsSC7uYD0Nbgik1+14FNndHNprZmf0zGQt0ZDYIt5KxXV3zD0hEqNcfRUsEEJvVmoRsUkJnASBVBeaaUw==
   dependencies:
     "@floating-ui/dom" "^1.6.13"
     "@floating-ui/vue" "^1.1.6"
