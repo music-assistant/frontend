@@ -109,7 +109,7 @@ bc.onmessage = (event) => {
 };
 
 // Called on close
-window.addEventListener("unload", function () {
+window.addEventListener("pagehide", function () {
   // Stop listening to any events, since we will soon close.
   bc.onmessage = null;
   if (isPlaybackMode(webPlayer.tabMode) && webPlayer.player_id) {
