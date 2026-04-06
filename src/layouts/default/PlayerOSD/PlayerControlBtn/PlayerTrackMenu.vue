@@ -23,7 +23,6 @@
         @click="onToggleFavorite"
       />
       <v-list-item
-        v-if="currentTrack"
         :title="$t('add_playlist')"
         prepend-icon="mdi-plus-circle-outline"
         @click="onAddToPlaylist"
@@ -94,8 +93,8 @@ const radioModeSupported = computed(() => {
 });
 
 const onAddToPlaylist = () => {
-  if (!currentTrack.value) return;
-  eventbus.emit("playlistdialog", { items: [currentTrack.value] });
+  if (!currentItem.value) return;
+  eventbus.emit("playlistdialog", { items: [currentItem.value] });
 };
 
 const onShowInfo = () => {
