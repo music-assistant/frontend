@@ -18,7 +18,7 @@
         :title="
           currentItem?.favorite
             ? $t('favorites_remove')
-            : $t('tooltip.favorite')
+            : $t('favorites_add')
         "
         @click="onToggleFavorite"
       />
