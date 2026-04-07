@@ -104,6 +104,7 @@ const isThumbHidden = ref(true);
 const isDragging = ref(false);
 const curTimeValue = ref(0);
 const tempTime = ref(0);
+const pendingSeekTarget = ref<number | null>(null);
 // ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
 // rAF drives smooth 60fps slider movement; a 1s interval keeps text
 // labels up-to-date when the tab is backgrounded (rAF pauses).
@@ -281,9 +282,15 @@ const progress = computed(() => {
 
 //watch
 watch(computedElapsedTime, (newTime) => {
-  if (!isDragging.value) {
-    curTimeValue.value = newTime;
+  if (isDragging.value) return;
+  if (pendingSeekTarget.value != null) {
+    if (Math.abs(newTime - pendingSeekTarget.value) < 2) {
+      pendingSeekTarget.value = null;
+    } else {
+      return;
+    }
   }
+  curTimeValue.value = newTime;
 });
 
 // methods
@@ -312,6 +319,7 @@ const onPointerDown = (e: MouseEvent | TouchEvent) => {
     isDragging.value = false;
     isThumbHidden.value = true;
     if (store.activePlayer) {
+      pendingSeekTarget.value = tempTime.value;
       api.playerCommandSeek(
         store.activePlayer.player_id,
         Math.round(tempTime.value),
@@ -353,6 +361,7 @@ const onKeyDown = (e: KeyboardEvent) => {
   const playerId = store.activePlayer.player_id;
   keySeekTimer = setTimeout(() => {
     isDragging.value = false;
+    pendingSeekTarget.value = tempTime.value;
     api.playerCommandSeek(playerId, Math.round(tempTime.value));
   }, 300);
 };
