@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0)" ref="sectionRef">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
@@ -47,7 +47,7 @@
             v-for="n in 12"
             :key="'skeleton-panel-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${columnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -57,7 +57,7 @@
             v-for="n in 12"
             :key="'skeleton-compact-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${columnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -72,6 +72,8 @@
           !(loading && pagedItems.length === 0) &&
           (viewMode == 'panel' || viewMode == 'panel_compact')
         "
+        role="grid"
+        :aria-rowcount="panelRows.length"
         :style="{
           height: `${totalVirtualHeight}px`,
           width: '100%',
@@ -81,12 +83,14 @@
         <div
           v-for="virtualRow in virtualRows"
           :key="virtualRow.index"
+          :ref="measureRow"
+          role="row"
+          :aria-rowindex="virtualRow.index + 1"
           :style="{
             position: 'absolute',
             top: 0,
             left: 0,
             width: '100%',
-            height: `${virtualRow.size}px`,
             transform: `translateY(${virtualRow.start}px)`,
           }"
         >
@@ -95,7 +99,7 @@
               v-for="item in panelRows[virtualRow.index]"
               :key="item.uri"
               cols="12"
-              :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+              :class="`col-${columnCount}`"
             >
               <PanelviewItem
                 v-if="viewMode == 'panel'"
@@ -225,7 +229,7 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import type { Component } from "vue";
+import type { Component, ComponentPublicInstance } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -397,6 +401,7 @@ const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
 
 // virtual scroll setup for panel views
+const sectionRef = ref<HTMLElement | null>(null);
 const scrollContainerRef = ref<HTMLElement | null>(null);
 const { width: displayWidth } = useDisplay();
 
@@ -429,6 +434,12 @@ const rowVirtualizer = useVirtualizer(
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalVirtualHeight = computed(() => rowVirtualizer.value.getTotalSize());
+
+const measureRow = (el: Element | ComponentPublicInstance | null) => {
+  if (el instanceof Element || el === null) {
+    rowVirtualizer.value.measureElement(el);
+  }
+};
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -1329,11 +1340,9 @@ if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
     const key = props.path || props.itemtype;
-    const el = document.querySelector(".content-section");
-
     store.prevState = {
       path: key,
-      scrollPos: el?.scrollTop || 0,
+      scrollPos: scrollContainerRef.value?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItems: allItems.value,
       allItemsReceived: allItemsReceived.value,
@@ -1450,10 +1459,11 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
-  scrollContainerRef.value = document.querySelector(
-    ".content-section",
-  ) as HTMLElement;
-  scrollContainerRef.value?.addEventListener("scroll", checkInfiniteScroll);
+  scrollContainerRef.value =
+    sectionRef.value?.closest<HTMLElement>(".content-section") ?? null;
+  scrollContainerRef.value?.addEventListener("scroll", checkInfiniteScroll, {
+    passive: true,
+  });
 
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
@@ -1466,10 +1476,8 @@ onMounted(async () => {
     initialDataReceived.value = store.prevState.initialDataReceived;
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
-      const el = document.querySelector(".content-section") as HTMLElement;
-
-      if (el) {
-        scrollElement(el, store.prevState!.scrollPos, 50);
+      if (scrollContainerRef.value) {
+        scrollElement(scrollContainerRef.value, store.prevState!.scrollPos, 50);
       }
     });
     loading.value = false;
