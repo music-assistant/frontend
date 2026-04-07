@@ -277,7 +277,7 @@ import {
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
-import { useDisplay } from "vuetify";
+import { useWindowSize } from "@vueuse/core";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -403,7 +403,7 @@ const genreOptions = ref<{ label: string; value: number }[]>([]);
 // virtual scroll setup for panel views
 const sectionRef = ref<HTMLElement | null>(null);
 const scrollContainerRef = ref<HTMLElement | null>(null);
-const { width: displayWidth } = useDisplay();
+const { width: displayWidth } = useWindowSize();
 
 const columnCount = computed(() => {
   return panelViewItemResponsive(displayWidth.value) || 3;
