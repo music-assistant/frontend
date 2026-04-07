@@ -1,4 +1,5 @@
 import { match } from "ts-pattern";
+import type { ClassValue, StyleValue } from "vue";
 import { computed } from "vue";
 import { mergeClasses } from "./utils";
 
@@ -31,8 +32,8 @@ export interface IconProps {
   badge?: boolean;
 
   // CSS and styling
-  class?: string | string[] | Record<string, boolean>;
-  style?: string | Record<string, string | number>;
+  class?: ClassValue;
+  style?: StyleValue;
 }
 
 export interface IconEmits {

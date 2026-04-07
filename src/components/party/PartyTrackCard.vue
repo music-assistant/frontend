@@ -29,6 +29,21 @@
         </MarqueeText>
       </div>
     </div>
+    <!-- Progress bar for current playing track -->
+    <div
+      v-if="
+        position === 'current' &&
+        isPlaying &&
+        progressPercentage > 0 &&
+        showProgressBar
+      "
+      class="progress-bar"
+    >
+      <div
+        class="progress-fill"
+        :style="{ '--progress-scale': progressPercentage / 100 }"
+      ></div>
+    </div>
     <!-- Guest request badge -->
     <div
       v-if="isGuestRequest"
@@ -43,13 +58,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Rocket, UserRound } from "lucide-vue-next";
+import { store } from "@/plugins/store";
+import computeElapsedTime from "@/helpers/elapsed";
+
+const { config: partyConfig } = usePartyConfig();
 
 export interface Props {
   queueItem?: QueueItem;
@@ -66,6 +86,51 @@ const props = withDefaults(defineProps<Props>(), {
   requestBadgeColor: "#2196F3", // Default: Blue
   boostBadgeColor: "#FF5722", // Default: Orange
   forceWhiteText: false,
+});
+
+// Ticking ref to force recompute of progress (Date.now() is non-reactive)
+const nowTick = ref(0);
+let rafId: number | null = null;
+let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+const startTick = () => {
+  if (!showProgressBar.value) return;
+
+  if (rafId === null) {
+    const tick = () => {
+      const now = Date.now();
+      if (now - nowTick.value >= 64) {
+        nowTick.value = now;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+  if (fallbackTimer === null) {
+    fallbackTimer = setInterval(() => (nowTick.value = Date.now()), 1000);
+  }
+};
+
+const stopTick = () => {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+  if (fallbackTimer !== null) {
+    clearInterval(fallbackTimer);
+    fallbackTimer = null;
+  }
+};
+
+onMounted(() => {
+  // Start ticking if this is the current track and playing
+  if (props.position === "current" && props.isPlaying) {
+    startTick();
+  }
+});
+
+onUnmounted(() => {
+  stopTick();
 });
 
 // Check if this is a guest request (party sets party_guest=true)
@@ -146,10 +211,57 @@ const artistName = computed(() => {
 const sizeClass = computed(() => {
   return props.position === "current" ? "size-large" : "size-medium";
 });
+
+const showProgressBar = computed(
+  () => partyConfig.value?.show_progress_bar ?? false,
+);
+
+// Progress percentage for the visual ticker (only for current track)
+const progressPercentage = computed(() => {
+  // Include nowTick.value so this computed re-evaluates periodically while mounted
+  void nowTick.value;
+
+  if (props.position !== "current" || !props.queueItem || !props.isPlaying) {
+    return 0;
+  }
+
+  const duration = props.queueItem.duration;
+  if (!duration || duration <= 0) {
+    return 0;
+  }
+
+  // Get elapsed time from the active player queue
+  const queue = store.activePlayerQueue;
+  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+    const elapsed =
+      computeElapsedTime(
+        queue.elapsed_time,
+        queue.elapsed_time_last_updated,
+        queue.state,
+      ) ?? 0;
+    return Math.min((elapsed / duration) * 100, 100);
+  }
+
+  return 0;
+});
+
+// Watch for changes in position and isPlaying to start/stop ticking
+watch(
+  () => props.position === "current" && props.isPlaying,
+  (shouldTick: boolean) => {
+    if (shouldTick) {
+      startTick();
+    } else {
+      stopTick();
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
 .track-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1.5vh;
@@ -159,6 +271,7 @@ const sizeClass = computed(() => {
   backdrop-filter: blur(1vh);
   width: 95%;
   box-sizing: border-box;
+  overflow: hidden;
   transform: scale(var(--scale, 1));
   opacity: var(--opacity, 1);
   z-index: var(--z-index, 1);
@@ -308,6 +421,27 @@ const sizeClass = computed(() => {
 
 .white-text .track-artist {
   color: rgba(255, 255, 255, 0.7);
+}
+
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0.6vh;
+  overflow: hidden;
+  /* Make sure it sits behind the content */
+  z-index: -1;
+}
+
+.progress-fill {
+  height: 100%;
+  background: rgb(var(--v-theme-primary));
+  border-bottom-left-radius: 1.2vh;
+  transform-origin: left center;
+  transform: scaleX(var(--progress-scale, 0));
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 @media (max-width: 768px) {

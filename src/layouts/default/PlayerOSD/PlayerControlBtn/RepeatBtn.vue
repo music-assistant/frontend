@@ -3,7 +3,12 @@
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="!playerQueue.active || playerQueue.items == 0 || isLoading"
+    :disabled="
+      !playerQueue.active ||
+      playerQueue.items == 0 ||
+      isLoading ||
+      isSingleDynamicPlaylist
+    "
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.repeat_mode == RepeatMode.OFF, undefined],
@@ -40,7 +45,12 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  Playlist,
+  PlayerQueue,
+  RepeatMode,
+} from "@/plugins/api/interfaces";
 import { computed } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
@@ -60,6 +70,15 @@ const compProps = withDefaults(defineProps<Props>(), {
 const isLoading = computed(() => {
   return (
     compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
+  );
+});
+
+const isSingleDynamicPlaylist = computed(() => {
+  const items = compProps.playerQueue?.enqueued_media_items;
+  return (
+    items?.length === 1 &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    (items[0] as Playlist).is_dynamic
   );
 });
 </script>

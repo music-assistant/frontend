@@ -2,7 +2,7 @@
   <!-- now playing media -->
   <v-list-item
     class="player-track-details"
-    style="height: auto; width: 100%; margin: 0px; padding: 0px"
+    style="height: auto; margin: 0px; padding: 0px"
     lines="two"
   >
     <template #prepend>

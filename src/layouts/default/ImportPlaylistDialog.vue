@@ -14,10 +14,7 @@
           {{ playlistName }}
         </DialogDescription>
 
-        <div
-          v-if="musicProviders.length"
-          class="flex flex-col gap-3 mt-4"
-        >
+        <div v-if="musicProviders.length" class="flex flex-col gap-3 mt-4">
           <Label>{{ $t("import_playlist_search_providers") }}</Label>
           <div class="flex flex-col gap-2">
             <div
@@ -96,9 +93,7 @@ onMounted(() => {
   eventbus.on("importPlaylistDialog", (evt: ImportPlaylistEvent) => {
     m3uData.value = evt.m3uData;
     playlistName.value = evt.playlistName;
-    selectedProviders.value = musicProviders.value.map(
-      (p) => p.instance_id,
-    );
+    selectedProviders.value = musicProviders.value.map((p) => p.instance_id);
     dialogKey.value++;
     showDialog.value = true;
   });

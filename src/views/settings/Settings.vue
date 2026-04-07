@@ -502,6 +502,15 @@ const allSettingsSections = [
     adminOnly: true,
   },
   {
+    name: "audio_analysis_providers",
+    label: "settings.audio_analysis_providers",
+    description: "settings.audio_analysis_providers_description",
+    icon: "mdi-waveform",
+    color: "blue",
+    route: { name: "providersettings", query: { types: "audio_analysis" } },
+    adminOnly: true,
+  },
+  {
     name: "profile",
     label: "auth.profile",
     description: "settings.profile_description",
@@ -567,6 +576,7 @@ const providerSectionNames = [
   "player_providers",
   "metadata_providers",
   "plugin_providers",
+  "audio_analysis_providers",
 ];
 
 const musicSections = computed(() => {
@@ -661,6 +671,7 @@ const activeTab = computed(() => {
   if (firstType === "player") return "player_providers";
   if (firstType === "metadata") return "metadata_providers";
   if (firstType === "plugin") return "plugin_providers";
+  if (firstType === "audio_analysis") return "audio_analysis_providers";
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
@@ -670,6 +681,8 @@ const activeTab = computed(() => {
       if (provider.type === ProviderType.PLAYER) return "player_providers";
       if (provider.type === ProviderType.METADATA) return "metadata_providers";
       if (provider.type === ProviderType.PLUGIN) return "plugin_providers";
+      if (provider.type === ProviderType.AUDIO_ANALYSIS)
+        return "audio_analysis_providers";
     }
   }
 
@@ -681,6 +694,8 @@ const activeTab = computed(() => {
       if (manifest.type === ProviderType.PLAYER) return "player_providers";
       if (manifest.type === ProviderType.METADATA) return "metadata_providers";
       if (manifest.type === ProviderType.PLUGIN) return "plugin_providers";
+      if (manifest.type === ProviderType.AUDIO_ANALYSIS)
+        return "audio_analysis_providers";
     }
   }
   return "music_providers";
@@ -777,6 +792,12 @@ const breadcrumbItems = computed(() => {
         title: t("settings.plugins"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "plugin" } },
+      });
+    } else if (currentTab === "audio_analysis_providers") {
+      items.push({
+        title: t("settings.audio_analysis_providers"),
+        disabled: name === "providersettings",
+        to: { name: "providersettings", query: { types: "audio_analysis" } },
       });
     } else if (currentTab === "about") {
       items.push({

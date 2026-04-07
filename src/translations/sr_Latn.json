@@ -1569,7 +1569,7 @@
         "cache_database_cleanup": "Čišćenje keširane baze podataka",
         "scan_missing_artist_artwork": "Skeniraj nedostajuće slike izvođača",
         "refresh_playlist_metadata": "Osveži metapodatke plejliste",
-        "update_metadata": "Ažuriraj metapodatke"
+        "update_metadata": "Ažuriraj metapodatke za {0}"
     },
     "not_found_headline": "Ups, ova stranica nije na listi pesama.",
     "not_found_subtext": "Tražena numera nije dostupna kod provajdera. Idite nazad ili izaberite drugu."
