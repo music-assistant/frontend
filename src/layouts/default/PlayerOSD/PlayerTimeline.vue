@@ -368,7 +368,7 @@ const chapterClicked = function (chaperPos: number) {
 <style scoped>
 .timeline-container {
   width: 100%;
-  --timeline-color: rgb(var(--v-theme-on-surface));
+  --timeline-color: rgb(var(--v-theme-primary));
 }
 
 .timeline-track {
