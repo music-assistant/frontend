@@ -426,7 +426,7 @@ const panelRowHeight = computed(() => {
 const rowVirtualizer = useVirtualizer(
   computed(() => ({
     count: panelRows.value.length,
-    getScrollElement: () => scrollContainerRef.value,
+    getScrollElement: () => scrollContainerRef.value as HTMLElement | null,
     estimateSize: () => panelRowHeight.value,
     overscan: 3,
   })),
