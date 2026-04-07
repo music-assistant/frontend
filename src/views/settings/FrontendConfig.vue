@@ -58,6 +58,7 @@ import {
   ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { companionMode } from "@/plugins/companion";
+import { store } from "@/plugins/store";
 import { $t, i18n } from "@/plugins/i18n";
 import { webPlayer } from "@/plugins/web_player";
 import EditConfig from "./EditConfig.vue";
@@ -118,6 +119,9 @@ onMounted(() => {
       options: [
         { title: $t("discover"), value: "discover" },
         { title: $t("search"), value: "search" },
+        ...(store.enabledPlugins.has("party")
+          ? [{ title: $t("party_mode"), value: "party" }]
+          : []),
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
         { title: $t("tracks"), value: "tracks" },

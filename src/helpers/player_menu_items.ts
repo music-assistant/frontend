@@ -145,7 +145,8 @@ export const getPlayerMenuItems = (
             p.player_id != player.player_id &&
             p.available &&
             p.enabled &&
-            !p.synced_to,
+            !p.synced_to &&
+            !p.hide_in_ui,
         )
         .map((p) => {
           return {

@@ -52,6 +52,7 @@
     "off": "Off",
     "on": "On",
     "other_versions": "Other versions",
+    "party_mode": "Party mode",
     "perform_action": "Perform action on {0} item(s)",
     "play": "Play",
     "play_album_from": "Play Album from here",
@@ -1617,7 +1618,7 @@
         "cache_database_cleanup": "Cache database cleanup",
         "scan_missing_artist_artwork": "Scan missing artist artwork",
         "refresh_playlist_metadata": "Refresh playlist metadata",
-        "update_metadata": "Update metadata"
+        "update_metadata": "Update metadata for {0}"
     },
     "not_found_headline": "Oops, this page is off the setlist.",
     "not_found_subtext": "The track you're looking for got lost between providers. Head back or find something new.",
