@@ -1,24 +1,32 @@
 <template>
   <div style="width: auto; height: 24px">
-    <div v-if="store.activePlayer" style="width: 100%">
+    <div
+      v-if="store.activePlayer"
+      class="timeline-container"
+      :style="color ? { '--timeline-color': color } : undefined"
+    >
       <div
         ref="trackRef"
         class="timeline-track"
         :class="{ 'timeline-track--disabled': !canSeek }"
+        role="slider"
+        :aria-valuenow="Math.round(curTimeValue)"
+        :aria-valuemin="0"
+        :aria-valuemax="Math.round(duration)"
+        :aria-disabled="!canSeek"
+        tabindex="0"
         @mouseenter="isThumbHidden = false"
         @mouseleave="isThumbHidden = true"
         @touchstart.passive="onPointerDown"
         @mousedown="onPointerDown"
+        @keydown="onKeyDown"
       >
         <!-- background track -->
         <div class="timeline-rail"></div>
         <!-- filled portion: GPU-composited via scaleX -->
         <div
           class="timeline-fill"
-          :style="{
-            transform: `scaleX(${progress})`,
-            backgroundColor: fillColor,
-          }"
+          :style="{ transform: `scaleX(${progress})` }"
         ></div>
         <!-- chapter ticks -->
         <template v-if="chapterTicks && Object.keys(chapterTicks).length">
@@ -41,14 +49,11 @@
             </span>
           </div>
         </template>
-        <!-- thumb: GPU-composited via translateX -->
+        <!-- thumb -->
         <div
           class="timeline-thumb"
           :class="{ 'timeline-thumb--hidden': isThumbHidden }"
-          :style="{
-            transform: `translateX(${thumbX}px)`,
-            backgroundColor: fillColor,
-          }"
+          :style="{ left: `${progress * 100}%` }"
         ></div>
       </div>
 
@@ -78,7 +83,6 @@ import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
-import { useTheme } from "vuetify";
 
 // properties
 export interface Props {
@@ -90,8 +94,6 @@ const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: undefined,
 });
-
-const theme = useTheme();
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
 
@@ -277,16 +279,6 @@ const progress = computed(() => {
   return Math.min(Math.max(curTimeValue.value / duration.value, 0), 1);
 });
 
-const thumbX = computed(() => {
-  if (!trackRef.value) return 0;
-  return progress.value * trackRef.value.clientWidth;
-});
-
-const fillColor = computed(() => {
-  if (props.color) return props.color;
-  return theme.current.value.colors.fg;
-});
-
 //watch
 watch(computedElapsedTime, (newTime) => {
   if (!isDragging.value) {
@@ -337,6 +329,25 @@ const onPointerDown = (e: MouseEvent | TouchEvent) => {
   document.addEventListener("touchend", onUp);
 };
 
+const onKeyDown = (e: KeyboardEvent) => {
+  if (!canSeek.value || !store.activePlayer) return;
+  const range = duration.value;
+  let newTime = curTimeValue.value;
+  if (e.key === "ArrowRight")
+    newTime += e.shiftKey ? range * 0.1 : range * 0.01;
+  else if (e.key === "ArrowLeft")
+    newTime -= e.shiftKey ? range * 0.1 : range * 0.01;
+  else if (e.key === "PageUp") newTime += range * 0.1;
+  else if (e.key === "PageDown") newTime -= range * 0.1;
+  else if (e.key === "Home") newTime = 0;
+  else if (e.key === "End") newTime = range;
+  else return;
+  e.preventDefault();
+  newTime = Math.min(Math.max(newTime, 0), range);
+  curTimeValue.value = newTime;
+  api.playerCommandSeek(store.activePlayer.player_id, Math.round(newTime));
+};
+
 const chapterClicked = function (chaperPos: number) {
   if (store.curQueueItem?.media_item?.metadata?.chapters) {
     for (const chapter of store.curQueueItem.media_item.metadata.chapters) {
@@ -355,6 +366,11 @@ const chapterClicked = function (chaperPos: number) {
 </script>
 
 <style scoped>
+.timeline-container {
+  width: 100%;
+  --timeline-color: rgb(var(--v-theme-on-surface));
+}
+
 .timeline-track {
   position: relative;
   height: 24px;
@@ -376,7 +392,7 @@ const chapterClicked = function (chaperPos: number) {
   right: 0;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--v-theme-on-surface), 0.2);
 }
 
 .timeline-fill {
@@ -387,15 +403,16 @@ const chapterClicked = function (chaperPos: number) {
   border-radius: 2px;
   transform-origin: left center;
   will-change: transform;
+  background-color: var(--timeline-color);
 }
 
 .timeline-thumb {
   position: absolute;
-  left: -5px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  will-change: transform;
+  margin-left: -5px;
+  background-color: var(--timeline-color);
   transition: opacity 0.15s ease;
 }
 
@@ -410,7 +427,7 @@ const chapterClicked = function (chaperPos: number) {
   height: 4px;
   margin-top: -2px;
   margin-left: -1px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(var(--v-theme-on-surface), 0.5);
   cursor: pointer;
 }
 
