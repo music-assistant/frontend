@@ -329,6 +329,8 @@ const onPointerDown = (e: MouseEvent | TouchEvent) => {
   document.addEventListener("touchend", onUp);
 };
 
+let keySeekTimer: ReturnType<typeof setTimeout> | null = null;
+
 const onKeyDown = (e: KeyboardEvent) => {
   if (!canSeek.value || !store.activePlayer) return;
   const range = duration.value;
@@ -343,9 +345,16 @@ const onKeyDown = (e: KeyboardEvent) => {
   else if (e.key === "End") newTime = range;
   else return;
   e.preventDefault();
+  isDragging.value = true;
   newTime = Math.min(Math.max(newTime, 0), range);
   curTimeValue.value = newTime;
-  api.playerCommandSeek(store.activePlayer.player_id, Math.round(newTime));
+  tempTime.value = newTime;
+  if (keySeekTimer) clearTimeout(keySeekTimer);
+  const playerId = store.activePlayer.player_id;
+  keySeekTimer = setTimeout(() => {
+    isDragging.value = false;
+    api.playerCommandSeek(playerId, Math.round(tempTime.value));
+  }, 300);
 };
 
 const chapterClicked = function (chaperPos: number) {
