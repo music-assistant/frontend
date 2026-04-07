@@ -1477,7 +1477,11 @@ onMounted(async () => {
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       if (scrollContainerRef.value) {
-        scrollElement(scrollContainerRef.value, store.prevState!.scrollPos, 50);
+        scrollElement(
+          scrollContainerRef.value as HTMLElement,
+          store.prevState!.scrollPos,
+          50,
+        );
       }
     });
     loading.value = false;
