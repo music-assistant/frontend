@@ -2,7 +2,13 @@
   <!-- Non-mobile: background gradient and player bar -->
   <template v-if="!useFloatingPlayer">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols">
+    <div
+      ref="desktopControlsRef"
+      class="mediacontrols"
+      tabindex="-1"
+      @mousedown="focusControls"
+      @keydown="onFooterKeyDown"
+    >
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
@@ -63,7 +69,15 @@
   <!-- Mobile: floating player with volume slider inside container -->
   <div v-else class="mediacontrols-mobile-container">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols" :data-mobile="true">
+    <div
+      ref="mobileControlsRef"
+      class="mediacontrols"
+      :data-mobile="true"
+      tabindex="-1"
+      @mousedown="focusControls"
+      @touchstart.passive="focusControls"
+      @keydown="onFooterKeyDown"
+    >
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="false"
@@ -111,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import api from "@/plugins/api";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -135,6 +150,67 @@ interface Props {
   useFloatingPlayer: boolean;
 }
 const props = defineProps<Props>();
+
+// refs for keyboard focus
+const desktopControlsRef = ref<HTMLElement | null>(null);
+const mobileControlsRef = ref<HTMLElement | null>(null);
+
+const focusControls = () => {
+  const el = desktopControlsRef.value || mobileControlsRef.value;
+  el?.focus();
+};
+
+let footerSeekTimer: ReturnType<typeof setTimeout> | null = null;
+let footerSeekTarget: number | null = null;
+
+const onFooterKeyDown = (e: KeyboardEvent) => {
+  if (e.defaultPrevented) return;
+  const player = store.activePlayer;
+  if (!player) return;
+
+  switch (e.key) {
+    case "ArrowUp":
+      e.preventDefault();
+      api.playerCommandVolumeUp(player.player_id);
+      break;
+    case "ArrowDown":
+      e.preventDefault();
+      api.playerCommandVolumeDown(player.player_id);
+      break;
+    case "ArrowLeft":
+    case "ArrowRight":
+    case "PageUp":
+    case "PageDown":
+    case "Home":
+    case "End": {
+      const duration = player.current_media?.duration;
+      if (!duration) break;
+      e.preventDefault();
+      const current = footerSeekTarget ?? player.elapsed_time ?? 0;
+      let target = current;
+      if (e.key === "ArrowRight")
+        target += e.shiftKey ? duration * 0.1 : duration * 0.01;
+      else if (e.key === "ArrowLeft")
+        target -= e.shiftKey ? duration * 0.1 : duration * 0.01;
+      else if (e.key === "PageUp") target += duration * 0.1;
+      else if (e.key === "PageDown") target -= duration * 0.1;
+      else if (e.key === "Home") target = 0;
+      else if (e.key === "End") target = duration;
+      target = Math.min(Math.max(target, 0), duration);
+      footerSeekTarget = target;
+      if (footerSeekTimer) clearTimeout(footerSeekTimer);
+      footerSeekTimer = setTimeout(() => {
+        api.playerCommandSeek(player.player_id, Math.round(target));
+        footerSeekTarget = null;
+      }, 300);
+      break;
+    }
+    case " ":
+      e.preventDefault();
+      api.playerCommandPlayPause(player.player_id);
+      break;
+  }
+};
 
 // local refs
 const coverImageColorPalette = ref<ImageColorPalette>({
@@ -212,6 +288,7 @@ watch(
   width: 100%;
   padding: 10px 15px;
   background-color: rgb(var(--v-theme-overlay));
+  outline: none;
   .mediacontrols-bottom-center {
     flex: 0 1 40%;
     min-width: 0;
