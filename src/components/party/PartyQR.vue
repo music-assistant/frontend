@@ -161,7 +161,7 @@ onMounted(async () => {
         }
       }
     });
-    resizeObserver.observe(qrContainer.value);
+    resizeObserver.observe(qrContainer.value as unknown as Element);
   }
 
   // Subscribe to PROVIDERS_UPDATED to detect when party provider is
