@@ -1,34 +1,31 @@
 <template>
-  <ActivePlayerPopover
-    v-if="!store.mobileLayout && player && player.isVisible"
-    auto-show
-    align="end"
-    child-element-id="extended-controls-speaker-button"
-  />
-  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
-
-  <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
-
-  <QueueBtn
-    v-if="queue && queue.isVisible"
-    :color="queue.color"
-    style="padding-left: 15px; padding-right: 20px"
-  />
-  <PlayerVolume
-    v-if="volume && volume.isVisible && store.activePlayer"
-    :player="store.activePlayer"
-    :width="volume.volumeSize || '150px'"
-    :allow-wheel="true"
-    :prefer-group-volume="true"
-  />
+  <div class="extended-controls">
+    <div v-if="store.activePlayer" class="extended-controls__label">
+      <PlayerNameLabel clickable :icon-size="20" />
+    </div>
+    <div class="extended-controls__buttons">
+      <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
+      <QueueBtn
+        v-if="queue && queue.isVisible"
+        :color="queue.color"
+        style="padding-left: 15px; padding-right: 20px"
+      />
+      <PlayerVolume
+        v-if="volume && volume.isVisible && store.activePlayer"
+        :player="store.activePlayer"
+        :width="volume.volumeSize || '150px'"
+        :allow-wheel="true"
+        :prefer-group-volume="true"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
+import PlayerNameLabel from "@/components/PlayerNameLabel.vue";
 import { store } from "@/plugins/store";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerVolume from "./PlayerVolume.vue";
 
 // properties
@@ -65,3 +62,24 @@ withDefaults(defineProps<Props>(), {
   contextMenu: () => ({ isVisible: true }),
 });
 </script>
+
+<style scoped>
+.extended-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.extended-controls__label {
+  padding-bottom: 2px;
+  align-self: flex-end;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.extended-controls__buttons {
+  display: flex;
+  align-items: center;
+}
+</style>

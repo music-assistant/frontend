@@ -41,13 +41,10 @@
             </v-card>
           </v-menu>
 
-          <SpeakerBtn
+          <PlayerNameLabel
             v-if="!showExpandedPlayerSelectButton"
-            @click="
-              () => {
-                store.showFullscreenPlayer = false;
-              }
-            "
+            clickable
+            @click="store.showFullscreenPlayer = false"
           />
 
           <Button icon @click.stop="openQueueMenu">
@@ -500,19 +497,15 @@
             padding-top: 15px;
           "
         >
-          <v-btn
-            class="responsive-icon-holder-btn"
-            variant="outlined"
-            @click="
+          <PlayerNameLabel
+            :icon-size="18"
+            @click.stop="
               () => {
                 store.showPlayersMenu = true;
                 store.showFullscreenPlayer = false;
               }
             "
-          >
-            <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
-            {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          />
         </div>
       </div>
     </v-card>
@@ -527,6 +520,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import PlayerNameLabel from "@/components/PlayerNameLabel.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
@@ -537,7 +531,6 @@ import {
   ImageColorPalette,
   formatDuration,
   getMediaImageUrl,
-  getPlayerName,
   sleep,
 } from "@/helpers/utils";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
@@ -580,7 +573,6 @@ import {
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name } = useDisplay();
@@ -617,7 +609,10 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
+const lyricsEnabled = computed(
+  () => store.showFullscreenPlayer && activeQueuePanel.value === 2,
+);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime(lyricsEnabled);
 
 // Computed properties
 

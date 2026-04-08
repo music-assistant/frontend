@@ -6,7 +6,6 @@
       <div class="mediacontrols-left">
         <PlayerTrackDetails
           :show-quality-details-btn="getBreakpointValue('bp9') ? true : false"
-          :show-only-artist="getBreakpointValue('bp7') ? false : true"
           :color-palette="coverImageColorPalette"
           :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
         />
@@ -271,6 +270,7 @@ watch(
   min-width: 0;
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
   > div {
     display: inline-flex;
     align-items: center;
