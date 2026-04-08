@@ -55,7 +55,9 @@
       >
         <template v-if="store.activePlayer?.current_media?.title">
           <div class="ma-line-clamp-1">
-            {{ store.activePlayer.current_media.title }}
+            <MarqueeText :sync="marqueeSync">
+              {{ store.activePlayer.current_media.title }}
+            </MarqueeText>
           </div>
         </template>
         <div
