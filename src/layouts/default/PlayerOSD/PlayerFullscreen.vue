@@ -498,7 +498,6 @@
           "
         >
           <PlayerNameLabel
-            :icon-size="18"
             @click.stop="
               () => {
                 store.showPlayersMenu = true;

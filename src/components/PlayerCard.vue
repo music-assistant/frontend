@@ -54,7 +54,6 @@
         >
           <PlayerNameLabel
             :player="player"
-            :icon-size="16"
             :truncate="isBuiltinPlayer(player) ? 12 : 27"
           />
           <!-- append small icon for builtin player -->

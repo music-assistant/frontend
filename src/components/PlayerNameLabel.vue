@@ -33,7 +33,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   player: undefined,
-  iconSize: 24,
+  iconSize: 20,
   truncate: 26,
   clickable: false,
 });

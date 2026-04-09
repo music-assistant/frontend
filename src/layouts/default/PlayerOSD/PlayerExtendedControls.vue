@@ -1,7 +1,7 @@
 <template>
   <div class="extended-controls">
     <div v-if="store.activePlayer" class="extended-controls__label">
-      <PlayerNameLabel clickable :icon-size="20" />
+      <PlayerNameLabel clickable />
     </div>
     <div class="extended-controls__buttons">
       <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
