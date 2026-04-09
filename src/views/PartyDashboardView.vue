@@ -850,6 +850,21 @@ onMounted(async () => {
     fetchQueueItems(true);
   });
   onBeforeUnmount(unsub3);
+
+  // Re-resolve party player when a different queue starts playing (auto mode)
+  const unsub4 = api.subscribe(
+    EventType.QUEUE_UPDATED,
+    async (evt: EventMessage) => {
+      if (evt.object_id !== store.activePlayerQueue?.queue_id) {
+        const updatedQueue = api.queues[evt.object_id as string];
+        if (updatedQueue?.state === PlaybackState.PLAYING) {
+          await refreshPartyPlayer();
+          fetchQueueItems(true);
+        }
+      }
+    },
+  );
+  onBeforeUnmount(unsub4);
 });
 
 // Cleanup when leaving the party view

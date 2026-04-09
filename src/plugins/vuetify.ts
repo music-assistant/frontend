@@ -7,10 +7,9 @@
 // Styles
 import "@mdi/font/css/materialdesignicons.css";
 import "material-design-icons-iconfont/dist/material-design-icons.css";
-import "vuetify/styles";
-import colors from "vuetify/lib/util/colors";
-import { aliases as defaultAliases, mdi } from "vuetify/iconsets/mdi";
 import { md } from "vuetify/iconsets/md";
+import { aliases as defaultAliases, mdi } from "vuetify/iconsets/mdi";
+import "./vuetify.css";
 
 // Composables
 import { IconAliases, createVuetify } from "vuetify";

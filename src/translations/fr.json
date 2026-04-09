@@ -1218,7 +1218,7 @@
         "correct_provider_mappings": "Corriger le mapping des fournisseurs de musique",
         "cache_database_cleanup": "Nettoyage de la base de données des caches",
         "refresh_playlist_metadata": "Mettre à jour les métadonnées de la liste de lecture",
-        "update_metadata": "Mettre à jour les métadonnées"
+        "update_metadata": "Mettre à jour les métadonnées de {0}"
     },
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",

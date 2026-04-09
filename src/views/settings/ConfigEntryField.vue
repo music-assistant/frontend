@@ -339,11 +339,12 @@ const getTranslatedActionLabel = () => {
 };
 
 const onUpdateValue = (value: ConfigValueType) => {
-  // When value is cleared (null/undefined/empty string/empty array), emit the default value instead
+  // When value is cleared (null/undefined/empty array), emit the default value instead
+  // For non-required fields, allow empty strings as a valid value
   if (
     value === null ||
     value === undefined ||
-    value === "" ||
+    (value === "" && props.confEntry.required) ||
     (Array.isArray(value) && value.length === 0)
   ) {
     emit("update:value", props.confEntry.default_value);

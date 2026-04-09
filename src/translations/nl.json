@@ -1583,7 +1583,7 @@
         "cache_database_cleanup": "Cache-database opschonen",
         "scan_missing_artist_artwork": "Ontbrekende albumhoezen van artiest scannen",
         "refresh_playlist_metadata": "Metadata van afspeellijst vernieuwen",
-        "update_metadata": "Metadata bijwerken"
+        "update_metadata": "Metadata bijwerken voor {0}"
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",

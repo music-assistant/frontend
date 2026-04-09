@@ -78,6 +78,8 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :added-items="addedItems"
+          :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${track.media_type}-${track.item_id}`
           "
@@ -139,6 +141,8 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
+          :added-items="addedItems"
+          :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${item.media_type}-${item.item_id}`
           "
@@ -212,6 +216,7 @@ import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
 import {
   type Artist,
+  type EventMessage,
   EventType,
   PlaybackState,
   type QueueItem,
@@ -298,8 +303,17 @@ const {
   handleScroll,
 } = search;
 
+const queuedUris = computed(() => {
+  const uris = new Set<string>();
+  for (const item of queueItems.value) {
+    if (item.media_item?.uri) uris.add(item.media_item.uri);
+  }
+  return uris;
+});
+
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
+const addedItems = ref(new Set<string>());
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
 const expandedResultItemId = ref("");
@@ -405,6 +419,8 @@ const addToQueue = async (item: Track | Artist, position: "next" | "end") => {
         consumeAddQueueToken();
       }
     }
+
+    addedItems.value.add(item.uri);
 
     const message =
       position === "next"
@@ -513,6 +529,7 @@ watch(partyConfig, (newConfig) => {
 let cleanupCountdown: (() => void) | null = null;
 let cleanupQueueEvents: (() => void) | null = null;
 let cleanupProvidersSub: (() => void) | null = null;
+let cleanupQueueUpdatedSub: (() => void) | null = null;
 
 const refreshPartyPlayer = async () => {
   try {
@@ -555,6 +572,21 @@ onMounted(async () => {
     },
   );
   cleanupProvidersSub = unsubProviders;
+
+  // Re-resolve party player when a different queue starts playing (auto mode)
+  const unsubQueueUpdated = api.subscribe(
+    EventType.QUEUE_UPDATED,
+    async (evt: EventMessage) => {
+      if (evt.object_id !== partyQueueId.value) {
+        const updatedQueue = api.queues[evt.object_id as string];
+        if (updatedQueue?.state === PlaybackState.PLAYING) {
+          await refreshPartyPlayer();
+          fetchQueueItems(true);
+        }
+      }
+    },
+  );
+  cleanupQueueUpdatedSub = unsubQueueUpdated;
 });
 
 onBeforeUnmount(() => {
@@ -562,6 +594,7 @@ onBeforeUnmount(() => {
   cleanupQueueEvents?.();
   cleanupCountdown?.();
   cleanupProvidersSub?.();
+  cleanupQueueUpdatedSub?.();
   search.cleanup();
 });
 </script>

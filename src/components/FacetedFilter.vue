@@ -6,7 +6,7 @@
         {{ title }}
         <template v-if="selectedCount > 0">
           <Separator orientation="vertical" class="mx-2 h-4" />
-          <Badge class="lg:hidden font-medium rounded-[6px]">
+          <Badge class="lg:hidden font-medium rounded-[6px]" :aria-label="`${selectedCount} selected`">
             {{ selectedCount }}
           </Badge>
           <div class="hidden space-x-1 lg:flex">
@@ -14,6 +14,7 @@
               {{ selectedCount }} selected
               <button
                 type="button"
+                :aria-label="`Clear all ${title} filters`"
                 class="flex items-center justify-center cursor-pointer hover:opacity-70"
                 @click.stop="clear"
               >
@@ -29,6 +30,7 @@
                 {{ opt.label }}
                 <button
                   type="button"
+                  :aria-label="`Remove ${opt.label} filter`"
                   class="flex items-center justify-center cursor-pointer hover:opacity-70"
                   @click.stop="removeFilter(opt.value)"
                 >
@@ -42,31 +44,34 @@
     </PopoverTrigger>
     <PopoverContent class="w-[220px] p-0" align="start">
       <div class="faceted-filter-content">
-        <Input v-model="search" :placeholder="title" class="mb-2 h-8" />
+        <Input v-model="search" :placeholder="title" :aria-label="`Search ${title}`" class="mb-2 h-8" />
         <div class="faceted-filter-list">
-          <label
+          <div
             v-for="option in filteredOptions"
-            :key="`${option.value}-${selectedSet.has(option.value)}`"
+            :key="option.value"
             class="faceted-filter-item"
+            role="checkbox"
+            :aria-checked="selectedSet.has(option.value)"
+            tabindex="0"
+            @click="toggle(option.value)"
+            @keydown.space.prevent="toggle(option.value)"
           >
             <Checkbox
-              :checked="selectedSet.has(option.value)"
-              :default-value="selectedSet.has(option.value)"
-              class="mr-2"
-              @click.stop="toggle(option.value)"
+              :model-value="selectedSet.has(option.value)"
+              class="mr-2 pointer-events-none"
+              tabindex="-1"
+              aria-hidden="true"
             />
-            <span
-              class="truncate cursor-pointer"
-              @click.stop="toggle(option.value)"
-            >
+            <span class="truncate">
               {{ option.label }}
             </span>
-          </label>
+          </div>
         </div>
         <button
           v-if="selectedCount > 0"
           type="button"
           class="faceted-filter-clear"
+          :aria-label="`Clear ${title} filters`"
           @click="clear"
         >
           Clear filters

@@ -18,6 +18,7 @@
           </router-view>
           <add-to-playlist-dialog />
           <create-playlist-dialog />
+          <import-playlist-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
@@ -39,6 +40,7 @@ import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 </script>
 

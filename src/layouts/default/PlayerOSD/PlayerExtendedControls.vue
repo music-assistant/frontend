@@ -5,6 +5,7 @@
     align="end"
     child-element-id="extended-controls-speaker-button"
   />
+  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
 
   <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
 
@@ -25,6 +26,7 @@
 <script setup lang="ts">
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
+import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerVolume from "./PlayerVolume.vue";
@@ -47,6 +49,9 @@ export interface Props {
     responsiveVolumeSize?: boolean;
     color?: string;
   };
+  contextMenu?: {
+    isVisible?: boolean;
+  };
 }
 
 withDefaults(defineProps<Props>(), {
@@ -57,5 +62,6 @@ withDefaults(defineProps<Props>(), {
     volumeSize: "150px",
     responsiveVolumeSize: false,
   }),
+  contextMenu: () => ({ isVisible: true }),
 });
 </script>

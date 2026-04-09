@@ -115,6 +115,7 @@ describe("useRateLimiting", () => {
       party_name: "Test Party",
       qr_text: "Test QR",
       hide_back_button: false,
+      show_progress_bar: false,
     };
 
     rateLimiting.configure(config);

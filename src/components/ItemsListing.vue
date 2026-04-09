@@ -1543,13 +1543,20 @@ const getFilteredItems = function (
   }
 
   if (params.sortBy == "album") {
-    result.sort((a, b) =>
-      getSortName((a as Track).album).localeCompare(
+    result.sort((a, b) => {
+      const albumCompare = getSortName((a as Track).album).localeCompare(
         getSortName((b as Track).album),
         undefined,
         { numeric: true },
-      ),
-    );
+      );
+      if (albumCompare !== 0) return albumCompare;
+      const discCompare =
+        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
+      if (discCompare !== 0) return discCompare;
+      return (
+        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
+      );
+    });
   }
   if (params.sortBy == "artist") {
     result.sort((a, b) =>

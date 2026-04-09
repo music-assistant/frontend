@@ -92,9 +92,8 @@
           style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
         >
           <!-- player powered off -->
-          <div v-if="player.powered == false">
-            {{ $t("off") }}
-          </div>
+          <div v-if="player.powered == false"></div>
+
           <!-- artist + album -->
           <div
             v-else-if="
@@ -104,18 +103,21 @@
             {{ player.current_media.artist }} •
             {{ player.current_media.album }}
           </div>
+
           <!-- artist only -->
           <div v-else-if="player.current_media?.artist">
             {{ player.current_media.artist }}
           </div>
+
           <!-- album only -->
           <div v-else-if="player.current_media?.album">
             {{ player.current_media.album }}
           </div>
-          <!-- queue empty message -->
-          <div v-else-if="playerQueue?.items == 0">
-            {{ $t("queue_empty") }}
-          </div>
+          <!-- queue empty (hidden visually, announced by screen readers) -->
+          <div
+            v-else-if="playerQueue?.items == 0"
+            :aria-label="$t('queue_empty')"
+          ></div>
         </div>
       </template>
 
@@ -124,7 +126,9 @@
         <!-- power button -->
         <Button
           v-if="
-            player.power_control != PLAYER_CONTROL_NONE && allowPowerControl
+            player.power_control != PLAYER_CONTROL_NONE &&
+            allowPowerControl &&
+            !player.powered
           "
           variant="ghost-icon"
           size="icon"
@@ -465,10 +469,14 @@ watch(
   margin-left: 5px;
 }
 
+.player-command-btn.group-expand-btn {
+  margin-right: 3px;
+}
+
 .group-badge :deep(.v-badge__badge) {
-  font-size: 10px;
-  height: 14px;
-  min-width: 14px;
+  font-size: 13px;
+  height: 16px;
+  min-width: 16px;
   padding: 0 4px 0 4px;
 }
 </style>

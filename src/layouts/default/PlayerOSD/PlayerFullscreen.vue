@@ -227,143 +227,137 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <v-infinite-scroll
+            <v-virtual-scroll
               v-if="!tempHide && activeQueuePanel !== 2"
-              :onLoad="loadNextPage"
-              :empty-text="''"
+              ref="virtualScrollRef"
+              :item-height="70"
               height="100%"
+              :items="activeQueuePanel == 0 ? nextItems : previousItems"
+              @scroll="onQueueScroll"
             >
-              <!-- list view -->
-              <v-virtual-scroll
-                :item-height="70"
-                max-height="100%"
-                :items="activeQueuePanel == 0 ? nextItems : previousItems"
-              >
-                <template #default="{ item, index }">
-                  <ListItem
-                    link
-                    :show-menu-btn="true"
-                    :disabled="!item.available"
-                    @click.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @mouseenter="hoveredQueueIndex = index"
-                    @mouseleave="hoveredQueueIndex = -1"
-                  >
-                    <template #prepend>
-                      <div class="media-thumb listitem-media-thumb">
-                        <MediaItemThumb size="50" :item="item" />
-                      </div>
-                    </template>
-                    <template #title>
-                      <div class="title-row">
-                        <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
-                          "
+              <template #default="{ item, index }">
+                <ListItem
+                  link
+                  :show-menu-btn="true"
+                  :disabled="!item.available"
+                  @click.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @mouseenter="hoveredQueueIndex = index"
+                  @mouseleave="hoveredQueueIndex = -1"
+                >
+                  <template #prepend>
+                    <div class="media-thumb listitem-media-thumb">
+                      <MediaItemThumb size="50" :item="item" />
+                    </div>
+                  </template>
+                  <template #title>
+                    <div class="title-row">
+                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          :class="{
+                            'is-playing':
+                              item.queue_item_id ===
+                              store.curQueueItem?.queue_item_id,
+                          }"
                         >
-                          <span
-                            :class="{
-                              'is-playing':
-                                item.queue_item_id ===
-                                store.curQueueItem?.queue_item_id,
-                            }"
-                          >
-                            {{ item.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
-                    </template>
-                    <template #subtitle>
-                      <div class="d-flex">
-                        <span style="white-space: nowrap" class="pr-1">
-                          {{ formatDuration(item.duration) }} |
+                          {{ item.name }}
                         </span>
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="d-flex">
+                      <span style="white-space: nowrap" class="pr-1">
+                        {{ formatDuration(item.duration) }} |
+                      </span>
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          v-if="
+                            item.media_item &&
+                            'album' in item.media_item &&
+                            item.media_item.album
                           "
                         >
-                          <span
-                            v-if="
-                              item.media_item &&
-                              'album' in item.media_item &&
-                              item.media_item.album
-                            "
-                          >
-                            {{ item.media_item.album.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
+                          {{ item.media_item.album.name }}
+                        </span>
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #append>
+                    <PartyPlayerBadge
+                      v-if="item.extra_attributes?.party_guest === true"
+                      :type="
+                        item.extra_attributes?.party_boosted === true
+                          ? 'boost'
+                          : 'request'
+                      "
+                      :badge-color="
+                        item.extra_attributes?.party_boosted === true
+                          ? boostBadgeColor
+                          : requestBadgeColor
+                      "
+                    />
+                    <NowPlayingBadge
+                      v-if="
+                        item.queue_item_id ===
+                          store.curQueueItem?.queue_item_id &&
+                        store.activePlayer?.playback_state != PlaybackState.IDLE
+                      "
+                      :show-badge="getBreakpointValue('bp4')"
+                    />
+                    <v-icon v-if="!item.available">mdi-alert</v-icon>
+                  </template>
+                </ListItem>
+                <!-- Show chapters -->
+                <div
+                  v-if="
+                    item.queue_item_id == store.curQueueItem?.queue_item_id &&
+                    item.media_item?.metadata?.chapters?.length
+                  "
+                  style="margin-left: 50px"
+                >
+                  <v-list-item
+                    v-for="chapter in item.media_item.metadata?.chapters"
+                    :key="chapter.position"
+                    @click.stop="chapterClicked(item.media_item, chapter)"
+                  >
+                    <template #title>
+                      <div>{{ chapter.name }}</div>
                     </template>
                     <template #append>
-                      <PartyPlayerBadge
-                        v-if="item.extra_attributes?.party_guest === true"
-                        :type="
-                          item.extra_attributes?.party_boosted === true
-                            ? 'boost'
-                            : 'request'
-                        "
-                        :badge-color="
-                          item.extra_attributes?.party_boosted === true
-                            ? boostBadgeColor
-                            : requestBadgeColor
-                        "
-                      />
-                      <NowPlayingBadge
-                        v-if="
-                          item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id &&
-                          store.activePlayer?.playback_state !=
-                            PlaybackState.IDLE
-                        "
-                        :show-badge="getBreakpointValue('bp4')"
-                      />
-                      <v-icon v-if="!item.available">mdi-alert</v-icon>
+                      <span v-if="chapter.end" class="text-caption"
+                        >{{ formatDuration(chapter.end - chapter.start) }}
+                      </span>
                     </template>
-                  </ListItem>
-                  <!-- Show chapters -->
-                  <div
-                    v-if="
-                      item.queue_item_id == store.curQueueItem?.queue_item_id &&
-                      item.media_item?.metadata?.chapters?.length
-                    "
-                    style="margin-left: 50px"
-                  >
-                    <v-list-item
-                      v-for="chapter in item.media_item.metadata?.chapters"
-                      :key="chapter.position"
-                      @click.stop="chapterClicked(item.media_item, chapter)"
-                    >
-                      <template #title>
-                        <div>{{ chapter.name }}</div>
-                      </template>
-                      <template #append>
-                        <span v-if="chapter.end" class="text-caption"
-                          >{{ formatDuration(chapter.end - chapter.start) }}
-                        </span>
-                      </template>
-                    </v-list-item>
-                  </div>
-                </template>
-              </v-virtual-scroll>
-            </v-infinite-scroll>
+                  </v-list-item>
+                </div>
+              </template>
+            </v-virtual-scroll>
             <!-- Lyrics view -->
             <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
               <LyricsViewer
@@ -1222,38 +1216,56 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
   }
 };
 
+const virtualScrollRef = ref<InstanceType<
+  typeof import("vuetify/components").VVirtualScroll
+> | null>(null);
+const loadingMore = ref(false);
+const allItemsLoaded = ref(false);
+
 const resetItems = async function () {
   tempHide.value = true;
   queueItems.value = [];
+  allItemsLoaded.value = false;
   await sleep(100);
   tempHide.value = false;
 };
 
-const loadNextPage = async function ({
-  done,
-}: {
-  done: (status: "ok" | "empty" | "loading" | "error") => void;
-}) {
-  if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
-    done("empty");
+const loadNextPage = async function () {
+  if (loadingMore.value || allItemsLoaded.value) return;
+  if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) return;
+  if (queueItems.value.length >= store.activePlayerQueue.items) {
+    allItemsLoaded.value = true;
     return;
   }
-  if (queueItems.value.length >= store.activePlayerQueue?.items) {
-    done("empty");
-    return;
-  }
+  loadingMore.value = true;
+  const pageSize = 50;
   const offset = queueItems.value.length;
-  const limit = (store.activePlayerQueue.current_index || 0) + 50;
+  // On first load, ensure we fetch enough items to cover past the current
+  // index so that nextItems (which slices from current_index) has data.
+  const minNeeded = (store.activePlayerQueue.current_index || 0) + pageSize;
+  const limit =
+    offset === 0 ? Math.max(pageSize, minNeeded - offset) : pageSize;
   const result = await api.getPlayerQueueItems(
     store.activePlayerQueue.queue_id,
     limit,
     offset,
   );
   queueItems.value.push(...result);
-  if (result.length < 50) {
-    done("empty");
-  } else {
-    done("ok");
+  if (result.length < limit) {
+    allItemsLoaded.value = true;
+  }
+  loadingMore.value = false;
+};
+
+const onQueueScroll = function (e: Event) {
+  const target = e.target as HTMLElement;
+  if (!target) return;
+  const threshold = 500;
+  if (
+    target.scrollTop + target.clientHeight >=
+    target.scrollHeight - threshold
+  ) {
+    loadNextPage();
   }
 };
 
@@ -1274,6 +1286,21 @@ onMounted(async () => {
     await fetchPartyConfig();
   }
 });
+
+// load initial page when queue items become visible
+watch(
+  [() => store.showFullscreenPlayer, () => store.showQueueItems],
+  () => {
+    if (
+      store.showFullscreenPlayer &&
+      store.showQueueItems &&
+      queueItems.value.length === 0
+    ) {
+      loadNextPage();
+    }
+  },
+  { immediate: true },
+);
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {

@@ -374,6 +374,7 @@ export enum ProviderType {
   PLAYER = "player",
   METADATA = "metadata",
   PLUGIN = "plugin",
+  AUDIO_ANALYSIS = "audio_analysis",
 }
 
 export enum ConfigEntryType {
@@ -694,6 +695,7 @@ export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
   supported_mediatypes: MediaType[];
+  is_dynamic: boolean;
 }
 
 export interface Radio extends MediaItem {}
@@ -859,6 +861,7 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  enqueued_media_items: MediaItemType[];
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
@@ -1236,4 +1239,5 @@ export interface PartyConfig {
   party_name: string | null;
   qr_text: string | null;
   hide_back_button: boolean;
+  show_progress_bar: boolean;
 }

@@ -94,8 +94,12 @@
     </v-toolbar>
 
     <div class="carousel-wrapper">
-      <carousel v-if="widgetRow.items.length > 0">
-        <swiper-slide v-for="item in widgetRow.items" :key="item.uri">
+      <carousel
+        v-if="widgetRow.items.length > 0"
+        :items="widgetRow.items"
+        :item-key="(item: MediaItemTypeOrItemMapping) => item.uri"
+      >
+        <template #default="{ item }">
           <PanelviewItemCompact
             :item="item"
             :show-provider-on-cover="showProviderOnCover"
@@ -107,7 +111,7 @@
             :is-available="itemIsAvailable(item)"
             :disabled="editMode"
           />
-        </swiper-slide>
+        </template>
       </carousel>
 
       <v-alert v-else>

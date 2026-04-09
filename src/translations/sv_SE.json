@@ -1569,7 +1569,7 @@
         "cache_database_cleanup": "Rensning av cachedatabasen",
         "scan_missing_artist_artwork": "Skanna saknade artisters konstverk",
         "refresh_playlist_metadata": "Uppdatera spellistans metadata",
-        "update_metadata": "Uppdatera metadata"
+        "update_metadata": "Uppdatera metadata för {0}"
     },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
     "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt."
