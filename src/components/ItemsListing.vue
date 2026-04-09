@@ -1550,9 +1550,12 @@ const getFilteredItems = function (
         { numeric: true },
       );
       if (albumCompare !== 0) return albumCompare;
-      const discCompare = ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
+      const discCompare =
+        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
       if (discCompare !== 0) return discCompare;
-      return ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0);
+      return (
+        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
+      );
     });
   }
   if (params.sortBy == "artist") {
