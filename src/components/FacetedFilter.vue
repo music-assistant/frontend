@@ -46,7 +46,7 @@
       <div class="faceted-filter-content">
         <Input v-model="search" :placeholder="title" :aria-label="`Search ${title}`" class="mb-2 h-8" />
         <div class="faceted-filter-list">
-          <label
+          <div
             v-for="option in filteredOptions"
             :key="option.value"
             class="faceted-filter-item"
@@ -65,7 +65,7 @@
             <span class="truncate">
               {{ option.label }}
             </span>
-          </label>
+          </div>
         </div>
         <button
           v-if="selectedCount > 0"
