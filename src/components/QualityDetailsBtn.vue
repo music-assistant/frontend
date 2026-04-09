@@ -697,7 +697,11 @@ const isContentTypeLossless = function (contentType: ContentType) {
 };
 
 const isHiResFormat = function (audioFormat: AudioFormat) {
-  if (!isContentTypeLossless(audioFormat.content_type)) return false;
+  if (
+    !isContentTypeLossless(audioFormat.content_type) &&
+    !isContentTypeLossless(audioFormat.codec_type)
+  )
+    return false;
   return audioFormat.bit_depth > 16 || audioFormat.sample_rate > 48000;
 };
 
@@ -708,10 +712,14 @@ const inputQualityTier = computed(() => {
 
   // Prefer making this decision based on codec type
   let content_type = sd.audio_format.content_type;
+  let codec_type = sd.audio_format.codec_type;
 
   if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;
-  } else if (isContentTypeLossless(content_type)) {
+  } else if (
+    isContentTypeLossless(content_type) ||
+    isContentTypeLossless(codec_type)
+  ) {
     return QualityTier.LOSSLESS;
   } else if (sd.audio_format.bit_rate >= 256) {
     return QualityTier.GOOD;
@@ -735,7 +743,10 @@ const outputQualityTiers = computed(() => {
     let player_tier = QualityTier.UNKNOWN;
     if (isHiResFormat(dsp.output_format)) {
       player_tier = QualityTier.HIRES;
-    } else if (isContentTypeLossless(dsp.output_format.content_type)) {
+    } else if (
+      isContentTypeLossless(dsp.output_format.content_type) ||
+      isContentTypeLossless(dsp.output_format.codec_type)
+    ) {
       player_tier = QualityTier.LOSSLESS;
     } else if (dsp.output_format.bit_rate >= 256) {
       player_tier = QualityTier.GOOD;
