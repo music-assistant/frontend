@@ -1240,3 +1240,22 @@ export interface PartyConfig {
   hide_back_button: boolean;
   show_progress_bar: boolean;
 }
+
+export interface SmartPlaylistRules {
+  genre_ids: number[];
+  artist_ids: number[];
+  album_ids: number[];
+  favorites_only: boolean;
+  seed_track_uri?: string;
+  min_popularity?: number;
+  logic: "AND" | "OR";
+  limit: number;
+  genre_names?: Record<number, string>;
+}
+
+export interface SmartPlaylistEntry {
+  db_playlist_id: string;
+  name: string;
+  rules: SmartPlaylistRules;
+  is_dynamic: boolean;
+}

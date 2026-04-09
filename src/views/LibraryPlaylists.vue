@@ -115,6 +115,17 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
+  // Smart Playlist option inside the "Create Playlist" submenu
+  if (Object.values(api.providers).some((p) => p.available && p.domain === "smart_playlist")) {
+    playListCreateItems.push({
+      label: "smart_playlist.create",
+      action: () => {
+        eventbus.emit("createSmartPlaylist", {});
+      },
+      icon: "mdi-playlist-star",
+      overflowAllowed: true,
+    });
+  }
   if (playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
