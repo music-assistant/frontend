@@ -1,0 +1,560 @@
+<!--
+  Shared rules form used by both CreateSmartPlaylistDialog and EditSmartPlaylistDialog.
+  Manages all filter state internally and exposes getFinalRules() for the parent to call on save.
+-->
+<template>
+  <div class="flex flex-col gap-4">
+    <!-- Genre filter -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("genres") }}</Label>
+      <div class="flex flex-wrap gap-1 items-center">
+        <Badge
+          v-for="gid in rules.genre_ids"
+          :key="gid"
+          variant="secondary"
+          class="gap-1 pr-1"
+        >
+          {{ genreName(gid) }}
+          <button
+            type="button"
+            class="ml-1 hover:opacity-70"
+            @click.stop="toggleGenreById(gid)"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+        <Popover>
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 gap-1 border-dashed text-xs"
+            >
+              <PlusCircle class="h-3 w-3" />
+              {{ $t("genres") }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-[200px] p-2">
+            <Input
+              v-model="genreSearch"
+              :placeholder="$t('search')"
+              class="mb-2 h-7 text-sm"
+              @keydown.stop
+            />
+            <div class="max-h-36 overflow-y-auto flex flex-col">
+              <div
+                v-for="genre in filteredGenres"
+                :key="genre.item_id"
+                class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
+                @click.stop="toggleGenreById(parseInt(genre.item_id))"
+              >
+                <Checkbox
+                  :checked="rules.genre_ids.includes(parseInt(genre.item_id))"
+                  class="h-4 w-4 pointer-events-none"
+                />
+                <span class="truncate">{{ genre.name }}</span>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+
+    <!-- Artist filter -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("artists") }}</Label>
+      <div class="flex flex-wrap gap-1 items-center">
+        <Badge
+          v-for="a in selectedArtistItems"
+          :key="a.id"
+          variant="secondary"
+          class="gap-1 pr-1"
+        >
+          {{ a.name }}
+          <button
+            type="button"
+            class="ml-1 hover:opacity-70"
+            @click.stop="toggleArtistById(a.id)"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+        <Popover>
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 gap-1 border-dashed text-xs"
+            >
+              <PlusCircle class="h-3 w-3" />
+              {{ $t("artists") }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-[200px] p-2">
+            <Input
+              v-model="artistSearch"
+              :placeholder="$t('search')"
+              class="mb-2 h-7 text-sm"
+              @keydown.stop
+            />
+            <div class="max-h-36 overflow-y-auto flex flex-col">
+              <div
+                v-for="artist in artistResults"
+                :key="artist.item_id"
+                class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
+                @click.stop="
+                  toggleArtistById(parseInt(artist.item_id), artist.name)
+                "
+              >
+                <Checkbox
+                  :checked="rules.artist_ids.includes(parseInt(artist.item_id))"
+                  class="h-4 w-4 pointer-events-none"
+                />
+                <span class="truncate">{{ artist.name }}</span>
+              </div>
+              <p
+                v-if="artistSearch.length < 2"
+                class="text-xs text-muted-foreground py-1"
+              >
+                {{ $t("search") }}…
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+
+    <!-- Album filter -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("albums") }}</Label>
+      <div class="flex flex-wrap gap-1 items-center">
+        <Badge
+          v-for="a in selectedAlbumItems"
+          :key="a.id"
+          variant="secondary"
+          class="gap-1 pr-1"
+        >
+          {{ a.name }}
+          <button
+            type="button"
+            class="ml-1 hover:opacity-70"
+            @click.stop="toggleAlbumById(a.id)"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+        <Popover>
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 gap-1 border-dashed text-xs"
+            >
+              <PlusCircle class="h-3 w-3" />
+              {{ $t("albums") }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-[200px] p-2">
+            <Input
+              v-model="albumSearch"
+              :placeholder="$t('search')"
+              class="mb-2 h-7 text-sm"
+              @keydown.stop
+            />
+            <div class="max-h-36 overflow-y-auto flex flex-col">
+              <div
+                v-for="album in albumResults"
+                :key="album.item_id"
+                class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
+                @click.stop="
+                  toggleAlbumById(parseInt(album.item_id), album.name)
+                "
+              >
+                <Checkbox
+                  :checked="rules.album_ids.includes(parseInt(album.item_id))"
+                  class="h-4 w-4 pointer-events-none"
+                />
+                <span class="truncate">{{ album.name }}</span>
+              </div>
+              <p
+                v-if="albumSearch.length < 2"
+                class="text-xs text-muted-foreground py-1"
+              >
+                {{ $t("search") }}…
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+
+    <!-- Favorites only -->
+    <div class="flex items-center justify-between">
+      <Label for="srf-fav" class="cursor-pointer">
+        {{ $t("smart_playlist.favorites_only") }}
+      </Label>
+      <Switch
+        id="srf-fav"
+        v-model="rules.favorites_only"
+        @update:model-value="_updateTrackCount()"
+      />
+    </div>
+
+    <!-- Rule logic -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("smart_playlist.logic") }}</Label>
+      <RadioGroup v-model="rules.logic" class="flex flex-row gap-6">
+        <div class="flex items-center gap-2">
+          <RadioGroupItem id="srf-logic-and" value="AND" />
+          <Label for="srf-logic-and">{{
+            $t("smart_playlist.logic_and")
+          }}</Label>
+        </div>
+        <div class="flex items-center gap-2">
+          <RadioGroupItem id="srf-logic-or" value="OR" />
+          <Label for="srf-logic-or">{{ $t("smart_playlist.logic_or") }}</Label>
+        </div>
+      </RadioGroup>
+    </div>
+
+    <!-- Min popularity -->
+    <div class="flex flex-col gap-2">
+      <Label>
+        {{ $t("smart_playlist.min_popularity") }}
+        <span
+          v-if="rules.min_popularity !== undefined"
+          class="ml-2 text-muted-foreground text-sm"
+        >
+          {{ rules.min_popularity }}%
+        </span>
+        <span v-else class="ml-2 text-muted-foreground text-sm">
+          {{ $t("smart_playlist.any") }}
+        </span>
+      </Label>
+      <div class="flex items-center gap-3">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          class="w-full"
+          :value="rules.min_popularity ?? 0"
+          @input="onPopularityInput"
+        />
+        <Button
+          v-if="rules.min_popularity !== undefined"
+          variant="ghost"
+          size="sm"
+          class="h-6 px-2 text-xs"
+          @click="rules.min_popularity = undefined"
+        >
+          {{ $t("smart_playlist.clear") }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- Year range -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("smart_playlist.year_range") }}</Label>
+      <div class="flex items-center gap-2">
+        <input
+          id="srf-year-from"
+          ref="yearFromEl"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          :placeholder="$t('smart_playlist.year_from')"
+          class="border-input w-28 h-8 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+          @keydown.stop
+          @blur="onYearFromInput"
+          @keyup.enter="onYearFromInput"
+        />
+        <span class="text-muted-foreground text-sm">–</span>
+        <input
+          id="srf-year-to"
+          ref="yearToEl"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          :placeholder="$t('smart_playlist.year_to')"
+          class="border-input w-28 h-8 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+          @keydown.stop
+          @blur="onYearToInput"
+          @keyup.enter="onYearToInput"
+        />
+        <Button
+          v-if="rules.year_from !== undefined || rules.year_to !== undefined"
+          variant="ghost"
+          size="sm"
+          class="h-6 px-2 text-xs"
+          @click="clearYear()"
+        >
+          {{ $t("smart_playlist.clear") }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- Seed track URI -->
+    <div class="flex flex-col gap-2">
+      <Label for="srf-seed">{{ $t("smart_playlist.seed_track") }}</Label>
+      <Input
+        id="srf-seed"
+        v-model="seedTrackUri"
+        :placeholder="$t('smart_playlist.seed_track_placeholder')"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
+import { useDebounceFn } from "@vueuse/core";
+import { PlusCircle, X } from "lucide-vue-next";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import api from "@/plugins/api";
+import type {
+  Album,
+  Artist,
+  Genre,
+  SmartPlaylistRules,
+} from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+
+interface Props {
+  initialRules?: SmartPlaylistRules | null;
+  initialArtistItems?: { id: number; name: string }[];
+  initialAlbumItems?: { id: number; name: string }[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  initialRules: null,
+  initialArtistItems: () => [],
+  initialAlbumItems: () => [],
+});
+
+const emit = defineEmits<{
+  (e: "trackCountUpdate", count: number | null, counting: boolean): void;
+}>();
+
+const rules = reactive<SmartPlaylistRules>({
+  genre_ids: [],
+  artist_ids: [],
+  album_ids: [],
+  favorites_only: false,
+  seed_track_uri: undefined,
+  min_popularity: undefined,
+  logic: "AND",
+  limit: 100,
+  year_from: undefined,
+  year_to: undefined,
+});
+
+const seedTrackUri = ref("");
+const yearFromEl = ref<HTMLInputElement | null>(null);
+const yearToEl = ref<HTMLInputElement | null>(null);
+
+const genres = ref<Genre[]>([]);
+const genreSearch = ref("");
+const filteredGenres = computed(() =>
+  genreSearch.value
+    ? genres.value.filter((g) =>
+        g.name.toLowerCase().includes(genreSearch.value.toLowerCase()),
+      )
+    : genres.value,
+);
+
+const artistSearch = ref("");
+const artistResults = ref<Artist[]>([]);
+const albumSearch = ref("");
+const albumResults = ref<Album[]>([]);
+const selectedArtistItems = ref<{ id: number; name: string }[]>([]);
+const selectedAlbumItems = ref<{ id: number; name: string }[]>([]);
+
+watch(
+  () => props.initialRules,
+  async (initial) => {
+    if (!initial) return;
+    rules.genre_ids = [...initial.genre_ids];
+    rules.artist_ids = [...initial.artist_ids];
+    rules.album_ids = [...initial.album_ids];
+    rules.favorites_only = initial.favorites_only;
+    rules.seed_track_uri = initial.seed_track_uri;
+    rules.min_popularity = initial.min_popularity;
+    rules.logic = initial.logic;
+    rules.limit = initial.limit;
+    rules.year_from = initial.year_from;
+    rules.year_to = initial.year_to;
+    seedTrackUri.value = initial.seed_track_uri ?? "";
+    await nextTick();
+    if (yearFromEl.value)
+      yearFromEl.value.value = initial.year_from ? String(initial.year_from) : "";
+    if (yearToEl.value)
+      yearToEl.value.value = initial.year_to ? String(initial.year_to) : "";
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.initialArtistItems,
+  (items) => {
+    selectedArtistItems.value = [...items];
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.initialAlbumItems,
+  (items) => {
+    selectedAlbumItems.value = [...items];
+  },
+  { immediate: true },
+);
+
+onMounted(async () => {
+  genres.value = await api.getLibraryGenres({ hide_empty: false });
+});
+
+function genreName(id: number): string {
+  return (
+    genres.value.find((g) => parseInt(g.item_id) === id)?.name ?? String(id)
+  );
+}
+
+function toggleGenreById(id: number) {
+  const idx = rules.genre_ids.indexOf(id);
+  if (idx >= 0) {
+    rules.genre_ids.splice(idx, 1);
+  } else {
+    rules.genre_ids.push(id);
+  }
+}
+
+function toggleArtistById(id: number, name?: string) {
+  const idx = rules.artist_ids.indexOf(id);
+  if (idx >= 0) {
+    rules.artist_ids.splice(idx, 1);
+    selectedArtistItems.value = selectedArtistItems.value.filter(
+      (a) => a.id !== id,
+    );
+  } else if (name !== undefined) {
+    rules.artist_ids.push(id);
+    selectedArtistItems.value.push({ id, name });
+  }
+}
+
+function toggleAlbumById(id: number, name?: string) {
+  const idx = rules.album_ids.indexOf(id);
+  if (idx >= 0) {
+    rules.album_ids.splice(idx, 1);
+    selectedAlbumItems.value = selectedAlbumItems.value.filter(
+      (a) => a.id !== id,
+    );
+  } else if (name !== undefined) {
+    rules.album_ids.push(id);
+    selectedAlbumItems.value.push({ id, name });
+  }
+}
+
+const _updateTrackCount = useDebounceFn(async () => {
+  emit("trackCountUpdate", null, true);
+  try {
+    const finalRules: SmartPlaylistRules = {
+      ...rules,
+      seed_track_uri: seedTrackUri.value || undefined,
+    };
+    const count = await api.countSmartPlaylistTracks(finalRules);
+    emit("trackCountUpdate", count, false);
+  } catch {
+    emit("trackCountUpdate", null, false);
+  }
+}, 600);
+
+watch(rules, () => {
+  _updateTrackCount();
+});
+
+watch(seedTrackUri, () => {
+  _updateTrackCount();
+});
+
+watch(artistSearch, async (q) => {
+  if (q.length >= 2) {
+    const result = await api.getLibraryArtists(undefined, q, 20);
+    if (artistSearch.value === q) artistResults.value = result;
+  } else {
+    artistResults.value = [];
+  }
+});
+
+watch(albumSearch, async (q) => {
+  if (q.length >= 2) {
+    const result = await api.getLibraryAlbums(undefined, q, 20);
+    if (albumSearch.value === q) albumResults.value = result;
+  } else {
+    albumResults.value = [];
+  }
+});
+
+function onPopularityInput(e: Event) {
+  const v = parseInt((e.target as HTMLInputElement).value, 10);
+  rules.min_popularity = v === 0 ? undefined : v;
+}
+
+function onYearFromInput() {
+  const v = yearFromEl.value?.value.trim() ?? "";
+  const n = parseInt(v);
+  rules.year_from = v && !isNaN(n) ? n : undefined;
+}
+
+function onYearToInput() {
+  const v = yearToEl.value?.value.trim() ?? "";
+  const n = parseInt(v);
+  rules.year_to = v && !isNaN(n) ? n : undefined;
+}
+
+function clearYear() {
+  rules.year_from = undefined;
+  rules.year_to = undefined;
+  if (yearFromEl.value) yearFromEl.value.value = "";
+  if (yearToEl.value) yearToEl.value.value = "";
+}
+
+function getFinalRules(): SmartPlaylistRules {
+  onYearFromInput();
+  onYearToInput();
+  const genreNamesMap: Record<number, string> = {};
+  for (const id of rules.genre_ids) {
+    const found = genres.value.find((g) => parseInt(g.item_id) === id);
+    if (found) genreNamesMap[id] = found.name;
+  }
+  const artistNamesMap: Record<number, string> = {};
+  for (const item of selectedArtistItems.value) {
+    artistNamesMap[item.id] = item.name;
+  }
+  const albumNamesMap: Record<number, string> = {};
+  for (const item of selectedAlbumItems.value) {
+    albumNamesMap[item.id] = item.name;
+  }
+  return {
+    ...rules,
+    seed_track_uri: seedTrackUri.value || undefined,
+    genre_names: genreNamesMap,
+    artist_names: artistNamesMap,
+    album_names: albumNamesMap,
+  };
+}
+
+defineExpose({ getFinalRules });
+</script>

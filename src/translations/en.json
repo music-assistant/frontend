@@ -1645,6 +1645,9 @@
         "creating": "Creating…",
         "created": "Smart playlist created!",
         "edit_rules": "Edit rules",
-        "saving": "Saving…"
+        "saving": "Saving…",
+        "year_range": "Year range",
+        "year_from": "From year",
+        "year_to": "To year"
     }
 }

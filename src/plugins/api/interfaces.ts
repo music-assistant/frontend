@@ -1253,6 +1253,8 @@ export interface SmartPlaylistRules {
   genre_names?: Record<number, string>;
   artist_names?: Record<number, string>;
   album_names?: Record<number, string>;
+  year_from?: number;
+  year_to?: number;
 }
 
 export interface SmartPlaylistEntry {
