@@ -79,11 +79,12 @@
             <X class="h-3 w-3" />
           </button>
         </Badge>
-        <Popover>
+        <Popover :open="selectedSeedTrack ? false : undefined">
           <PopoverTrigger as-child>
             <Button
               variant="outline"
               size="sm"
+              :disabled="!!selectedSeedTrack"
               class="h-7 gap-1 border-dashed text-xs"
             >
               <PlusCircle class="h-3 w-3" />
@@ -122,6 +123,9 @@
           </PopoverContent>
         </Popover>
       </div>
+      <p v-if="selectedSeedTrack" class="text-xs text-muted-foreground">
+        {{ $t("smart_playlist.seed_overrides_filter") }}
+      </p>
     </div>
 
     <!-- Album filter -->
@@ -143,11 +147,12 @@
             <X class="h-3 w-3" />
           </button>
         </Badge>
-        <Popover>
+        <Popover :open="selectedSeedTrack ? false : undefined">
           <PopoverTrigger as-child>
             <Button
               variant="outline"
               size="sm"
+              :disabled="!!selectedSeedTrack"
               class="h-7 gap-1 border-dashed text-xs"
             >
               <PlusCircle class="h-3 w-3" />
@@ -186,6 +191,9 @@
           </PopoverContent>
         </Popover>
       </div>
+      <p v-if="selectedSeedTrack" class="text-xs text-muted-foreground">
+        {{ $t("smart_playlist.seed_overrides_filter") }}
+      </p>
     </div>
 
     <!-- Favorites only -->
@@ -294,14 +302,70 @@
       </div>
     </div>
 
-    <!-- Seed track URI -->
+    <!-- Seed track (search picker) -->
     <div class="flex flex-col gap-2">
-      <Label for="srf-seed">{{ $t("smart_playlist.seed_track") }}</Label>
-      <Input
-        id="srf-seed"
-        v-model="seedTrackUri"
-        :placeholder="$t('smart_playlist.seed_track_placeholder')"
-      />
+      <Label>{{ $t("smart_playlist.seed_track") }}</Label>
+      <div class="flex flex-wrap gap-1 items-center">
+        <Badge v-if="selectedSeedTrack" variant="secondary" class="gap-1 pr-1">
+          {{ selectedSeedTrack.name }}
+          <span class="text-muted-foreground text-xs ml-0.5">
+            – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
+          </span>
+          <button
+            type="button"
+            class="ml-1 hover:opacity-70"
+            @click.stop="clearSeedTrack()"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+        <Popover v-if="!selectedSeedTrack">
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 gap-1 border-dashed text-xs"
+            >
+              <PlusCircle class="h-3 w-3" />
+              {{ $t("smart_playlist.seed_track_pick") }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-[260px] p-2">
+            <input
+              v-model="seedTrackSearch"
+              type="text"
+              :placeholder="$t('search')"
+              class="border-input mb-2 h-7 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              @keydown.stop
+            />
+            <div class="max-h-48 overflow-y-auto flex flex-col">
+              <div
+                v-for="track in seedTrackResults"
+                :key="track.item_id"
+                class="flex flex-col py-0.5 px-1 cursor-pointer text-sm hover:bg-accent rounded-sm"
+                @click.stop="selectSeedTrack(track)"
+              >
+                <span class="truncate font-medium">{{ track.name }}</span>
+                <span class="truncate text-xs text-muted-foreground">
+                  {{ (track.artists as Artist[])[0]?.name }}
+                </span>
+              </div>
+              <p
+                v-if="seedTrackSearch.length < 2"
+                class="text-xs text-muted-foreground py-1 px-1"
+              >
+                {{ $t("search") }}…
+              </p>
+              <p
+                v-else-if="seedTrackResults.length === 0"
+                class="text-xs text-muted-foreground py-1 px-1"
+              >
+                {{ $t("no_results") }}
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   </div>
 </template>
@@ -329,6 +393,11 @@ import type {
   Artist,
   Genre,
   SmartPlaylistRules,
+  Track,
+} from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  ProviderFeature as ProviderFeatureEnum,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
@@ -354,6 +423,7 @@ const rules = reactive<SmartPlaylistRules>({
   album_ids: [],
   favorites_only: false,
   seed_track_uri: undefined,
+  seed_track_name: undefined,
   min_popularity: undefined,
   logic: "AND",
   limit: 100,
@@ -362,6 +432,9 @@ const rules = reactive<SmartPlaylistRules>({
 });
 
 const seedTrackUri = ref("");
+const selectedSeedTrack = ref<Track | null>(null);
+const seedTrackSearch = ref("");
+const seedTrackResults = ref<Track[]>([]);
 const yearFromEl = ref<HTMLInputElement | null>(null);
 const yearToEl = ref<HTMLInputElement | null>(null);
 
@@ -391,15 +464,29 @@ watch(
     rules.album_ids = [...initial.album_ids];
     rules.favorites_only = initial.favorites_only;
     rules.seed_track_uri = initial.seed_track_uri;
+    rules.seed_track_name = initial.seed_track_name;
     rules.min_popularity = initial.min_popularity;
     rules.logic = initial.logic;
     rules.limit = initial.limit;
     rules.year_from = initial.year_from;
     rules.year_to = initial.year_to;
     seedTrackUri.value = initial.seed_track_uri ?? "";
+    selectedSeedTrack.value = null;
+    if (initial.seed_track_uri) {
+      try {
+        const item = await api.getItemByUri(initial.seed_track_uri);
+        if (item.media_type === MediaType.TRACK) {
+          selectedSeedTrack.value = item as Track;
+        }
+      } catch {
+        // URI not resolvable — leave selectedSeedTrack null
+      }
+    }
     await nextTick();
     if (yearFromEl.value)
-      yearFromEl.value.value = initial.year_from ? String(initial.year_from) : "";
+      yearFromEl.value.value = initial.year_from
+        ? String(initial.year_from)
+        : "";
     if (yearToEl.value)
       yearToEl.value.value = initial.year_to ? String(initial.year_to) : "";
   },
@@ -507,6 +594,54 @@ watch(albumSearch, async (q) => {
   }
 });
 
+const _similarTrackProviderIds = computed(() =>
+  Object.values(api.providers)
+    .filter((p) =>
+      (p.supported_features as unknown as string[]).includes(
+        ProviderFeatureEnum.SIMILAR_TRACKS,
+      ),
+    )
+    .map((p) => p.instance_id),
+);
+
+watch(seedTrackSearch, async (q) => {
+  if (q.length < 2) {
+    seedTrackResults.value = [];
+    return;
+  }
+  const providerIds = _similarTrackProviderIds.value;
+  if (providerIds.length === 0) {
+    seedTrackResults.value = [];
+    return;
+  }
+  const result = await api.search(q, [MediaType.TRACK], 20);
+  if (seedTrackSearch.value !== q) return;
+  seedTrackResults.value = result.tracks.filter((t) =>
+    t.provider_mappings?.some((m) => providerIds.includes(m.provider_instance)),
+  );
+});
+
+function selectSeedTrack(track: Track) {
+  selectedSeedTrack.value = track;
+  const mapping = track.provider_mappings?.find((m) =>
+    _similarTrackProviderIds.value.includes(m.provider_instance),
+  );
+  seedTrackUri.value = mapping
+    ? `${mapping.provider_domain}://track/${mapping.item_id}`
+    : `library://track/${track.item_id}`;
+  rules.seed_track_name = `${track.name} – ${(track.artists as Artist[])[0]?.name ?? ""}`;
+  seedTrackSearch.value = "";
+  seedTrackResults.value = [];
+}
+
+function clearSeedTrack() {
+  selectedSeedTrack.value = null;
+  seedTrackUri.value = "";
+  rules.seed_track_name = undefined;
+  seedTrackSearch.value = "";
+  seedTrackResults.value = [];
+}
+
 function onPopularityInput(e: Event) {
   const v = parseInt((e.target as HTMLInputElement).value, 10);
   rules.min_popularity = v === 0 ? undefined : v;
@@ -550,6 +685,9 @@ function getFinalRules(): SmartPlaylistRules {
   return {
     ...rules,
     seed_track_uri: seedTrackUri.value || undefined,
+    seed_track_name: selectedSeedTrack.value
+      ? `${selectedSeedTrack.value.name} – ${(selectedSeedTrack.value.artists as Artist[])[0]?.name ?? ""}`
+      : undefined,
     genre_names: genreNamesMap,
     artist_names: artistNamesMap,
     album_names: albumNamesMap,

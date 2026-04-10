@@ -1247,6 +1247,7 @@ export interface SmartPlaylistRules {
   album_ids: number[];
   favorites_only: boolean;
   seed_track_uri?: string;
+  seed_track_name?: string;
   min_popularity?: number;
   logic: "AND" | "OR";
   limit: number;
