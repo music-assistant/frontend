@@ -1251,6 +1251,8 @@ export interface SmartPlaylistRules {
   logic: "AND" | "OR";
   limit: number;
   genre_names?: Record<number, string>;
+  artist_names?: Record<number, string>;
+  album_names?: Record<number, string>;
 }
 
 export interface SmartPlaylistEntry {

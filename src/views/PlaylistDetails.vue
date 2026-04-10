@@ -1,7 +1,12 @@
 <template>
   <InfoHeader :item="itemDetails">
     <template v-if="smartRules" #after-play>
-      <Button variant="outline" size="sm" class="h-8 gap-1 text-xs" @click="showEditDialog = true">
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-8 gap-1 text-xs"
+        @click="showEditDialog = true"
+      >
         <Settings2 class="h-4 w-4" />
         {{ $t("smart_playlist.edit_rules") }}
       </Button>

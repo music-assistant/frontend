@@ -116,7 +116,11 @@ onMounted(() => {
     });
   }
   // Smart Playlist option inside the "Create Playlist" submenu
-  if (Object.values(api.providers).some((p) => p.available && p.domain === "smart_playlist")) {
+  if (
+    Object.values(api.providers).some(
+      (p) => p.available && p.domain === "smart_playlist",
+    )
+  ) {
     playListCreateItems.push({
       label: "smart_playlist.create",
       action: () => {

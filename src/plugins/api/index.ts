@@ -832,7 +832,9 @@ export class MusicAssistantApi {
   public getSmartPlaylistRules(
     db_playlist_id: string | number,
   ): Promise<SmartPlaylistRules | null> {
-    return this.sendCommand("smart_playlists/get_rules", { playlist_id: db_playlist_id });
+    return this.sendCommand("smart_playlists/get_rules", {
+      playlist_id: db_playlist_id,
+    });
   }
 
   public updateSmartPlaylistRules(
@@ -854,6 +856,10 @@ export class MusicAssistantApi {
     limit: number = 10,
   ): Promise<Track[]> {
     return this.sendCommand("smart_playlists/preview_tracks", { rules, limit });
+  }
+
+  public countSmartPlaylistTracks(rules: SmartPlaylistRules): Promise<number> {
+    return this.sendCommand("smart_playlists/count_tracks", { rules });
   }
 
   /**
