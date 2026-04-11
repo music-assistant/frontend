@@ -1542,10 +1542,14 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == "album") {
+  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
+    const preferSortName = params.sortBy == "album_sort_name";
     result.sort((a, b) => {
-      const albumCompare = getSortName((a as Track).album).localeCompare(
-        getSortName((b as Track).album),
+      const albumCompare = getSortName(
+        (a as Track).album,
+        preferSortName,
+      ).localeCompare(
+        getSortName((b as Track).album, preferSortName),
         undefined,
         { numeric: true },
       );
