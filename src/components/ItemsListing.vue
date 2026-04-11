@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0)" ref="sectionRef">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
@@ -47,7 +47,7 @@
             v-for="n in 12"
             :key="'skeleton-panel-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${columnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
@@ -57,18 +57,88 @@
             v-for="n in 12"
             :key="'skeleton-compact-' + n"
             cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
+            :class="`col-${columnCount}`"
           >
             <PanelViewSkeleton />
           </v-col>
         </v-row>
       </template>
 
+      <!-- virtualized panel view -->
+      <div
+        v-if="
+          !tempHide &&
+          !(pagedItems.length == 0 && allItemsReceived) &&
+          !(loading && pagedItems.length === 0) &&
+          (viewMode == 'panel' || viewMode == 'panel_compact')
+        "
+        role="grid"
+        :aria-rowcount="panelRows.length"
+        :style="{
+          height: `${totalVirtualHeight}px`,
+          width: '100%',
+          position: 'relative',
+        }"
+      >
+        <div
+          v-for="virtualRow in virtualRows"
+          :key="virtualRow.index"
+          :ref="measureRow"
+          role="row"
+          :aria-rowindex="virtualRow.index + 1"
+          :style="{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${virtualRow.start}px)`,
+          }"
+        >
+          <v-row>
+            <v-col
+              v-for="item in panelRows[virtualRow.index]"
+              :key="item.uri"
+              cols="12"
+              :class="`col-${columnCount}`"
+            >
+              <PanelviewItem
+                v-if="viewMode == 'panel'"
+                :item="item"
+                :is-selected="isSelected(item)"
+                :show-checkboxes="showCheckboxes"
+                :show-actions="
+                  ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+                "
+                :show-track-number="showTrackNumber"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                @select="onSelect"
+              />
+              <PanelviewItemCompact
+                v-else
+                :item="item"
+                :is-selected="isSelected(item)"
+                :show-checkboxes="showCheckboxes"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                @select="onSelect"
+              />
+            </v-col>
+          </v-row>
+        </div>
+      </div>
+
+      <!-- list view with infinite scroll -->
       <v-infinite-scroll
         v-if="
           !tempHide &&
           !(pagedItems.length == 0 && allItemsReceived) &&
-          !(loading && pagedItems.length === 0)
+          !(loading && pagedItems.length === 0) &&
+          viewMode == 'list'
         "
         :onLoad="loadNextPage"
         :mode="infiniteScroll ? 'intersect' : 'manual'"
@@ -76,55 +146,7 @@
         :empty-text="''"
         style="overflow: hidden"
       >
-        <!-- panel view -->
-        <v-row v-if="viewMode == 'panel'">
-          <v-col
-            v-for="item in pagedItems"
-            :key="item.uri"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItem
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
-              :show-actions="
-                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
-              "
-              :show-track-number="showTrackNumber"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              @select="onSelect"
-            />
-          </v-col>
-        </v-row>
-
-        <!-- compact panel view -->
-        <v-row v-if="viewMode == 'panel_compact'">
-          <v-col
-            v-for="item in pagedItems"
-            :key="item.uri"
-            cols="12"
-            :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
-          >
-            <PanelviewItemCompact
-              :item="item"
-              :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              @select="onSelect"
-            />
-          </v-col>
-        </v-row>
-
-        <!-- list view -->
         <v-virtual-scroll
-          v-if="viewMode == 'list'"
           :item-height="70"
           height="100%"
           :items="pagedItems"
@@ -207,7 +229,7 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
-import type { Component } from "vue";
+import type { Component, ComponentPublicInstance } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -242,6 +264,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { useVirtualizer } from "@tanstack/vue-virtual";
 import {
   computed,
   nextTick,
@@ -254,6 +277,7 @@ import {
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import { useWindowSize } from "@vueuse/core";
 import ListviewItem from "./ListviewItem.vue";
 import PanelviewItem from "./PanelviewItem.vue";
 import PanelviewItemCompact from "./PanelviewItemCompact.vue";
@@ -375,6 +399,47 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// virtual scroll setup for panel views
+const sectionRef = ref<HTMLElement | null>(null);
+const scrollContainerRef = ref<HTMLElement | null>(null);
+const { width: displayWidth } = useWindowSize();
+
+const columnCount = computed(() => {
+  return panelViewItemResponsive(displayWidth.value) || 3;
+});
+
+const panelRows = computed(() => {
+  const cols = columnCount.value;
+  const items = pagedItems.value;
+  const rows: MediaItemType[][] = [];
+  for (let i = 0; i < items.length; i += cols) {
+    rows.push(items.slice(i, i + cols));
+  }
+  return rows;
+});
+
+const panelRowHeight = computed(() => {
+  return viewMode.value === "panel_compact" ? 180 : 260;
+});
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: panelRows.value.length,
+    getScrollElement: () => scrollContainerRef.value as HTMLElement | null,
+    estimateSize: () => panelRowHeight.value,
+    overscan: 3,
+  })),
+);
+
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const totalVirtualHeight = computed(() => rowVirtualizer.value.getTotalSize());
+
+const measureRow = (el: Element | ComponentPublicInstance | null) => {
+  if (el instanceof Element || el === null) {
+    rowVirtualizer.value.measureElement(el);
+  }
+};
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -728,6 +793,24 @@ const loadAllItems = async function () {
     await loadNextPage({ done: function () {} });
   }
 };
+
+const checkInfiniteScroll = () => {
+  const el = scrollContainerRef.value;
+  if (!el || !expanded.value || allItemsReceived.value || loading.value) return;
+  if (viewMode.value !== "panel" && viewMode.value !== "panel_compact") return;
+
+  const threshold = 500;
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
+    loadNextPage({ done: () => {} });
+  }
+};
+
+watch(
+  () => pagedItems.value.length,
+  () => {
+    nextTick(checkInfiniteScroll);
+  },
+);
 
 // computed properties
 const isSearchActive = computed(() => {
@@ -1257,11 +1340,9 @@ if (props.restoreState) {
   // handle restore state
   onBeforeUnmount(() => {
     const key = props.path || props.itemtype;
-    const el = document.querySelector(".content-section");
-
     store.prevState = {
       path: key,
-      scrollPos: el?.scrollTop || 0,
+      scrollPos: scrollContainerRef.value?.scrollTop || 0,
       pagedItems: pagedItems.value,
       allItems: allItems.value,
       allItemsReceived: allItemsReceived.value,
@@ -1372,11 +1453,18 @@ const loadGenreOptions = async () => {
 
 let _unsubscribeMediaEvents: (() => void) | undefined;
 onBeforeUnmount(() => {
+  scrollContainerRef.value?.removeEventListener("scroll", checkInfiniteScroll);
   eventbus.off("clearSelection");
   _unsubscribeMediaEvents?.();
 });
 
 onMounted(async () => {
+  scrollContainerRef.value =
+    sectionRef.value?.closest<HTMLElement>(".content-section") ?? null;
+  scrollContainerRef.value?.addEventListener("scroll", checkInfiniteScroll, {
+    passive: true,
+  });
+
   // for the main listings (e.g. artists, albums etc.) we remember the scroll position
   // so we can jump back there on back navigation
   const key = props.path || props.itemtype;
@@ -1388,10 +1476,12 @@ onMounted(async () => {
     initialDataReceived.value = store.prevState.initialDataReceived;
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
-      const el = document.querySelector(".content-section") as HTMLElement;
-
-      if (el) {
-        scrollElement(el, store.prevState!.scrollPos, 50);
+      if (scrollContainerRef.value) {
+        scrollElement(
+          scrollContainerRef.value as HTMLElement,
+          store.prevState!.scrollPos,
+          50,
+        );
       }
     });
     loading.value = false;
