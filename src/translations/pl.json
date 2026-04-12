@@ -1104,5 +1104,31 @@
     "collections": "Kolekcje",
     "narrators": "Narratorzy",
     "series_plural": "Serie",
-    "series_singular": "Serie"
+    "series_singular": "Serie",
+    "smart_playlist": {
+        "create": "Utwórz inteligentną playlistę",
+        "desc": "Generuj playlistę z biblioteki na podstawie reguł.",
+        "mode": "Tryb",
+        "dynamic": "Dynamiczna",
+        "fixed": "Stała (jednorazowa)",
+        "track_count": "Liczba utworów",
+        "favorites_only": "Tylko ulubione",
+        "logic": "Kombinacja reguł",
+        "logic_and": "Spełnij WSZYSTKIE reguły (I)",
+        "logic_or": "Spełnij DOWOLNĄ regułę (LUB)",
+        "min_popularity": "Minimalna popularność",
+        "any": "Dowolna",
+        "limit": "Maks. utworów",
+        "seed_track": "Podobne do utworu",
+        "seed_track_pick": "Wybierz utwór",
+        "seed_overrides_filter": "Nieużywane gdy utwór bazowy jest ustawiony",
+        "clear": "Wyczyść",
+        "creating": "Tworzenie…",
+        "created": "Inteligentna playlista utworzona!",
+        "edit_rules": "Edytuj reguły",
+        "saving": "Zapisywanie…",
+        "year_range": "Zakres lat",
+        "year_from": "Od roku",
+        "year_to": "Do roku"
+    }
 }

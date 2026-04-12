@@ -345,5 +345,31 @@
     "collections": "אוספים",
     "narrators": "קריינים",
     "series_plural": "סדרות",
-    "series_singular": "סדרה"
+    "series_singular": "סדרה",
+    "smart_playlist": {
+        "create": "יצירת רשימת השמעה חכמה",
+        "desc": "יצירת רשימת השמעה מהספריה לפי כללים.",
+        "mode": "מצב",
+        "dynamic": "דינמי",
+        "fixed": "קבוע (פעם אחת)",
+        "track_count": "מספר שירים",
+        "favorites_only": "מועדפים בלבד",
+        "logic": "שילוב כללים",
+        "logic_and": "התאמה לכל הכללים (וגם)",
+        "logic_or": "התאמה לכלל כלשהו (או)",
+        "min_popularity": "פופולריות מינימלית",
+        "any": "כלשהו",
+        "limit": "מקסימום שירים",
+        "seed_track": "דומה לשיר",
+        "seed_track_pick": "בחירת שיר",
+        "seed_overrides_filter": "לא בשימוש כאשר שיר מוצא מוגדר",
+        "clear": "נקה",
+        "creating": "יוצר…",
+        "created": "רשימת השמעה חכמה נוצרה!",
+        "edit_rules": "עריכת כללים",
+        "saving": "שומר…",
+        "year_range": "טווח שנים",
+        "year_from": "משנת",
+        "year_to": "עד שנת"
+    }
 }

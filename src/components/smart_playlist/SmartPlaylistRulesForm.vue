@@ -4,6 +4,23 @@
 -->
 <template>
   <div class="flex flex-col gap-4">
+    <!-- Rule logic -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("smart_playlist.logic") }}</Label>
+      <RadioGroup v-model="rules.logic" class="flex flex-row gap-6">
+        <div class="flex items-center gap-2">
+          <RadioGroupItem id="srf-logic-and" value="AND" />
+          <Label for="srf-logic-and">{{
+            $t("smart_playlist.logic_and")
+          }}</Label>
+        </div>
+        <div class="flex items-center gap-2">
+          <RadioGroupItem id="srf-logic-or" value="OR" />
+          <Label for="srf-logic-or">{{ $t("smart_playlist.logic_or") }}</Label>
+        </div>
+      </RadioGroup>
+    </div>
+
     <!-- Genre filter -->
     <div class="flex flex-col gap-2">
       <Label>{{ $t("genres") }}</Label>
@@ -54,6 +71,72 @@
                 />
                 <span class="truncate">{{ genre.name }}</span>
               </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+
+    <!-- Seed track (search picker) -->
+    <div class="flex flex-col gap-2">
+      <Label>{{ $t("smart_playlist.seed_track") }}</Label>
+      <div class="flex flex-wrap gap-1 items-center">
+        <Badge v-if="selectedSeedTrack" variant="secondary" class="gap-1 pr-1">
+          {{ selectedSeedTrack.name }}
+          <span class="text-muted-foreground text-xs ml-0.5">
+            – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
+          </span>
+          <button
+            type="button"
+            class="ml-1 hover:opacity-70"
+            @click.stop="clearSeedTrack()"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </Badge>
+        <Popover v-if="!selectedSeedTrack">
+          <PopoverTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 gap-1 border-dashed text-xs"
+            >
+              <PlusCircle class="h-3 w-3" />
+              {{ $t("smart_playlist.seed_track_pick") }}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-[260px] p-2">
+            <input
+              v-model="seedTrackSearch"
+              type="text"
+              :placeholder="$t('search')"
+              class="border-input mb-2 h-7 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              @keydown.stop
+            />
+            <div class="max-h-48 overflow-y-auto flex flex-col">
+              <div
+                v-for="track in seedTrackResults"
+                :key="track.item_id"
+                class="flex flex-col py-0.5 px-1 cursor-pointer text-sm hover:bg-accent rounded-sm"
+                @click.stop="selectSeedTrack(track)"
+              >
+                <span class="truncate font-medium">{{ track.name }}</span>
+                <span class="truncate text-xs text-muted-foreground">
+                  {{ (track.artists as Artist[])[0]?.name }}
+                </span>
+              </div>
+              <p
+                v-if="seedTrackSearch.length < 2"
+                class="text-xs text-muted-foreground py-1 px-1"
+              >
+                {{ $t("search") }}…
+              </p>
+              <p
+                v-else-if="seedTrackResults.length === 0"
+                class="text-xs text-muted-foreground py-1 px-1"
+              >
+                {{ $t("no_results") }}
+              </p>
             </div>
           </PopoverContent>
         </Popover>
@@ -208,23 +291,6 @@
       />
     </div>
 
-    <!-- Rule logic -->
-    <div class="flex flex-col gap-2">
-      <Label>{{ $t("smart_playlist.logic") }}</Label>
-      <RadioGroup v-model="rules.logic" class="flex flex-row gap-6">
-        <div class="flex items-center gap-2">
-          <RadioGroupItem id="srf-logic-and" value="AND" />
-          <Label for="srf-logic-and">{{
-            $t("smart_playlist.logic_and")
-          }}</Label>
-        </div>
-        <div class="flex items-center gap-2">
-          <RadioGroupItem id="srf-logic-or" value="OR" />
-          <Label for="srf-logic-or">{{ $t("smart_playlist.logic_or") }}</Label>
-        </div>
-      </RadioGroup>
-    </div>
-
     <!-- Min popularity -->
     <div class="flex flex-col gap-2">
       <Label>
@@ -299,72 +365,6 @@
         >
           {{ $t("smart_playlist.clear") }}
         </Button>
-      </div>
-    </div>
-
-    <!-- Seed track (search picker) -->
-    <div class="flex flex-col gap-2">
-      <Label>{{ $t("smart_playlist.seed_track") }}</Label>
-      <div class="flex flex-wrap gap-1 items-center">
-        <Badge v-if="selectedSeedTrack" variant="secondary" class="gap-1 pr-1">
-          {{ selectedSeedTrack.name }}
-          <span class="text-muted-foreground text-xs ml-0.5">
-            – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
-          </span>
-          <button
-            type="button"
-            class="ml-1 hover:opacity-70"
-            @click.stop="clearSeedTrack()"
-          >
-            <X class="h-3 w-3" />
-          </button>
-        </Badge>
-        <Popover v-if="!selectedSeedTrack">
-          <PopoverTrigger as-child>
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-7 gap-1 border-dashed text-xs"
-            >
-              <PlusCircle class="h-3 w-3" />
-              {{ $t("smart_playlist.seed_track_pick") }}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent class="w-[260px] p-2">
-            <input
-              v-model="seedTrackSearch"
-              type="text"
-              :placeholder="$t('search')"
-              class="border-input mb-2 h-7 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-              @keydown.stop
-            />
-            <div class="max-h-48 overflow-y-auto flex flex-col">
-              <div
-                v-for="track in seedTrackResults"
-                :key="track.item_id"
-                class="flex flex-col py-0.5 px-1 cursor-pointer text-sm hover:bg-accent rounded-sm"
-                @click.stop="selectSeedTrack(track)"
-              >
-                <span class="truncate font-medium">{{ track.name }}</span>
-                <span class="truncate text-xs text-muted-foreground">
-                  {{ (track.artists as Artist[])[0]?.name }}
-                </span>
-              </div>
-              <p
-                v-if="seedTrackSearch.length < 2"
-                class="text-xs text-muted-foreground py-1 px-1"
-              >
-                {{ $t("search") }}…
-              </p>
-              <p
-                v-else-if="seedTrackResults.length === 0"
-                class="text-xs text-muted-foreground py-1 px-1"
-              >
-                {{ $t("no_results") }}
-              </p>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
     </div>
   </div>

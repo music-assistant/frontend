@@ -553,5 +553,31 @@
     },
     "homescreen_edit_enable": "Edita la pantalla d'inici",
     "homescreen_edit_disable": "Surt del mode d'edició de la pantalla d'inici",
-    "lyrics_will_appear_soon": "La lletra apareixerà quan comenci la cançó..."
+    "lyrics_will_appear_soon": "La lletra apareixerà quan comenci la cançó...",
+    "smart_playlist": {
+        "create": "Crea llista de reproducció intel·ligent",
+        "desc": "Genera una llista de reproducció de la teva biblioteca basada en regles.",
+        "mode": "Mode",
+        "dynamic": "Dinàmica",
+        "fixed": "Fixa (única vegada)",
+        "track_count": "Nombre de pistes",
+        "favorites_only": "Només preferits",
+        "logic": "Combinació de regles",
+        "logic_and": "Complir TOTES les regles (I)",
+        "logic_or": "Complir QUALSEVOL regla (O)",
+        "min_popularity": "Popularitat mínima",
+        "any": "Qualsevol",
+        "limit": "Màx. pistes",
+        "seed_track": "Similar a la pista",
+        "seed_track_pick": "Tria una pista",
+        "seed_overrides_filter": "No s'utilitza quan hi ha una pista llavor configurada",
+        "clear": "Netejar",
+        "creating": "Creant…",
+        "created": "Llista de reproducció intel·ligent creada!",
+        "edit_rules": "Edita les regles",
+        "saving": "Desant…",
+        "year_range": "Interval d'anys",
+        "year_from": "Des de l'any",
+        "year_to": "Fins a l'any"
+    }
 }

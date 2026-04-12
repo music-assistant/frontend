@@ -1424,5 +1424,31 @@
             "link_copy_success": "Nuoroda nukopijuota!"
         }
     },
-    "no_lyrics_available": "Dainų tekstai nepasiekiami"
+    "no_lyrics_available": "Dainų tekstai nepasiekiami",
+    "smart_playlist": {
+        "create": "Kurti išmanųjį grojaraštį",
+        "desc": "Generuoti grojaraštį iš bibliotekos pagal taisykles.",
+        "mode": "Režimas",
+        "dynamic": "Dinaminis",
+        "fixed": "Fiksuotas (vienkartinis)",
+        "track_count": "Kūrinių skaičius",
+        "favorites_only": "Tik mėgstami",
+        "logic": "Taisyklių derinys",
+        "logic_and": "Atitikti VISAS taisykles (IR)",
+        "logic_or": "Atitikti BET KURIĄ taisyklę (ARBA)",
+        "min_popularity": "Minimalus populiarumas",
+        "any": "Bet koks",
+        "limit": "Maks. kūriniai",
+        "seed_track": "Panašus į kūrinį",
+        "seed_track_pick": "Pasirinkti kūrinį",
+        "seed_overrides_filter": "Nenaudojama, kai nustatytas pradinis kūrinys",
+        "clear": "Išvalyti",
+        "creating": "Kuriama…",
+        "created": "Išmanusis grojaraštis sukurtas!",
+        "edit_rules": "Redaguoti taisykles",
+        "saving": "Išsaugoma…",
+        "year_range": "Metų intervalas",
+        "year_from": "Nuo metų",
+        "year_to": "Iki metų"
+    }
 }

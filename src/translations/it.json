@@ -816,5 +816,31 @@
     "remote": {
         "connect_title": "Connessione a tuo server",
         "subtitle": "Connettiti al tuo home server da ovunque"
+    },
+    "smart_playlist": {
+        "create": "Crea playlist intelligente",
+        "desc": "Genera una playlist dalla tua libreria in base a regole.",
+        "mode": "Modalità",
+        "dynamic": "Dinamica",
+        "fixed": "Fissa (una tantum)",
+        "track_count": "Numero di brani",
+        "favorites_only": "Solo preferiti",
+        "logic": "Combinazione regole",
+        "logic_and": "Corrisponde a TUTTE le regole (E)",
+        "logic_or": "Corrisponde ad ALMENO UNA regola (O)",
+        "min_popularity": "Popolarità minima",
+        "any": "Qualsiasi",
+        "limit": "Brani max.",
+        "seed_track": "Simile al brano",
+        "seed_track_pick": "Scegli un brano",
+        "seed_overrides_filter": "Non usato quando è impostato un brano seme",
+        "clear": "Cancella",
+        "creating": "Creazione…",
+        "created": "Playlist intelligente creata!",
+        "edit_rules": "Modifica regole",
+        "saving": "Salvataggio…",
+        "year_range": "Intervallo anni",
+        "year_from": "Anno da",
+        "year_to": "Anno a"
     }
 }

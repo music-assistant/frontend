@@ -1572,5 +1572,31 @@
         "update_metadata": "Ažuriraj metapodatke"
     },
     "not_found_headline": "Ups, ova stranica nije na listi pesama.",
-    "not_found_subtext": "Tražena numera nije dostupna kod provajdera. Idite nazad ili izaberite drugu."
+    "not_found_subtext": "Tražena numera nije dostupna kod provajdera. Idite nazad ili izaberite drugu.",
+    "smart_playlist": {
+        "create": "Kreiraj pametnu listu pesama",
+        "desc": "Generiši listu pesama iz biblioteke na osnovu pravila.",
+        "mode": "Režim",
+        "dynamic": "Dinamička",
+        "fixed": "Fiksna (jednokratna)",
+        "track_count": "Broj numera",
+        "favorites_only": "Samo omiljeno",
+        "logic": "Kombinacija pravila",
+        "logic_and": "Ispuniti SVA pravila (I)",
+        "logic_or": "Ispuniti BILO KOJE pravilo (ILI)",
+        "min_popularity": "Minimalna popularnost",
+        "any": "Bilo koja",
+        "limit": "Maks. numera",
+        "seed_track": "Slično numeri",
+        "seed_track_pick": "Odaberi numeru",
+        "seed_overrides_filter": "Nije korišćeno kada je postavljena polazna numera",
+        "clear": "Očisti",
+        "creating": "Kreiranje…",
+        "created": "Pametna lista pesama kreirana!",
+        "edit_rules": "Uredi pravila",
+        "saving": "Čuvanje…",
+        "year_range": "Opseg godina",
+        "year_from": "Od godine",
+        "year_to": "Do godine"
+    }
 }

@@ -1136,5 +1136,31 @@
     "series_plural": "Séries",
     "series_singular": "Série",
     "queue_move_end": "Mover para o fim",
-    "discover": "Descobrir"
+    "discover": "Descobrir",
+    "smart_playlist": {
+        "create": "Criar lista de reprodução inteligente",
+        "desc": "Gerar uma lista de reprodução da sua biblioteca com base em regras.",
+        "mode": "Modo",
+        "dynamic": "Dinâmica",
+        "fixed": "Fixa (única vez)",
+        "track_count": "Número de faixas",
+        "favorites_only": "Apenas favoritos",
+        "logic": "Combinação de regras",
+        "logic_and": "Corresponder a TODAS as regras (E)",
+        "logic_or": "Corresponder a QUALQUER regra (OU)",
+        "min_popularity": "Popularidade mínima",
+        "any": "Qualquer",
+        "limit": "Máx. faixas",
+        "seed_track": "Semelhante à faixa",
+        "seed_track_pick": "Escolher uma faixa",
+        "seed_overrides_filter": "Não utilizado quando uma faixa de semente está definida",
+        "clear": "Limpar",
+        "creating": "A criar…",
+        "created": "Lista de reprodução inteligente criada!",
+        "edit_rules": "Editar regras",
+        "saving": "A guardar…",
+        "year_range": "Intervalo de anos",
+        "year_from": "A partir do ano",
+        "year_to": "Até ao ano"
+    }
 }

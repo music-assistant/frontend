@@ -1222,5 +1222,31 @@
     },
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",
-    "genre_name": "Nom du genre"
+    "genre_name": "Nom du genre",
+    "smart_playlist": {
+        "create": "Créer une liste de lecture intelligente",
+        "desc": "Générer une liste de lecture depuis votre bibliothèque en fonction de règles.",
+        "mode": "Mode",
+        "dynamic": "Dynamique",
+        "fixed": "Fixe (unique)",
+        "track_count": "Nombre de pistes",
+        "favorites_only": "Favoris uniquement",
+        "logic": "Combinaison de règles",
+        "logic_and": "Correspondre à TOUTES les règles (ET)",
+        "logic_or": "Correspondre à N'IMPORTE QUELLE règle (OU)",
+        "min_popularity": "Popularité minimale",
+        "any": "N'importe",
+        "limit": "Pistes max.",
+        "seed_track": "Similaire à la piste",
+        "seed_track_pick": "Choisir une piste",
+        "seed_overrides_filter": "Non utilisé lorsqu'une piste de départ est définie",
+        "clear": "Effacer",
+        "creating": "Création…",
+        "created": "Liste de lecture intelligente créée !",
+        "edit_rules": "Modifier les règles",
+        "saving": "Enregistrement…",
+        "year_range": "Plage d'années",
+        "year_from": "À partir de l'année",
+        "year_to": "Jusqu'à l'année"
+    }
 }

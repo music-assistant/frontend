@@ -1590,5 +1590,31 @@
     "radiobrowser_by_popularity": "Op populariteit",
     "radiobrowser_by_category": "Op categorie",
     "restore_genre": "Herstel",
-    "genre_name": "Genrenaam"
+    "genre_name": "Genrenaam",
+    "smart_playlist": {
+        "create": "Slimme afspeellijst maken",
+        "desc": "Maak een afspeellijst van je bibliotheek op basis van regels.",
+        "mode": "Modus",
+        "dynamic": "Dynamisch",
+        "fixed": "Vast (eenmalig)",
+        "track_count": "Aantal nummers",
+        "favorites_only": "Alleen favorieten",
+        "logic": "Regelcombinatie",
+        "logic_and": "Aan ALLE regels voldoen (EN)",
+        "logic_or": "Aan MINIMAAL één regel voldoen (OF)",
+        "min_popularity": "Minimale populariteit",
+        "any": "Willekeurig",
+        "limit": "Max. nummers",
+        "seed_track": "Vergelijkbaar met nummer",
+        "seed_track_pick": "Kies een nummer",
+        "seed_overrides_filter": "Niet gebruikt wanneer een seed-nummer is ingesteld",
+        "clear": "Wissen",
+        "creating": "Aanmaken…",
+        "created": "Slimme afspeellijst aangemaakt!",
+        "edit_rules": "Regels bewerken",
+        "saving": "Opslaan…",
+        "year_range": "Jaarbereik",
+        "year_from": "Vanaf jaar",
+        "year_to": "Tot jaar"
+    }
 }
