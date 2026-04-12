@@ -539,31 +539,5 @@
         "scan_qr": "Escanear QR",
         "qr_invalid": "Código QR no válido. Por favor escanea el código ID QR remoto de Music Assistant."
     },
-    "narrators": "Narradores",
-    "smart_playlist": {
-        "create": "Crear lista de reproducción inteligente",
-        "desc": "Genera una lista de reproducción desde tu biblioteca basada en reglas.",
-        "mode": "Modo",
-        "dynamic": "Dinámica",
-        "fixed": "Fija (única vez)",
-        "track_count": "Número de pistas",
-        "favorites_only": "Solo favoritos",
-        "logic": "Combinación de reglas",
-        "logic_and": "Cumplir TODAS las reglas (Y)",
-        "logic_or": "Cumplir ALGUNA regla (O)",
-        "min_popularity": "Popularidad mínima",
-        "any": "Cualquiera",
-        "limit": "Máx. pistas",
-        "seed_track": "Similar a la pista",
-        "seed_track_pick": "Elegir una pista",
-        "seed_overrides_filter": "No se usa cuando hay una pista semilla establecida",
-        "clear": "Borrar",
-        "creating": "Creando…",
-        "created": "¡Lista de reproducción inteligente creada!",
-        "edit_rules": "Editar reglas",
-        "saving": "Guardando…",
-        "year_range": "Rango de años",
-        "year_from": "Desde el año",
-        "year_to": "Hasta el año"
-    }
+    "narrators": "Narradores"
 }

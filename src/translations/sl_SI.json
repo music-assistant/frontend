@@ -527,31 +527,5 @@
     "recommendations": {
         "random_artists": "Naključni umetniki",
         "random_albums": "Naključni albumi"
-    },
-    "smart_playlist": {
-        "create": "Ustvari pametni seznam predvajanja",
-        "desc": "Ustvari seznam predvajanja iz knjižnice na podlagi pravil.",
-        "mode": "Način",
-        "dynamic": "Dinamičen",
-        "fixed": "Fiksen (enkraten)",
-        "track_count": "Število posnetkov",
-        "favorites_only": "Samo priljubljeni",
-        "logic": "Kombinacija pravil",
-        "logic_and": "Ujemanje VSEH pravil (IN)",
-        "logic_or": "Ujemanje KATEREGA KOLI pravila (ALI)",
-        "min_popularity": "Minimalna priljubljenost",
-        "any": "Katerakoli",
-        "limit": "Maks. posnetkov",
-        "seed_track": "Podobno posnetku",
-        "seed_track_pick": "Izberi posnetek",
-        "seed_overrides_filter": "Ni v uporabi, ko je nastavljen osnovni posnetek",
-        "clear": "Počisti",
-        "creating": "Ustvarjanje…",
-        "created": "Pametni seznam predvajanja ustvarjen!",
-        "edit_rules": "Uredi pravila",
-        "saving": "Shranjevanje…",
-        "year_range": "Letni razpon",
-        "year_from": "Od leta",
-        "year_to": "Do leta"
     }
 }

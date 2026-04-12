@@ -520,31 +520,5 @@
     "edit": "수정",
     "recommendations": {
         "recommended": "권장됨"
-    },
-    "smart_playlist": {
-        "create": "스마트 재생목록 만들기",
-        "desc": "규칙에 따라 라이브러리에서 재생목록을 생성합니다.",
-        "mode": "모드",
-        "dynamic": "동적",
-        "fixed": "고정 (일회성)",
-        "track_count": "트랙 수",
-        "favorites_only": "즐겨찾기만",
-        "logic": "규칙 조합",
-        "logic_and": "모든 규칙 일치 (AND)",
-        "logic_or": "임의 규칙 일치 (OR)",
-        "min_popularity": "최소 인기도",
-        "any": "모두",
-        "limit": "최대 트랙",
-        "seed_track": "트랙과 유사",
-        "seed_track_pick": "트랙 선택",
-        "seed_overrides_filter": "시드 트랙이 설정된 경우 사용되지 않음",
-        "clear": "지우기",
-        "creating": "생성 중…",
-        "created": "스마트 재생목록이 생성되었습니다!",
-        "edit_rules": "규칙 편집",
-        "saving": "저장 중…",
-        "year_range": "연도 범위",
-        "year_from": "시작 연도",
-        "year_to": "종료 연도"
     }
 }

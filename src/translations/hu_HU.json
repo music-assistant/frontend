@@ -1572,31 +1572,5 @@
         "update_metadata": "Metaadatok frissítése"
     },
     "not_found_headline": "Hoppá, ez az oldal nincs a műsorban.",
-    "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat.",
-    "smart_playlist": {
-        "create": "Intelligens lejátszási lista létrehozása",
-        "desc": "Lejátszási lista generálása a könyvtárból szabályok alapján.",
-        "mode": "Mód",
-        "dynamic": "Dinamikus",
-        "fixed": "Rögzített (egyszeri)",
-        "track_count": "Számok száma",
-        "favorites_only": "Csak kedvencek",
-        "logic": "Szabálykombináció",
-        "logic_and": "Az ÖSSZES szabálynak megfelelő (ÉS)",
-        "logic_or": "BÁRMELY szabálynak megfelelő (VAGY)",
-        "min_popularity": "Minimális népszerűség",
-        "any": "Bármely",
-        "limit": "Max. számok",
-        "seed_track": "Hasonló a számhoz",
-        "seed_track_pick": "Szám kiválasztása",
-        "seed_overrides_filter": "Nem használt, ha alapszám van beállítva",
-        "clear": "Törlés",
-        "creating": "Létrehozás…",
-        "created": "Intelligens lejátszási lista létrehozva!",
-        "edit_rules": "Szabályok szerkesztése",
-        "saving": "Mentés…",
-        "year_range": "Évtartomány",
-        "year_from": "Évtől",
-        "year_to": "Évig"
-    }
+    "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat."
 }

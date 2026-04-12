@@ -876,31 +876,5 @@
     "playlist_mix_allowed": "Disse medietyper kan blandes.",
     "playlist_mix_not_allowed": "Denne udbyder understøtter ikke blanding af medietyper i afspilningslister. Vælg venligst, hvilken medietype du ønsker at oprette en afspilningsliste for:",
     "playlist_create_provider_error": "Kan ikke få fat i udbyder.",
-    "playlist_create_no_type_selected": "Ingen medietype valgt",
-    "smart_playlist": {
-        "create": "Opret smart afspilningsliste",
-        "desc": "Generer en afspilningsliste fra dit bibliotek baseret på regler.",
-        "mode": "Tilstand",
-        "dynamic": "Dynamisk",
-        "fixed": "Fast (engangskørsel)",
-        "track_count": "Antal numre",
-        "favorites_only": "Kun favoritter",
-        "logic": "Regelkombination",
-        "logic_and": "Opfyld ALLE regler (OG)",
-        "logic_or": "Opfyld EN VILKÅRLIG regel (ELLER)",
-        "min_popularity": "Minimum popularitet",
-        "any": "Enhver",
-        "limit": "Maks. numre",
-        "seed_track": "Ligner nummer",
-        "seed_track_pick": "Vælg et nummer",
-        "seed_overrides_filter": "Ikke brugt når et startnummer er sat",
-        "clear": "Ryd",
-        "creating": "Opretter…",
-        "created": "Smart afspilningsliste oprettet!",
-        "edit_rules": "Rediger regler",
-        "saving": "Gemmer…",
-        "year_range": "Årsinterval",
-        "year_from": "Fra år",
-        "year_to": "Til år"
-    }
+    "playlist_create_no_type_selected": "Ingen medietype valgt"
 }

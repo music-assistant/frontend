@@ -1311,31 +1311,5 @@
         "settable": "Uzstādāmās opcijas atskaņotājam {0}",
         "read_only": "Tikai lasāmas atskaņotāja opcijas, atskaņotājam {0}"
     },
-    "select_sound_mode": "Izvēlieties skaņas režīmu",
-    "smart_playlist": {
-        "create": "Izveidot viedāko atskaņošanas sarakstu",
-        "desc": "Ģenerēt atskaņošanas sarakstu no bibliotēkas, pamatojoties uz noteikumiem.",
-        "mode": "Režīms",
-        "dynamic": "Dinamisks",
-        "fixed": "Fiksēts (vienreizējs)",
-        "track_count": "Ierakstu skaits",
-        "favorites_only": "Tikai izlase",
-        "logic": "Noteikumu kombinācija",
-        "logic_and": "Atbilst VISIEM noteikumiem (UN)",
-        "logic_or": "Atbilst JEBKURAM noteikumam (VAI)",
-        "min_popularity": "Minimālā popularitāte",
-        "any": "Jebkāda",
-        "limit": "Maks. ieraksti",
-        "seed_track": "Līdzīgs ierakstam",
-        "seed_track_pick": "Izvēlēties ierakstu",
-        "seed_overrides_filter": "Netiek izmantots, ja ir iestatīts sākuma ieraksts",
-        "clear": "Notīrīt",
-        "creating": "Izveido…",
-        "created": "Viedais atskaņošanas saraksts izveidots!",
-        "edit_rules": "Rediģēt noteikumus",
-        "saving": "Saglabā…",
-        "year_range": "Gadu diapazons",
-        "year_from": "No gada",
-        "year_to": "Līdz gadam"
-    }
+    "select_sound_mode": "Izvēlieties skaņas režīmu"
 }

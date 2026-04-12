@@ -806,31 +806,5 @@
         "or": "ou"
     },
     "yes": "Sim",
-    "no": "Não",
-    "smart_playlist": {
-        "create": "Criar playlist inteligente",
-        "desc": "Gerar uma playlist da sua biblioteca com base em regras.",
-        "mode": "Modo",
-        "dynamic": "Dinâmica",
-        "fixed": "Fixa (única vez)",
-        "track_count": "Número de faixas",
-        "favorites_only": "Apenas favoritos",
-        "logic": "Combinação de regras",
-        "logic_and": "Corresponder a TODAS as regras (E)",
-        "logic_or": "Corresponder a QUALQUER regra (OU)",
-        "min_popularity": "Popularidade mínima",
-        "any": "Qualquer",
-        "limit": "Máx. faixas",
-        "seed_track": "Similar à faixa",
-        "seed_track_pick": "Escolher uma faixa",
-        "seed_overrides_filter": "Não utilizado quando uma faixa semente está definida",
-        "clear": "Limpar",
-        "creating": "Criando…",
-        "created": "Playlist inteligente criada!",
-        "edit_rules": "Editar regras",
-        "saving": "Salvando…",
-        "year_range": "Intervalo de anos",
-        "year_from": "A partir do ano",
-        "year_to": "Até o ano"
-    }
+    "no": "Não"
 }

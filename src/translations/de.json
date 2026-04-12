@@ -1612,9 +1612,6 @@
         "creating": "Wird erstellt…",
         "created": "Intelligente Wiedergabeliste erstellt!",
         "edit_rules": "Regeln bearbeiten",
-        "saving": "Wird gespeichert…",
-        "year_to": "Bis Jahr",
-        "year_from": "Ab Jahr",
-        "year_range": "Jahrgang"
+        "saving": "Wird gespeichert…"
     }
 }

@@ -919,31 +919,5 @@
         "replace": "Spill av nå (erstatt kø)",
         "replace_next": "Spill av som neste (erstatt kø)",
         "add": "Legg til i køen"
-    },
-    "smart_playlist": {
-        "create": "Opprett smart spilleliste",
-        "desc": "Generer en spilleliste fra biblioteket ditt basert på regler.",
-        "mode": "Modus",
-        "dynamic": "Dynamisk",
-        "fixed": "Fast (engangskjøring)",
-        "track_count": "Antall spor",
-        "favorites_only": "Kun favoritter",
-        "logic": "Regelkombinasjon",
-        "logic_and": "Samsvarer med ALLE regler (OG)",
-        "logic_or": "Samsvarer med EN VILKÅRLIG regel (ELLER)",
-        "min_popularity": "Minimum popularitet",
-        "any": "Hva som helst",
-        "limit": "Maks. spor",
-        "seed_track": "Ligner på spor",
-        "seed_track_pick": "Velg et spor",
-        "seed_overrides_filter": "Ikke brukt når et startspor er angitt",
-        "clear": "Nullstill",
-        "creating": "Oppretter…",
-        "created": "Smart spilleliste opprettet!",
-        "edit_rules": "Rediger regler",
-        "saving": "Lagrer…",
-        "year_range": "Årsintervall",
-        "year_from": "Fra år",
-        "year_to": "Til år"
     }
 }

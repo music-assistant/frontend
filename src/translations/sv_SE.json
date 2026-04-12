@@ -1572,31 +1572,5 @@
         "update_metadata": "Uppdatera metadata"
     },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
-    "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt.",
-    "smart_playlist": {
-        "create": "Skapa smart spellista",
-        "desc": "Generera en spellista från ditt bibliotek baserat på regler.",
-        "mode": "Läge",
-        "dynamic": "Dynamisk",
-        "fixed": "Fast (engångs)",
-        "track_count": "Antal spår",
-        "favorites_only": "Endast favoriter",
-        "logic": "Regelkombination",
-        "logic_and": "Matcha ALLA regler (OCH)",
-        "logic_or": "Matcha VALFRI regel (ELLER)",
-        "min_popularity": "Minsta popularitet",
-        "any": "Valfri",
-        "limit": "Max spår",
-        "seed_track": "Liknar spåret",
-        "seed_track_pick": "Välj ett spår",
-        "seed_overrides_filter": "Används inte när ett startspår är inställt",
-        "clear": "Rensa",
-        "creating": "Skapar…",
-        "created": "Smart spellista skapad!",
-        "edit_rules": "Redigera regler",
-        "saving": "Sparar…",
-        "year_range": "Årsintervall",
-        "year_from": "Från år",
-        "year_to": "Till år"
-    }
+    "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt."
 }

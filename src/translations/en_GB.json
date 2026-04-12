@@ -1090,31 +1090,5 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
-    "edit": "Edit",
-    "smart_playlist": {
-        "create": "Create Smart Playlist",
-        "desc": "Generate a playlist from your library based on rules.",
-        "mode": "Mode",
-        "dynamic": "Dynamic",
-        "fixed": "Fixed (one-time)",
-        "track_count": "Number of tracks",
-        "favorites_only": "Favourites only",
-        "logic": "Rule combination",
-        "logic_and": "Match ALL rules (AND)",
-        "logic_or": "Match ANY rule (OR)",
-        "min_popularity": "Minimum popularity",
-        "any": "Any",
-        "limit": "Max tracks",
-        "seed_track": "Similar to track",
-        "seed_track_pick": "Pick a track",
-        "seed_overrides_filter": "Not used when a seed track is set",
-        "clear": "Clear",
-        "creating": "Creating…",
-        "created": "Smart playlist created!",
-        "edit_rules": "Edit rules",
-        "saving": "Saving…",
-        "year_range": "Year range",
-        "year_from": "From year",
-        "year_to": "To year"
-    }
+    "edit": "Edit"
 }

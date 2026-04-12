@@ -581,31 +581,5 @@
     "play_replace_next": "Следующим (очистить очередь)",
     "all_enqueue_options": "Все опции очереди",
     "music_assistant_source": "Очередь воспроизведения Music Assistant",
-    "music_assistant_library": "Библиотека Music Assistant",
-    "smart_playlist": {
-        "create": "Создать умный плейлист",
-        "desc": "Создать плейлист из библиотеки на основе правил.",
-        "mode": "Режим",
-        "dynamic": "Динамический",
-        "fixed": "Фиксированный (разовый)",
-        "track_count": "Количество треков",
-        "favorites_only": "Только избранное",
-        "logic": "Комбинация правил",
-        "logic_and": "Соответствовать ВСЕМ правилам (И)",
-        "logic_or": "Соответствовать ЛЮБОМУ правилу (ИЛИ)",
-        "min_popularity": "Минимальная популярность",
-        "any": "Любая",
-        "limit": "Макс. треков",
-        "seed_track": "Похоже на трек",
-        "seed_track_pick": "Выбрать трек",
-        "seed_overrides_filter": "Не используется, если задан исходный трек",
-        "clear": "Очистить",
-        "creating": "Создание…",
-        "created": "Умный плейлист создан!",
-        "edit_rules": "Изменить правила",
-        "saving": "Сохранение…",
-        "year_range": "Диапазон лет",
-        "year_from": "С года",
-        "year_to": "По год"
-    }
+    "music_assistant_library": "Библиотека Music Assistant"
 }

@@ -1371,31 +1371,5 @@
     "playlist_mix_allowed": "Tyto typy médií lze kombinovat.",
     "playlist_mix_not_allowed": "Tento poskytovatel nepodporuje odlišné typy médií v seznamech skladeb. Vyberte prosím, pro který typ média chcete seznam skladeb vytvořit:",
     "playlist_create_provider_error": "Nelze získat poskytovatele.",
-    "playlist_create_no_type_selected": "Nebyl zvolen typ média.",
-    "smart_playlist": {
-        "create": "Vytvořit chytrý seznam skladeb",
-        "desc": "Generovat seznam skladeb z vaší knihovny na základě pravidel.",
-        "mode": "Režim",
-        "dynamic": "Dynamický",
-        "fixed": "Pevný (jednorázový)",
-        "track_count": "Počet skladeb",
-        "favorites_only": "Pouze oblíbené",
-        "logic": "Kombinace pravidel",
-        "logic_and": "Splnit VŠECHNA pravidla (A)",
-        "logic_or": "Splnit LIBOVOLNÉ pravidlo (NEBO)",
-        "min_popularity": "Minimální popularita",
-        "any": "Jakákoliv",
-        "limit": "Max. skladeb",
-        "seed_track": "Podobné skladbě",
-        "seed_track_pick": "Vybrat skladbu",
-        "seed_overrides_filter": "Nepoužíváno, pokud je nastaven výchozí track",
-        "clear": "Vymazat",
-        "creating": "Vytváření…",
-        "created": "Chytrý seznam skladeb vytvořen!",
-        "edit_rules": "Upravit pravidla",
-        "saving": "Ukládání…",
-        "year_range": "Rozsah roků",
-        "year_from": "Od roku",
-        "year_to": "Do roku"
-    }
+    "playlist_create_no_type_selected": "Nebyl zvolen typ média."
 }

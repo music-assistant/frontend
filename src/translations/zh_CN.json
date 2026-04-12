@@ -1152,31 +1152,5 @@
     "playlist_mix_allowed": "这些媒体类型可以混合使用。",
     "playlist_mix_not_allowed": "此服务商不支持在播放列表中混合使用多种媒体类型。请选择您要创建播放列表的媒体类型：",
     "playlist_create_provider_error": "无法获取提供商。",
-    "playlist_create_no_type_selected": "未选择媒体类型。",
-    "smart_playlist": {
-        "create": "创建智能播放列表",
-        "desc": "根据规则从您的音乐库生成播放列表。",
-        "mode": "模式",
-        "dynamic": "动态",
-        "fixed": "固定（一次性）",
-        "track_count": "曲目数量",
-        "favorites_only": "仅收藏",
-        "logic": "规则组合",
-        "logic_and": "匹配所有规则（与）",
-        "logic_or": "匹配任意规则（或）",
-        "min_popularity": "最低热度",
-        "any": "任意",
-        "limit": "最多曲目",
-        "seed_track": "与曲目相似",
-        "seed_track_pick": "选择曲目",
-        "seed_overrides_filter": "设置种子曲目后不使用此过滤器",
-        "clear": "清除",
-        "creating": "创建中…",
-        "created": "智能播放列表已创建！",
-        "edit_rules": "编辑规则",
-        "saving": "保存中…",
-        "year_range": "年份范围",
-        "year_from": "起始年份",
-        "year_to": "结束年份"
-    }
+    "playlist_create_no_type_selected": "未选择媒体类型。"
 }

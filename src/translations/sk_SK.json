@@ -383,31 +383,5 @@
     },
     "homescreen_edit_enable": "Úprava domovskej obrazovky",
     "homescreen_edit_disable": "Opustenie režimu úprav domovskej obrazovky",
-    "lyrics_will_appear_soon": "Text piesne sa zobrazí, keď skladba začne...",
-    "smart_playlist": {
-        "create": "Vytvoriť inteligentnú sadu skladieb",
-        "desc": "Generovať sadu skladieb z knižnice na základe pravidiel.",
-        "mode": "Režim",
-        "dynamic": "Dynamická",
-        "fixed": "Pevná (jednorazová)",
-        "track_count": "Počet skladieb",
-        "favorites_only": "Len obľúbené",
-        "logic": "Kombinácia pravidiel",
-        "logic_and": "Splniť VŠETKY pravidlá (A)",
-        "logic_or": "Splniť HOCIJAKÉ pravidlo (ALEBO)",
-        "min_popularity": "Minimálna popularita",
-        "any": "Ľubovoľná",
-        "limit": "Max. skladieb",
-        "seed_track": "Podobné skladbe",
-        "seed_track_pick": "Vybrať skladbu",
-        "seed_overrides_filter": "Nepoužíva sa, ak je nastavený výchozí track",
-        "clear": "Vymazať",
-        "creating": "Vytváranie…",
-        "created": "Inteligentný zoznam skladieb vytvorený!",
-        "edit_rules": "Upraviť pravidlá",
-        "saving": "Ukladanie…",
-        "year_range": "Rozsah rokov",
-        "year_from": "Od roku",
-        "year_to": "Do roku"
-    }
+    "lyrics_will_appear_soon": "Text piesne sa zobrazí, keď skladba začne..."
 }
