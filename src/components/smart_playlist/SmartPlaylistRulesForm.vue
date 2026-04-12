@@ -24,22 +24,15 @@
     <!-- Genre filter -->
     <div class="flex flex-col gap-2">
       <Label>{{ $t("genres") }}</Label>
-      <div class="flex flex-wrap gap-1 items-center">
-        <Badge
+      <TagsInput v-model="genreModelValue">
+        <TagsInputItem
           v-for="gid in rules.genre_ids"
           :key="gid"
-          variant="secondary"
-          class="gap-1 pr-1"
+          :value="String(gid)"
         >
-          {{ genreName(gid) }}
-          <button
-            type="button"
-            class="ml-1 hover:opacity-70"
-            @click.stop="toggleGenreById(gid)"
-          >
-            <X class="h-3 w-3" />
-          </button>
-        </Badge>
+          <span class="py-0.5 px-2 text-sm">{{ genreName(gid) }}</span>
+          <TagsInputItemDelete />
+        </TagsInputItem>
         <Popover>
           <PopoverTrigger as-child>
             <Button
@@ -74,26 +67,25 @@
             </div>
           </PopoverContent>
         </Popover>
-      </div>
+      </TagsInput>
     </div>
 
     <!-- Seed track (search picker) -->
     <div class="flex flex-col gap-2">
       <Label>{{ $t("smart_playlist.seed_track") }}</Label>
-      <div class="flex flex-wrap gap-1 items-center">
-        <Badge v-if="selectedSeedTrack" variant="secondary" class="gap-1 pr-1">
-          {{ selectedSeedTrack.name }}
-          <span class="text-muted-foreground text-xs ml-0.5">
-            – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
+      <TagsInput :model-value="selectedSeedTrack ? [selectedSeedTrack.item_id] : []" @update:model-value="() => clearSeedTrack()">
+        <TagsInputItem
+          v-if="selectedSeedTrack"
+          :value="selectedSeedTrack.item_id"
+        >
+          <span class="py-0.5 pl-2 text-sm">
+            {{ selectedSeedTrack.name }}
+            <span class="text-muted-foreground text-xs ml-0.5">
+              – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
+            </span>
           </span>
-          <button
-            type="button"
-            class="ml-1 hover:opacity-70"
-            @click.stop="clearSeedTrack()"
-          >
-            <X class="h-3 w-3" />
-          </button>
-        </Badge>
+          <TagsInputItemDelete />
+        </TagsInputItem>
         <Popover v-if="!selectedSeedTrack">
           <PopoverTrigger as-child>
             <Button
@@ -106,11 +98,10 @@
             </Button>
           </PopoverTrigger>
           <PopoverContent class="w-[260px] p-2">
-            <input
+            <Input
               v-model="seedTrackSearch"
-              type="text"
               :placeholder="$t('search')"
-              class="border-input mb-2 h-7 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              class="mb-2 h-7 text-sm"
               @keydown.stop
             />
             <div class="max-h-48 overflow-y-auto flex flex-col">
@@ -140,28 +131,21 @@
             </div>
           </PopoverContent>
         </Popover>
-      </div>
+      </TagsInput>
     </div>
 
     <!-- Artist filter -->
     <div class="flex flex-col gap-2">
       <Label>{{ $t("artists") }}</Label>
-      <div class="flex flex-wrap gap-1 items-center">
-        <Badge
+      <TagsInput v-model="artistModelValue">
+        <TagsInputItem
           v-for="a in selectedArtistItems"
           :key="a.id"
-          variant="secondary"
-          class="gap-1 pr-1"
+          :value="String(a.id)"
         >
-          {{ a.name }}
-          <button
-            type="button"
-            class="ml-1 hover:opacity-70"
-            @click.stop="toggleArtistById(a.id)"
-          >
-            <X class="h-3 w-3" />
-          </button>
-        </Badge>
+          <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+          <TagsInputItemDelete />
+        </TagsInputItem>
         <Popover :open="selectedSeedTrack ? false : undefined">
           <PopoverTrigger as-child>
             <Button
@@ -205,7 +189,7 @@
             </div>
           </PopoverContent>
         </Popover>
-      </div>
+      </TagsInput>
       <p v-if="selectedSeedTrack" class="text-xs text-muted-foreground">
         {{ $t("smart_playlist.seed_overrides_filter") }}
       </p>
@@ -214,22 +198,15 @@
     <!-- Album filter -->
     <div class="flex flex-col gap-2">
       <Label>{{ $t("albums") }}</Label>
-      <div class="flex flex-wrap gap-1 items-center">
-        <Badge
+      <TagsInput v-model="albumModelValue">
+        <TagsInputItem
           v-for="a in selectedAlbumItems"
           :key="a.id"
-          variant="secondary"
-          class="gap-1 pr-1"
+          :value="String(a.id)"
         >
-          {{ a.name }}
-          <button
-            type="button"
-            class="ml-1 hover:opacity-70"
-            @click.stop="toggleAlbumById(a.id)"
-          >
-            <X class="h-3 w-3" />
-          </button>
-        </Badge>
+          <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+          <TagsInputItemDelete />
+        </TagsInputItem>
         <Popover :open="selectedSeedTrack ? false : undefined">
           <PopoverTrigger as-child>
             <Button
@@ -273,7 +250,7 @@
             </div>
           </PopoverContent>
         </Popover>
-      </div>
+      </TagsInput>
       <p v-if="selectedSeedTrack" class="text-xs text-muted-foreground">
         {{ $t("smart_playlist.seed_overrides_filter") }}
       </p>
@@ -373,10 +350,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { PlusCircle, X } from "lucide-vue-next";
+import { PlusCircle } from "lucide-vue-next";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  TagsInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+} from "@/components/ui/tags-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -454,6 +435,33 @@ const albumSearch = ref("");
 const albumResults = ref<Album[]>([]);
 const selectedArtistItems = ref<{ id: number; name: string }[]>([]);
 const selectedAlbumItems = ref<{ id: number; name: string }[]>([]);
+
+const genreModelValue = computed({
+  get: () => rules.genre_ids.map(String),
+  set: (vals: string[]) => {
+    rules.genre_ids = vals.map(Number);
+  },
+});
+
+const artistModelValue = computed({
+  get: () => selectedArtistItems.value.map((a) => String(a.id)),
+  set: (vals: string[]) => {
+    selectedArtistItems.value = selectedArtistItems.value.filter((a) =>
+      vals.includes(String(a.id)),
+    );
+    rules.artist_ids = selectedArtistItems.value.map((a) => a.id);
+  },
+});
+
+const albumModelValue = computed({
+  get: () => selectedAlbumItems.value.map((a) => String(a.id)),
+  set: (vals: string[]) => {
+    selectedAlbumItems.value = selectedAlbumItems.value.filter((a) =>
+      vals.includes(String(a.id)),
+    );
+    rules.album_ids = selectedAlbumItems.value.map((a) => a.id);
+  },
+});
 
 watch(
   () => props.initialRules,
