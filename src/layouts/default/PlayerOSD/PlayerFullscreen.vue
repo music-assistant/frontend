@@ -1228,6 +1228,9 @@ const resetItems = async function () {
   allItemsLoaded.value = false;
   await sleep(100);
   tempHide.value = false;
+  if (store.showFullscreenPlayer && store.showQueueItems) {
+    loadNextPage();
+  }
 };
 
 const loadNextPage = async function () {
