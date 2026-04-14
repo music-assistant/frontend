@@ -59,7 +59,6 @@ import {
 import { companionMode } from "@/plugins/companion";
 import { store } from "@/plugins/store";
 import { $t, i18n } from "@/plugins/i18n";
-import { webPlayer } from "@/plugins/web_player";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
