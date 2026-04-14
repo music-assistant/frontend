@@ -10,7 +10,6 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { getSendspinDefaultStaticDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
@@ -209,17 +208,13 @@ onMounted(() => {
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const defaultStaticDelay = getSendspinDefaultStaticDelay();
     const savedSyncDelay = localStorage.getItem(
       "frontend.settings.sendspin_sync_delay",
     );
-    let syncDelay: number;
-    if (savedSyncDelay !== null) {
-      const parsed = parseInt(savedSyncDelay, 10);
-      syncDelay = isNaN(parsed) ? defaultStaticDelay : parsed;
-    } else {
-      syncDelay = defaultStaticDelay;
-    }
+    const syncDelay =
+      savedSyncDelay !== null
+        ? parseInt(savedSyncDelay, 10) || undefined
+        : undefined;
 
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
