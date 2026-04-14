@@ -211,10 +211,8 @@ onMounted(() => {
     const savedSyncDelay = localStorage.getItem(
       "frontend.settings.sendspin_sync_delay",
     );
-    const syncDelay =
-      savedSyncDelay !== null
-        ? parseInt(savedSyncDelay, 10) || undefined
-        : undefined;
+    const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
+    const syncDelay = isNaN(parsed) ? undefined : parsed;
 
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
