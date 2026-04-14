@@ -209,7 +209,7 @@ onMounted(() => {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
     const savedSyncDelay = localStorage.getItem(
-      "frontend.settings.sendspin_sync_delay",
+      "frontend.settings.sendspin_static_delay",
     );
     const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
     const syncDelay = isNaN(parsed) ? undefined : parsed;
@@ -244,7 +244,7 @@ onMounted(() => {
           correctionMode: correctionMode.value,
           onDelayCommand: (delayMs: number) => {
             localStorage.setItem(
-              "frontend.settings.sendspin_sync_delay",
+              "frontend.settings.sendspin_static_delay",
               String(delayMs),
             );
           },
