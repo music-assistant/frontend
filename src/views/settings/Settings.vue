@@ -294,6 +294,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -509,6 +510,7 @@ const allSettingsSections = [
     color: "blue",
     route: { name: "providersettings", query: { types: "audio_analysis" } },
     adminOnly: true,
+    minServerVersion: "2.9.0",
   },
   {
     name: "profile",
@@ -568,7 +570,12 @@ const allSettingsSections = [
 
 const settingsSections = computed(() => {
   const isAdmin = authManager.isAdmin();
-  return allSettingsSections.filter((section) => !section.adminOnly || isAdmin);
+  return allSettingsSections.filter(
+    (section) =>
+      (!section.adminOnly || isAdmin) &&
+      (!section.minServerVersion ||
+        requireServerVersion(section.minServerVersion)),
+  );
 });
 
 const providerSectionNames = [

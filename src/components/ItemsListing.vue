@@ -1217,7 +1217,13 @@ const restoreSettings = async function () {
   }
 
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true && prefs.providerFilter) {
+  // only apply stored filter if there are multiple providers available
+  // with a single provider, any stored filter is either redundant or stale
+  if (
+    props.showProviderFilter === true &&
+    prefs.providerFilter &&
+    musicProviders.value.length > 1
+  ) {
     params.value.provider = prefs.providerFilter;
   }
 
@@ -1542,10 +1548,14 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == "album") {
+  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
+    const preferSortName = params.sortBy == "album_sort_name";
     result.sort((a, b) => {
-      const albumCompare = getSortName((a as Track).album).localeCompare(
-        getSortName((b as Track).album),
+      const albumCompare = getSortName(
+        (a as Track).album,
+        preferSortName,
+      ).localeCompare(
+        getSortName((b as Track).album, preferSortName),
         undefined,
         { numeric: true },
       );

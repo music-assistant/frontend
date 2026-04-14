@@ -650,6 +650,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
   if (contentType == ContentType.WAV) return iconWAV;
+  if (contentType == ContentType.ALAC) return iconALAC;
   if (isPcm(contentType)) return iconPcm;
   return null;
 };
@@ -696,7 +697,11 @@ const isContentTypeLossless = function (contentType: ContentType) {
 };
 
 const isHiResFormat = function (audioFormat: AudioFormat) {
-  if (!isContentTypeLossless(audioFormat.content_type)) return false;
+  if (
+    !isContentTypeLossless(audioFormat.content_type) &&
+    !isContentTypeLossless(audioFormat.codec_type)
+  )
+    return false;
   return audioFormat.bit_depth > 16 || audioFormat.sample_rate > 48000;
 };
 
@@ -707,10 +712,14 @@ const inputQualityTier = computed(() => {
 
   // Prefer making this decision based on codec type
   let content_type = sd.audio_format.content_type;
+  let codec_type = sd.audio_format.codec_type;
 
   if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;
-  } else if (isContentTypeLossless(content_type)) {
+  } else if (
+    isContentTypeLossless(content_type) ||
+    isContentTypeLossless(codec_type)
+  ) {
     return QualityTier.LOSSLESS;
   } else if (sd.audio_format.bit_rate >= 256) {
     return QualityTier.GOOD;
@@ -734,7 +743,10 @@ const outputQualityTiers = computed(() => {
     let player_tier = QualityTier.UNKNOWN;
     if (isHiResFormat(dsp.output_format)) {
       player_tier = QualityTier.HIRES;
-    } else if (isContentTypeLossless(dsp.output_format.content_type)) {
+    } else if (
+      isContentTypeLossless(dsp.output_format.content_type) ||
+      isContentTypeLossless(dsp.output_format.codec_type)
+    ) {
       player_tier = QualityTier.LOSSLESS;
     } else if (dsp.output_format.bit_rate >= 256) {
       player_tier = QualityTier.GOOD;
@@ -823,6 +835,7 @@ export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 export const iconPcm = new URL("@/assets/pcm.svg", import.meta.url).href;
 export const iconWAV = new URL("@/assets/wav.png", import.meta.url).href;
+export const iconALAC = new URL("@/assets/alac.png", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;

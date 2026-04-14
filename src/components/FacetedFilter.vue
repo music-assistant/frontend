@@ -6,7 +6,10 @@
         {{ title }}
         <template v-if="selectedCount > 0">
           <Separator orientation="vertical" class="mx-2 h-4" />
-          <Badge class="lg:hidden font-medium rounded-[6px]" :aria-label="`${selectedCount} selected`">
+          <Badge
+            class="lg:hidden font-medium rounded-[6px]"
+            :aria-label="`${selectedCount} selected`"
+          >
             {{ selectedCount }}
           </Badge>
           <div class="hidden space-x-1 lg:flex">
@@ -44,7 +47,12 @@
     </PopoverTrigger>
     <PopoverContent class="w-[220px] p-0" align="start">
       <div class="faceted-filter-content">
-        <Input v-model="search" :placeholder="title" :aria-label="`Search ${title}`" class="mb-2 h-8" />
+        <Input
+          v-model="search"
+          :placeholder="title"
+          :aria-label="`Search ${title}`"
+          class="mb-2 h-8"
+        />
         <div class="faceted-filter-list">
           <div
             v-for="option in filteredOptions"
