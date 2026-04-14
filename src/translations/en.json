@@ -644,7 +644,7 @@
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "sendspin_static_delay": {
             "label": "Static playback delay (ms)",
-            "description": "Delay in milliseconds to compensate for device-specific audio latency (e.g., AV receiver, Bluetooth). Higher values play audio earlier."
+            "description": "Offset in milliseconds to keep this player in sync with other players. Increase if audio plays too late, for example to compensate for latency from an amp, active speakers, or the OS."
         },
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
