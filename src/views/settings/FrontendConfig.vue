@@ -191,23 +191,6 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.web_player_enabled") !==
         "false",
     });
-
-    // Output latency compensation - enabled by default everywhere
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    configEntries.push({
-      key: "sendspin_output_latency_compensation",
-      type: ConfigEntryType.BOOLEAN,
-      label: "sendspin_output_latency_compensation",
-      default_value: true,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value:
-        storedOutputLatency !== null ? storedOutputLatency === "true" : true,
-      depends_on: "web_player_enabled",
-    });
   }
 
   config.value = configEntries;

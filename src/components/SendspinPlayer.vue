@@ -221,13 +221,6 @@ onMounted(() => {
       syncDelay = defaultStaticDelay;
     }
 
-    // Output latency compensation - enabled by default
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    const useOutputLatencyCompensation =
-      storedOutputLatency !== null ? storedOutputLatency === "true" : true;
-
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
       .then(() => {
@@ -248,7 +241,6 @@ onMounted(() => {
           clientName: getDeviceName(),
           codecs,
           syncDelay,
-          useOutputLatencyCompensation,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;
