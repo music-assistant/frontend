@@ -642,10 +642,6 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "web_player_enabled": {
-            "label": "Enable built-in (Sendspin) Web Player",
-            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
-        },
         "sendspin_static_delay": {
             "label": "Static playback delay (ms)",
             "description": "Delay in milliseconds to compensate for device-specific audio latency (e.g., AV receiver, Bluetooth). Higher values play audio earlier."
