@@ -1115,6 +1115,10 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
   ) {
     return;
   }
+  // Dynamic playlists own their own track feed — radio mode would conflict
+  if (item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic) {
+    return false;
+  }
   if ("provider_mappings" in item) {
     for (const provId of item.provider_mappings) {
       if (
