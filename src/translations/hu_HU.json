@@ -1569,7 +1569,7 @@
         "cache_database_cleanup": "Gyorsítótár adatbázis karbantartása",
         "scan_missing_artist_artwork": "Hiányzó előadói grafikák keresése",
         "refresh_playlist_metadata": "Lejátszási lista metaadatok frissítése",
-        "update_metadata": "Metaadatok frissítése"
+        "update_metadata": "Metaadatok frissítése: {0}"
     },
     "not_found_headline": "Hoppá, ez az oldal nincs a műsorban.",
     "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat."

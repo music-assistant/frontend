@@ -1583,7 +1583,7 @@
         "cache_database_cleanup": "Bereinigung der Cache-Datenbank",
         "scan_missing_artist_artwork": "Scannen Sie fehlende Kunstwerke von Künstlern",
         "refresh_playlist_metadata": "Metadaten der Wiedergabeliste aktualisieren",
-        "update_metadata": "Aktualisiere Metadaten"
+        "update_metadata": "Aktualisiere Metadaten für {0}"
     },
     "not_found_headline": "Ups, diese Seite gehört nicht zur Setlist.",
     "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem.",

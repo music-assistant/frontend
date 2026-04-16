@@ -453,6 +453,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 // properties
 export interface Props {
   item?: MediaItemType;
+  sortBy?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
@@ -595,6 +596,7 @@ const playButtonClick = function (forceMenu = false) {
     playButton.getBoundingClientRect().top + 36,
     undefined,
     forceMenu,
+    compProps.sortBy,
   );
 };
 

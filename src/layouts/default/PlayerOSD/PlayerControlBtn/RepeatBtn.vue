@@ -46,11 +46,10 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  MediaType,
-  Playlist,
   PlayerQueue,
   RepeatMode,
 } from "@/plugins/api/interfaces";
+import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { computed } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
@@ -73,12 +72,5 @@ const isLoading = computed(() => {
   );
 });
 
-const isSingleDynamicPlaylist = computed(() => {
-  const items = compProps.playerQueue?.enqueued_media_items;
-  return (
-    items?.length === 1 &&
-    items[0].media_type === MediaType.PLAYLIST &&
-    (items[0] as Playlist).is_dynamic
-  );
-});
+const isSingleDynamicPlaylist = computed(() => isQueueDynamicPlaylist(compProps.playerQueue));
 </script>

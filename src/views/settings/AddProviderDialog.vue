@@ -138,6 +138,9 @@ const dialogTitle = computed(() =>
     .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
     .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
     .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+    .with(ProviderType.AUDIO_ANALYSIS, () =>
+      $t("settings.add_audio_analysis_provider"),
+    )
     .otherwise(() => $t("settings.add_provider")),
 );
 

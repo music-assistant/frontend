@@ -1,5 +1,5 @@
 <template>
-  <InfoHeader :item="itemDetails">
+  <InfoHeader :item="itemDetails" :sort-by="listingRef?.sortBy">
     <template v-if="smartRules" #after-play>
       <Button
         variant="outline"
@@ -20,6 +20,7 @@
   </InfoHeader>
   <ItemsListing
     v-if="itemDetails"
+    ref="listingRef"
     itemtype="playlisttracks"
     :parent-item="itemDetails"
     :show-provider="false"
@@ -76,6 +77,7 @@ const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
 const smartRules = ref<SmartPlaylistRules | null>(null);
 const showEditDialog = ref(false);
+const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);

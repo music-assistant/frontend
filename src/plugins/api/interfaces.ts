@@ -374,6 +374,7 @@ export enum ProviderType {
   PLAYER = "player",
   METADATA = "metadata",
   PLUGIN = "plugin",
+  AUDIO_ANALYSIS = "audio_analysis",
 }
 
 export enum ConfigEntryType {

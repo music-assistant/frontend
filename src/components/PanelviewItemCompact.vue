@@ -158,6 +158,7 @@ export interface Props {
   isPlaying?: boolean;
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
+  sortBy?: string;
   disabled?: boolean;
 }
 const compProps = withDefaults(defineProps<Props>(), {
@@ -169,6 +170,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   isAvailable: true,
   disablePlayButton: false,
   parentItem: undefined,
+  sortBy: undefined,
 });
 
 const { t, te } = useI18n();
@@ -193,7 +195,14 @@ const onMenu = function (evt: PointerEvent | TouchEvent) {
   if (compProps.showCheckboxes) return;
   const posX = "clientX" in evt ? evt.clientX : evt.touches[0].clientX;
   const posY = "clientY" in evt ? evt.clientY : evt.touches[0].clientY;
-  handleMenuBtnClick(compProps.item, posX, posY, compProps.parentItem);
+  handleMenuBtnClick(
+    compProps.item,
+    posX,
+    posY,
+    compProps.parentItem,
+    true,
+    compProps.sortBy,
+  );
 };
 
 const onClick = function (evt: PointerEvent) {
@@ -216,6 +225,8 @@ const onPlayClick = function (evt: PointerEvent) {
     evt.clientX,
     evt.clientY,
     compProps.parentItem,
+    undefined,
+    compProps.sortBy,
   );
 };
 </script>
