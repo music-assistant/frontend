@@ -96,6 +96,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -117,6 +118,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -147,6 +149,7 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </template>
@@ -194,6 +197,8 @@
                   evt.clientX,
                   evt.clientY,
                   parentItem,
+                  true,
+                  params.sortBy,
                 )
             "
           >
@@ -211,12 +216,13 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed } from "lucide-vue-next";
+import { Eye, EyeClosed, Layers } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -235,6 +241,7 @@ import {
   ProviderType,
   Radio,
   type Album,
+  type Genre,
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
@@ -265,7 +272,7 @@ export interface LoadDataParams {
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
-  hideEmptyFilter?: boolean;
+  hideEmptyFilter?: boolean | null;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
@@ -346,7 +353,7 @@ const props = withDefaults(defineProps<Props>(), {
 // global refs
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, te } = useI18n();
 const { getItemsListingPreferences, setItemsListingPreference } =
   useUserPreferences();
 
@@ -489,7 +496,15 @@ const toggleAlbumArtistsFilter = function () {
 };
 
 const toggleHideEmptyFilter = function () {
-  params.value.hideEmptyFilter = !params.value.hideEmptyFilter;
+  const current = params.value.hideEmptyFilter;
+  // cycle: undefined/false (all) → true (hide empty) → null (defaults only) → false (all)
+  if (current === true) {
+    params.value.hideEmptyFilter = null;
+  } else if (current === null) {
+    params.value.hideEmptyFilter = false;
+  } else {
+    params.value.hideEmptyFilter = true;
+  }
   setItemsListingPreference(
     props.path || props.itemtype,
     props.itemtype,
@@ -906,15 +921,19 @@ const menuItems = computed(() => {
     });
   }
 
-  // has media mappings filter (hide empty genres)
+  // has media mappings filter (hide empty genres / show only defaults)
   if (props.showHideEmptyFilter === true) {
+    const hef = params.value.hideEmptyFilter;
     items.push({
-      label: params.value.hideEmptyFilter
-        ? "tooltip.show_empty_genres"
-        : "tooltip.hide_empty_genres",
-      icon: params.value.hideEmptyFilter ? EyeClosed : Eye,
+      label:
+        hef === true
+          ? "tooltip.show_only_default_genres"
+          : hef === null
+            ? "tooltip.show_all_genres"
+            : "tooltip.hide_empty_genres",
+      icon: hef === true ? EyeClosed : hef === null ? Layers : Eye,
       action: toggleHideEmptyFilter,
-      active: params.value.hideEmptyFilter,
+      active: hef === true || hef === null,
       overflowAllowed: true,
     });
   }
@@ -1155,6 +1174,8 @@ const restoreSettings = async function () {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";
+  } else if (props.itemtype == "genres") {
+    viewMode.value = "panel_compact";
   } else {
     viewMode.value = "list";
   }
@@ -1184,7 +1205,7 @@ const restoreSettings = async function () {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
-  // get stored/default hideEmptyFilter for this itemtype (default: on)
+  // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
   if (props.showHideEmptyFilter) {
     params.value.hideEmptyFilter =
       prefs.hideEmptyFilter !== undefined ? prefs.hideEmptyFilter : true;
@@ -1201,7 +1222,13 @@ const restoreSettings = async function () {
   }
 
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true && prefs.providerFilter) {
+  // only apply stored filter if there are multiple providers available
+  // with a single provider, any stored filter is either redundant or stale
+  if (
+    props.showProviderFilter === true &&
+    prefs.providerFilter &&
+    musicProviders.value.length > 1
+  ) {
     params.value.provider = prefs.providerFilter;
   }
 
@@ -1312,22 +1339,43 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+const itemtypeToMediaType: Partial<Record<string, MediaType>> = {
+  tracks: MediaType.TRACK,
+  albums: MediaType.ALBUM,
+  artists: MediaType.ARTIST,
+  playlists: MediaType.PLAYLIST,
+  audiobooks: MediaType.AUDIOBOOK,
+  podcasts: MediaType.PODCAST,
+};
+
 const loadGenreOptions = async () => {
   if (!props.showGenreFilter) return;
 
   try {
-    const genres = await api.getLibraryGenres(
-      undefined,
-      undefined,
-      100,
-      0,
-      "name",
-    );
+    const pageSize = 100;
+    const all: { label: string; value: number }[] = [];
+    let offset = 0;
+    let page: Genre[];
+    const mediaType = itemtypeToMediaType[props.itemtype];
 
-    genreOptions.value = genres.map((genre) => ({
-      label: genre.name,
-      value: Number(genre.item_id),
-    }));
+    do {
+      page = await api.getLibraryGenres({
+        limit: pageSize,
+        offset,
+        order_by: "name",
+        hide_empty: true, // always hide empty genres in the filter dropdown
+        media_type: mediaType, // filter to genres relevant for this media type
+      });
+      for (const genre of page) {
+        all.push({
+          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          value: Number(genre.item_id),
+        });
+      }
+      offset += pageSize;
+    } while (page.length === pageSize);
+
+    genreOptions.value = all;
   } catch {
     toast.error(t("error_loading_genres"));
   }
@@ -1505,14 +1553,25 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == "album") {
-    result.sort((a, b) =>
-      getSortName((a as Track).album).localeCompare(
-        getSortName((b as Track).album),
+  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
+    const preferSortName = params.sortBy == "album_sort_name";
+    result.sort((a, b) => {
+      const albumCompare = getSortName(
+        (a as Track).album,
+        preferSortName,
+      ).localeCompare(
+        getSortName((b as Track).album, preferSortName),
         undefined,
         { numeric: true },
-      ),
-    );
+      );
+      if (albumCompare !== 0) return albumCompare;
+      const discCompare =
+        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
+      if (discCompare !== 0) return discCompare;
+      return (
+        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
+      );
+    });
   }
   if (params.sortBy == "artist") {
     result.sort((a, b) =>
@@ -1605,6 +1664,10 @@ const selectAll = async function () {
     showCheckboxes.value = true;
   }
 };
+
+defineExpose({
+  sortBy: computed(() => params.value.sortBy),
+});
 </script>
 
 <style scoped>

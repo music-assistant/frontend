@@ -135,7 +135,7 @@ export const kebabize = (str: string) => {
     .join("");
 };
 
-const toSentenceCase = function (str: string): string {
+export const toSentenceCase = function (str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
@@ -824,23 +824,32 @@ export const handlePlayBtnClick = function (
   posY: number,
   parentItem?: MediaItemType,
   forceMenu?: boolean,
+  sortBy?: string,
 ) {
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
     if (
       item.media_type == MediaType.TRACK &&
-      parentItem?.media_type == MediaType.PLAYLIST &&
-      store.activePlayerQueue &&
-      (store.activePlayerQueue.items <= 1 ||
-        store.activePlayerQueue.state != PlaybackState.PLAYING)
+      (parentItem?.media_type == MediaType.PLAYLIST ||
+        parentItem?.media_type == MediaType.ALBUM) &&
+      store.activePlayerQueue
     ) {
-      // special case: playing a track from a playlist - play playlist from here
-      api.playMedia(parentItem.uri, undefined, false, item.item_id);
+      // special case: playing a track from a playlist/album - play from here
+      api.playMedia(
+        parentItem.uri,
+        undefined,
+        false,
+        item.item_id,
+        undefined,
+        sortBy,
+      );
 
       return;
     }
     // else: play the item directly
-    api.playMedia(item).then(() => {});
+    api
+      .playMedia(item, undefined, undefined, undefined, undefined, sortBy)
+      .then(() => {});
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);
@@ -894,6 +903,7 @@ export const handleMenuBtnClick = function (
   posY: number,
   parentItem?: MediaItemType,
   includePlayMenuItems = true,
+  sortBy?: string,
 ) {
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
@@ -905,27 +915,8 @@ export const handleMenuBtnClick = function (
     posY,
     includePlayMenuItems,
     includePlayMenuItems,
+    sortBy,
   );
-};
-
-/**
- * Get platform-specific default sync delay for Sendspin player.
- * Based on testing across various platforms/browsers.
- */
-export const getSendspinDefaultSyncDelay = function (): number {
-  const ua = navigator.userAgent;
-  const isAndroid = /android/i.test(ua);
-  const isIOS = /iPad|iPhone|iPod/i.test(ua);
-  const isFirefox = /firefox/i.test(ua);
-
-  if (isIOS) {
-    return -250;
-  } else if (!isAndroid && !isFirefox) {
-    // Desktop Chrome/Chromium/Edge
-    return -300;
-  }
-  // Android, Firefox (desktop/mobile)
-  return -200;
 };
 
 /**

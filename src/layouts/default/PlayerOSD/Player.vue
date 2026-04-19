@@ -14,6 +14,7 @@
       <div class="mediacontrols-bottom-center">
         <!-- player control buttons -->
         <PlayerControls
+          :style="playIconStyle"
           :visible-components="{
             repeat: { isVisible: getBreakpointValue('bp3') },
             shuffle: { isVisible: getBreakpointValue('bp3') },
@@ -45,15 +46,13 @@
           <PlayerExtendedControls
             :queue="{
               isVisible: getBreakpointValue('bp3'),
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :player="{
               isVisible: true,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-              color: $vuetify.theme.current.dark ? '#fff' : '#000',
+              volumeSize: getBreakpointValue('bp8') ? '150px' : '100px',
             }"
           />
         </div>
@@ -77,16 +76,15 @@
         <div>
           <!-- player mobile control buttons -->
           <PlayerControls
-            style="padding-right: 5px"
+            :style="[{ 'padding-right': '5px' }, playIconStyle]"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },
               play: {
                 isVisible: true,
                 icon: {
-                  staticWidth: '40px',
-                  staticHeight: '40px',
-                  color: $vuetify.theme.current.dark ? '#fff' : '#000',
+                  staticWidth: '44px',
+                  staticHeight: '44px',
                 },
               },
               previous: { isVisible: false },
@@ -113,7 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
 import {
   imgCoverDark,
   imgCoverLight,
@@ -127,6 +124,7 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import { computed, ref, watch } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -170,6 +168,14 @@ const backgroundColor = computed(() => {
   return "#CCCCCC26";
 });
 
+const themeColor = computed(() =>
+  vuetify.theme.current.value.dark ? "#fff" : "#000",
+);
+
+const playIconStyle = computed(() => ({
+  "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
+}));
+
 // watchers
 watch(
   () => store.activePlayer?.current_media?.image_url,
@@ -207,7 +213,8 @@ watch(
   padding: 10px 15px;
   background-color: rgb(var(--v-theme-overlay));
   .mediacontrols-bottom-center {
-    width: 40%;
+    flex: 0 1 40%;
+    min-width: 0;
   }
 
   &[data-mobile="true"] {
@@ -219,6 +226,7 @@ watch(
     .mediacontrols-left {
       flex: 1;
       min-width: 0;
+      max-width: none;
     }
   }
 }
@@ -247,15 +255,22 @@ watch(
 }
 
 .mediacontrols-left {
-  margin-inline-end: auto;
-  width: 20%;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   > div {
     padding: 0px !important;
+    min-width: 0;
   }
 }
 
 .mediacontrols-bottom-right {
-  margin-inline-start: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
   > div {
     display: inline-flex;
     align-items: center;
@@ -266,6 +281,22 @@ watch(
   width: calc(100% - 34px);
   margin: -4px 6px 6px 14px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.volume-slider :deep([data-slot="slider-range"]) {
+  background-color: v-bind("themeColor") !important;
+}
+
+.volume-slider :deep([data-slot="slider-thumb"])::before {
+  background-color: v-bind("themeColor") !important;
+}
+
+.volume-slider :deep([data-slot="slider-track"])::before {
+  background-color: color-mix(
+    in srgb,
+    v-bind("themeColor") 24%,
+    transparent
+  ) !important;
 }
 
 .volume-slider--no-safe-area {

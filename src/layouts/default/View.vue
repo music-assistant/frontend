@@ -18,10 +18,16 @@
           </router-view>
           <add-to-playlist-dialog />
           <create-playlist-dialog />
+          <import-playlist-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
           <item-context-menu />
+          <AddManualLink
+            v-model="showEditItemDialog"
+            :type="editItemType"
+            :edit-item="editItem"
+          />
         </div>
       </SidebarInset>
       <PlayerSelect />
@@ -39,7 +45,32 @@ import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+import AddManualLink from "@/components/AddManualLink.vue";
+import {
+  MediaType,
+  type Playlist,
+  type Radio,
+  type Track,
+} from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+
+const showEditItemDialog = ref(false);
+const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
+const editItemType = ref<MediaType>(MediaType.RADIO);
+
+onMounted(() => {
+  eventbus.on("editItemDialog", (item: Radio | Track | Playlist) => {
+    editItem.value = item;
+    editItemType.value = item.media_type as MediaType;
+    showEditItemDialog.value = true;
+  });
+  onBeforeUnmount(() => {
+    eventbus.off("editItemDialog");
+  });
+});
 </script>
 
 <style scoped>

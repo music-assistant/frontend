@@ -1,37 +1,29 @@
 <template>
-  <div class="config-panel-content">
-    <p class="text-body-2 text-medium-emphasis mb-4">
-      {{ description }}
-    </p>
-    <v-btn
-      variant="outlined"
-      :color="destructive ? 'error' : 'primary'"
-      :prepend-icon="icon"
-      :loading="loading"
-      :disabled="loading"
-      @click="$emit('restore')"
-    >
-      {{ buttonText }}
-    </v-btn>
-  </div>
+  <Button
+    :variant="destructive ? 'destructive' : 'outline'"
+    size="sm"
+    :disabled="loading"
+    @click="$emit('restore')"
+  >
+    <Spinner v-if="loading" />
+    <AlertTriangle v-else-if="destructive" class="size-4" />
+    <RefreshCw v-else class="size-4" />
+    {{ buttonText }}
+  </Button>
 </template>
 
 <script setup lang="ts">
+import { AlertTriangle, RefreshCw } from "lucide-vue-next";
+
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+
 interface Props {
-  description: string;
   buttonText: string;
   loading: boolean;
-  icon: string;
   destructive?: boolean;
 }
 
 defineProps<Props>();
 defineEmits<{ restore: [] }>();
 </script>
-
-<style scoped>
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-</style>

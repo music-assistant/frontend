@@ -24,7 +24,7 @@
       active-color="fg"
       @click="handleDiscoverClick"
     >
-      <Home class="w-5 h-5" :stroke-width="isActive('discover') ? 2.5 : 2" />
+      <Compass class="w-5 h-5" :stroke-width="isActive('discover') ? 2.5 : 2" />
       <span
         class="menuButton"
         :class="{ 'menuButton--active': isActive('discover') }"
@@ -70,7 +70,7 @@
 <script setup lang="ts">
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Home, Menu, Search, Speaker } from "lucide-vue-next";
+import { Compass, Menu, Search, Speaker } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 

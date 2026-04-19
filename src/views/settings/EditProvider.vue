@@ -138,21 +138,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
-import { useRouter } from "vue-router";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-  ProviderConfig,
   ConfigValueType,
   EventMessage,
   EventType,
-  ConfigEntry,
+  ProviderConfig,
 } from "@/plugins/api/interfaces";
-import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { nanoid } from "nanoid";
-import { markdownToHtml } from "@/helpers/utils";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
@@ -171,8 +170,6 @@ const props = defineProps<{
 // computed properties
 const allConfigEntries = computed(() => {
   if (!config.value) return [];
-  // Pass all entries (including hidden ones) to EditConfig
-  // Hidden entries contain values that need to be preserved on save
   return Object.values(config.value.values);
 });
 
@@ -220,7 +217,10 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
-      router.push({ name: "providersettings" });
+      router.push({
+        name: "providersettings",
+        query: { types: config.value!.type },
+      });
     })
     .catch((err) => {
       // TODO: make this a bit more fancy someday
@@ -236,16 +236,21 @@ const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
   // Immediately apply a config value change to the backend
-  api.saveProviderConfig(
+  // and refresh the local config with the server response
+  const updatedConfig = await api.saveProviderConfig(
     config.value!.domain,
     values,
     config.value!.instance_id,
   );
+  for (const [key, entry] of Object.entries(updatedConfig.values)) {
+    config.value!.values[key] = entry;
+  }
 };
 
 const onAction = async function (
   action: string,
   values: Record<string, ConfigValueType>,
+  immediateApply: boolean,
 ) {
   loading.value = true;
   // append existing ConfigEntry values to allow
@@ -264,10 +269,27 @@ const onAction = async function (
       action,
       values,
     )
-    .then((entries) => {
+    .then(async (entries) => {
       config.value!.values = {};
       for (const entry of entries) {
         config.value!.values[entry.key] = entry;
+      }
+      // If the action has immediate_apply, save the updated values right away
+      if (immediateApply) {
+        const saveValues: Record<string, ConfigValueType> = {};
+        for (const entry of entries) {
+          if (entry.value !== undefined) {
+            saveValues[entry.key] = entry.value;
+          }
+        }
+        const updatedConfig = await api.saveProviderConfig(
+          config.value!.domain,
+          saveValues,
+          config.value!.instance_id,
+        );
+        for (const [key, entry] of Object.entries(updatedConfig.values)) {
+          config.value!.values[key] = entry;
+        }
       }
     })
     .catch((err) => {

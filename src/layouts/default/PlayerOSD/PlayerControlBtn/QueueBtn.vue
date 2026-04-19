@@ -8,7 +8,6 @@
         !store.curQueueItem &&
         !store.showQueueItems)
     "
-    icon="mdi-playlist-play"
     :color="
       getValueFromSources(icon?.color, [
         [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
@@ -16,7 +15,9 @@
     "
     variant="button"
     @click="onClick"
-  />
+  >
+    <ListVideo :size="size" />
+  </Icon>
 </template>
 
 <script setup lang="ts">
@@ -24,16 +25,19 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { store } from "@/plugins/store";
+import { ListVideo } from "lucide-vue-next";
 
 // properties
 export interface Props {
   isVisible?: boolean;
   icon?: IconProps;
+  size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
+  size: 20,
 });
 
 const onClick = function () {

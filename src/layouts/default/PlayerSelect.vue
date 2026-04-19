@@ -434,6 +434,26 @@ const selectDefaultPlayer = function () {
   background: transparent !important;
 }
 
+/* Decrease space above search bar */
+.player-content :deep(.v-expansion-panel .v-expansion-panel-title) {
+  padding-bottom: 0;
+}
+
+/* Prevent panel title from growing when opening */
+.player-content :deep(.v-expansion-panel--active > .v-expansion-panel-title) {
+  min-height: 48px;
+}
+
+/* Disable focus and hover color changes */
+.player-content
+  :deep(
+    .v-expansion-panel-title:focus-visible > .v-expansion-panel-title__overlay
+  ),
+.player-content
+  :deep(.v-expansion-panel-title:hover > .v-expansion-panel-title__overlay) {
+  opacity: 0;
+}
+
 .expansion :deep(.v-expansion-panel-title) {
   padding: 10px 16px;
 }

@@ -34,7 +34,6 @@
     "external_source_active": "מקור חיצוני פעיל: {0}",
     "goto_album": "עבור לאלבום {0}",
     "goto_artist": "עבור לאמן {0}",
-    "discover": "גלה",
     "items_selected": "נבחרו {0} פריטים",
     "items_total": "{0} פריט(ים) סה\"כ",
     "library": "ספריה",
@@ -174,7 +173,29 @@
             "description": "כפו את הפריסה למובייל (עם ניווט התפריטים בתחתית), אפילו על מסכים גדולים יותר."
         },
         "providers_description": "נהל את מקורות המוזיקה, שירותי הסטרימינג והאינטגרציות שלך",
-        "players_description": "הגדר ונהל את התקני פלט האודיו שלך"
+        "players_description": "הגדר ונהל את התקני פלט האודיו שלך",
+        "onboarding_add_music": "הוסף מוזיקה",
+        "onboarding_player_title": "נגנים",
+        "onboarding_player_desc": "חבר את הרמקולים והמכשירים שלך, כגון Sonos, Chromecast או AirPlay.",
+        "onboarding_add_player": "הוסף נגנים",
+        "onboarding_footer": "ניתן להוסיף ספקים נוספים בכל עת דרך דף ההגדרות.",
+        "remote_access_qr_code": "קוד QR",
+        "remote_access_qr_code_description": "סרוק עם מצלמת הטלפון כדי להתחבר באופן מיידי.",
+        "reset_to_defaults": "שחזור להגדרות ברירת מחדל",
+        "reset_to_defaults_confirm": "האם אתה בטוח שברצונך לשחזר את כל ההגדרות לברירת המחדל? פעולה זו תשמור את השינויים באופן מיידי.",
+        "unsaved_changes": "שינויים שלא נשמרו",
+        "unsaved_changes_message": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת מבלי לשמור?",
+        "stay": "השאר",
+        "discard": "מחק שינויים",
+        "provider_requires_attention": "ספק זה דורש תשומת לב",
+        "provider_requires_attention_detail": "ספק אחד או יותר דורש תשומת לב. אנא בדוק את הגדרות הספקים.",
+        "reconfigure": "הגדר מחדש",
+        "fix_now": "תקן כעת",
+        "language": {
+            "options": {
+                "lt_LT": "ליטאית"
+            }
+        }
     },
     "show_info": "הצג מידע",
     "show_select_boxes": "הצג תיבות בחירה",
@@ -223,7 +244,8 @@
         "back": "חזור",
         "show_menu": "הצג\/הסתר תפריט",
         "copy_uri": "העתקת URI ללוח",
-        "select_all": "בחר את כל הפריטים"
+        "select_all": "בחר את כל הפריטים",
+        "in_provider_library": "פריט זה נמצא בספריית הספק"
     },
     "topresult": "תוצאה נבחרת",
     "track": "שיר",
@@ -278,9 +300,50 @@
         "new_releases_for_you": "ריליסים חדשים עבורך",
         "recent_favorite_tracks": "רצועות מועדפות לאחרונה",
         "favorite_playlists": "פלייליסטים מועדפים",
-        "favorite_radio_stations": "תחנות רדיו מועדפות"
+        "favorite_radio_stations": "תחנות רדיו מועדפות",
+        "listen_again": "האזן שוב",
+        "in_progress_series": "המשך סדרות...",
+        "recommended": "מומלץ",
+        "recently_added": "נוספו לאחרונה",
+        "episodes_recently_added": "פרקים שנוספו לאחרונה",
+        "recent_series": "סדרות אחרונות",
+        "newest_authors": "האמנים החדשים ביותר",
+        "newest_episodes": "הפרקים החדשים ביותר",
+        "discover": "גילוי",
+        "libraries": "ספריות",
+        "library": "ספרייה",
+        "trending_podcasts": "פודקאסטים פופולריים"
     },
     "homescreen_edit_enable": "עריכת מסך הבית",
     "homescreen_edit_disable": "יציאה ממצב עריכה של מסך הבית",
-    "lyrics_will_appear_soon": "המילים יופיעו כשהשיר מתחיל..."
+    "lyrics_will_appear_soon": "המילים יופיעו כשהשיר מתחיל...",
+    "search_all_providers": "חפש התאמות בכל הספקים",
+    "search_all_providers_confirm": "האם אתה בטוח שברצונך לחפש התאמות בכל הספקים? הפעולה עשויה להימשך זמן מה ותבוצע ברקע.",
+    "remove_provider_mapping": "הסרת שיוך ספק",
+    "remove_provider_mapping_confirm": "האם אתה בטוח שברצונך להסיר את שיוך הספק? פעולה זו תנתק את הפריט מפרטיו הנוכחיים. השיוך עשוי להתעדכן מחדש אם תתבצע סריקה נוספת לאיתור התאמות.",
+    "map_provider_mapping": "שייך רשומה זו של הספק לפריט הנוכחי",
+    "login": {
+        "scan_qr": "סרוק QR",
+        "scan_qr_code": "סרוק קוד QR",
+        "scan_qr_hint": "כוון את המצלמה אל קוד ה-QR המופיע בהגדרות שרת ה-Music Assistant שלך.",
+        "qr_invalid": "קוד QR לא תקין. יש לסרוק את קוד ה-Remote ID של שרת ה-Music Assistant.",
+        "qr_camera_error": "לא ניתן לגשת למצלמה. אנא בדוק את ההרשאות."
+    },
+    "player_tip": {
+        "selected_player": "נגן נבחר",
+        "currently_playing": "מתנגן כעת ב",
+        "click_to_change": "לחץ כדי לשנות התקן פלט"
+    },
+    "more_options": "אפשרויות נוספות",
+    "auth": {
+        "save_changes": "שמור שינויים",
+        "update_password": "עדכון סיסמה"
+    },
+    "edit": "עריכה",
+    "authors": "אמנים",
+    "collection": "אוסף",
+    "collections": "אוספים",
+    "narrators": "קריינים",
+    "series_plural": "סדרות",
+    "series_singular": "סדרה"
 }

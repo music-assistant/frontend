@@ -2,6 +2,7 @@ import { store } from "../store";
 /* eslint-disable no-constant-condition */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
+import { $t } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
 import { getDeviceName } from "./helpers";
@@ -9,6 +10,7 @@ import {
   type Album,
   type Artist,
   type AuthToken,
+  type BackgroundTask,
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
@@ -24,7 +26,7 @@ import {
   type Radio,
   type ServerInfoMessage,
   type SuccessResultMessage,
-  type SyncTask,
+  type TaskSchedule,
   type Track,
   type User,
   AlbumType,
@@ -78,11 +80,16 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
+  public queueElapsedTime = reactive<{
+    [queue_id: string]: {
+      elapsed_time: number;
+      elapsed_time_last_updated: number;
+    };
+  }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
   );
-  public syncTasks = ref<SyncTask[]>([]);
   public hasStreamingProviders = computed(() => {
     return Object.values(this.providers).some((p) => p.is_streaming_provider);
   });
@@ -376,11 +383,13 @@ export class MusicAssistantApi {
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
     Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.queueElapsedTime).forEach(
+      (key) => delete this.queueElapsedTime[key],
+    );
     Object.keys(this.providers).forEach((key) => delete this.providers[key]);
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
     );
-    this.syncTasks.value = [];
     this.serverInfo.value = undefined;
   }
 
@@ -547,6 +556,12 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/genres/count", { favorite_only });
+  }
+
+  public getGenreMediaCounts(
+    genre_ids: string[],
+  ): Promise<Record<string, Record<string, number>>> {
+    return this.sendCommand("music/genres/media_counts", { genre_ids });
   }
 
   /**
@@ -738,20 +753,32 @@ export class MusicAssistantApi {
   public addPlaylistTracks(
     db_playlist_id: string | number,
     uris: string[],
-  ): Promise<void> {
-    return this.sendCommand("music/playlists/add_playlist_tracks", {
-      db_playlist_id,
-      uris,
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>(
+      "music/playlists/add_playlist_tracks",
+      {
+        db_playlist_id,
+        uris,
+      },
+    ).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
     });
   }
 
   public removePlaylistTracks(
     db_playlist_id: string | number,
     positions_to_remove: number[],
-  ): Promise<void> {
-    return this.sendCommand("music/playlists/remove_playlist_tracks", {
-      db_playlist_id,
-      positions_to_remove,
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>(
+      "music/playlists/remove_playlist_tracks",
+      {
+        db_playlist_id,
+        positions_to_remove,
+      },
+    ).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
     });
   }
 
@@ -764,6 +791,24 @@ export class MusicAssistantApi {
       name,
       provider_instance_or_domain,
       media_types,
+    });
+  }
+
+  public exportPlaylist(db_playlist_id: string | number): Promise<string> {
+    return this.sendCommand("music/playlists/export_playlist", {
+      db_playlist_id,
+    });
+  }
+
+  public importPlaylist(
+    m3u_data: string,
+    library_matching: boolean = true,
+    match_providers?: string[],
+  ): Promise<Playlist> {
+    return this.sendCommand("music/playlists/import_playlist", {
+      m3u_data,
+      library_matching,
+      match_providers,
     });
   }
 
@@ -907,28 +952,25 @@ export class MusicAssistantApi {
    * @param offset - Number of items to skip
    * @param order_by - Order by field (e.g. 'sort_name', 'timestamp_added')
    * @param provider - Filter by provider instance ID or domain (single string or list)
+   * @param genre - Filter by genre ID(s)
+   * @param hide_empty - Hide genres with no associated media items
+   * @param media_type - Filter to genres that have at least one item of this media type
    * @returns Promise resolving to array of genres
    */
   public getLibraryGenres(
-    favorite?: boolean,
-    search?: string,
-    limit?: number,
-    offset?: number,
-    order_by?: string,
-    provider?: string | string[],
-    genre?: number | number[],
-    hide_empty?: boolean,
+    opts: {
+      favorite?: boolean;
+      search?: string;
+      limit?: number;
+      offset?: number;
+      order_by?: string;
+      provider?: string | string[];
+      genre?: number | number[];
+      hide_empty?: boolean | null;
+      media_type?: MediaType;
+    } = {},
   ): Promise<Genre[]> {
-    return this.sendCommand("music/genres/library_items", {
-      favorite,
-      search,
-      limit,
-      offset,
-      order_by,
-      provider,
-      genre,
-      hide_empty,
-    });
+    return this.sendCommand("music/genres/library_items", opts);
   }
 
   public getGenre(
@@ -954,6 +996,16 @@ export class MusicAssistantApi {
   public removeGenreFromLibrary(item_id: string): Promise<void> {
     return this.sendCommand("music/genres/remove", {
       item_id,
+    });
+  }
+
+  public getGlobalGenreExclusions(): Promise<Genre[]> {
+    return this.sendCommand("music/genres/global_exclusions");
+  }
+
+  public removeGlobalGenreExclusion(genre_id: string): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_global_exclusion", {
+      genre_id,
     });
   }
 
@@ -1447,11 +1499,17 @@ export class MusicAssistantApi {
   public queueCommandSaveAsPlaylist(
     queueId: string,
     name: string,
-  ): Promise<Playlist> {
+    options: { showBackgroundTaskToast?: boolean } = {},
+  ): Promise<BackgroundTask> {
     // Save the current queue items as a new playlist.
-    return this.sendCommand("player_queues/save_as_playlist", {
+    return this.sendCommand<BackgroundTask>("player_queues/save_as_playlist", {
       queue_id: queueId,
       name,
+    }).then((task) => {
+      if (options.showBackgroundTaskToast !== false) {
+        this._notifyBackgroundTaskStarted(task);
+      }
+      return task;
     });
   }
 
@@ -1696,6 +1754,7 @@ export class MusicAssistantApi {
     radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
+    sort_by?: string,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1712,6 +1771,7 @@ export class MusicAssistantApi {
       option,
       radio_mode,
       start_item,
+      sort_by,
     });
   }
 
@@ -1946,11 +2006,110 @@ export class MusicAssistantApi {
   public startSync(
     media_types?: MediaType[],
     providers?: string[],
-  ): Promise<void> {
+  ): Promise<BackgroundTask[]> {
     // Start running the sync of (all or selected) musicproviders.
     // media_types: only sync these media types. omit for all.
     // providers: only sync these provider domains. omit for all.
-    return this.sendCommand("music/sync", { media_types, providers });
+    return this.sendCommand<BackgroundTask[]>("music/sync", {
+      media_types,
+      providers,
+    }).then((tasks) => {
+      this._notifyBackgroundTaskStarted(tasks);
+      return tasks;
+    });
+  }
+
+  public getTasks(): Promise<BackgroundTask[]> {
+    return this.sendCommand("tasks/list");
+  }
+
+  public runTask(
+    task_id: string,
+    options: { showBackgroundTaskToast?: boolean } = {},
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>("tasks/run", { task_id }).then(
+      (task) => {
+        if (options.showBackgroundTaskToast !== false) {
+          this._notifyBackgroundTaskStarted(task);
+        }
+        return task;
+      },
+    );
+  }
+
+  public setTaskEnabled(
+    task_id: string,
+    enabled: boolean,
+  ): Promise<BackgroundTask> {
+    return this.sendCommand("tasks/set_enabled", { task_id, enabled });
+  }
+
+  public updateTaskSchedule(
+    task_id: string,
+    params: {
+      schedule: TaskSchedule;
+    },
+  ): Promise<BackgroundTask> {
+    return this.sendCommand("tasks/update_schedule", {
+      task_id,
+      ...params,
+    });
+  }
+
+  public retryTask(
+    task_id: string,
+    options: { showBackgroundTaskToast?: boolean } = {},
+  ): Promise<BackgroundTask> {
+    return this.sendCommand<BackgroundTask>("tasks/retry", { task_id }).then(
+      (task) => {
+        if (options.showBackgroundTaskToast !== false) {
+          this._notifyBackgroundTaskStarted(task);
+        }
+        return task;
+      },
+    );
+  }
+
+  public cancelTask(task_id: string): Promise<BackgroundTask> {
+    return this.sendCommand("tasks/cancel", { task_id });
+  }
+
+  public removeTask(task_id: string): Promise<void> {
+    return this.sendCommand("tasks/remove", { task_id });
+  }
+
+  public clearFinishedTasks(): Promise<void> {
+    return this.sendCommand("tasks/clear_finished");
+  }
+
+  public getTaskLog(task_id: string): Promise<string> {
+    return this.sendCommand("tasks/log", { task_id });
+  }
+
+  private _notifyBackgroundTaskStarted(
+    taskOrTasks: BackgroundTask | BackgroundTask[],
+  ): void {
+    const tasks = Array.isArray(taskOrTasks) ? taskOrTasks : [taskOrTasks];
+    if (tasks.length === 0) {
+      return;
+    }
+
+    toast.info($t("background_tasks.toast.added"), {
+      action: {
+        label: $t("background_tasks.open"),
+        onClick: () => {
+          void this._openBackgroundTasks();
+        },
+      },
+    });
+  }
+
+  private async _openBackgroundTasks(): Promise<void> {
+    const { default: router } = await import("../router");
+    if (router.currentRoute.value.name === "backgroundtasks") {
+      return;
+    }
+    await router.push({ name: "backgroundtasks" });
   }
 
   public getProviderName(provider_domain_or_instance_id: string): string {
@@ -2005,17 +2164,33 @@ export class MusicAssistantApi {
     if (msg.event == EventType.QUEUE_ADDED) {
       const queue = msg.data as PlayerQueue;
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_UPDATED) {
       const queue = msg.data as PlayerQueue;
       if (queue.queue_id in this.queues)
         Object.assign(this.queues[queue.queue_id], queue);
       else this.queues[queue.queue_id] = queue;
-      this.queues[queue.queue_id].elapsed_time_last_updated = Date.now() / 1000;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        this.queues[queueId].elapsed_time = msg.data as unknown as number;
-        this.queues[queueId].elapsed_time_last_updated = Date.now() / 1000;
+        const now = Date.now() / 1000;
+        const elapsed = msg.data as unknown as number;
+        if (queueId in this.queueElapsedTime) {
+          this.queueElapsedTime[queueId].elapsed_time = elapsed;
+          this.queueElapsedTime[queueId].elapsed_time_last_updated = now;
+        } else {
+          this.queueElapsedTime[queueId] = {
+            elapsed_time: elapsed,
+            elapsed_time_last_updated: now,
+          };
+        }
       }
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
@@ -2028,8 +2203,7 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.PLAYER_REMOVED) {
       delete this.players[msg.object_id!];
       delete this.queues[msg.object_id!];
-    } else if (msg.event == EventType.SYNC_TASKS_UPDATED) {
-      this.syncTasks.value = msg.data as SyncTask[];
+      delete this.queueElapsedTime[msg.object_id!];
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
@@ -2586,6 +2760,10 @@ export class MusicAssistantApi {
     }
     for (const queue of await this.getPlayerQueues()) {
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     }
 
     for (const prov of await this.sendCommand<ProviderManifest[]>(
@@ -2599,9 +2777,6 @@ export class MusicAssistantApi {
     )) {
       this.providers[prov.instance_id] = prov;
     }
-
-    this.syncTasks.value =
-      await this.sendCommand<SyncTask[]>("music/synctasks");
   }
 
   private _genCmdId(): string {

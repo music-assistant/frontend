@@ -28,7 +28,10 @@
             @toggle-password="showPasswordValues = !showPasswordValues"
             @update:value="onValueUpdate(conf_entry, $event)"
             @action="
-              action(conf_entry.action || conf_entry.key);
+              action(
+                conf_entry.action || conf_entry.key,
+                !!conf_entry.immediate_apply,
+              );
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
@@ -98,7 +101,10 @@
             @toggle-password="showPasswordValues = !showPasswordValues"
             @update:value="onValueUpdate(conf_entry, $event)"
             @action="
-              action(conf_entry.action || conf_entry.key);
+              action(
+                conf_entry.action || conf_entry.key,
+                !!conf_entry.immediate_apply,
+              );
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
@@ -166,7 +172,10 @@
               @toggle-password="showPasswordValues = !showPasswordValues"
               @update:value="onValueUpdate(conf_entry, $event)"
               @action="
-                action(conf_entry.action || conf_entry.key);
+                action(
+                  conf_entry.action || conf_entry.key,
+                  !!conf_entry.immediate_apply,
+                );
                 conf_entry.value = conf_entry.action ? null : conf_entry.key;
               "
               @open-dsp="openDspConfig"
@@ -279,7 +288,10 @@
                   @toggle-password="showPasswordValues = !showPasswordValues"
                   @update:value="onValueUpdate(conf_entry, $event)"
                   @action="
-                    action(conf_entry.action || conf_entry.key);
+                    action(
+                      conf_entry.action || conf_entry.key,
+                      !!conf_entry.immediate_apply,
+                    );
                     conf_entry.value = conf_entry.action
                       ? null
                       : conf_entry.key;
@@ -348,7 +360,10 @@
             @toggle-password="showPasswordValues = !showPasswordValues"
             @update:value="onValueUpdate(conf_entry, $event)"
             @action="
-              action(conf_entry.action || conf_entry.key);
+              action(
+                conf_entry.action || conf_entry.key,
+                !!conf_entry.immediate_apply,
+              );
               conf_entry.value = conf_entry.action ? null : conf_entry.key;
             "
             @open-dsp="openDspConfig"
@@ -501,7 +516,12 @@ export interface Props {
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
-  (e: "action", action: string, values: Record<string, ConfigValueType>): void;
+  (
+    e: "action",
+    action: string,
+    values: Record<string, ConfigValueType>,
+    immediateApply: boolean,
+  ): void;
   (e: "immediateApply", values: Record<string, ConfigValueType>): void;
 }>();
 
@@ -669,7 +689,9 @@ watch(
       if (entry.value == undefined || entry.value == null)
         entry.value = entry.default_value;
       // Store the initial value AFTER applying defaults (deep clone for arrays/objects)
-      if (shouldCaptureOldValues) {
+      // Also update oldValues for immediate_apply entries on subsequent updates,
+      // since their values are already saved to the backend.
+      if (shouldCaptureOldValues || entry.immediate_apply) {
         oldValues.value[entry.key] =
           typeof entry.value === "object" && entry.value !== null
             ? JSON.parse(JSON.stringify(entry.value))
@@ -705,16 +727,21 @@ const submit = async function () {
     emit("submit", getCurrentValues());
   }
 };
-const action = async function (action: string) {
+const action = async function (action: string, immediateApply: boolean) {
   // call config entries action
-  emit("action", action, getCurrentValues());
+  emit("action", action, getCurrentValues(), immediateApply);
 };
 
 const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
   // If immediate_apply is set, emit the value change immediately
+  // and update oldValues so the form doesn't show as "unsaved"
   if (entry.immediate_apply) {
     emit("immediateApply", { [entry.key]: value });
+    oldValues.value[entry.key] =
+      typeof value === "object" && value !== null
+        ? JSON.parse(JSON.stringify(value))
+        : value;
   }
 };
 const openLink = function (url: string) {

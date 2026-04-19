@@ -10,6 +10,7 @@ import { ref, watchEffect, onScopeDispose, type Ref } from "vue";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computeElapsedTime } from "@/helpers/elapsed";
+import api from "@/plugins/api";
 
 export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
   const elapsedTime = ref(0);
@@ -17,14 +18,16 @@ export function useLyricsElapsedTime(enabled?: Ref<boolean>) {
 
   const update = () => {
     const queue = store.activePlayerQueue;
+    const queueId = queue?.queue_id;
+    const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
     if (
-      queue?.elapsed_time != null &&
-      queue?.elapsed_time_last_updated != null
+      queueTime?.elapsed_time != null &&
+      queueTime?.elapsed_time_last_updated != null
     ) {
       elapsedTime.value =
         computeElapsedTime(
-          queue.elapsed_time,
-          queue.elapsed_time_last_updated,
+          queueTime.elapsed_time,
+          queueTime.elapsed_time_last_updated,
           store.activePlayer?.playback_state,
         ) ?? 0;
     }

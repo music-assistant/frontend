@@ -4,7 +4,8 @@
     fullscreen
     :scrim="false"
     transition="dialog-bottom-transition"
-    z-index="9999"
+    z-index="9000"
+    :retain-focus="false"
     persistent
   >
     <v-card
@@ -226,149 +227,142 @@
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <v-infinite-scroll
+            <v-virtual-scroll
               v-if="!tempHide && activeQueuePanel !== 2"
-              :onLoad="loadNextPage"
-              :empty-text="''"
+              ref="virtualScrollRef"
+              :item-height="70"
               height="100%"
+              :items="activeQueuePanel == 0 ? nextItems : previousItems"
+              @scroll="onQueueScroll"
             >
-              <!-- list view -->
-              <v-virtual-scroll
-                :item-height="70"
-                max-height="100%"
-                :items="activeQueuePanel == 0 ? nextItems : previousItems"
-              >
-                <template #default="{ item, index }">
-                  <ListItem
-                    link
-                    :show-menu-btn="true"
-                    :disabled="!item.available"
-                    @click.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
-                    @mouseenter="hoveredQueueIndex = index"
-                    @mouseleave="hoveredQueueIndex = -1"
-                  >
-                    <template #prepend>
-                      <div class="media-thumb listitem-media-thumb">
-                        <MediaItemThumb size="50" :item="item" />
-                      </div>
-                    </template>
-                    <template #title>
-                      <div class="title-row">
-                        <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
-                          "
+              <template #default="{ item, index }">
+                <ListItem
+                  link
+                  :show-menu-btn="true"
+                  :disabled="!item.available"
+                  @click.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
+                  @mouseenter="hoveredQueueIndex = index"
+                  @mouseleave="hoveredQueueIndex = -1"
+                >
+                  <template #prepend>
+                    <div class="media-thumb listitem-media-thumb">
+                      <MediaItemThumb size="50" :item="item" />
+                    </div>
+                  </template>
+                  <template #title>
+                    <div class="title-row">
+                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          :class="{
+                            'is-playing':
+                              item.queue_item_id ===
+                              store.curQueueItem?.queue_item_id,
+                          }"
                         >
-                          <span
-                            :class="{
-                              'is-playing':
-                                item.queue_item_id ===
-                                store.curQueueItem?.queue_item_id,
-                            }"
-                          >
-                            {{ item.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
-                    </template>
-                    <template #subtitle>
-                      <div class="d-flex">
-                        <span style="white-space: nowrap" class="pr-1">
-                          {{ formatDuration(item.duration) }} |
+                          {{ item.name }}
                         </span>
-                        <MarqueeText
-                          :sync="
-                            index == 0 && activeQueuePanel == 0
-                              ? playerMarqueeSync
-                              : hoveredMarqueeSync
-                          "
-                          :disabled="
-                            !(
-                              (index == 0 && activeQueuePanel == 0) ||
-                              hoveredQueueIndex == index
-                            )
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <div class="d-flex">
+                      <span style="white-space: nowrap" class="pr-1">
+                        {{ formatDuration(item.duration) }} |
+                      </span>
+                      <MarqueeText
+                        :sync="
+                          index == 0 && activeQueuePanel == 0
+                            ? playerMarqueeSync
+                            : hoveredMarqueeSync
+                        "
+                        :disabled="
+                          !(
+                            (index == 0 && activeQueuePanel == 0) ||
+                            hoveredQueueIndex == index
+                          )
+                        "
+                      >
+                        <span
+                          v-if="
+                            item.media_item &&
+                            'album' in item.media_item &&
+                            item.media_item.album
                           "
                         >
-                          <span
-                            v-if="
-                              item.media_item &&
-                              'album' in item.media_item &&
-                              item.media_item.album
-                            "
-                          >
-                            {{ item.media_item.album.name }}
-                          </span>
-                        </MarqueeText>
-                      </div>
+                          {{ item.media_item.album.name }}
+                        </span>
+                      </MarqueeText>
+                    </div>
+                  </template>
+                  <template #append>
+                    <PartyPlayerBadge
+                      v-if="item.extra_attributes?.party_guest === true"
+                      :type="
+                        item.extra_attributes?.party_boosted === true
+                          ? 'boost'
+                          : 'request'
+                      "
+                      :badge-color="
+                        item.extra_attributes?.party_boosted === true
+                          ? boostBadgeColor
+                          : requestBadgeColor
+                      "
+                    />
+                    <NowPlayingBadge
+                      v-if="
+                        item.queue_item_id ===
+                          store.curQueueItem?.queue_item_id &&
+                        store.activePlayer?.playback_state != PlaybackState.IDLE
+                      "
+                      :show-badge="getBreakpointValue('bp4')"
+                    />
+                    <v-icon v-if="!item.available">mdi-alert</v-icon>
+                  </template>
+                </ListItem>
+                <!-- Show chapters -->
+                <div
+                  v-if="
+                    item.queue_item_id == store.curQueueItem?.queue_item_id &&
+                    item.media_item?.metadata?.chapters?.length
+                  "
+                  style="margin-left: 50px"
+                >
+                  <v-list-item
+                    v-for="chapter in item.media_item.metadata?.chapters"
+                    :key="chapter.position"
+                    @click.stop="chapterClicked(item.media_item, chapter)"
+                  >
+                    <template #title>
+                      <div>{{ chapter.name }}</div>
                     </template>
                     <template #append>
-                      <PartyPlayerBadge
-                        v-if="item.extra_attributes?.party_guest === true"
-                        :type="
-                          item.extra_attributes?.party_boosted === true
-                            ? 'boost'
-                            : 'request'
-                        "
-                        :badge-color="
-                          item.extra_attributes?.party_boosted === true
-                            ? boostBadgeColor
-                            : requestBadgeColor
-                        "
-                      />
-                      <NowPlayingBadge
-                        v-if="
-                          item.queue_item_id ===
-                            store.curQueueItem?.queue_item_id &&
-                          store.activePlayer?.playback_state !=
-                            PlaybackState.IDLE
-                        "
-                        :show-badge="getBreakpointValue('bp4')"
-                      />
-                      <v-icon v-if="!item.available">mdi-alert</v-icon>
+                      <span v-if="chapter.end" class="text-caption"
+                        >{{ formatDuration(chapter.end - chapter.start) }}
+                      </span>
                     </template>
-                  </ListItem>
-                  <!-- Show chapters -->
-                  <div
-                    v-if="
-                      item.queue_item_id == store.curQueueItem?.queue_item_id &&
-                      item.media_item?.metadata?.chapters?.length
-                    "
-                    style="margin-left: 50px"
-                  >
-                    <v-list-item
-                      v-for="chapter in item.media_item.metadata?.chapters"
-                      :key="chapter.position"
-                      @click.stop="chapterClicked(item.media_item, chapter)"
-                    >
-                      <template #title>
-                        <div>{{ chapter.name }}</div>
-                      </template>
-                      <template #append>
-                        <span v-if="chapter.end" class="text-caption"
-                          >{{ formatDuration(chapter.end - chapter.start) }}
-                        </span>
-                      </template>
-                    </v-list-item>
-                  </div>
-                </template>
-              </v-virtual-scroll>
-            </v-infinite-scroll>
+                  </v-list-item>
+                </div>
+              </template>
+            </v-virtual-scroll>
             <!-- Lyrics view -->
             <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
               <LyricsViewer
                 :media-item="store.curQueueItem?.media_item"
                 :position="lyricsElapsedTime"
-                :duration="store.curQueueItem?.duration"
                 :stream-details="store.curQueueItem?.streamdetails"
                 :text-color="sliderColor"
                 :lyrics="currentLyrics.plain"
@@ -418,17 +412,21 @@
           <Icon
             v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
-            :icon="
-              store.curQueueItem?.media_item?.favorite
-                ? 'mdi-heart'
-                : 'mdi-heart-outline'
-            "
             :title="$t('tooltip.favorite')"
             variant="button"
             class="media-controls-item"
             max-height="30px"
             @click="onHeartBtnClick"
-          />
+          >
+            <Heart
+              :size="18"
+              :fill="
+                store.curQueueItem?.media_item?.favorite
+                  ? 'currentColor'
+                  : 'none'
+              "
+            />
+          </Icon>
           <ShuffleBtn
             v-if="$vuetify.display.mdAndUp"
             :player-queue="store.activePlayerQueue"
@@ -440,14 +438,17 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
-          <div class="play-btn-wrapper">
+          <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
               class="media-controls-item"
-              :icon="{ staticWidth: '70px', staticHeight: '70px' }"
+              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
               :spinner-size="73"
+              :size="30"
+              :play-offset="2"
             />
           </div>
           <NextBtn
@@ -455,6 +456,7 @@
             :player-queue="store.activePlayerQueue"
             class="media-controls-item"
             max-height="45px"
+            :size="28"
           />
           <RepeatBtn
             v-if="$vuetify.display.mdAndUp"
@@ -466,6 +468,7 @@
             v-if="store.activePlayerQueue"
             class="media-controls-item"
             max-height="30px"
+            :size="18"
           />
         </div>
 
@@ -526,6 +529,8 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -541,8 +546,8 @@ import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBt
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import api from "@/plugins/api";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -563,6 +568,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
+import { Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -576,8 +582,6 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
-import { getSourceName } from "@/plugins/api/helpers";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 
 const { name } = useDisplay();
 
@@ -590,6 +594,15 @@ interface Props {
   colorPalette: ImageColorPalette;
 }
 const compProps = defineProps<Props>();
+
+const playBtnStyle = computed(() => {
+  const isDark = vuetify.theme.current.value.dark;
+  const color = isDark
+    ? compProps.colorPalette.darkColor
+    : compProps.colorPalette.lightColor;
+  if (!color) return {};
+  return { "--play-icon-color": color };
+});
 
 const playerMarqueeSync = new MarqueeTextSync();
 const hoveredQueueIndex = ref(-1);
@@ -1203,38 +1216,59 @@ const queueCommand = function (item: QueueItem | undefined, command: string) {
   }
 };
 
+const virtualScrollRef = ref<InstanceType<
+  typeof import("vuetify/components").VVirtualScroll
+> | null>(null);
+const loadingMore = ref(false);
+const allItemsLoaded = ref(false);
+
 const resetItems = async function () {
   tempHide.value = true;
   queueItems.value = [];
+  allItemsLoaded.value = false;
   await sleep(100);
   tempHide.value = false;
+  if (store.showFullscreenPlayer && store.showQueueItems) {
+    loadNextPage();
+  }
 };
 
-const loadNextPage = async function ({
-  done,
-}: {
-  done: (status: "ok" | "empty" | "loading" | "error") => void;
-}) {
-  if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) {
-    done("empty");
+const loadNextPage = async function () {
+  if (loadingMore.value || allItemsLoaded.value) return;
+  if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) return;
+  if (queueItems.value.length >= store.activePlayerQueue.items) {
+    allItemsLoaded.value = true;
     return;
   }
-  if (queueItems.value.length >= store.activePlayerQueue?.items) {
-    done("empty");
-    return;
-  }
+  loadingMore.value = true;
+  const pageSize = 50;
   const offset = queueItems.value.length;
-  const limit = (store.activePlayerQueue.current_index || 0) + 50;
+  // On first load, ensure we fetch enough items to cover past the current
+  // index so that nextItems (which slices from current_index) has data.
+  const minNeeded = (store.activePlayerQueue.current_index || 0) + pageSize;
+  const limit =
+    offset === 0 ? Math.max(pageSize, minNeeded - offset) : pageSize;
   const result = await api.getPlayerQueueItems(
     store.activePlayerQueue.queue_id,
     limit,
     offset,
   );
   queueItems.value.push(...result);
-  if (result.length < 50) {
-    done("empty");
-  } else {
-    done("ok");
+  if (result.length < limit) {
+    allItemsLoaded.value = true;
+  }
+  loadingMore.value = false;
+};
+
+const onQueueScroll = function (e: Event) {
+  const target = e.target as HTMLElement;
+  if (!target) return;
+  const threshold = 500;
+  if (
+    target.scrollTop + target.clientHeight >=
+    target.scrollHeight - threshold
+  ) {
+    loadNextPage();
   }
 };
 
@@ -1255,6 +1289,21 @@ onMounted(async () => {
     await fetchPartyConfig();
   }
 });
+
+// load initial page when queue items become visible
+watch(
+  [() => store.showFullscreenPlayer, () => store.showQueueItems],
+  () => {
+    if (
+      store.showFullscreenPlayer &&
+      store.showQueueItems &&
+      queueItems.value.length === 0
+    ) {
+      loadNextPage();
+    }
+  },
+  { immediate: true },
+);
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
@@ -1455,6 +1504,10 @@ watchEffect(() => {
   // Keep color between text and sliders consistent.
   // Also, this text color has a better contrast than the automatically selected one
   document.documentElement.style.setProperty("--text-color", textColor.hex());
+  document.documentElement.style.setProperty(
+    "--text-color-inverse",
+    isLight ? DARK_TEXT_COLOR.hex() : LIGHT_TEXT_COLOR.hex(),
+  );
   sliderColor.value = textColor.hex();
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
@@ -1670,10 +1723,51 @@ button {
   color: var(--text-color);
 }
 
+.play-btn-wrapper :deep(.play-btn-icon) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-range"]) {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-thumb"])::before {
+  background-color: var(--text-color) !important;
+}
+
+.player-bottom :deep([data-slot="slider-track"])::before {
+  background-color: color-mix(
+    in srgb,
+    var(--text-color) 24%,
+    transparent
+  ) !important;
+}
+
 .lyrics-wrapper {
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+.lyrics-wrapper :deep(.lyrics-line),
+.lyrics-wrapper :deep(.break-note) {
+  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+}
+
+/* Tablet */
+@media (min-width: 600px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1280px) {
+  .lyrics-wrapper :deep(.lyrics-line),
+  .lyrics-wrapper :deep(.break-note) {
+    font-size: clamp(1.4rem, 2vw, 2.2rem);
+  }
 }
 
 .title-row {

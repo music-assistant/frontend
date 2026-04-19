@@ -309,11 +309,12 @@ export enum EventType {
   MEDIA_ITEM_DELETED = "media_item_deleted",
   MEDIA_ITEM_PLAYED = "media_item_played",
   PROVIDERS_UPDATED = "providers_updated",
+  TASKS_UPDATED = "tasks_updated",
+  MUSIC_SYNC_COMPLETED = "music_sync_completed",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
   PLAYER_DSP_CONFIG_UPDATED = "player_dsp_config_updated",
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
-  SYNC_TASKS_UPDATED = "sync_tasks_updated",
   AUTH_SESSION = "auth_session",
   // special types for local subscriptions only
   CONNECTED = "connected",
@@ -373,6 +374,7 @@ export enum ProviderType {
   PLAYER = "player",
   METADATA = "metadata",
   PLUGIN = "plugin",
+  AUDIO_ANALYSIS = "audio_analysis",
 }
 
 export enum ConfigEntryType {
@@ -693,6 +695,7 @@ export interface Playlist extends MediaItem {
   owner: string;
   is_editable: boolean;
   supported_mediatypes: MediaType[];
+  is_dynamic: boolean;
 }
 
 export interface Radio extends MediaItem {}
@@ -858,6 +861,7 @@ export interface PlayerQueue {
   current_item?: QueueItem;
   next_item?: QueueItem;
   radio_source: MediaItemType[];
+  enqueued_media_items: MediaItemType[];
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
@@ -1049,11 +1053,67 @@ export interface ProviderInstance {
   is_streaming_provider?: boolean;
 }
 
-export interface SyncTask {
-  // Description of a Sync task/job of a musicprovider.
-  provider_domain: string;
-  provider_instance: string;
-  media_types: MediaType[];
+export enum TaskStatus {
+  IDLE = "idle",
+  PENDING = "pending",
+  RUNNING = "running",
+  SUCCESS = "success",
+  PARTIAL_SUCCESS = "partial_success",
+  FAILED = "failed",
+  CANCELLED = "cancelled",
+  UNKNOWN = "unknown",
+}
+
+export enum TaskScheduleType {
+  HOURLY = "hourly",
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  UNKNOWN = "unknown",
+}
+
+export interface TaskSchedule {
+  type: TaskScheduleType;
+  enabled: boolean;
+  every?: number;
+  days_of_week?: number[];
+  hour?: number;
+  minute?: number;
+}
+
+export type TaskMetadataValue =
+  | null
+  | boolean
+  | number
+  | string
+  | TaskMetadataValue[]
+  | { [key: string]: TaskMetadataValue };
+
+export type TaskMetadata = Record<string, TaskMetadataValue>;
+
+export interface BackgroundTask {
+  id: string;
+  name: string;
+  status: TaskStatus;
+  translation_key?: string;
+  translation_args: unknown[];
+  logs: string[];
+  schedule?: TaskSchedule;
+  last_run?: string;
+  next_run?: string;
+  user_id?: string;
+  last_run_user_id?: string;
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
+  last_error?: string;
+  failure_count: number;
+  failure_messages: string[];
+  metadata: TaskMetadata;
+  progress?: number;
+  progress_text?: string;
+  allow_retry: boolean;
+  allow_cancel: boolean;
 }
 
 export enum MobileDeviceType {
@@ -1171,14 +1231,15 @@ export interface PartyConfig {
   enable_skip_song: boolean;
   skip_song_limit: number;
   skip_song_refill_minutes: number;
-  album_art_background: boolean;
-  display_lyrics: boolean;
   karaoke_mode: boolean;
+  highlight_ahead: boolean;
   request_badge_color?: string;
   boost_badge_color?: string;
-  qr_show_instruction_text: boolean;
-  qr_instruction_text: string;
   anti_burn_in: boolean;
+  party_name: string | null;
+  qr_text: string | null;
+  hide_back_button: boolean;
+  show_progress_bar: boolean;
 }
 
 // AI Radio interfaces

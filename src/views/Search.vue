@@ -150,15 +150,13 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import Container from "@/components/Container.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
-import Toolbar from "@/components/Toolbar.vue";
 import WidgetRow from "@/components/WidgetRow.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Search } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const SEARCH_TYPE_ALL = "all";
@@ -212,13 +210,12 @@ const loadSearchResults = async function (
   if (searchTerm) {
     if (filter === MediaType.GENRE) {
       // Genre-only search: use library search directly
-      const genres = await api.getLibraryGenres(
-        undefined,
-        searchTerm,
+      const genres = await api.getLibraryGenres({
+        search: searchTerm,
         limit,
-        0,
-        "name",
-      );
+        offset: 0,
+        order_by: "name",
+      });
       searchResult.value = {
         artists: [],
         albums: [],
@@ -234,7 +231,12 @@ const loadSearchResults = async function (
       const [results, genres] = await Promise.all([
         api.search(searchTerm, mediaTypes, limit),
         !filter
-          ? api.getLibraryGenres(undefined, searchTerm, limit, 0, "name")
+          ? api.getLibraryGenres({
+              search: searchTerm,
+              limit,
+              offset: 0,
+              order_by: "name",
+            })
           : Promise.resolve([]),
       ]);
       searchResult.value = {

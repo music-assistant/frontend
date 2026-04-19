@@ -1,14 +1,16 @@
 <template>
-  <div class="tokens-badge" :style="badgeStyle">
-    <component :is="iconComponent" :size="16" :color="color" />
-    <span class="token-count" :style="{ color }">
-      {{ tokens }}/{{ maxTokens }}
-    </span>
-    <span class="token-label" :style="{ color }">{{ label }}</span>
-    <span v-if="countdown" class="token-countdown" :style="{ color }">
-      <Clock :size="12" :color="color" />
-      {{ countdown }}
-    </span>
+  <div class="tokens-badge">
+    <div class="badge-left" :style="leftStyle">
+      <component :is="iconComponent" :size="14" />
+      <span class="badge-count">{{ tokens }}/{{ maxTokens }}</span>
+    </div>
+    <div class="badge-right" :style="rightStyle">
+      <span class="badge-label">{{ label }}</span>
+      <span v-if="countdown" class="badge-countdown">
+        <Clock :size="11" />
+        {{ countdown }}
+      </span>
+    </div>
   </div>
 </template>
 
@@ -30,12 +32,25 @@ const iconComponent = computed(() =>
   props.icon === "request" ? ListPlus : Rocket,
 );
 
-const badgeStyle = computed(() => {
+const leftStyle = computed(() => {
   try {
     const c = Color(props.color);
     return {
-      background: c.alpha(0.1).string(),
+      background: c.alpha(0.85).string(),
+      color: c.isLight() ? "#000" : "#fff",
+    };
+  } catch {
+    return {};
+  }
+});
+
+const rightStyle = computed(() => {
+  try {
+    const c = Color(props.color);
+    return {
+      background: c.alpha(0.12).string(),
       borderColor: c.alpha(0.3).string(),
+      color: c.string(),
     };
   } catch {
     return {};
@@ -45,47 +60,58 @@ const badgeStyle = computed(() => {
 
 <style scoped>
 .tokens-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  border: 1px solid;
-}
-
-.token-count {
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.token-label {
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.token-countdown {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding-left: 0.5rem;
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.2);
+}
+
+.badge-left {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.badge-count {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.badge-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid;
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+}
+
+.badge-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid currentColor;
+  opacity: 0.7;
 }
 
 @media (max-width: 768px) {
-  .tokens-badge {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .token-label {
+  .badge-label {
     display: none;
   }
 
-  .token-countdown {
-    padding-left: 0.375rem;
-    border-left: none;
+  .badge-right {
+    padding: 0.45rem 0.55rem;
   }
 }
 </style>

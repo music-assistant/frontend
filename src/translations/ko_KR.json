@@ -495,7 +495,6 @@
     },
     "play_replace": "즉시 재생 (대기열 지우기)",
     "played": "재생됨",
-    "background_task_added": "이 작업은 백그라운드에서 서버에 의해 수행되며 완료하는 데 다소 시간이 걸릴 수 있습니다. 서버 로그에서 진행 상황을 주시하십시오.",
     "images": "이미지",
     "image_type": "타입",
     "image_source": "소스",

@@ -194,13 +194,18 @@ const computedElapsedTime = computed(() => {
     return curTimeValue.value;
   }
 
-  // Prefer queue-level elapsed_time if available
+  // Prefer queue-level elapsed_time if available (from isolated reactive map)
   const queue = store.activePlayerQueue;
-  if (queue?.elapsed_time != null && queue?.elapsed_time_last_updated != null) {
+  const queueId = queue?.queue_id;
+  const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+  if (
+    queueTime?.elapsed_time != null &&
+    queueTime?.elapsed_time_last_updated != null
+  ) {
     const computed = computeElapsedTime(
-      queue.elapsed_time,
-      queue.elapsed_time_last_updated,
-      queue.state,
+      queueTime.elapsed_time,
+      queueTime.elapsed_time_last_updated,
+      queue!.state,
     );
     return computed ?? 0;
   }

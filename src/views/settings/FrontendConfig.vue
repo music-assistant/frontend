@@ -1,23 +1,23 @@
 <template>
-  <section class="frontend-config">
+  <div class="p-4">
     <!-- Header card -->
-    <v-card class="header-card mb-4" elevation="0">
-      <div class="header-content">
-        <div class="header-icon">
-          <v-icon size="32" color="orange">mdi-palette</v-icon>
+    <Card class="mb-4">
+      <CardHeader class="flex flex-row items-center gap-4 pb-4">
+        <div
+          class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-orange-500/10"
+        >
+          <Palette class="size-8 text-orange-500" />
         </div>
-        <div class="header-info">
-          <h2 class="header-title">
-            {{ $t("settings.frontend") }}
-          </h2>
-          <p class="header-description">
-            {{ $t("settings.frontend_description") }}
-          </p>
+        <div class="flex flex-col gap-1">
+          <CardTitle>{{ $t("settings.frontend") }}</CardTitle>
+          <CardDescription>{{
+            $t("settings.frontend_description")
+          }}</CardDescription>
         </div>
-      </div>
-    </v-card>
+      </CardHeader>
+    </Card>
 
-    <!-- Config entries (generic entries shown in card, non-generic in expansion panels) -->
+    <!-- Config entries -->
     <EditConfig
       v-if="config.length > 0"
       :config-entries="config"
@@ -27,32 +27,39 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
+    <!-- Loading overlay -->
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
-  </section>
+      <Spinner class="size-16" />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useColorMode } from "@vueuse/core";
+import { Palette } from "lucide-vue-next";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
-import { webPlayer } from "@/plugins/web_player";
 import {
   ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
 } from "@/plugins/api/interfaces";
+import { companionMode } from "@/plugins/companion";
+import { store } from "@/plugins/store";
 import { $t, i18n } from "@/plugins/i18n";
-import { useColorMode } from "@vueuse/core";
-import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
-import { companionMode, isCompanionApp } from "@/plugins/companion";
 
 // global refs
 const router = useRouter();
@@ -110,6 +117,9 @@ onMounted(() => {
       options: [
         { title: $t("discover"), value: "discover" },
         { title: $t("search"), value: "search" },
+        ...(store.enabledPlugins.has("party")
+          ? [{ title: $t("party_mode"), value: "party" }]
+          : []),
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
         { title: $t("tracks"), value: "tracks" },
@@ -180,43 +190,6 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.web_player_enabled") !==
         "false",
     });
-
-    // Sendspin sync delay option
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    configEntries.push({
-      key: "sendspin_sync_delay",
-      type: ConfigEntryType.INTEGER,
-      label: "sendspin_sync_delay",
-      default_value: defaultSyncDelay,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value: parseInt(
-        localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-          String(defaultSyncDelay),
-        10,
-      ),
-      range: [-1000, 1000],
-      immediate_apply: true,
-      depends_on: "web_player_enabled",
-    });
-
-    // Output latency compensation - enabled by default everywhere
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    configEntries.push({
-      key: "sendspin_output_latency_compensation",
-      type: ConfigEntryType.BOOLEAN,
-      label: "sendspin_output_latency_compensation",
-      default_value: true,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value:
-        storedOutputLatency !== null ? storedOutputLatency === "true" : true,
-      depends_on: "web_player_enabled",
-    });
   }
 
   config.value = configEntries;
@@ -270,68 +243,12 @@ const onSubmit = function (values: Record<string, ConfigValueType>) {
 const onAction = async function (
   _action: string,
   _values: Record<string, ConfigValueType>,
+  _immediateApply: boolean,
 ) {};
 
 const onImmediateApply = function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
     localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
   }
-  if ("sendspin_sync_delay" in values) {
-    webPlayer.setSyncDelay(values.sendspin_sync_delay as number);
-  }
 };
 </script>
-
-<style scoped>
-.frontend-config {
-  padding: 16px;
-}
-
-.header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 12px;
-}
-
-.header-content {
-  display: flex;
-  gap: 20px;
-  padding: 24px;
-}
-
-.header-icon {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: rgba(255, 152, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.header-description {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
-@media (max-width: 600px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-</style>

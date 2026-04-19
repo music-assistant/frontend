@@ -10,7 +10,6 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
-import { getSendspinDefaultSyncDelay } from "@/helpers/utils";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
@@ -209,19 +208,11 @@ onMounted(() => {
   if (audioRef.value) {
     const audioElement = isMobileOutput ? audioRef.value : undefined;
 
-    const defaultSyncDelay = getSendspinDefaultSyncDelay();
-    const syncDelay = parseInt(
-      localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-        String(defaultSyncDelay),
-      10,
+    const savedSyncDelay = localStorage.getItem(
+      "frontend.settings.sendspin_static_delay",
     );
-
-    // Output latency compensation - enabled by default
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    const useOutputLatencyCompensation =
-      storedOutputLatency !== null ? storedOutputLatency === "true" : true;
+    const parsed = savedSyncDelay !== null ? parseInt(savedSyncDelay, 10) : NaN;
+    const syncDelay = isNaN(parsed) ? undefined : parsed;
 
     // Prepare session first, then create player with appropriate codecs
     prepareSendspinSession()
@@ -243,7 +234,6 @@ onMounted(() => {
           clientName: getDeviceName(),
           codecs,
           syncDelay,
-          useOutputLatencyCompensation,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;
@@ -253,9 +243,6 @@ onMounted(() => {
           },
           correctionMode: correctionMode.value,
         });
-
-        // Register callback for real-time sync delay changes from settings
-        webPlayer.onSyncDelayChange = (delay) => player?.setSyncDelay(delay);
 
         return player.connect();
       })
@@ -314,7 +301,9 @@ onMounted(() => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
       const newPos = Math.round(elapsed + offset);
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -325,7 +314,9 @@ onMounted(() => {
       const targetId = getTargetPlayerId();
       if (!targetId) return;
       const offset = evt.seekOffset || 10;
-      const elapsed = lastSeekPos ?? store.activePlayerQueue?.elapsed_time ?? 0;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
       const newPos = Math.round(Math.max(0, elapsed - offset));
       lastSeekPos = newPos;
       resetLastSeekPos();
@@ -364,7 +355,6 @@ onBeforeUnmount(() => {
   }
   if (unsubMetadata) unsubMetadata();
   if (silentAudioInterval) clearInterval(silentAudioInterval);
-  webPlayer.onSyncDelayChange = null;
 
   // Clear MediaSession state
   navigator.mediaSession.metadata = null;
