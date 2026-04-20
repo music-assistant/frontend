@@ -32,6 +32,26 @@ const sortSessions = (items: AIRadioSession[]) => {
   return [...items].sort((a, b) => b.created_at.localeCompare(a.created_at));
 };
 
+const errorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (error && typeof error === "object") {
+    const data = error as Record<string, unknown>;
+    for (const key of ["message", "error", "detail", "reason"]) {
+      if (typeof data[key] === "string" && data[key].trim()) {
+        return data[key];
+      }
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+};
+
 async function loadStations(silent = false): Promise<AIRadioStation[]> {
   loadingStations.value = true;
   try {
@@ -116,6 +136,9 @@ async function startRun(
       mode === "playlist"
         ? $t("providers.ai_radio.toast.playlist_start_failed")
         : $t("providers.ai_radio.toast.live_start_failed"),
+      {
+        description: errorMessage(error),
+      },
     );
     throw error;
   } finally {
@@ -130,7 +153,9 @@ async function stopRun(sessionId: string): Promise<void> {
     toast.success($t("providers.ai_radio.toast.session_stopped"));
     await loadStatus(true);
   } catch (error) {
-    toast.error($t("providers.ai_radio.toast.session_stop_failed"));
+    toast.error($t("providers.ai_radio.toast.session_stop_failed"), {
+      description: errorMessage(error),
+    });
     throw error;
   } finally {
     stoppingRun.value = false;

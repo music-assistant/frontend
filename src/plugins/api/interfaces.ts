@@ -1313,20 +1313,9 @@ export interface AIRadioStationGeneral {
     city: string;
     country: string;
   };
-  model: string;
-  temperature: number;
-  max_tokens: number;
   instructions: string;
-  openai_base_url: string;
-  section_store_path: string;
   weather_provider: string;
   weather_timeout_seconds: number;
-  tts_provider: string;
-  openai_tts_model: string;
-  openai_tts_voice: string;
-  openai_tts_instructions: string;
-  elevenlabs_model: string;
-  elevenlabs_voice_id: string;
 }
 
 export interface AIRadioStation {

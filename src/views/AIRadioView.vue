@@ -274,10 +274,15 @@
                     </div>
                   </div>
                   <div
-                    v-if="session.error"
-                    class="mt-2 text-sm text-destructive"
+                    v-if="sessionErrorMessage(session)"
+                    class="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
-                    {{ session.error }}
+                    <div class="font-medium">
+                      {{ $t("providers.ai_radio.sessions.error") }}
+                    </div>
+                    <div class="mt-1 break-words">
+                      {{ sessionErrorMessage(session) }}
+                    </div>
                   </div>
                   <div v-if="session.status === 'running'" class="mt-3">
                     <Button
@@ -940,40 +945,6 @@
                   </div>
 
                   <div class="space-y-2">
-                    <Label for="station-general-model">{{
-                      $t("providers.ai_radio.fields.model")
-                    }}</Label>
-                    <Input
-                      id="station-general-model"
-                      v-model="stationDraft.general.model"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-temp">{{
-                      $t("providers.ai_radio.fields.temperature")
-                    }}</Label>
-                    <Input
-                      id="station-general-temp"
-                      v-model="stationTemperatureInput"
-                      type="number"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-max-tokens">{{
-                      $t("providers.ai_radio.fields.max_tokens")
-                    }}</Label>
-                    <Input
-                      id="station-general-max-tokens"
-                      v-model="stationMaxTokensInput"
-                      type="number"
-                      min="1"
-                      step="1"
-                    />
-                  </div>
-                  <div class="space-y-2">
                     <Label for="station-general-timezone">{{
                       $t("providers.ai_radio.fields.timezone")
                     }}</Label>
@@ -1021,95 +992,14 @@
                       step="1"
                     />
                   </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-openai-url">{{
-                      $t("providers.ai_radio.fields.openai_base_url")
-                    }}</Label>
-                    <Input
-                      id="station-general-openai-url"
-                      v-model="stationDraft.general.openai_base_url"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-section-store">{{
-                      $t("providers.ai_radio.fields.section_store_path")
-                    }}</Label>
-                    <Input
-                      id="station-general-section-store"
-                      v-model="stationDraft.general.section_store_path"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-tts-provider">{{
-                      $t("providers.ai_radio.fields.tts_provider")
-                    }}</Label>
-                    <select
-                      id="station-general-tts-provider"
-                      v-model="stationDraft.general.tts_provider"
-                      class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    >
-                      <option value="openai">OpenAI</option>
-                      <option value="elevenlabs">ElevenLabs</option>
-                    </select>
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-openai-tts-model">{{
-                      $t("providers.ai_radio.fields.openai_tts_model")
-                    }}</Label>
-                    <Input
-                      id="station-general-openai-tts-model"
-                      v-model="stationDraft.general.openai_tts_model"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-openai-tts-voice">{{
-                      $t("providers.ai_radio.fields.openai_tts_voice")
-                    }}</Label>
-                    <Input
-                      id="station-general-openai-tts-voice"
-                      v-model="stationDraft.general.openai_tts_voice"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-eleven-model">{{
-                      $t("providers.ai_radio.fields.elevenlabs_model")
-                    }}</Label>
-                    <Input
-                      id="station-general-eleven-model"
-                      v-model="stationDraft.general.elevenlabs_model"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="station-general-eleven-voice">{{
-                      $t("providers.ai_radio.fields.elevenlabs_voice_id")
-                    }}</Label>
-                    <Input
-                      id="station-general-eleven-voice"
-                      v-model="stationDraft.general.elevenlabs_voice_id"
-                    />
-                  </div>
                   <div class="space-y-2 md:col-span-2">
                     <Label for="station-general-instructions">{{
-                      $t("providers.ai_radio.fields.host_program_instructions")
+                      $t("providers.ai_radio.fields.instructions")
                     }}</Label>
                     <Textarea
                       id="station-general-instructions"
                       v-model="stationDraft.general.instructions"
                       rows="6"
-                    />
-                  </div>
-                  <div class="space-y-2 md:col-span-2">
-                    <Label for="station-general-openai-tts-instructions">
-                      {{
-                        $t(
-                          "providers.ai_radio.fields.openai_tts_delivery_instructions",
-                        )
-                      }}
-                    </Label>
-                    <Textarea
-                      id="station-general-openai-tts-instructions"
-                      v-model="stationDraft.general.openai_tts_instructions"
-                      rows="4"
                     />
                   </div>
                 </div>
@@ -1259,6 +1149,9 @@
                       {{ $t("providers.ai_radio.web_search.force") }}
                     </option>
                   </select>
+                  <p class="text-xs text-muted-foreground">
+                    {{ $t("providers.ai_radio.web_search.help") }}
+                  </p>
                 </div>
 
                 <div
@@ -2120,26 +2013,6 @@ const stationDynamicPollInput = computed({
   },
 });
 
-const stationTemperatureInput = computed({
-  get: () => String(stationDraft.value?.general?.temperature ?? 0.7),
-  set: (value: string) => {
-    if (!stationDraft.value) {
-      return;
-    }
-    stationDraft.value.general.temperature = safeNumber(value, 0, 0.7);
-  },
-});
-
-const stationMaxTokensInput = computed({
-  get: () => String(stationDraft.value?.general?.max_tokens ?? 1200),
-  set: (value: string) => {
-    if (!stationDraft.value) {
-      return;
-    }
-    stationDraft.value.general.max_tokens = safeInteger(value, 1, 1200);
-  },
-});
-
 const stationWeatherTimeoutInput = computed({
   get: () => String(stationDraft.value?.general?.weather_timeout_seconds ?? 8),
   set: (value: string) => {
@@ -2205,6 +2078,21 @@ const toProgressRecord = (session: AIRadioSession): Record<string, unknown> => {
     return {};
   }
   return session.progress as Record<string, unknown>;
+};
+
+const sessionErrorMessage = (session: AIRadioSession): string => {
+  if (session.error) {
+    return session.error;
+  }
+  const progress = toProgressRecord(session);
+  const progressError = progress.error || progress.error_message;
+  if (typeof progressError === "string") {
+    return progressError;
+  }
+  if (progressError && typeof progressError === "object") {
+    return errorMessage(progressError);
+  }
+  return "";
 };
 
 const asProgressNumber = (value: unknown): number | null => {
@@ -2393,25 +2281,12 @@ const asGeneralDefaults = (
       city: general?.location?.city || "",
       country: general?.location?.country || "",
     },
-    model: general?.model || "gpt-4o-mini",
-    temperature:
-      typeof general?.temperature === "number" ? general.temperature : 0.7,
-    max_tokens:
-      typeof general?.max_tokens === "number" ? general.max_tokens : 1200,
     instructions: general?.instructions || "",
-    openai_base_url: general?.openai_base_url || "https://api.openai.com/v1",
-    section_store_path: general?.section_store_path || "ai_radio_sections",
     weather_provider: general?.weather_provider || "open_meteo",
     weather_timeout_seconds:
       typeof general?.weather_timeout_seconds === "number"
         ? general.weather_timeout_seconds
         : 8,
-    tts_provider: general?.tts_provider || "openai",
-    openai_tts_model: general?.openai_tts_model || "gpt-4o-mini-tts",
-    openai_tts_voice: general?.openai_tts_voice || "ballad",
-    openai_tts_instructions: general?.openai_tts_instructions || "",
-    elevenlabs_model: general?.elevenlabs_model || "eleven_flash_v2_5",
-    elevenlabs_voice_id: general?.elevenlabs_voice_id || "",
   };
 };
 
@@ -2481,6 +2356,19 @@ const slugify = (value: string) => {
 const errorMessage = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message;
+  }
+  if (error && typeof error === "object") {
+    const data = error as Record<string, unknown>;
+    for (const key of ["message", "error", "detail", "reason"]) {
+      if (typeof data[key] === "string" && data[key].trim()) {
+        return data[key];
+      }
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
   }
   return String(error);
 };
@@ -2953,6 +2841,18 @@ const validateStationDraftLocal = (station: AIRadioStation): string | null => {
           ruleIndex + 1,
           flowIndex + 1,
         ]);
+      }
+      if (type === "OPTIONAL" && "OPTIONAL" in item) {
+        const chance = (item.OPTIONAL as { chance?: unknown }).chance;
+        if (
+          chance !== undefined &&
+          (typeof chance !== "number" || !Number.isFinite(chance))
+        ) {
+          return $t("providers.ai_radio.validation.optional_chance_numeric", [
+            ruleIndex + 1,
+            flowIndex + 1,
+          ]);
+        }
       }
     }
   }

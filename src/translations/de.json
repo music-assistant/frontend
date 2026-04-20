@@ -1520,7 +1520,8 @@
                 "title": "Sitzungen",
                 "description": "Neueste KI-Radio-Sitzungen auf diesem Server.",
                 "empty": "Noch keine Sitzungen.",
-                "started": "Gestartet"
+                "started": "Gestartet",
+                "error": "Backend-Fehler"
             },
             "stations": {
                 "title": "Sender",
@@ -1572,23 +1573,12 @@
                 "dynamic_batch_size": "Größe der dynamischen Generierungs-Batches",
                 "dynamic_prefetch_remaining": "Verbleibende Titel für dynamisches Prefetch",
                 "dynamic_poll_seconds": "Dynamisches Abfrageintervall in Sekunden",
-                "model": "Modell",
-                "temperature": "Temperatur",
-                "max_tokens": "Maximale Tokens",
                 "timezone": "Zeitzone",
                 "weather_city": "Wetter - Stadt",
                 "weather_country": "Wetter - Land",
                 "weather_provider": "Wetter - Anbieter",
                 "weather_timeout_seconds": "Timeout für Wetterabfragen in Sekunden",
-                "openai_base_url": "OpenAI-URL",
-                "section_store_path": "Speicherort für Abschnitte",
-                "tts_provider": "TTS-Anbieter (Text-zu-Sprache)",
-                "openai_tts_model": "OpenAI-TTS-Modell",
-                "openai_tts_voice": "OpenAI-TTS-Stimme",
-                "elevenlabs_model": "ElevenLabs-Modell",
-                "elevenlabs_voice_id": "ElevenLabs-Voice-ID",
-                "host_program_instructions": "Host- und Programmanweisungen",
-                "openai_tts_delivery_instructions": "Anweisungen für die OpenAI-TTS-Ausgabe",
+                "instructions": "Host- und Programmanweisungen",
                 "insert_at": "Einfügen nach"
             },
             "flow": {
@@ -1610,7 +1600,8 @@
             "web_search": {
                 "disabled": "Deaktiviert (kein Web-Tool)",
                 "allow": "Erlauben (Modell darf das Web nutzen)",
-                "force": "Erzwingen (Websuche erforderlich)"
+                "force": "Erzwingen (Websuche erforderlich)",
+                "help": "Nur ein Hinweis; wird als Prompt-Anweisung übergeben und nicht durch die Provider-API erzwungen."
             },
             "wizard": {
                 "title": "Sender erstellen (Tutorial)",
@@ -1680,6 +1671,7 @@
                 "must_needs_section": "Regel {0}, Ablauf {1}: MUST benötigt einen Abschnitt",
                 "alternative_needs_choice": "Regel {0}, Ablauf {1}: ALTERNATIVE benötigt mindestens eine gültige Auswahl",
                 "optional_needs_section": "Regel {0}, Ablauf {1}: OPTIONAL benötigt einen Abschnitt",
+                "optional_chance_numeric": "Regel {0}, Ablauf {1}: OPTIONAL-Wahrscheinlichkeit muss numerisch sein",
                 "section_name_required": "Abschnittsname ist erforderlich",
                 "section_prompt_required": "Abschnitts-Prompt ist erforderlich",
                 "no_station_loaded": "Kein Sender geladen",

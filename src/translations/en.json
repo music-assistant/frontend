@@ -406,7 +406,8 @@
                 "title": "Sessions",
                 "description": "Latest AI Radio sessions for this server.",
                 "empty": "No sessions yet.",
-                "started": "Started"
+                "started": "Started",
+                "error": "Backend error"
             },
             "stations": {
                 "title": "Stations",
@@ -458,23 +459,12 @@
                 "dynamic_batch_size": "Dynamic Batch Size",
                 "dynamic_prefetch_remaining": "Dynamic Prefetch Remaining Tracks",
                 "dynamic_poll_seconds": "Dynamic Poll Seconds",
-                "model": "Model",
-                "temperature": "Temperature",
-                "max_tokens": "Max Tokens",
                 "timezone": "Timezone",
                 "weather_city": "Weather City",
                 "weather_country": "Weather Country",
                 "weather_provider": "Weather Provider",
                 "weather_timeout_seconds": "Weather Timeout Seconds",
-                "openai_base_url": "OpenAI Base URL",
-                "section_store_path": "Section Store Path",
-                "tts_provider": "TTS Provider",
-                "openai_tts_model": "OpenAI TTS Model",
-                "openai_tts_voice": "OpenAI TTS Voice",
-                "elevenlabs_model": "ElevenLabs Model",
-                "elevenlabs_voice_id": "ElevenLabs Voice ID",
-                "host_program_instructions": "Host and Program Instructions",
-                "openai_tts_delivery_instructions": "OpenAI TTS Delivery Instructions",
+                "instructions": "Host and Program Instructions",
                 "insert_at": "Insert At"
             },
             "flow": {
@@ -496,7 +486,8 @@
             "web_search": {
                 "disabled": "disabled (no web tool)",
                 "allow": "allow (model may use web)",
-                "force": "force (web search required)"
+                "force": "force (web search required)",
+                "help": "Advisory only; passed as prompt guidance, not hard-enforced by provider API."
             },
             "wizard": {
                 "title": "Create Station (Guided)",
@@ -566,6 +557,7 @@
                 "must_needs_section": "Rule {0}, flow {1}: MUST needs a section",
                 "alternative_needs_choice": "Rule {0}, flow {1}: ALTERNATIVE needs at least one valid choice",
                 "optional_needs_section": "Rule {0}, flow {1}: OPTIONAL needs a section",
+                "optional_chance_numeric": "Rule {0}, flow {1}: OPTIONAL chance must be numeric",
                 "section_name_required": "Section name is required",
                 "section_prompt_required": "Section prompt is required",
                 "no_station_loaded": "No station loaded",

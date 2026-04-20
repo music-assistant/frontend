@@ -277,20 +277,9 @@ function createStationDraftFromTemplate(): AIRadioStation {
     general: {
       timezone: "UTC",
       location: { city: "", country: "" },
-      model: "gpt-4o-mini",
-      temperature: 0.7,
-      max_tokens: 1200,
       instructions: "",
-      openai_base_url: "https://api.openai.com/v1",
-      section_store_path: "ai_radio_sections",
       weather_provider: "open_meteo",
       weather_timeout_seconds: 8,
-      tts_provider: "openai",
-      openai_tts_model: "gpt-4o-mini-tts",
-      openai_tts_voice: "ballad",
-      openai_tts_instructions: "",
-      elevenlabs_model: "eleven_flash_v2_5",
-      elevenlabs_voice_id: "",
     },
   };
 }
