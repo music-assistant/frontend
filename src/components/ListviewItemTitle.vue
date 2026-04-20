@@ -25,7 +25,7 @@
   >
     <Tooltip>
       <TooltipTrigger as-child>
-        <span :aria-label="t('tooltip.explicit')" role="button" tabindex="0">
+        <span :aria-label="t('tooltip.explicit')" tabindex="0">
           <v-icon
             :class="{ 'explicit-icon-margin-left': showCheckboxes }"
             icon="mdi-alpha-e-box"

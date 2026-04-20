@@ -3,7 +3,7 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
-    :class="{ unavailable: !isAvailable }"
+    :class="{ unavailable: !isAvailable, 'listitem-selecting': showCheckboxes }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -226,8 +226,8 @@ import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
-import ListviewItemTitle from "./ListviewItemTitle.vue";
 import { Checkbox } from "@/components/ui/checkbox";
+import ListviewItemTitle from "./ListviewItemTitle.vue";
 
 // properties
 export interface Props {
@@ -353,6 +353,10 @@ const onPlayClick = function (evt: PointerEvent) {
 </script>
 
 <style scoped>
+.list-item-main.listitem-selecting {
+  padding: 7px 0 !important;
+}
+
 .checkbox {
   margin-left: 20px;
 }
