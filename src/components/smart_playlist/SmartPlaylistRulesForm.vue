@@ -6,7 +6,19 @@
   <div class="flex flex-col gap-4">
     <!-- Rule logic -->
     <div class="flex flex-col gap-2">
-      <Label>{{ $t("smart_playlist.logic") }}</Label>
+      <div class="flex items-center gap-1">
+        <Label>{{ $t("smart_playlist.logic") }}</Label>
+        <Popover>
+          <PopoverTrigger as-child>
+            <button type="button" class="cursor-help">
+              <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent class="max-w-[220px] text-sm p-3">
+            {{ $t("smart_playlist.logic_tooltip") }}
+          </PopoverContent>
+        </Popover>
+      </div>
       <RadioGroup v-model="rules.logic" class="flex flex-row gap-6">
         <div class="flex items-center gap-2">
           <RadioGroupItem id="srf-logic-and" value="AND" />
@@ -72,11 +84,27 @@
 
     <!-- Seed track (search picker) -->
     <div class="flex flex-col gap-2">
-      <Label>{{ $t("smart_playlist.seed_track") }}</Label>
-      <TagsInput :model-value="selectedSeedTrack ? [selectedSeedTrack.item_id] : []" @update:model-value="() => clearSeedTrack()">
+      <div class="flex items-center gap-1">
+        <Label>{{ $t("smart_playlist.seed_track") }}</Label>
+        <Popover>
+          <PopoverTrigger as-child>
+            <button type="button" class="cursor-help">
+              <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent class="max-w-[220px] text-sm p-3">
+            {{ $t("smart_playlist.seed_track_tooltip") }}
+          </PopoverContent>
+        </Popover>
+      </div>
+      <TagsInput
+        :model-value="selectedSeedTrack ? [selectedSeedTrack.item_id] : []"
+        @update:model-value="() => clearSeedTrack()"
+      >
         <TagsInputItem
           v-if="selectedSeedTrack"
           :value="selectedSeedTrack.item_id"
+          class="max-w-[240px]"
         >
           <span class="py-0.5 pl-2 text-sm">
             {{ selectedSeedTrack.name }}
@@ -105,6 +133,9 @@
               @keydown.stop
             />
             <div class="max-h-48 overflow-y-auto flex flex-col">
+              <div v-if="isSeedSearching" class="flex justify-center py-2">
+                <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
               <div
                 v-for="track in seedTrackResults"
                 :key="track.item_id"
@@ -166,6 +197,9 @@
               @keydown.stop
             />
             <div class="max-h-36 overflow-y-auto flex flex-col">
+              <div v-if="isArtistSearching" class="flex justify-center py-2">
+                <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
               <div
                 v-for="artist in artistResults"
                 :key="artist.item_id"
@@ -227,6 +261,9 @@
               @keydown.stop
             />
             <div class="max-h-36 overflow-y-auto flex flex-col">
+              <div v-if="isAlbumSearching" class="flex justify-center py-2">
+                <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
               <div
                 v-for="album in albumResults"
                 :key="album.item_id"
@@ -270,18 +307,30 @@
 
     <!-- Min popularity -->
     <div class="flex flex-col gap-2">
-      <Label>
-        {{ $t("smart_playlist.min_popularity") }}
-        <span
-          v-if="rules.min_popularity !== undefined"
-          class="ml-2 text-muted-foreground text-sm"
-        >
-          {{ rules.min_popularity }}%
-        </span>
-        <span v-else class="ml-2 text-muted-foreground text-sm">
-          {{ $t("smart_playlist.any") }}
-        </span>
-      </Label>
+      <div class="flex items-center gap-1">
+        <Label>
+          {{ $t("smart_playlist.min_popularity") }}
+          <span
+            v-if="rules.min_popularity !== undefined"
+            class="ml-2 text-muted-foreground text-sm"
+          >
+            {{ rules.min_popularity }}%
+          </span>
+          <span v-else class="ml-2 text-muted-foreground text-sm">
+            {{ $t("smart_playlist.any") }}
+          </span>
+        </Label>
+        <Popover>
+          <PopoverTrigger as-child>
+            <button type="button" class="cursor-help">
+              <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent class="max-w-[220px] text-sm p-3">
+            {{ $t("smart_playlist.min_popularity_tooltip") }}
+          </PopoverContent>
+        </Popover>
+      </div>
       <div class="flex items-center gap-3">
         <input
           type="range"
@@ -350,7 +399,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { PlusCircle } from "lucide-vue-next";
+import { HelpCircle, Loader2, PlusCircle } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -368,6 +417,7 @@ import {
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+
 import api from "@/plugins/api";
 import type {
   Album,
@@ -431,8 +481,11 @@ const filteredGenres = computed(() =>
 
 const artistSearch = ref("");
 const artistResults = ref<Artist[]>([]);
+const isArtistSearching = ref(false);
 const albumSearch = ref("");
 const albumResults = ref<Album[]>([]);
+const isAlbumSearching = ref(false);
+const isSeedSearching = ref(false);
 const selectedArtistItems = ref<{ id: number; name: string }[]>([]);
 const selectedAlbumItems = ref<{ id: number; name: string }[]>([]);
 
@@ -478,6 +531,9 @@ watch(
     rules.limit = initial.limit;
     rules.year_from = initial.year_from;
     rules.year_to = initial.year_to;
+    rules.genre_names = initial.genre_names ? { ...initial.genre_names } : undefined;
+    rules.artist_names = initial.artist_names ? { ...initial.artist_names } : undefined;
+    rules.album_names = initial.album_names ? { ...initial.album_names } : undefined;
     seedTrackUri.value = initial.seed_track_uri ?? "";
     selectedSeedTrack.value = null;
     if (initial.seed_track_uri) {
@@ -523,7 +579,9 @@ onMounted(async () => {
 
 function genreName(id: number): string {
   return (
-    genres.value.find((g) => parseInt(g.item_id) === id)?.name ?? String(id)
+    genres.value.find((g) => parseInt(g.item_id) === id)?.name ??
+    rules.genre_names?.[id] ??
+    String(id)
   );
 }
 
@@ -584,21 +642,51 @@ watch(seedTrackUri, () => {
   _updateTrackCount();
 });
 
-watch(artistSearch, async (q) => {
+const _doArtistSearch = useDebounceFn(async (q: string) => {
   if (q.length >= 2) {
-    const result = await api.getLibraryArtists(undefined, q, 20);
-    if (artistSearch.value === q) artistResults.value = result;
+    isArtistSearching.value = true;
+    try {
+      const result = await api.getLibraryArtists(undefined, q, 20);
+      if (artistSearch.value === q) artistResults.value = result;
+    } finally {
+      isArtistSearching.value = false;
+    }
   } else {
     artistResults.value = [];
   }
+}, 400);
+
+watch(artistSearch, (q) => {
+  if (q.length < 2) {
+    artistResults.value = [];
+    isArtistSearching.value = false;
+  } else {
+    isArtistSearching.value = true;
+    _doArtistSearch(q);
+  }
 });
 
-watch(albumSearch, async (q) => {
+const _doAlbumSearch = useDebounceFn(async (q: string) => {
   if (q.length >= 2) {
-    const result = await api.getLibraryAlbums(undefined, q, 20);
-    if (albumSearch.value === q) albumResults.value = result;
+    isAlbumSearching.value = true;
+    try {
+      const result = await api.getLibraryAlbums(undefined, q, 20);
+      if (albumSearch.value === q) albumResults.value = result;
+    } finally {
+      isAlbumSearching.value = false;
+    }
   } else {
     albumResults.value = [];
+  }
+}, 400);
+
+watch(albumSearch, (q) => {
+  if (q.length < 2) {
+    albumResults.value = [];
+    isAlbumSearching.value = false;
+  } else {
+    isAlbumSearching.value = true;
+    _doAlbumSearch(q);
   }
 });
 
@@ -612,21 +700,34 @@ const _similarTrackProviderIds = computed(() =>
     .map((p) => p.instance_id),
 );
 
-watch(seedTrackSearch, async (q) => {
+const _doSeedSearch = useDebounceFn(async (q: string) => {
+  const providerIds = _similarTrackProviderIds.value;
+  if (q.length < 2 || providerIds.length === 0) {
+    seedTrackResults.value = [];
+    isSeedSearching.value = false;
+    return;
+  }
+  try {
+    const result = await api.search(q, [MediaType.TRACK], 20);
+    if (seedTrackSearch.value !== q) return;
+    seedTrackResults.value = result.tracks.filter((t) =>
+      t.provider_mappings?.some((m) =>
+        providerIds.includes(m.provider_instance),
+      ),
+    );
+  } finally {
+    if (seedTrackSearch.value === q) isSeedSearching.value = false;
+  }
+}, 400);
+
+watch(seedTrackSearch, (q) => {
   if (q.length < 2) {
     seedTrackResults.value = [];
-    return;
+    isSeedSearching.value = false;
+  } else {
+    isSeedSearching.value = true;
+    _doSeedSearch(q);
   }
-  const providerIds = _similarTrackProviderIds.value;
-  if (providerIds.length === 0) {
-    seedTrackResults.value = [];
-    return;
-  }
-  const result = await api.search(q, [MediaType.TRACK], 20);
-  if (seedTrackSearch.value !== q) return;
-  seedTrackResults.value = result.tracks.filter((t) =>
-    t.provider_mappings?.some((m) => providerIds.includes(m.provider_instance)),
-  );
 });
 
 function selectSeedTrack(track: Track) {
