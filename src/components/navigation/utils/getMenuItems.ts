@@ -12,6 +12,7 @@ import {
   PartyPopper,
   Podcast,
   Radio,
+  Sparkles,
   Search,
   Settings,
 } from "lucide-vue-next";
@@ -51,6 +52,15 @@ export const getMenuItems = function () {
         icon: Search,
         path: "/search",
         isLibraryNode: false,
+      });
+    }
+    if (enabledMenuItemStr === "ai_radio") {
+      items.push({
+        label: "AI Radio",
+        icon: Sparkles,
+        path: "/ai-radio",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("ai_radio"),
       });
     }
     if (enabledMenuItemStr === "party") {
