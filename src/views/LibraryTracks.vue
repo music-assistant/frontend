@@ -28,7 +28,7 @@
     :total="total"
     :show-provider-filter="true"
   />
-  <AddManualLink v-model="showAddEditDialog" :type="MediaType.RADIO" />
+  <AddManualLink v-model="showAddEditDialog" :type="MediaType.TRACK" />
 </template>
 
 <script setup lang="ts">

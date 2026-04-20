@@ -10,6 +10,7 @@
     :ripple="false"
     :disabled="!player.available"
     @click="$emit('click', player)"
+    @contextmenu.prevent="openPlayerMenu"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">

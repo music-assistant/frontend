@@ -108,9 +108,9 @@ bc.onmessage = (event) => {
   }
 };
 
-// Called on close
-window.addEventListener("unload", function () {
-  // Stop listening to any events, since we will soon close.
+// Called on close — skip if page is entering bfcache (may be restored)
+window.addEventListener("pagehide", function (event) {
+  if (event.persisted) return;
   bc.onmessage = null;
   if (isPlaybackMode(webPlayer.tabMode) && webPlayer.player_id) {
     bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
@@ -270,11 +270,6 @@ export const webPlayer = reactive({
   interacted: false,
   // Timestamp from when the last update was sent
   lastUpdate: 0,
-  // Callback for sync delay changes, registered by SendspinPlayer
-  onSyncDelayChange: null as ((delay: number) => void) | null,
-  setSyncDelay(delay: number) {
-    this.onSyncDelayChange?.(delay);
-  },
   async setMode(mode: WebPlayerMode) {
     this.mode = mode;
     await this.setTabMode(mode);

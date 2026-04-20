@@ -51,7 +51,6 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_MENU_ITEMS } from "@/constants";
-import { getDefaultSyncDelay } from "@sendspin/sendspin-js";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -60,7 +59,6 @@ import {
 import { companionMode } from "@/plugins/companion";
 import { store } from "@/plugins/store";
 import { $t, i18n } from "@/plugins/i18n";
-import { webPlayer } from "@/plugins/web_player";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
@@ -192,43 +190,6 @@ onMounted(() => {
         localStorage.getItem("frontend.settings.web_player_enabled") !==
         "false",
     });
-
-    // Sendspin sync delay option
-    const defaultSyncDelay = getDefaultSyncDelay();
-    configEntries.push({
-      key: "sendspin_sync_delay",
-      type: ConfigEntryType.INTEGER,
-      label: "sendspin_sync_delay",
-      default_value: defaultSyncDelay,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value: parseInt(
-        localStorage.getItem("frontend.settings.sendspin_sync_delay") ||
-          String(defaultSyncDelay),
-        10,
-      ),
-      range: [-1000, 1000],
-      immediate_apply: true,
-      depends_on: "web_player_enabled",
-    });
-
-    // Output latency compensation - enabled by default everywhere
-    const storedOutputLatency = localStorage.getItem(
-      "frontend.settings.sendspin_output_latency_compensation",
-    );
-    configEntries.push({
-      key: "sendspin_output_latency_compensation",
-      type: ConfigEntryType.BOOLEAN,
-      label: "sendspin_output_latency_compensation",
-      default_value: true,
-      required: false,
-      multi_value: false,
-      category: "web_player",
-      value:
-        storedOutputLatency !== null ? storedOutputLatency === "true" : true,
-      depends_on: "web_player_enabled",
-    });
   }
 
   config.value = configEntries;
@@ -288,9 +249,6 @@ const onAction = async function (
 const onImmediateApply = function (values: Record<string, ConfigValueType>) {
   for (const key in values) {
     localStorage.setItem(`frontend.settings.${key}`, String(values[key]));
-  }
-  if ("sendspin_sync_delay" in values) {
-    webPlayer.setSyncDelay(values.sendspin_sync_delay as number);
   }
 };
 </script>

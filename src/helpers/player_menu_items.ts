@@ -10,6 +10,7 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -84,8 +85,10 @@ export const getPlayerMenuItems = (
         ),
     });
   }
+  const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
+
   // add enable/disable shuffle menu item
-  if (playerQueue) {
+  if (playerQueue && !isSingleDynamicPlaylist) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -99,7 +102,7 @@ export const getPlayerMenuItems = (
   }
 
   // add repeat mode item
-  if (playerQueue) {
+  if (playerQueue && !isSingleDynamicPlaylist) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -241,7 +244,11 @@ export const getPlayerMenuItems = (
   }
 
   // add 'don't stop the music' menu item
-  if (playerQueue && "dont_stop_the_music_enabled" in playerQueue) {
+  if (
+    playerQueue &&
+    !isSingleDynamicPlaylist &&
+    "dont_stop_the_music_enabled" in playerQueue
+  ) {
     menuItems.push({
       label: playerQueue.dont_stop_the_music_enabled
         ? "dont_stop_the_music_disable"

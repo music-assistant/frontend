@@ -51,6 +51,7 @@ import {
   QueueOption,
   type Track,
 } from "@/plugins/api/interfaces";
+import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -65,6 +66,9 @@ const currentTrack = computed(() => {
 const radioModeSupported = computed(() => {
   const item = currentTrack.value;
   if (!item) return false;
+  // hide radio mode for dynamic playlists
+  const queue = store.activePlayer ? api.queues[store.activePlayer.player_id] : undefined;
+  if (isQueueDynamicPlaylist(queue)) return false;
   for (const provId of item.provider_mappings) {
     if (
       api.providers[provId.provider_instance]?.supported_features.includes(
