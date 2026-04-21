@@ -907,7 +907,7 @@ onMounted(() => {
   });
 
   if (graphContainer.value) {
-    resizeObserver.observe(graphContainer.value);
+    resizeObserver.observe(graphContainer.value as unknown as Element);
   }
 
   return () => {

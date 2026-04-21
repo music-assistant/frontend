@@ -209,15 +209,15 @@ const setup = () => {
   });
   if (!containerRef.value || !scrollingRef.value) return;
   // Setup observers
-  scrollingObserver.observe(scrollingRef.value, {
+  scrollingObserver.observe(scrollingRef.value as unknown as Node, {
     childList: true,
     subtree: true,
     characterData: true,
     attributes: true,
     attributeFilter: ["style", "class"],
   });
-  containerObserver.observe(containerRef.value);
-  visibilityObserver.observe(containerRef.value);
+  containerObserver.observe(containerRef.value as unknown as Element);
+  visibilityObserver.observe(containerRef.value as unknown as Element);
 };
 
 // Cleanup observers and animation

@@ -44,14 +44,26 @@
 
       <!-- playername -->
       <template #title>
-        <!-- special builtin player (web player or companion native player) -->
         <div
-          v-if="isBuiltinPlayer(player)"
-          style="font-size: 0.88rem; line-height: 1.3"
+          style="
+            font-size: 0.88rem;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          "
         >
-          <span>{{ getPlayerName(player, 12) }}</span>
-          <!-- append small icon to the title -->
-          <v-chip density="compact" size="small" class="ml-2" outlined>
+          <PlayerNameLabel
+            :player="player"
+            :truncate="isBuiltinPlayer(player) ? 12 : 27"
+          />
+          <!-- append small icon for builtin player -->
+          <v-chip
+            v-if="isBuiltinPlayer(player)"
+            density="compact"
+            size="small"
+            outlined
+          >
             <v-icon
               size="14"
               :icon="
@@ -62,10 +74,6 @@
               $t("this_device")
             }}</span>
           </v-chip>
-        </div>
-        <!-- regular player -->
-        <div v-else style="font-size: 0.88rem; line-height: 1.3">
-          {{ getPlayerName(player, 27) }}
         </div>
       </template>
 
@@ -157,20 +165,21 @@
           @click.stop="$emit('toggle-expand', player)"
         >
           <v-badge
+            v-if="groupMemberCount > 1"
             color="primary"
             :offset-x="-5"
             :offset-y="-5"
-            :content="
-              player.type == PlayerType.GROUP
-                ? player.group_members.length
-                : player.group_members.length || 1
-            "
+            :content="groupMemberCount"
             class="group-badge"
           >
-            <Speaker
-              :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
+            <SpeakerGroupIcon
+              :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 28"
             />
           </v-badge>
+          <SpeakerGroupIcon
+            v-else
+            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 28"
+          />
         </Button>
 
         <!-- play/pause button -->
@@ -244,7 +253,6 @@ import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getColorPalette,
   getMediaImageUrl,
-  getPlayerName,
   ImageColorPalette,
   isBuiltinPlayer,
 } from "@/helpers/utils";
@@ -261,7 +269,9 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { webPlayer } from "@/plugins/web_player";
-import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
+import SpeakerGroupIcon from "@/components/icons/SpeakerGroupIcon.vue";
+import PlayerNameLabel from "@/components/PlayerNameLabel.vue";
+import { MoreVertical, Pause, Play, Power } from "lucide-vue-next";
 import { computed, ref, toRef, watch } from "vue";
 
 // properties
@@ -282,6 +292,13 @@ defineEmits<{
   (e: "click", player: Player): void;
   (e: "toggle-expand", player: Player): void;
 }>();
+
+const groupMemberCount = computed(() => {
+  if (compProps.player.type === PlayerType.GROUP) {
+    return compProps.player.group_members.length;
+  }
+  return compProps.player.group_members.length || 1;
+});
 
 const playerQueue = computed(() => {
   if (
