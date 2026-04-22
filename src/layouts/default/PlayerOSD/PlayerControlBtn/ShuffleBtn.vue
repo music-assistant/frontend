@@ -57,5 +57,7 @@ const isLoading = computed(() => {
   );
 });
 
-const isSingleDynamicPlaylist = computed(() => isQueueDynamicPlaylist(compProps.playerQueue));
+const isSingleDynamicPlaylist = computed(() =>
+  isQueueDynamicPlaylist(compProps.playerQueue),
+);
 </script>

@@ -531,9 +531,15 @@ watch(
     rules.limit = initial.limit;
     rules.year_from = initial.year_from;
     rules.year_to = initial.year_to;
-    rules.genre_names = initial.genre_names ? { ...initial.genre_names } : undefined;
-    rules.artist_names = initial.artist_names ? { ...initial.artist_names } : undefined;
-    rules.album_names = initial.album_names ? { ...initial.album_names } : undefined;
+    rules.genre_names = initial.genre_names
+      ? { ...initial.genre_names }
+      : undefined;
+    rules.artist_names = initial.artist_names
+      ? { ...initial.artist_names }
+      : undefined;
+    rules.album_names = initial.album_names
+      ? { ...initial.album_names }
+      : undefined;
     seedTrackUri.value = initial.seed_track_uri ?? "";
     selectedSeedTrack.value = null;
     if (initial.seed_track_uri) {
