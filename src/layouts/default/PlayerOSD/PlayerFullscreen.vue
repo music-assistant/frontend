@@ -467,7 +467,7 @@
           <QueueBtn
             v-if="store.activePlayerQueue"
             class="media-controls-item"
-            max-height="30px"
+            style="max-height: 30px; min-height: 0; min-width: 0"
             :size="18"
           />
         </div>

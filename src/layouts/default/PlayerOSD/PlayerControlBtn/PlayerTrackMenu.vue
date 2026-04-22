@@ -1,50 +1,46 @@
 <template>
-  <v-menu v-if="currentItem">
-    <template #activator="{ props: menuProps }">
-      <Icon
-        v-if="currentItem"
-        v-bind="menuProps"
-        variant="button"
-        icon="mdi-dots-horizontal"
-        :title="$t('more_options')"
-        style="padding-left: 15px; padding-right: 15px"
-      />
-    </template>
-    <v-list>
-      <v-list-item
-        :prepend-icon="
-          currentItem?.favorite ? 'mdi-heart' : 'mdi-heart-outline'
-        "
-        :title="
-          currentItem?.favorite
-            ? $t('favorites_remove')
-            : $t('favorites_add')
-        "
-        @click="onToggleFavorite"
-      />
-      <v-list-item
-        :title="$t('add_playlist')"
-        prepend-icon="mdi-plus-circle-outline"
-        @click="onAddToPlaylist"
-      />
-      <v-list-item
-        :title="$t('show_info')"
-        prepend-icon="mdi-information-outline"
-        @click="onShowInfo"
-      />
-      <v-list-item
-        v-if="radioModeSupported"
-        :title="$t('play_radio')"
-        prepend-icon="mdi-radio-tower"
-        @click="onStartRadio"
-      />
-    </v-list>
-  </v-menu>
+  <DropdownMenu v-if="currentItem">
+    <DropdownMenuTrigger as-child>
+      <Button variant="icon" :ripple="false" icon :title="$t('more_options')">
+        <EllipsisIcon />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" class="z-[100001]">
+      <DropdownMenuItem @click="onToggleFavorite">
+        <Heart
+          class="size-4"
+          :fill="currentItem?.favorite ? 'currentColor' : 'none'"
+        />
+        {{
+          currentItem?.favorite ? $t("favorites_remove") : $t("favorites_add")
+        }}
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="onAddToPlaylist">
+        <PlusCircle class="size-4" />
+        {{ $t("add_playlist") }}
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="onShowInfo">
+        <Info class="size-4" />
+        {{ $t("show_info") }}
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="radioModeSupported" @click="onStartRadio">
+        <RadioTower class="size-4" />
+        {{ $t("play_radio") }}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
 </template>
 
 <script setup lang="ts">
-import Icon from "@/components/Icon.vue";
+import Button from "@/components/Button.vue";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import api from "@/plugins/api";
+import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import {
   MediaType,
   ProviderFeature,
@@ -52,10 +48,16 @@ import {
   type Radio,
   type Track,
 } from "@/plugins/api/interfaces";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
+import {
+  EllipsisIcon,
+  Heart,
+  Info,
+  PlusCircle,
+  RadioTower,
+} from "lucide-vue-next";
 import { computed } from "vue";
 
 const currentTrack = computed(() => {
@@ -76,7 +78,9 @@ const radioModeSupported = computed(() => {
   const item = currentTrack.value;
   if (!item) return false;
   // hide radio mode for dynamic playlists
-  const queue = store.activePlayer ? api.queues[store.activePlayer.player_id] : undefined;
+  const queue = store.activePlayer
+    ? api.queues[store.activePlayer.player_id]
+    : undefined;
   if (isQueueDynamicPlaylist(queue)) return false;
   for (const provId of item.provider_mappings) {
     if (
