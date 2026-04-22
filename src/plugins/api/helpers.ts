@@ -1,13 +1,22 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import { MediaItemType, ItemMapping, MediaType, Player, PlayerQueue, Playlist } from "./interfaces";
+import {
+  MediaItemType,
+  ItemMapping,
+  MediaType,
+  Player,
+  PlayerQueue,
+  Playlist,
+} from "./interfaces";
 
 /**
  * Returns true when the given queue is currently playing a single dynamic playlist.
  * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
  */
-export const isQueueDynamicPlaylist = function (queue: PlayerQueue | undefined): boolean {
+export const isQueueDynamicPlaylist = function (
+  queue: PlayerQueue | undefined,
+): boolean {
   const source = queue?.radio_source;
   return (
     source?.length === 1 &&
