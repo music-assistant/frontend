@@ -618,11 +618,7 @@ const tempHide = ref(false);
 const requestBadgeColor = ref("#2196f3");
 const boostBadgeColor = ref("#ff5722");
 
-const lyricsEnabled = computed(
-  () => store.showFullscreenPlayer && activeQueuePanel.value === 2,
-);
-const { elapsedTime: lyricsElapsedTime } =
-  useLyricsElapsedTime(lyricsEnabled);
+const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Computed properties
 
