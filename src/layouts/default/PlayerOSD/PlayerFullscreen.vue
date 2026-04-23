@@ -464,12 +464,13 @@
             class="media-controls-item"
             max-height="35px"
           />
-          <QueueBtn
-            v-if="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="30px"
-            :size="18"
-          />
+          <div class="media-controls-item queue-btn-wrapper">
+            <QueueBtn
+              v-if="store.activePlayerQueue"
+              style="max-height: 30px; min-height: 0; min-width: 0"
+              :size="18"
+            />
+          </div>
         </div>
 
         <!-- volume control -->
@@ -1649,6 +1650,12 @@ watchEffect(() => {
   margin: 0 10px;
   width: 100%;
   height: 100%;
+}
+
+.queue-btn-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
