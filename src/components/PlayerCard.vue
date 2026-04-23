@@ -10,7 +10,11 @@
     :ripple="false"
     :disabled="!player.available"
     @click="$emit('click', player)"
-    @contextmenu.prevent="openPlayerMenu"
+    @contextmenu.prevent="openPlayerMenu($event)"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+    style="touch-action: manipulation; user-select: none"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -301,12 +305,54 @@ const playerQueue = computed(() => {
   return undefined;
 });
 
-const openPlayerMenu = function (evt: Event) {
+const openPlayerMenu = (evt?: Event) => {
+  let posX = 0, posY = 0;
+  if (evt) {
+    if (evt instanceof PointerEvent || evt instanceof MouseEvent) {
+      posX = evt.clientX;
+      posY = evt.clientY;
+    } else if (evt instanceof TouchEvent && evt.touches.length > 0) {
+      posX = evt.touches[0].clientX;
+      posY = evt.touches[0].clientY;
+    }
+  } else {
+    // for manual long press
+    posX = touchStartX;
+    posY = touchStartY;
+  }
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    posX,
+    posY,
   });
+};
+
+const onTouchStart = (evt: TouchEvent) => {
+  if (evt.touches.length > 0) {
+    touchStartX = evt.touches[0].clientX;
+    touchStartY = evt.touches[0].clientY;
+    touchTimeout = setTimeout(() => {
+      openPlayerMenu();
+    }, 500);
+  }
+};
+
+const onTouchMove = (evt: TouchEvent) => {
+  if (touchTimeout && evt.touches.length > 0) {
+    const x = evt.touches[0].clientX;
+    const y = evt.touches[0].clientY;
+    if (Math.abs(x - touchStartX) > 10 || Math.abs(y - touchStartY) > 10) {
+      clearTimeout(touchTimeout);
+      touchTimeout = null;
+    }
+  }
+};
+
+const onTouchEnd = () => {
+  if (touchTimeout) {
+    clearTimeout(touchTimeout);
+    touchTimeout = null;
+  }
 };
 
 const canPlayPause = computed(() => {
@@ -327,6 +373,10 @@ const coverImageColorPalette = ref<ImageColorPalette>({
   lightColor: "",
   darkColor: "",
 });
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchTimeout: NodeJS.Timeout | null = null;
 
 // utility feature to extract the dominant colors from the cover image
 // we use this color palette to colorize the playerbar/OSD

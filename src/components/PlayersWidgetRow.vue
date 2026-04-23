@@ -29,14 +29,17 @@
       :space-between="15"
       :free-mode="true"
       :navigation="false"
+      :touch-start-prevent-default="false"
+      :virtual="{ enabled: true }"
       :mousewheel="{
         forceToAxis: true,
         releaseOnEdges: true,
       }"
     >
       <swiper-slide
-        v-for="player in sortedPlayers"
+        v-for="(player, index) in sortedPlayers"
         :key="player.player_id"
+        :virtual-index="index"
         style="width: 240px"
       >
         <PlayerCard
