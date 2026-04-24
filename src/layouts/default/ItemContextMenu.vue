@@ -763,6 +763,65 @@ export const getContextMenuItems = async function (
       icon: "mdi-refresh",
     });
   }
+  // regenerate playlist artwork via playlist_art plugin
+  if (
+    items.length === 1 &&
+    items[0].provider === "library" &&
+    items[0].media_type === MediaType.PLAYLIST &&
+    api.getProvider("playlist_art")
+  ) {
+    contextMenuItems.push({
+      label: "playlist_art.regenerate",
+      labelArgs: [],
+      icon: "mdi-image-refresh",
+      subItems: [
+        {
+          label: "playlist_art.template.artist_mosaic",
+          labelArgs: [],
+          action: async () => {
+            await api.sendCommand("playlist_art/regenerate", {
+              playlist_id: items[0].item_id,
+              template: "artist_mosaic",
+            });
+          },
+          icon: "mdi-view-dashboard",
+        },
+        {
+          label: "playlist_art.template.artist_grid",
+          labelArgs: [],
+          action: async () => {
+            await api.sendCommand("playlist_art/regenerate", {
+              playlist_id: items[0].item_id,
+              template: "artist_grid",
+            });
+          },
+          icon: "mdi-view-grid",
+        },
+        {
+          label: "playlist_art.template.album_grid",
+          labelArgs: [],
+          action: async () => {
+            await api.sendCommand("playlist_art/regenerate", {
+              playlist_id: items[0].item_id,
+              template: "album_grid",
+            });
+          },
+          icon: "mdi-grid",
+        },
+        {
+          label: "playlist_art.template.artist_radio",
+          labelArgs: [],
+          action: async () => {
+            await api.sendCommand("playlist_art/regenerate", {
+              playlist_id: items[0].item_id,
+              template: "artist_radio",
+            });
+          },
+          icon: "mdi-circle-slice-8",
+        },
+      ],
+    });
+  }
   // export playlist
   if (
     items.length === 1 &&

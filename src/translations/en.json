@@ -85,6 +85,15 @@
     "radios": "Radio",
     "read_more": "read more",
     "refresh_item": "Refresh item",
+    "playlist_art": {
+        "regenerate": "Regenerate artwork",
+        "template": {
+            "artist_mosaic": "Artist Mosaic",
+            "artist_grid": "Artist Grid",
+            "album_grid": "Album Grid",
+            "artist_radio": "Artist Radio"
+        }
+    },
     "export_playlist": "Export playlist",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
