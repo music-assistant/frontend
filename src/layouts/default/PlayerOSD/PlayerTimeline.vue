@@ -94,7 +94,10 @@ const stopTick = () => {
   }
 };
 
-onUnmounted(stopTick);
+onUnmounted(() => {
+  stopTick();
+  if (keySeekTimer) clearTimeout(keySeekTimer);
+});
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 
@@ -222,13 +225,12 @@ const onSeekStart = () => {
 
 let keySeekTimer: ReturnType<typeof setTimeout> | null = null;
 
-const onSeekEnd = (value: number) => {
+const onSeekEnd = (value: number, source: 'keyboard' | 'pointer') => {
   dragEndValue.value = value;
 
-  // Debounce so rapid key presses coalesce into a single seek command.
-  if (keySeekTimer) clearTimeout(keySeekTimer);
-  keySeekTimer = setTimeout(() => {
+  const commit = () => {
     isDragging.value = false;
+    keySeekTimer = null;
     if (store.activePlayer) {
       pendingSeekTarget.value = dragEndValue.value;
       api.playerCommandSeek(
@@ -236,7 +238,17 @@ const onSeekEnd = (value: number) => {
         Math.round(dragEndValue.value),
       );
     }
-  }, 300);
+  };
+
+  if (keySeekTimer) clearTimeout(keySeekTimer);
+
+  if (source === 'keyboard') {
+    // Coalesce rapid keypresses into a single seek
+    keySeekTimer = setTimeout(commit, 300);
+  } else {
+    // Pointer release — commit immediately
+    commit();
+  }
 };
 
 // ── Chapter click ─────────────────────────────────────────────────────────────

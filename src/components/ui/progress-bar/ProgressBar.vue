@@ -3,8 +3,8 @@
     ref="trackRef"
     class="progress-bar-track"
     :class="{ 'progress-bar-track--disabled': disabled }"
+    :style="colorStyle"
     role="slider"
-    aria-orientation="horizontal"
     :aria-label="label"
     :aria-labelledby="labelledBy"
     :aria-valuenow="Math.round(modelValue)"
@@ -12,28 +12,28 @@
     :aria-valuemax="Math.round(max)"
     :aria-valuetext="valueText"
     :aria-disabled="disabled"
-    tabindex="0"
+    :tabindex="disabled ? -1 : 0"
     @mouseenter="isThumbHidden = false"
     @mouseleave="isThumbHidden = true"
-    @touchstart.passive="onPointerDown"
+    @focus="isThumbHidden = false"
+    @blur="isThumbHidden = true"
+    @touchstart.prevent="onPointerDown"
     @mousedown="onPointerDown"
     @keydown="onKeyDown"
   >
-    <!-- background track -->
     <div class="progress-bar-rail"></div>
 
-    <!-- filled portion: GPU-composited via scaleX -->
     <div class="progress-bar-fill-wrapper">
       <div
         class="progress-bar-fill"
-        :style="{ transform: `scaleX(${progress})` }"
+        :class="{ 'progress-bar-fill--animated': !isDragging }"
+        :style="{ transform: `translateX(${(progress - 1) * 100}%)` }"
       ></div>
     </div>
 
-    <!-- tick marks -->
     <template v-if="ticks && Object.keys(ticks).length">
       <div
-        v-for="(label, pos) in ticks"
+        v-for="(tickLabel, pos) in ticks"
         :key="pos"
         class="progress-bar-tick"
         :style="{ left: `${(Number(pos) / max) * 100}%` }"
@@ -43,16 +43,18 @@
           v-if="showTickLabels && !isThumbHidden && tickCount < 6"
           class="progress-bar-tick-label text-caption"
         >
-          {{ label }}
+          {{ tickLabel }}
         </span>
       </div>
     </template>
 
-    <!-- thumb -->
     <div
       class="progress-bar-thumb"
-      :class="{ 'progress-bar-thumb--hidden': isThumbHidden }"
-      :style="{ left: `${progress * 100}%` }"
+      :class="{
+        'progress-bar-thumb--hidden': isThumbHidden,
+        'progress-bar-thumb--animated': !isDragging,
+      }"
+      :style="{ transform: `translateX(${progress * 100}cqw)` }"
     ></div>
   </div>
 </template>
@@ -67,9 +69,7 @@ export interface ProgressBarTicks {
 export interface Props {
   color?: string;
   disabled?: boolean;
-  /** Step size for arrow-key nudges (default: 1% of range) */
   keyStep?: number;
-  /** Step size for shift+arrow / page keys (default: 10% of range) */
   keyStepLarge?: number;
   label?: string;
   labelledBy?: string;
@@ -85,25 +85,19 @@ const props = withDefaults(defineProps<Props>(), {
   min: 0,
   max: 100,
   disabled: false,
-  color: undefined,
-  ticks: undefined,
   showTickLabels: false,
-  keyStep: undefined,
-  keyStepLarge: undefined,
-  label: undefined,
-  labelledBy: undefined,
-  valueText: undefined,
 });
 
 const emit = defineEmits<{
   "update:modelValue": [value: number];
   "seek-start": [value: number];
-  "seek-end": [value: number];
+  "seek-end": [value: number, source: "keyboard" | "pointer"];
   "tick-click": [position: number];
 }>();
 
 const trackRef = ref<HTMLElement | null>(null);
 const isThumbHidden = ref(true);
+const isDragging = ref(false);
 
 const range = computed(() => props.max - props.min);
 const progress = computed(() =>
@@ -125,11 +119,13 @@ const positionFromClientX = (clientX: number): number => {
 
 const clamp = (v: number) => Math.min(Math.max(v, props.min), props.max);
 
-// ── Pointer drag ──────────────────────────────────────────────────────────────
-
 const onPointerDown = (e: MouseEvent | TouchEvent) => {
   if (props.disabled) return;
+  // Ensure track receives focus for subsequent keyboard input
+  trackRef.value?.focus();
+
   isThumbHidden.value = false;
+  isDragging.value = true;
 
   const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
   const startValue = positionFromClientX(clientX);
@@ -137,13 +133,17 @@ const onPointerDown = (e: MouseEvent | TouchEvent) => {
   emit("update:modelValue", startValue);
 
   const onMove = (ev: MouseEvent | TouchEvent) => {
+    if ("touches" in ev) ev.preventDefault();
     const x = "touches" in ev ? ev.touches[0].clientX : ev.clientX;
     emit("update:modelValue", positionFromClientX(x));
   };
 
   const onUp = () => {
-    isThumbHidden.value = true;
-    emit("seek-end", props.modelValue);
+    isDragging.value = false;
+    if (document.activeElement !== trackRef.value) {
+      isThumbHidden.value = true;
+    }
+    emit("seek-end", props.modelValue, "pointer");
     document.removeEventListener("mousemove", onMove);
     document.removeEventListener("mouseup", onUp);
     document.removeEventListener("touchmove", onMove);
@@ -152,11 +152,9 @@ const onPointerDown = (e: MouseEvent | TouchEvent) => {
 
   document.addEventListener("mousemove", onMove);
   document.addEventListener("mouseup", onUp);
-  document.addEventListener("touchmove", onMove, { passive: true });
+  document.addEventListener("touchmove", onMove, { passive: false });
   document.addEventListener("touchend", onUp);
 };
-
-// ── Keyboard ──────────────────────────────────────────────────────────────────
 
 const onKeyDown = (e: KeyboardEvent) => {
   if (props.disabled) return;
@@ -165,19 +163,36 @@ const onKeyDown = (e: KeyboardEvent) => {
   const largeStep = props.keyStepLarge ?? range.value * 0.1;
 
   let next = props.modelValue;
-  if (e.key === "ArrowRight") next += e.shiftKey ? largeStep : smallStep;
-  else if (e.key === "ArrowLeft") next -= e.shiftKey ? largeStep : smallStep;
-  else if (e.key === "PageUp") next += largeStep;
-  else if (e.key === "PageDown") next -= largeStep;
-  else if (e.key === "Home") next = props.min;
-  else if (e.key === "End") next = props.max;
-  else return;
+  switch (e.key) {
+    case "ArrowRight":
+    case "ArrowUp":
+      next += e.shiftKey ? largeStep : smallStep;
+      break;
+    case "ArrowLeft":
+    case "ArrowDown":
+      next -= e.shiftKey ? largeStep : smallStep;
+      break;
+    case "PageUp":
+      next += largeStep;
+      break;
+    case "PageDown":
+      next -= largeStep;
+      break;
+    case "Home":
+      next = props.min;
+      break;
+    case "End":
+      next = props.max;
+      break;
+    default:
+      return;
+  }
 
   e.preventDefault();
   const clamped = clamp(next);
   emit("seek-start", clamped);
   emit("update:modelValue", clamped);
-  emit("seek-end", clamped);
+  emit("seek-end", clamped, "keyboard");
 };
 </script>
 
@@ -190,7 +205,8 @@ const onKeyDown = (e: KeyboardEvent) => {
   cursor: pointer;
   touch-action: none;
   user-select: none;
-  --progress-bar-color: currentColor;
+  container-type: inline-size;
+  --progress-bar-color: rgb(var(--v-theme-surface-variant));
 }
 
 .progress-bar-track:focus-visible {
@@ -218,27 +234,42 @@ const onKeyDown = (e: KeyboardEvent) => {
   left: 0;
   right: 0;
   height: 6px;
-  border-radius: 3px;
+  border-radius: 9999px;
   overflow: hidden;
 }
 
 .progress-bar-fill {
-  width: 100%;
-  height: 100%;
-  transform-origin: left center;
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background-color: var(--progress-bar-color);
   will-change: transform;
-  background-color: rgb(var(--v-theme-surface-variant));
+}
+
+.progress-bar-fill--animated {
+  transition: transform 120ms linear;
 }
 
 .progress-bar-thumb {
   position: absolute;
+  left: 0;
+  top: 50%;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  margin-top: -5px;
   margin-left: -5px;
-  background-color: rgb(var(--v-theme-surface-variant));
+  border-radius: 50%;
+  background-color: var(--progress-bar-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  will-change: transform;
+  opacity: 1;
   transition: opacity 0.15s ease;
+}
+
+.progress-bar-thumb--animated {
+  transition:
+    opacity 0.15s ease,
+    transform 120ms linear;
 }
 
 .progress-bar-thumb--hidden {
