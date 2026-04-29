@@ -373,9 +373,12 @@ const handleCreateToken = async () => {
 };
 
 const copyToken = async () => {
-  if (createdToken.value) {
-    await copyToClipboard(createdToken.value);
+  if (!createdToken.value) return;
+  const success = await copyToClipboard(createdToken.value);
+  if (success) {
     toast.success(t("auth.token_copied"));
+  } else {
+    toast.error(t("auth.token_copy_failed"));
   }
 };
 
