@@ -751,7 +751,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   // so a focus trap (e.g. Reka UI Dialog) does not steal focus and clear the
   // textarea's selection before execCommand("copy") runs.
   const host =
-    document.activeElement?.closest<HTMLElement>('[role="dialog"]') ??
+    document.activeElement?.closest<HTMLElement>("[role=dialog]") ??
     document.body;
   const textArea = document.createElement("textarea");
   textArea.value = text;
