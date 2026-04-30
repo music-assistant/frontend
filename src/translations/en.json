@@ -91,7 +91,10 @@
             "artist_mosaic": "Artist Mosaic",
             "artist_grid": "Artist Grid",
             "album_grid": "Album Grid",
-            "artist_radio": "Artist Radio"
+            "artist_radio": "Artist Radio",
+            "artist_banner": "Artist Banner",
+            "album_fan": "Album Fan",
+            "album_grid_tilted": "Album Grid Tilted"
         }
     },
     "export_playlist": "Export playlist",

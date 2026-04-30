@@ -85,41 +85,75 @@
             </v-btn>
           </template>
           <v-list density="compact" slim tile>
-            <v-list-item
+            <template
               v-for="(menuItem, index) in menuItems?.filter(
                 (x) => x.hide != true && x.overflowAllowed != false,
               )"
               :key="index"
-              :title="$t(menuItem.label, menuItem.labelArgs || [])"
-              :disabled="menuItem.disabled == true"
-              :append-icon="
-                menuItem.subItems?.length ? 'mdi-chevron-right' : undefined
-              "
-              @click.prevent.stop="
-                (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
-              "
             >
-              <template v-if="menuItem.icon" #prepend>
-                <v-badge
-                  :model-value="menuItem.active == true"
-                  color="primary"
-                  dot
-                >
-                  <v-icon
-                    v-if="typeof menuItem.icon === 'string'"
-                    :icon="menuItem.icon"
-                    :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                    size="22px"
-                  />
-                  <component
-                    :is="menuItem.icon"
-                    v-else
-                    class="w-[22px] h-[22px]"
-                    :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                  />
-                </v-badge>
-              </template>
-            </v-list-item>
+              <!-- Item with sub-items: emit contextmenu event at cursor position (same as ItemContextMenu) -->
+              <v-list-item
+                v-if="menuItem.subItems?.length"
+                :title="$t(menuItem.label, menuItem.labelArgs || [])"
+                :disabled="menuItem.disabled == true"
+                append-icon="mdi-chevron-right"
+                @click.prevent.stop="
+                  (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
+                "
+              >
+                <template v-if="menuItem.icon" #prepend>
+                  <v-badge
+                    :model-value="menuItem.active == true"
+                    color="primary"
+                    dot
+                  >
+                    <v-icon
+                      v-if="typeof menuItem.icon === 'string'"
+                      :icon="menuItem.icon"
+                      :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                      size="22px"
+                    />
+                    <component
+                      :is="menuItem.icon"
+                      v-else
+                      class="w-[22px] h-[22px]"
+                      :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                    />
+                  </v-badge>
+                </template>
+              </v-list-item>
+
+              <!-- Regular item without sub-items -->
+              <v-list-item
+                v-else
+                :title="$t(menuItem.label, menuItem.labelArgs || [])"
+                :disabled="menuItem.disabled == true"
+                @click.prevent.stop="
+                  (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
+                "
+              >
+                <template v-if="menuItem.icon" #prepend>
+                  <v-badge
+                    :model-value="menuItem.active == true"
+                    color="primary"
+                    dot
+                  >
+                    <v-icon
+                      v-if="typeof menuItem.icon === 'string'"
+                      :icon="menuItem.icon"
+                      :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                      size="22px"
+                    />
+                    <component
+                      :is="menuItem.icon"
+                      v-else
+                      class="w-[22px] h-[22px]"
+                      :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                    />
+                  </v-badge>
+                </template>
+              </v-list-item>
+            </template>
           </v-list>
         </v-menu>
       </div>
@@ -145,19 +179,22 @@ const onMenuItemClick = (
 ) => {
   event.preventDefault();
   if (menuItem.subItems?.length) {
-    // Open submenu via global context menu
-    // Map closeOnContentClick to close_on_click on subItems if needed
-    const items =
-      menuItem.closeOnContentClick === false
-        ? menuItem.subItems.map((item) => ({
-            ...item,
-            close_on_click: item.close_on_click ?? false,
-          }))
-        : menuItem.subItems;
+    // Open submenu via global context menu at cursor position.
+    // Wrap each sub-item action so the overflow menu also closes when one is picked.
+    const wrappedItems = menuItem.subItems.map((item) => ({
+      ...item,
+      close_on_click: menuItem.closeOnContentClick === false ? (item.close_on_click ?? false) : item.close_on_click,
+      action: item.action
+        ? () => {
+            overflowMenuOpen.value = false;
+            item.action!();
+          }
+        : undefined,
+    }));
     const posX = "clientX" in event ? event.clientX : 0;
     const posY = "clientY" in event ? event.clientY : 0;
     eventbus.emit("contextmenu", {
-      items,
+      items: wrappedItems,
       posX,
       posY,
     });

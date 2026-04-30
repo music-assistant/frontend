@@ -768,58 +768,36 @@ export const getContextMenuItems = async function (
     items.length === 1 &&
     items[0].provider === "library" &&
     items[0].media_type === MediaType.PLAYLIST &&
+    (items[0] as Playlist).is_editable === true &&
     api.getProvider("playlist_art")
   ) {
+    const artworkSubItems: ContextMenuItem[] = [];
+    for (const [template, icon] of [
+      ["artist_mosaic", "mdi-view-dashboard"],
+      ["artist_grid", "mdi-view-grid"],
+      ["album_grid", "mdi-grid"],
+      ["artist_radio", "mdi-circle-slice-8"],
+      ["artist_banner", "mdi-image-text"],
+      ["album_fan", "mdi-cards"],
+      ["album_grid_tilted", "mdi-view-grid-outline"],
+    ] as [string, string][]) {
+      artworkSubItems.push({
+        label: `playlist_art.template.${template}`,
+        labelArgs: [],
+        action: async () => {
+          await api.sendCommand("playlist_art/regenerate", {
+            playlist_id: items[0].item_id,
+            template,
+          });
+        },
+        icon,
+      });
+    }
     contextMenuItems.push({
       label: "playlist_art.regenerate",
       labelArgs: [],
       icon: "mdi-image-refresh",
-      subItems: [
-        {
-          label: "playlist_art.template.artist_mosaic",
-          labelArgs: [],
-          action: async () => {
-            await api.sendCommand("playlist_art/regenerate", {
-              playlist_id: items[0].item_id,
-              template: "artist_mosaic",
-            });
-          },
-          icon: "mdi-view-dashboard",
-        },
-        {
-          label: "playlist_art.template.artist_grid",
-          labelArgs: [],
-          action: async () => {
-            await api.sendCommand("playlist_art/regenerate", {
-              playlist_id: items[0].item_id,
-              template: "artist_grid",
-            });
-          },
-          icon: "mdi-view-grid",
-        },
-        {
-          label: "playlist_art.template.album_grid",
-          labelArgs: [],
-          action: async () => {
-            await api.sendCommand("playlist_art/regenerate", {
-              playlist_id: items[0].item_id,
-              template: "album_grid",
-            });
-          },
-          icon: "mdi-grid",
-        },
-        {
-          label: "playlist_art.template.artist_radio",
-          labelArgs: [],
-          action: async () => {
-            await api.sendCommand("playlist_art/regenerate", {
-              playlist_id: items[0].item_id,
-              template: "artist_radio",
-            });
-          },
-          icon: "mdi-circle-slice-8",
-        },
-      ],
+      subItems: artworkSubItems,
     });
   }
   // export playlist
