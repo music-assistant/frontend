@@ -771,7 +771,9 @@ export const getContextMenuItems = async function (
     items[0].provider === "library" &&
     items[0].media_type === MediaType.PLAYLIST &&
     (items[0] as Playlist).is_editable === true &&
-    (items[0] as Playlist).provider_mappings?.some((pm) => pm.provider_domain === "builtin") &&
+    (items[0] as Playlist).provider_mappings?.some(
+      (pm) => pm.provider_domain === "builtin",
+    ) &&
     api.getProvider("playlist_art")
   ) {
     const artworkSubItems: ContextMenuItem[] = [];
