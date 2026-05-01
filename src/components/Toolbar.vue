@@ -98,7 +98,8 @@
                 :disabled="menuItem.disabled == true"
                 append-icon="mdi-chevron-right"
                 @click.prevent.stop="
-                  (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
+                  (e: MouseEvent | KeyboardEvent) =>
+                    onMenuItemClick(e, menuItem)
                 "
               >
                 <template v-if="menuItem.icon" #prepend>
@@ -129,7 +130,8 @@
                 :title="$t(menuItem.label, menuItem.labelArgs || [])"
                 :disabled="menuItem.disabled == true"
                 @click.prevent.stop="
-                  (e: MouseEvent | KeyboardEvent) => onMenuItemClick(e, menuItem)
+                  (e: MouseEvent | KeyboardEvent) =>
+                    onMenuItemClick(e, menuItem)
                 "
               >
                 <template v-if="menuItem.icon" #prepend>
@@ -183,7 +185,10 @@ const onMenuItemClick = (
     // Wrap each sub-item action so the overflow menu also closes when one is picked.
     const wrappedItems = menuItem.subItems.map((item) => ({
       ...item,
-      close_on_click: menuItem.closeOnContentClick === false ? (item.close_on_click ?? false) : item.close_on_click,
+      close_on_click:
+        menuItem.closeOnContentClick === false
+          ? (item.close_on_click ?? false)
+          : item.close_on_click,
       action: item.action
         ? () => {
             overflowMenuOpen.value = false;

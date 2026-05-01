@@ -764,22 +764,25 @@ export const getContextMenuItems = async function (
     });
   }
   // regenerate playlist artwork via playlist_art plugin
+  // Only for user-created library playlists (has builtin provider mapping + is_editable).
+  // Apple Music / Spotify playlists are excluded even if is_editable is true.
   if (
     items.length === 1 &&
     items[0].provider === "library" &&
     items[0].media_type === MediaType.PLAYLIST &&
     (items[0] as Playlist).is_editable === true &&
+    (items[0] as Playlist).provider_mappings?.some((pm) => pm.provider_domain === "builtin") &&
     api.getProvider("playlist_art")
   ) {
     const artworkSubItems: ContextMenuItem[] = [];
     for (const [template, icon] of [
-      ["artist_mosaic", "mdi-view-dashboard"],
-      ["artist_grid", "mdi-view-grid"],
       ["album_grid", "mdi-grid"],
-      ["artist_radio", "mdi-circle-slice-8"],
-      ["artist_banner", "mdi-image-text"],
       ["album_fan", "mdi-cards"],
       ["album_grid_tilted", "mdi-view-grid-outline"],
+      ["artist_mosaic", "mdi-view-dashboard"],
+      ["artist_grid", "mdi-view-grid"],
+      ["artist_radio", "mdi-circle-slice-8"],
+      ["artist_banner", "mdi-image-text"],
     ] as [string, string][]) {
       artworkSubItems.push({
         label: `playlist_art.template.${template}`,
