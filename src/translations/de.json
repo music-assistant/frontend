@@ -1590,28 +1590,5 @@
     "radiobrowser_by_popularity": "Nach Beliebtheit",
     "radiobrowser_by_category": "Nach Kategorie",
     "restore_genre": "Wiederherstellen",
-    "genre_name": "Genre-Name",
-    "smart_playlist": {
-        "create": "Intelligente Wiedergabeliste erstellen",
-        "desc": "Erstelle eine Wiedergabeliste aus deiner Bibliothek anhand von Regeln.",
-        "mode": "Modus",
-        "dynamic": "Dynamisch",
-        "fixed": "Fest (einmalig)",
-        "track_count": "Anzahl Titel",
-        "favorites_only": "Nur Favoriten",
-        "logic": "Regelverknüpfung",
-        "logic_and": "Alle Regeln erfüllen (UND)",
-        "logic_or": "Mindestens eine Regel erfüllen (ODER)",
-        "min_popularity": "Mindestbeliebtheit",
-        "any": "Beliebig",
-        "limit": "Max. Titel",
-        "seed_track": "Ähnlich wie Titel",
-        "seed_track_pick": "Titel auswählen",
-        "seed_overrides_filter": "Wird nicht verwendet, wenn ein Seed-Titel gesetzt ist",
-        "clear": "Zurücksetzen",
-        "creating": "Wird erstellt…",
-        "created": "Intelligente Wiedergabeliste erstellt!",
-        "edit_rules": "Regeln bearbeiten",
-        "saving": "Wird gespeichert…"
-    }
+    "genre_name": "Genre-Name"
 }

@@ -8,29 +8,25 @@
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-1">
         <Label>{{ $t("smart_playlist.logic") }}</Label>
-        <Popover>
-          <PopoverTrigger as-child>
-            <button type="button" class="cursor-help">
+        <v-tooltip location="top" max-width="220" :z-index="10000">
+          <template #activator="{ props: tooltipProps }">
+            <span v-bind="tooltipProps" class="cursor-help inline-flex">
               <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent class="max-w-[220px] text-sm p-3">
-            {{ $t("smart_playlist.logic_tooltip") }}
-          </PopoverContent>
-        </Popover>
+            </span>
+          </template>
+          {{ $t("smart_playlist.logic_tooltip") }}
+        </v-tooltip>
       </div>
-      <RadioGroup v-model="rules.logic" class="flex flex-row gap-6">
-        <div class="flex items-center gap-2">
-          <RadioGroupItem id="srf-logic-and" value="AND" />
-          <Label for="srf-logic-and">{{
-            $t("smart_playlist.logic_and")
-          }}</Label>
-        </div>
-        <div class="flex items-center gap-2">
-          <RadioGroupItem id="srf-logic-or" value="OR" />
-          <Label for="srf-logic-or">{{ $t("smart_playlist.logic_or") }}</Label>
-        </div>
-      </RadioGroup>
+      <Tabs :model-value="rules.logic" @update:model-value="(v) => (rules.logic = v as 'AND' | 'OR')">
+        <TabsList class="h-8">
+          <TabsTrigger value="AND" class="text-xs px-4">
+            {{ $t("smart_playlist.logic_and") }}
+          </TabsTrigger>
+          <TabsTrigger value="OR" class="text-xs px-4">
+            {{ $t("smart_playlist.logic_or") }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
 
     <!-- Genre filter -->
@@ -86,16 +82,14 @@
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-1">
         <Label>{{ $t("smart_playlist.seed_track") }}</Label>
-        <Popover>
-          <PopoverTrigger as-child>
-            <button type="button" class="cursor-help">
+        <v-tooltip location="top" max-width="220" :z-index="10000">
+          <template #activator="{ props: tooltipProps }">
+            <span v-bind="tooltipProps" class="cursor-help inline-flex">
               <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent class="max-w-[220px] text-sm p-3">
-            {{ $t("smart_playlist.seed_track_tooltip") }}
-          </PopoverContent>
-        </Popover>
+            </span>
+          </template>
+          {{ $t("smart_playlist.seed_track_tooltip") }}
+        </v-tooltip>
       </div>
       <TagsInput
         :model-value="selectedSeedTrack ? [selectedSeedTrack.item_id] : []"
@@ -307,50 +301,40 @@
 
     <!-- Min popularity -->
     <div class="flex flex-col gap-2">
-      <div class="flex items-center gap-1">
-        <Label>
-          {{ $t("smart_playlist.min_popularity") }}
-          <span
-            v-if="rules.min_popularity !== undefined"
-            class="ml-2 text-muted-foreground text-sm"
-          >
-            {{ rules.min_popularity }}%
-          </span>
-          <span v-else class="ml-2 text-muted-foreground text-sm">
-            {{ $t("smart_playlist.any") }}
-          </span>
-        </Label>
-        <Popover>
-          <PopoverTrigger as-child>
-            <button type="button" class="cursor-help">
-              <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent class="max-w-[220px] text-sm p-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1">
+          <Label>{{ $t("smart_playlist.min_popularity") }}</Label>
+          <v-tooltip location="top" max-width="220" :z-index="10000">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="cursor-help inline-flex">
+                <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
+              </span>
+            </template>
             {{ $t("smart_playlist.min_popularity_tooltip") }}
-          </PopoverContent>
-        </Popover>
+          </v-tooltip>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-foreground w-10 text-right">
+            {{ rules.min_popularity !== undefined ? `${rules.min_popularity}%` : $t("smart_playlist.any") }}
+          </span>
+          <Button
+            v-if="rules.min_popularity !== undefined"
+            variant="ghost"
+            size="sm"
+            class="h-6 px-2 text-xs"
+            @click="rules.min_popularity = undefined"
+          >
+            {{ $t("smart_playlist.clear") }}
+          </Button>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          class="w-full"
-          :value="rules.min_popularity ?? 0"
-          @input="onPopularityInput"
-        />
-        <Button
-          v-if="rules.min_popularity !== undefined"
-          variant="ghost"
-          size="sm"
-          class="h-6 px-2 text-xs"
-          @click="rules.min_popularity = undefined"
-        >
-          {{ $t("smart_playlist.clear") }}
-        </Button>
-      </div>
+      <Slider
+        :model-value="[rules.min_popularity ?? 0]"
+        :min="0"
+        :max="100"
+        :step="5"
+        @update:model-value="(v) => { rules.min_popularity = (v?.[0] ?? 0) === 0 ? undefined : v?.[0]; }"
+      />
     </div>
 
     <!-- Year range -->
@@ -415,8 +399,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import api from "@/plugins/api";
 import type {
@@ -755,11 +740,6 @@ function clearSeedTrack() {
   rules.seed_track_name = undefined;
   seedTrackSearch.value = "";
   seedTrackResults.value = [];
-}
-
-function onPopularityInput(e: Event) {
-  const v = parseInt((e.target as HTMLInputElement).value, 10);
-  rules.min_popularity = v === 0 ? undefined : v;
 }
 
 function onYearFromInput() {

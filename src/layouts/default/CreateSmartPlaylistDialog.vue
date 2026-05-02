@@ -30,18 +30,16 @@
         <!-- Mode: Dynamic / Fixed -->
         <div class="flex flex-col gap-2">
           <Label>{{ $t("smart_playlist.mode") }}</Label>
-          <RadioGroup v-model="mode" class="flex flex-row gap-6">
-            <div class="flex items-center gap-2">
-              <RadioGroupItem id="mode-dynamic" value="dynamic" />
-              <Label for="mode-dynamic">{{
-                $t("smart_playlist.dynamic")
-              }}</Label>
-            </div>
-            <div class="flex items-center gap-2">
-              <RadioGroupItem id="mode-fixed" value="fixed" />
-              <Label for="mode-fixed">{{ $t("smart_playlist.fixed") }}</Label>
-            </div>
-          </RadioGroup>
+          <Tabs v-model="mode">
+            <TabsList class="h-8">
+              <TabsTrigger value="dynamic" class="text-xs px-4">
+                {{ $t("smart_playlist.dynamic") }}
+              </TabsTrigger>
+              <TabsTrigger value="fixed" class="text-xs px-4">
+                {{ $t("smart_playlist.fixed") }}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <!-- Track count (fixed mode only) -->
@@ -62,28 +60,21 @@
           </NumberField>
         </div>
 
-        <Separator />
-
         <SmartPlaylistRulesForm
           :key="dialogKey"
           ref="rulesForm"
           @track-count-update="onTrackCountUpdate"
         />
+
+        <p v-if="isCountingTracks" class="text-sm text-muted-foreground">
+          …
+        </p>
+        <p v-else-if="matchingTrackCount !== null" class="text-sm text-muted-foreground">
+          ~{{ matchingTrackCount }} {{ $t("tracks") }}
+        </p>
       </div>
 
-      <DialogFooter class="items-center">
-        <span
-          v-if="isCountingTracks"
-          class="text-sm text-muted-foreground mr-auto"
-        >
-          …
-        </span>
-        <span
-          v-else-if="matchingTrackCount !== null"
-          class="text-sm text-muted-foreground mr-auto"
-        >
-          ~{{ matchingTrackCount }} {{ $t("tracks") }}
-        </span>
+      <DialogFooter>
         <Button variant="outline" @click="showDialog = false">
           {{ $t("close") }}
         </Button>
@@ -118,8 +109,7 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
 import api from "@/plugins/api";
 import { type CreateSmartPlaylistEvent, eventbus } from "@/plugins/eventbus";

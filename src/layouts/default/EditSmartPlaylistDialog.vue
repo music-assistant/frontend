@@ -21,8 +21,6 @@
       </div>
 
       <div v-else class="flex flex-col gap-4 py-2">
-        <Separator />
-
         <SmartPlaylistRulesForm
           ref="rulesForm"
           :initial-rules="loadedRules"
@@ -30,21 +28,16 @@
           :initial-album-items="loadedAlbumItems"
           @track-count-update="onTrackCountUpdate"
         />
+
+        <p v-if="isCountingTracks" class="text-sm text-muted-foreground">
+          …
+        </p>
+        <p v-else-if="matchingTrackCount !== null" class="text-sm text-muted-foreground">
+          ~{{ matchingTrackCount }} {{ $t("tracks") }}
+        </p>
       </div>
 
-      <DialogFooter class="items-center">
-        <span
-          v-if="isCountingTracks"
-          class="text-sm text-muted-foreground mr-auto"
-        >
-          …
-        </span>
-        <span
-          v-else-if="matchingTrackCount !== null"
-          class="text-sm text-muted-foreground mr-auto"
-        >
-          ~{{ matchingTrackCount }} {{ $t("tracks") }}
-        </span>
+      <DialogFooter>
         <Button variant="outline" @click="showDialog = false">
           {{ $t("close") }}
         </Button>
@@ -70,7 +63,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
 import api from "@/plugins/api";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
