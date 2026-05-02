@@ -804,6 +804,7 @@
         "sort_options": "Sort options",
         "toggle_view_mode": "Toggle view mode list\/thumbs",
         "filter_favorites": "Only show favorites",
+        "filter_hide_fully_played": "Hide fully-played episodes",
         "favorite": "Mark\/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
         "collapse_expand": "Collapse\/expand this listing",
