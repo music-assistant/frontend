@@ -263,10 +263,10 @@ describe("getGenreDisplayName", () => {
     );
   });
 
-  it("applies sentence case when no translation found", () => {
+  it("applies title case when no translation found", () => {
     expect(
       getGenreDisplayName("my custom genre", undefined, mockT, mockTe),
-    ).toBe("My custom genre");
+    ).toBe("My Custom Genre");
   });
 
   it("handles empty name", () => {
