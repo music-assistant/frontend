@@ -534,6 +534,7 @@ import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
+import { fetchRainStatus, isRainMoodAvailable } from "@/composables/useRainMood";
 import {
   ImageColorPalette,
   formatDuration,
@@ -1173,8 +1174,11 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
   });
 };
 
-const openQueueMenu = function (evt: Event) {
+const openQueueMenu = async function (evt: Event) {
   if (!store.activePlayer) return;
+  if (isRainMoodAvailable()) {
+    await fetchRainStatus(store.activePlayer.player_id);
+  }
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue),
     posX: (evt as PointerEvent).clientX,

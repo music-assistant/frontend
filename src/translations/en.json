@@ -883,6 +883,8 @@
     "shuffle_enable": "Enable shuffle",
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
+    "rainy_mood_enable": "Enable 'Rainy Mood'",
+    "rainy_mood_disable": "Disable 'Rainy Mood'",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
