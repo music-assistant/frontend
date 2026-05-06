@@ -213,6 +213,9 @@
                 :src="inputFileIcon"
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
+              <template v-if="inputQualityTier == QualityTier.GOOD || inputQualityTier == QualityTier.LOW">
+                {{ streamDetails.audio_format.bit_rate.toFixed(0) }} kbps /
+              </template>
               {{ streamDetails.audio_format.bit_depth }} bits
               <v-tooltip location="top" :open-on-click="true" max-width="300">
                 <template #activator="{ props }">
@@ -727,6 +730,7 @@ const inputQualityTier = computed(() => {
     return QualityTier.LOW;
   }
 });
+
 
 const outputQualityTiers = computed(() => {
   const tiers: Record<string, QualityTier> = {};
