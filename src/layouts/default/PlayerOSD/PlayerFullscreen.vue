@@ -534,7 +534,10 @@ import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { fetchRainStatus, isRainMoodAvailable } from "@/composables/useRainMood";
+import {
+  fetchRainStatus,
+  isRainMoodAvailable,
+} from "@/composables/useRainMood";
 import {
   ImageColorPalette,
   formatDuration,

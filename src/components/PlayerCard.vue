@@ -241,7 +241,10 @@ import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { fetchRainStatus, isRainMoodAvailable } from "@/composables/useRainMood";
+import {
+  fetchRainStatus,
+  isRainMoodAvailable,
+} from "@/composables/useRainMood";
 import {
   getColorPalette,
   getMediaImageUrl,
