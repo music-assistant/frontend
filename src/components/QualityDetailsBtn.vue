@@ -216,8 +216,9 @@
               {{ streamDetails.audio_format.bit_depth }} bits
               <template
                 v-if="
-                  inputQualityTier == QualityTier.GOOD ||
-                  inputQualityTier == QualityTier.LOW && streamDetails.audio_format.bit_rate
+                  (inputQualityTier == QualityTier.GOOD ||
+                    inputQualityTier == QualityTier.LOW) &&
+                  streamDetails.audio_format.bit_rate
                 "
               >
                 / {{ streamDetails.audio_format.bit_rate.toFixed(0) }} kbps
