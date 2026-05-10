@@ -29,11 +29,15 @@
           @track-count-update="onTrackCountUpdate"
         />
 
-        <p v-if="isCountingTracks" class="text-sm text-muted-foreground">
-          …
-        </p>
-        <p v-else-if="matchingTrackCount !== null" class="text-sm text-muted-foreground">
+        <p v-if="isCountingTracks" class="text-sm text-muted-foreground">…</p>
+        <p
+          v-else-if="matchingTrackCount !== null"
+          class="text-sm text-muted-foreground"
+        >
           ~{{ matchingTrackCount }} {{ $t("tracks") }}
+          <span v-if="matchingDuration !== null" class="ml-1"
+            >(~{{ formatDuration(matchingDuration) }})</span
+          >
         </p>
       </div>
 
@@ -81,6 +85,7 @@ const showDialog = defineModel<boolean>("open", { default: false });
 const loading = ref(false);
 const isSaving = ref(false);
 const matchingTrackCount = ref<number | null>(null);
+const matchingDuration = ref<number | null>(null);
 const isCountingTracks = ref(false);
 const rulesForm = ref<InstanceType<typeof SmartPlaylistRulesForm>>();
 
@@ -122,9 +127,21 @@ watch(showDialog, async (open) => {
   }
 });
 
-function onTrackCountUpdate(count: number | null, counting: boolean) {
+function onTrackCountUpdate(
+  count: number | null,
+  duration: number | null,
+  counting: boolean,
+) {
   matchingTrackCount.value = count;
+  matchingDuration.value = duration;
   isCountingTracks.value = counting;
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 async function doSave() {

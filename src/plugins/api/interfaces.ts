@@ -350,6 +350,7 @@ export enum ProviderFeature {
   LIBRARY_GENRES_EDIT = "library_genres_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
+  SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
   PLAYLIST_CREATE = "playlist_create",
@@ -1249,6 +1250,8 @@ export interface SmartPlaylistRules {
   favorites_only: boolean;
   seed_track_uri?: string;
   seed_track_name?: string;
+  seed_artist_uri?: string;
+  seed_artist_name?: string;
   min_popularity?: number;
   logic: "AND" | "OR";
   limit: number;
@@ -1257,6 +1260,17 @@ export interface SmartPlaylistRules {
   album_names?: Record<number, string>;
   year_from?: number;
   year_to?: number;
+  excluded_artist_ids?: number[];
+  excluded_album_ids?: number[];
+  excluded_track_uris?: string[];
+  excluded_artist_names?: Record<number, string>;
+  excluded_album_names?: Record<number, string>;
+  dedup_hours?: number;
+}
+
+export interface SmartPlaylistTrackStats {
+  count: number;
+  duration_seconds: number;
 }
 
 export interface SmartPlaylistEntry {

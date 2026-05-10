@@ -867,7 +867,9 @@ export class MusicAssistantApi {
     return this.sendCommand("smart_playlists/preview_tracks", { rules, limit });
   }
 
-  public countSmartPlaylistTracks(rules: SmartPlaylistRules): Promise<number> {
+  public countSmartPlaylistTracks(
+    rules: SmartPlaylistRules,
+  ): Promise<{ count: number; duration_seconds: number }> {
     return this.sendCommand("smart_playlists/count_tracks", { rules });
   }
 
