@@ -52,6 +52,20 @@
       :allow-collapse="true"
     />
     <br />
+    <!-- similar artists -->
+    <ItemsListing
+      v-if="itemDetails && !loading && hasSimilarArtistsProvider"
+      itemtype="artists"
+      :parent-item="itemDetails"
+      :show-provider="false"
+      :show-favorites-only-filter="false"
+      :show-library-only-filter="false"
+      :show-refresh-button="false"
+      :load-items="loadSimilarArtists"
+      :title="$t('similar_artists')"
+      :allow-collapse="true"
+    />
+    <br />
     <!-- media images -->
     <MediaItemImages
       v-if="
@@ -80,9 +94,10 @@ import {
   EventMessage,
   EventType,
   MediaItemType,
+  ProviderFeature,
   type Artist,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
   itemId: string;
@@ -143,6 +158,22 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
     props.itemId,
     props.provider,
     params.libraryOnly,
+  );
+};
+
+const hasSimilarArtistsProvider = computed(() =>
+  Object.values(api.providers).some((p) =>
+    (p.supported_features as unknown as string[]).includes(
+      ProviderFeature.SIMILAR_ARTISTS,
+    ),
+  ),
+);
+
+const loadSimilarArtists = async function (_params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  return await api.getSimilarArtists(
+    props.itemId,
+    props.provider,
   );
 };
 
