@@ -1,0 +1,209 @@
+[
+  {
+    "item_id": "recording-sym5-karajan-1962",
+    "work_id": "work-beethoven-sym5",
+    "conductor": "Herbert von Karajan",
+    "conductor_id": "performer-karajan",
+    "orchestra": "Berlin Philharmonic",
+    "orchestra_id": "performer-bpo",
+    "credits": [
+      { "artist_id": "performer-karajan", "role": "conductor", "position": 0 },
+      { "artist_id": "performer-bpo", "role": "orchestra", "position": 1 }
+    ],
+    "year": 1962,
+    "duration_seconds": 1920,
+    "source_album": "Beethoven: The Symphonies (1963)",
+    "source_album_id": "album-karajan-cycle-1963",
+    "movements": [
+      {
+        "track_id": "track-sym5-karajan-1962-i",
+        "title": "I. Allegro con brio",
+        "duration_seconds": 432
+      },
+      {
+        "track_id": "track-sym5-karajan-1962-ii",
+        "title": "II. Andante con moto",
+        "duration_seconds": 612
+      },
+      {
+        "track_id": "track-sym5-karajan-1962-iii",
+        "title": "III. Scherzo. Allegro",
+        "duration_seconds": 312
+      },
+      {
+        "track_id": "track-sym5-karajan-1962-iv",
+        "title": "IV. Allegro",
+        "duration_seconds": 564
+      }
+    ]
+  },
+  {
+    "item_id": "recording-sym5-karajan-1977",
+    "work_id": "work-beethoven-sym5",
+    "conductor": "Herbert von Karajan",
+    "conductor_id": "performer-karajan",
+    "orchestra": "Berlin Philharmonic",
+    "orchestra_id": "performer-bpo",
+    "credits": [
+      { "artist_id": "performer-karajan", "role": "conductor", "position": 0 },
+      { "artist_id": "performer-bpo", "role": "orchestra", "position": 1 }
+    ],
+    "year": 1977,
+    "duration_seconds": 1980,
+    "source_album": "Beethoven: 9 Symphonies (1977)",
+    "source_album_id": "album-karajan-cycle-1977",
+    "movements": [
+      {
+        "track_id": "track-sym5-karajan-1977-i",
+        "title": "I. Allegro con brio",
+        "duration_seconds": 444
+      },
+      {
+        "track_id": "track-sym5-karajan-1977-ii",
+        "title": "II. Andante con moto",
+        "duration_seconds": 624
+      },
+      {
+        "track_id": "track-sym5-karajan-1977-iii",
+        "title": "III. Scherzo. Allegro",
+        "duration_seconds": 318
+      },
+      {
+        "track_id": "track-sym5-karajan-1977-iv",
+        "title": "IV. Allegro",
+        "duration_seconds": 594
+      }
+    ]
+  },
+  {
+    "item_id": "recording-sym5-bernstein-1979",
+    "work_id": "work-beethoven-sym5",
+    "conductor": "Leonard Bernstein",
+    "conductor_id": "performer-bernstein",
+    "orchestra": "Vienna Philharmonic",
+    "orchestra_id": "performer-vpo",
+    "credits": [
+      { "artist_id": "performer-bernstein", "role": "conductor", "position": 0 },
+      { "artist_id": "performer-vpo", "role": "orchestra", "position": 1 }
+    ],
+    "year": 1979,
+    "duration_seconds": 2010,
+    "source_album": "Beethoven: Symphony No. 5 (Bernstein/VPO)",
+    "source_album_id": "album-bernstein-sym5",
+    "movements": [
+      {
+        "track_id": "track-sym5-bernstein-i",
+        "title": "I. Allegro con brio",
+        "duration_seconds": 450
+      },
+      {
+        "track_id": "track-sym5-bernstein-ii",
+        "title": "II. Andante con moto",
+        "duration_seconds": 642
+      },
+      {
+        "track_id": "track-sym5-bernstein-iii",
+        "title": "III. Scherzo. Allegro",
+        "duration_seconds": 324
+      },
+      {
+        "track_id": "track-sym5-bernstein-iv",
+        "title": "IV. Allegro",
+        "duration_seconds": 594
+      }
+    ]
+  },
+  {
+    "item_id": "recording-archduke-pollini-trio",
+    "work_id": "work-beethoven-archduke",
+    "conductor": null,
+    "conductor_id": null,
+    "orchestra": null,
+    "orchestra_id": null,
+    "performer_ids": ["performer-pollini"],
+    "credits": [
+      {
+        "artist_id": "performer-pollini",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 0
+      }
+    ],
+    "year": 1979,
+    "duration_seconds": 2400,
+    "source_album": "Beethoven: Piano Trios",
+    "source_album_id": "album-pollini-trios",
+    "movements": [
+      {
+        "track_id": "track-archduke-i",
+        "title": "I. Allegro moderato",
+        "duration_seconds": 780
+      },
+      {
+        "track_id": "track-archduke-ii",
+        "title": "II. Scherzo. Allegro",
+        "duration_seconds": 432
+      },
+      {
+        "track_id": "track-archduke-iii",
+        "title": "III. Andante cantabile, ma però con moto",
+        "duration_seconds": 738
+      },
+      {
+        "track_id": "track-archduke-iv",
+        "title": "IV. Allegro moderato",
+        "duration_seconds": 450
+      }
+    ]
+  },
+  {
+    "item_id": "recording-spiegel-hilliard",
+    "work_id": "work-part-spiegel",
+    "conductor": null,
+    "conductor_id": null,
+    "orchestra": null,
+    "orchestra_id": null,
+    "performer_ids": ["performer-hilliard"],
+    "credits": [
+      { "artist_id": "performer-hilliard", "role": "ensemble", "position": 0 }
+    ],
+    "year": 1999,
+    "duration_seconds": 600,
+    "source_album": "Pärt: Alina",
+    "source_album_id": "album-part-alina",
+    "movements": [
+      {
+        "track_id": "track-spiegel-hilliard",
+        "title": "Spiegel im Spiegel",
+        "duration_seconds": 600
+      }
+    ]
+  },
+  {
+    "item_id": "recording-spiegel-estonian",
+    "work_id": "work-part-spiegel",
+    "conductor": null,
+    "conductor_id": null,
+    "orchestra": null,
+    "orchestra_id": null,
+    "performer_ids": ["performer-estonian-phil-choir"],
+    "credits": [
+      {
+        "artist_id": "performer-estonian-phil-choir",
+        "role": "choir",
+        "position": 0
+      }
+    ],
+    "year": 2005,
+    "duration_seconds": 570,
+    "source_album": "Pärt: Fratres",
+    "source_album_id": "album-part-fratres",
+    "movements": [
+      {
+        "track_id": "track-spiegel-estonian",
+        "title": "Spiegel im Spiegel",
+        "duration_seconds": 570
+      }
+    ]
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "item_id": "performer-karajan",
+    "name": "Herbert von Karajan",
+    "role": "conductor",
+    "year_range": "1908–1989",
+    "recording_count": 2,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/karajan-fanart.jpg"
+  },
+  {
+    "item_id": "performer-bpo",
+    "name": "Berlin Philharmonic",
+    "role": "orchestra",
+    "recording_count": 2,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/berlin-fanart.jpg",
+    "logo_url": "http://192.168.1.166:8123/local/classical/berlin-logo.png"
+  },
+  {
+    "item_id": "performer-bernstein",
+    "name": "Leonard Bernstein",
+    "role": "conductor",
+    "year_range": "1918–1990",
+    "recording_count": 1,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/bernstein-fanart.jpg",
+    "thumbnail_url": "http://192.168.1.166:8123/local/classical/bernstein-thumb.jpg",
+    "logo_url": "http://192.168.1.166:8123/local/classical/bernstein-logo.png",
+    "biography": "American conductor, composer, pianist, music educator, author, and humanitarian. Among the first conductors born and educated in the United States to receive worldwide acclaim, he was — according to music critic Donal Henahan — \"one of the most prodigiously talented and successful musicians in American history.\" His long association with the New York Philharmonic and his televised Young People's Concerts brought classical music to a generation of viewers."
+  },
+  {
+    "item_id": "performer-vpo",
+    "name": "Vienna Philharmonic",
+    "role": "orchestra",
+    "recording_count": 1,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/vienna-fanart.jpg"
+  },
+  {
+    "item_id": "performer-pollini",
+    "name": "Maurizio Pollini",
+    "role": "soloist",
+    "year_range": "1942–2024",
+    "recording_count": 1,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/maurizio-fanart.jpg"
+  },
+  {
+    "item_id": "performer-hilliard",
+    "name": "Hilliard Ensemble",
+    "role": "ensemble",
+    "year_range": "1974–2014",
+    "recording_count": 1,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/hilliard-fanart.jpg"
+  },
+  {
+    "item_id": "performer-estonian-phil-choir",
+    "name": "Estonian Philharmonic Chamber Choir",
+    "role": "choir",
+    "year_range": "1981–",
+    "recording_count": 1,
+    "work_count": 1,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/estonia-fanart.jpg"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "item_id": "work-beethoven-sym5",
+    "name": "Symphony No. 5 in C minor",
+    "composer": "Ludwig van Beethoven",
+    "composer_id": "composer-beethoven",
+    "catalog_number": "Op. 67",
+    "work_type": "symphony",
+    "year_composed": 1808,
+    "recording_count": 3
+  },
+  {
+    "item_id": "work-beethoven-archduke",
+    "name": "Piano Trio in B-flat major \"Archduke\"",
+    "composer": "Ludwig van Beethoven",
+    "composer_id": "composer-beethoven",
+    "catalog_number": "Op. 97",
+    "work_type": "other",
+    "year_composed": 1811,
+    "recording_count": 1
+  },
+  {
+    "item_id": "work-part-spiegel",
+    "name": "Spiegel im Spiegel",
+    "composer": "Arvo Pärt",
+    "composer_id": "composer-part",
+    "catalog_number": "",
+    "work_type": "other",
+    "year_composed": 1978,
+    "recording_count": 2
+  }
+]
