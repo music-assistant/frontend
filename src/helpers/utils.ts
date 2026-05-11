@@ -382,9 +382,13 @@ export const getMediaItemImageUrl = function (
   if (!checksum) checksum = "";
   if (!img || !img.path) return "";
   if (img.path.startsWith("data:image")) return img.path;
+  // TEMP(classical-mock): exempt "http"/"builtin" providers from the
+  // size-triggered proxy so the synthetic image URLs used by the Classical
+  // mock fixtures load directly. Revert when the mock service is removed.
+  const directProvider = img.provider === "http" || img.provider === "builtin";
   if (
     !img.remotely_accessible ||
-    size ||
+    (size && !directProvider) ||
     img.path.split("//")[0] != window.location.protocol
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb

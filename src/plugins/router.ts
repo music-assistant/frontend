@@ -234,6 +234,98 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: "/classical",
+        component: () =>
+          import(
+            /* webpackChunkName: "classical" */ "@/views/classical/ClassicalView.vue"
+          ),
+        children: [
+          {
+            path: "",
+            name: "classical",
+            redirect: () => {
+              const stored = localStorage.getItem(
+                "frontend.classical.last_tab",
+              );
+              const tab =
+                stored === "works" || stored === "performers"
+                  ? stored
+                  : "composers";
+              return { path: `/classical/${tab}` };
+            },
+          },
+          {
+            path: "composers",
+            name: "classical-composers",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/ComposersTab.vue"
+              ),
+          },
+          {
+            path: "composers/:id",
+            name: "classical-composer",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/ComposerDetail.vue"
+              ),
+            props: true,
+            meta: { hideTabs: true },
+          },
+          {
+            path: "works",
+            name: "classical-works",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/WorksTab.vue"
+              ),
+          },
+          {
+            path: "works/:id",
+            name: "classical-work",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/WorkDetail.vue"
+              ),
+            props: (route: {
+              params: Record<string, string | string[]>;
+              query: Record<
+                string,
+                string | (string | null)[] | null | undefined
+              >;
+            }) => ({
+              ...route.params,
+              ...route.query,
+            }),
+            meta: { hideTabs: true },
+          },
+          {
+            path: "performers",
+            name: "classical-performers",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/PerformersTab.vue"
+              ),
+            props: (route: {
+              query: Record<
+                string,
+                string | (string | null)[] | null | undefined
+              >;
+            }) => ({ ...route.query }),
+          },
+          {
+            path: "performers/:id",
+            name: "classical-performer",
+            component: () =>
+              import(
+                /* webpackChunkName: "classical" */ "@/views/classical/PerformerDetail.vue"
+              ),
+            props: true,
+            meta: { hideTabs: true },
+          },
+        ],
+      },
+      {
         path: "/audiobooks",
         children: [
           {

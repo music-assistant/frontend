@@ -10,6 +10,7 @@ import {
   ListMusic,
   Music2,
   PartyPopper,
+  Piano,
   Podcast,
   Radio,
   Search,
@@ -92,6 +93,15 @@ export const getMenuItems = function () {
         icon: ListMusic,
         path: "/playlists",
         isLibraryNode: true,
+      });
+    }
+    if (enabledMenuItemStr === "classical") {
+      items.push({
+        label: "classical",
+        icon: Piano,
+        path: "/classical",
+        isLibraryNode: true,
+        disabled: store.hasClassicalContent === false,
       });
     }
     if (enabledMenuItemStr === "audiobooks") {

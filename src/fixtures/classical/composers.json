@@ -1,0 +1,25 @@
+[
+  {
+    "item_id": "composer-beethoven",
+    "name": "Ludwig van Beethoven",
+    "sort_name": "Beethoven, Ludwig van",
+    "year_range": "1770–1827",
+    "work_count": 2,
+    "recording_count": 4,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/beethoven-fanart.jpg",
+    "thumbnail_url": "http://192.168.1.166:8123/local/classical/beethoven-thumb.jpg",
+    "logo_url": "http://192.168.1.166:8123/local/classical/beethoven-logo.png",
+    "biography": "German composer and pianist. A crucial figure in the transition between the Classical and Romantic eras, Beethoven's body of music is among the most performed of any composer's."
+  },
+  {
+    "item_id": "composer-part",
+    "name": "Arvo Pärt",
+    "sort_name": "Pärt, Arvo",
+    "year_range": "1935–",
+    "work_count": 1,
+    "recording_count": 2,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/arvo-fanart.jpg",
+    "thumbnail_url": "http://192.168.1.166:8123/local/classical/arvo-thumb.jpg",
+    "biography": "Estonian composer of classical and sacred music. Since the late 1970s, Pärt has worked in a minimalist style that uses his self-invented compositional technique, tintinnabuli."
+  }
+]

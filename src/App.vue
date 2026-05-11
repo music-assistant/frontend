@@ -38,6 +38,7 @@ import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
 import { i18n } from "@/plugins/i18n";
+import { hasClassicalContent } from "@/services/classical";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -233,6 +234,7 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
+    store.hasClassicalContent = await hasClassicalContent();
   } else {
     console.debug("[App] Party guest - skipping full state fetch");
   }
