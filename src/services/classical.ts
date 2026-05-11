@@ -12,7 +12,7 @@ import {
   type MediaItemImage,
   type Track,
 } from "@/plugins/api/interfaces";
-import { ArtistRole } from "@/types/classical";
+import { ArtistRole, PERFORMER_ROLES } from "@/types/classical";
 
 import composersFixture from "@/fixtures/classical/composers.json";
 import performersFixture from "@/fixtures/classical/performers.json";
@@ -205,7 +205,12 @@ export async function getPerformers(
   opts: ListOpts & { role?: ArtistRole } = {},
 ): Promise<ClassicalPerformer[]> {
   if (USE_MOCKS) {
-    const all = performersFixture as ClassicalPerformer[];
+    // Lyricists/arrangers are credits but not performers; exclude them at the
+    // service boundary so callers (and the "All" chip in PerformersTab) never
+    // have to worry about leaking non-performer roles into performer UI.
+    const all = (performersFixture as ClassicalPerformer[]).filter((p) =>
+      PERFORMER_ROLES.includes(p.role as ArtistRole),
+    );
     if (!opts.role) return all;
     return all.filter((p) => p.role === opts.role);
   }
