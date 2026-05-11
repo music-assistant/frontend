@@ -52,6 +52,7 @@ import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
 import { i18n, resolveLocale } from "@/plugins/i18n";
+import { hasClassicalContent } from "@/services/classical";
 import { store } from "@/plugins/store";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -316,6 +317,7 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
+    store.hasClassicalContent = await hasClassicalContent();
 
     // Keep plugin-backed UI entries in sync with enabled providers.
     await refreshPluginEnabledStates();

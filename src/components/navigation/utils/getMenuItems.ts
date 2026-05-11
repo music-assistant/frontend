@@ -11,6 +11,7 @@ import {
   MicVocal,
   Music2,
   PartyPopper,
+  Piano,
   Podcast,
   Radio,
   Search,
@@ -131,6 +132,15 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/playlists",
     isLibraryNode: true,
     group: "library",
+  },
+  {
+    id: "classical",
+    label: "classical",
+    icon: Piano,
+    path: "/classical",
+    isLibraryNode: true,
+    group: "library",
+    disabled: () => store.hasClassicalContent === false,
   },
   {
     id: "audiobooks",
