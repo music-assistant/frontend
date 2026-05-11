@@ -940,6 +940,30 @@ const albumModelValue = computed({
   },
 });
 
+const excludedArtistModelValue = computed({
+  get: () => selectedExcludedArtistItems.value.map((a) => String(a.id)),
+  set: (vals: string[]) => {
+    selectedExcludedArtistItems.value = selectedExcludedArtistItems.value.filter(
+      (a) => vals.includes(String(a.id)),
+    );
+    rules.excluded_artist_ids = selectedExcludedArtistItems.value.map(
+      (a) => a.id,
+    );
+  },
+});
+
+const excludedAlbumModelValue = computed({
+  get: () => selectedExcludedAlbumItems.value.map((a) => String(a.id)),
+  set: (vals: string[]) => {
+    selectedExcludedAlbumItems.value = selectedExcludedAlbumItems.value.filter(
+      (a) => vals.includes(String(a.id)),
+    );
+    rules.excluded_album_ids = selectedExcludedAlbumItems.value.map(
+      (a) => a.id,
+    );
+  },
+});
+
 watch(
   () => props.initialRules,
   async (initial) => {
