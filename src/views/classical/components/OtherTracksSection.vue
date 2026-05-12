@@ -7,7 +7,9 @@
           <select v-model="sortKey" class="sort-select">
             <option value="name">{{ $t("classical_sort_name") }}</option>
             <option value="year">{{ $t("classical_sort_year_newest") }}</option>
-            <option value="date_added">{{ $t("classical_sort_date_added") }}</option>
+            <option value="date_added">
+              {{ $t("classical_sort_date_added") }}
+            </option>
           </select>
         </div>
       </template>
