@@ -30,6 +30,12 @@
     <p v-else class="composer-works-empty">
       {{ $t("classical_no_works_for_composer") }}
     </p>
+
+    <OtherTracksSection
+      :tracks="otherTracks"
+      @play-track="onPlayOtherTrack"
+      @menu-track="onMenuOtherTrack"
+    />
   </section>
   <section v-else-if="!loading" class="composer-not-found">
     <p>{{ $t("classical_composer_not_found") }}</p>
@@ -46,19 +52,33 @@ import { type Artist } from "@/plugins/api/interfaces";
 import {
   getComposer,
   getComposerWorks,
+  getOtherTracksForArtist,
+  getPerformers,
+  makePerformerLookup,
   synthesiseArtist,
   type ClassicalComposer,
+  type ClassicalOtherTrack,
+  type ClassicalPerformer,
   type ClassicalWorkSummary,
 } from "@/services/classical";
+import OtherTracksSection from "@/views/classical/components/OtherTracksSection.vue";
+import { openOtherTrackMenu } from "@/views/classical/menu";
 import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 defineOptions({ name: "ComposerDetail" });
 
 const props = defineProps<{ id: string }>();
 
+const router = useRouter();
+
 const composer = ref<ClassicalComposer | undefined>();
 const works = ref<ClassicalWorkSummary[]>([]);
+const otherTracks = ref<ClassicalOtherTrack[]>([]);
+const performers = ref<ClassicalPerformer[]>([]);
 const loading = ref(true);
+
+const performerLookup = computed(() => makePerformerLookup(performers.value));
 
 const artistItem = computed<Artist | undefined>(() => {
   const c = composer.value;
@@ -86,6 +106,10 @@ const load = async (id: string) => {
     if (!bc) return -1;
     return ac.localeCompare(bc, undefined, { numeric: true });
   });
+  otherTracks.value = await getOtherTracksForArtist(id, "composer");
+  if (performers.value.length === 0) {
+    performers.value = await getPerformers();
+  }
   loading.value = false;
 };
 
@@ -94,6 +118,22 @@ watch(
   (id) => load(id),
   { immediate: true },
 );
+
+const onPlayOtherTrack = (_t: ClassicalOtherTrack) => {
+  // TODO: play_media on the track URI once tracks are real records.
+};
+
+const onMenuOtherTrack = (t: ClassicalOtherTrack, evt: Event) => {
+  openOtherTrackMenu(
+    t,
+    {
+      router,
+      composer: composer.value,
+      performerLookup: performerLookup.value,
+    },
+    evt,
+  );
+};
 </script>
 
 <style scoped>

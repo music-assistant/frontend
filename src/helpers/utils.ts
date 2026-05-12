@@ -116,6 +116,13 @@ export const isColorDark = function (hexColor: string) {
 export const formatAliasName = (name: string) =>
   name ? name.replace(/(^|\s)\S/g, (match) => match.toUpperCase()) : "";
 
+/** Lowercase + strip diacritics: "Béla Bartók" → "bela bartok". */
+export const normalizeForFilter = (s: string): string =>
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
 export const formatRelativeTime = (seconds: number): string => {
   if (seconds < 60) return `${Math.round(seconds)}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;

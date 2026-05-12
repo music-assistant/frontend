@@ -17,9 +17,11 @@ import { QueueOption, type Track } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { i18n } from "@/plugins/i18n";
 import {
+  synthesiseOtherTrack,
   synthesiseTrack,
   type ClassicalComposer,
   type ClassicalCreditRecord,
+  type ClassicalOtherTrack,
   type ClassicalPerformer,
   type ClassicalRecording,
   type ClassicalRecordingMovement,
@@ -112,6 +114,76 @@ export async function openRecordingMenu(
     includeMoreInfo: false,
   });
   emit(items, evt);
+}
+
+export interface OtherTrackMenuContext {
+  router: Router;
+  composer?: ClassicalComposer;
+  performerLookup: Record<string, ClassicalPerformer>;
+}
+
+// Workless tracks reuse the standard track menu, plus the classical entries
+// spliced near "Go to album". "Go to work" is omitted entirely — there is no
+// work to navigate to, so the spec opts for absence over a greyed entry.
+export async function openOtherTrackMenu(
+  track: ClassicalOtherTrack,
+  ctx: OtherTrackMenuContext,
+  evt: Event | MouseEvent,
+) {
+  const performerIds = track.credits
+    .filter((c) => c.role !== ArtistRole.COMPOSER)
+    .map((c) => c.artist_id);
+  const performers = Array.from(new Set(performerIds))
+    .map((id) => ctx.performerLookup[id])
+    .filter((p): p is ClassicalPerformer => !!p);
+
+  const trackItem = synthesiseOtherTrack(track, ctx.composer, performers);
+
+  let playItems = await getPlaybackContextMenuItems([trackItem]);
+  if (playItems.length === 0) playItems = fallbackPlayItems([trackItem]);
+  const standardItems = await getContextMenuItems([trackItem]);
+
+  const filtered = standardItems.filter((item) => {
+    if (item.label === "goto_artist") return false;
+    if (item.label === "refresh_item") return false;
+    return true;
+  });
+
+  // Build a synthetic recording so the existing performer-submenu helper can
+  // reuse its credit-aggregation pipeline (role priority, instrument
+  // qualifiers, dedupe). The recording lives only inside this call.
+  const syntheticRecording: ClassicalRecording = {
+    item_id: track.item_id,
+    work_id: "",
+    duration_seconds: track.duration_seconds,
+    credits: track.credits,
+    movements: [],
+  };
+  const submenuCtx: ClassicalMenuContext = {
+    router: ctx.router,
+    work: { item_id: "", name: "" } as ClassicalWorkSummary,
+    composer: ctx.composer,
+    performerLookup: ctx.performerLookup,
+  };
+
+  const classicalEntries: ContextMenuItem[] = [
+    gotoComposer(submenuCtx),
+    performerSubMenu(syntheticRecording, submenuCtx),
+  ].filter((x): x is ContextMenuItem => x !== null);
+  const albumIdx = filtered.findIndex((i) => i.label === "goto_album");
+  if (albumIdx >= 0) {
+    filtered.splice(albumIdx + 1, 0, ...classicalEntries);
+  } else {
+    filtered.unshift(...classicalEntries);
+  }
+
+  if (!filtered.some((i) => i.label === "show_info")) {
+    filtered.unshift(showInfoEntry(trackItem, ctx.router));
+  }
+
+  reorderFavourites(filtered);
+
+  emit([...playItems, ...filtered], evt);
 }
 
 // ---------------------------------------------------------------------------

@@ -19,6 +19,7 @@ export default defineConfig({
     tailwindcss(),
     webfontDownload([
       "https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap",
+      "https://fonts.googleapis.com/css2?family=Roboto+Serif:ital,opsz,wght@0,8..144,400..700;1,8..144,400..700&display=swap",
     ]),
     vuetify({
       autoImport: true,

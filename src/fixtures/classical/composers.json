@@ -21,5 +21,16 @@
     "fanart_url": "http://192.168.1.166:8123/local/classical/arvo-fanart.jpg",
     "thumbnail_url": "http://192.168.1.166:8123/local/classical/arvo-thumb.jpg",
     "biography": "Estonian composer of classical and sacred music. Since the late 1970s, Pärt has worked in a minimalist style that uses his self-invented compositional technique, tintinnabuli."
+  },
+  {
+    "item_id": "composer-mompou",
+    "name": "Federico Mompou",
+    "sort_name": "Mompou, Federico",
+    "year_range": "1893–1987",
+    "work_count": 0,
+    "recording_count": 0,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/federico-fanart.jpg",
+    "thumbnail_url": "http://192.168.1.166:8123/local/classical/federico-thumb.jpg",
+    "biography": "Catalan composer and pianist whose intimate piano miniatures inhabit a quiet, harmonically static idiom often compared with Satie. Best known for the four-volume Música Callada — every track of his in the library is a fragment or excerpt that MusicBrainz never linked to a Work."
   }
 ]
