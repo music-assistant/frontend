@@ -1,6 +1,9 @@
 <template>
   <article class="recording-card" :class="{ expanded }">
-    <div class="recording-header-row">
+    <div
+      class="recording-header-row"
+      @contextmenu.prevent="$emit('menu-recording', recording, $event)"
+    >
       <button
         type="button"
         class="recording-header"
@@ -40,7 +43,14 @@
 
     <div v-if="expanded" class="recording-body">
       <ol class="movements">
-        <li v-for="m in recording.movements" :key="m.track_id" class="movement">
+        <li
+          v-for="m in recording.movements"
+          :key="m.track_id"
+          class="movement"
+          @contextmenu.prevent.stop="
+            $emit('menu-movement', m, recording, $event)
+          "
+        >
           <button
             type="button"
             class="movement-play"
@@ -144,18 +154,14 @@ const performerCredits = computed(() => {
 </script>
 
 <style scoped>
-.recording-card {
-  border: 1px solid var(--border, #2a2a2a);
-  border-radius: 8px;
-  background: var(--card, transparent);
-  overflow: hidden;
+.recording-card:not(:last-child) {
+  border-bottom: 1px solid var(--border, #2a2a2a);
 }
 
 .recording-header-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding-right: 0.4rem;
 }
 
 .recording-header {
@@ -164,7 +170,7 @@ const performerCredits = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.6rem 0.9rem;
+  padding: 0.7rem 0.25rem 0.7rem 0;
   background: transparent;
   border: 0;
   text-align: left;
@@ -220,9 +226,7 @@ const performerCredits = computed(() => {
 }
 
 .recording-body {
-  /* right-padding matches .recording-header-row so the movement-row actions
-     line up vertically with the recording-header actions above. */
-  padding: 0.4rem 0.4rem 0.8rem 2.5rem;
+  padding: 0 0 0.8rem 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -260,6 +264,19 @@ const performerCredits = computed(() => {
 
 .movement-play:hover .movement-title {
   text-decoration: underline;
+}
+
+.movement-title {
+  font-family: var(
+    --font-classical-serif,
+    "Roboto Serif",
+    ui-serif,
+    Georgia,
+    serif
+  );
+  font-optical-sizing: auto;
+  font-style: italic;
+  font-size: 0.95rem;
 }
 
 .source-album {

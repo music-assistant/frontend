@@ -1,7 +1,25 @@
 <template>
   <div class="composers-tab">
-    <ul v-if="composers.length" class="composer-grid">
-      <li v-for="c in composers" :key="c.item_id" class="composer-card">
+    <div class="composers-controls">
+      <input
+        v-model="search"
+        type="search"
+        :placeholder="searchPlaceholder"
+        class="composers-search"
+        :aria-label="searchPlaceholder"
+      />
+      <label class="composers-sort">
+        {{ $t("classical_sort_label") }}
+        <select v-model="sort">
+          <option value="sort_name">{{ $t("sort.sort_name") }}</option>
+          <option value="name">{{ $t("sort.name") }}</option>
+          <option value="works">{{ $t("classical_sort_works") }}</option>
+        </select>
+      </label>
+    </div>
+
+    <ul v-if="filteredComposers.length" class="composer-grid">
+      <li v-for="c in filteredComposers" :key="c.item_id" class="composer-card">
         <router-link
           :to="`/classical/composers/${c.item_id}`"
           class="composer-card-link"
@@ -28,6 +46,9 @@
         </router-link>
       </li>
     </ul>
+    <p v-else-if="composers.length" class="text-muted-foreground">
+      {{ $t("classical_no_composers_match") }}
+    </p>
     <p v-else class="text-muted-foreground">
       {{ $t("classical_no_composers") }}
     </p>
@@ -35,15 +56,49 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeForFilter } from "@/helpers/utils";
 import { getComposers, type ClassicalComposer } from "@/services/classical";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 defineOptions({ name: "ComposersTab" });
 
+type SortKey = "name" | "sort_name" | "works";
+
+const { t } = useI18n();
+
 const composers = ref<ClassicalComposer[]>([]);
+const search = ref("");
+const sort = ref<SortKey>("sort_name");
+
+const searchPlaceholder = computed(() =>
+  t("classical_filter_composers_placeholder"),
+);
 
 onMounted(async () => {
   composers.value = await getComposers();
+});
+
+const collator = new Intl.Collator(undefined, { numeric: true });
+
+const filteredComposers = computed(() => {
+  const q = normalizeForFilter(search.value.trim());
+  const filtered = q
+    ? composers.value.filter((c) => normalizeForFilter(c.name).includes(q))
+    : composers.value;
+  const sorted = [...filtered];
+  sorted.sort((a, b) => {
+    if (sort.value === "works") {
+      const byCount = b.work_count - a.work_count;
+      if (byCount !== 0) return byCount;
+      return collator.compare(a.sort_name || a.name, b.sort_name || b.name);
+    }
+    if (sort.value === "sort_name") {
+      return collator.compare(a.sort_name || a.name, b.sort_name || b.name);
+    }
+    return collator.compare(a.name, b.name);
+  });
+  return sorted;
 });
 </script>
 
@@ -52,6 +107,43 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.composers-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.composers-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #444);
+  background: var(--card, transparent);
+  color: inherit;
+  font: inherit;
+}
+
+.composers-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--muted-foreground, #aaa);
+}
+
+.composers-sort select {
+  /* Pinned identically in WorksTab and PerformersTab. */
+  min-width: 12rem;
+  background: var(--card, transparent);
+  color: inherit;
+  border: 1px solid var(--border, #444);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
 }
 
 .composer-grid {

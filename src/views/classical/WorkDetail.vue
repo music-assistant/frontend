@@ -141,7 +141,7 @@ const artistItem = computed<Artist | undefined>(() => {
     thumbnail_url: c?.thumbnail_url,
     // Skip the composer's logo so the InfoHeader name slot shows the work title.
     logo_url: null,
-    biography: null,
+    biography: w.description ?? null,
   });
 });
 
@@ -217,7 +217,10 @@ const formatWorkType = (raw: string) => {
 }
 
 .work-composer-link {
+  font-family: var(--font-classical-serif);
+  font-optical-sizing: auto;
   font-weight: 600;
+  font-size: 1.05rem;
   color: inherit;
   text-decoration: none;
 }
@@ -233,8 +236,7 @@ const formatWorkType = (raw: string) => {
 .recordings-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem 0;
+  padding: 0.25rem 1rem 0;
 }
 
 .recordings-empty {

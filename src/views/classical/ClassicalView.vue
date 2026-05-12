@@ -1,5 +1,5 @@
 <template>
-  <section class="classical-view">
+  <section class="classical-view classical-typography">
     <v-toolbar color="transparent" class="classical-toolbar">
       <template #prepend>
         <v-btn :disabled="true" size="small" style="opacity: 0.8">
@@ -90,6 +90,36 @@ const goToTab = (tab: ClassicalTab) => {
 .classical-view {
   display: flex;
   flex-direction: column;
+}
+
+/* Inherited by all child routes; referenced by inner components for movement titles. */
+.classical-typography {
+  --font-classical-serif:
+    "Roboto Serif", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.classical-typography .classical-toolbar-title,
+.classical-typography :deep(.classical-tab-trigger),
+.classical-typography :deep(.classical-tab-trigger span) {
+  font-family: var(--font-classical-serif);
+  font-optical-sizing: auto;
+}
+
+.classical-typography :deep(.v-card-title) {
+  font-family: var(--font-classical-serif);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.classical-typography :deep(.header.v-toolbar) {
+  font-family: var(--font-classical-serif);
+  font-optical-sizing: auto;
+}
+
+/* Toolbar's title is a native <button>; no classical view wires titleClicked. */
+.classical-typography :deep(.v-toolbar-title button) {
+  cursor: default;
 }
 
 .classical-toolbar :deep(.v-toolbar__content) {

@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeForFilter } from "@/helpers/utils";
 import { getWorks, type ClassicalWorkSummary } from "@/services/classical";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -78,11 +79,11 @@ onMounted(async () => {
 const collator = new Intl.Collator(undefined, { numeric: true });
 
 const filteredWorks = computed(() => {
-  const q = search.value.trim().toLowerCase();
+  const q = normalizeForFilter(search.value.trim());
   const filtered = q
     ? works.value.filter((w) => {
         const hay = `${w.composer} ${w.name} ${w.catalog_number ?? ""}`;
-        return hay.toLowerCase().includes(q);
+        return normalizeForFilter(hay).includes(q);
       })
     : works.value;
   const sorted = [...filtered];
@@ -147,6 +148,8 @@ const filteredWorks = computed(() => {
 }
 
 .works-sort select {
+  /* Pinned identically in ComposersTab and PerformersTab. */
+  min-width: 12rem;
   background: var(--card, transparent);
   color: inherit;
   border: 1px solid var(--border, #444);

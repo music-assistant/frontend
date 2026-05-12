@@ -9,7 +9,12 @@
     <v-divider />
 
     <ul v-if="works.length" class="performer-works-list">
-      <li v-for="w in works" :key="w.item_id" class="performer-work-row">
+      <li
+        v-for="w in works"
+        :key="w.item_id"
+        class="performer-work-row"
+        @contextmenu.prevent="onMenuWork(w, $event)"
+      >
         <router-link :to="workLink(w.item_id)" class="performer-work-link">
           <span class="performer-work-composer">{{ w.composer }}</span>
           <span class="performer-work-title">
@@ -40,6 +45,12 @@
     <p v-else class="performer-works-empty">
       {{ $t("classical_no_works_for_performer") }}
     </p>
+
+    <OtherTracksSection
+      :tracks="otherTracks"
+      @play-track="onPlayOtherTrack"
+      @menu-track="onMenuOtherTrack"
+    />
   </section>
   <section v-else-if="!loading" class="performer-not-found">
     <p>{{ $t("classical_performer_not_found") }}</p>
@@ -55,6 +66,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { type Artist } from "@/plugins/api/interfaces";
 import {
   getComposer,
+  getOtherTracksForArtist,
   getPerformer,
   getPerformerWorks,
   getPerformers,
@@ -62,11 +74,13 @@ import {
   makePerformerLookup,
   synthesiseArtist,
   type ClassicalComposer,
+  type ClassicalOtherTrack,
   type ClassicalPerformer,
   type ClassicalWorkSummary,
 } from "@/services/classical";
 import ClassicalRowActions from "@/views/classical/components/ClassicalRowActions.vue";
-import { openRecordingMenu } from "@/views/classical/menu";
+import OtherTracksSection from "@/views/classical/components/OtherTracksSection.vue";
+import { openOtherTrackMenu, openRecordingMenu } from "@/views/classical/menu";
 import { computed, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -78,6 +92,7 @@ const router = useRouter();
 
 const performer = ref<ClassicalPerformer | undefined>();
 const works = ref<ClassicalWorkSummary[]>([]);
+const otherTracks = ref<ClassicalOtherTrack[]>([]);
 const allPerformers = ref<ClassicalPerformer[]>([]);
 const composerCache = reactive<Record<string, ClassicalComposer>>({});
 const loading = ref(true);
@@ -145,10 +160,37 @@ const load = async (id: string) => {
   loading.value = true;
   performer.value = await getPerformer(id);
   works.value = await getPerformerWorks(id);
+  otherTracks.value = await getOtherTracksForArtist(id, "performer");
   if (allPerformers.value.length === 0) {
     allPerformers.value = await getPerformers();
   }
   loading.value = false;
+};
+
+const onPlayOtherTrack = (_t: ClassicalOtherTrack) => {
+  // TODO: wire to play_media on the track URI once tracks are real records.
+};
+
+// Other-track menu: same context as a movement menu minus the work, since
+// these tracks are Workless by definition. The composer comes from the
+// track's composer credit (if any) — looked up lazily.
+const onMenuOtherTrack = async (t: ClassicalOtherTrack, evt: Event) => {
+  const composerCredit = t.credits.find((c) => c.role === "composer");
+  if (composerCredit && !composerCache[composerCredit.artist_id]) {
+    const c = await getComposer(composerCredit.artist_id);
+    if (c) composerCache[composerCredit.artist_id] = c;
+  }
+  openOtherTrackMenu(
+    t,
+    {
+      router,
+      composer: composerCredit
+        ? composerCache[composerCredit.artist_id]
+        : undefined,
+      performerLookup: performerLookup.value,
+    },
+    evt,
+  );
 };
 
 watch(
