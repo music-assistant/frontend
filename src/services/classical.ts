@@ -15,6 +15,7 @@ import {
 import { ArtistRole, PERFORMER_ROLES } from "@/types/classical";
 
 import composersFixture from "@/fixtures/classical/composers.json";
+import otherTracksFixture from "@/fixtures/classical/other_tracks.json";
 import performersFixture from "@/fixtures/classical/performers.json";
 import recordingsFixture from "@/fixtures/classical/recordings.json";
 import worksFixture from "@/fixtures/classical/works.json";
@@ -53,6 +54,7 @@ export interface ClassicalWorkSummary {
   work_type?: string;
   year_composed?: number | null;
   recording_count: number;
+  description?: string;
   arrangement_of?: Array<{ item_id: string; name: string; composer: string }>;
 }
 
@@ -83,6 +85,20 @@ export interface ClassicalCreditRecord {
   role: ArtistRole | string;
   instrument?: string | null;
   position: number;
+}
+
+// A library track credited to a composer or performer but with no Work
+// linkage. Stage 3d's API will expose a query for "tracks where artist X is
+// credited AND work_id IS NULL"; until then we filter the fixture client-side.
+export interface ClassicalOtherTrack {
+  item_id: string;
+  name: string;
+  album: string;
+  album_id: string;
+  duration_seconds: number;
+  year?: number | null;
+  timestamp_added: number;
+  credits: ClassicalCreditRecord[];
 }
 
 export interface ClassicalRecording {
@@ -232,21 +248,54 @@ export async function getPerformerWorks(
   performerId: string,
 ): Promise<ClassicalWorkSummary[]> {
   if (USE_MOCKS) {
-    const workIds = new Set(
-      (recordingsFixture as ClassicalRecording[])
-        .filter(
-          (r) =>
-            r.conductor_id === performerId ||
-            r.orchestra_id === performerId ||
-            r.performer_ids?.includes(performerId),
-        )
-        .map((r) => r.work_id),
-    );
-    return (worksFixture as ClassicalWorkSummary[]).filter((w) =>
-      workIds.has(w.item_id),
-    );
+    // recording_count is per-performer here, not the work's library-wide total.
+    const countsByWork = new Map<string, number>();
+    for (const r of recordingsFixture as ClassicalRecording[]) {
+      const involved =
+        r.conductor_id === performerId ||
+        r.orchestra_id === performerId ||
+        r.performer_ids?.includes(performerId);
+      if (involved) {
+        countsByWork.set(r.work_id, (countsByWork.get(r.work_id) ?? 0) + 1);
+      }
+    }
+    return (worksFixture as ClassicalWorkSummary[])
+      .filter((w) => countsByWork.has(w.item_id))
+      .map((w) => ({ ...w, recording_count: countsByWork.get(w.item_id)! }));
   }
   throw new Error("getPerformerWorks: real backend not wired yet");
+}
+
+// ---------------------------------------------------------------------------
+// "Other tracks" — tracks credited to an entity but unlinked to any Work.
+// ---------------------------------------------------------------------------
+
+export type OtherTracksMode = "composer" | "performer";
+
+/**
+ * Tracks where the entity has a credit on the track AND the track is not
+ * linked to a Work entity. For `mode="composer"` only composer credits
+ * count; for `mode="performer"` only non-composer credits count. The
+ * Work-bound filter is implicit in mock mode — the fixture only contains
+ * Workless tracks; the real API will apply `work_id IS NULL` server-side.
+ */
+export async function getOtherTracksForArtist(
+  artistId: string,
+  mode: OtherTracksMode,
+): Promise<ClassicalOtherTrack[]> {
+  if (USE_MOCKS) {
+    const all = otherTracksFixture as ClassicalOtherTrack[];
+    return all.filter((t) =>
+      t.credits.some(
+        (c) =>
+          c.artist_id === artistId &&
+          (mode === "composer"
+            ? c.role === ArtistRole.COMPOSER
+            : c.role !== ArtistRole.COMPOSER),
+      ),
+    );
+  }
+  throw new Error("getOtherTracksForArtist: real backend not wired yet");
 }
 
 // ---------------------------------------------------------------------------
@@ -372,6 +421,59 @@ export function synthesiseTrack(
     favorite: false,
     timestamp_added: 0,
     timestamp_modified: 0,
+  };
+}
+
+/**
+ * Build a Track-shaped MediaItem from a ClassicalOtherTrack so the standard
+ * context-menu builders accept the row. Mirrors synthesiseTrack but without
+ * a parent recording — the other-track is its own album row.
+ */
+export function synthesiseOtherTrack(
+  track: ClassicalOtherTrack,
+  composer: ClassicalComposer | undefined,
+  performers: ClassicalPerformer[],
+): Track {
+  const composerMapping = composer ? performerToMapping(composer) : undefined;
+  const performerMappings = performers.map(performerToMapping);
+  const artists: ItemMapping[] = composerMapping
+    ? [composerMapping, ...performerMappings]
+    : performerMappings;
+
+  const album: ItemMapping = {
+    item_id: track.album_id,
+    provider: "library",
+    name: track.album,
+    uri: `library://album/${track.album_id}`,
+    available: true,
+    is_playable: true,
+    media_type: MediaType.ALBUM,
+  };
+
+  return {
+    item_id: track.item_id,
+    provider: "library",
+    name: track.name,
+    uri: `library://track/${track.item_id}`,
+    is_playable: true,
+    media_type: MediaType.TRACK,
+    duration: track.duration_seconds,
+    artists,
+    album,
+    track_number: 1,
+    provider_mappings: [
+      {
+        item_id: track.item_id,
+        provider_domain: "library",
+        provider_instance: "library",
+        available: true,
+        in_library: true,
+      },
+    ],
+    metadata: {},
+    favorite: false,
+    timestamp_added: track.timestamp_added,
+    timestamp_modified: track.timestamp_added,
   };
 }
 

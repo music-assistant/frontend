@@ -1,5 +1,24 @@
 <template>
   <div class="performers-tab">
+    <div class="performers-controls">
+      <input
+        v-model="search"
+        type="search"
+        :placeholder="searchPlaceholder"
+        class="performers-search"
+        :aria-label="searchPlaceholder"
+      />
+      <label class="performers-sort">
+        {{ $t("classical_sort_label") }}
+        <select v-model="sort">
+          <option value="name">{{ $t("sort.name") }}</option>
+          <option value="recordings">
+            {{ $t("classical_sort_recordings") }}
+          </option>
+        </select>
+      </label>
+    </div>
+
     <div class="role-chips">
       <button
         v-for="chip in chips"
@@ -52,6 +71,9 @@
         </router-link>
       </li>
     </ul>
+    <p v-else-if="search.trim()" class="text-muted-foreground">
+      {{ $t("classical_no_performers_match") }}
+    </p>
     <p v-else class="text-muted-foreground">
       {{ $t("classical_no_performers_for_role") }}
     </p>
@@ -60,11 +82,17 @@
 
 <script setup lang="ts">
 import { ArtistRole } from "@/types/classical";
+import { normalizeForFilter } from "@/helpers/utils";
 import { getPerformers, type ClassicalPerformer } from "@/services/classical";
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 defineOptions({ name: "PerformersTab" });
+
+type SortKey = "name" | "recordings";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   // Pre-selected chip from /classical/performers?role=conductor.
@@ -91,17 +119,38 @@ const chips: Chip[] = [
 ];
 
 const performers = ref<ClassicalPerformer[]>([]);
+const search = ref("");
+const sort = ref<SortKey>("name");
+
+const searchPlaceholder = computed(() =>
+  t("classical_filter_performers_placeholder"),
+);
 
 const activeRole = computed<ArtistRole | null>(() => {
   if (!props.role) return null;
   return chips.find((c) => c.value === props.role)?.value ?? null;
 });
 
-const filteredPerformers = computed(() =>
-  activeRole.value
+const collator = new Intl.Collator(undefined, { numeric: true });
+
+const filteredPerformers = computed(() => {
+  const byRole = activeRole.value
     ? performers.value.filter((p) => p.role === activeRole.value)
-    : performers.value,
-);
+    : performers.value;
+  const q = normalizeForFilter(search.value.trim());
+  const filtered = q
+    ? byRole.filter((p) => normalizeForFilter(p.name).includes(q))
+    : byRole;
+  const sorted = [...filtered];
+  sorted.sort((a, b) => {
+    if (sort.value === "recordings") {
+      const byCount = b.recording_count - a.recording_count;
+      if (byCount !== 0) return byCount;
+    }
+    return collator.compare(a.name, b.name);
+  });
+  return sorted;
+});
 
 const setRole = (role: ArtistRole | null) => {
   router.replace({
@@ -138,6 +187,43 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.performers-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.performers-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #444);
+  background: var(--card, transparent);
+  color: inherit;
+  font: inherit;
+}
+
+.performers-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--muted-foreground, #aaa);
+}
+
+.performers-sort select {
+  /* Pinned identically in WorksTab and ComposersTab. */
+  min-width: 12rem;
+  background: var(--card, transparent);
+  color: inherit;
+  border: 1px solid var(--border, #444);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
 }
 
 .role-chips {

@@ -1,0 +1,134 @@
+[
+  {
+    "item_id": "track-other-beethoven-untitled-piano-f",
+    "name": "Untitled Piano Piece in F",
+    "album": "Beethoven: Piano Miscellany",
+    "album_id": "album-beethoven-piano-miscellany",
+    "duration_seconds": 272,
+    "year": 2018,
+    "timestamp_added": 1714003200,
+    "credits": [
+      { "artist_id": "composer-beethoven", "role": "composer", "position": 0 },
+      {
+        "artist_id": "performer-pollini",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 1
+      }
+    ]
+  },
+  {
+    "item_id": "track-other-beethoven-andante-fragment",
+    "name": "Andante in C (fragment)",
+    "album": "Beethoven: Piano Miscellany",
+    "album_id": "album-beethoven-piano-miscellany",
+    "duration_seconds": 198,
+    "year": 2018,
+    "timestamp_added": 1714003201,
+    "credits": [
+      { "artist_id": "composer-beethoven", "role": "composer", "position": 0 },
+      {
+        "artist_id": "performer-pollini",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 1
+      }
+    ]
+  },
+  {
+    "item_id": "track-other-karajan-march-1955",
+    "name": "March in B-flat (1955 studio rehearsal)",
+    "album": "Karajan: Studio Sessions Vol. 3",
+    "album_id": "album-karajan-studio-sessions-3",
+    "duration_seconds": 321,
+    "year": 1955,
+    "timestamp_added": 1712534400,
+    "credits": [
+      { "artist_id": "performer-karajan", "role": "conductor", "position": 0 },
+      { "artist_id": "performer-bpo", "role": "orchestra", "position": 1 }
+    ]
+  },
+  {
+    "item_id": "track-other-karajan-fanfare",
+    "name": "Fanfare for the Vienna Festival",
+    "album": "Karajan: Studio Sessions Vol. 3",
+    "album_id": "album-karajan-studio-sessions-3",
+    "duration_seconds": 138,
+    "year": 1965,
+    "timestamp_added": 1712534401,
+    "credits": [
+      { "artist_id": "performer-karajan", "role": "conductor", "position": 0 },
+      { "artist_id": "performer-vpo", "role": "orchestra", "position": 1 }
+    ]
+  },
+  {
+    "item_id": "track-other-mompou-callada-i",
+    "name": "Música Callada, I. Angélico",
+    "album": "Mompou: Música Callada (excerpts)",
+    "album_id": "album-mompou-callada-excerpts",
+    "duration_seconds": 256,
+    "year": 1980,
+    "timestamp_added": 1709856000,
+    "credits": [
+      { "artist_id": "composer-mompou", "role": "composer", "position": 0 },
+      {
+        "artist_id": "performer-pollini",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 1
+      }
+    ]
+  },
+  {
+    "item_id": "track-other-mompou-callada-vi",
+    "name": "Música Callada, VI. Lento",
+    "album": "Mompou: Música Callada (excerpts)",
+    "album_id": "album-mompou-callada-excerpts",
+    "duration_seconds": 304,
+    "year": 1980,
+    "timestamp_added": 1709856001,
+    "credits": [
+      { "artist_id": "composer-mompou", "role": "composer", "position": 0 },
+      {
+        "artist_id": "performer-pollini",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 1
+      }
+    ]
+  },
+  {
+    "item_id": "track-other-gould-improv-fugue",
+    "name": "Goldberg-style Fugue (improvisation)",
+    "album": "Glenn Gould: Off the Record",
+    "album_id": "album-gould-off-the-record",
+    "duration_seconds": 412,
+    "year": 1969,
+    "timestamp_added": 1707264000,
+    "credits": [
+      {
+        "artist_id": "performer-glenn-gould",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 0
+      }
+    ]
+  },
+  {
+    "item_id": "track-other-gould-bach-warmup",
+    "name": "Bach Warm-up (rehearsal take)",
+    "album": "Glenn Gould: Off the Record",
+    "album_id": "album-gould-off-the-record",
+    "duration_seconds": 168,
+    "year": 1969,
+    "timestamp_added": 1707264001,
+    "credits": [
+      {
+        "artist_id": "performer-glenn-gould",
+        "role": "soloist",
+        "instrument": "piano",
+        "position": 0
+      }
+    ]
+  }
+]

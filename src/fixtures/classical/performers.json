@@ -63,5 +63,16 @@
     "recording_count": 1,
     "work_count": 1,
     "fanart_url": "http://192.168.1.166:8123/local/classical/estonia-fanart.jpg"
+  },
+  {
+    "item_id": "performer-glenn-gould",
+    "name": "Glenn Gould",
+    "role": "soloist",
+    "year_range": "1932–1982",
+    "recording_count": 0,
+    "work_count": 0,
+    "fanart_url": "http://192.168.1.166:8123/local/classical/glenn-fanart.jpg",
+    "thumbnail_url": "http://192.168.1.166:8123/local/classical/glenn-thumb.jpg",
+    "biography": "Canadian pianist whose recordings of J. S. Bach defined a generation. The library here contains only off-record fragments and rehearsal takes — none linked to a Work entity."
   }
 ]
