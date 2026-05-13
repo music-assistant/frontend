@@ -17,6 +17,9 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { computed } from "vue";
+
+const isEditMode = computed(() => store.homescreenEditMode);
 import { LogOut, MoreVertical, Pencil, Settings } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 
@@ -113,7 +116,7 @@ const handleLogout = () => {
           </DropdownMenuItem>
           <DropdownMenuItem @click="handleEditHomescreen">
             <Pencil class="size-4" />
-            {{ $t("homescreen_edit_enable") }}
+            {{ $t(isEditMode ? "homescreen_edit_disable" : "homescreen_edit_enable") }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"
