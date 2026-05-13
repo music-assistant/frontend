@@ -1262,9 +1262,11 @@ export interface SmartPlaylistRules {
   year_to?: number;
   excluded_artist_ids?: number[];
   excluded_album_ids?: number[];
+  excluded_genre_ids?: number[];
   excluded_track_uris?: string[];
   excluded_artist_names?: Record<number, string>;
   excluded_album_names?: Record<number, string>;
+  excluded_genre_names?: Record<number, string>;
   dedup_hours?: number;
   seed_artist_library_only?: boolean;
 }

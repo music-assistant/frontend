@@ -1656,6 +1656,7 @@
         "seed_overrides_filter": "Not used when a seed track or artist is set",
         "excluded_artists": "Exclude artists",
         "excluded_albums": "Exclude albums",
+        "excluded_genres": "Exclude genres",
         "dedup_hours": "No repeat within",
         "dedup_hours_tooltip": "Skip tracks that were recently played. Set a window in hours (1–168) during which a track will not be repeated. Leave at 0 to disable.",
         "off": "Off",

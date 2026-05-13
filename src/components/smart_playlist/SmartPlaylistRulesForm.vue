@@ -68,6 +68,59 @@
             </TagsInput>
           </div>
 
+          <!-- Excluded genres -->
+          <div class="flex flex-col gap-2">
+            <Label>{{ $t("smart_playlist.excluded_genres") }}</Label>
+            <TagsInput v-model="excludedGenreModelValue">
+              <TagsInputItem
+                v-for="gid in rules.excluded_genre_ids"
+                :key="gid"
+                :value="String(gid)"
+              >
+                <span class="py-0.5 px-2 text-sm">{{ genreName(gid) }}</span>
+                <TagsInputItemDelete />
+              </TagsInputItem>
+              <Popover>
+                <PopoverTrigger as-child>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-7 gap-1 border-dashed text-xs"
+                  >
+                    <PlusCircle class="h-3 w-3" />
+                    {{ $t("genres") }}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-[200px] p-2">
+                  <Input
+                    v-model="excludedGenreSearch"
+                    :placeholder="$t('search')"
+                    class="mb-2 h-7 text-sm"
+                    @keydown.stop
+                  />
+                  <div class="max-h-36 overflow-y-auto flex flex-col">
+                    <div
+                      v-for="genre in filteredExcludedGenres"
+                      :key="genre.item_id"
+                      class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
+                      @click.stop="toggleExcludedGenreById(parseInt(genre.item_id))"
+                    >
+                      <Checkbox
+                        :checked="
+                          (rules.excluded_genre_ids ?? []).includes(
+                            parseInt(genre.item_id),
+                          )
+                        "
+                        class="h-4 w-4 pointer-events-none"
+                      />
+                      <span class="truncate">{{ genre.name }}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TagsInput>
+          </div>
+
           <!-- Seed track (search picker) -->
           <div class="flex flex-col gap-2">
             <div class="flex items-center gap-1">
@@ -102,7 +155,10 @@
                   <Button
                     variant="outline"
                     size="sm"
-                    :disabled="_similarTrackProviderIds.length === 0 || !!selectedSeedArtist"
+                    :disabled="
+                      _similarTrackProviderIds.length === 0 ||
+                      !!selectedSeedArtist
+                    "
                     class="h-7 gap-1 border-dashed text-xs"
                   >
                     <PlusCircle class="h-3 w-3" />
@@ -188,7 +244,10 @@
                   <Button
                     variant="outline"
                     size="sm"
-                    :disabled="_similarArtistProviderIds.length === 0 || !!selectedSeedTrack"
+                    :disabled="
+                      _similarArtistProviderIds.length === 0 ||
+                      !!selectedSeedTrack
+                    "
                     class="h-7 gap-1 border-dashed text-xs"
                   >
                     <PlusCircle class="h-3 w-3" />
@@ -861,9 +920,11 @@ const rules = reactive<SmartPlaylistRules>({
   seed_artist_library_only: false,
   excluded_artist_ids: [],
   excluded_album_ids: [],
+  excluded_genre_ids: [],
   excluded_track_uris: [],
   excluded_artist_names: {},
   excluded_album_names: {},
+  excluded_genre_names: {},
   min_popularity: undefined,
   dedup_hours: undefined,
   logic: "AND",
@@ -895,6 +956,15 @@ const filteredGenres = computed(() =>
       )
     : genres.value,
 );
+const excludedGenreSearch = ref("");
+const filteredExcludedGenres = computed(() => {
+  const base = excludedGenreSearch.value
+    ? genres.value.filter((g) =>
+        g.name.toLowerCase().includes(excludedGenreSearch.value.toLowerCase()),
+      )
+    : genres.value;
+  return base;
+});
 
 const artistSearch = ref("");
 const artistResults = ref<Artist[]>([]);
@@ -939,6 +1009,13 @@ const albumModelValue = computed({
       vals.includes(String(a.id)),
     );
     rules.album_ids = selectedAlbumItems.value.map((a) => a.id);
+  },
+});
+
+const excludedGenreModelValue = computed({
+  get: () => (rules.excluded_genre_ids ?? []).map(String),
+  set: (vals: string[]) => {
+    rules.excluded_genre_ids = vals.map(Number);
   },
 });
 
@@ -987,6 +1064,9 @@ watch(
       : [];
     rules.excluded_album_ids = initial.excluded_album_ids
       ? [...initial.excluded_album_ids]
+      : [];
+    rules.excluded_genre_ids = initial.excluded_genre_ids
+      ? [...initial.excluded_genre_ids]
       : [];
     rules.excluded_track_uris = initial.excluded_track_uris
       ? [...initial.excluded_track_uris]
@@ -1072,6 +1152,9 @@ function toggleGenreById(id: number) {
   if (idx >= 0) {
     rules.genre_ids.splice(idx, 1);
   } else {
+    // Remove from excluded if present
+    const excIdx = (rules.excluded_genre_ids ?? []).indexOf(id);
+    if (excIdx >= 0) rules.excluded_genre_ids!.splice(excIdx, 1);
     rules.genre_ids.push(id);
   }
 }
@@ -1084,6 +1167,12 @@ function toggleArtistById(id: number, name?: string) {
       (a) => a.id !== id,
     );
   } else if (name !== undefined) {
+    // Remove from excluded if present
+    const excIdx = rules.excluded_artist_ids!.indexOf(id);
+    if (excIdx >= 0) {
+      rules.excluded_artist_ids!.splice(excIdx, 1);
+      selectedExcludedArtistItems.value = selectedExcludedArtistItems.value.filter((a) => a.id !== id);
+    }
     rules.artist_ids.push(id);
     selectedArtistItems.value.push({ id, name });
   }
@@ -1097,8 +1186,26 @@ function toggleAlbumById(id: number, name?: string) {
       (a) => a.id !== id,
     );
   } else if (name !== undefined) {
+    // Remove from excluded if present
+    const excIdx = rules.excluded_album_ids!.indexOf(id);
+    if (excIdx >= 0) {
+      rules.excluded_album_ids!.splice(excIdx, 1);
+      selectedExcludedAlbumItems.value = selectedExcludedAlbumItems.value.filter((a) => a.id !== id);
+    }
     rules.album_ids.push(id);
     selectedAlbumItems.value.push({ id, name });
+  }
+}
+
+function toggleExcludedGenreById(id: number) {
+  const idx = (rules.excluded_genre_ids ?? []).indexOf(id);
+  if (idx >= 0) {
+    rules.excluded_genre_ids!.splice(idx, 1);
+  } else {
+    // Remove from included if present
+    const incIdx = rules.genre_ids.indexOf(id);
+    if (incIdx >= 0) rules.genre_ids.splice(incIdx, 1);
+    rules.excluded_genre_ids!.push(id);
   }
 }
 
@@ -1109,6 +1216,12 @@ function toggleExcludedArtistById(id: number, name?: string) {
     selectedExcludedArtistItems.value =
       selectedExcludedArtistItems.value.filter((a) => a.id !== id);
   } else if (name !== undefined) {
+    // Remove from included if present
+    const incIdx = rules.artist_ids.indexOf(id);
+    if (incIdx >= 0) {
+      rules.artist_ids.splice(incIdx, 1);
+      selectedArtistItems.value = selectedArtistItems.value.filter((a) => a.id !== id);
+    }
     rules.excluded_artist_ids!.push(id);
     selectedExcludedArtistItems.value.push({ id, name });
   }
@@ -1122,6 +1235,12 @@ function toggleExcludedAlbumById(id: number, name?: string) {
       (a) => a.id !== id,
     );
   } else if (name !== undefined) {
+    // Remove from included if present
+    const incIdx = rules.album_ids.indexOf(id);
+    if (incIdx >= 0) {
+      rules.album_ids.splice(incIdx, 1);
+      selectedAlbumItems.value = selectedAlbumItems.value.filter((a) => a.id !== id);
+    }
     rules.excluded_album_ids!.push(id);
     selectedExcludedAlbumItems.value.push({ id, name });
   }
@@ -1428,12 +1547,21 @@ function getFinalRules(): SmartPlaylistRules {
     seed_artist_name: selectedSeedArtist.value?.name,
     excluded_artist_ids: rules.excluded_artist_ids,
     excluded_album_ids: rules.excluded_album_ids,
+    excluded_genre_ids: rules.excluded_genre_ids,
     excluded_track_uris: rules.excluded_track_uris,
     excluded_artist_names: Object.fromEntries(
       selectedExcludedArtistItems.value.map((a) => [a.id, a.name]),
     ),
     excluded_album_names: Object.fromEntries(
       selectedExcludedAlbumItems.value.map((a) => [a.id, a.name]),
+    ),
+    excluded_genre_names: Object.fromEntries(
+      (rules.excluded_genre_ids ?? []).map((id) => [
+        id,
+        genres.value.find((g) => parseInt(g.item_id) === id)?.name ??
+          rules.excluded_genre_names?.[id] ??
+          String(id),
+      ]),
     ),
     dedup_hours: rules.dedup_hours,
     genre_names: genreNamesMap,
