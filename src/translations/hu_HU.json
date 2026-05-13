@@ -636,14 +636,6 @@
         "players_total": "Összesen {0}{1} lejátszó",
         "api_docs": "API dokumentáció",
         "no_group_providers": "Jelenleg nincs olyan szolgáltató, amely támogatná csoportok létrehozását",
-        "sendspin_sync_delay": {
-            "label": "Sendspin szinkronizációs késleltetés (ms)",
-            "description": "Statikus késleltetés milliszekundumban a hang szinkronizációjának beállításához. A pozitív értékek késleltetik a lejátszást, a negatívok előrébb hozzák. Használja ezt az eszközspecifikus hang késleltetés kompenzálására."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Böngésző késleltetés-érzékelés használata",
-            "description": "Automatikus kompenzáció a hardveres hang késleltetésre (pl. Bluetooth fejhallgatók) a böngésző kimeneti késleltetési API-jának használatával. Ez az API meglehetősen új és nem biztos, hogy megbízhatóan működik minden böngészőben és operációs rendszeren."
-        },
         "provider_codeowners": "Ezt a szolgáltatót közreműködő\/karbantartó:",
         "provider_credits": "Lehetővé tette:",
         "onboarding_subtitle": "Kezdjük azzal, hogy csatlakoztatjuk zenei forrásait és audioeszközeit.",
@@ -701,7 +693,7 @@
         "restore_success": "{0} hiányzó műfaj visszaállítva.",
         "restore_all_present": "Az összes alapértelmezett műfaj már jelen van.",
         "full_restore_success": "Teljes visszaállítás befejezve. {0} alapértelmezett műfaj visszaállítva.",
-        "genre_statistics": "Műfaj statisztikák",
+        "genre_statistics": "Műfaj könyvtár adminisztráció",
         "total_genres": "Összes műfaj",
         "view_all_genres": "Összes műfaj megtekintése",
         "background_scanner": "Háttérben futó feltérképező",
@@ -726,13 +718,28 @@
         "add_metadata_provider": "Metaadat szolgáltató hozzáadása",
         "add_plugin_provider": "Plugin hozzáadása",
         "music_sources": "Zeneforrások",
-        "plugins": "Pluginok",
+        "plugins": "Pluginek",
         "music_providers_description": "Kezelje zenei streaming szolgáltatásait és helyi könyvtárait",
         "player_providers_description": "Állítsa be a szolgáltatókat audio kimeneti eszközeihez",
         "metadata_providers_description": "Kezelje a metaadat szolgáltatókat borítóképekhez és további információkhoz",
         "plugin_providers_description": "Kezelje a pluginokat, amelyek kibővítik a Music Assistant funkcionalitását",
         "restore_genres": "Műfajok visszaállítása",
-        "scan_ago": "{0}-val ezelőtt"
+        "scan_ago": "{0}-val ezelőtt",
+        "genre_statistics_description": "Böngésszen és szűrjön a könyvtárában található összes műfaj között. A műfajok globálisan kizárhatók és visszaállíthatók.",
+        "excluded_genres": "Kizárt műfajok",
+        "excluded_genres_description": "Az itt felsorolt műfajok globálisan ki vannak zárva a könyvtárából, és nem jelennek meg egyetlen nézetben sem.",
+        "genre_table_rows_per_page": "Sorok oldalanként",
+        "genre_table_page_info": "{0}–{1} \/ {2}",
+        "missing_players_hint": "Hiányoznak a lejátszók? {0}",
+        "add_player_providers": "További lejátszó szolgáltatók hozzáadása",
+        "add_audio_analysis_provider": "Hanganalízis szolgáltató hozzáadása",
+        "audio_analysis_providers": "Hanganalízis",
+        "audio_analysis_providers_description": "A hangokat elemző szolgáltatók kezelése",
+        "audio_analysis": "Hanganalízis",
+        "sendspin_static_delay": {
+            "label": "Statikus lejátszási késleltetés (ms)",
+            "description": "Eltolás milliszekundumban, hogy ez a lejátszó szinkronban maradjon a többi lejátszóval. Növelje, ha a hang túl későn játszódik le, például egy erősítő, aktív hangszórók vagy az operációs rendszer késleltetésének kompenzálására."
+        }
     },
     "show_info": "Információ megjelenítése",
     "show_select_boxes": "Kijelölőmezők megjelenítése",
@@ -745,7 +752,7 @@
         "track_number": "Zeneszám száma",
         "year": "Megjelenés éve",
         "position_desc": "Pozíció (csökkenő)",
-        "album": "Album",
+        "album": "Album (ABC szerint)",
         "artist": "Előadó",
         "name": "ABC sorrendben",
         "name_desc": "ABC sorrendben (csökkenő)",
@@ -763,7 +770,8 @@
         "play_count": "Lejátszások száma",
         "play_count_desc": "Lejátszások száma (csökkenő)",
         "artist_name": "Album előadója",
-        "artist_name_desc": "Album előadója (csökkenő)"
+        "artist_name_desc": "Album előadója (csökkenő)",
+        "album_sort_name": "Album (rendezési név)"
     },
     "state": {
         "idle": "tétlen",
@@ -1371,7 +1379,34 @@
     "player_options": {
         "open": "Lejátszó beállítások megnyitása",
         "settable": "Beállítható lejátszó beállítások a(z) {0} lejátszóhoz",
-        "read_only": "Csak olvasható lejátszó beállítások a(z) {0} lejátszóhoz"
+        "read_only": "Csak olvasható lejátszó beállítások a(z) {0} lejátszóhoz",
+        "adaptive_drc": "Adaptív DRC",
+        "bass": "Mély",
+        "bass_extension": "Mély kiterjesztés",
+        "clear_voice": "Tiszta hang",
+        "dts_dialogue_control": "DTS párbeszéd szabályozás",
+        "dialogue_level": "Párbeszéd szint",
+        "dialogue_lift": "Párbeszéd kiemelés",
+        "dimmer": "Fényerő szabályozó",
+        "enhancer": "Hangjavító",
+        "equalizer_high": "Equalizer magas",
+        "equalizer_low": "Equalizer mély",
+        "equalizer_mid": "Equalizer közép",
+        "equalizer_mode": "Equalizer mód",
+        "extra_bass": "Extra mély",
+        "link_audio_delay": "Kapcsolat hang késleltetés",
+        "link_control": "Kapcsolat vezérlés",
+        "link_audio_quality": "Kapcsolat hangminőség",
+        "party_mode": "Party mód",
+        "pure_direct": "Közvetlen üzemmód",
+        "sleep": "Alvás időzítő",
+        "speaker_a": "A hangszóró",
+        "speaker_b": "B hangszóró",
+        "subwoofer_volume": "Mélysugárzó hangerő",
+        "surround_3d": "3D térhatás",
+        "surround_decoder_type": "Térhatás dekóder típus",
+        "tone_control_mode": "Hangszín szabályozás mód",
+        "treble": "Magas"
     },
     "select_sound_mode": "Hangmód kiválasztása",
     "refresh": "Frissítés",
@@ -1421,7 +1456,9 @@
                 "song_skipped": "Dal átugorva!",
                 "try_different_search": "Próbáljon meg másik keresési kifejezést",
                 "unknown_artist": "Ismeretlen előadó",
-                "view_songs": "Dalok megtekintése"
+                "view_songs": "Dalok megtekintése",
+                "added": "Hozzáadva",
+                "already_in_queue": "Már a várakozási sorban van"
             },
             "add": "Hozzáadás",
             "boost": "Előrehozás",
@@ -1435,7 +1472,14 @@
             "qr_failed": "A QR kód generálása sikertelen",
             "request": "Kérés",
             "link_copy_fail": "A link másolása sikertelen",
-            "link_copy_success": "Link másolva!"
+            "link_copy_success": "Link másolva!",
+            "confirm_disable_guest_access": "Biztosan le szeretné tiltani a vendéghozzáférést? A vendégek többé nem tudnak csatlakozni a bulihoz, zenét böngészni vagy számokat hozzáadni a lejátszási sorhoz.",
+            "confirm_enable_guest_access": "Biztosan engedélyezni szeretné a vendéghozzáférést? Ez lehetővé teszi, hogy bárki, aki rendelkezik a linkkel vagy QR-kóddal, csatlakozzon a bulihoz, zenét böngésszen és számokat adjon hozzá a lejátszási sorhoz.",
+            "disable_guest_access": "Vendéghozzáférés letiltása",
+            "enable_guest_access": "Vendéghozzáférés engedélyezése",
+            "guest_access_enabled": "Vendéghozzáférés engedélyezve",
+            "guest_access_toggle_failed": "A vendéghozzáférés váltása sikertelen",
+            "powered_by": "Szolgáltató:"
         }
     },
     "no_lyrics_available": "Nem érhető el dalszöveg",
@@ -1569,8 +1613,22 @@
         "cache_database_cleanup": "Gyorsítótár adatbázis karbantartása",
         "scan_missing_artist_artwork": "Hiányzó előadói grafikák keresése",
         "refresh_playlist_metadata": "Lejátszási lista metaadatok frissítése",
-        "update_metadata": "Metaadatok frissítése: {0}"
+        "update_metadata": "Metaadatok frissítése ehhez: {0}"
     },
     "not_found_headline": "Hoppá, ez az oldal nincs a műsorban.",
-    "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat."
+    "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat.",
+    "radiobrowser_by_popularity": "Népszerűség szerint",
+    "radiobrowser_by_category": "Kategória szerint",
+    "restore_genre": "Visszaállítás",
+    "genre_name": "Műfaj neve",
+    "export_playlist": "Lejátszási lista exportálása",
+    "import_playlist": "Lejátszási lista importálása",
+    "import_playlist_title": "Lejátszási lista importálása",
+    "import_playlist_invalid_file": "Érvénytelen lejátszási lista fájl",
+    "import_playlist_search_providers": "Számok keresése itt:",
+    "party_mode": "Parti",
+    "edit_playlist": "Lejátszási lista szerkesztése",
+    "edit_radio": "Rádióállomás szerkesztése",
+    "edit_track": "Szám szerkesztése",
+    "uri_read_only": "URI (csak olvasható)"
 }

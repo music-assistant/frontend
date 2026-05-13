@@ -628,14 +628,6 @@
         "players_total": "{0} łącznie odtwarzaczy{1}",
         "api_docs": "Dokumentacja API",
         "no_group_providers": "Obecnie nie masz żadnych dostawców obsługujących tworzenie grup",
-        "sendspin_sync_delay": {
-            "label": "Opóźnienie synchronizacji Sendspin (ms)",
-            "description": "Statyczne opóźnienie w milisekundach do regulacji synchronizacji dźwięku. Wartości dodatnie opóźniają odtwarzanie, wartości ujemne przyspieszają je. Służy do kompensacji opóźnienia dźwięku specyficznego dla urządzenia."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Użyj wykrywania opóźnień przeglądarki",
-            "description": "Automatycznie kompensuj sprzętowe opóźnienie dźwięku (np. w słuchawkach Bluetooth) za pomocą interfejsu API do pomiaru opóźnienia wyjściowego przeglądarki. To API jest dość nowe i może nie działać niezawodnie we wszystkich przeglądarkach i systemach operacyjnych."
-        },
         "provider_codeowners": "Ten dostawca jest współtworzony\/obsługiwany przez",
         "provider_credits": "Możliwe dzięki",
         "onboarding_subtitle": "Zacznijmy od podłączenia źródeł muzyki i urządzeń audio.",
