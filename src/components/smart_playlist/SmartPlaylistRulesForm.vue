@@ -90,14 +90,8 @@
               <TagsInputItem
                 v-if="selectedSeedTrack"
                 :value="selectedSeedTrack.item_id"
-                class="max-w-[240px]"
               >
-                <span class="py-0.5 pl-2 text-sm">
-                  {{ selectedSeedTrack.name }}
-                  <span class="text-muted-foreground text-xs ml-0.5">
-                    – {{ (selectedSeedTrack.artists as Artist[])[0]?.name }}
-                  </span>
-                </span>
+                <span class="py-0.5 px-2 text-sm truncate max-w-[180px] block">{{ selectedSeedTrack.name }}</span>
                 <TagsInputItemDelete />
               </TagsInputItem>
               <Popover v-if="!selectedSeedTrack && !selectedSeedArtist">
@@ -637,18 +631,20 @@
                 </Button>
               </div>
             </div>
-            <Slider
-              :model-value="[rules.min_popularity ?? 0]"
-              :min="0"
-              :max="100"
-              :step="5"
-              @update:model-value="
-                (v) => {
-                  rules.min_popularity =
-                    (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
-                }
-              "
-            />
+            <div class="px-4">
+              <Slider
+                :model-value="[rules.min_popularity ?? 0]"
+                :min="0"
+                :max="100"
+                :step="5"
+                @update:model-value="
+                  (v) => {
+                    rules.min_popularity =
+                      (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
+                  }
+                "
+              />
+            </div>
           </div>
 
           <!-- Year range -->
@@ -737,17 +733,19 @@
                 </Button>
               </div>
             </div>
-            <Slider
-              :model-value="[rules.dedup_hours ?? 0]"
-              :min="0"
-              :max="168"
-              :step="1"
-              @update:model-value="
-                (v) => {
-                  rules.dedup_hours = (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
-                }
-              "
-            />
+            <div class="px-4">
+              <Slider
+                :model-value="[rules.dedup_hours ?? 0]"
+                :min="0"
+                :max="168"
+                :step="1"
+                @update:model-value="
+                  (v) => {
+                    rules.dedup_hours = (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
+                  }
+                "
+              />
+            </div>
           </div>
 
           <!-- Rule logic -->
