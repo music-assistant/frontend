@@ -91,15 +91,18 @@
                 v-if="selectedSeedTrack"
                 :value="selectedSeedTrack.item_id"
               >
-                <span class="py-0.5 px-2 text-sm truncate max-w-[180px] block">{{ selectedSeedTrack.name }}</span>
+                <span
+                  class="py-0.5 px-2 text-sm truncate max-w-[180px] block"
+                  >{{ selectedSeedTrack.name }}</span
+                >
                 <TagsInputItemDelete />
               </TagsInputItem>
-              <Popover v-if="!selectedSeedTrack && !selectedSeedArtist">
+              <Popover v-if="!selectedSeedTrack">
                 <PopoverTrigger as-child>
                   <Button
                     variant="outline"
                     size="sm"
-                    :disabled="_similarTrackProviderIds.length === 0"
+                    :disabled="_similarTrackProviderIds.length === 0 || !!selectedSeedArtist"
                     class="h-7 gap-1 border-dashed text-xs"
                   >
                     <PlusCircle class="h-3 w-3" />
@@ -180,12 +183,12 @@
                 }}</span>
                 <TagsInputItemDelete />
               </TagsInputItem>
-              <Popover v-if="!selectedSeedArtist && !selectedSeedTrack">
+              <Popover v-if="!selectedSeedArtist">
                 <PopoverTrigger as-child>
                   <Button
                     variant="outline"
                     size="sm"
-                    :disabled="_similarArtistProviderIds.length === 0"
+                    :disabled="_similarArtistProviderIds.length === 0 || !!selectedSeedTrack"
                     class="h-7 gap-1 border-dashed text-xs"
                   >
                     <PlusCircle class="h-3 w-3" />
@@ -741,7 +744,8 @@
                 :step="1"
                 @update:model-value="
                   (v) => {
-                    rules.dedup_hours = (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
+                    rules.dedup_hours =
+                      (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
                   }
                 "
               />
@@ -941,9 +945,10 @@ const albumModelValue = computed({
 const excludedArtistModelValue = computed({
   get: () => selectedExcludedArtistItems.value.map((a) => String(a.id)),
   set: (vals: string[]) => {
-    selectedExcludedArtistItems.value = selectedExcludedArtistItems.value.filter(
-      (a) => vals.includes(String(a.id)),
-    );
+    selectedExcludedArtistItems.value =
+      selectedExcludedArtistItems.value.filter((a) =>
+        vals.includes(String(a.id)),
+      );
     rules.excluded_artist_ids = selectedExcludedArtistItems.value.map(
       (a) => a.id,
     );
