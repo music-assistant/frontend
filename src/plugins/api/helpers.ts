@@ -7,7 +7,6 @@ import {
   MediaType,
   Player,
   PlayerQueue,
-  Playlist,
 } from "./interfaces";
 
 /**
@@ -17,12 +16,7 @@ import {
 export const isQueueDynamicPlaylist = function (
   queue: PlayerQueue | undefined,
 ): boolean {
-  const source = queue?.radio_source;
-  return (
-    source?.length === 1 &&
-    source[0].media_type === MediaType.PLAYLIST &&
-    (source[0] as Playlist).is_dynamic
-  );
+  return queue?.is_dynamic ?? false;
 };
 
 /**

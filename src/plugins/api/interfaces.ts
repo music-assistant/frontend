@@ -862,6 +862,7 @@ export interface PlayerQueue {
   next_item?: QueueItem;
   radio_source: MediaItemType[];
   enqueued_media_items: MediaItemType[];
+  is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
