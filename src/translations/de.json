@@ -43,7 +43,7 @@
     "mass": "Music Assistant",
     "new_playlist_name": "Gib einen neuen Namen für die neue Wiedergabeliste ein",
     "no_content": "Keine Einträge gefunden.",
-    "no_content_filter": "Keine Einträge für die aktuellen Filter-/Suchkriterien gefunden.",
+    "no_content_filter": "Keine Einträge für die aktuellen Filter-\/Suchkriterien gefunden.",
     "no_player": "Kein Wiedergabegerät ausgewählt",
     "off": "Aus",
     "on": "An",
@@ -158,7 +158,7 @@
         },
         "flow_mode": {
             "label": "Warteschlangen-„Flow“-Modus aktivieren",
-            "description": "Aktiviere den „Flow“-Modus, in dem alle Titel der Warteschlange als kontinuierlicher Audiostream gesendet werden. \nVerwende diese Funktion für Wiedergabegeräte, die lückenloses Abspielen und/oder Überblenden nicht nativ unterstützen oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
+            "description": "Aktiviere den „Flow“-Modus, in dem alle Titel der Warteschlange als kontinuierlicher Audiostream gesendet werden. \nVerwende diese Funktion für Wiedergabegeräte, die lückenloses Abspielen und\/oder Überblenden nicht nativ unterstützen oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
         },
         "auto_play": {
             "label": "Automatische Wiedergabe (Fortsetzen beim Einschalten)",
@@ -229,10 +229,10 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Spiele jetzt die Titel des Künstlers und behalte die verbleibenden Elemente in der Warteschlange.",
-                "replace": "Lösche die Warteschlange und spiele den/die Künstler-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und den/die Titel direkt nach dem aktuell gespielten/gepufferten Element abspielen.",
-                "add": "Füge den/die Titel des Künstlers am Ende der Warteschlange hinzu."
+                "replace": "Lösche die Warteschlange und spiele den\/die Künstler-Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Warteschlange leeren und den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element abspielen.",
+                "add": "Füge den\/die Titel des Künstlers am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_album": {
@@ -240,21 +240,21 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Albumtitel jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
-                "replace": "Lösche die Warteschlange und spiele den/die Album-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten/gepufferten Titel abspielen.",
-                "add": "Füge den/die Album-Titel am Ende der Warteschlange hinzu."
+                "replace": "Lösche die Warteschlange und spiele den\/die Album-Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten\/gepufferten Titel abspielen.",
+                "add": "Füge den\/die Album-Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_track": {
             "label": "Standardmäßige Warteschlangenoption für Titel.",
             "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
             "options": {
-                "play": "Spiele jetzt den/die Titel ab und behalte die verbleibenden Warteschlangenelemente.",
-                "replace": "Lösche die Warteschlange und spiele den/die Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "add": "Füge den/die Titel am Ende der Warteschlange hinzu."
+                "play": "Spiele jetzt den\/die Titel ab und behalte die verbleibenden Warteschlangenelemente.",
+                "replace": "Lösche die Warteschlange und spiele den\/die Titel ab.",
+                "next": "Spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "add": "Füge den\/die Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_playlist": {
@@ -263,9 +263,9 @@
             "options": {
                 "play": "Wiedergabeliste jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
                 "replace": "Lösche die Warteschlange und spiele die Wiedergabeliste-Titel ab.",
-                "next": "Spiele den/die Titel direkt nach dem derzeit abgespielten/gepufferten Titel ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Titel direkt nach dem aktuell gespielten/gepufferten Element der Wiedergabeliste ab.",
-                "add": "Füge den/die Wiedergabelisten-Titel am Ende der Warteschlange hinzu."
+                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element der Wiedergabeliste ab.",
+                "add": "Füge den\/die Wiedergabelisten-Titel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_radio": {
@@ -274,9 +274,9 @@
             "options": {
                 "play": "Spiele jetzt den Radiosender ab und behalte die verbleibenden Warteschlangenelemente.",
                 "replace": "Lösche die Warteschlange und spiele den Radiosender ab",
-                "next": "Spiele das/die Element(e) direkt nach dem aktuell gespielten/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den/die Radiosender direkt nach dem aktuell wiedergegebenen/gepufferten Element ab.",
-                "add": "Füge den/die Radiosender am Ende der Warteschlange hinzu."
+                "next": "Spiele das\/die Element(e) direkt nach dem aktuell gespielten\/gepufferten Element ab.",
+                "replace_next": "Lösche die Warteschlange und spiele den\/die Radiosender direkt nach dem aktuell wiedergegebenen\/gepufferten Element ab.",
+                "add": "Füge den\/die Radiosender am Ende der Warteschlange hinzu."
             }
         },
         "default": "Standard",
@@ -286,7 +286,7 @@
             "generic": "Allgemein",
             "announcements": "Ankündigungen",
             "player_controls": "Wiedergabegeräte-Steuerung",
-            "sync_options": "Synchronisiere/importiere Optionen",
+            "sync_options": "Synchronisiere\/importiere Optionen",
             "builtin_playlists": "Integrierte Wiedergabelisten",
             "web_player": "Web-Player",
             "playback": "Wiedergabe von Warteschlangen",
@@ -323,7 +323,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https://pictogrammers.com/library/mdi/."
+            "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Theme",
@@ -375,7 +375,7 @@
         "no_player_providers_detail": "Konfiguriere die Wiedergabegeräte-Anbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
         "volume_normalization_radio": {
             "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\n**Optionen:**\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\n**Optionen:**\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Ausgeschaltet",
                 "dynamic": "Erzwinge dynamisch",
@@ -387,7 +387,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 / Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\n**Optionen:**\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\n**Optionen:**\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
                 "dynamic": "Erzwinge dynamisch",
@@ -398,16 +398,16 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Feste/Fallback Gain-Anpassung für Songs",
-            "description": "Feste/Fallback Gain-Korrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
+            "label": "Feste\/Fallback Gain-Anpassung für Songs",
+            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
-            "label": "Feste/Fallback Gain-Anpassung für Radio",
-            "description": "Feste/Fallback Gain-Korrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung „Lautstärkenormalisierungsmethode“ ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist."
+            "label": "Feste\/Fallback Gain-Anpassung für Radio",
+            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung „Lautstärkenormalisierungsmethode“ ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist."
         },
         "dynamic_members": {
             "label": "Dynamische Gruppenmitglieder",
-            "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält."
+            "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten\/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält."
         },
         "dsp": {
             "configure_on": "DSP konfigurieren auf: {name}",
@@ -436,13 +436,13 @@
                     "high_pass": "Hochpass",
                     "notch": "Engpass"
                 },
-                "import_apo": "APO/REW-Voreinstellung importieren",
+                "import_apo": "APO\/REW-Voreinstellung importieren",
                 "export_apo": "APO-Voreinstellung exportieren",
                 "preamp": "Vorverstärker",
                 "add_band_channel": "Band hinzufügen (nur {channel})",
                 "band_channel": "Band {index} (nur {channel})",
                 "show_multichannel_controls": "Multi-Channel-Steuerung anzeigen",
-                "edited_channel": "EQ-Antwort für diesen Kanal/diese Kanäle aufzeichnen",
+                "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
                 "channel": "Das Band wird angewendet auf",
                 "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}"
             },
@@ -479,16 +479,16 @@
             }
         },
         "power_control": {
-            "label": "Steuerung Ein-/Ausschaltverhalten",
-            "description": "Bestimme/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer „Fake“ Energiesteuerung, falls das Wiedergabegerät die Befehle für das Ein-/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
+            "label": "Steuerung Ein-\/Ausschaltverhalten",
+            "description": "Bestimme\/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer „Fake“ Energiesteuerung, falls das Wiedergabegerät die Befehle für das Ein-\/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
         },
         "volume_control": {
             "label": "Lautstärkeregelung",
-            "description": "Bestimme/Übersteuere das Verhalten der Lautstärkeregelung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Lautstärkeregelung an ein anderes Gerät oder die vollständige Abschaltung."
+            "description": "Bestimme\/Übersteuere das Verhalten der Lautstärkeregelung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Lautstärkeregelung an ein anderes Gerät oder die vollständige Abschaltung."
         },
         "mute_control": {
             "label": "Stummschaltung",
-            "description": "Bestimme/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine „Fake“ Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
+            "description": "Bestimme\/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine „Fake“ Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
         },
         "output_limiter": {
             "label": "Begrenzer aktivieren, um Clipping zu verhindern",
@@ -502,7 +502,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
         },
-        "add_group_player_desc_universal": "Durch das Erstellen einer universellen Wiedergabegeräte-Gruppe kannst du Wiedergabegeräte von verschiedenen Anbietern/Ökosystemen zusammenfassen. \nDadurch werden dieselben Audiodaten an alle Wiedergabegeräte der Gruppe verteilt (jedoch nicht synchron).",
+        "add_group_player_desc_universal": "Durch das Erstellen einer universellen Wiedergabegeräte-Gruppe kannst du Wiedergabegeräte von verschiedenen Anbietern\/Ökosystemen zusammenfassen. \nDadurch werden dieselben Audiodaten an alle Wiedergabegeräte der Gruppe verteilt (jedoch nicht synchron).",
         "edit_provider": "Anbieter bearbeiten: {0}",
         "metadata": "Metadaten",
         "metadataprovider": "Metadatenanbieter",
@@ -599,7 +599,7 @@
         "remote_access_feature_no_port_forwarding": "Keine Portweiterleitung oder VPN benötigt",
         "remote_access_mode_optimized": "Optimierter Modus (HA Cloud)",
         "remote_access_mode_basic": "Betrieb im Basismodus",
-        "remote_access_mode_optimized_description": "Für optimale Leistung werden STUN/TURN-Server von Home Assistant Cloud verwendet. Funktioniert zuverlässig in allen Netzwerkkonfigurationen.",
+        "remote_access_mode_optimized_description": "Für optimale Leistung werden STUN\/TURN-Server von Home Assistant Cloud verwendet. Funktioniert zuverlässig in allen Netzwerkkonfigurationen.",
         "remote_access_mode_basic_description": "Die Verwendung öffentlicher STUN-Server kann in komplexen Netzwerkumgebungen zu Problemen führen. Für ein optimales Nutzungserlebnis empfehlen wir ein Upgrade auf Home Assistant Cloud.",
         "remote_access_upgrade_to_optimized": "Upgrade auf Home Assistant Cloud",
         "remote_access_status": "Fernzugriffsstatus",
@@ -627,7 +627,7 @@
         "remote_access_disabled_success": "Fernzugriff wurde deaktiviert.",
         "remote_access_signaling_server_description": "Signalisierungsserver in der Cloud, gehostet von der Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC mit öffentlichen STUN-Servern (funktioniert möglicherweise nicht in komplexen Netzwerkkonfigurationen).",
-        "remote_access_protocol_optimized": "WebRTC mit optimierten STUN/TURN-Servern von Home Assistant Cloud (funktioniert in allen Netzwerkkonfigurationen).",
+        "remote_access_protocol_optimized": "WebRTC mit optimierten STUN\/TURN-Servern von Home Assistant Cloud (funktioniert in allen Netzwerkkonfigurationen).",
         "remote_access_encryption_description": "Die Ende-zu-Ende-Verschlüsselung mit DTLS-SRTP gewährleistet, dass deine Daten privat und sicher bleiben.",
         "frontend": "Benutzeroberfläche",
         "players_count": "{0} Wiedergabegerät{1}",
@@ -660,7 +660,7 @@
         "fix_now": "Jetzt reparieren",
         "web_player_enabled": {
             "label": "Integrierten (Sendspin) Web-Player aktivieren",
-            "description": "Die Wiedergabe auf diesem Gerät/Browser soll über den integrierten Sendspin-Web-Player ermöglicht werden."
+            "description": "Die Wiedergabe auf diesem Gerät\/Browser soll über den integrierten Sendspin-Web-Player ermöglicht werden."
         },
         "enable_browser_controls": {
             "label": "Aktivieren der Browser-Mediensteuerung",
@@ -784,21 +784,21 @@
     "tooltip": {
         "album_artist_filter": "Nach Album-Künstlern filtern",
         "explicit": "Explizit",
-        "filter_library": "Nach Elementen in Bibliothek/Favoriten filtern",
-        "library": "Bibliothek/Favorit umschalten",
+        "filter_library": "Nach Elementen in Bibliothek\/Favoriten filtern",
+        "library": "Bibliothek\/Favorit umschalten",
         "linked": "Dieser Anbieter ist mit den aktuellen Details des Elements verknüpft",
         "refresh": "Liste aktualisieren",
         "refresh_new_content": "Neue Inhalte verfügbar. Zum Aktualisieren, hier klicken.",
-        "search": "Sucheingabe ein-/ausblenden",
+        "search": "Sucheingabe ein-\/ausblenden",
         "select_items": "Mehrere Elemente wählen",
         "sort_options": "Sortieroptionen",
         "toggle_view_mode": "Anzeigemodus zwischen Listen- und Raster-Ansicht umschalten",
         "filter_favorites": "Nur Favoriten anzeigen",
-        "favorite": "Als Favorit hinzufügen/entfernen",
+        "favorite": "Als Favorit hinzufügen\/entfernen",
         "open_provider_link": "Auf Website des Anbieters ansehen",
-        "collapse_expand": "Auflistung aus-/einklappen",
+        "collapse_expand": "Auflistung aus-\/einklappen",
         "back": "Zurück",
-        "show_menu": "Menü anzeigen/verbergen",
+        "show_menu": "Menü anzeigen\/verbergen",
         "search_filter_active": "Die Suche filtert aktuell die Ergebnisse",
         "play_sample": "Beispiel wiedergeben",
         "album_type": "Albumtyp",
@@ -1102,7 +1102,7 @@
         "local_server": "Lokaler Server",
         "remote_server": "Remote",
         "server_address": "Serveradresse",
-        "server_address_placeholder": "http://192.168.1.100:8095",
+        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
         "remote_id": "Remote-ID",
         "remote_id_placeholder": "z. B. MA-X7K9-P2M4",
         "remote_id_hint": "Du findest diese Option in deinen Servereinstellungen unter „Fernzugriff“.",
@@ -1222,7 +1222,7 @@
     "genre": "Genre",
     "genres": "Genres",
     "genre_names": {
-        "afrobeats": "Afrobeats (westafrikanische Urban-/Popmusik)",
+        "afrobeats": "Afrobeats (westafrikanische Urban-\/Popmusik)",
         "ambient": "Ambient",
         "anime_and_video_game_music": "Anime- und Videospielmusik",
         "asian_music": "Asiatische Musik",
@@ -1312,7 +1312,7 @@
     },
     "genre_descriptions": {
         "afrobeats": "Afrobeats, nicht zu verwechseln mit Afrobeat oder Afroswing, ist ein Oberbegriff für populäre Musik aus Westafrika und der Diaspora, die sich in den 2000er und 2010er Jahren zunächst in Nigeria, Ghana und dem Vereinigten Königreich entwickelte. Afrobeats ist weniger ein Stil an sich als vielmehr eine Beschreibung für die Verschmelzung von Klängen, die aus Nigeria und Ghana kommen. Genres wie Hiplife, Jùjú-Musik, Highlife, Azonto-Musik und Naija Beats wurden unter anderem unter dem Begriff „Afrobeats“ zusammengefasst.",
-        "ambient": "Ambient-Musik ist ein Musikgenre, bei dem Klang und Atmosphäre gegenüber traditionellen musikalischen Strukturen oder Rhythmen im Vordergrund stehen. Ambient-Musik, die oft „friedlich“ klingt und der es an Komposition, Takt und/oder strukturierter Melodie fehlt, verwendet texturierte Klangschichten, die sowohl passives als auch aktives Zuhören belohnen und ein Gefühl der Ruhe oder Kontemplation fördern können. Das Genre hat eine „atmosphärische“, „visuelle“ oder „unaufdringliche“ Qualität. Es können Naturgeräusche enthalten sein, und in einigen Werken werden anhaltende oder wiederholte Töne verwendet, wie in der Drone-Musik. In Anlehnung an die New-Age-Musik können Instrumente wie Klavier, Streicher und Flöte durch einen Synthesizer emuliert werden.",
+        "ambient": "Ambient-Musik ist ein Musikgenre, bei dem Klang und Atmosphäre gegenüber traditionellen musikalischen Strukturen oder Rhythmen im Vordergrund stehen. Ambient-Musik, die oft „friedlich“ klingt und der es an Komposition, Takt und\/oder strukturierter Melodie fehlt, verwendet texturierte Klangschichten, die sowohl passives als auch aktives Zuhören belohnen und ein Gefühl der Ruhe oder Kontemplation fördern können. Das Genre hat eine „atmosphärische“, „visuelle“ oder „unaufdringliche“ Qualität. Es können Naturgeräusche enthalten sein, und in einigen Werken werden anhaltende oder wiederholte Töne verwendet, wie in der Drone-Musik. In Anlehnung an die New-Age-Musik können Instrumente wie Klavier, Streicher und Flöte durch einen Synthesizer emuliert werden.",
         "anime_and_video_game_music": "Videospielmusik (VGM) ist der Soundtrack, der Videospiele untermalt. Die frühe Videospielmusik war einst auf die Klänge früher Soundchips wie programmierbare Soundgeneratoren (PSG) oder FM-Synthesechips beschränkt. Diese Einschränkungen haben zu dem als Chiptune bekannten Musikstil geführt, der zum Sound der frühen Videospiele wurde.",
         "asian_music": "Die asiatische Musik umfasst zahlreiche Musikstile, verschiedene kulturelle und religiöse Traditionen und Formen, die ihren Ursprung auf dem asiatischen Kontinent haben.",
         "bluegrass": "Die Bluegrass-Musik ist ein Genre der amerikanischen Roots-Musik, das in den 1940er Jahren in den Appalachen in den Vereinigten Staaten entstand. Der Name des Genres geht auf die Band Bill Monroe and the Blue Grass Boys zurück. Bluegrass hat seine Wurzeln in afroamerikanischen Genres wie Blues und Jazz und nordeuropäischen Genres wie irischen Balladen und Tanzliedern. Im Gegensatz zum Country wird Bluegrass traditionell ausschließlich mit akustischen Instrumenten wie Fidel, Mandoline, Banjo, Gitarre und Kontrabass gespielt. Er wurde von Musikern weiterentwickelt, die mit Monroe spielten, darunter der 5-saitige Banjospieler Earl Scruggs und der Gitarrist Lester Flatt. Bill Monroe beschrieb die Bluegrass-Musik einmal so: „Sie ist ein Teil der Traditionen der Methodisten, der Holiness und der Baptisten. Sie ist Blues und Jazz, und sie hat einen hohen, einsamen Klang.“",
@@ -1331,7 +1331,7 @@
         "disco": "Disco ist ein Genre der Tanzmusik und eine Subkultur, die in den späten 1960er Jahren in der städtischen Ausgehszene der Vereinigten Staaten entstand, insbesondere in afroamerikanischen, italienisch-amerikanischen, lateinamerikanischen und queeren Gemeinschaften. Typisch für den Sound sind Four-on-the-Floor-Beats, synkopierte Bässe, Streicher, Bläser und Hörner, E-Pianos, Synthesizer und elektrische Rhythmusgitarren.",
         "electronic": "Elektronische Musik im weitesten Sinne ist eine Gruppe von Musikgenres, die elektronische Musikinstrumente, schaltkreisbasierte Musiktechnologie und Software oder Allzweckelektronik für ihre Entstehung verwenden. Sie umfasst sowohl Musik, die mit elektronischen als auch mit elektromechanischen Mitteln erzeugt wird. Rein elektronische Instrumente beruhen vollständig auf schaltkreisbasierter Klangerzeugung, z. B. mit Geräten wie einem elektronischen Oszillator, Theremin oder Synthesizer: Es müssen keine akustischen Wellen zuvor auf mechanischem Wege erzeugt und dann in elektrische Signale umgewandelt werden. Elektromechanische Instrumente hingegen haben mechanische Teile wie Saiten oder Hämmer, die die Schallwellen erzeugen, sowie elektrische Elemente wie magnetische Tonabnehmer, Leistungsverstärker und Lautsprecher, die die Schallwellen in elektrische Signale umwandeln, diese verarbeiten und wieder in Schallwellen umwandeln. Zu diesen elektromechanischen Geräten gehören das Telharmonium, die Hammond-Orgel, das elektrische Klavier und die elektrische Gitarre.",
         "experimental": "Experimentelle Musik ist eine allgemeine Bezeichnung für jede Musik oder Musikrichtung, die bestehende Grenzen und Genredefinitionen überschreitet. Die experimentelle Kompositionspraxis definiert sich im weitesten Sinne durch eine forschende Sensibilität, die sich radikal gegen die institutionalisierten kompositorischen, aufführungspraktischen und ästhetischen Konventionen in der Musik richtet und diese infrage stellt. Zu den Elementen der experimentellen Musik gehört die Unbestimmtheit, bei der der Komponist Elemente des Zufalls oder der Unvorhersehbarkeit in Bezug auf die Komposition oder ihre Aufführung einführt. Die Künstler können eine Mischung aus verschiedenen Stilen verwenden oder unorthodoxe und einzigartige Elemente einbauen.",
-        "field_recording": "Field Recording ist die Produktion von Audioaufnahmen außerhalb von Aufnahmestudios, und der Begriff bezieht sich sowohl auf Aufnahmen von natürlichen als auch von menschlich erzeugten Geräuschen. Sie können auch die Aufnahme von elektromagnetischen Feldern oder Schwingungen mit verschiedenen Mikrofonen umfassen, z. B. mit einer passiven magnetischen Antenne für elektromagnetische Aufnahmen oder Kontaktmikrofonen, oder Unterwasseraufnahmen mit Hydrofonen, um die Geräusche und/oder Bewegungen von Walen oder anderen Meeresbewohnern aufzunehmen. Diese Aufnahmen werden oft als sehr nützlich für Sounddesigner und Geräuschemacher angesehen.",
+        "field_recording": "Field Recording ist die Produktion von Audioaufnahmen außerhalb von Aufnahmestudios, und der Begriff bezieht sich sowohl auf Aufnahmen von natürlichen als auch von menschlich erzeugten Geräuschen. Sie können auch die Aufnahme von elektromagnetischen Feldern oder Schwingungen mit verschiedenen Mikrofonen umfassen, z. B. mit einer passiven magnetischen Antenne für elektromagnetische Aufnahmen oder Kontaktmikrofonen, oder Unterwasseraufnahmen mit Hydrofonen, um die Geräusche und\/oder Bewegungen von Walen oder anderen Meeresbewohnern aufzunehmen. Diese Aufnahmen werden oft als sehr nützlich für Sounddesigner und Geräuschemacher angesehen.",
         "folk": "Volksmusik ist ein Musikgenre, das die traditionelle Volksmusik und das zeitgenössische Genre umfasst, das sich während des Folk-Revivals im 20. Jahrhundert aus der traditionellen Musik entwickelt hat. Einige Arten von Volksmusik können auch als Weltmusik bezeichnet werden. Traditionelle Volksmusik wurde auf verschiedene Weise definiert: als Musik, die mündlich weitergegeben wird, als Musik mit unbekannten Komponisten, als Musik, die auf traditionellen Instrumenten gespielt wird, als Musik, die von kultureller oder nationaler Identität handelt, als Musik, die sich von Generation zu Generation ändert, als Musik, die mit der Folklore eines Volkes verbunden ist, oder als Musik, die über einen langen Zeitraum hinweg aus Tradition gespielt wird. Sie steht im Gegensatz zu den kommerziellen und klassischen Stilen. Der Begriff hat seinen Ursprung im 19. Jahrhundert, aber Volksmusik geht darüber hinaus.",
         "funk": "Funk ist ein Musikgenre, das Mitte der 1960er Jahre in afroamerikanischen Gemeinschaften entstand, als Musiker eine rhythmische, tanzbare neue Musikform durch eine Mischung aus verschiedenen Musikgenres schufen, die Mitte des 20. Jahrhunderts bei Afroamerikanern sehr beliebt war. Der Funk stellt Melodie und Akkordfolgen in den Hintergrund und konzentriert sich auf einen starken rhythmischen Groove, der sich aus einer von einem E-Bassisten gespielten Basslinie und einem von einem Schlagzeuger gespielten Schlagzeugpart zusammensetzt und zwar häufig in einem langsameren Tempo als andere populäre Musik. Funk besteht in der Regel aus einem komplexen perkussiven Groove, bei dem die Rhythmusinstrumente ineinandergreifende Grooves spielen, die ein „hypnotisches“ und „tanzbares“ Gefühl erzeugen. Der frühe Funk, insbesondere James Brown, verschmolz Jazz und Blues und fügte einen synkopischen Schlagzeug-Groove hinzu.",
         "gangsta_rap": "Gangsta- oder Gangster-Rap, ursprünglich Reality-Rap genannt, ist ein Subgenre des Hip-Hop, das die Kultur, die Werte und die Erfahrungen von städtischen Gangs und Straßenhändlern vermittelt und häufig die unangenehmen Realitäten der Welt im Allgemeinen durch eine urbane Linse diskutiert. Zu den Pionieren des Gangsta-Rap, der in den späten 1980er Jahren entstand, gehören Schoolly D und Ice-T, die später durch Künstler wie N.W.A. erweitert wurden. 1992 wurde der Gangsta-Rap durch den Plattenproduzenten und Rapper Dr. Dre, den Rapper Snoop Dogg und ihren G-Funk-Sound zum Mainstream-Sound.",
