@@ -634,14 +634,6 @@
         "players_total": "{0} total de leitores{1}",
         "api_docs": "Documentação da API",
         "no_group_providers": "De momento não tem nenhum fornecedor que suporte a criação de grupos",
-        "sendspin_sync_delay": {
-            "label": "Atraso de sincronização do pino de envio (ms)",
-            "description": "Atraso estático em milissegundos para ajustar a sincronização de áudio. Os valores positivos atrasam a reprodução, os valores negativos adiantam-na. Utilize-o para compensar a latência de áudio específica do dispositivo."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Utilizar a deteção de latência do navegador",
-            "description": "Compensar automaticamente a latência de áudio do hardware (e.g., auscultadores Bluetooth) utilizando a API de latência de saída do navegador. Esta API é relativamente nova e pode não funcionar de forma fiável em todos os navegadores e sistemas operativos."
-        },
         "provider_codeowners": "Este provedor é contribuído\/mantido por",
         "provider_credits": "Tornado possível por",
         "onboarding_subtitle": "Vamos começar por ligar as suas fontes de música e dispositivos de áudio.",

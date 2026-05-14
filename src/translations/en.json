@@ -984,7 +984,8 @@
         "discover": "Discover",
         "libraries": "Libraries",
         "library": "Library",
-        "trending_podcasts": "Trending podcasts"
+        "trending_podcasts": "Trending podcasts",
+        "trending_stations": "Trending stations"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",

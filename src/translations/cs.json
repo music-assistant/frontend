@@ -636,14 +636,6 @@
         "players_total": "{0} celkový přehrávač{1}",
         "api_docs": "Dokumentace API",
         "no_group_providers": "Momentálně nemáte žádné poskytovatele, kteří by podporovali vytváření skupin.",
-        "sendspin_sync_delay": {
-            "label": "Zpoždění synchronizace Sendspin (ms)",
-            "description": "Statické zpoždění v milisekundách pro nastavení synchronizace zvuku. Kladné hodnoty zpožďují přehrávání, záporné hodnoty ho urychlují. Slouží ke kompenzaci zpoždění zvuku specifického pro dané zařízení."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Použití detekce zpoždění prohlížeče",
-            "description": "Automatická kompenzace hardwarového zpoždění zvuku (např. sluchátek Bluetooth) pomocí rozhraní API výstupního zpoždění prohlížeče. Toto rozhraní API je poměrně nové a nemusí spolehlivě fungovat ve všech prohlížečích a operačních systémech."
-        },
         "provider_codeowners": "Na tomto poskytovateli se podílí\/spravuje jej",
         "provider_credits": "Umožněno díky",
         "onboarding_subtitle": "Začněme připojením zdrojů hudby a audio zařízení.",

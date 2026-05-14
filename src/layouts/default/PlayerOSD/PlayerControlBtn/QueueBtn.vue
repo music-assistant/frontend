@@ -1,44 +1,43 @@
 <template>
-  <Icon
+  <Button
     v-if="isVisible"
-    v-bind="{ ...icon, ...$attrs }"
+    variant="icon"
+    :ripple="false"
+    icon
+    v-bind="$attrs"
     :disabled="
       !store.activePlayerId ||
       (store.showFullscreenPlayer &&
         !store.curQueueItem &&
         !store.showQueueItems)
     "
-    :color="
-      getValueFromSources(icon?.color, [
-        [store.showFullscreenPlayer && store.showQueueItems, 'primary', ''],
-      ])
-    "
-    variant="button"
+    :color="activeColor"
     @click="onClick"
   >
     <ListVideo :size="size" />
-  </Icon>
+  </Button>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
-import { getValueFromSources } from "@/helpers/utils";
+import Button from "@/components/Button.vue";
 import { store } from "@/plugins/store";
 import { ListVideo } from "lucide-vue-next";
+import { computed } from "vue";
 
-// properties
 export interface Props {
   isVisible?: boolean;
-  icon?: IconProps;
   size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
   isVisible: true,
-  icon: undefined,
   size: 20,
 });
+
+const activeColor = computed(() =>
+  store.showFullscreenPlayer && store.showQueueItems ? "primary" : undefined,
+);
 
 const onClick = function () {
   if (store.showFullscreenPlayer && store.showQueueItems) {

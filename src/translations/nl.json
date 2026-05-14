@@ -275,8 +275,8 @@
                 "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
                 "replace": "Wis de wachtrij en speel het radiostation af",
                 "next": "Speel het item of de items direct na het huidig afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel de radiozender(s) af direct na het huidige afgespeelde\/gebufferde item.",
-                "add": "Voeg de radiozender(s) toe aan het einde van de wachtrij."
+                "replace_next": "Wis de wachtrij en speel het radiostation(s) af direct na het huidige afgespeelde\/gebufferde item.",
+                "add": "Voeg het radiostation(s) toe aan het einde van de wachtrij."
             }
         },
         "default": "standaard",
@@ -375,7 +375,7 @@
         "no_player_providers_detail": "Configureer spelerproviders om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
         "volume_normalization_radio": {
             "label": "Volumenormalisatiemethode om te gebruiken voor radiostreams",
-            "description": "Stel de voorkeursstrategie voor volumenormalisatie voor radiostreams in. \nStandaard verzamelt Music Assistant een meting van de (gemiddeld waargenomen) luidheid van het radiostation volgens de EBU-R128-specificatie en past vervolgens de totale versterking\/het volume van de stream aan op basis van die meting, zodat het dynamisch bereik van de audio niet wordt beïnvloed. Wanneer er (nog) geen meting bestaat voor een radiozender, zal Music Assistant terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter.\n\nTIP: Radiostreams hebben vaak verschillende luidheidsniveaus, vooral tijdens aankondigingen en commercials.\nU kunt ervoor kiezen om dynamische volumenormalisatie altijd af te dwingen voor radiostreams, zelfs als er een (gemiddelde) luidheidsmeting voor het radiostation bestaat. \n \n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams. \n  - Forceer Dynamische modus - Dwing te allen tijde dynamische volumenivellering af. \n  - Alleen meting (geen fallback) - Pas volumenormalisatie toe op basis van een opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe.\n  - Terugval naar versterkingscorrectie - Pas volumenormalisatie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie.\n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe.\n  - Terugval naar dynamisch - Kies automatisch de beste optie: Pas volumenormalisatie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
+            "description": "Stel de voorkeursstrategie voor volumenormalisatie voor radiostreams in. \nStandaard verzamelt Music Assistant een meting van de (gemiddeld waargenomen) luidheid van het radiostation volgens de EBU-R128-specificatie en past vervolgens de totale versterking\/het volume van de stream aan op basis van die meting, zodat het dynamisch bereik van de audio niet wordt beïnvloed. Wanneer er (nog) geen meting bestaat voor een radiostation, zal Music Assistant terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter.\n\nTIP: Radiostreams hebben vaak verschillende luidheidsniveaus, vooral tijdens aankondigingen en commercials.\nU kunt ervoor kiezen om dynamische volumenormalisatie altijd af te dwingen voor radiostreams, zelfs als er een (gemiddelde) luidheidsmeting voor het radiostation bestaat. \n \n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams. \n  - Forceer Dynamische modus - Dwing te allen tijde dynamische volumenivellering af. \n  - Alleen meting (geen fallback) - Pas volumenormalisatie toe op basis van een opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe.\n  - Terugval naar versterkingscorrectie - Pas volumenormalisatie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie.\n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe.\n  - Terugval naar dynamisch - Kies automatisch de beste optie: Pas volumenormalisatie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
             "options": {
                 "disabled": "Uitgeschakeld",
                 "dynamic": "Forceer dynamische modus",
@@ -636,14 +636,6 @@
         "players_total": "{0} totale speler{1}",
         "api_docs": "API-documentatie",
         "no_group_providers": "Er zijn nu geen providers die het aanmaken van groepen ondersteunen",
-        "sendspin_sync_delay": {
-            "label": "Sendspin-synchronisatievertraging (ms)",
-            "description": "Statische vertraging in milliseconden om de audiosynchronisatie aan te passen. Positieve waarden vertragen het afspelen, negatieve waarden vervroegen het. Gebruik dit om apparaatspecifieke audiovertraging te compenseren."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Gebruik browserlatencydetectie",
-            "description": "Compenseer automatisch voor hardware-audiolatency (bijv. Bluetooth-koptelefoons) met behulp van de uitvoerlatency-API van de browser. Deze API is vrij nieuw en werkt mogelijk niet betrouwbaar in alle browsers en besturingssystemen."
-        },
         "provider_codeowners": "Deze provider wordt bijgedragen\/onderhouden door",
         "provider_credits": "Mogelijk gemaakt door",
         "onboarding_subtitle": "Laten we beginnen met het aansluiten van je muziekbronnen en audioapparaten.",
@@ -739,7 +731,15 @@
         "genre_table_rows_per_page": "Rijen per pagina",
         "genre_table_page_info": "{0}–{1} van de {2}",
         "missing_players_hint": "Ontbrekende spelers? {0}",
-        "add_player_providers": "Voeg meer spelerproviders toe"
+        "add_player_providers": "Voeg meer spelerproviders toe",
+        "add_audio_analysis_provider": "Een audioanalyse-provider toevoegen",
+        "audio_analysis_providers": "Audioanalyse",
+        "audio_analysis_providers_description": "Beheer providers die je audio analyseren",
+        "audio_analysis": "Audioanalyse",
+        "sendspin_static_delay": {
+            "label": "Statische afspeelvertraging (ms)",
+            "description": "Een offset in milliseconden om deze speler synchroon te houden met andere spelers. Verhoog deze waarde als het geluid te laat wordt afgespeeld, bijvoorbeeld om de vertraging van een versterker, actieve luidsprekers of het besturingssysteem te compenseren."
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -770,7 +770,8 @@
         "play_count": "Aantal keren afgespeeld",
         "play_count_desc": "Aantal keren afgespeeld (aflopend)",
         "artist_name": "Albumartiest",
-        "artist_name_desc": "Albumartiest (aflopend)"
+        "artist_name_desc": "Albumartiest (aflopend)",
+        "album_sort_name": "Album (sorteernaam)"
     },
     "state": {
         "idle": "gestopt",
@@ -961,7 +962,7 @@
         "new_releases_for_you": "Nieuwe releases voor jou",
         "recent_favorite_tracks": "Onlangs als favoriet gemarkeerde nummers",
         "favorite_playlists": "Favoriete afspeellijsten",
-        "favorite_radio_stations": "Favoriete radiozenders",
+        "favorite_radio_stations": "Favoriete radiostations",
         "listen_again": "Opnieuw luisteren",
         "in_progress_series": "Vervolg serie...",
         "recommended": "Aanbevolen",
@@ -973,7 +974,8 @@
         "discover": "Ontdekken",
         "libraries": "Bibliotheken",
         "library": "Bibliotheek",
-        "trending_podcasts": "Populaire podcasts"
+        "trending_podcasts": "Populaire podcasts",
+        "trending_stations": "Populaire stations"
     },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
@@ -1378,7 +1380,34 @@
     "player_options": {
         "open": "Speleropties openen",
         "settable": "Instelbare speleropties voor de speler {0}",
-        "read_only": "Alleen-lezen speleropties voor speler {0}"
+        "read_only": "Alleen-lezen speleropties voor speler {0}",
+        "adaptive_drc": "Adaptieve DRC",
+        "bass": "Bas",
+        "bass_extension": "Basversterking",
+        "clear_voice": "Duidelijke stem",
+        "dts_dialogue_control": "DTS-dialoogcontrole",
+        "dialogue_level": "Dialoogniveau",
+        "dialogue_lift": "Dialooglift",
+        "dimmer": "Dimmer",
+        "enhancer": "Verbeteraar",
+        "equalizer_high": "Equalizer hoog",
+        "equalizer_low": "Equalizer laag",
+        "equalizer_mid": "Equalizer midden",
+        "equalizer_mode": "Equalizer-modus",
+        "extra_bass": "Extra bas",
+        "link_audio_delay": "Audiovertraging koppelen",
+        "link_control": "Linkcontrole",
+        "link_audio_quality": "Link audiokwaliteit",
+        "party_mode": "Partymodus",
+        "pure_direct": "Zuiver direct",
+        "sleep": "Slaaptimer",
+        "speaker_a": "Speaker A",
+        "speaker_b": "Speaker B",
+        "subwoofer_volume": "Subwoofervolume",
+        "surround_3d": "Surround 3D",
+        "surround_decoder_type": "Surround-decodertype",
+        "tone_control_mode": "Toonregelingsmodus",
+        "treble": "Treble"
     },
     "select_sound_mode": "Selecteer geluidsmodus",
     "refresh": "Vernieuwen",
@@ -1428,7 +1457,9 @@
                 "song_skipped": "Nummer overgeslagen!",
                 "try_different_search": "Probeer een andere zoekterm",
                 "unknown_artist": "Onbekende artiest",
-                "view_songs": "Bekijk nummers"
+                "view_songs": "Bekijk nummers",
+                "added": "Toegevoegd",
+                "already_in_queue": "Staat al in de wachtrij"
             },
             "add": "Toevoegen",
             "boost": "Boost",
@@ -1526,8 +1557,8 @@
             "hourly": "Uurlijks",
             "daily": "Dagelijks",
             "weekly": "Wekelijks",
-            "every_hours": "Elk (aantal) uur uitvoeren",
-            "every_days": "Elk (aantal) dag(en) uitvoeren",
+            "every_hours": "Elk(e) (aantal) uur uitvoeren",
+            "every_days": "Elk(e) (aantal) dag(en) uitvoeren",
             "hour": "Uur",
             "minute": "Minuut",
             "browser_timezone": "Tijdzone van browser: {0}.",
@@ -1583,12 +1614,22 @@
         "cache_database_cleanup": "Cache-database opschonen",
         "scan_missing_artist_artwork": "Ontbrekende albumhoezen van artiest scannen",
         "refresh_playlist_metadata": "Metadata van afspeellijst vernieuwen",
-        "update_metadata": "Metadata bijwerken voor {0}"
+        "update_metadata": "Metadata bijwerken"
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
     "radiobrowser_by_popularity": "Op populariteit",
     "radiobrowser_by_category": "Op categorie",
     "restore_genre": "Herstel",
-    "genre_name": "Genrenaam"
+    "genre_name": "Genrenaam",
+    "export_playlist": "Exporteer afspeellijst",
+    "import_playlist": "Importeer afspeellijst",
+    "import_playlist_title": "Importeer afspeellijst",
+    "import_playlist_invalid_file": "Ongeldig afspeellijstbestand",
+    "import_playlist_search_providers": "Zoek naar nummers op",
+    "party_mode": "Partymodus",
+    "edit_playlist": "Afspeellijst bewerken",
+    "edit_radio": "Radiostation bewerken",
+    "edit_track": "Nummer bewerken",
+    "uri_read_only": "URI (alleen-lezen)"
 }
