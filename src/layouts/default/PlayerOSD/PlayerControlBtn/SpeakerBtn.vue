@@ -1,5 +1,13 @@
 <template>
-  <Button variant="icon" :ripple="false" icon @click="openPlayersMenu">
+  <Button
+    variant="icon"
+    :ripple="false"
+    icon
+    :title="$t('players')"
+    aria-haspopup="menu"
+    :aria-expanded="store.showPlayersMenu ? 'true' : 'false'"
+    @click="openPlayersMenu"
+  >
     <v-icon
       :color="color ? color : ''"
       :size="24"

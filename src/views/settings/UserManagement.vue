@@ -55,6 +55,8 @@
                       variant="ghost"
                       size="icon"
                       class="size-8 shrink-0"
+                      :aria-label="`${$t('more_options')}: ${user.display_name || user.username}`"
+                      :title="`${$t('more_options')}: ${user.display_name || user.username}`"
                       @click.stop
                     >
                       <MoreVertical :size="16" />

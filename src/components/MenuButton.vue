@@ -11,6 +11,9 @@
             margin-left: -1px;
           `"
       :disabled="loading"
+      :title="menuButtonLabel"
+      :aria-label="menuButtonLabel"
+      aria-haspopup="menu"
       @click="emit('menu')"
     >
       <v-icon
@@ -45,6 +48,7 @@
 export interface Props {
   icon?: string;
   text?: string;
+  menuButtonLabel?: string;
   disabled?: boolean;
   width?: number;
   loading?: boolean;
@@ -52,6 +56,7 @@ export interface Props {
 withDefaults(defineProps<Props>(), {
   icon: undefined,
   text: undefined,
+  menuButtonLabel: undefined,
   disabled: false,
   width: 200,
   loading: true,

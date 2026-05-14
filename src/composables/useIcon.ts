@@ -27,6 +27,10 @@ export interface IconProps {
   color?: string;
   disabled?: boolean;
   size?: string | number;
+  title?: string;
+  ariaLabel?: string;
+  "aria-label"?: string;
+  "aria-pressed"?: boolean | "true" | "false" | "mixed";
 
   // Badge support
   badge?: boolean;
@@ -53,6 +57,10 @@ export const useIcon = (props: IconProps) => {
       minWidth,
       minHeight,
       badge,
+      title: _title,
+      ariaLabel: _ariaLabel,
+      "aria-label": _ariaLabelAttr,
+      "aria-pressed": _ariaPressed,
       style: _style,
       ...vuetifyProps
     } = props;

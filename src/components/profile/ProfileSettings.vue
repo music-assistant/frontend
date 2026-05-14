@@ -43,6 +43,7 @@
                   variant="outline"
                   size="icon"
                   class="absolute bottom-0 right-0 size-8 rounded-full border-2 border-background bg-background shadow-md hover:bg-accent"
+                  :aria-label="$t('auth.change_avatar')"
                   @click="showAvatarDialog = true"
                 >
                   <Camera :size="14" />

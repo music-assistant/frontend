@@ -31,6 +31,8 @@
             size="icon-sm"
             variant="ghost"
             class="ml-auto shrink-0"
+            :aria-label="placeholder"
+            :title="placeholder"
             @click.prevent
           >
             <ChevronsUpDown :size="16" class="opacity-50" />

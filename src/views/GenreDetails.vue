@@ -5,7 +5,7 @@
         <Button
           variant="ghost"
           size="icon"
-          :title="$t('tooltip.toggle_view_mode')"
+          :title="viewModeMenuLabel"
           @click="(e: MouseEvent) => openViewModeMenu(e)"
         >
           <v-icon :icon="viewModeIcon" />
@@ -235,6 +235,14 @@ const viewModeIcon = computed(() => {
   if (viewMode.value === "panel_compact") return "mdi-view-comfy";
   return "mdi-view-list";
 });
+
+const getViewModeLabel = function (mode: GenreViewMode) {
+  return t(`view.${mode}`);
+};
+
+const viewModeMenuLabel = computed(() =>
+  t("tooltip.view_mode_current", [getViewModeLabel(viewMode.value)]),
+);
 
 const openViewModeMenu = (e: MouseEvent) => {
   eventbus.emit("contextmenu", {

@@ -169,12 +169,13 @@
     <v-select
       v-else-if="confEntry.options && confEntry.options.length > 0"
       :model-value="confEntry.value"
-      :chips="confEntry.multi_value"
+      :chips="confEntry.multi_value && !shouldSummarizeMultiValueSelection"
       :clearable="true"
       :multiple="confEntry.multi_value"
       :items="translatedOptions"
       :disabled="isFieldDisabled"
       :label="getTranslatedLabel()"
+      :aria-label="getSelectAccessibleLabel()"
       :required="confEntry.required"
       :rules="[
         (v) =>
@@ -185,7 +186,16 @@
       density="comfortable"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
-    />
+    >
+      <template
+        v-if="shouldSummarizeMultiValueSelection"
+        #selection="{ index }"
+      >
+        <span v-if="index === 0" class="multi-value-selection-summary">
+          {{ multiValueSelectionSummary }}
+        </span>
+      </template>
+    </v-select>
 
     <!-- int value without range -->
     <v-text-field
@@ -386,6 +396,32 @@ const translatedOptions = computed(() => {
   }
   return options;
 });
+
+const selectedValueCount = computed(() => {
+  const value = props.confEntry.value;
+  if (Array.isArray(value)) return value.length;
+  if (value === null || value === undefined || value === "") return 0;
+  return 1;
+});
+
+const shouldSummarizeMultiValueSelection = computed(() => {
+  return (
+    props.confEntry.key === "menu_items" &&
+    !!props.confEntry.multi_value &&
+    !!props.confEntry.options &&
+    props.confEntry.options.length > 4
+  );
+});
+
+const multiValueSelectionSummary = computed(() => {
+  return $t("items_selected", [selectedValueCount.value]);
+});
+
+const getSelectAccessibleLabel = () => {
+  const label = getTranslatedLabel();
+  if (!shouldSummarizeMultiValueSelection.value) return label;
+  return `${label}: ${multiValueSelectionSummary.value}`;
+};
 </script>
 
 <style scoped>
@@ -414,6 +450,14 @@ const translatedOptions = computed(() => {
   margin-bottom: 20px;
   width: 100%;
   height: 50px;
+}
+
+.multi-value-selection-summary {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .config-slider-wrapper {

@@ -36,6 +36,7 @@
           :key="item.player_id"
           link
           :show-menu-btn="true"
+          :menu-button-label="`${$t('more_options')}: ${getPlayerName(item)}`"
           :class="{
             'player-disabled': !item.enabled,
             'player-unavailable': !api.players[item.player_id]?.available,

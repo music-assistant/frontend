@@ -9,6 +9,8 @@
         :min="sliderMin"
         :max="sliderMax"
         :step="sliderStep"
+        :aria-label="config.label"
+        :title="config.label"
         hide-details
         class="flex-grow-1 pr-4"
         density="compact"
@@ -17,6 +19,8 @@
       <v-text-field
         v-model="displayValue"
         type="number"
+        :aria-label="config.label"
+        :title="config.label"
         hide-details
         density="compact"
         style="max-width: 100px"
