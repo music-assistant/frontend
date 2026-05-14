@@ -5,6 +5,8 @@
         :icon="typeof icon === 'string' ? icon : undefined"
         size="small"
         :disabled="iconAction == null"
+        :aria-label="toolbarIconLabel"
+        :aria-hidden="toolbarIconLabel ? undefined : true"
         style="opacity: 0.8"
         @click="iconAction?.()"
       >
@@ -34,6 +36,9 @@
         variant="ghost"
         size="icon-lg"
         :title="menuItemLabel(menuItem)"
+        :aria-label="menuItemLabel(menuItem)"
+        :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
+        :aria-pressed="menuItem.active == null ? undefined : menuItem.active"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -46,7 +51,12 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <DropdownMenu v-if="overflowItems.length" v-model:open="overflowMenuOpen">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon-lg" :title="$t('menu')">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('menu')"
+            :aria-label="$t('menu')"
+          >
             <span class="relative inline-flex">
               <EllipsisVertical class="size-[22px]" />
               <span v-if="menuActive" :class="ACTIVE_DOT_CLASS"></span>
@@ -134,6 +144,7 @@ import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   color?: string;
@@ -145,6 +156,7 @@ interface Props {
   menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
+  iconLabel?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -156,12 +168,14 @@ const props = withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,
+  iconLabel: undefined,
 });
 
 const ACTIVE_DOT_CLASS =
   "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
+const { t } = useI18n();
 
 const directItems = computed(
   () =>
@@ -224,6 +238,14 @@ const onMenuItemClick = (
     menuItem.action();
   }
 };
+
+const toolbarIconLabel = computed(() => {
+  if (props.iconLabel) return props.iconLabel;
+  if (props.title) return props.title;
+  if (props.isDiscoverPage) return t("discover");
+  if (props.iconAction) return t("back");
+  return undefined;
+});
 
 // emitters
 const emit = defineEmits<{

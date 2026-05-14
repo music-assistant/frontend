@@ -2,12 +2,19 @@
 import api from "@/plugins/api";
 import { type MediaItem } from "@/plugins/api/interfaces";
 import { Heart } from "@lucide/vue";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   item: MediaItem;
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
+
+const favoriteButtonLabel = computed(() =>
+  props.item?.favorite ? t("favorites_remove") : t("favorites_add"),
+);
 
 const toggle = (e: Event) => {
   e.preventDefault();
@@ -24,7 +31,9 @@ const toggle = (e: Event) => {
     :fill="item?.favorite ? 'currentColor' : 'none'"
     role="button"
     tabindex="0"
-    :aria-label="$t('tooltip.favorite')"
+    :aria-label="favoriteButtonLabel"
+    :aria-pressed="item?.favorite ? 'true' : 'false'"
+    :title="favoriteButtonLabel"
     @click="toggle"
     @keydown.enter.space.prevent="toggle"
   />

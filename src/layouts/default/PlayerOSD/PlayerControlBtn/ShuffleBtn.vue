@@ -11,6 +11,8 @@
     "
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
+    :aria-label="shuffleTitle"
+    :aria-pressed="shuffleActive ? 'true' : 'false'"
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="
@@ -40,6 +42,7 @@ import { PlayerQueue } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { IconArrowsRight } from "@tabler/icons-vue";
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -51,6 +54,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   icon: undefined,
   size: 20,
 });
+const { t } = useI18n();
 
 const isLoading = computed(() => {
   return (

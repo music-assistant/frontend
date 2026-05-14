@@ -72,6 +72,15 @@ describe("useButton", () => {
     expect(buttonProps.value["aria-label"]).toBe("Custom Aria Label");
   });
 
+  it("handles normalized ariaLabel correctly when no title", () => {
+    const props: ButtonProps = {
+      ariaLabel: "Custom Aria Label",
+    };
+    const { buttonProps } = useButton(props);
+
+    expect(buttonProps.value["aria-label"]).toBe("Custom Aria Label");
+  });
+
   it("prioritizes title over aria-label", () => {
     const props: ButtonProps = {
       title: "Button Title",
