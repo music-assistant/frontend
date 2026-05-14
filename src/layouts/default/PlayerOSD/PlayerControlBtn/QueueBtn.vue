@@ -4,6 +4,8 @@
     size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
+    :title="$t('queue')"
+    :aria-expanded="active ? 'true' : 'false'"
     :disabled="disabled"
     :class="{ 'text-primary': active }"
     @click="togglePlayerQueue"

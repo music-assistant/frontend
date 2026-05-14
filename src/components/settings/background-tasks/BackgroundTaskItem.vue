@@ -3,6 +3,7 @@
     v-if="variant === 'list'"
     link
     :show-menu-btn="true"
+    :menu-button-label="`${t('more_options')}: ${displayName}`"
     @click="emit('click', task)"
     @menu="(event) => emit('menu', event, task)"
   >
@@ -97,6 +98,8 @@
           size="small"
           variant="text"
           class="task-card-menu"
+          :aria-label="`${t('more_options')}: ${displayName}`"
+          :title="`${t('more_options')}: ${displayName}`"
           @click.stop="emit('menu', $event, task)"
         />
       </div>
