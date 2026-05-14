@@ -985,7 +985,19 @@
         "libraries": "Libraries",
         "library": "Library",
         "trending_podcasts": "Trending podcasts",
-        "trending_stations": "Trending stations"
+        "trending_stations": "Trending stations",
+        "recommendation": {
+            "forgotten_tracks": "Forgotten Tracks",
+            "forgotten_albums": "Forgotten Albums",
+            "forgotten_artists": "Forgotten Artists",
+            "most_played_tracks": "Most Played Tracks",
+            "never_played_tracks": "Never / Rarely Played",
+            "recent_favorite_tracks": "Recently Favorited Tracks",
+            "recent_favorite_albums": "Recently Favorited Albums",
+            "recently_added_tracks": "Recently Added Tracks",
+            "random_artists": "Random Artists",
+            "random_albums": "Random Albums"
+        }
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
