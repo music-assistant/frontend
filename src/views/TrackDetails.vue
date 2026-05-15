@@ -36,6 +36,20 @@
       :refresh-on-parent-update="true"
     />
     <br />
+    <!-- similar tracks -->
+    <ItemsListing
+      v-if="itemDetails && !loading && hasSimilarTracksProvider"
+      itemtype="tracks"
+      :parent-item="itemDetails"
+      :show-provider="false"
+      :show-favorites-only-filter="false"
+      :show-library-only-filter="false"
+      :show-refresh-button="false"
+      :load-items="loadSimilarTracks"
+      :title="$t('similar_tracks')"
+      :allow-collapse="true"
+    />
+    <br />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
     <br />
@@ -45,11 +59,12 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   EventMessage,
   EventType,
   MediaItemType,
+  ProviderFeature,
   type Track,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
@@ -63,13 +78,16 @@ export interface Props {
 }
 const props = defineProps<Props>();
 const itemDetails = ref<Track>();
+const loading = ref(true);
 
 const loadItemDetails = async function () {
+  loading.value = true;
   itemDetails.value = await api.getTrack(
     props.itemId,
     props.provider,
     props.album,
   );
+  loading.value = false;
 };
 
 watch(
@@ -120,6 +138,29 @@ const loadTrackAlbums = async function (params: LoadDataParams) {
     props.itemId,
     props.provider,
     params.libraryOnly,
+  );
+};
+
+const hasSimilarTracksProvider = computed(() =>
+  Object.values(api.providers).some((p) =>
+    (p.supported_features as unknown as string[]).includes(
+      ProviderFeature.SIMILAR_TRACKS,
+    ),
+  ),
+);
+
+const loadSimilarTracks = async function (_params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  const tracks = await api.getSimilarTracks(props.itemId, props.provider);
+  return tracks.filter(
+    (t) =>
+      !itemDetails.value!.provider_mappings.some((refPm) =>
+        t.provider_mappings.some(
+          (tpm) =>
+            tpm.item_id === refPm.item_id &&
+            tpm.provider_domain === refPm.provider_domain,
+        ),
+      ),
   );
 };
 </script>
