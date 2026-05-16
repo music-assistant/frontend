@@ -551,7 +551,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
@@ -707,6 +707,62 @@ const playActionInProgress = computed(() => {
 const playButtonText = computed(() => {
   if (!store.activePlayer) return $t("play");
   return getPlayerName(store.activePlayer, 20);
+});
+
+const isEditableEscapeTarget = function (target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      [
+        "input",
+        "select",
+        "textarea",
+        "[contenteditable='true']",
+        "[role='combobox']",
+        "[role='searchbox']",
+        "[role='slider']",
+        "[role='spinbutton']",
+        "[role='textbox']",
+      ].join(","),
+    ),
+  );
+};
+
+const hasActiveOverlay = function () {
+  if (showFullInfo.value || store.dialogActive || store.showPlayersMenu) {
+    return true;
+  }
+  return Boolean(
+    document.querySelector(
+      [
+        ".v-overlay--active",
+        "[role='dialog']:not([aria-hidden='true'])",
+        "[role='menu']:not([aria-hidden='true'])",
+      ].join(","),
+    ),
+  );
+};
+
+const handleEscapeBack = function (event: KeyboardEvent) {
+  if (event.defaultPrevented || event.key !== "Escape") return;
+  if (
+    hasActiveOverlay() ||
+    isEditableEscapeTarget(event.target) ||
+    isEditableEscapeTarget(document.activeElement)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  backButtonClick();
+};
+
+onMounted(() => {
+  document.addEventListener("keydown", handleEscapeBack);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handleEscapeBack);
 });
 
 const playButtonClick = function (forceMenu = false) {
