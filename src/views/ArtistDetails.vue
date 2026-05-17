@@ -55,7 +55,7 @@
     <!-- similar artists -->
     <ItemsListing
       v-if="itemDetails && !loading && hasSimilarArtistsProvider"
-      itemtype="artists"
+      itemtype="similarartists"
       :parent-item="itemDetails"
       :show-provider="false"
       :show-favorites-only-filter="false"
