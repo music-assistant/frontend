@@ -107,6 +107,7 @@ const FILTER_TYPES = [
   MediaType.ALBUM,
   MediaType.TRACK,
   MediaType.RADIO,
+  MediaType.PODCAST,
 ] as const;
 type FilterType = (typeof FILTER_TYPES)[number];
 
@@ -134,13 +135,15 @@ const availableItems = computed(() => {
 });
 
 const fetchItems = async () => {
-  const [playlists, artists, albums, tracks, radios] = await Promise.all([
-    api.getLibraryPlaylists(),
-    api.getLibraryArtists(),
-    api.getLibraryAlbums(),
-    api.getLibraryTracks(),
-    api.getLibraryRadios(),
-  ]);
+  const [playlists, artists, albums, tracks, radios, podcasts] =
+    await Promise.all([
+      api.getLibraryPlaylists(),
+      api.getLibraryArtists(),
+      api.getLibraryAlbums(),
+      api.getLibraryTracks(),
+      api.getLibraryRadios(),
+      api.getLibraryPodcasts(),
+    ]);
   // Sort all items by name
   allItems.value = [
     ...playlists,
@@ -148,6 +151,7 @@ const fetchItems = async () => {
     ...albums,
     ...tracks,
     ...radios,
+    ...podcasts,
   ].sort((a, b) => a.name.localeCompare(b.name));
 };
 

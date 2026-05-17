@@ -844,7 +844,7 @@ export const getContextMenuItems = async function (
       icon: "mdi-export",
     });
   }
-  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio)
+  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast)
   if (
     items.length === 1 &&
     [
@@ -853,6 +853,7 @@ export const getContextMenuItems = async function (
       MediaType.ALBUM,
       MediaType.TRACK,
       MediaType.RADIO,
+      MediaType.PODCAST,
     ].includes(items[0].media_type) &&
     items[0].provider === "library"
   ) {

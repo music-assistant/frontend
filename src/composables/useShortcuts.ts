@@ -6,6 +6,7 @@ import type {
   EventMessage,
   MediaItemType,
   Playlist,
+  Podcast,
   Radio,
   Track,
 } from "@/plugins/api/interfaces";
@@ -13,7 +14,7 @@ import { EventType, MediaType } from "@/plugins/api/interfaces";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { store } from "@/plugins/store";
 
-export type ShortcutItem = Playlist | Artist | Album | Track | Radio;
+export type ShortcutItem = Playlist | Artist | Album | Track | Radio | Podcast;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
@@ -21,6 +22,7 @@ const SUPPORTED_TYPES = new Set([
   MediaType.ALBUM,
   MediaType.TRACK,
   MediaType.RADIO,
+  MediaType.PODCAST,
 ]);
 
 const PREF_KEY = "sidebar.shortcuts";
