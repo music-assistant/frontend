@@ -44,6 +44,7 @@ const MEDIA_TYPE_PATH: Partial<Record<MediaType, string>> = {
   [MediaType.TRACK]: "tracks",
   [MediaType.RADIO]: "radios",
   [MediaType.PODCAST]: "podcasts",
+  [MediaType.AUDIOBOOK]: "audiobooks",
 };
 
 const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
@@ -53,6 +54,7 @@ const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
   [MediaType.TRACK]: "mdi-music-note",
   [MediaType.RADIO]: "mdi-radio-tower",
   [MediaType.PODCAST]: "mdi-podcast",
+  [MediaType.AUDIOBOOK]: "mdi-book-music",
 };
 
 const getItemUrl = (item: ShortcutItem) => {
