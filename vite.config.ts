@@ -11,7 +11,9 @@ function genMdiIconNames(): Plugin {
   return {
     name: "gen-mdi-icon-names",
     buildStart() {
-      execFileSync("node", ["scripts/gen-mdi-icon-names.mjs"], { stdio: "inherit" });
+      execFileSync("node", ["scripts/gen-mdi-icon-names.mjs"], {
+        stdio: "inherit",
+      });
     },
   };
 }
