@@ -39,7 +39,7 @@
           ]"
           @click="selectedType = type"
         >
-          {{ type ? $t(type + 's') : $t('searchtype_all') }}
+          {{ type ? $t(type + "s") : $t("searchtype_all") }}
         </button>
       </div>
 
@@ -100,8 +100,15 @@ import { store } from "@/plugins/store";
 import { Pin, Search } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-const FILTER_TYPES = [null, MediaType.PLAYLIST, MediaType.ARTIST, MediaType.ALBUM, MediaType.TRACK, MediaType.RADIO] as const;
-type FilterType = typeof FILTER_TYPES[number];
+const FILTER_TYPES = [
+  null,
+  MediaType.PLAYLIST,
+  MediaType.ARTIST,
+  MediaType.ALBUM,
+  MediaType.TRACK,
+  MediaType.RADIO,
+] as const;
+type FilterType = (typeof FILTER_TYPES)[number];
 
 const show = ref(false);
 const allItems = ref<ShortcutItem[]>([]);
@@ -120,7 +127,9 @@ const availableItems = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return allItems.value
     .filter((item) => !isShortcutPinned(item.uri))
-    .filter((item) => !selectedType.value || item.media_type === selectedType.value)
+    .filter(
+      (item) => !selectedType.value || item.media_type === selectedType.value,
+    )
     .filter((item) => !query || item.name.toLowerCase().includes(query));
 });
 

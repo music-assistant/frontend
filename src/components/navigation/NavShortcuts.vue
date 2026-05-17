@@ -73,8 +73,16 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
 
 <template>
   <template v-if="pinnedItems.length > 0 || !isCollapsed">
-    <div class="mx-3 my-1 h-px bg-sidebar-border" />
-    <SidebarGroup>
+    <div
+      :class="[
+        'my-1',
+        'h-px',
+        'shrink-0',
+        'bg-sidebar-border',
+        isCollapsed ? 'mx-1' : 'mx-3',
+      ]"
+    ></div>
+    <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupContent class="flex flex-col gap-0.5">
         <SidebarMenu>
           <!-- Pinned shortcuts -->
@@ -152,6 +160,11 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
 </template>
 
 <style scoped>
+:deep(.shortcuts-group-collapsed[data-sidebar="group"]) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 :deep(a) {
   text-decoration: none !important;
   color: inherit !important;
