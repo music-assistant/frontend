@@ -39,7 +39,7 @@
     <!-- similar tracks -->
     <ItemsListing
       v-if="itemDetails && !loading && hasSimilarTracksProvider"
-      itemtype="tracks"
+      itemtype="similartracks"
       :parent-item="itemDetails"
       :show-provider="false"
       :show-favorites-only-filter="false"
