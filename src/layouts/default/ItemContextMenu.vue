@@ -236,6 +236,12 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import {
+  isShortcutPinned,
+  pinShortcutStandalone,
+  unpinShortcutStandalone,
+  type ShortcutItem,
+} from "@/composables/useShortcuts";
 
 import type { Component } from "vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -837,6 +843,35 @@ export const getContextMenuItems = async function (
       },
       icon: "mdi-export",
     });
+  }
+  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio)
+  if (
+    items.length === 1 &&
+    [
+      MediaType.PLAYLIST,
+      MediaType.ARTIST,
+      MediaType.ALBUM,
+      MediaType.TRACK,
+      MediaType.RADIO,
+    ].includes(items[0].media_type) &&
+    items[0].provider === "library"
+  ) {
+    const shortcutItem = items[0] as ShortcutItem;
+    if (isShortcutPinned(shortcutItem.uri)) {
+      contextMenuItems.push({
+        label: "unpin_from_sidebar",
+        labelArgs: [],
+        action: () => unpinShortcutStandalone(shortcutItem.uri),
+        icon: "mdi-pin-off-outline",
+      });
+    } else {
+      contextMenuItems.push({
+        label: "pin_to_sidebar",
+        labelArgs: [],
+        action: () => pinShortcutStandalone(shortcutItem),
+        icon: "mdi-pin-outline",
+      });
+    }
   }
   // map to main item (add provider mapping)
   if (

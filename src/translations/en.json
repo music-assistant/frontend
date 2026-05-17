@@ -93,6 +93,9 @@
     "export_playlist": "Export playlist",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
+    "pin_to_sidebar": "Pin to sidebar",
+    "unpin_from_sidebar": "Unpin from sidebar",
+    "add_shortcut": "Add shortcut",
     "search": "Search",
     "settings": {
         "add_new": "Add new",
