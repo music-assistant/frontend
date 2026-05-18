@@ -844,7 +844,7 @@ export const getContextMenuItems = async function (
       icon: "mdi-export",
     });
   }
-  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook)
+  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
   if (
     items.length === 1 &&
     [
@@ -855,20 +855,21 @@ export const getContextMenuItems = async function (
       MediaType.RADIO,
       MediaType.PODCAST,
       MediaType.AUDIOBOOK,
+      MediaType.GENRE,
     ].includes(items[0].media_type) &&
     items[0].provider === "library"
   ) {
     const shortcutItem = items[0] as ShortcutItem;
     if (isShortcutPinned(shortcutItem.uri)) {
       contextMenuItems.push({
-        label: "unpin_from_sidebar",
+        label: "shortcut.remove_from",
         labelArgs: [],
         action: () => unpinShortcutStandalone(shortcutItem.uri),
         icon: "mdi-pin-off-outline",
       });
     } else {
       contextMenuItems.push({
-        label: "pin_to_sidebar",
+        label: "shortcut.add_to",
         labelArgs: [],
         action: () => pinShortcutStandalone(shortcutItem),
         icon: "mdi-pin-outline",

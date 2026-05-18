@@ -5,6 +5,7 @@ import type {
   Artist,
   Audiobook,
   EventMessage,
+  Genre,
   MediaItemType,
   Playlist,
   Podcast,
@@ -22,7 +23,8 @@ export type ShortcutItem =
   | Track
   | Radio
   | Podcast
-  | Audiobook;
+  | Audiobook
+  | Genre;
 
 const SUPPORTED_TYPES = new Set([
   MediaType.PLAYLIST,
@@ -32,6 +34,7 @@ const SUPPORTED_TYPES = new Set([
   MediaType.RADIO,
   MediaType.PODCAST,
   MediaType.AUDIOBOOK,
+  MediaType.GENRE,
 ]);
 
 const PREF_KEY = "sidebar.shortcuts";

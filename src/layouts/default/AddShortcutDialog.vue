@@ -7,10 +7,10 @@
     <SheetContent side="bottom" class="h-[85vh] flex flex-col p-0">
       <SheetHeader class="flex-row items-center gap-3 border-b px-4 py-3">
         <Pin class="size-5 shrink-0 opacity-80" />
-        <SheetTitle>{{ $t("add_shortcut") }}</SheetTitle>
+        <SheetTitle>{{ $t("shortcut.add") }}</SheetTitle>
       </SheetHeader>
       <SheetDescription class="sr-only">
-        {{ $t("add_shortcut") }}
+        {{ $t("shortcut.add") }}
       </SheetDescription>
 
       <!-- Search bar -->
@@ -109,6 +109,7 @@ const FILTER_TYPES = [
   MediaType.RADIO,
   MediaType.PODCAST,
   MediaType.AUDIOBOOK,
+  MediaType.GENRE,
 ] as const;
 type FilterType = (typeof FILTER_TYPES)[number];
 
@@ -136,7 +137,7 @@ const availableItems = computed(() => {
 });
 
 const fetchItems = async () => {
-  const [playlists, artists, albums, tracks, radios, podcasts, audiobooks] =
+  const [playlists, artists, albums, tracks, radios, podcasts, audiobooks, genres] =
     await Promise.all([
       api.getLibraryPlaylists(),
       api.getLibraryArtists(),
@@ -145,6 +146,7 @@ const fetchItems = async () => {
       api.getLibraryRadios(),
       api.getLibraryPodcasts(),
       api.getLibraryAudiobooks(),
+      api.getLibraryGenres(),
     ]);
   // Sort all items by name
   allItems.value = [
@@ -155,6 +157,7 @@ const fetchItems = async () => {
     ...radios,
     ...podcasts,
     ...audiobooks,
+    ...genres,
   ].sort((a, b) => a.name.localeCompare(b.name));
 };
 

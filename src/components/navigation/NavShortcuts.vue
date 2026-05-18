@@ -45,6 +45,7 @@ const MEDIA_TYPE_PATH: Partial<Record<MediaType, string>> = {
   [MediaType.RADIO]: "radios",
   [MediaType.PODCAST]: "podcasts",
   [MediaType.AUDIOBOOK]: "audiobooks",
+  [MediaType.GENRE]: "genres",
 };
 
 const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
@@ -55,6 +56,7 @@ const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
   [MediaType.RADIO]: "mdi-radio-tower",
   [MediaType.PODCAST]: "mdi-podcast",
   [MediaType.AUDIOBOOK]: "mdi-book-music",
+  [MediaType.GENRE]: "mdi-music-circle-outline",
 };
 
 const getItemUrl = (item: ShortcutItem) => {
@@ -71,6 +73,8 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
     undefined,
     event.clientX,
     event.clientY,
+    true,
+    true,
   );
 };
 </script>
@@ -107,6 +111,7 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
                   : 'no-underline font-medium',
               ]"
               @click="handleClick"
+              @contextmenu.prevent="openContextMenu($event, item)"
             >
               <img
                 v-if="getImageThumbForItem(item)"
@@ -145,7 +150,7 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
           <SidebarMenuItem class="mr-1.5">
             <SidebarMenuButton
               as="button"
-              :tooltip="t('add_shortcut')"
+              :tooltip="t('shortcut.add')"
               class="no-underline font-medium text-sm"
               @click="handleAddShortcut"
             >
@@ -154,7 +159,7 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
                 size="19"
                 class="shortcut-add-icon"
               />
-              <span v-if="!isCollapsed">{{ t("add_shortcut") }}</span>
+              <span v-if="!isCollapsed">{{ t("shortcut.add") }}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
