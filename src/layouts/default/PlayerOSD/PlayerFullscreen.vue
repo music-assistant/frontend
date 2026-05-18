@@ -14,15 +14,19 @@
     >
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-chevron-down" />
+          <Button
+            variant="ghost"
+            size="icon"
+            @click="store.showFullscreenPlayer = false"
+          >
+            <ChevronDownIcon class="size-5" />
           </Button>
         </template>
         <template #append>
           <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
             <template #activator="{ props }">
-              <Button v-bind="props" icon>
-                <v-icon color="accent" icon="mdi-radio-tower" />
+              <Button v-bind="props" variant="ghost" size="icon">
+                <RadioTowerIcon class="size-5" />
               </Button>
             </template>
 
@@ -50,8 +54,8 @@
             "
           />
 
-          <Button icon @click.stop="openQueueMenu">
-            <v-icon icon="mdi-dots-vertical" />
+          <Button variant="ghost" size="icon" @click.stop="openQueueMenu">
+            <EllipsisVerticalIcon class="size-5" />
           </Button>
         </template>
       </v-toolbar>
@@ -224,45 +228,39 @@
                 <div class="lyrics-tab-row">
                   <span>{{ $t("lyrics") }}</span>
                   <template v-if="showLyricsOffset && activeQueuePanel === 2">
-                    <v-btn
+                    <Button
                       class="lyrics-offset-btn"
-                      icon
-                      size="x-small"
-                      variant="tonal"
-                      rounded="md"
+                      variant="secondary"
+                      size="icon-xs"
                       :title="$t('lyrics_offset')"
                       @click.stop="
                         showLyricsOffsetControls = !showLyricsOffsetControls
                       "
                     >
-                      <v-icon icon="mdi-arrow-left-right" size="small" />
-                    </v-btn>
+                      <ChevronsLeftRightIcon class="size-3.5" />
+                    </Button>
                     <template v-if="showLyricsOffsetControls">
-                      <v-btn
+                      <Button
                         class="lyrics-offset-btn"
-                        icon
-                        size="x-small"
-                        variant="tonal"
-                        rounded="md"
+                        variant="secondary"
+                        size="icon-xs"
                         @click.stop
                         @mousedown.stop="startRepeatingOffset(-0.1)"
                         @touchstart.stop.prevent="startRepeatingOffset(-0.1)"
                       >
-                        <v-icon icon="mdi-minus" size="small" />
-                      </v-btn>
-                      <v-btn
+                        <MinusIcon class="size-3.5" />
+                      </Button>
+                      <Button
                         class="lyrics-offset-btn"
-                        icon
-                        size="x-small"
-                        variant="tonal"
-                        rounded="md"
+                        variant="secondary"
+                        size="icon-xs"
                         @click.stop
                         @mousedown.stop="startRepeatingOffset(0.1)"
                         @touchstart.stop.prevent="startRepeatingOffset(0.1)"
                       >
-                        <v-icon icon="mdi-plus" size="small" />
-                      </v-btn>
-                      <span class="lyrics-offset-value">
+                        <PlusIcon class="size-3.5" />
+                      </Button>
+                      <span class="lyrics-offset-value text-sm mt-0.5">
                         {{ lyricsOffsetDisplay
                         }}<span class="lyrics-offset-unit">s</span>
                       </span>
@@ -551,9 +549,9 @@
             padding-top: 15px;
           "
         >
-          <v-btn
+          <Button
             class="responsive-icon-holder-btn"
-            variant="outlined"
+            variant="outline"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -563,7 +561,7 @@
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          </Button>
         </div>
       </div>
     </v-card>
@@ -571,7 +569,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
@@ -580,6 +577,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -619,7 +617,15 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
-import { Heart } from "lucide-vue-next";
+import {
+  ChevronDownIcon,
+  ChevronsLeftRightIcon,
+  EllipsisVerticalIcon,
+  Heart,
+  MinusIcon,
+  PlusIcon,
+  RadioTowerIcon,
+} from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -1774,7 +1780,6 @@ watchEffect(() => {
 }
 
 .lyrics-offset-value {
-  font-size: 1.04rem;
   font-variant-numeric: tabular-nums;
   opacity: 0.8;
   pointer-events: none;
