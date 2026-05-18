@@ -6,12 +6,14 @@
         v-model="store.globalSearchTerm"
         clearable
         prepend-inner-icon="mdi-magnify"
-        :label="$t('type_to_search')"
+        :label="$t('search')"
         hide-details
         variant="outlined"
         @focus="searchHasFocus = true"
         @blur="searchHasFocus = false"
-      />
+      >
+        <template #label>{{ $t("type_to_search") }}</template>
+      </v-text-field>
 
       <v-chip-group
         v-model="selectedSearchType"
