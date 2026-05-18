@@ -82,7 +82,7 @@ const handleLogout = () => {
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          class="z-[100001] w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          :class="['z-[100001] w-(--reka-dropdown-menu-trigger-width) rounded-lg', isEditMode ? 'min-w-64' : 'min-w-56']"
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
