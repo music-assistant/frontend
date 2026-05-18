@@ -351,6 +351,7 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
+                "bg_BG": "Bulgarian",
                 "cs": "Czech",
                 "da": "Danish",
                 "de": "German",

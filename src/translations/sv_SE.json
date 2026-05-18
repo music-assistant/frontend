@@ -636,14 +636,6 @@
         "players_total": "{0}total spelare{1}",
         "api_docs": "API Dokumentation",
         "no_group_providers": "Du har för närvarande inga leverantörer som stöder att skapa grupper",
-        "sendspin_sync_delay": {
-            "label": "Sendspin synkroniseringsfördröjning (ms)",
-            "description": "Statisk fördröjning i millisekunder för att justera ljudsynkronisering. Positiva värden fördröjer uppspelningen, negativa värden ökar den. Använd detta för att kompensera för enhetsspecifik ljud fördröjning."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Använd webbläsarens fördröjnings detektering",
-            "description": "Kompensera automatiskt för hårdvaruljudfördröjning (t.ex. Bluetooth-hörlurar) med hjälp av webbläsarens API för utmatningsfördröjning. Detta API är relativt nytt och fungerar eventuellt inte tillförlitligt i alla webbläsare och operativsystem."
-        },
         "provider_codeowners": "Denna leverantör tillhandahålls\/underhålls av",
         "provider_credits": "Möjliggjort av",
         "onboarding_subtitle": "Nu kommer vi igång genom att ansluta dina musikkällor och ljudenheter.",
@@ -701,7 +693,7 @@
         "restore_success": "Återställd {0} saknade genrer.",
         "restore_all_present": "Alla standardgenrer finns redan.",
         "full_restore_success": "Fullständig återställning klar. {0} standardgenre (r) återställd (a).",
-        "genre_statistics": "Genre statistik",
+        "genre_statistics": "Genre biblioteksadministration",
         "total_genres": "Totalt antal genrer",
         "view_all_genres": "Visa alla genrer",
         "background_scanner": "Bakgrundsskanning",
@@ -732,7 +724,22 @@
         "metadata_providers_description": "Hantera metadataleverantörer för illustrationer och ytterligare information",
         "plugin_providers_description": "Hantera plugin program som utökar musikassistentens funktionalitet",
         "restore_genres": "Återställ genrer",
-        "scan_ago": "{0} sedan"
+        "scan_ago": "{0} sedan",
+        "genre_statistics_description": "Bläddra bland och filtrera alla genrer i ditt bibliotek. Genrer kan exkluderas globalt och återställas.",
+        "excluded_genres": "Uteslutna genrer",
+        "excluded_genres_description": "Genrer som listas här är globalt exkluderade från ditt bibliotek och kommer inte att visas i några vyer.",
+        "genre_table_rows_per_page": "Rader per sida",
+        "genre_table_page_info": "{0}–{1} av {2}",
+        "missing_players_hint": "Saknade spelare? {0}",
+        "add_player_providers": "Lägg till fler spelarleverantörer",
+        "add_audio_analysis_provider": "Lägg till en leverantör för ljudanalys",
+        "audio_analysis_providers": "Ljudanalys",
+        "audio_analysis_providers_description": "Hantera leverantörer som analyserar ditt ljud",
+        "audio_analysis": "Ljudanalys",
+        "sendspin_static_delay": {
+            "label": "Statisk uppspelningsfördröjning (ms)",
+            "description": "Offset i millisekunder för att hålla den här spelaren synkroniserad med andra spelare. Öka om ljudet spelas upp för sent, till exempel för att kompensera för latens från en förstärkare, aktiva högtalare eller operativsystemet."
+        }
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -745,7 +752,7 @@
         "track_number": "Låtnummer",
         "year": "Utgivningsår",
         "position_desc": "Position (fallande)",
-        "album": "Album",
+        "album": "Album (alfabetiskt)",
         "artist": "Artist",
         "name": "Alfabetiskt",
         "name_desc": "Alfabetiskt (fallande)",
@@ -763,7 +770,8 @@
         "play_count": "Antal spelningar",
         "play_count_desc": "Antal uppspelningar (fallande)",
         "artist_name": "Albumartist",
-        "artist_name_desc": "Albumartist (fallande)"
+        "artist_name_desc": "Albumartist (fallande)",
+        "album_sort_name": "Album (sorteringsnamn)"
     },
     "state": {
         "idle": "vilande",
@@ -966,7 +974,8 @@
         "discover": "Upptäck",
         "libraries": "Bibliotek",
         "library": "Bibliotek",
-        "trending_podcasts": "Trendiga poddar"
+        "trending_podcasts": "Trendiga poddar",
+        "trending_stations": "Trendiga stationer"
     },
     "homescreen_edit_enable": "Redigera startskärm",
     "homescreen_edit_disable": "Lämna redigeringsläget för startskärmen",
@@ -1371,7 +1380,34 @@
     "player_options": {
         "open": "Öppna spelaralternativ",
         "settable": "Inställbara spelaralternativ för spelare {0}",
-        "read_only": "Endast läsning spelaralternativ för spelare {0}"
+        "read_only": "Endast läsning spelaralternativ för spelare {0}",
+        "adaptive_drc": "Adaptiv DRC",
+        "bass": "Bas",
+        "bass_extension": "Basförlängning",
+        "clear_voice": "Klar röst",
+        "dts_dialogue_control": "DTS Dialog Kontroll",
+        "dialogue_level": "Dialognivå",
+        "dialogue_lift": "Dialoglyft",
+        "dimmer": "Dimmer",
+        "enhancer": "Förstärkare",
+        "equalizer_high": "Utjämnare hög",
+        "equalizer_low": "Utjämnare låg",
+        "equalizer_mid": "Utjämnare mitten",
+        "equalizer_mode": "Utjämnare läge",
+        "extra_bass": "Extra bas",
+        "link_audio_delay": "Länkljud fördröjning",
+        "link_control": "Länkkontroll",
+        "link_audio_quality": "Länkens ljudkvalitet",
+        "party_mode": "Partyläge",
+        "pure_direct": "Ren direkt",
+        "sleep": "Sovtimer",
+        "speaker_a": "Högtalare A",
+        "speaker_b": "Högtalare B",
+        "subwoofer_volume": "Subwoofer volym",
+        "surround_3d": "Omgivande 3D",
+        "surround_decoder_type": "Omgivande dekoder typ",
+        "tone_control_mode": "Tonkontroll läge",
+        "treble": "Diskant"
     },
     "select_sound_mode": "Välj ljudläge",
     "refresh": "Uppdatera",
@@ -1421,7 +1457,9 @@
                 "song_skipped": "Låten hoppades över!",
                 "try_different_search": "Prova en annan sökterm",
                 "unknown_artist": "Okänd Artist",
-                "view_songs": "Visa låtar"
+                "view_songs": "Visa låtar",
+                "added": "Tillagd",
+                "already_in_queue": "Redan i kön"
             },
             "add": "Lägg till",
             "boost": "Höj",
@@ -1435,7 +1473,14 @@
             "qr_failed": "Misslyckades med att generera QR koden",
             "request": "Begäran",
             "link_copy_fail": "Misslyckades med att kopiera länken",
-            "link_copy_success": "Länk kopierad!"
+            "link_copy_success": "Länk kopierad!",
+            "confirm_disable_guest_access": "Är du säker på att du vill inaktivera gäståtkomst? Gäster kommer inte längre att kunna gå med i festen, bläddra bland musik eller lägga till låtar i kön.",
+            "confirm_enable_guest_access": "Är du säker på att du vill aktivera gäståtkomst? Detta gör att alla med länken eller QR-koden kan gå med i festen, bläddra bland musik och lägga till låtar i kön.",
+            "disable_guest_access": "Inaktivera gäståtkomst",
+            "enable_guest_access": "Aktivera gäståtkomst",
+            "guest_access_enabled": "Gäståtkomst aktiverad",
+            "guest_access_toggle_failed": "Misslyckades med att växla gäståtkomst",
+            "powered_by": "Drivs av"
         }
     },
     "no_lyrics_available": "Inga texter tillgängliga",
@@ -1572,5 +1617,19 @@
         "update_metadata": "Uppdatera metadata för {0}"
     },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
-    "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt."
+    "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt.",
+    "radiobrowser_by_popularity": "Efter popularitet",
+    "radiobrowser_by_category": "Efter kategori",
+    "restore_genre": "Återställ",
+    "genre_name": "Namn på genre",
+    "export_playlist": "Exportera spellistan",
+    "import_playlist": "Importera spellista",
+    "import_playlist_title": "Importera spellista",
+    "import_playlist_invalid_file": "Ogiltig spellista fil",
+    "import_playlist_search_providers": "Sök efter spår på",
+    "party_mode": "Party",
+    "edit_playlist": "Redigera spellista",
+    "edit_radio": "Redigera radiostation",
+    "edit_track": "Redigera spår",
+    "uri_read_only": "URI (läs-bara)"
 }

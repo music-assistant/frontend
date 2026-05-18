@@ -630,14 +630,6 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "sendspin_sync_delay": {
-            "label": "Sendspin sync delay (ms)",
-            "description": "Static delay in milliseconds to adjust audio synchronisation. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Use browser latency detection",
-            "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
-        },
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",

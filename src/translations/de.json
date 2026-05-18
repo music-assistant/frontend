@@ -636,14 +636,6 @@
         "players_total": "{0} Wiedergabegeräte insgesamt{1}",
         "api_docs": "API-Dokumentation",
         "no_group_providers": "Du hast derzeit keine Anbieter, die die Erstellung von Gruppen unterstützen.",
-        "sendspin_sync_delay": {
-            "label": "Sendspin-Synchronisierungsverzögerung (ms)",
-            "description": "Statische Verzögerung in Millisekunden zur Anpassung der Audiosynchronisation. Positive Werte verzögern die Wiedergabe, negative Werte beschleunigen sie. Verwende diese Einstellung, um gerätespezifische Audiolatenzen auszugleichen."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Browser-Latenzzeit-Erkennung verwenden",
-            "description": "Hardware-Audiolatenz (z. B. von Bluetooth-Kopfhörern) wird automatisch mithilfe der Ausgabelatenz-API des Browsers kompensiert. Diese API ist relativ neu und funktioniert möglicherweise nicht zuverlässig auf allen Browsern und Betriebssystemen."
-        },
         "provider_codeowners": "Dieser Anbieter wird unterstützt\/gewartet von",
         "provider_credits": "Ermöglicht durch",
         "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
@@ -739,7 +731,15 @@
         "genre_table_rows_per_page": "Zeilen pro Seite",
         "genre_table_page_info": "{0}–{1} von {2}",
         "missing_players_hint": "Fehlende Wiedergabegeräte? {0}",
-        "add_player_providers": "Weitere Wiedergabegeräte-Anbieter hinzufügen"
+        "add_player_providers": "Weitere Wiedergabegeräte-Anbieter hinzufügen",
+        "add_audio_analysis_provider": "Anbieter von Audioanalysen hinzufügen",
+        "audio_analysis_providers": "Audioanalyse",
+        "audio_analysis_providers_description": "Verwalte Anbieter, die deine Audiodaten analysieren",
+        "audio_analysis": "Audioanalyse",
+        "sendspin_static_delay": {
+            "label": "Statische Wiedergabeverzögerung (ms)",
+            "description": "Offset in Millisekunden, um dieses Wiedergabegerät mit anderen Playern zu synchronisieren. Erhöhe den Wert, wenn die Audiowiedergabe zu verzögert ist, beispielsweise um Latenzen von einem Verstärker, Aktivlautsprechern oder dem Betriebssystem auszugleichen."
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -752,7 +752,7 @@
         "track_number": "Titelnummer",
         "year": "Erscheinungsjahr",
         "position_desc": "Position (absteigend)",
-        "album": "Album",
+        "album": "Album (alphabetisch)",
         "artist": "Künstler",
         "name": "Alphabetisch",
         "name_desc": "Alphabetisch (absteigend)",
@@ -770,7 +770,8 @@
         "play_count": "Wiedergabezähler",
         "play_count_desc": "Wiedergabezähler (absteigend)",
         "artist_name": "Albuminterpret",
-        "artist_name_desc": "Albuminterpret (absteigend)"
+        "artist_name_desc": "Albuminterpret (absteigend)",
+        "album_sort_name": "Album (Sortiername)"
     },
     "state": {
         "idle": "Inaktiv",
@@ -1378,7 +1379,34 @@
     "player_options": {
         "open": "Wiedergabegeräts-Optionen öffnen",
         "settable": "Einstellbare Wiedergabegeräts-Optionen für Wiedergabegerät {0}",
-        "read_only": "Schreibgeschützte Wiedergabegeräts-Optionen für Wiedergabegerät {0}"
+        "read_only": "Schreibgeschützte Wiedergabegeräts-Optionen für Wiedergabegerät {0}",
+        "adaptive_drc": "Adaptiver DRC",
+        "bass": "Bass",
+        "bass_extension": "Bass-Erweiterung",
+        "clear_voice": "Klare Stimme",
+        "dts_dialogue_control": "DTS-Dialogsteuerung",
+        "dialogue_level": "Dialog Level",
+        "dialogue_lift": "Dialog-Lift",
+        "dimmer": "Dimmer",
+        "enhancer": "Enhancer",
+        "equalizer_high": "Equalizer hoch",
+        "equalizer_low": "Equalizer niedrig",
+        "equalizer_mid": "Equalizer mittel",
+        "equalizer_mode": "Equalizer-Modus",
+        "extra_bass": "Extra Bass",
+        "link_audio_delay": "Link Audio-Verzögerung",
+        "link_control": "Linksteuerung",
+        "link_audio_quality": "Link-Audioqualität",
+        "party_mode": "Partymodus",
+        "pure_direct": "Klar und Direkt",
+        "sleep": "Schlaftimer",
+        "speaker_a": "Lautsprecher A",
+        "speaker_b": "Lautsprecher B",
+        "subwoofer_volume": "Subwoofer-Lautstärke",
+        "surround_3d": "Surround 3D",
+        "surround_decoder_type": "Surround-Decoder-Typ",
+        "tone_control_mode": "Tonregelungsmodus",
+        "treble": "Höhen"
     },
     "select_sound_mode": "Tonmodus auswählen",
     "refresh": "Aktualisieren",
@@ -1428,7 +1456,9 @@
                 "song_skipped": "Lied übersprungen!",
                 "try_different_search": "Versuche einen anderen Suchbegriff",
                 "unknown_artist": "Unbekannter Künstler",
-                "view_songs": "Lieder ansehen"
+                "view_songs": "Lieder ansehen",
+                "added": "Hinzugefügt",
+                "already_in_queue": "Bereits in der Warteschlange"
             },
             "add": "Hinzufügen",
             "boost": "Boost",
@@ -1583,12 +1613,22 @@
         "cache_database_cleanup": "Bereinigung der Cache-Datenbank",
         "scan_missing_artist_artwork": "Scannen Sie fehlende Kunstwerke von Künstlern",
         "refresh_playlist_metadata": "Metadaten der Wiedergabeliste aktualisieren",
-        "update_metadata": "Aktualisiere Metadaten für {0}"
+        "update_metadata": "Metadaten aktualisieren für {0}"
     },
     "not_found_headline": "Ups, diese Seite gehört nicht zur Setlist.",
     "not_found_subtext": "Der gesuchte Titel ist zwischen den Anbietern verloren gegangen. Gehe zurück oder suche nach etwas Neuem.",
     "radiobrowser_by_popularity": "Nach Beliebtheit",
     "radiobrowser_by_category": "Nach Kategorie",
     "restore_genre": "Wiederherstellen",
-    "genre_name": "Genre-Name"
+    "genre_name": "Genre-Name",
+    "export_playlist": "Wiedergabeliste exportieren",
+    "import_playlist": "Wiedergabeliste importieren",
+    "import_playlist_title": "Wiedergabeliste importieren",
+    "import_playlist_invalid_file": "Ungültige Wiedergabelistendatei",
+    "import_playlist_search_providers": "Suche nach Titeln auf",
+    "party_mode": "Party",
+    "edit_playlist": "Wiedergabeliste bearbeiten",
+    "edit_radio": "Radiosender bearbeiten",
+    "edit_track": "Track bearbeiten",
+    "uri_read_only": "URI (schreibgeschützt)"
 }
