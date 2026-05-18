@@ -82,7 +82,10 @@ const handleLogout = () => {
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          :class="['z-[100001] w-(--reka-dropdown-menu-trigger-width) rounded-lg', isEditMode ? 'min-w-64' : 'min-w-56']"
+          :class="[
+            'z-[100001] w-(--reka-dropdown-menu-trigger-width) rounded-lg',
+            isEditMode ? 'min-w-64' : 'min-w-56',
+          ]"
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
@@ -116,7 +119,13 @@ const handleLogout = () => {
           </DropdownMenuItem>
           <DropdownMenuItem @click="handleEditHomescreen">
             <Pencil class="size-4" />
-            {{ $t(isEditMode ? "homescreen_edit_disable" : "homescreen_edit_enable") }}
+            {{
+              $t(
+                isEditMode
+                  ? "homescreen_edit_disable"
+                  : "homescreen_edit_enable",
+              )
+            }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"
