@@ -986,7 +986,14 @@
         "libraries": "Libraries",
         "library": "Library",
         "trending_podcasts": "Trending podcasts",
-        "trending_stations": "Trending stations"
+        "trending_stations": "Trending stations",
+        "forgotten_tracks": "Forgotten tracks",
+        "forgotten_albums": "Forgotten albums",
+        "forgotten_artists": "Forgotten artists",
+        "most_played_tracks": "Most played tracks",
+        "never_played_tracks": "Never / rarely played",
+        "recent_favorite_albums": "Recently favorited albums",
+        "recently_added_tracks": "Recently added tracks"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
