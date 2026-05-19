@@ -14,15 +14,19 @@
     >
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-chevron-down" />
+          <Button
+            variant="ghost"
+            size="icon"
+            @click="store.showFullscreenPlayer = false"
+          >
+            <ChevronDownIcon class="size-5" />
           </Button>
         </template>
         <template #append>
           <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
             <template #activator="{ props }">
-              <Button v-bind="props" icon>
-                <v-icon color="accent" icon="mdi-radio-tower" />
+              <Button v-bind="props" variant="ghost" size="icon">
+                <RadioTowerIcon class="size-5" />
               </Button>
             </template>
 
@@ -50,8 +54,8 @@
             "
           />
 
-          <Button icon @click.stop="openQueueMenu">
-            <v-icon icon="mdi-dots-vertical" />
+          <Button variant="ghost" size="icon" @click.stop="openQueueMenu">
+            <EllipsisVerticalIcon class="size-5" />
           </Button>
         </template>
       </v-toolbar>
@@ -219,8 +223,51 @@
                 inline
               />
             </v-tab>
-            <v-tab v-if="hasLyrics" :value="2">
-              {{ $t("lyrics") }}
+            <v-tab v-if="hasLyrics" :value="2" class="lyrics-tab">
+              <div class="lyrics-tab-content">
+                <div class="lyrics-tab-row">
+                  <span>{{ $t("lyrics") }}</span>
+                  <template v-if="showLyricsOffset && activeQueuePanel === 2">
+                    <Button
+                      class="lyrics-offset-btn"
+                      variant="secondary"
+                      size="icon-xs"
+                      :title="$t('lyrics_offset')"
+                      @click.stop="
+                        showLyricsOffsetControls = !showLyricsOffsetControls
+                      "
+                    >
+                      <ChevronsLeftRightIcon class="size-3.5" />
+                    </Button>
+                    <template v-if="showLyricsOffsetControls">
+                      <Button
+                        class="lyrics-offset-btn"
+                        variant="secondary"
+                        size="icon-xs"
+                        @click.stop
+                        @mousedown.stop="startRepeatingOffset(-0.1)"
+                        @touchstart.stop.prevent="startRepeatingOffset(-0.1)"
+                      >
+                        <MinusIcon class="size-3.5" />
+                      </Button>
+                      <Button
+                        class="lyrics-offset-btn"
+                        variant="secondary"
+                        size="icon-xs"
+                        @click.stop
+                        @mousedown.stop="startRepeatingOffset(0.1)"
+                        @touchstart.stop.prevent="startRepeatingOffset(0.1)"
+                      >
+                        <PlusIcon class="size-3.5" />
+                      </Button>
+                      <span class="lyrics-offset-value text-sm mt-0.5">
+                        {{ lyricsOffsetDisplay
+                        }}<span class="lyrics-offset-unit">s</span>
+                      </span>
+                    </template>
+                  </template>
+                </div>
+              </div>
             </v-tab>
           </v-tabs>
           <div
@@ -367,6 +414,7 @@
                 :text-color="sliderColor"
                 :lyrics="currentLyrics.plain"
                 :lrc-lyrics="currentLyrics.synced"
+                :offset="lyricsOffset"
               />
             </div>
           </div>
@@ -501,9 +549,9 @@
             padding-top: 15px;
           "
         >
-          <v-btn
+          <Button
             class="responsive-icon-holder-btn"
-            variant="outlined"
+            variant="outline"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -513,7 +561,7 @@
           >
             <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          </Button>
         </div>
       </div>
     </v-card>
@@ -521,7 +569,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
@@ -530,6 +577,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -569,7 +617,15 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import Color from "color";
-import { Heart } from "lucide-vue-next";
+import {
+  ChevronDownIcon,
+  ChevronsLeftRightIcon,
+  EllipsisVerticalIcon,
+  Heart,
+  MinusIcon,
+  PlusIcon,
+  RadioTowerIcon,
+} from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -648,6 +704,76 @@ const hasLyrics = computed(() => {
     (!!synced && synced.trim().length > 0)
   );
 });
+
+// Protocols with accurate playback time reporting don't need a latency offset.
+const ACCURATE_TIME_PROTOCOLS = ["airplay"];
+
+const showLyricsOffset = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  let domain: string | undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== "native"
+  ) {
+    domain =
+      player.output_protocols?.find(
+        (p) => p.output_protocol_id === player.active_output_protocol,
+      )?.protocol_domain ?? undefined;
+  }
+  if (!domain) {
+    domain = player.provider.split("--")[0];
+  }
+  return !ACCURATE_TIME_PROTOCOLS.includes(domain);
+});
+
+// Lyrics latency offset, in seconds. Adjustable via the controls in the
+// Lyrics tab; persists across tracks within the session.
+const lyricsOffset = ref(0);
+const showLyricsOffsetControls = ref(false);
+
+const lyricsOffsetDisplay = computed(() => {
+  const val = lyricsOffset.value;
+  const sign = val > 0 ? "+" : "";
+  return `${sign}${val.toFixed(1)}`;
+});
+
+const adjustLyricsOffset = (delta: number) => {
+  const next = Math.round((lyricsOffset.value + delta) * 10) / 10;
+  lyricsOffset.value = Math.max(-9.9, Math.min(9.9, next));
+};
+
+// Press-and-hold: first step on press, then accelerate after a short delay.
+let offsetHoldDelay: number | null = null;
+let offsetHoldInterval: number | null = null;
+
+const stopRepeatingOffset = () => {
+  if (offsetHoldDelay !== null) {
+    clearTimeout(offsetHoldDelay);
+    offsetHoldDelay = null;
+  }
+  if (offsetHoldInterval !== null) {
+    clearInterval(offsetHoldInterval);
+    offsetHoldInterval = null;
+  }
+  window.removeEventListener("mouseup", stopRepeatingOffset);
+  window.removeEventListener("touchend", stopRepeatingOffset);
+  window.removeEventListener("touchcancel", stopRepeatingOffset);
+};
+
+const startRepeatingOffset = (delta: number) => {
+  stopRepeatingOffset();
+  adjustLyricsOffset(delta);
+  offsetHoldDelay = window.setTimeout(() => {
+    offsetHoldInterval = window.setInterval(
+      () => adjustLyricsOffset(delta),
+      80,
+    );
+  }, 400);
+  window.addEventListener("mouseup", stopRepeatingOffset);
+  window.addEventListener("touchend", stopRepeatingOffset);
+  window.addEventListener("touchcancel", stopRepeatingOffset);
+};
 
 // Fetch lyrics for the current track (only when fullscreen player is open)
 const fetchLyrics = async () => {
@@ -1329,6 +1455,7 @@ onMounted(() => {
   window.addEventListener("keydown", onKeydown);
   onBeforeUnmount(() => {
     window.removeEventListener("keydown", onKeydown);
+    stopRepeatingOffset();
   });
 });
 
@@ -1634,6 +1761,34 @@ watchEffect(() => {
 }
 .v-tab-item--selected {
   opacity: 1;
+}
+
+.lyrics-tab-content {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.lyrics-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lyrics-offset-btn {
+  opacity: 1;
+}
+
+.lyrics-offset-value {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.lyrics-offset-unit {
+  font-size: 0.7em;
+  margin-left: 1px;
+  opacity: 0.8;
 }
 
 .media-controls {
