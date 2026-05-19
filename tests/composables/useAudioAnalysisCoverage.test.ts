@@ -26,13 +26,54 @@ function setProviders(list: Array<Record<string, unknown>>) {
   for (const p of list) providersMock[p.instance_id as string] = p;
 }
 
+/**
+ * Mock the two-call-per-provider flow introduced for server PR-3851:
+ * `audio_analysis/status` is the authoritative loaded/version probe, and
+ * `audio_analysis/coverage` supplies the analyzed/pending/stale counts.
+ */
+function mockAa(
+  byDomain: Record<
+    string,
+    {
+      status?:
+        | { provider_loaded: boolean; analysis_version: number }
+        | "reject";
+      coverage?:
+        | {
+            analyzed: number;
+            pending: number;
+            stale_version: number;
+            analysis_version: number;
+          }
+        | "reject";
+    }
+  >,
+) {
+  mockSendCommand.mockImplementation(
+    (cmd: string, args: { aa_domain?: string; task_id?: string }) => {
+      const entry = args.aa_domain ? byDomain[args.aa_domain] : undefined;
+      if (cmd === "audio_analysis/status") {
+        if (!entry || entry.status === "reject" || !entry.status)
+          return Promise.reject(new Error("unavailable"));
+        return Promise.resolve(entry.status);
+      }
+      if (cmd === "audio_analysis/coverage") {
+        if (!entry || entry.coverage === "reject" || !entry.coverage)
+          return Promise.reject(new Error("unavailable"));
+        return Promise.resolve(entry.coverage);
+      }
+      return Promise.resolve({});
+    },
+  );
+}
+
 describe("useAudioAnalysisCoverage - coverage", () => {
   beforeEach(() => {
     mockSendCommand.mockReset();
     setProviders([]);
   });
 
-  it("discovers only AUDIO_ANALYSIS providers and derives coverage %", async () => {
+  it("probes audio_analysis/status then coverage; version comes from status", async () => {
     setProviders([
       {
         type: ProviderType.AUDIO_ANALYSIS,
@@ -49,11 +90,16 @@ describe("useAudioAnalysisCoverage - coverage", () => {
         available: true,
       },
     ]);
-    mockSendCommand.mockResolvedValueOnce({
-      analyzed: 78,
-      pending: 22,
-      stale_version: 3,
-      analysis_version: 2,
+    mockAa({
+      sonic_analysis: {
+        status: { provider_loaded: true, analysis_version: 5 },
+        coverage: {
+          analyzed: 78,
+          pending: 22,
+          stale_version: 3,
+          analysis_version: 2,
+        },
+      },
     });
 
     const c = useAudioAnalysisCoverage();
@@ -71,8 +117,12 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     expect(row.analyzed).toBe(78);
     expect(row.pending).toBe(22);
     expect(row.staleVersion).toBe(3);
-    expect(row.analysisVersion).toBe(2);
+    // Authoritative version is the status endpoint's, not coverage's.
+    expect(row.analysisVersion).toBe(5);
     expect(row.coveragePct).toBe(78);
+    expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/status", {
+      aa_domain: "sonic_analysis",
+    });
     expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/coverage", {
       aa_domain: "sonic_analysis",
     });
@@ -88,11 +138,16 @@ describe("useAudioAnalysisCoverage - coverage", () => {
         available: true,
       },
     ]);
-    mockSendCommand.mockResolvedValueOnce({
-      analyzed: 0,
-      pending: 0,
-      stale_version: 0,
-      analysis_version: 1,
+    mockAa({
+      loudness: {
+        status: { provider_loaded: true, analysis_version: 1 },
+        coverage: {
+          analyzed: 0,
+          pending: 0,
+          stale_version: 0,
+          analysis_version: 1,
+        },
+      },
     });
 
     const c = useAudioAnalysisCoverage();
@@ -102,7 +157,7 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     expect(c.rows.value[0].hasData).toBe(false);
   });
 
-  it("skips unavailable providers: no coverage call, row marked unavailable", async () => {
+  it("skips providers unavailable in api.providers: no status or coverage call", async () => {
     setProviders([
       {
         type: ProviderType.AUDIO_ANALYSIS,
@@ -116,6 +171,9 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     const c = useAudioAnalysisCoverage();
     await c.refresh();
 
+    expect(mockSendCommand).not.toHaveBeenCalledWith("audio_analysis/status", {
+      aa_domain: "sonic_analysis",
+    });
     expect(mockSendCommand).not.toHaveBeenCalledWith(
       "audio_analysis/coverage",
       { aa_domain: "sonic_analysis" },
@@ -124,7 +182,60 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     expect(c.rows.value[0].hasData).toBe(false);
   });
 
-  it("isolates a failed coverage call: other rows still resolve", async () => {
+  it("status rejecting overrides an optimistic api.providers flag: unavailable, no coverage call", async () => {
+    setProviders([
+      {
+        type: ProviderType.AUDIO_ANALYSIS,
+        domain: "sonic_analysis",
+        name: "Sonic Analysis",
+        instance_id: "sa1",
+        available: true,
+      },
+    ]);
+    mockAa({ sonic_analysis: { status: "reject" } });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    expect(mockSendCommand).not.toHaveBeenCalledWith(
+      "audio_analysis/coverage",
+      { aa_domain: "sonic_analysis" },
+    );
+    const row = c.rows.value[0];
+    expect(row.available).toBe(false);
+    expect(row.hasData).toBe(false);
+    expect(row.error).toBe(false);
+  });
+
+  it("status provider_loaded:false: unavailable, no coverage call", async () => {
+    setProviders([
+      {
+        type: ProviderType.AUDIO_ANALYSIS,
+        domain: "sonic_analysis",
+        name: "Sonic Analysis",
+        instance_id: "sa1",
+        available: true,
+      },
+    ]);
+    mockAa({
+      sonic_analysis: {
+        status: { provider_loaded: false, analysis_version: 4 },
+      },
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    expect(mockSendCommand).not.toHaveBeenCalledWith(
+      "audio_analysis/coverage",
+      { aa_domain: "sonic_analysis" },
+    );
+    const row = c.rows.value[0];
+    expect(row.available).toBe(false);
+    expect(row.error).toBe(false);
+  });
+
+  it("loaded provider whose coverage call fails: error row, still available, version from status", async () => {
     setProviders([
       {
         type: ProviderType.AUDIO_ANALYSIS,
@@ -141,18 +252,21 @@ describe("useAudioAnalysisCoverage - coverage", () => {
         available: true,
       },
     ]);
-    mockSendCommand.mockImplementation(
-      (_cmd: string, args: { aa_domain: string }) => {
-        if (args.aa_domain === "bad")
-          return Promise.reject(new Error("unavailable"));
-        return Promise.resolve({
+    mockAa({
+      bad: {
+        status: { provider_loaded: true, analysis_version: 7 },
+        coverage: "reject",
+      },
+      good: {
+        status: { provider_loaded: true, analysis_version: 1 },
+        coverage: {
           analyzed: 10,
           pending: 0,
           stale_version: 0,
           analysis_version: 1,
-        });
+        },
       },
-    );
+    });
 
     const c = useAudioAnalysisCoverage();
     await c.refresh();
@@ -161,6 +275,8 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     const good = c.rows.value.find((r) => r.domain === "good")!;
     expect(bad.hasData).toBe(false);
     expect(bad.error).toBe(true);
+    expect(bad.available).toBe(true);
+    expect(bad.analysisVersion).toBe(7);
     expect(good.hasData).toBe(true);
     expect(good.coveragePct).toBe(100);
   });

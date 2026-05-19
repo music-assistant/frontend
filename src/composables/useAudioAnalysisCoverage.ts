@@ -15,6 +15,11 @@ export interface CoverageResponse {
   analysis_version: number;
 }
 
+export interface StatusResponse {
+  provider_loaded: boolean;
+  analysis_version: number;
+}
+
 export interface ProviderCoverageRow {
   domain: string;
   name: string;
@@ -91,6 +96,21 @@ export function useAudioAnalysisCoverage(): {
     const results = await Promise.allSettled(
       providers.map(async (meta) => {
         if (!meta.available) return emptyRow(meta);
+        // audio_analysis/status is the authoritative loaded/version probe
+        // (server PR-3851): it overrides an optimistic api.providers flag and
+        // owns analysis_version. Only counts come from coverage.
+        let status: StatusResponse;
+        try {
+          status = await api.sendCommand<StatusResponse>(
+            "audio_analysis/status",
+            { aa_domain: meta.domain },
+          );
+        } catch {
+          return { ...emptyRow(meta), available: false };
+        }
+        if (!status.provider_loaded) {
+          return { ...emptyRow(meta), available: false };
+        }
         try {
           const cov = await api.sendCommand<CoverageResponse>(
             "audio_analysis/coverage",
@@ -99,16 +119,21 @@ export function useAudioAnalysisCoverage(): {
           const total = cov.analyzed + cov.pending;
           return {
             ...emptyRow(meta),
+            available: true,
             analyzed: cov.analyzed,
             pending: cov.pending,
             staleVersion: cov.stale_version,
-            analysisVersion: cov.analysis_version,
+            analysisVersion: status.analysis_version,
             coveragePct:
               total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
             hasData: total > 0,
           } satisfies ProviderCoverageRow;
         } catch {
-          return emptyRow(meta, true);
+          return {
+            ...emptyRow(meta, true),
+            available: true,
+            analysisVersion: status.analysis_version,
+          };
         }
       }),
     );
