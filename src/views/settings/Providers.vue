@@ -1,4 +1,5 @@
 <template>
+  <AudioAnalysisCoverage v-if="currentType === ProviderType.AUDIO_ANALYSIS" />
   <div class="providers-header w-100">
     <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
@@ -302,6 +303,7 @@ import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AudioAnalysisCoverage from "@/components/AudioAnalysisCoverage.vue";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
@@ -315,8 +317,10 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
+const currentType = computed(() => route.query.types as string | undefined);
+
 const addProviderLabel = computed(() => {
-  const type = route.query.types as string | undefined;
+  const type = currentType.value;
 
   return match(type)
     .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
