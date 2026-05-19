@@ -645,6 +645,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getSimilarArtists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Artist[]> {
+    return this.sendCommand("music/artists/similar_artists", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
+    });
+  }
+
   /**
    * Get Albums listing from the server.
    * @param favorite - Filter by favorite status
