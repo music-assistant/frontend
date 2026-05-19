@@ -752,6 +752,7 @@
         "missing_players_hint": "Missing players? {0}",
         "add_player_providers": "Add more player providers"
     },
+    "similar_tracks": "Similar tracks",
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",

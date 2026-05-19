@@ -498,6 +498,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getSimilarTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/tracks/similar_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
+    });
+  }
+
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
