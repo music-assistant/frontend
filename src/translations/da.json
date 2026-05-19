@@ -62,7 +62,7 @@
     },
     "players": "Afspillere",
     "playlist": "Afspilningsliste",
-    "playlist_tracks": "Spor på afspilningslister",
+    "playlist_tracks": "Sange i playlisten",
     "playlists": "Afspilningslister",
     "provider_details": "Udbyderoplysninger",
     "queue": "Kø",
@@ -134,7 +134,7 @@
         "server_as_addon": "Home Assistant add-on",
         "artists_in_library": "Kunstnere i biblioteket",
         "albums_in_library": "Albummer i biblioteket",
-        "tracks_in_library": "Spor i biblioteket",
+        "tracks_in_library": "Sange i biblioteket",
         "playlists_in_library": "Afspilningslister i biblioteket",
         "radio_in_library": "Radio i biblioteket",
         "server_logging": "Server-logning",
@@ -198,7 +198,7 @@
         },
         "crossfade_duration": {
             "label": "Crossfade-varighed",
-            "description": "Varighed i sekunder af crossfade mellem spor (hvis aktiveret)"
+            "description": "Varighed i sekunder af crossfade mellem sange (hvis aktiveret)"
         },
         "hide_player": {
             "label": "Skjul denne afspiller i brugergrænsefladen",
@@ -230,7 +230,7 @@
                 "replace": "Ryd køen, og afspil kunstnerens nummer\/numre [default].",
                 "next": "Afspil elementet\/elementerne efter det aktuelle element.",
                 "replace_next": "Ryd køen, og afspil kunstnerens nummer\/numre efter det aktuelle element.",
-                "add": "Tilføj kunstnerens spor i bunden af køen."
+                "add": "Tilføj kunstnerens sang(e) til slutningen af køen."
             }
         },
         "default_enqueue_action_album": {
@@ -262,8 +262,8 @@
                 "play": "Afspil afspilningslistens numre, og behold de resterende elementer i køen.",
                 "replace": "Ryd køen, og afspil afspilningslistens numre [standard].",
                 "next": "Afspil elementet(erne) efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil afspilningslistens spor efter det aktuelle element.",
-                "add": "Tilføj afspilningslistens spor i bunden af køen."
+                "replace_next": "Ryd køen, og afspil sangen(e) fra playlisten lige efter den aktuelle sang.",
+                "add": "Tilføj sangen(e) fra playliste til slutningen af køen."
             }
         },
         "default_enqueue_action_radio": {
@@ -375,8 +375,8 @@
             }
         },
         "volume_normalization_tracks": {
-            "label": "Volumen-normaliseringsmetode til brug for spor",
-            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for spor\/sange.\nMusic Assistant bruger en måling af sporets (gennemsnitlige opfattede) lydstyrke i henhold til EBU-R128-specifikationen til at justere den samlede forstærkning\/lydstyrke i strømmen uden at påvirke lydens dynamiske område.\nDisse målinger leveres enten af streamingudbyderen, eller i tilfælde af lokale filer kan de være indeholdt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\nHvis målingen ikke er angivet, vil Music Assistant automatisk udføre en måling, når\/efter sporet afspilles (første gang). Når der (endnu) ikke findes nogen måling for et nummer, vil Music Assistant som standard falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter. Det sikrer, at der ikke er store stigninger\/fald i lydstyrken mellem numrene, selvom der endnu ikke er nogen nøjagtig måling, men det dynamiske udjævningsfilter kan nogle gange komprimere det dynamiske område en smule, selvom det ikke burde være hørbart i de fleste tilfælde.\n\n\n**Valgmuligheder:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
+            "label": "Metode til normalisering af lydstyrken for musiknumre",
+            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for sange.\nMusic Assistant bruger en måling af sangens gennemsnitligt oplevede lydstyrke i henhold til EBU-R128-specifikationen til at justere streamens samlede gain\/lydstyrke uden at påvirke lydens dynamiske område.\nDisse målinger leveres enten af streamingudbyderen eller kan, ved lokale filer, være gemt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\nHvis målingen ikke er tilgængelig, udfører Music Assistant automatisk en måling, når eller efter sangen afspilles første gang.\nNår der endnu ikke findes en måling for en sang, bruger Music Assistant som standard et dynamisk, men mindre præcist, filter til udjævning af lydstyrken. Det sikrer, at der ikke opstår store spring eller fald i lydstyrken mellem sange, selvom der endnu ikke findes en nøjagtig måling.\nDet dynamiske udjævningsfilter kan dog i nogle tilfælde komprimere det dynamiske område en smule, selvom det i de fleste tilfælde ikke bør kunne høres.\n\n\n**Valgmuligheder:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
             "options": {
                 "disabled": "Deaktiveret",
                 "dynamic": "Gennemtving dynamisk",
@@ -387,7 +387,7 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Fast\/standard gain-justering for spor",
+            "label": "Fast\/standard gain-justering for musiknumre",
             "description": "Fast\/standard gain-korrektion, der skal anvendes på et spors lydstrøm (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
         },
         "volume_normalization_fixed_gain_radio": {
@@ -553,7 +553,7 @@
         "position": "Position",
         "provider": "Udbyder",
         "sort_name": "Alfabetisk",
-        "track_number": "Nummer",
+        "track_number": "Sangnummer",
         "year": "Udgivelsesår",
         "position_desc": "Position",
         "album": "Album",
@@ -614,9 +614,9 @@
         "filter_genre": "Filtrer efter genre"
     },
     "topresult": "Bedste resultat",
-    "track": "Spor",
-    "track_number": "Disc {0} spor {1}",
-    "tracks": "Spor",
+    "track": "Sang",
+    "track_number": "Disc {0} Sang {1}",
+    "tracks": "Sange",
     "try_global_search": "Prøv global søgning",
     "type_to_search": "Skriv her for at søge...",
     "volume_normalization": "Volume-normalisering",
@@ -645,7 +645,8 @@
     "view": {
         "list": "Listevisning",
         "panel": "Panelvisning",
-        "panel_compact": "Kompakt panelvisning"
+        "panel_compact": "Kompakt panelvisning",
+        "discovery": "Udforsk"
     },
     "play_replace": "Afspil nu (ryd køen)",
     "played": "Afspillet",
@@ -760,11 +761,13 @@
         "new_releases_for_you": "Nye udgivelser til dig",
         "recent_favorite_tracks": "Nyligt foretrukne numre",
         "favorite_playlists": "Favorit-playlister",
-        "favorite_radio_stations": "Favorit-radiostationer"
+        "favorite_radio_stations": "Favorit-radiostationer",
+        "discover": "Udforsk"
     },
     "homescreen_edit_enable": "Rediger startskærmen",
     "homescreen_edit_disable": "Forlad redigeringstilstand for startskærmen",
     "lyrics_will_appear_soon": "Sangteksten vises, når sangen begynder...",
+    "discover": "Udforsk",
     "confirm_remove_alias": "Er du sikker på, at du vil fjerne aliaset \"{0}\" fra denne genre?",
     "delete": "Slet",
     "delete_genre": "Slet genre",
