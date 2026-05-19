@@ -1,5 +1,10 @@
 <template>
-  <AudioAnalysisCoverage v-if="currentType === ProviderType.AUDIO_ANALYSIS" />
+  <div
+    v-if="currentType === ProviderType.AUDIO_ANALYSIS"
+    class="px-5 pt-5"
+  >
+    <AudioAnalysisCoverage />
+  </div>
   <div class="providers-header w-100">
     <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
