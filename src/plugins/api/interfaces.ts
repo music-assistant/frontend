@@ -895,6 +895,15 @@ export interface DeviceInfo {
   identifiers: Record<IdentifierType, string>;
 }
 
+export interface MediaItemPalette {
+  background_dark?: [number, number, number] | null;
+  background_light?: [number, number, number] | null;
+  primary?: [number, number, number] | null;
+  accent?: [number, number, number] | null;
+  on_dark?: [number, number, number] | null;
+  on_light?: [number, number, number] | null;
+}
+
 export interface PlayerMedia {
   uri: string; // uri or other identifier of the loaded media
   media_type: MediaType;
@@ -902,6 +911,7 @@ export interface PlayerMedia {
   artist?: string; // optional
   album?: string; // optional
   image_url?: string; // optional
+  palette?: MediaItemPalette | null; // optional
   duration?: number; // optional
   source_id?: string; // optional
   elapsed_time?: number; // optional

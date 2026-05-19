@@ -111,20 +111,12 @@
 </template>
 
 <script setup lang="ts">
-import {
-  imgCoverDark,
-  imgCoverLight,
-} from "@/components/QualityDetailsBtn.vue";
-import {
-  ImageColorPalette,
-  getColorPalette,
-  getMediaImageUrl,
-} from "@/helpers/utils";
+import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
 import { MediaType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import PlayerControls from "./PlayerControls.vue";
 import PlayerExtendedControls from "./PlayerExtendedControls.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
@@ -136,26 +128,9 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-// local refs
-const coverImageColorPalette = ref<ImageColorPalette>({
-  "0": "",
-  "1": "",
-  "2": "",
-  "3": "",
-  "4": "",
-  "5": "",
-  lightColor: "",
-  darkColor: "",
-});
-
-// utility feature to extract the dominant colors from the cover image
-// we use this color palette to colorize the playerbar/OSD
-const img = new Image();
-img.src = vuetify.theme.current.value.dark ? imgCoverDark : imgCoverLight;
-img.crossOrigin = "Anonymous";
-img.addEventListener("load", function () {
-  coverImageColorPalette.value = getColorPalette(img);
-});
+const coverImageColorPalette = computed<ImageColorPalette>(() =>
+  paletteFromServer(store.activePlayer?.current_media?.palette),
+);
 
 const backgroundColor = computed(() => {
   if (vuetify.theme.current.value.dark) {
@@ -175,20 +150,6 @@ const themeColor = computed(() =>
 const playIconStyle = computed(() => ({
   "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
 }));
-
-// watchers
-watch(
-  () => store.activePlayer?.current_media?.image_url,
-  () => {
-    // load cover image for the (new) QueueItem
-    // make sure that the image selection is exactly the same as on the player OSD thumb
-    if (store.activePlayer?.current_media?.image_url) {
-      img.src = getMediaImageUrl(store.activePlayer.current_media.image_url);
-    } else {
-      img.src = "";
-    }
-  },
-);
 </script>
 
 <style scoped lang="scss">

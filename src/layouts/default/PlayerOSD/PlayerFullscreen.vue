@@ -1461,55 +1461,22 @@ const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
-  const LIGHT_TEXT_COLOR = Color("white");
-  const DARK_TEXT_COLOR = Color("black");
-  // Minimum WCAG contrast ration between the background and the text
-  // W3C recommends at least 4.5
-  const MIN_CONTRAST = 5;
-  const ADJUSTMENT_INCREMENT = 0.05;
-
-  // Determine the base color from palette or fallback to theme default
-  const coverImageColorCode = vuetify.theme.current.value.dark
+  const isDarkTheme = vuetify.theme.current.value.dark;
+  const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
     : compProps.colorPalette.lightColor || "#fff";
 
-  // Start with the original cover color as background
-  let bgColor = Color(coverImageColorCode);
+  const textHex = isDarkTheme ? "#ffffff" : "#000000";
+  const inverseTextHex = isDarkTheme ? "#000000" : "#ffffff";
 
-  // Calculate contrast with white and black
-  const lightContrast = LIGHT_TEXT_COLOR.contrast(bgColor);
-  const darkContrast = DARK_TEXT_COLOR.contrast(bgColor);
-
-  // Choose the color with higher contrast as starting value
-  const isLight = lightContrast >= darkContrast;
-  let textColor = isLight ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
-  let contrast = Math.max(lightContrast, darkContrast);
-
-  // If the best contrast still doesn't meet requirements, adjust background
-  if (contrast < MIN_CONTRAST) {
-    // Darken light bg or lighten dark bg until contrast is good
-    let adjustment = ADJUSTMENT_INCREMENT;
-
-    while (contrast < MIN_CONTRAST && adjustment <= 0.5) {
-      if (isLight) {
-        bgColor = bgColor.darken(ADJUSTMENT_INCREMENT);
-      } else {
-        bgColor = bgColor.lighten(ADJUSTMENT_INCREMENT);
-      }
-
-      contrast = Color(textColor).contrast(bgColor);
-      adjustment += ADJUSTMENT_INCREMENT;
-    }
-  }
-
-  // Keep color between text and sliders consistent.
-  // Also, this text color has a better contrast than the automatically selected one
-  document.documentElement.style.setProperty("--text-color", textColor.hex());
+  document.documentElement.style.setProperty("--text-color", textHex);
   document.documentElement.style.setProperty(
     "--text-color-inverse",
-    isLight ? DARK_TEXT_COLOR.hex() : LIGHT_TEXT_COLOR.hex(),
+    inverseTextHex,
   );
-  sliderColor.value = textColor.hex();
+  sliderColor.value = textHex;
+
+  const bgColor = Color(bgHex);
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
