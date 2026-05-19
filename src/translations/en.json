@@ -750,7 +750,21 @@
         "genre_table_rows_per_page": "Rows per page",
         "genre_table_page_info": "{0}–{1} of {2}",
         "missing_players_hint": "Missing players? {0}",
-        "add_player_providers": "Add more player providers"
+        "add_player_providers": "Add more player providers",
+        "audio_analysis_coverage": {
+            "title": "Audio Analysis Coverage",
+            "refresh": "Refresh",
+            "col_provider": "Provider",
+            "col_coverage": "Coverage",
+            "col_pending": "Pending",
+            "col_stale": "Stale",
+            "col_version": "Version",
+            "unavailable": "unavailable",
+            "scan_label": "Background scan",
+            "scan_unavailable": "unavailable",
+            "scan_failures": "{0} failures",
+            "none": "—"
+        }
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
