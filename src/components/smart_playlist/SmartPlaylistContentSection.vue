@@ -89,6 +89,77 @@
         </div>
 
         <div class="flex flex-col gap-2">
+          <Label>{{ $t("smart_playlist.excluded_artists") }}</Label>
+          <TagsInput v-model="excludedArtistModelValue">
+            <TagsInputItem
+              v-for="a in selectedExcludedArtistItems"
+              :key="a.id"
+              :value="String(a.id)"
+            >
+              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <TagsInputItemDelete />
+            </TagsInputItem>
+            <Popover>
+              <PopoverTrigger as-child>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 gap-1 border-dashed text-xs"
+                >
+                  <PlusCircle class="h-3 w-3" />
+                  {{ $t("artists") }}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent class="w-[200px] p-2">
+                <Input
+                  v-model="excludedArtistSearch"
+                  :placeholder="$t('search')"
+                  class="mb-2 h-7 text-sm"
+                  @keydown.stop
+                />
+                <div class="max-h-36 overflow-y-auto flex flex-col">
+                  <div
+                    v-if="isExcludedArtistSearching"
+                    class="flex justify-center py-2"
+                  >
+                    <Loader2
+                      class="h-4 w-4 animate-spin text-muted-foreground"
+                    />
+                  </div>
+                  <div
+                    v-for="artist in excludedArtistResults"
+                    :key="artist.item_id"
+                    class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
+                    @click.stop="
+                      toggleExcludedArtistById(
+                        parseInt(artist.item_id),
+                        artist.name,
+                      )
+                    "
+                  >
+                    <Checkbox
+                      :checked="
+                        (rules.excluded_artist_ids ?? []).includes(
+                          parseInt(artist.item_id),
+                        )
+                      "
+                      class="h-4 w-4 pointer-events-none"
+                    />
+                    <span class="truncate">{{ artist.name }}</span>
+                  </div>
+                  <p
+                    v-if="excludedArtistSearch.length < 2"
+                    class="text-xs text-muted-foreground py-1"
+                  >
+                    {{ $t("search") }}...
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </TagsInput>
+        </div>
+
+        <div class="flex flex-col gap-2">
           <Label>{{ $t("albums") }}</Label>
           <TagsInput v-model="albumModelValue">
             <TagsInputItem
@@ -160,77 +231,6 @@
           >
             {{ $t("smart_playlist.seed_overrides_filter") }}
           </p>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <Label>{{ $t("smart_playlist.excluded_artists") }}</Label>
-          <TagsInput v-model="excludedArtistModelValue">
-            <TagsInputItem
-              v-for="a in selectedExcludedArtistItems"
-              :key="a.id"
-              :value="String(a.id)"
-            >
-              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
-              <TagsInputItemDelete />
-            </TagsInputItem>
-            <Popover>
-              <PopoverTrigger as-child>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-7 gap-1 border-dashed text-xs"
-                >
-                  <PlusCircle class="h-3 w-3" />
-                  {{ $t("artists") }}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-[200px] p-2">
-                <Input
-                  v-model="excludedArtistSearch"
-                  :placeholder="$t('search')"
-                  class="mb-2 h-7 text-sm"
-                  @keydown.stop
-                />
-                <div class="max-h-36 overflow-y-auto flex flex-col">
-                  <div
-                    v-if="isExcludedArtistSearching"
-                    class="flex justify-center py-2"
-                  >
-                    <Loader2
-                      class="h-4 w-4 animate-spin text-muted-foreground"
-                    />
-                  </div>
-                  <div
-                    v-for="artist in excludedArtistResults"
-                    :key="artist.item_id"
-                    class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
-                    @click.stop="
-                      toggleExcludedArtistById(
-                        parseInt(artist.item_id),
-                        artist.name,
-                      )
-                    "
-                  >
-                    <Checkbox
-                      :checked="
-                        (rules.excluded_artist_ids ?? []).includes(
-                          parseInt(artist.item_id),
-                        )
-                      "
-                      class="h-4 w-4 pointer-events-none"
-                    />
-                    <span class="truncate">{{ artist.name }}</span>
-                  </div>
-                  <p
-                    v-if="excludedArtistSearch.length < 2"
-                    class="text-xs text-muted-foreground py-1"
-                  >
-                    {{ $t("search") }}...
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </TagsInput>
         </div>
 
         <div class="flex flex-col gap-2">
