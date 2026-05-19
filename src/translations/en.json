@@ -57,7 +57,6 @@
     "on": "On",
     "other_versions": "Other versions",
     "party_mode": "Party",
-    "similar_tracks": "Similar tracks",
     "perform_action": "Perform action on {0} item(s)",
     "play": "Play",
     "play_album_from": "Play Album from here",
@@ -752,6 +751,7 @@
         "missing_players_hint": "Missing players? {0}",
         "add_player_providers": "Add more player providers"
     },
+    "similar_tracks": "Similar tracks",
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
