@@ -1,5 +1,9 @@
 import { api } from "@/plugins/api";
-import { ProviderType, TaskStatus, type BackgroundTask } from "@/plugins/api/interfaces";
+import {
+  ProviderType,
+  TaskStatus,
+  type BackgroundTask,
+} from "@/plugins/api/interfaces";
 import { ref, type Ref } from "vue";
 
 export const BACKGROUND_SCAN_TASK_ID = "audio_analysis_background_scan";
