@@ -51,11 +51,9 @@
         },
         "default": "predvolené",
         "category": {
-            "audio": "Zvuk",
             "advanced": "Rozšírené nastavenia",
             "generic": "Všeobecné nastavenia",
-            "player_controls": "Ovládacie prvky prehrávača",
-            "presets": "Predvoľby"
+            "player_controls": "Ovládacie prvky prehrávača"
         },
         "announce_volume_strategy": {
             "options": {
@@ -127,7 +125,6 @@
             "label": "Nastavenie pevného\/záložného zosilnenia pre rádio",
             "description": "Korekcia pevného\/záložného zosilnenia, ktorá sa použije na rádiový stream (závisí od nastavenia „Metóda normalizácie hlasitosti“). \nNa zvýšenie hlasitosti použite kladnú hodnotu, na zníženie hlasitosti zápornú hodnotu. \n \nToto nastavenie sa používa, keď je metóda normalizácie hlasitosti nastavená na možnosť „Korekcia pevného zosilnenia“ alebo „Záložná korekcia zisku“."
         },
-        "add_group_player_desc": "Pre skupinu prehrávačov vytvorenú pre poskytovateľa {0} sa automaticky vytvorí synchronizačná skupina, čo znamená, že ak prehrávate na tejto skupine prehrávačov, členské prehrávače sa automaticky synchronizujú.",
         "dynamic_members": {
             "label": "Členovia dynamickej skupiny",
             "description": "Povoliť členom (dočasne) dynamicky sa pripojiť\/opustiť skupinu, takže skupina sa správa viac-menej rovnako ako manuálna synchronizácia prehrávačov, s hlavným rozdielom, že prehrávač skupiny bude držať frontu."

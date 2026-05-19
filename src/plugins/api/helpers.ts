@@ -1,7 +1,60 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
+import {
+  MediaItemType,
+  ItemMapping,
+  MediaType,
+  Player,
+  PlayerQueue,
+  Playlist,
+} from "./interfaces";
+
+/**
+ * Returns true when the given queue is currently playing a single dynamic playlist.
+ * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
+ */
+export const isQueueDynamicPlaylist = function (
+  queue: PlayerQueue | undefined,
+): boolean {
+  const source = queue?.radio_source;
+  return (
+    source?.length === 1 &&
+    source[0].media_type === MediaType.PLAYLIST &&
+    (source[0] as Playlist).is_dynamic
+  );
+};
+
+/**
+ * Check if the connected server meets a minimum version requirement.
+ * Returns true if server version >= the required version, or if the server
+ * reports version 0.0.0 (development builds).
+ */
+export function requireServerVersion(minVersion: string): boolean {
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (!serverVersion) return false;
+
+  const parseVersion = (v: string): number[] => {
+    // Strip any suffix like "beta1", "b2", "dev", etc.
+    return v
+      .replace(/[-].*/g, "")
+      .split(".")
+      .map((n) => parseInt(n, 10) || 0);
+  };
+
+  const server = parseVersion(serverVersion);
+  // Development builds (0.0.0) always pass
+  if (server[0] === 0 && server[1] === 0 && server[2] === 0) return true;
+
+  const required = parseVersion(minVersion);
+  for (let i = 0; i < Math.max(server.length, required.length); i++) {
+    const s = server[i] || 0;
+    const r = required[i] || 0;
+    if (s > r) return true;
+    if (s < r) return false;
+  }
+  return true; // equal
+}
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,

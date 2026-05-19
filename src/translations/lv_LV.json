@@ -636,14 +636,6 @@
         "players_total": "{0} kopējie atskaņotāji {1}",
         "api_docs": "API dokumentācija",
         "no_group_providers": "Tev pašlaik nav neviena sniedzēja, kas atbalsta grupu izveidi.",
-        "sendspin_sync_delay": {
-            "label": "Sendspin sinhronizācijas aizkave (ms)",
-            "description": "Statiskā aizkave milisekundēs, lai regulētu audio sinhronizāciju. Pozitīvas vērtības aizkavē atskaņošanu, negatīvas vērtības to paātrina. Izmantojiet to, lai kompensētu ierīcei raksturīgu audio aizkavi."
-        },
-        "sendspin_output_latency_compensation": {
-            "label": "Izmantot pārlūkprogrammas aizkaves noteikšanu",
-            "description": "Automātiski kompensē aparatūras audio aizkavi (piemēram, Bluetooth austiņām), izmantojot pārlūkprogrammas aizkaves API. Šis API ir diezgan jauns un var nedarboties visos pārlūkos un operētājsistēmās."
-        },
         "provider_codeowners": "Šo sniedzēju nodrošina\/uztur",
         "provider_credits": "Iespējams ar",
         "onboarding_subtitle": "Sāksim darbu, pievienojot tavus mūzikas avotus un audio ierīces.",

@@ -116,7 +116,7 @@ const syncPlayers = computed(() => {
   if (props.provider === "universal_group") {
     // for universal groups, show all available non-group players, regardless of provider
     return Object.values(api.players)
-      .filter((x) => x.available && x.type != PlayerType.GROUP)
+      .filter((x) => x.available && x.type != PlayerType.GROUP && !x.hide_in_ui)
       .sort((a, b) =>
         (a.name ?? "")
           .toUpperCase()
@@ -127,7 +127,8 @@ const syncPlayers = computed(() => {
     // for sync groups, show all available non-group players that are sync compatible
     return Object.values(api.players)
       .filter((x) => {
-        if (!x.available || x.type === PlayerType.GROUP) return false;
+        if (!x.available || x.type === PlayerType.GROUP || x.hide_in_ui)
+          return false;
         if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
           return false;
         // If a player is temporarily synced, can_group_with will be empty.
@@ -156,6 +157,7 @@ const syncPlayers = computed(() => {
       (x) =>
         x.available &&
         x.type != PlayerType.GROUP &&
+        !x.hide_in_ui &&
         x.provider == providerDetails.value?.instance_id,
     )
     .sort((a, b) =>

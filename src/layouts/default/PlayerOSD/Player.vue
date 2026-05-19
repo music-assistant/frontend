@@ -52,7 +52,7 @@
             }"
             :volume="{
               isVisible: store.activePlayer != undefined,
-              volumeSize: getBreakpointValue('bp8') ? '150px' : '100px',
+              volumeSize: getBreakpointValue('bp8') ? '150px' : '130px',
             }"
           />
         </div>

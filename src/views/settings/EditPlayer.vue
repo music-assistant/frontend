@@ -398,8 +398,16 @@ const enablePlayer = function () {
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
-  api.savePlayerConfig(props.playerId!, values);
-  router.back();
+  loading.value = true;
+  try {
+    await api.savePlayerConfig(props.playerId!, values);
+    router.back();
+  } catch {
+    // Error toast is already shown by the API layer (handleResultMessage).
+    // We just prevent navigation so the user can correct values.
+  } finally {
+    loading.value = false;
+  }
 };
 
 const onImmediateApply = async function (

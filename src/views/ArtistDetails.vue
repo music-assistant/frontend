@@ -43,6 +43,7 @@
         'name',
         'sort_name',
         'album',
+        'album_sort_name',
         'duration',
         'name_desc',
         'sort_name_desc',

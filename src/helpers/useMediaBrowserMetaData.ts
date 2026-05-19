@@ -81,9 +81,13 @@ export function useMediaBrowserMetaData(player_id?: string) {
     },
     { immediate: true },
   );
+  const queueElapsed = computed(() => {
+    const queueId = playerQueue.value?.queue_id;
+    return queueId ? api.queueElapsedTime[queueId] : undefined;
+  });
   const unwatch_position = watch(
     () => [
-      playerQueue.value?.elapsed_time,
+      queueElapsed.value?.elapsed_time,
       playerQueue.value?.current_item?.duration,
     ],
     () => {
@@ -99,8 +103,8 @@ export function useMediaBrowserMetaData(player_id?: string) {
       const duration = playerQueue.value?.current_item?.duration || 1;
       const position = Math.min(
         duration,
-        playerQueue.value?.elapsed_time != null
-          ? playerQueue.value?.elapsed_time
+        queueElapsed.value?.elapsed_time != null
+          ? queueElapsed.value.elapsed_time
           : 0,
       );
       navigator.mediaSession.setPositionState({

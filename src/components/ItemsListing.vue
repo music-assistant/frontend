@@ -96,6 +96,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -117,6 +118,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -147,6 +149,7 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </template>
@@ -194,6 +197,8 @@
                   evt.clientX,
                   evt.clientY,
                   parentItem,
+                  true,
+                  params.sortBy,
                 )
             "
           >
@@ -1220,7 +1225,13 @@ const restoreSettings = async function () {
   }
 
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true && prefs.providerFilter) {
+  // only apply stored filter if there are multiple providers available
+  // with a single provider, any stored filter is either redundant or stale
+  if (
+    props.showProviderFilter === true &&
+    prefs.providerFilter &&
+    musicProviders.value.length > 1
+  ) {
     params.value.provider = prefs.providerFilter;
   }
 
@@ -1545,14 +1556,25 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == "album") {
-    result.sort((a, b) =>
-      getSortName((a as Track).album).localeCompare(
-        getSortName((b as Track).album),
+  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
+    const preferSortName = params.sortBy == "album_sort_name";
+    result.sort((a, b) => {
+      const albumCompare = getSortName(
+        (a as Track).album,
+        preferSortName,
+      ).localeCompare(
+        getSortName((b as Track).album, preferSortName),
         undefined,
         { numeric: true },
-      ),
-    );
+      );
+      if (albumCompare !== 0) return albumCompare;
+      const discCompare =
+        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
+      if (discCompare !== 0) return discCompare;
+      return (
+        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
+      );
+    });
   }
   if (params.sortBy == "artist") {
     result.sort((a, b) =>
@@ -1645,6 +1667,10 @@ const selectAll = async function () {
     showCheckboxes.value = true;
   }
 };
+
+defineExpose({
+  sortBy: computed(() => params.value.sortBy),
+});
 </script>
 
 <style scoped>

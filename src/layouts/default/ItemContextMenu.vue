@@ -231,6 +231,7 @@ import {
   ProviderFeature,
   ProviderMapping,
   QueueOption,
+  Radio,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -259,6 +260,7 @@ export const showContextMenuForMediaItem = async function (
   posY = 0,
   includePlayMenuItems = false,
   showPlayMenuHeader = false,
+  sortBy?: string,
 ) {
   // show ContextMenu for given MediaItem(s)
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
@@ -285,7 +287,11 @@ export const showContextMenuForMediaItem = async function (
     itemIsAvailable(mediaItems[0])
   ) {
     // Play menu items first, then context items
-    menuItems = await getPlaybackContextMenuItems(mediaItems, parentItem);
+    menuItems = await getPlaybackContextMenuItems(
+      mediaItems,
+      parentItem,
+      sortBy,
+    );
     menuItems.push(...contextMenuItems);
   } else {
     // No play items - just show context menu items directly
@@ -740,6 +746,49 @@ export const getContextMenuItems = async function (
       icon: "mdi-image-album",
     });
   }
+  // edit item (for builtin provider items that support editing)
+  if (
+    items.length === 1 &&
+    items[0] == parentItem &&
+    items[0].provider === "library" &&
+    "provider_mappings" in items[0] &&
+    [MediaType.RADIO, MediaType.TRACK, MediaType.PLAYLIST].includes(
+      items[0].media_type,
+    )
+  ) {
+    const item = items[0] as Radio | Track | Playlist;
+    const hasBuiltinProvider = item.provider_mappings?.some(
+      (pm) => pm.provider_domain === "builtin",
+    );
+    const builtinProvider = api.getProvider("builtin");
+    const featureMap: Record<string, ProviderFeature> = {
+      [MediaType.RADIO]: ProviderFeature.LIBRARY_RADIOS_EDIT,
+      [MediaType.TRACK]: ProviderFeature.LIBRARY_TRACKS_EDIT,
+      [MediaType.PLAYLIST]: ProviderFeature.LIBRARY_PLAYLISTS_EDIT,
+    };
+    const labelMap: Record<string, string> = {
+      [MediaType.RADIO]: "edit_radio",
+      [MediaType.TRACK]: "edit_track",
+      [MediaType.PLAYLIST]: "edit_playlist",
+    };
+    const supportsEdit = builtinProvider?.supported_features?.includes(
+      featureMap[item.media_type],
+    );
+    // For playlists, also check is_editable flag (builtin special playlists are not editable)
+    const isEditablePlaylist =
+      item.media_type !== MediaType.PLAYLIST ||
+      (item as Playlist).is_editable !== false;
+    if (hasBuiltinProvider && supportsEdit && isEditablePlaylist) {
+      contextMenuItems.push({
+        label: labelMap[item.media_type],
+        labelArgs: [],
+        action: () => {
+          eventbus.emit("editItemDialog", item);
+        },
+        icon: "mdi-pencil",
+      });
+    }
+  }
   // refresh item
   if (
     items.length === 1 &&
@@ -889,6 +938,7 @@ export const getContextMenuItems = async function (
 export const getPlaybackContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
+  sortBy?: string,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
@@ -922,6 +972,8 @@ export const getPlaybackContextMenuItems = async function (
             undefined,
             false,
             playableItems[0].item_id,
+            undefined,
+            sortBy,
           );
         },
         icon: "mdi-play-circle-outline",
@@ -934,7 +986,14 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_album_from",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+          api.playMedia(
+            parentItem.uri,
+            undefined,
+            false,
+            firstItem.item_id,
+            undefined,
+            sortBy,
+          );
         },
         icon: "mdi-play-circle-outline",
         labelArgs: [],
@@ -1114,6 +1173,10 @@ const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
     ].includes(item.media_type)
   ) {
     return;
+  }
+  // Dynamic playlists own their own track feed — radio mode would conflict
+  if (item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic) {
+    return false;
   }
   if ("provider_mappings" in item) {
     for (const provId of item.provider_mappings) {
