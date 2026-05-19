@@ -765,9 +765,11 @@
             "none": "—"
         }
     },
+    "similar_tracks": "Similar tracks",
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
+    "similar_artists": "Similar artists",
     "sort": {
         "duration": "Duration",
         "position": "Position",
@@ -1011,6 +1013,7 @@
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
+    "lyrics_offset": "Lyrics offset",
     "radiobrowser_by_votes": "By votes",
     "radiobrowser_by_clicks": "By clicks",
     "radiobrowser_by_language": "By language",

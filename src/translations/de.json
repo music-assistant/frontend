@@ -366,7 +366,8 @@
                 "it": "Italienisch",
                 "el_GR": "Griechisch",
                 "lt_LT": "Litauisch",
-                "lv_LV": "Lettisch"
+                "lv_LV": "Lettisch",
+                "bg_BG": "Bulgarisch"
             }
         },
         "no_music_providers": "Keine Musikanbieter konfiguriert",
@@ -974,7 +975,15 @@
         "discover": "Entdecken",
         "libraries": "Bibliotheken",
         "library": "Bibliothek",
-        "trending_podcasts": "Beliebte Podcasts"
+        "trending_podcasts": "Beliebte Podcasts",
+        "trending_stations": "Trendsender",
+        "forgotten_tracks": "Vergessene Tracks",
+        "forgotten_albums": "Vergessene Alben",
+        "forgotten_artists": "Vergessene Künstler",
+        "most_played_tracks": "Meistgespielte Titel",
+        "never_played_tracks": "Nie \/ selten gespielt",
+        "recent_favorite_albums": "Kürzlich favorisierte Alben",
+        "recently_added_tracks": "Kürzlich hinzugefügte Titel"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
