@@ -1,5 +1,4 @@
-import { computed, ref, watch } from "vue";
-import { useDebounceFn } from "@vueuse/core";
+import { computed, ref } from "vue";
 import api from "@/plugins/api";
 import { buildItemUri } from "@/helpers/utils";
 import type { Artist, Track } from "@/plugins/api/interfaces";
@@ -7,6 +6,7 @@ import {
   MediaType,
   ProviderFeature as ProviderFeatureEnum,
 } from "@/plugins/api/interfaces";
+import { setupDebouncedSearch } from "./useSmartPlaylistSearchHelpers";
 
 export function useSmartPlaylistSeedItems() {
   const seedTrackUri = ref("");
@@ -37,64 +37,38 @@ export function useSmartPlaylistSeedItems() {
       .map((p) => p.instance_id),
   );
 
-  const _doSeedSearch = useDebounceFn(async (q: string) => {
-    const providerIds = _similarTrackProviderIds.value;
-    if (q.length < 2 || providerIds.length === 0) {
-      seedTrackResults.value = [];
-      isSeedSearching.value = false;
-      return;
-    }
-    try {
+  setupDebouncedSearch({
+    query: seedTrackSearch,
+    results: seedTrackResults,
+    isSearching: isSeedSearching,
+    searchFn: async (q) => {
+      const providerIds = _similarTrackProviderIds.value;
+      if (providerIds.length === 0) return [];
+
       const result = await api.search(q, [MediaType.TRACK], 20);
-      if (seedTrackSearch.value !== q) return;
-      seedTrackResults.value = result.tracks.filter((t) =>
+      return result.tracks.filter((t) =>
         t.provider_mappings?.some((m) =>
           providerIds.includes(m.provider_instance),
         ),
       );
-    } finally {
-      if (seedTrackSearch.value === q) isSeedSearching.value = false;
-    }
-  }, 400);
-
-  watch(seedTrackSearch, (q) => {
-    if (q.length < 2) {
-      seedTrackResults.value = [];
-      isSeedSearching.value = false;
-    } else {
-      isSeedSearching.value = true;
-      _doSeedSearch(q);
-    }
+    },
   });
 
-  const _doSeedArtistSearch = useDebounceFn(async (q: string) => {
-    const providerIds = _similarArtistProviderIds.value;
-    if (q.length < 2 || providerIds.length === 0) {
-      seedArtistResults.value = [];
-      isSeedArtistSearching.value = false;
-      return;
-    }
-    try {
+  setupDebouncedSearch({
+    query: seedArtistSearch,
+    results: seedArtistResults,
+    isSearching: isSeedArtistSearching,
+    searchFn: async (q) => {
+      const providerIds = _similarArtistProviderIds.value;
+      if (providerIds.length === 0) return [];
+
       const result = await api.search(q, [MediaType.ARTIST], 20);
-      if (seedArtistSearch.value !== q) return;
-      seedArtistResults.value = result.artists.filter((a) =>
+      return result.artists.filter((a) =>
         a.provider_mappings?.some((m) =>
           providerIds.includes(m.provider_instance),
         ),
       );
-    } finally {
-      if (seedArtistSearch.value === q) isSeedArtistSearching.value = false;
-    }
-  }, 400);
-
-  watch(seedArtistSearch, (q) => {
-    if (q.length < 2) {
-      seedArtistResults.value = [];
-      isSeedArtistSearching.value = false;
-    } else {
-      isSeedArtistSearching.value = true;
-      _doSeedArtistSearch(q);
-    }
+    },
   });
 
   function selectSeedTrack(track: Track) {

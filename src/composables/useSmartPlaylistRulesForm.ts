@@ -1,4 +1,4 @@
-import { nextTick, reactive, ref, watch } from "vue";
+import { nextTick, reactive, ref, toRef, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import api from "@/plugins/api";
 import type {
@@ -56,8 +56,17 @@ export function useSmartPlaylistRulesForm(
 
   // Initialize sub-composables
   const seedItems = useSmartPlaylistSeedItems();
-  const genresComposable = useSmartPlaylistGenres();
-  const contentFilters = useSmartPlaylistContentFilters();
+  const genresComposable = useSmartPlaylistGenres(
+    toRef(rules, "genre_ids"),
+    toRef(rules, "excluded_genre_ids"),
+    toRef(rules, "genre_names"),
+  );
+  const contentFilters = useSmartPlaylistContentFilters(
+    toRef(rules, "artist_ids"),
+    toRef(rules, "album_ids"),
+    toRef(rules, "excluded_artist_ids"),
+    toRef(rules, "excluded_album_ids"),
+  );
   const yearRange = useSmartPlaylistYearRange();
 
   const trackCountRequestId = ref(0);
@@ -213,10 +222,24 @@ export function useSmartPlaylistRulesForm(
     { immediate: true },
   );
 
+  function onYearFromInput() {
+    rules.year_from = yearRange.onYearFromInput();
+  }
+
+  function onYearToInput() {
+    rules.year_to = yearRange.onYearToInput();
+  }
+
+  function clearYear() {
+    yearRange.clearYear();
+    rules.year_from = undefined;
+    rules.year_to = undefined;
+  }
+
   function getFinalRules(): SmartPlaylistRules {
     // Update year values from inputs
-    rules.year_from = yearRange.onYearFromInput();
-    rules.year_to = yearRange.onYearToInput();
+    onYearFromInput();
+    onYearToInput();
 
     // Build genre names map
     const genreNamesMap: Record<number, string> = {};
@@ -286,6 +309,9 @@ export function useSmartPlaylistRulesForm(
     ...genresComposable,
     ...contentFilters,
     ...yearRange,
+    onYearFromInput,
+    onYearToInput,
+    clearYear,
     _updateTrackCount,
     getFinalRules,
   };

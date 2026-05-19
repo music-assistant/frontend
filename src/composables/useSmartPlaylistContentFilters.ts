@@ -1,9 +1,15 @@
-import { computed, ref, watch } from "vue";
-import { useDebounceFn } from "@vueuse/core";
+import { computed, ref } from "vue";
+import type { Ref } from "vue";
 import api from "@/plugins/api";
 import type { Album, Artist } from "@/plugins/api/interfaces";
+import { setupDebouncedSearch } from "./useSmartPlaylistSearchHelpers";
 
-export function useSmartPlaylistContentFilters() {
+export function useSmartPlaylistContentFilters(
+  ruleArtistIds: Ref<number[]>,
+  ruleAlbumIds: Ref<number[]>,
+  ruleExcludedArtistIds: Ref<number[]>,
+  ruleExcludedAlbumIds: Ref<number[]>,
+) {
   const artistSearch = ref("");
   const artistResults = ref<Artist[]>([]);
   const isArtistSearching = ref(false);
@@ -29,6 +35,7 @@ export function useSmartPlaylistContentFilters() {
       selectedArtistItems.value = selectedArtistItems.value.filter((a) =>
         vals.includes(String(a.id)),
       );
+      ruleArtistIds.value = selectedArtistItems.value.map((a) => a.id);
     },
   });
 
@@ -38,6 +45,7 @@ export function useSmartPlaylistContentFilters() {
       selectedAlbumItems.value = selectedAlbumItems.value.filter((a) =>
         vals.includes(String(a.id)),
       );
+      ruleAlbumIds.value = selectedAlbumItems.value.map((a) => a.id);
     },
   });
 
@@ -48,6 +56,9 @@ export function useSmartPlaylistContentFilters() {
         selectedExcludedArtistItems.value.filter((a) =>
           vals.includes(String(a.id)),
         );
+      ruleExcludedArtistIds.value = selectedExcludedArtistItems.value.map(
+        (a) => a.id,
+      );
     },
   });
 
@@ -58,116 +69,44 @@ export function useSmartPlaylistContentFilters() {
         selectedExcludedAlbumItems.value.filter((a) =>
           vals.includes(String(a.id)),
         );
+      ruleExcludedAlbumIds.value = selectedExcludedAlbumItems.value.map(
+        (a) => a.id,
+      );
     },
   });
 
-  const _doArtistSearch = useDebounceFn(async (q: string) => {
-    if (q.length >= 2) {
-      isArtistSearching.value = true;
-      try {
-        const result = await api.getLibraryArtists(undefined, q, 20);
-        if (artistSearch.value === q) artistResults.value = result;
-      } finally {
-        isArtistSearching.value = false;
-      }
-    } else {
-      artistResults.value = [];
-    }
-  }, 400);
-
-  watch(artistSearch, (q) => {
-    if (q.length < 2) {
-      artistResults.value = [];
-      isArtistSearching.value = false;
-    } else {
-      isArtistSearching.value = true;
-      _doArtistSearch(q);
-    }
+  setupDebouncedSearch({
+    query: artistSearch,
+    results: artistResults,
+    isSearching: isArtistSearching,
+    searchFn: (q) => api.getLibraryArtists(undefined, q, 20),
   });
 
-  const _doAlbumSearch = useDebounceFn(async (q: string) => {
-    if (q.length >= 2) {
-      isAlbumSearching.value = true;
-      try {
-        const result = await api.getLibraryAlbums(undefined, q, 20);
-        if (albumSearch.value === q) albumResults.value = result;
-      } finally {
-        isAlbumSearching.value = false;
-      }
-    } else {
-      albumResults.value = [];
-    }
-  }, 400);
-
-  watch(albumSearch, (q) => {
-    if (q.length < 2) {
-      albumResults.value = [];
-      isAlbumSearching.value = false;
-    } else {
-      isAlbumSearching.value = true;
-      _doAlbumSearch(q);
-    }
+  setupDebouncedSearch({
+    query: albumSearch,
+    results: albumResults,
+    isSearching: isAlbumSearching,
+    searchFn: (q) => api.getLibraryAlbums(undefined, q, 20),
   });
 
-  const _doExcludedArtistSearch = useDebounceFn(async (q: string) => {
-    if (q.length >= 2) {
-      isExcludedArtistSearching.value = true;
-      try {
-        const result = await api.getLibraryArtists(undefined, q, 20);
-        if (excludedArtistSearch.value === q)
-          excludedArtistResults.value = result;
-      } finally {
-        isExcludedArtistSearching.value = false;
-      }
-    } else {
-      excludedArtistResults.value = [];
-    }
-  }, 400);
-
-  watch(excludedArtistSearch, (q) => {
-    if (q.length < 2) {
-      excludedArtistResults.value = [];
-      isExcludedArtistSearching.value = false;
-    } else {
-      isExcludedArtistSearching.value = true;
-      _doExcludedArtistSearch(q);
-    }
+  setupDebouncedSearch({
+    query: excludedArtistSearch,
+    results: excludedArtistResults,
+    isSearching: isExcludedArtistSearching,
+    searchFn: (q) => api.getLibraryArtists(undefined, q, 20),
   });
 
-  const _doExcludedAlbumSearch = useDebounceFn(async (q: string) => {
-    if (q.length >= 2) {
-      isExcludedAlbumSearching.value = true;
-      try {
-        const result = await api.getLibraryAlbums(undefined, q, 20);
-        if (excludedAlbumSearch.value === q)
-          excludedAlbumResults.value = result;
-      } finally {
-        isExcludedAlbumSearching.value = false;
-      }
-    } else {
-      excludedAlbumResults.value = [];
-    }
-  }, 400);
-
-  watch(excludedAlbumSearch, (q) => {
-    if (q.length < 2) {
-      excludedAlbumResults.value = [];
-      isExcludedAlbumSearching.value = false;
-    } else {
-      isExcludedAlbumSearching.value = true;
-      _doExcludedAlbumSearch(q);
-    }
+  setupDebouncedSearch({
+    query: excludedAlbumSearch,
+    results: excludedAlbumResults,
+    isSearching: isExcludedAlbumSearching,
+    searchFn: (q) => api.getLibraryAlbums(undefined, q, 20),
   });
 
-  function toggleArtistById(
-    id: number,
-    name?: string,
-    ruleArtistIds?: number[],
-  ) {
-    if (!ruleArtistIds) return;
-    const idx = ruleArtistIds.indexOf(id);
+  function toggleArtistById(id: number, name?: string) {
+    const idx = ruleArtistIds.value.indexOf(id);
     if (idx >= 0) {
-      ruleArtistIds.splice(idx, 1);
+      ruleArtistIds.value.splice(idx, 1);
       selectedArtistItems.value = selectedArtistItems.value.filter(
         (a) => a.id !== id,
       );
@@ -177,17 +116,19 @@ export function useSmartPlaylistContentFilters() {
       );
       if (excIdx >= 0) {
         selectedExcludedArtistItems.value.splice(excIdx, 1);
+        const excludedIdx = ruleExcludedArtistIds.value.indexOf(id);
+        if (excludedIdx >= 0)
+          ruleExcludedArtistIds.value.splice(excludedIdx, 1);
       }
-      ruleArtistIds.push(id);
+      ruleArtistIds.value.push(id);
       selectedArtistItems.value.push({ id, name });
     }
   }
 
-  function toggleAlbumById(id: number, name?: string, ruleAlbumIds?: number[]) {
-    if (!ruleAlbumIds) return;
-    const idx = ruleAlbumIds.indexOf(id);
+  function toggleAlbumById(id: number, name?: string) {
+    const idx = ruleAlbumIds.value.indexOf(id);
     if (idx >= 0) {
-      ruleAlbumIds.splice(idx, 1);
+      ruleAlbumIds.value.splice(idx, 1);
       selectedAlbumItems.value = selectedAlbumItems.value.filter(
         (a) => a.id !== id,
       );
@@ -197,62 +138,48 @@ export function useSmartPlaylistContentFilters() {
       );
       if (excIdx >= 0) {
         selectedExcludedAlbumItems.value.splice(excIdx, 1);
+        const excludedIdx = ruleExcludedAlbumIds.value.indexOf(id);
+        if (excludedIdx >= 0) ruleExcludedAlbumIds.value.splice(excludedIdx, 1);
       }
-      ruleAlbumIds.push(id);
+      ruleAlbumIds.value.push(id);
       selectedAlbumItems.value.push({ id, name });
     }
   }
 
-  function toggleExcludedArtistById(
-    id: number,
-    name?: string,
-    ruleExcludedArtistIds?: number[],
-    ruleArtistIds?: number[],
-  ) {
-    if (!ruleExcludedArtistIds) return;
-    const idx = ruleExcludedArtistIds.indexOf(id);
+  function toggleExcludedArtistById(id: number, name?: string) {
+    const idx = ruleExcludedArtistIds.value.indexOf(id);
     if (idx >= 0) {
-      ruleExcludedArtistIds.splice(idx, 1);
+      ruleExcludedArtistIds.value.splice(idx, 1);
       selectedExcludedArtistItems.value =
         selectedExcludedArtistItems.value.filter((a) => a.id !== id);
     } else if (name !== undefined) {
-      if (ruleArtistIds) {
-        const incIdx = ruleArtistIds.indexOf(id);
-        if (incIdx >= 0) {
-          ruleArtistIds.splice(incIdx, 1);
-          selectedArtistItems.value = selectedArtistItems.value.filter(
-            (a) => a.id !== id,
-          );
-        }
+      const incIdx = ruleArtistIds.value.indexOf(id);
+      if (incIdx >= 0) {
+        ruleArtistIds.value.splice(incIdx, 1);
+        selectedArtistItems.value = selectedArtistItems.value.filter(
+          (a) => a.id !== id,
+        );
       }
-      ruleExcludedArtistIds.push(id);
+      ruleExcludedArtistIds.value.push(id);
       selectedExcludedArtistItems.value.push({ id, name });
     }
   }
 
-  function toggleExcludedAlbumById(
-    id: number,
-    name?: string,
-    ruleExcludedAlbumIds?: number[],
-    ruleAlbumIds?: number[],
-  ) {
-    if (!ruleExcludedAlbumIds) return;
-    const idx = ruleExcludedAlbumIds.indexOf(id);
+  function toggleExcludedAlbumById(id: number, name?: string) {
+    const idx = ruleExcludedAlbumIds.value.indexOf(id);
     if (idx >= 0) {
-      ruleExcludedAlbumIds.splice(idx, 1);
+      ruleExcludedAlbumIds.value.splice(idx, 1);
       selectedExcludedAlbumItems.value =
         selectedExcludedAlbumItems.value.filter((a) => a.id !== id);
     } else if (name !== undefined) {
-      if (ruleAlbumIds) {
-        const incIdx = ruleAlbumIds.indexOf(id);
-        if (incIdx >= 0) {
-          ruleAlbumIds.splice(incIdx, 1);
-          selectedAlbumItems.value = selectedAlbumItems.value.filter(
-            (a) => a.id !== id,
-          );
-        }
+      const incIdx = ruleAlbumIds.value.indexOf(id);
+      if (incIdx >= 0) {
+        ruleAlbumIds.value.splice(incIdx, 1);
+        selectedAlbumItems.value = selectedAlbumItems.value.filter(
+          (a) => a.id !== id,
+        );
       }
-      ruleExcludedAlbumIds.push(id);
+      ruleExcludedAlbumIds.value.push(id);
       selectedExcludedAlbumItems.value.push({ id, name });
     }
   }

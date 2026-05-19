@@ -1,8 +1,13 @@
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
+import type { Ref } from "vue";
 import api from "@/plugins/api";
-import type { Genre, SmartPlaylistRules } from "@/plugins/api/interfaces";
+import type { Genre } from "@/plugins/api/interfaces";
 
-export function useSmartPlaylistGenres() {
+export function useSmartPlaylistGenres(
+  ruleGenreIds: Ref<number[]>,
+  ruleExcludedGenreIds: Ref<number[]>,
+  ruleGenreNames: Ref<Record<number, string> | undefined>,
+) {
   const genres = ref<Genre[]>([]);
   const genreSearch = ref("");
   const excludedGenreSearch = ref("");
@@ -27,22 +32,16 @@ export function useSmartPlaylistGenres() {
   });
 
   const genreModelValue = computed({
-    get: () => {
-      // This will be set via context in parent
-      return [] as string[];
-    },
-    set: () => {
-      // Will be implemented in parent
+    get: () => ruleGenreIds.value.map(String),
+    set: (vals: string[]) => {
+      ruleGenreIds.value = vals.map(Number);
     },
   });
 
   const excludedGenreModelValue = computed({
-    get: () => {
-      // This will be set via context in parent
-      return [] as string[];
-    },
-    set: () => {
-      // Will be implemented in parent
+    get: () => ruleExcludedGenreIds.value.map(String),
+    set: (vals: string[]) => {
+      ruleExcludedGenreIds.value = vals.map(Number);
     },
   });
 
@@ -50,41 +49,33 @@ export function useSmartPlaylistGenres() {
     genres.value = await api.getLibraryGenres({ hide_empty: false });
   });
 
-  function genreName(id: number, genreNames?: Record<number, string>): string {
+  function genreName(id: number): string {
     return (
       genres.value.find((g) => parseInt(g.item_id) === id)?.name ??
-      genreNames?.[id] ??
+      ruleGenreNames.value?.[id] ??
       String(id)
     );
   }
 
-  function toggleGenreById(
-    id: number,
-    ruleGenreIds: number[],
-    ruleExcludedGenreIds: number[],
-  ) {
-    const idx = ruleGenreIds.indexOf(id);
+  function toggleGenreById(id: number) {
+    const idx = ruleGenreIds.value.indexOf(id);
     if (idx >= 0) {
-      ruleGenreIds.splice(idx, 1);
+      ruleGenreIds.value.splice(idx, 1);
     } else {
-      const excIdx = ruleExcludedGenreIds.indexOf(id);
-      if (excIdx >= 0) ruleExcludedGenreIds.splice(excIdx, 1);
-      ruleGenreIds.push(id);
+      const excIdx = ruleExcludedGenreIds.value.indexOf(id);
+      if (excIdx >= 0) ruleExcludedGenreIds.value.splice(excIdx, 1);
+      ruleGenreIds.value.push(id);
     }
   }
 
-  function toggleExcludedGenreById(
-    id: number,
-    ruleGenreIds: number[],
-    ruleExcludedGenreIds: number[],
-  ) {
-    const excIdx = ruleExcludedGenreIds.indexOf(id);
+  function toggleExcludedGenreById(id: number) {
+    const excIdx = ruleExcludedGenreIds.value.indexOf(id);
     if (excIdx >= 0) {
-      ruleExcludedGenreIds.splice(excIdx, 1);
+      ruleExcludedGenreIds.value.splice(excIdx, 1);
     } else {
-      const incIdx = ruleGenreIds.indexOf(id);
-      if (incIdx >= 0) ruleGenreIds.splice(incIdx, 1);
-      ruleExcludedGenreIds.push(id);
+      const incIdx = ruleGenreIds.value.indexOf(id);
+      if (incIdx >= 0) ruleGenreIds.value.splice(incIdx, 1);
+      ruleExcludedGenreIds.value.push(id);
     }
   }
 
