@@ -1,5 +1,5 @@
 import { ProviderType } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSendCommand, providersMock } = vi.hoisted(() => {
   return {
@@ -163,5 +163,80 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     expect(bad.error).toBe(true);
     expect(good.hasData).toBe(true);
     expect(good.coveragePct).toBe(100);
+  });
+});
+
+describe("useAudioAnalysisCoverage - scan + polling", () => {
+  beforeEach(() => {
+    mockSendCommand.mockReset();
+    setProviders([]);
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("normalizes scan status; failure_count only surfaced when > 0", async () => {
+    mockSendCommand.mockImplementation((cmd: string) => {
+      if (cmd === "tasks/get")
+        return Promise.resolve({
+          status: "idle",
+          last_run: "2026-05-18T10:00:00Z",
+          next_run: "2026-05-18T14:00:00Z",
+          failure_count: 0,
+        });
+      return Promise.resolve({});
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    expect(mockSendCommand).toHaveBeenCalledWith("tasks/get", {
+      task_id: "audio_analysis_background_scan",
+    });
+    expect(c.scan.value).toEqual({
+      status: "idle",
+      lastRun: "2026-05-18T10:00:00Z",
+      nextRun: "2026-05-18T14:00:00Z",
+      failureCount: 0,
+      unavailable: false,
+    });
+  });
+
+  it("marks scan unavailable when tasks/get rejects (table still usable)", async () => {
+    mockSendCommand.mockImplementation((cmd: string) => {
+      if (cmd === "tasks/get") return Promise.reject(new Error("nope"));
+      return Promise.resolve({});
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    expect(c.scan.value.unavailable).toBe(true);
+  });
+
+  it("startAutoRefresh polls only while running; stop clears timer", async () => {
+    let status = "running";
+    mockSendCommand.mockImplementation((cmd: string) => {
+      if (cmd === "tasks/get")
+        return Promise.resolve({ status, failure_count: 0 });
+      return Promise.resolve({});
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+    c.startAutoRefresh(5000);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    const callsAfterFirstTick = mockSendCommand.mock.calls.length;
+    expect(callsAfterFirstTick).toBeGreaterThan(1);
+
+    status = "idle";
+    await vi.advanceTimersByTimeAsync(5000); // observes idle, stops itself
+    const callsAfterIdle = mockSendCommand.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(15000); // no further polling
+    expect(mockSendCommand.mock.calls.length).toBe(callsAfterIdle);
+
+    c.stopAutoRefresh(); // idempotent, no throw
   });
 });
