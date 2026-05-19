@@ -20,7 +20,7 @@ const { mockRefresh, mockStartAutoRefresh, mockStopAutoRefresh } = vi.hoisted(
 // Reactive refs — must be created outside vi.hoisted (hoisted callbacks run before imports).
 const mockRows = ref<ProviderCoverageRow[]>([]);
 const mockScan = ref<ScanStatus>({
-  status: TaskStatus.IDLE,
+  status: TaskStatus.UNKNOWN,
   failureCount: 0,
   unavailable: false,
 });

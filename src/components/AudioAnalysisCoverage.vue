@@ -1,5 +1,5 @@
 <template>
-  <div v-if="rows.length" data-test="aa-coverage" class="aa-coverage">
+  <div v-if="rows.length > 0" data-test="aa-coverage" class="aa-coverage">
     <div class="aa-coverage__header">
       <span class="aa-coverage__title">{{
         $t("settings.audio_analysis_coverage.title")
@@ -113,7 +113,6 @@ watch(
   () => {
     refresh();
   },
-  { deep: true },
 );
 
 watch(
