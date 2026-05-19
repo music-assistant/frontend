@@ -57,7 +57,11 @@ describe("useAudioAnalysisCoverage - coverage", () => {
     });
 
     const c = useAudioAnalysisCoverage();
-    await c.refresh();
+    expect(c.loading.value).toBe(false);
+    const p = c.refresh();
+    expect(c.loading.value).toBe(true);
+    await p;
+    expect(c.loading.value).toBe(false);
 
     expect(c.rows.value).toHaveLength(1);
     const row = c.rows.value[0];
@@ -137,15 +141,18 @@ describe("useAudioAnalysisCoverage - coverage", () => {
         available: true,
       },
     ]);
-    mockSendCommand.mockImplementation((_cmd: string, args: { aa_domain: string }) => {
-      if (args.aa_domain === "bad") return Promise.reject(new Error("unavailable"));
-      return Promise.resolve({
-        analyzed: 10,
-        pending: 0,
-        stale_version: 0,
-        analysis_version: 1,
-      });
-    });
+    mockSendCommand.mockImplementation(
+      (_cmd: string, args: { aa_domain: string }) => {
+        if (args.aa_domain === "bad")
+          return Promise.reject(new Error("unavailable"));
+        return Promise.resolve({
+          analyzed: 10,
+          pending: 0,
+          stale_version: 0,
+          analysis_version: 1,
+        });
+      },
+    );
 
     const c = useAudioAnalysisCoverage();
     await c.refresh();

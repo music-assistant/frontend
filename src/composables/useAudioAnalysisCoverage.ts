@@ -48,7 +48,12 @@ export function useAudioAnalysisCoverage(): {
   }
 
   function emptyRow(
-    meta: { domain: string; name: string; instanceId: string; available: boolean },
+    meta: {
+      domain: string;
+      name: string;
+      instanceId: string;
+      available: boolean;
+    },
     error = false,
   ): ProviderCoverageRow {
     return {
@@ -74,9 +79,12 @@ export function useAudioAnalysisCoverage(): {
         providers.map(async (meta) => {
           if (!meta.available) return emptyRow(meta);
           try {
-            const cov = await api.sendCommand<CoverageResponse>("audio_analysis/coverage", {
-              aa_domain: meta.domain,
-            });
+            const cov = await api.sendCommand<CoverageResponse>(
+              "audio_analysis/coverage",
+              {
+                aa_domain: meta.domain,
+              },
+            );
             const total = cov.analyzed + cov.pending;
             return {
               ...emptyRow(meta),
@@ -84,7 +92,8 @@ export function useAudioAnalysisCoverage(): {
               pending: cov.pending,
               staleVersion: cov.stale_version,
               analysisVersion: cov.analysis_version,
-              coveragePct: total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
+              coveragePct:
+                total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
               hasData: total > 0,
             } satisfies ProviderCoverageRow;
           } catch {
@@ -93,7 +102,7 @@ export function useAudioAnalysisCoverage(): {
         }),
       );
       rows.value = results.map((r, i) =>
-        r.status === "fulfilled" ? r.value : emptyRow(discover()[i], true),
+        r.status === "fulfilled" ? r.value : emptyRow(providers[i], true),
       );
     } finally {
       loading.value = false;
