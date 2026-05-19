@@ -286,6 +286,7 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import AudioAnalysisCoverage from "@/components/AudioAnalysisCoverage.vue";
 import { Button } from "@/components/ui/button";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -303,7 +304,6 @@ import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AudioAnalysisCoverage from "@/components/AudioAnalysisCoverage.vue";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
