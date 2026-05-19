@@ -53,7 +53,6 @@ import {
   RemoteAccessInfo,
   RepeatMode,
   SearchResults,
-  SmartPlaylistEntry,
   SmartPlaylistRules,
   UserRole,
 } from "./interfaces";
@@ -854,17 +853,6 @@ export class MusicAssistantApi {
       playlist_id: db_playlist_id,
       rules,
     });
-  }
-
-  public listSmartPlaylists(): Promise<SmartPlaylistEntry[]> {
-    return this.sendCommand("smart_playlists/list", {});
-  }
-
-  public previewSmartPlaylistTracks(
-    rules: SmartPlaylistRules,
-    limit: number = 10,
-  ): Promise<Track[]> {
-    return this.sendCommand("smart_playlists/preview_tracks", { rules, limit });
   }
 
   public countSmartPlaylistTracks(

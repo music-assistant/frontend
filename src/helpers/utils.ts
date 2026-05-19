@@ -124,6 +124,16 @@ export const formatRelativeTime = (seconds: number): string => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 };
 
+export const buildItemUri = function (
+  mediaType: MediaType,
+  mapping: ProviderMapping | null,
+  fallbackItemId: string,
+): string {
+  const domain = mapping?.provider_domain ?? "library";
+  const itemId = mapping?.item_id ?? fallbackItemId;
+  return `${domain}://${mediaType}/${itemId}`;
+};
+
 export const kebabize = (str: string) => {
   return str
     .split("")

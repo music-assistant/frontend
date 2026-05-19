@@ -1275,10 +1275,3 @@ export interface SmartPlaylistTrackStats {
   count: number;
   duration_seconds: number;
 }
-
-export interface SmartPlaylistEntry {
-  db_playlist_id: string;
-  name: string;
-  rules: SmartPlaylistRules;
-  is_dynamic: boolean;
-}

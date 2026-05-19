@@ -33,6 +33,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { toast } from "vue-sonner";
 import { ListMusic } from "lucide-vue-next";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -118,7 +119,7 @@ onMounted(() => {
   // Smart Playlist option inside the "Create Playlist" submenu
   if (
     Object.values(api.providers).some(
-      (p) => p.available && p.domain === "smart_playlist",
+      (p) => p.available && p.domain === SMART_PLAYLIST_PROVIDER_DOMAIN,
     )
   ) {
     playListCreateItems.push({

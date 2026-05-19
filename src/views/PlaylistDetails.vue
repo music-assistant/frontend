@@ -82,7 +82,11 @@ const listingRef = ref<InstanceType<typeof ItemsListing>>();
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
   if (props.provider === "library") {
-    smartRules.value = await api.getSmartPlaylistRules(props.itemId);
+    try {
+      smartRules.value = await api.getSmartPlaylistRules(props.itemId);
+    } catch {
+      smartRules.value = null;
+    }
   } else {
     smartRules.value = null;
   }

@@ -100,28 +100,32 @@ watch(showDialog, async (open) => {
     loadedArtistItems.value = [];
     loadedAlbumItems.value = [];
 
-    const fetchedRules = await api.getSmartPlaylistRules(props.dbPlaylistId);
+    try {
+      const fetchedRules = await api.getSmartPlaylistRules(props.dbPlaylistId);
 
-    if (fetchedRules) {
-      await Promise.all([
-        ...fetchedRules.artist_ids.map(async (id) => {
-          try {
-            const artist = await api.getArtist(String(id), "library");
-            loadedArtistItems.value.push({ id, name: artist.name });
-          } catch {
-            loadedArtistItems.value.push({ id, name: String(id) });
-          }
-        }),
-        ...fetchedRules.album_ids.map(async (id) => {
-          try {
-            const album = await api.getAlbum(String(id), "library");
-            loadedAlbumItems.value.push({ id, name: album.name });
-          } catch {
-            loadedAlbumItems.value.push({ id, name: String(id) });
-          }
-        }),
-      ]);
-      loadedRules.value = fetchedRules;
+      if (fetchedRules) {
+        await Promise.all([
+          ...fetchedRules.artist_ids.map(async (id) => {
+            try {
+              const artist = await api.getArtist(String(id), "library");
+              loadedArtistItems.value.push({ id, name: artist.name });
+            } catch {
+              loadedArtistItems.value.push({ id, name: String(id) });
+            }
+          }),
+          ...fetchedRules.album_ids.map(async (id) => {
+            try {
+              const album = await api.getAlbum(String(id), "library");
+              loadedAlbumItems.value.push({ id, name: album.name });
+            } catch {
+              loadedAlbumItems.value.push({ id, name: String(id) });
+            }
+          }),
+        ]);
+        loadedRules.value = fetchedRules;
+      }
+    } catch {
+      loadedRules.value = null;
     }
     loading.value = false;
   }
