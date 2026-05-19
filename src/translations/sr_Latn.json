@@ -974,7 +974,8 @@
         "discover": "Istražite",
         "libraries": "Biblioteke",
         "library": "Biblioteka",
-        "trending_podcasts": "Popularni podkasti"
+        "trending_podcasts": "Popularni podkasti",
+        "trending_stations": "Popularne stanice"
     },
     "homescreen_edit_enable": "Uredite početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
