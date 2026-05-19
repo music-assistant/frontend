@@ -9,13 +9,9 @@ import type {
 
 // vi.hoisted runs before module bindings — use the raw string value of TaskStatus.IDLE here;
 // the `as ScanStatus` cast below enforces type safety at the call-site level.
-const { mockRefresh, mockStartAutoRefresh, mockStopAutoRefresh } = vi.hoisted(
-  () => ({
-    mockRefresh: vi.fn().mockResolvedValue(undefined),
-    mockStartAutoRefresh: vi.fn(),
-    mockStopAutoRefresh: vi.fn(),
-  }),
-);
+const { mockRefresh } = vi.hoisted(() => ({
+  mockRefresh: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Reactive refs — must be created outside vi.hoisted (hoisted callbacks run before imports).
 const mockRows = ref<ProviderCoverageRow[]>([]);
@@ -31,8 +27,6 @@ vi.mock("@/composables/useAudioAnalysisCoverage", () => ({
     scan: mockScan,
     loading: ref(false),
     refresh: mockRefresh,
-    startAutoRefresh: mockStartAutoRefresh,
-    stopAutoRefresh: mockStopAutoRefresh,
   }),
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (k: string) => k }));

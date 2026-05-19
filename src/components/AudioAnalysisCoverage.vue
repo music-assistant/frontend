@@ -4,14 +4,6 @@
       <span class="aa-coverage__title">{{
         $t("settings.audio_analysis_coverage.title")
       }}</span>
-      <button
-        type="button"
-        class="aa-coverage__refresh"
-        :title="$t('settings.audio_analysis_coverage.refresh')"
-        @click="refresh()"
-      >
-        <RefreshCw class="size-4" />
-      </button>
     </div>
     <table class="aa-coverage__table">
       <thead>
@@ -94,18 +86,14 @@
 import { useAudioAnalysisCoverage } from "@/composables/useAudioAnalysisCoverage";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
-import { TaskStatus } from "@/plugins/api/interfaces";
-import { RefreshCw } from "lucide-vue-next";
-import { onBeforeUnmount, onMounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 
-const { rows, scan, refresh, startAutoRefresh, stopAutoRefresh } =
-  useAudioAnalysisCoverage();
+const { rows, scan, refresh } = useAudioAnalysisCoverage();
 
 const none = $t("settings.audio_analysis_coverage.none");
 
-onMounted(async () => {
-  await refresh();
-  if (scan.value.status === TaskStatus.RUNNING) startAutoRefresh(5000);
+onMounted(() => {
+  refresh();
 });
 
 watch(
@@ -114,17 +102,6 @@ watch(
     refresh();
   },
 );
-
-watch(
-  () => scan.value.status,
-  (s) => {
-    if (s === TaskStatus.RUNNING) startAutoRefresh(5000);
-  },
-);
-
-onBeforeUnmount(() => {
-  stopAutoRefresh();
-});
 </script>
 
 <style scoped>
@@ -139,12 +116,6 @@ onBeforeUnmount(() => {
 }
 .aa-coverage__title {
   font-weight: 600;
-}
-.aa-coverage__refresh {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: inherit;
 }
 .aa-coverage__table {
   width: 100%;

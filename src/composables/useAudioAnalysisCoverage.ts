@@ -42,8 +42,6 @@ export function useAudioAnalysisCoverage(): {
   scan: Ref<ScanStatus>;
   loading: Ref<boolean>;
   refresh: () => Promise<void>;
-  startAutoRefresh: (intervalMs: number) => void;
-  stopAutoRefresh: () => void;
 } {
   const rows = ref<ProviderCoverageRow[]>([]);
   const scan = ref<ScanStatus>({
@@ -52,7 +50,6 @@ export function useAudioAnalysisCoverage(): {
     unavailable: false,
   });
   const loading = ref(false);
-  let timer: ReturnType<typeof setInterval> | null = null;
 
   function discover() {
     return Object.values(api.providers)
@@ -150,21 +147,5 @@ export function useAudioAnalysisCoverage(): {
     }
   }
 
-  function stopAutoRefresh(): void {
-    if (timer !== null) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
-
-  function startAutoRefresh(intervalMs: number): void {
-    stopAutoRefresh();
-    // 5s interval vs. fast local API: refresh() overlap is not a concern here.
-    timer = setInterval(async () => {
-      await refresh();
-      if (scan.value.status !== TaskStatus.RUNNING) stopAutoRefresh();
-    }, intervalMs);
-  }
-
-  return { rows, scan, loading, refresh, startAutoRefresh, stopAutoRefresh };
+  return { rows, scan, loading, refresh };
 }

@@ -753,7 +753,6 @@
         "add_player_providers": "Add more player providers",
         "audio_analysis_coverage": {
             "title": "Audio Analysis Coverage",
-            "refresh": "Refresh",
             "col_provider": "Provider",
             "col_coverage": "Coverage",
             "col_pending": "Pending",

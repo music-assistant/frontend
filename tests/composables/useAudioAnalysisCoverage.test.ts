@@ -1,5 +1,5 @@
 import { ProviderType } from "@/plugins/api/interfaces";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSendCommand, providersMock } = vi.hoisted(() => {
   return {
@@ -166,14 +166,10 @@ describe("useAudioAnalysisCoverage - coverage", () => {
   });
 });
 
-describe("useAudioAnalysisCoverage - scan + polling", () => {
+describe("useAudioAnalysisCoverage - scan", () => {
   beforeEach(() => {
     mockSendCommand.mockReset();
     setProviders([]);
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("normalizes scan status; failure_count only surfaced when > 0", async () => {
@@ -213,30 +209,5 @@ describe("useAudioAnalysisCoverage - scan + polling", () => {
     await c.refresh();
 
     expect(c.scan.value.unavailable).toBe(true);
-  });
-
-  it("startAutoRefresh polls only while running; stop clears timer", async () => {
-    let status = "running";
-    mockSendCommand.mockImplementation((cmd: string) => {
-      if (cmd === "tasks/get")
-        return Promise.resolve({ status, failure_count: 0 });
-      return Promise.resolve({});
-    });
-
-    const c = useAudioAnalysisCoverage();
-    await c.refresh();
-    c.startAutoRefresh(5000);
-
-    await vi.advanceTimersByTimeAsync(5000);
-    const callsAfterFirstTick = mockSendCommand.mock.calls.length;
-    expect(callsAfterFirstTick).toBe(2);
-
-    status = "idle";
-    await vi.advanceTimersByTimeAsync(5000); // observes idle, stops itself
-    const callsAfterIdle = mockSendCommand.mock.calls.length;
-    await vi.advanceTimersByTimeAsync(15000); // no further polling
-    expect(mockSendCommand.mock.calls.length).toBe(callsAfterIdle);
-
-    c.stopAutoRefresh(); // idempotent, no throw
   });
 });
