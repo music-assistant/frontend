@@ -22,7 +22,6 @@
     "artist": "Artist",
     "artist_albums": "Albums",
     "artist_toptracks": "Top tracks",
-    "similar_artists": "Similar artists",
     "artists": "Artists",
     "browse": "Browse",
     "clear_selection": "Clear selection",
@@ -750,6 +749,7 @@
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
+    "similar_artists": "Similar artists",
     "sort": {
         "duration": "Duration",
         "position": "Position",

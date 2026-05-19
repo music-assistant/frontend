@@ -163,9 +163,7 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
 
 const hasSimilarArtistsProvider = computed(() =>
   Object.values(api.providers).some((p) =>
-    (p.supported_features as unknown as string[]).includes(
-      ProviderFeature.SIMILAR_ARTISTS,
-    ),
+    p.supported_features.includes(ProviderFeature.SIMILAR_ARTISTS),
   ),
 );
 
