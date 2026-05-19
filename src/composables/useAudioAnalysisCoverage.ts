@@ -1,5 +1,5 @@
 import { api } from "@/plugins/api";
-import { ProviderType, type BackgroundTask } from "@/plugins/api/interfaces";
+import { ProviderType, TaskStatus, type BackgroundTask } from "@/plugins/api/interfaces";
 import { ref, type Ref } from "vue";
 
 export const BACKGROUND_SCAN_TASK_ID = "audio_analysis_background_scan";
@@ -26,7 +26,7 @@ export interface ProviderCoverageRow {
 }
 
 export interface ScanStatus {
-  status: string;
+  status: TaskStatus;
   lastRun?: string;
   nextRun?: string;
   failureCount: number;
@@ -43,7 +43,7 @@ export function useAudioAnalysisCoverage(): {
 } {
   const rows = ref<ProviderCoverageRow[]>([]);
   const scan = ref<ScanStatus>({
-    status: "unknown",
+    status: TaskStatus.UNKNOWN,
     failureCount: 0,
     unavailable: false,
   });
@@ -62,7 +62,12 @@ export function useAudioAnalysisCoverage(): {
   }
 
   function emptyRow(
-    meta: { domain: string; name: string; instanceId: string; available: boolean },
+    meta: {
+      domain: string;
+      name: string;
+      instanceId: string;
+      available: boolean;
+    },
     error = false,
   ): ProviderCoverageRow {
     return {
@@ -97,7 +102,8 @@ export function useAudioAnalysisCoverage(): {
             pending: cov.pending,
             staleVersion: cov.stale_version,
             analysisVersion: cov.analysis_version,
-            coveragePct: total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
+            coveragePct:
+              total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
             hasData: total > 0,
           } satisfies ProviderCoverageRow;
         } catch {
@@ -124,7 +130,7 @@ export function useAudioAnalysisCoverage(): {
       };
     } catch {
       scan.value = {
-        status: "unknown",
+        status: TaskStatus.UNKNOWN,
         failureCount: 0,
         unavailable: true,
       };
@@ -149,9 +155,10 @@ export function useAudioAnalysisCoverage(): {
 
   function startAutoRefresh(intervalMs: number): void {
     stopAutoRefresh();
+    // 5s interval vs. fast local API: refresh() overlap is not a concern here.
     timer = setInterval(async () => {
       await refresh();
-      if (scan.value.status !== "running") stopAutoRefresh();
+      if (scan.value.status !== TaskStatus.RUNNING) stopAutoRefresh();
     }, intervalMs);
   }
 

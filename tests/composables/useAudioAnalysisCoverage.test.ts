@@ -229,7 +229,7 @@ describe("useAudioAnalysisCoverage - scan + polling", () => {
 
     await vi.advanceTimersByTimeAsync(5000);
     const callsAfterFirstTick = mockSendCommand.mock.calls.length;
-    expect(callsAfterFirstTick).toBeGreaterThan(1);
+    expect(callsAfterFirstTick).toBe(2);
 
     status = "idle";
     await vi.advanceTimersByTimeAsync(5000); // observes idle, stops itself
