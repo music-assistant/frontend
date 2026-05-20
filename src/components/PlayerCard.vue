@@ -238,7 +238,6 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-  EMPTY_COLOR_PALETTE,
   getMediaImageUrl,
   getPlayerName,
   ImageColorPalette,
@@ -258,7 +257,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
-import { computed, ref, toRef, watch } from "vue";
+import { computed, toRef } from "vue";
 
 // properties
 export interface Props {
@@ -312,18 +311,9 @@ const canPlayPause = computed(() => {
   return false;
 });
 
-// local refs
-const coverImageColorPalette = ref<ImageColorPalette>({
-  ...EMPTY_COLOR_PALETTE,
-});
-
 // Use the server-derived palette from the now-playing media.
-watch(
-  () => compProps.player.current_media?.palette,
-  (palette) => {
-    coverImageColorPalette.value = paletteFromServer(palette);
-  },
-  { immediate: true },
+const coverImageColorPalette = computed<ImageColorPalette>(() =>
+  paletteFromServer(compProps.player.current_media?.palette),
 );
 </script>
 

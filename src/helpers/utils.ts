@@ -26,7 +26,6 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import Color from "color";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
 
@@ -447,49 +446,6 @@ export function paletteFromServer(
     lightColor: _rgbTupleToHex(palette.on_dark),
     darkColor: _rgbTupleToHex(palette.on_light),
   };
-}
-
-export function getContrastingTextColor(hexColor: string): string {
-  hexColor = hexColor.replace("#", "");
-  if (hexColor.length === 3) {
-    hexColor = hexColor
-      .split("")
-      .map((hex) => hex + hex)
-      .join("");
-  }
-
-  const r = parseInt(hexColor.substr(0, 2), 16);
-  const g = parseInt(hexColor.substr(2, 2), 16);
-  const b = parseInt(hexColor.substr(4, 2), 16);
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (luminance > 0.7) {
-    return "#000000";
-  } else {
-    return "#FFFFFF";
-  }
-}
-
-export function getContrastRatio(color1: string, color2: string): number {
-  const c1 = Color(color1);
-  const c2 = Color(color2);
-  return c1.contrast(c2);
-}
-
-export function lightenColor(hexCode: string, factor: number): string {
-  if (factor <= 0 || factor > 1) {
-    throw new Error("Factor must be in the range of 0 (exclusive) to 1.");
-  }
-
-  const rgbColor: RGBColor = hexToRgb(hexCode);
-
-  const newRgbColor: RGBColor = [
-    Math.min(255, Math.round(rgbColor[0] + (255 - rgbColor[0]) * factor)),
-    Math.min(255, Math.round(rgbColor[1] + (255 - rgbColor[1]) * factor)),
-    Math.min(255, Math.round(rgbColor[2] + (255 - rgbColor[2]) * factor)),
-  ];
-
-  return rgbToHex(newRgbColor);
 }
 
 export function hexToRgb(hex: string): RGBColor {
