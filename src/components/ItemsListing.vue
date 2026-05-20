@@ -1170,7 +1170,10 @@ const restoreSettings = async function () {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
     viewMode.value = prefs.viewMode;
-  } else if (props.itemtype == "artists") {
+  } else if (
+    props.itemtype == "artists" ||
+    props.itemtype == "similarartists"
+  ) {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";

@@ -44,7 +44,7 @@
             <!-- Fileinfo -->
             <div class="line-space"></div>
             <!-- Volume Normalization -->
-            <div class="line-space"></div>
+            <div v-if="loudness" class="line-space"></div>
             <!-- Branch if multiple players playing -->
             <div class="line-branch-start-left"></div>
             <!-- Player -->
@@ -115,7 +115,7 @@
             <!-- Fileinfo -->
             <div class="line-straight"></div>
             <!-- Volume Normalization -->
-            <div class="line-with-dot"></div>
+            <div v-if="loudness" class="line-with-dot"></div>
             <!-- Branch if multiple players playing -->
             <div
               v-if="dsp_grouped.length >= 2"

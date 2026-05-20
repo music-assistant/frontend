@@ -366,7 +366,8 @@
                 "it": "Italienska",
                 "el_GR": "Grekiska",
                 "lt_LT": "Litauiska",
-                "lv_LV": "Lettiska"
+                "lv_LV": "Lettiska",
+                "bg_BG": "Bulgariska"
             }
         },
         "no_music_providers": "Inga musikleverantörer har konfigurerats",
@@ -975,7 +976,14 @@
         "libraries": "Bibliotek",
         "library": "Bibliotek",
         "trending_podcasts": "Trendiga poddar",
-        "trending_stations": "Trendiga stationer"
+        "trending_stations": "Trendiga stationer",
+        "forgotten_tracks": "Glömda spår",
+        "forgotten_albums": "Glömda album",
+        "forgotten_artists": "Glömda artister",
+        "most_played_tracks": "Mest spelade låtar",
+        "never_played_tracks": "Aldrig\/sällan spelad",
+        "recent_favorite_albums": "Nyligen favoritmarkerade album",
+        "recently_added_tracks": "Nyligen tillagda spår"
     },
     "homescreen_edit_enable": "Redigera startskärm",
     "homescreen_edit_disable": "Lämna redigeringsläget för startskärmen",

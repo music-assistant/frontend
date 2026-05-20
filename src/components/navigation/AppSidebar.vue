@@ -87,7 +87,6 @@ onUnmounted(() => {
 .sidebar-header-logo {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
   flex-shrink: 0;
 }
 

@@ -26,9 +26,8 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import Color from "color";
-import { getPaletteSync } from "colorthief";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -177,7 +176,7 @@ export const getGenreDisplayName = function (
   if (te(key)) return t(key);
 
   // No translation found - apply sentence case for user-created/promoted genres
-  return toSentenceCase(name);
+  return name;
 };
 
 export const getGenreDescription = function (
@@ -435,52 +434,28 @@ export const numberRange = function (start: number, end: number): number[] {
 type RGBColor = [number, number, number];
 
 export interface ImageColorPalette {
-  [key: number]: string;
   lightColor: string;
   darkColor: string;
 }
 
-export function getContrastingTextColor(hexColor: string): string {
-  hexColor = hexColor.replace("#", "");
-  if (hexColor.length === 3) {
-    hexColor = hexColor
-      .split("")
-      .map((hex) => hex + hex)
-      .join("");
-  }
+const _rgbTupleToHex = (rgb: RGBColor | null | undefined): string => {
+  if (!rgb) return "";
+  return rgbToHex(rgb);
+};
 
-  const r = parseInt(hexColor.substr(0, 2), 16);
-  const g = parseInt(hexColor.substr(2, 2), 16);
-  const b = parseInt(hexColor.substr(4, 2), 16);
+export const EMPTY_COLOR_PALETTE: ImageColorPalette = {
+  lightColor: "",
+  darkColor: "",
+};
 
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (luminance > 0.7) {
-    return "#000000";
-  } else {
-    return "#FFFFFF";
-  }
-}
-
-export function getContrastRatio(color1: string, color2: string): number {
-  const c1 = Color(color1);
-  const c2 = Color(color2);
-  return c1.contrast(c2);
-}
-
-export function lightenColor(hexCode: string, factor: number): string {
-  if (factor <= 0 || factor > 1) {
-    throw new Error("Factor must be in the range of 0 (exclusive) to 1.");
-  }
-
-  const rgbColor: RGBColor = hexToRgb(hexCode);
-
-  const newRgbColor: RGBColor = [
-    Math.min(255, Math.round(rgbColor[0] + (255 - rgbColor[0]) * factor)),
-    Math.min(255, Math.round(rgbColor[1] + (255 - rgbColor[1]) * factor)),
-    Math.min(255, Math.round(rgbColor[2] + (255 - rgbColor[2]) * factor)),
-  ];
-
-  return rgbToHex(newRgbColor);
+export function paletteFromServer(
+  palette: MediaItemPalette | null | undefined,
+): ImageColorPalette {
+  if (!palette) return { ...EMPTY_COLOR_PALETTE };
+  return {
+    lightColor: _rgbTupleToHex(palette.on_dark),
+    darkColor: _rgbTupleToHex(palette.on_light),
+  };
 }
 
 export function hexToRgb(hex: string): RGBColor {
@@ -497,64 +472,6 @@ export function rgbToHex(rgb: RGBColor): string {
     .toString(16)
     .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
   return hex;
-}
-
-export function findLightColor(colors: RGBColor[]): string {
-  let mostPleasantColor = "";
-  let highestContrastRatio = 0;
-
-  colors.forEach((rgb) => {
-    const hexColor = rgbToHex(rgb);
-    const contrastRatio = getContrastRatio("#000000", hexColor);
-
-    if (
-      (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-      (contrastRatio > highestContrastRatio &&
-        contrastRatio >= highestContrastRatio * 0.7)
-    ) {
-      highestContrastRatio = contrastRatio;
-      mostPleasantColor = hexColor;
-    }
-  });
-  return mostPleasantColor;
-}
-
-export function findDarkColor(colors: RGBColor[]): string {
-  let mostPleasantColor = "";
-  let highestContrastRatio = 0;
-  const maxContrastRatio = 17.35;
-
-  colors.forEach((rgb) => {
-    const hexColor = rgbToHex(rgb);
-    const contrastRatio = getContrastRatio("#fff", hexColor);
-    if (maxContrastRatio >= contrastRatio) {
-      if (
-        (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-        (contrastRatio > highestContrastRatio &&
-          contrastRatio >= highestContrastRatio * 0.7)
-      ) {
-        highestContrastRatio = contrastRatio;
-        mostPleasantColor = hexColor;
-      }
-    }
-  });
-  return mostPleasantColor;
-}
-
-export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
-  const palette = getPaletteSync(img, { colorCount: 5 }) ?? [];
-  const colorNumberPalette: RGBColor[] = palette.map((c) => c.array());
-  const colorHexPalette: string[] = palette.map((c) => c.hex());
-
-  return {
-    0: colorHexPalette[0],
-    1: colorHexPalette[1],
-    2: colorHexPalette[2],
-    3: colorHexPalette[3],
-    4: colorHexPalette[4],
-    lightColor: findLightColor(colorNumberPalette),
-    darkColor: findDarkColor(colorNumberPalette),
-  };
 }
 
 export function getValueFromSources<T>(

@@ -499,6 +499,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getSimilarTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/tracks/similar_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
+    });
+  }
+
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
@@ -631,6 +643,18 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+    });
+  }
+
+  public getSimilarArtists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Artist[]> {
+    return this.sendCommand("music/artists/similar_artists", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
     });
   }
 
