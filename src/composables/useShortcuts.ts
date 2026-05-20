@@ -6,6 +6,7 @@ import type {
   Audiobook,
   EventMessage,
   Genre,
+  ItemMapping,
   MediaItemType,
   Playlist,
   Podcast,
@@ -39,6 +40,97 @@ const SUPPORTED_TYPES = new Set([
 
 const PREF_KEY = "sidebar.shortcuts";
 
+interface ParsedShortcutUri {
+  provider: string;
+  mediaType: string;
+  itemId: string;
+}
+
+interface ShortcutIdentity {
+  provider: string;
+  mediaType: string;
+  itemId: string;
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function parseShortcutUri(uri: string): ParsedShortcutUri | null {
+  const sepIdx = uri.indexOf("://");
+  if (sepIdx < 0) return null;
+  const provider = safeDecode(uri.slice(0, sepIdx));
+  const rest = uri.slice(sepIdx + 3);
+  const slashIdx = rest.indexOf("/");
+  if (slashIdx < 0) return null;
+  const mediaType = safeDecode(rest.slice(0, slashIdx));
+  return {
+    provider,
+    mediaType,
+    itemId: safeDecode(rest.slice(slashIdx + 1)),
+  };
+}
+
+function isSameShortcutUri(left: string, right: string): boolean {
+  if (left === right) return true;
+  const a = parseShortcutUri(left);
+  const b = parseShortcutUri(right);
+  if (!a || !b) return false;
+  return (
+    a.mediaType === b.mediaType &&
+    a.provider === b.provider &&
+    a.itemId === b.itemId
+  );
+}
+
+function getShortcutIdentities(
+  item: ShortcutItem | ItemMapping,
+): ShortcutIdentity[] {
+  const identities: ShortcutIdentity[] = [
+    {
+      provider: safeDecode(item.provider),
+      mediaType: item.media_type,
+      itemId: safeDecode(item.item_id),
+    },
+  ];
+
+  // Also match the provider domain form for instance-based provider ids.
+  const baseProvider = safeDecode(item.provider.split("--")[0]);
+  if (baseProvider && baseProvider !== safeDecode(item.provider)) {
+    identities.push({
+      provider: baseProvider,
+      mediaType: item.media_type,
+      itemId: safeDecode(item.item_id),
+    });
+  }
+
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
+    for (const mapping of item.provider_mappings) {
+      identities.push({
+        provider: safeDecode(mapping.provider_instance),
+        mediaType: item.media_type,
+        itemId: safeDecode(mapping.item_id),
+      });
+      // Some URIs store provider domain instead of provider instance.
+      identities.push({
+        provider: safeDecode(mapping.provider_domain),
+        mediaType: item.media_type,
+        itemId: safeDecode(mapping.item_id),
+      });
+    }
+  }
+
+  return identities;
+}
+
+export function isShortcutMediaType(mediaType: MediaType): boolean {
+  return SUPPORTED_TYPES.has(mediaType);
+}
+
 // ---------------------------------------------------------------------------
 // Standalone helpers — usable outside Vue component setup (e.g. context menus)
 // ---------------------------------------------------------------------------
@@ -56,17 +148,52 @@ async function _setPinnedUris(uris: string[]): Promise<void> {
 }
 
 export function isShortcutPinned(uri: string): boolean {
-  return _getPinnedUris().includes(uri);
+  return _getPinnedUris().some((pinnedUri) =>
+    isSameShortcutUri(pinnedUri, uri),
+  );
 }
 
-export async function pinShortcutStandalone(item: ShortcutItem): Promise<void> {
+export function isShortcutPinnedItem(
+  item: ShortcutItem | ItemMapping,
+): boolean {
+  const identities = getShortcutIdentities(item);
+  return _getPinnedUris().some((pinnedUri) => {
+    const parsed = parseShortcutUri(pinnedUri);
+    if (!parsed) return false;
+    return identities.some(
+      (identity) =>
+        parsed.mediaType === identity.mediaType &&
+        parsed.provider === identity.provider &&
+        parsed.itemId === identity.itemId,
+    );
+  });
+}
+
+export async function unpinShortcutStandaloneItem(
+  item: ShortcutItem | ItemMapping,
+): Promise<void> {
+  const identities = getShortcutIdentities(item);
+  await _setPinnedUris(
+    _getPinnedUris().filter((pinnedUri) => {
+      const parsed = parseShortcutUri(pinnedUri);
+      if (!parsed) return true;
+      return !identities.some(
+        (identity) =>
+          parsed.mediaType === identity.mediaType &&
+          parsed.provider === identity.provider &&
+          parsed.itemId === identity.itemId,
+      );
+    }),
+  );
+}
+
+export async function pinShortcutStandalone(
+  item: ShortcutItem | ItemMapping,
+): Promise<void> {
+  if (!isShortcutMediaType(item.media_type)) return;
   const uris = _getPinnedUris();
-  if (uris.includes(item.uri)) return;
+  if (uris.some((pinnedUri) => isSameShortcutUri(pinnedUri, item.uri))) return;
   await _setPinnedUris([...uris, item.uri]);
-}
-
-export async function unpinShortcutStandalone(uri: string): Promise<void> {
-  await _setPinnedUris(_getPinnedUris().filter((u) => u !== uri));
 }
 
 export function useShortcuts() {

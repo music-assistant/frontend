@@ -61,7 +61,9 @@ const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
 
 const getItemUrl = (item: ShortcutItem) => {
   const base = MEDIA_TYPE_PATH[item.media_type] ?? "playlists";
-  return `/${base}/${item.provider}/${item.item_id}`;
+  const provider = encodeURIComponent(item.provider);
+  const itemId = encodeURIComponent(item.item_id);
+  return `/${base}/${provider}/${itemId}`;
 };
 
 const getFallbackIcon = (item: ShortcutItem) =>

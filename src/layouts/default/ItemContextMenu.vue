@@ -237,10 +237,10 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import {
-  isShortcutPinned,
+  isShortcutMediaType,
+  isShortcutPinnedItem,
   pinShortcutStandalone,
-  unpinShortcutStandalone,
-  type ShortcutItem,
+  unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 
 import type { Component } from "vue";
@@ -847,24 +847,15 @@ export const getContextMenuItems = async function (
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
   if (
     items.length === 1 &&
-    [
-      MediaType.PLAYLIST,
-      MediaType.ARTIST,
-      MediaType.ALBUM,
-      MediaType.TRACK,
-      MediaType.RADIO,
-      MediaType.PODCAST,
-      MediaType.AUDIOBOOK,
-      MediaType.GENRE,
-    ].includes(items[0].media_type) &&
-    items[0].provider === "library"
+    isShortcutMediaType(items[0].media_type) &&
+    !!items[0].uri
   ) {
-    const shortcutItem = items[0] as ShortcutItem;
-    if (isShortcutPinned(shortcutItem.uri)) {
+    const shortcutItem = items[0];
+    if (isShortcutPinnedItem(shortcutItem)) {
       contextMenuItems.push({
         label: "shortcut.remove_from",
         labelArgs: [],
-        action: () => unpinShortcutStandalone(shortcutItem.uri),
+        action: () => unpinShortcutStandaloneItem(shortcutItem),
         icon: "mdi-pin-off-outline",
       });
     } else {
