@@ -115,6 +115,7 @@ import {
 } from "@/components/ui/number-field";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
+import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { type CreateSmartPlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -150,13 +151,6 @@ function onTrackCountUpdate(
   matchingTrackCount.value = count;
   matchingDuration.value = duration;
   isCountingTracks.value = counting;
-}
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
 }
 
 async function doSave() {

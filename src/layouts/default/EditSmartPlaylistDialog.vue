@@ -70,6 +70,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
+import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -96,6 +97,19 @@ const loadedArtistItems = ref<{ id: number; name: string }[]>([]);
 const loadedAlbumItems = ref<{ id: number; name: string }[]>([]);
 const loadedExcludedArtistItems = ref<{ id: number; name: string }[]>([]);
 const loadedExcludedAlbumItems = ref<{ id: number; name: string }[]>([]);
+
+function resetDialogState() {
+  loading.value = false;
+  isSaving.value = false;
+  matchingTrackCount.value = null;
+  matchingDuration.value = null;
+  isCountingTracks.value = false;
+  loadedRules.value = null;
+  loadedArtistItems.value = [];
+  loadedAlbumItems.value = [];
+  loadedExcludedArtistItems.value = [];
+  loadedExcludedAlbumItems.value = [];
+}
 
 watch(showDialog, async (open) => {
   if (open) {
@@ -160,6 +174,8 @@ watch(showDialog, async (open) => {
       loadedRules.value = null;
     }
     loading.value = false;
+  } else {
+    resetDialogState();
   }
 });
 
@@ -171,13 +187,6 @@ function onTrackCountUpdate(
   matchingTrackCount.value = count;
   matchingDuration.value = duration;
   isCountingTracks.value = counting;
-}
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
 }
 
 async function doSave() {
