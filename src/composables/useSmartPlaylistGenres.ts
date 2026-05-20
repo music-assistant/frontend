@@ -4,8 +4,8 @@ import api from "@/plugins/api";
 import type { Genre } from "@/plugins/api/interfaces";
 
 export function useSmartPlaylistGenres(
-  ruleGenreIds: Ref<number[]>,
-  ruleExcludedGenreIds: Ref<number[]>,
+  ruleGenreIds: Ref<number[] | undefined>,
+  ruleExcludedGenreIds: Ref<number[] | undefined>,
   ruleGenreNames: Ref<Record<number, string> | undefined>,
 ) {
   const genres = ref<Genre[]>([]);
@@ -32,14 +32,14 @@ export function useSmartPlaylistGenres(
   });
 
   const genreModelValue = computed({
-    get: () => ruleGenreIds.value.map(String),
+    get: () => (ruleGenreIds.value ?? []).map(String),
     set: (vals: string[]) => {
       ruleGenreIds.value = vals.map(Number);
     },
   });
 
   const excludedGenreModelValue = computed({
-    get: () => ruleExcludedGenreIds.value.map(String),
+    get: () => (ruleExcludedGenreIds.value ?? []).map(String),
     set: (vals: string[]) => {
       ruleExcludedGenreIds.value = vals.map(Number);
     },
@@ -58,24 +58,38 @@ export function useSmartPlaylistGenres(
   }
 
   function toggleGenreById(id: number) {
-    const idx = ruleGenreIds.value.indexOf(id);
+    const genreIds = ruleGenreIds.value ?? [];
+    const idx = genreIds.indexOf(id);
     if (idx >= 0) {
-      ruleGenreIds.value.splice(idx, 1);
+      genreIds.splice(idx, 1);
+      ruleGenreIds.value = genreIds;
     } else {
-      const excIdx = ruleExcludedGenreIds.value.indexOf(id);
-      if (excIdx >= 0) ruleExcludedGenreIds.value.splice(excIdx, 1);
-      ruleGenreIds.value.push(id);
+      const excludedGenreIds = ruleExcludedGenreIds.value ?? [];
+      const excIdx = excludedGenreIds.indexOf(id);
+      if (excIdx >= 0) {
+        excludedGenreIds.splice(excIdx, 1);
+        ruleExcludedGenreIds.value = excludedGenreIds;
+      }
+      genreIds.push(id);
+      ruleGenreIds.value = genreIds;
     }
   }
 
   function toggleExcludedGenreById(id: number) {
-    const excIdx = ruleExcludedGenreIds.value.indexOf(id);
+    const excludedGenreIds = ruleExcludedGenreIds.value ?? [];
+    const excIdx = excludedGenreIds.indexOf(id);
     if (excIdx >= 0) {
-      ruleExcludedGenreIds.value.splice(excIdx, 1);
+      excludedGenreIds.splice(excIdx, 1);
+      ruleExcludedGenreIds.value = excludedGenreIds;
     } else {
-      const incIdx = ruleGenreIds.value.indexOf(id);
-      if (incIdx >= 0) ruleGenreIds.value.splice(incIdx, 1);
-      ruleExcludedGenreIds.value.push(id);
+      const genreIds = ruleGenreIds.value ?? [];
+      const incIdx = genreIds.indexOf(id);
+      if (incIdx >= 0) {
+        genreIds.splice(incIdx, 1);
+        ruleGenreIds.value = genreIds;
+      }
+      excludedGenreIds.push(id);
+      ruleExcludedGenreIds.value = excludedGenreIds;
     }
   }
 

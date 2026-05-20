@@ -28,6 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
   initialRules: null,
   initialArtistItems: () => [],
   initialAlbumItems: () => [],
+  initialExcludedArtistItems: () => [],
+  initialExcludedAlbumItems: () => [],
 });
 
 const emit = defineEmits<{

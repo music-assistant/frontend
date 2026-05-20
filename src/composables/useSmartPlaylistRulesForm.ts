@@ -16,6 +16,8 @@ export interface SmartPlaylistRulesFormInit {
   initialRules?: SmartPlaylistRules | null;
   initialArtistItems?: { id: number; name: string }[];
   initialAlbumItems?: { id: number; name: string }[];
+  initialExcludedArtistItems?: { id: number; name: string }[];
+  initialExcludedAlbumItems?: { id: number; name: string }[];
 }
 
 export type TrackCountUpdateHandler = (
@@ -218,6 +220,22 @@ export function useSmartPlaylistRulesForm(
     () => props.initialAlbumItems,
     (items) => {
       contentFilters.selectedAlbumItems.value = [...(items ?? [])];
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => props.initialExcludedArtistItems,
+    (items) => {
+      contentFilters.selectedExcludedArtistItems.value = [...(items ?? [])];
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => props.initialExcludedAlbumItems,
+    (items) => {
+      contentFilters.selectedExcludedAlbumItems.value = [...(items ?? [])];
     },
     { immediate: true },
   );

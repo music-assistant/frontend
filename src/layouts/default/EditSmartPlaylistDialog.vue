@@ -26,6 +26,8 @@
           :initial-rules="loadedRules"
           :initial-artist-items="loadedArtistItems"
           :initial-album-items="loadedAlbumItems"
+          :initial-excluded-artist-items="loadedExcludedArtistItems"
+          :initial-excluded-album-items="loadedExcludedAlbumItems"
           @track-count-update="onTrackCountUpdate"
         />
 
@@ -92,6 +94,8 @@ const rulesForm = ref<InstanceType<typeof SmartPlaylistRulesForm>>();
 const loadedRules = ref<SmartPlaylistRules | null>(null);
 const loadedArtistItems = ref<{ id: number; name: string }[]>([]);
 const loadedAlbumItems = ref<{ id: number; name: string }[]>([]);
+const loadedExcludedArtistItems = ref<{ id: number; name: string }[]>([]);
+const loadedExcludedAlbumItems = ref<{ id: number; name: string }[]>([]);
 
 watch(showDialog, async (open) => {
   if (open) {
@@ -99,6 +103,8 @@ watch(showDialog, async (open) => {
     loadedRules.value = null;
     loadedArtistItems.value = [];
     loadedAlbumItems.value = [];
+    loadedExcludedArtistItems.value = [];
+    loadedExcludedAlbumItems.value = [];
 
     try {
       const fetchedRules = await api.getSmartPlaylistRules(props.dbPlaylistId);
@@ -119,6 +125,32 @@ watch(showDialog, async (open) => {
               loadedAlbumItems.value.push({ id, name: album.name });
             } catch {
               loadedAlbumItems.value.push({ id, name: String(id) });
+            }
+          }),
+          ...(fetchedRules.excluded_artist_ids ?? []).map(async (id) => {
+            const nameFromRules = fetchedRules.excluded_artist_names?.[id];
+            if (nameFromRules) {
+              loadedExcludedArtistItems.value.push({ id, name: nameFromRules });
+              return;
+            }
+            try {
+              const artist = await api.getArtist(String(id), "library");
+              loadedExcludedArtistItems.value.push({ id, name: artist.name });
+            } catch {
+              loadedExcludedArtistItems.value.push({ id, name: String(id) });
+            }
+          }),
+          ...(fetchedRules.excluded_album_ids ?? []).map(async (id) => {
+            const nameFromRules = fetchedRules.excluded_album_names?.[id];
+            if (nameFromRules) {
+              loadedExcludedAlbumItems.value.push({ id, name: nameFromRules });
+              return;
+            }
+            try {
+              const album = await api.getAlbum(String(id), "library");
+              loadedExcludedAlbumItems.value.push({ id, name: album.name });
+            } catch {
+              loadedExcludedAlbumItems.value.push({ id, name: String(id) });
             }
           }),
         ]);

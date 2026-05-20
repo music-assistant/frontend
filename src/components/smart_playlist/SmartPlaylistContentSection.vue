@@ -18,8 +18,9 @@
               v-for="a in selectedArtistItems"
               :key="a.id"
               :value="String(a.id)"
+              class="max-w-[240px]"
             >
-              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -95,8 +96,9 @@
               v-for="a in selectedExcludedArtistItems"
               :key="a.id"
               :value="String(a.id)"
+              class="max-w-[240px]"
             >
-              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -177,8 +179,9 @@
               v-for="a in selectedAlbumItems"
               :key="a.id"
               :value="String(a.id)"
+              class="max-w-[240px]"
             >
-              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -251,8 +254,9 @@
               v-for="a in selectedExcludedAlbumItems"
               :key="a.id"
               :value="String(a.id)"
+              class="max-w-[240px]"
             >
-              <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover

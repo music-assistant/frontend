@@ -5,10 +5,10 @@ import type { Album, Artist } from "@/plugins/api/interfaces";
 import { setupDebouncedSearch } from "./useSmartPlaylistSearchHelpers";
 
 export function useSmartPlaylistContentFilters(
-  ruleArtistIds: Ref<number[]>,
-  ruleAlbumIds: Ref<number[]>,
-  ruleExcludedArtistIds: Ref<number[]>,
-  ruleExcludedAlbumIds: Ref<number[]>,
+  ruleArtistIds: Ref<number[] | undefined>,
+  ruleAlbumIds: Ref<number[] | undefined>,
+  ruleExcludedArtistIds: Ref<number[] | undefined>,
+  ruleExcludedAlbumIds: Ref<number[] | undefined>,
 ) {
   const artistSearch = ref("");
   const artistResults = ref<Artist[]>([]);
@@ -104,9 +104,11 @@ export function useSmartPlaylistContentFilters(
   });
 
   function toggleArtistById(id: number, name?: string) {
-    const idx = ruleArtistIds.value.indexOf(id);
+    const artistIds = ruleArtistIds.value ?? [];
+    const idx = artistIds.indexOf(id);
     if (idx >= 0) {
-      ruleArtistIds.value.splice(idx, 1);
+      artistIds.splice(idx, 1);
+      ruleArtistIds.value = artistIds;
       selectedArtistItems.value = selectedArtistItems.value.filter(
         (a) => a.id !== id,
       );
@@ -116,19 +118,25 @@ export function useSmartPlaylistContentFilters(
       );
       if (excIdx >= 0) {
         selectedExcludedArtistItems.value.splice(excIdx, 1);
-        const excludedIdx = ruleExcludedArtistIds.value.indexOf(id);
-        if (excludedIdx >= 0)
-          ruleExcludedArtistIds.value.splice(excludedIdx, 1);
+        const excludedArtistIds = ruleExcludedArtistIds.value ?? [];
+        const excludedIdx = excludedArtistIds.indexOf(id);
+        if (excludedIdx >= 0) {
+          excludedArtistIds.splice(excludedIdx, 1);
+          ruleExcludedArtistIds.value = excludedArtistIds;
+        }
       }
-      ruleArtistIds.value.push(id);
+      artistIds.push(id);
+      ruleArtistIds.value = artistIds;
       selectedArtistItems.value.push({ id, name });
     }
   }
 
   function toggleAlbumById(id: number, name?: string) {
-    const idx = ruleAlbumIds.value.indexOf(id);
+    const albumIds = ruleAlbumIds.value ?? [];
+    const idx = albumIds.indexOf(id);
     if (idx >= 0) {
-      ruleAlbumIds.value.splice(idx, 1);
+      albumIds.splice(idx, 1);
+      ruleAlbumIds.value = albumIds;
       selectedAlbumItems.value = selectedAlbumItems.value.filter(
         (a) => a.id !== id,
       );
@@ -138,48 +146,63 @@ export function useSmartPlaylistContentFilters(
       );
       if (excIdx >= 0) {
         selectedExcludedAlbumItems.value.splice(excIdx, 1);
-        const excludedIdx = ruleExcludedAlbumIds.value.indexOf(id);
-        if (excludedIdx >= 0) ruleExcludedAlbumIds.value.splice(excludedIdx, 1);
+        const excludedAlbumIds = ruleExcludedAlbumIds.value ?? [];
+        const excludedIdx = excludedAlbumIds.indexOf(id);
+        if (excludedIdx >= 0) {
+          excludedAlbumIds.splice(excludedIdx, 1);
+          ruleExcludedAlbumIds.value = excludedAlbumIds;
+        }
       }
-      ruleAlbumIds.value.push(id);
+      albumIds.push(id);
+      ruleAlbumIds.value = albumIds;
       selectedAlbumItems.value.push({ id, name });
     }
   }
 
   function toggleExcludedArtistById(id: number, name?: string) {
-    const idx = ruleExcludedArtistIds.value.indexOf(id);
+    const excludedArtistIds = ruleExcludedArtistIds.value ?? [];
+    const idx = excludedArtistIds.indexOf(id);
     if (idx >= 0) {
-      ruleExcludedArtistIds.value.splice(idx, 1);
+      excludedArtistIds.splice(idx, 1);
+      ruleExcludedArtistIds.value = excludedArtistIds;
       selectedExcludedArtistItems.value =
         selectedExcludedArtistItems.value.filter((a) => a.id !== id);
     } else if (name !== undefined) {
-      const incIdx = ruleArtistIds.value.indexOf(id);
+      const artistIds = ruleArtistIds.value ?? [];
+      const incIdx = artistIds.indexOf(id);
       if (incIdx >= 0) {
-        ruleArtistIds.value.splice(incIdx, 1);
+        artistIds.splice(incIdx, 1);
+        ruleArtistIds.value = artistIds;
         selectedArtistItems.value = selectedArtistItems.value.filter(
           (a) => a.id !== id,
         );
       }
-      ruleExcludedArtistIds.value.push(id);
+      excludedArtistIds.push(id);
+      ruleExcludedArtistIds.value = excludedArtistIds;
       selectedExcludedArtistItems.value.push({ id, name });
     }
   }
 
   function toggleExcludedAlbumById(id: number, name?: string) {
-    const idx = ruleExcludedAlbumIds.value.indexOf(id);
+    const excludedAlbumIds = ruleExcludedAlbumIds.value ?? [];
+    const idx = excludedAlbumIds.indexOf(id);
     if (idx >= 0) {
-      ruleExcludedAlbumIds.value.splice(idx, 1);
+      excludedAlbumIds.splice(idx, 1);
+      ruleExcludedAlbumIds.value = excludedAlbumIds;
       selectedExcludedAlbumItems.value =
         selectedExcludedAlbumItems.value.filter((a) => a.id !== id);
     } else if (name !== undefined) {
-      const incIdx = ruleAlbumIds.value.indexOf(id);
+      const albumIds = ruleAlbumIds.value ?? [];
+      const incIdx = albumIds.indexOf(id);
       if (incIdx >= 0) {
-        ruleAlbumIds.value.splice(incIdx, 1);
+        albumIds.splice(incIdx, 1);
+        ruleAlbumIds.value = albumIds;
         selectedAlbumItems.value = selectedAlbumItems.value.filter(
           (a) => a.id !== id,
         );
       }
-      ruleExcludedAlbumIds.value.push(id);
+      excludedAlbumIds.push(id);
+      ruleExcludedAlbumIds.value = excludedAlbumIds;
       selectedExcludedAlbumItems.value.push({ id, name });
     }
   }
