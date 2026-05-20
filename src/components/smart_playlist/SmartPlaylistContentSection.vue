@@ -99,11 +99,16 @@
               <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
-            <Popover>
+            <Popover
+              :open="
+                selectedSeedTrack || selectedSeedArtist ? false : undefined
+              "
+            >
               <PopoverTrigger as-child>
                 <Button
                   variant="outline"
                   size="sm"
+                  :disabled="!!selectedSeedTrack || !!selectedSeedArtist"
                   class="h-7 gap-1 border-dashed text-xs"
                 >
                   <PlusCircle class="h-3 w-3" />
@@ -157,6 +162,12 @@
               </PopoverContent>
             </Popover>
           </TagsInput>
+          <p
+            v-if="selectedSeedTrack || selectedSeedArtist"
+            class="text-xs text-muted-foreground"
+          >
+            {{ $t("smart_playlist.seed_overrides_filter") }}
+          </p>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -244,11 +255,16 @@
               <span class="py-0.5 px-2 text-sm">{{ a.name }}</span>
               <TagsInputItemDelete />
             </TagsInputItem>
-            <Popover>
+            <Popover
+              :open="
+                selectedSeedTrack || selectedSeedArtist ? false : undefined
+              "
+            >
               <PopoverTrigger as-child>
                 <Button
                   variant="outline"
                   size="sm"
+                  :disabled="!!selectedSeedTrack || !!selectedSeedArtist"
                   class="h-7 gap-1 border-dashed text-xs"
                 >
                   <PlusCircle class="h-3 w-3" />
@@ -302,6 +318,12 @@
               </PopoverContent>
             </Popover>
           </TagsInput>
+          <p
+            v-if="selectedSeedTrack || selectedSeedArtist"
+            class="text-xs text-muted-foreground"
+          >
+            {{ $t("smart_playlist.seed_overrides_filter") }}
+          </p>
         </div>
       </div>
     </AccordionContent>
