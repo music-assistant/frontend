@@ -20,7 +20,10 @@
               :value="String(a.id)"
               class="max-w-[240px]"
             >
-              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span
+                class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm"
+                >{{ a.name }}</span
+              >
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -98,7 +101,10 @@
               :value="String(a.id)"
               class="max-w-[240px]"
             >
-              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span
+                class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm"
+                >{{ a.name }}</span
+              >
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -181,7 +187,10 @@
               :value="String(a.id)"
               class="max-w-[240px]"
             >
-              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span
+                class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm"
+                >{{ a.name }}</span
+              >
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
@@ -256,7 +265,10 @@
               :value="String(a.id)"
               class="max-w-[240px]"
             >
-              <span class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm">{{ a.name }}</span>
+              <span
+                class="block max-w-[200px] truncate whitespace-nowrap py-0.5 px-2 text-sm"
+                >{{ a.name }}</span
+              >
               <TagsInputItemDelete />
             </TagsInputItem>
             <Popover
