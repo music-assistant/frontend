@@ -167,7 +167,7 @@ export const getGenreDisplayName = function (
   if (te(key)) return t(key);
 
   // No translation found - apply sentence case for user-created/promoted genres
-  return toSentenceCase(name);
+  return name;
 };
 
 export const getGenreDescription = function (
