@@ -59,7 +59,6 @@ export type Events = {
   genreExcluded: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
-  addShortcut: void;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

@@ -14,7 +14,6 @@ import {
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { eventbus } from "@/plugins/eventbus";
 import { MediaType } from "@/plugins/api/interfaces";
 
 const RouterLinkComponent = markRaw(RouterLink);
@@ -29,11 +28,6 @@ const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
 
 const handleClick = () => {
-  if (isMobile.value) setOpenMobile(false);
-};
-
-const handleAddShortcut = () => {
-  eventbus.emit("addShortcut");
   if (isMobile.value) setOpenMobile(false);
 };
 
@@ -148,22 +142,6 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
             />
           </SidebarMenuItem>
 
-          <!-- Add shortcut button -->
-          <SidebarMenuItem class="mr-1.5">
-            <SidebarMenuButton
-              as="button"
-              :tooltip="t('shortcut.add')"
-              class="no-underline font-medium text-sm"
-              @click="handleAddShortcut"
-            >
-              <v-icon
-                icon="mdi-plus-circle-outline"
-                size="19"
-                class="shortcut-add-icon"
-              />
-              <span v-if="!isCollapsed">{{ t("shortcut.add") }}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
@@ -199,14 +177,6 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
   padding: 0.125rem !important;
   justify-content: center !important;
   align-items: center !important;
-}
-
-/* MDI plus icon — match NavMain size */
-:deep([data-sidebar="menu-button"] .shortcut-add-icon) {
-  font-size: 1.2rem !important;
-  flex-shrink: 0;
-  margin-right: 0.3rem !important;
-  padding-right: 3px !important;
 }
 
 .shortcut-thumb {

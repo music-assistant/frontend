@@ -19,7 +19,6 @@
           <add-to-playlist-dialog />
           <create-playlist-dialog />
           <import-playlist-dialog />
-          <add-shortcut-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
@@ -47,7 +46,6 @@ import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
-import AddShortcutDialog from "./AddShortcutDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
 import AddManualLink from "@/components/AddManualLink.vue";
 import {

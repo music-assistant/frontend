@@ -94,7 +94,6 @@
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
     "shortcut": {
-        "add": "Add shortcut",
         "add_to": "Add to shortcuts",
         "remove_from": "Remove from shortcuts"
     },
