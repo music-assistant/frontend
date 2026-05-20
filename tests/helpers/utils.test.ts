@@ -2,16 +2,17 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
-  getContrastingTextColor,
   getGenreDisplayName,
   hexToRgb,
   kebabize,
   numberRange,
+  paletteFromServer,
   parseBool,
   rgbToHex,
   sleep,
   truncateString,
 } from "@/helpers/utils";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
@@ -45,20 +46,6 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
-}));
-
-vi.mock("colorthief", () => ({
-  default: class {
-    getPalette() {
-      return [
-        [255, 0, 0],
-        [0, 255, 0],
-        [0, 0, 255],
-        [255, 255, 0],
-        [255, 0, 255],
-      ];
-    }
-  },
 }));
 
 describe("formatDuration", () => {
@@ -168,20 +155,57 @@ describe("color utilities", () => {
     });
   });
 
-  describe("getContrastingTextColor", () => {
-    it("returns black text for light backgrounds", () => {
-      expect(getContrastingTextColor("#ffffff")).toBe("#000000");
-      expect(getContrastingTextColor("#f0f0f0")).toBe("#000000");
+  describe("paletteFromServer", () => {
+    it("returns empty palette for null", () => {
+      expect(paletteFromServer(null)).toEqual({
+        lightColor: "",
+        darkColor: "",
+      });
     });
 
-    it("returns white text for dark backgrounds", () => {
-      expect(getContrastingTextColor("#000000")).toBe("#FFFFFF");
-      expect(getContrastingTextColor("#333333")).toBe("#FFFFFF");
+    it("returns empty palette for undefined", () => {
+      expect(paletteFromServer(undefined)).toEqual({
+        lightColor: "",
+        darkColor: "",
+      });
     });
 
-    it("handles 3-character hex codes", () => {
-      expect(getContrastingTextColor("#fff")).toBe("#000000");
-      expect(getContrastingTextColor("#000")).toBe("#FFFFFF");
+    it("returns empty strings when on_dark and on_light are missing", () => {
+      const palette: MediaItemPalette = {};
+      expect(paletteFromServer(palette)).toEqual({
+        lightColor: "",
+        darkColor: "",
+      });
+    });
+
+    it("returns empty strings when on_dark and on_light are null", () => {
+      const palette: MediaItemPalette = { on_dark: null, on_light: null };
+      expect(paletteFromServer(palette)).toEqual({
+        lightColor: "",
+        darkColor: "",
+      });
+    });
+
+    it("maps on_dark to lightColor and on_light to darkColor", () => {
+      const palette: MediaItemPalette = {
+        on_dark: [255, 200, 100],
+        on_light: [40, 20, 10],
+      };
+      expect(paletteFromServer(palette)).toEqual({
+        lightColor: "#ffc864",
+        darkColor: "#28140a",
+      });
+    });
+
+    it("handles only one of on_dark/on_light being set", () => {
+      expect(paletteFromServer({ on_dark: [255, 255, 255] })).toEqual({
+        lightColor: "#ffffff",
+        darkColor: "",
+      });
+      expect(paletteFromServer({ on_light: [0, 0, 0] })).toEqual({
+        lightColor: "",
+        darkColor: "#000000",
+      });
     });
   });
 });

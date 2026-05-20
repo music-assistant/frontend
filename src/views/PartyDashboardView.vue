@@ -302,8 +302,8 @@ import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
   ImageColorPalette,
-  getColorPalette,
   getMediaItemImageUrl,
+  paletteFromServer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -513,16 +513,9 @@ const lyricsTextColor = computed(() =>
 const { elapsedTime: lyricsElapsedTime, stop: stopTick } =
   useLyricsElapsedTime(lyricsEnabled);
 
-// Color palette state
-const colorPalette = ref<ImageColorPalette>({
-  "0": "",
-  "1": "",
-  "2": "",
-  "3": "",
-  "4": "",
-  lightColor: "",
-  darkColor: "",
-});
+const colorPalette = computed<ImageColorPalette>(() =>
+  paletteFromServer(store.activePlayer?.current_media?.palette),
+);
 
 // Single list of visible items for the unified TransitionGroup
 const visibleItems = computed(() => {
@@ -634,43 +627,6 @@ const fetchQueueItems = async (force = false) => {
     lastFetchedOffset.value = 0;
   }
 };
-
-// Dynamic background
-const img = new Image();
-img.crossOrigin = "Anonymous";
-const handleImageLoad = () => {
-  colorPalette.value = getColorPalette(img);
-};
-img.addEventListener("load", handleImageLoad);
-
-onBeforeUnmount(() => {
-  img.removeEventListener("load", handleImageLoad);
-  img.src = "";
-});
-
-watch(
-  () => store.curQueueItem?.image,
-  (image) => {
-    if (image) {
-      const imageUrl = getMediaItemImageUrl(image);
-      if (imageUrl) {
-        img.src = imageUrl;
-      }
-    } else {
-      // Reset to empty so the gradient computed picks theme-aware fallbacks
-      colorPalette.value = {
-        "0": "",
-        "1": "",
-        "2": "",
-        "3": "",
-        "4": "",
-        lightColor: "",
-        darkColor: "",
-      };
-    }
-  },
-  { immediate: true },
-);
 
 // Album art URL for the blurred background element
 const albumArtUrl = computed(() => {
