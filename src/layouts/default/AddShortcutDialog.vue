@@ -137,17 +137,25 @@ const availableItems = computed(() => {
 });
 
 const fetchItems = async () => {
-  const [playlists, artists, albums, tracks, radios, podcasts, audiobooks, genres] =
-    await Promise.all([
-      api.getLibraryPlaylists(),
-      api.getLibraryArtists(),
-      api.getLibraryAlbums(),
-      api.getLibraryTracks(),
-      api.getLibraryRadios(),
-      api.getLibraryPodcasts(),
-      api.getLibraryAudiobooks(),
-      api.getLibraryGenres(),
-    ]);
+  const [
+    playlists,
+    artists,
+    albums,
+    tracks,
+    radios,
+    podcasts,
+    audiobooks,
+    genres,
+  ] = await Promise.all([
+    api.getLibraryPlaylists(),
+    api.getLibraryArtists(),
+    api.getLibraryAlbums(),
+    api.getLibraryTracks(),
+    api.getLibraryRadios(),
+    api.getLibraryPodcasts(),
+    api.getLibraryAudiobooks(),
+    api.getLibraryGenres(),
+  ]);
   // Sort all items by name
   allItems.value = [
     ...playlists,
