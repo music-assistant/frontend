@@ -242,6 +242,10 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
+  fetchRainStatus,
+  isRainMoodAvailable,
+} from "@/composables/useRainMood";
+import {
   getColorPalette,
   getMediaImageUrl,
   getPlayerName,
@@ -301,7 +305,10 @@ const playerQueue = computed(() => {
   return undefined;
 });
 
-const openPlayerMenu = function (evt: Event) {
+const openPlayerMenu = async function (evt: Event) {
+  if (isRainMoodAvailable()) {
+    await fetchRainStatus(compProps.player.player_id);
+  }
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value),
     posX: (evt as PointerEvent).clientX,

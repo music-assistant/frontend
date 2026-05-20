@@ -3,6 +3,12 @@
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import api from "@/plugins/api";
 import {
+  disableRain,
+  enableRain,
+  isRainActive,
+  isRainMoodAvailable,
+} from "@/composables/useRainMood";
+import {
   Player,
   PlayerQueue,
   PlayerFeature,
@@ -260,6 +266,24 @@ export const getPlayerMenuItems = (
       icon: "mdi-all-inclusive",
     });
   }
+  // add 'rainy mood' menu item
+  if (isRainMoodAvailable()) {
+    menuItems.push({
+      label: isRainActive(player.player_id)
+        ? "rainy_mood_disable"
+        : "rainy_mood_enable",
+      labelArgs: [],
+      action: () => {
+        if (isRainActive(player.player_id)) {
+          disableRain(player.player_id);
+        } else {
+          enableRain(player.player_id);
+        }
+      },
+      icon: "mdi-weather-rainy",
+    });
+  }
+
   // add player settings (admin only)
   if (authManager.isAdmin()) {
     menuItems.push({
