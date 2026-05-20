@@ -141,7 +141,6 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
               @click.stop="openContextMenu($event, item)"
             />
           </SidebarMenuItem>
-
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
