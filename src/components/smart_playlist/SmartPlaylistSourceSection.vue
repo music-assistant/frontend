@@ -50,6 +50,7 @@
             <TagsInputItem
               v-if="selectedSeedTrack"
               :value="selectedSeedTrack.item_id"
+              class="bg-primary text-primary-foreground"
             >
               <span class="py-0.5 px-2 text-sm truncate max-w-[180px] block">{{
                 selectedSeedTrack.name
@@ -136,7 +137,7 @@
             <TagsInputItem
               v-if="selectedSeedArtist"
               :value="selectedSeedArtist.item_id"
-              class="max-w-[240px]"
+              class="max-w-[240px] bg-primary text-primary-foreground"
             >
               <span class="py-0.5 pl-2 text-sm">{{
                 selectedSeedArtist.name
