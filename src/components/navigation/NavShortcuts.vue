@@ -244,6 +244,7 @@ onBeforeUnmount(() => {
 :deep(.shortcuts-group-collapsed[data-sidebar="group"]) {
   padding-left: 0 !important;
   padding-right: 0 !important;
+  align-items: start !important;
 }
 
 :deep(a) {
@@ -255,19 +256,17 @@ onBeforeUnmount(() => {
   color: inherit !important;
 }
 
-/* Override AppSidebar global padding for image-based items (expanded) */
+/* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
-  height: auto !important;
-  min-height: unset !important;
-  /* right padding reserves space for the action button so text never overlaps */
+  /* explicit height (not auto) so transition-[height] can animate */
+  height: 3.6rem !important;
   padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
   align-items: center !important;
 }
 
-/* Collapsed: let shadcn control the 2rem×2rem size, just remove excess padding */
+/* padding 0.125rem makes content area exactly 1.75rem = icon width → centered */
 :deep([data-sidebar="menu-button"].shortcut-button-collapsed) {
   padding: 0.125rem !important;
-  justify-content: center !important;
   align-items: center !important;
 }
 
@@ -278,6 +277,10 @@ onBeforeUnmount(() => {
   object-fit: cover;
   flex-shrink: 0;
   margin-right: 0.5rem;
+  transition:
+    width 400ms ease-linear,
+    height 400ms ease-linear,
+    margin-right 400ms ease-linear;
 }
 
 .shortcut-thumb--collapsed {
