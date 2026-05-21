@@ -111,6 +111,15 @@ const maybeAddInspiredRow = async function (
   rows: WidgetRow[],
   recommendations: { translation_key?: string }[],
 ) {
+  // Skip everything when the optional sonic_similarity plugin isn't loaded.
+  // sendCommand's global error handler fires a toast on every error result,
+  // so we must avoid the API call entirely rather than rely on try/catch —
+  // the toast would still surface before the local catch swallows the promise.
+  const sonicSimilarityLoaded = Object.values(api.providers).some(
+    (p) => p.domain === "sonic_similarity",
+  );
+  if (!sonicSimilarityLoaded) return;
+
   try {
     const ssStatus = await api.getSonicSimilarityStatus();
     if (!((ssStatus.index_size ?? 0) > 0) || !ssStatus.has_corpus_stats) {
