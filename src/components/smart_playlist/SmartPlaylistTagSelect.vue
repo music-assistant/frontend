@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import type { AcceptableInputValue } from "reka-ui";
 import { Loader2, PlusCircle } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -116,7 +117,7 @@ const selectedIdSet = computed(
   () => new Set(props.modelValue.map((i) => i.id)),
 );
 
-function onTagsChange(newValues: string[]) {
+function onTagsChange(newValues: AcceptableInputValue[]) {
   emit(
     "update:modelValue",
     props.modelValue.filter((item) => newValues.includes(String(item.id))),

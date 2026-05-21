@@ -63,7 +63,7 @@
           </div>
           <Slider
             :model-value="[rules.min_popularity ?? 0]"
-            thumb-alignment="fill"
+            thumb-alignment="contain"
             :min="0"
             :max="100"
             :step="5"
