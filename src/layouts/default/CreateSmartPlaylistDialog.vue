@@ -15,56 +15,60 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div class="flex flex-col gap-4 py-2">
-        <!-- Playlist name -->
-        <div class="flex flex-col gap-2">
-          <Label for="sp-name">{{ $t("new_playlist_name") }}</Label>
-          <Input
-            id="sp-name"
-            ref="nameInput"
-            v-model="playlistName"
-            @keyup.enter="doSave"
+      <div class="flex flex-col gap-2 py-2">
+        <div
+          class="flex flex-col gap-4 h-[55vh] overflow-y-auto -mx-6 px-6"
+        >
+          <!-- Playlist name -->
+          <div class="flex flex-col gap-2">
+            <Label for="sp-name">{{ $t("new_playlist_name") }}</Label>
+            <Input
+              id="sp-name"
+              ref="nameInput"
+              v-model="playlistName"
+              @keyup.enter="doSave"
+            />
+          </div>
+
+          <!-- Mode: Dynamic / Fixed -->
+          <div class="flex flex-col gap-2">
+            <Label>{{ $t("smart_playlist.mode") }}</Label>
+            <Tabs v-model="mode">
+              <TabsList class="h-8">
+                <TabsTrigger value="dynamic" class="text-xs px-4">
+                  {{ $t("smart_playlist.dynamic") }}
+                </TabsTrigger>
+                <TabsTrigger value="fixed" class="text-xs px-4">
+                  {{ $t("smart_playlist.fixed") }}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <!-- Track count (fixed mode only) -->
+          <div v-if="mode === 'fixed'" class="flex flex-col gap-2">
+            <Label for="sp-count">{{ $t("smart_playlist.track_count") }}</Label>
+            <NumberField
+              id="sp-count"
+              v-model="trackCount"
+              :min="1"
+              :max="2000"
+              class="max-w-[160px]"
+            >
+              <NumberFieldContent>
+                <NumberFieldDecrement />
+                <NumberFieldInput />
+                <NumberFieldIncrement />
+              </NumberFieldContent>
+            </NumberField>
+          </div>
+
+          <SmartPlaylistRulesForm
+            :key="dialogKey"
+            ref="rulesForm"
+            @track-count-update="onTrackCountUpdate"
           />
         </div>
-
-        <!-- Mode: Dynamic / Fixed -->
-        <div class="flex flex-col gap-2">
-          <Label>{{ $t("smart_playlist.mode") }}</Label>
-          <Tabs v-model="mode">
-            <TabsList class="h-8">
-              <TabsTrigger value="dynamic" class="text-xs px-4">
-                {{ $t("smart_playlist.dynamic") }}
-              </TabsTrigger>
-              <TabsTrigger value="fixed" class="text-xs px-4">
-                {{ $t("smart_playlist.fixed") }}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <!-- Track count (fixed mode only) -->
-        <div v-if="mode === 'fixed'" class="flex flex-col gap-2">
-          <Label for="sp-count">{{ $t("smart_playlist.track_count") }}</Label>
-          <NumberField
-            id="sp-count"
-            v-model="trackCount"
-            :min="1"
-            :max="2000"
-            class="max-w-[160px]"
-          >
-            <NumberFieldContent>
-              <NumberFieldDecrement />
-              <NumberFieldInput />
-              <NumberFieldIncrement />
-            </NumberFieldContent>
-          </NumberField>
-        </div>
-
-        <SmartPlaylistRulesForm
-          :key="dialogKey"
-          ref="rulesForm"
-          @track-count-update="onTrackCountUpdate"
-        />
 
         <p v-if="isCountingTracks" class="text-sm text-muted-foreground">…</p>
         <p
@@ -75,6 +79,9 @@
           <span v-if="matchingDuration !== null" class="ml-1"
             >(~{{ formatDuration(matchingDuration) }})</span
           >
+        </p>
+        <p class="text-xs text-muted-foreground/70">
+          {{ $t("smart_playlist.track_count_hint") }}
         </p>
       </div>
 

@@ -318,6 +318,8 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
               <Merge
                 v-if="

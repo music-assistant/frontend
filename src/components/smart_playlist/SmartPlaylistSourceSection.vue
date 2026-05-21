@@ -10,110 +10,24 @@
       </span>
     </AccordionTrigger>
     <AccordionContent>
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2">
-          <Label>{{ $t("genres") }}</Label>
-          <TagsInput v-model="genreModelValue">
-            <TagsInputItem
-              v-for="gid in rules.genre_ids"
-              :key="gid"
-              :value="String(gid)"
-            >
-              <span class="py-0.5 px-2 text-sm">{{ genreName(gid) }}</span>
-              <TagsInputItemDelete />
-            </TagsInputItem>
-            <Popover>
-              <PopoverTrigger as-child>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-7 gap-1 border-dashed text-xs"
-                >
-                  <PlusCircle class="h-3 w-3" />
-                  {{ $t("genres") }}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-[200px] p-2">
-                <Input
-                  v-model="genreSearch"
-                  :placeholder="$t('search')"
-                  class="mb-2 h-7 text-sm"
-                  @keydown.stop
-                />
-                <div class="max-h-36 overflow-y-auto flex flex-col">
-                  <div
-                    v-for="genre in filteredGenres"
-                    :key="genre.item_id"
-                    class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
-                    @click.stop="toggleGenreById(parseInt(genre.item_id))"
-                  >
-                    <Checkbox
-                      :checked="
-                        rules.genre_ids.includes(parseInt(genre.item_id))
-                      "
-                      class="h-4 w-4 pointer-events-none"
-                    />
-                    <span class="truncate">{{ genre.name }}</span>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </TagsInput>
-        </div>
+      <div class="flex flex-col gap-4 px-1">
+        <SmartPlaylistTagSelect
+          v-model="genreItems"
+          v-model:search-query="genreSearch"
+          :label="$t('genres')"
+          :add-label="$t('genres')"
+          :results="filteredGenres"
+          @toggle="(id) => toggleGenreById(id)"
+        />
 
-        <div class="flex flex-col gap-2">
-          <Label>{{ $t("smart_playlist.excluded_genres") }}</Label>
-          <TagsInput v-model="excludedGenreModelValue">
-            <TagsInputItem
-              v-for="gid in rules.excluded_genre_ids"
-              :key="gid"
-              :value="String(gid)"
-            >
-              <span class="py-0.5 px-2 text-sm">{{ genreName(gid) }}</span>
-              <TagsInputItemDelete />
-            </TagsInputItem>
-            <Popover>
-              <PopoverTrigger as-child>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-7 gap-1 border-dashed text-xs"
-                >
-                  <PlusCircle class="h-3 w-3" />
-                  {{ $t("genres") }}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-[200px] p-2">
-                <Input
-                  v-model="excludedGenreSearch"
-                  :placeholder="$t('search')"
-                  class="mb-2 h-7 text-sm"
-                  @keydown.stop
-                />
-                <div class="max-h-36 overflow-y-auto flex flex-col">
-                  <div
-                    v-for="genre in filteredExcludedGenres"
-                    :key="genre.item_id"
-                    class="flex items-center gap-2 py-0.5 cursor-pointer text-sm"
-                    @click.stop="
-                      toggleExcludedGenreById(parseInt(genre.item_id))
-                    "
-                  >
-                    <Checkbox
-                      :checked="
-                        (rules.excluded_genre_ids ?? []).includes(
-                          parseInt(genre.item_id),
-                        )
-                      "
-                      class="h-4 w-4 pointer-events-none"
-                    />
-                    <span class="truncate">{{ genre.name }}</span>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </TagsInput>
-        </div>
+        <SmartPlaylistTagSelect
+          v-model="excludedGenreItems"
+          v-model:search-query="excludedGenreSearch"
+          :label="$t('smart_playlist.excluded_genres')"
+          :add-label="$t('genres')"
+          :results="filteredExcludedGenres"
+          @toggle="(id) => toggleExcludedGenreById(id)"
+        />
 
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-1">
@@ -157,7 +71,7 @@
                   {{ $t("smart_playlist.seed_track_pick") }}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent class="w-[260px] p-2">
+              <PopoverContent align="start" class="w-[260px] p-2">
                 <Input
                   v-model="seedTrackSearch"
                   :placeholder="$t('search')"
@@ -244,7 +158,7 @@
                   {{ $t("smart_playlist.seed_artist_pick") }}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent class="w-[260px] p-2">
+              <PopoverContent align="start" class="w-[260px] p-2">
                 <Input
                   v-model="seedArtistSearch"
                   :placeholder="$t('search')"
@@ -304,6 +218,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { HelpCircle, Loader2, PlusCircle } from "lucide-vue-next";
 import {
   AccordionContent,
@@ -330,13 +245,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SmartPlaylistRulesFormContext } from "@/composables/useSmartPlaylistRulesForm";
+import SmartPlaylistTagSelect from "@/components/smart_playlist/SmartPlaylistTagSelect.vue";
 
 const props = defineProps<{ form: SmartPlaylistRulesFormContext }>();
 
 const {
   rules,
-  genreModelValue,
-  excludedGenreModelValue,
   genreSearch,
   excludedGenreSearch,
   filteredGenres,
@@ -359,4 +273,19 @@ const {
   isSeedArtistSearching,
   selectSeedArtist,
 } = props.form;
+
+const genreItems = computed({
+  get: () => rules.genre_ids.map((id) => ({ id, name: genreName(id) })),
+  set: (items: { id: number; name: string }[]) => {
+    rules.genre_ids = items.map((i) => i.id);
+  },
+});
+
+const excludedGenreItems = computed({
+  get: () =>
+    (rules.excluded_genre_ids ?? []).map((id) => ({ id, name: genreName(id) })),
+  set: (items: { id: number; name: string }[]) => {
+    rules.excluded_genre_ids = items.map((i) => i.id);
+  },
+});
 </script>

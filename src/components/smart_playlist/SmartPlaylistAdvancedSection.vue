@@ -21,7 +21,7 @@
               </Tooltip>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-muted-foreground w-16 text-right">
+              <span class="text-sm text-muted-foreground w-16 text-right py-1">
                 {{
                   rules.dedup_hours !== undefined
                     ? `${rules.dedup_hours}h`
@@ -39,11 +39,11 @@
               </Button>
             </div>
           </div>
-          <div class="px-4">
+          <div class="px-2">
             <Slider
               :model-value="[rules.dedup_hours ?? 0]"
               :min="0"
-              :max="168"
+              :max="24"
               :step="1"
               @update:model-value="
                 (v) => {
@@ -54,7 +54,7 @@
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 px-1">
           <div class="flex items-center gap-1">
             <Label>{{ $t("smart_playlist.logic") }}</Label>
             <Tooltip>

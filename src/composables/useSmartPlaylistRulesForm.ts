@@ -1,4 +1,4 @@
-import { nextTick, reactive, ref, toRef, watch } from "vue";
+import { reactive, ref, toRef, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import api from "@/plugins/api";
 import type {
@@ -10,7 +10,6 @@ import { MediaType } from "@/plugins/api/interfaces";
 import { useSmartPlaylistSeedItems } from "./useSmartPlaylistSeedItems";
 import { useSmartPlaylistGenres } from "./useSmartPlaylistGenres";
 import { useSmartPlaylistContentFilters } from "./useSmartPlaylistContentFilters";
-import { useSmartPlaylistYearRange } from "./useSmartPlaylistYearRange";
 
 export interface SmartPlaylistRulesFormInit {
   initialRules?: SmartPlaylistRules | null;
@@ -69,8 +68,6 @@ export function useSmartPlaylistRulesForm(
     toRef(rules, "excluded_artist_ids"),
     toRef(rules, "excluded_album_ids"),
   );
-  const yearRange = useSmartPlaylistYearRange();
-
   const trackCountRequestId = ref(0);
 
   // Track count update with request-id guard
@@ -117,6 +114,9 @@ export function useSmartPlaylistRulesForm(
   watch(seedItems.seedArtistUri, () => {
     _updateTrackCount();
   });
+
+  // Trigger initial track count on mount
+  _updateTrackCount();
 
   // Initialize from props
   watch(
@@ -190,20 +190,6 @@ export function useSmartPlaylistRulesForm(
           // URI not resolvable
         }
       }
-
-      await nextTick();
-
-      // Sync year inputs
-      if (yearRange.yearFromEl.value) {
-        yearRange.yearFromEl.value.value = initial.year_from
-          ? String(initial.year_from)
-          : "";
-      }
-      if (yearRange.yearToEl.value) {
-        yearRange.yearToEl.value.value = initial.year_to
-          ? String(initial.year_to)
-          : "";
-      }
     },
     { immediate: true },
   );
@@ -240,25 +226,12 @@ export function useSmartPlaylistRulesForm(
     { immediate: true },
   );
 
-  function onYearFromInput() {
-    rules.year_from = yearRange.onYearFromInput();
-  }
-
-  function onYearToInput() {
-    rules.year_to = yearRange.onYearToInput();
-  }
-
   function clearYear() {
-    yearRange.clearYear();
     rules.year_from = undefined;
     rules.year_to = undefined;
   }
 
   function getFinalRules(): SmartPlaylistRules {
-    // Update year values from inputs
-    onYearFromInput();
-    onYearToInput();
-
     // Build genre names map
     const genreNamesMap: Record<number, string> = {};
     for (const id of rules.genre_ids) {
@@ -326,9 +299,6 @@ export function useSmartPlaylistRulesForm(
     ...seedItems,
     ...genresComposable,
     ...contentFilters,
-    ...yearRange,
-    onYearFromInput,
-    onYearToInput,
     clearYear,
     _updateTrackCount,
     getFinalRules,

@@ -43,7 +43,7 @@
               </Tooltip>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-muted-foreground w-10 text-right">
+              <span class="text-sm text-muted-foreground w-10 text-right py-1">
                 {{
                   rules.min_popularity !== undefined
                     ? `${rules.min_popularity}%`
@@ -61,50 +61,46 @@
               </Button>
             </div>
           </div>
-          <div class="px-4">
-            <Slider
-              :model-value="[rules.min_popularity ?? 0]"
-              :min="0"
-              :max="100"
-              :step="5"
-              @update:model-value="
-                (v) => {
-                  rules.min_popularity =
-                    (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
-                }
-              "
-            />
-          </div>
+          <Slider
+            :model-value="[rules.min_popularity ?? 0]"
+            thumb-alignment="fill"
+            :min="0"
+            :max="100"
+            :step="5"
+            @update:model-value="
+              (v) => {
+                rules.min_popularity = (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
+              }
+            "
+          />
         </div>
 
         <div class="flex flex-col gap-2">
           <Label>{{ $t("smart_playlist.year_range") }}</Label>
-          <div class="flex items-center gap-2">
-            <input
-              id="srf-year-from"
-              ref="yearFromEl"
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              :placeholder="$t('smart_playlist.year_from')"
-              class="border-input w-28 h-8 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+          <div class="flex items-center gap-2 px-1">
+            <NumberField
+              v-model="rules.year_from"
+              class="w-28"
+              :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
               @keydown.stop
-              @blur="onYearFromInput"
-              @keyup.enter="onYearFromInput"
-            />
+            >
+              <NumberFieldContent>
+                <NumberFieldInput
+                  :placeholder="$t('smart_playlist.year_from')"
+                />
+              </NumberFieldContent>
+            </NumberField>
             <span class="text-muted-foreground text-sm">-</span>
-            <input
-              id="srf-year-to"
-              ref="yearToEl"
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              :placeholder="$t('smart_playlist.year_to')"
-              class="border-input w-28 h-8 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            <NumberField
+              v-model="rules.year_to"
+              class="w-28"
+              :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
               @keydown.stop
-              @blur="onYearToInput"
-              @keyup.enter="onYearToInput"
-            />
+            >
+              <NumberFieldContent>
+                <NumberFieldInput :placeholder="$t('smart_playlist.year_to')" />
+              </NumberFieldContent>
+            </NumberField>
             <Button
               v-if="
                 rules.year_from !== undefined || rules.year_to !== undefined
@@ -132,6 +128,11 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -143,13 +144,5 @@ import type { SmartPlaylistRulesFormContext } from "@/composables/useSmartPlayli
 
 const props = defineProps<{ form: SmartPlaylistRulesFormContext }>();
 
-const {
-  rules,
-  yearFromEl,
-  yearToEl,
-  clearYear,
-  onYearFromInput,
-  onYearToInput,
-  _updateTrackCount: updateTrackCount,
-} = props.form;
+const { rules, clearYear, _updateTrackCount: updateTrackCount } = props.form;
 </script>

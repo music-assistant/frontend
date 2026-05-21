@@ -1681,6 +1681,7 @@
         "seed_track_pick": "Pick a track",
         "seed_track_tooltip": "Pick a track to find similar tracks via your streaming provider (e.g. Apple Music, Spotify). Artist and album filters are ignored when a seed track is set.",
         "track_count": "Number of tracks",
+        "track_count_hint": "Without filters, all library tracks are included. Adding filters narrows the selection.",
         "year_from": "From year",
         "year_range": "Year range",
         "year_to": "To year"

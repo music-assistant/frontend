@@ -1,23 +1,21 @@
 <template>
   <InfoHeader :item="itemDetails" :sort-by="listingRef?.sortBy">
-    <template v-if="smartRules" #after-play>
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-8 gap-1 text-xs"
+    <template v-if="smartRules" #append-actions>
+      <Settings2
+        :size="22"
+        class="cursor-pointer"
+        :title="$t('smart_playlist.edit_rules')"
         @click="showEditDialog = true"
-      >
-        <Settings2 class="h-4 w-4" />
-        {{ $t("smart_playlist.edit_rules") }}
-      </Button>
-      <EditSmartPlaylistDialog
-        v-model:open="showEditDialog"
-        :db-playlist-id="props.itemId"
-        :playlist-name="itemDetails?.name ?? ''"
-        @saved="loadItemDetails"
       />
     </template>
   </InfoHeader>
+  <EditSmartPlaylistDialog
+    v-if="smartRules"
+    v-model:open="showEditDialog"
+    :db-playlist-id="props.itemId"
+    :playlist-name="itemDetails?.name ?? ''"
+    @saved="loadItemDetails"
+  />
   <ItemsListing
     v-if="itemDetails"
     ref="listingRef"
@@ -56,7 +54,6 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
-import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-vue-next";
 import {
   EventType,

@@ -12,23 +12,36 @@ export function useSmartPlaylistGenres(
   const genreSearch = ref("");
   const excludedGenreSearch = ref("");
 
-  const filteredGenres = computed(() =>
-    genreSearch.value
-      ? genres.value.filter((g) =>
+  const filteredGenres = computed(() => {
+    const excluded = ruleExcludedGenreIds.value ?? [];
+    const included = ruleGenreIds.value ?? [];
+    const base = genres.value.filter(
+      (g) =>
+        !excluded.includes(parseInt(g.item_id)) &&
+        !included.includes(parseInt(g.item_id)),
+    );
+    return genreSearch.value
+      ? base.filter((g) =>
           g.name.toLowerCase().includes(genreSearch.value.toLowerCase()),
         )
-      : genres.value,
-  );
+      : base;
+  });
 
   const filteredExcludedGenres = computed(() => {
-    const base = excludedGenreSearch.value
-      ? genres.value.filter((g) =>
+    const included = ruleGenreIds.value ?? [];
+    const excluded = ruleExcludedGenreIds.value ?? [];
+    const base = genres.value.filter(
+      (g) =>
+        !included.includes(parseInt(g.item_id)) &&
+        !excluded.includes(parseInt(g.item_id)),
+    );
+    return excludedGenreSearch.value
+      ? base.filter((g) =>
           g.name
             .toLowerCase()
             .includes(excludedGenreSearch.value.toLowerCase()),
         )
-      : genres.value;
-    return base;
+      : base;
   });
 
   const genreModelValue = computed({

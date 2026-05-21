@@ -20,16 +20,18 @@
         {{ $t("loading") }}
       </div>
 
-      <div v-else class="flex flex-col gap-4 py-2">
-        <SmartPlaylistRulesForm
-          ref="rulesForm"
-          :initial-rules="loadedRules"
-          :initial-artist-items="loadedArtistItems"
-          :initial-album-items="loadedAlbumItems"
-          :initial-excluded-artist-items="loadedExcludedArtistItems"
-          :initial-excluded-album-items="loadedExcludedAlbumItems"
-          @track-count-update="onTrackCountUpdate"
-        />
+      <div v-else class="flex flex-col gap-2 py-2">
+        <div class="h-[55vh] overflow-y-auto -mx-6 px-6">
+          <SmartPlaylistRulesForm
+            ref="rulesForm"
+            :initial-rules="loadedRules"
+            :initial-artist-items="loadedArtistItems"
+            :initial-album-items="loadedAlbumItems"
+            :initial-excluded-artist-items="loadedExcludedArtistItems"
+            :initial-excluded-album-items="loadedExcludedAlbumItems"
+            @track-count-update="onTrackCountUpdate"
+          />
+        </div>
 
         <p v-if="isCountingTracks" class="text-sm text-muted-foreground">…</p>
         <p
@@ -40,6 +42,9 @@
           <span v-if="matchingDuration !== null" class="ml-1"
             >(~{{ formatDuration(matchingDuration) }})</span
           >
+        </p>
+        <p class="text-xs text-muted-foreground/70">
+          {{ $t("smart_playlist.track_count_hint") }}
         </p>
       </div>
 
