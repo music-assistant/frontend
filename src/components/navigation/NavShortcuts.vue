@@ -1,8 +1,21 @@
 <script setup lang="ts">
-import { computed, markRaw } from "vue";
+import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import {
+  BookAudio,
+  Disc3,
+  EllipsisVertical,
+  ListMusic,
+  Mic2,
+  Music,
+  Podcast,
+  Radio,
+  Tag,
+  type LucideComponent,
+} from "lucide-vue-next";
 
+import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -42,15 +55,15 @@ const MEDIA_TYPE_PATH: Partial<Record<MediaType, string>> = {
   [MediaType.GENRE]: "genres",
 };
 
-const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, string>> = {
-  [MediaType.PLAYLIST]: "mdi-playlist-music",
-  [MediaType.ARTIST]: "mdi-account-music",
-  [MediaType.ALBUM]: "mdi-album",
-  [MediaType.TRACK]: "mdi-music-note",
-  [MediaType.RADIO]: "mdi-radio-tower",
-  [MediaType.PODCAST]: "mdi-podcast",
-  [MediaType.AUDIOBOOK]: "mdi-book-music",
-  [MediaType.GENRE]: "mdi-music-circle-outline",
+const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, LucideComponent>> = {
+  [MediaType.PLAYLIST]: ListMusic,
+  [MediaType.ARTIST]: Mic2,
+  [MediaType.ALBUM]: Disc3,
+  [MediaType.TRACK]: Music,
+  [MediaType.RADIO]: Radio,
+  [MediaType.PODCAST]: Podcast,
+  [MediaType.AUDIOBOOK]: BookAudio,
+  [MediaType.GENRE]: Tag,
 };
 
 const getItemUrl = (item: ShortcutItem) => {
@@ -60,8 +73,17 @@ const getItemUrl = (item: ShortcutItem) => {
   return `/${base}/${provider}/${itemId}`;
 };
 
-const getFallbackIcon = (item: ShortcutItem) =>
-  MEDIA_TYPE_FALLBACK_ICON[item.media_type] ?? "mdi-music-note";
+const getFallbackIcon = (item: ShortcutItem): LucideComponent =>
+  MEDIA_TYPE_FALLBACK_ICON[item.media_type] ?? Music;
+
+const thumbMap = computed(() =>
+  Object.fromEntries(
+    pinnedItems.value.map((item) => [
+      item.uri,
+      getImageThumbForItem(item, undefined, 64),
+    ]),
+  ),
+);
 
 const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
   await showContextMenuForMediaItem(
@@ -73,18 +95,60 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
     true,
   );
 };
+
+// Scrollbar gutter logic: when the collapsed sidebar overflows vertically,
+// widen --sidebar-width-icon by 6px so the scrollbar doesn't clip thumbnails.
+const navEl = ref<HTMLElement | null>(null);
+let resizeObserver: ResizeObserver | null = null;
+let mutationObserver: MutationObserver | null = null;
+
+const updateScrollbarWidth = () => {
+  const contentEl = navEl.value?.closest<HTMLElement>(
+    "[data-slot=sidebar-content]",
+  );
+  const sidebarEl = navEl.value?.closest<HTMLElement>("[data-slot=sidebar]");
+  if (!contentEl || !sidebarEl) return;
+
+  const overflows =
+    state.value === "collapsed" &&
+    contentEl.scrollHeight > contentEl.clientHeight;
+
+  if (overflows) {
+    sidebarEl.style.setProperty("--sidebar-width-icon", "calc(3rem + 6px)");
+    contentEl.style.scrollbarGutter = "stable";
+  } else {
+    sidebarEl.style.removeProperty("--sidebar-width-icon");
+    contentEl.style.scrollbarGutter = "";
+  }
+};
+
+watch(state, updateScrollbarWidth);
+
+onMounted(() => {
+  const contentEl = navEl.value?.closest<HTMLElement>(
+    "[data-slot=sidebar-content]",
+  );
+  updateScrollbarWidth();
+  if (contentEl) {
+    resizeObserver = new ResizeObserver(updateScrollbarWidth);
+    resizeObserver.observe(contentEl);
+    mutationObserver = new MutationObserver(updateScrollbarWidth);
+    mutationObserver.observe(contentEl, { childList: true, subtree: true });
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  mutationObserver?.disconnect();
+});
 </script>
 
 <template>
-  <template v-if="pinnedItems.length > 0 || !isCollapsed">
+  <template v-if="pinnedItems.length > 0">
+    <div ref="navEl"></div>
     <div
-      :class="[
-        'my-1',
-        'h-px',
-        'shrink-0',
-        'bg-sidebar-border',
-        isCollapsed ? 'mx-1' : 'mx-3',
-      ]"
+      class="my-1 h-px shrink-0 bg-sidebar-border"
+      :class="isCollapsed ? 'mx-1' : 'mx-3'"
     ></div>
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupContent class="flex flex-col gap-0.5">
@@ -110,17 +174,17 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
               @contextmenu.prevent="openContextMenu($event, item)"
             >
               <img
-                v-if="getImageThumbForItem(item)"
-                :src="getImageThumbForItem(item, undefined, 64)"
+                v-if="thumbMap[item.uri]"
+                :src="thumbMap[item.uri]"
                 :class="[
                   'shortcut-thumb',
                   isCollapsed ? 'shortcut-thumb--collapsed' : '',
                 ]"
                 :alt="item.name"
               />
-              <v-icon
+              <component
+                :is="getFallbackIcon(item)"
                 v-else
-                :icon="getFallbackIcon(item)"
                 :class="[
                   'shortcut-thumb',
                   isCollapsed ? 'shortcut-thumb--collapsed' : '',
@@ -131,15 +195,16 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
                 <span class="shortcut-type">{{ t(item.media_type) }}</span>
               </span>
             </SidebarMenuButton>
-            <v-btn
+            <Button
               v-if="!isCollapsed"
-              icon="mdi-dots-vertical"
-              variant="plain"
-              density="compact"
-              class="shortcut-action-btn opacity-0 group-hover/menu-item:opacity-100 absolute right-1 top-1/2 -translate-y-1/2"
+              variant="ghost"
+              size="icon"
+              class="shortcut-action-btn opacity-0 group-hover/menu-item:opacity-100 absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
               :title="t('more_options')"
               @click.stop="openContextMenu($event, item)"
-            />
+            >
+              <EllipsisVertical class="h-4 w-4" />
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>

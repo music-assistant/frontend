@@ -210,25 +210,33 @@ export function useShortcuts() {
     }
 
     const results: ShortcutItem[] = [];
-    const validUris: string[] = [];
+    const prunedUris: string[] = [];
 
-    for (const uri of uris) {
-      try {
-        const item = await api.getItemByUri(uri);
+    const settled = await Promise.allSettled(
+      uris.map((uri) => api.getItemByUri(uri)),
+    );
+    settled.forEach((result, i) => {
+      const uri = uris[i];
+      if (result.status === "fulfilled") {
+        const item = result.value;
         if (item && SUPPORTED_TYPES.has(item.media_type)) {
           results.push(item as ShortcutItem);
-          validUris.push(uri);
+        } else {
+          // Item explicitly gone (null / unsupported type) — prune
+          prunedUris.push(uri);
         }
-      } catch {
-        // Item no longer exists — will be pruned below
       }
-    }
+      // rejected = network/transport error — keep the URI, don't prune
+    });
 
     resolvedItems.value = results;
 
     // Prune stale URIs from preferences
-    if (validUris.length !== uris.length) {
-      await setPreference(PREF_KEY, validUris);
+    if (prunedUris.length > 0) {
+      await setPreference(
+        PREF_KEY,
+        uris.filter((u) => !prunedUris.includes(u)),
+      );
     }
   }
 
@@ -267,19 +275,23 @@ export function useShortcuts() {
 
     // Fetch and add newly pinned items not yet resolved
     const toAdd = newUris.filter((uri) => !currentUris.includes(uri));
-    for (const uri of toAdd) {
-      try {
-        const item = await api.getItemByUri(uri);
-        if (item && SUPPORTED_TYPES.has(item.media_type)) {
-          resolvedItems.value = [...resolvedItems.value, item as ShortcutItem];
+    if (toAdd.length > 0) {
+      const settled = await Promise.allSettled(
+        toAdd.map((uri) => api.getItemByUri(uri)),
+      );
+      settled.forEach((result) => {
+        if (
+          result.status === "fulfilled" &&
+          result.value &&
+          SUPPORTED_TYPES.has(result.value.media_type)
+        ) {
+          resolvedItems.value = [
+            ...resolvedItems.value,
+            result.value as ShortcutItem,
+          ];
         }
-      } catch {
-        // Stale URI — prune from preferences
-        await setPreference(
-          PREF_KEY,
-          pinnedUris.value.filter((u) => u !== uri),
-        );
-      }
+        // rejected = network error — don't prune, the URI stays pinned
+      });
     }
   });
 

@@ -1,59 +1,14 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue";
 import { cn } from "@/lib/utils";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useSidebar } from "./utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
-
-const el = ref<HTMLElement | null>(null);
-const { state } = useSidebar();
-
-let resizeObserver: ResizeObserver | null = null;
-let mutationObserver: MutationObserver | null = null;
-
-const updateScrollbarWidth = () => {
-  if (!el.value) return;
-  const sidebarEl = el.value.closest<HTMLElement>("[data-slot=sidebar]");
-  if (!sidebarEl) return;
-
-  const overflows =
-    state.value === "collapsed" &&
-    el.value.scrollHeight > el.value.clientHeight;
-
-  if (overflows) {
-    sidebarEl.style.setProperty("--sidebar-width-icon", "calc(3rem + 6px)");
-    el.value.style.scrollbarGutter = "stable";
-  } else {
-    sidebarEl.style.removeProperty("--sidebar-width-icon");
-    el.value.style.scrollbarGutter = "";
-  }
-};
-
-watch(state, updateScrollbarWidth);
-
-onMounted(() => {
-  updateScrollbarWidth();
-
-  resizeObserver = new ResizeObserver(updateScrollbarWidth);
-  if (el.value) resizeObserver.observe(el.value);
-
-  mutationObserver = new MutationObserver(updateScrollbarWidth);
-  if (el.value)
-    mutationObserver.observe(el.value, { childList: true, subtree: true });
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  mutationObserver?.disconnect();
-});
 </script>
 
 <template>
   <div
-    ref="el"
     data-slot="sidebar-content"
     data-sidebar="content"
     :class="
