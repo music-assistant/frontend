@@ -2,15 +2,14 @@ import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { ref, type Ref } from "vue";
 
-export interface CoverageResponse {
+/**
+ * Mirrors music_assistant_models.audio_analysis.AudioAnalysisCoverage —
+ * the response payload of the server's `audio_analysis/coverage` command.
+ */
+export interface AudioAnalysisCoverage {
   analyzed: number;
   pending: number;
   stale_version: number;
-  analysis_version: number;
-}
-
-export interface StatusResponse {
-  provider_loaded: boolean;
   analysis_version: number;
 }
 
@@ -25,7 +24,6 @@ export interface ProviderCoverageRow {
   analysisVersion: number;
   coveragePct: number;
   hasData: boolean;
-  error: boolean;
 }
 
 export function useAudioAnalysisCoverage(): {
@@ -47,15 +45,12 @@ export function useAudioAnalysisCoverage(): {
       }));
   }
 
-  function emptyRow(
-    meta: {
-      domain: string;
-      name: string;
-      instanceId: string;
-      available: boolean;
-    },
-    error = false,
-  ): ProviderCoverageRow {
+  function emptyRow(meta: {
+    domain: string;
+    name: string;
+    instanceId: string;
+    available: boolean;
+  }): ProviderCoverageRow {
     return {
       domain: meta.domain,
       name: meta.name,
@@ -67,7 +62,6 @@ export function useAudioAnalysisCoverage(): {
       analysisVersion: 0,
       coveragePct: 0,
       hasData: false,
-      error,
     };
   }
 
@@ -76,23 +70,11 @@ export function useAudioAnalysisCoverage(): {
     const results = await Promise.allSettled(
       providers.map(async (meta) => {
         if (!meta.available) return emptyRow(meta);
-        // audio_analysis/status is the authoritative loaded/version probe
-        // (server PR-3851): it overrides an optimistic api.providers flag and
-        // owns analysis_version. Only counts come from coverage.
-        let status: StatusResponse;
+        // audio_analysis/coverage raises ProviderUnavailableError when the
+        // provider isn't loaded; rejection here authoritatively overrides
+        // an optimistic api.providers flag.
         try {
-          status = await api.sendCommand<StatusResponse>(
-            "audio_analysis/status",
-            { aa_domain: meta.domain },
-          );
-        } catch {
-          return { ...emptyRow(meta), available: false };
-        }
-        if (!status.provider_loaded) {
-          return { ...emptyRow(meta), available: false };
-        }
-        try {
-          const cov = await api.sendCommand<CoverageResponse>(
+          const cov = await api.sendCommand<AudioAnalysisCoverage>(
             "audio_analysis/coverage",
             { aa_domain: meta.domain },
           );
@@ -103,22 +85,18 @@ export function useAudioAnalysisCoverage(): {
             analyzed: cov.analyzed,
             pending: cov.pending,
             staleVersion: cov.stale_version,
-            analysisVersion: status.analysis_version,
+            analysisVersion: cov.analysis_version,
             coveragePct:
               total > 0 ? Math.round((cov.analyzed / total) * 100) : 0,
             hasData: total > 0,
           } satisfies ProviderCoverageRow;
         } catch {
-          return {
-            ...emptyRow(meta, true),
-            available: true,
-            analysisVersion: status.analysis_version,
-          };
+          return { ...emptyRow(meta), available: false };
         }
       }),
     );
     rows.value = results.map((r, i) =>
-      r.status === "fulfilled" ? r.value : emptyRow(providers[i], true),
+      r.status === "fulfilled" ? r.value : emptyRow(providers[i]),
     );
   }
 

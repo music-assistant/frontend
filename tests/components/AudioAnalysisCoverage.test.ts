@@ -44,7 +44,6 @@ describe("AudioAnalysisCoverage.vue", () => {
         analysisVersion: 2,
         coveragePct: 78,
         hasData: true,
-        error: false,
       },
     ];
     const w = mount(AudioAnalysisCoverage);
