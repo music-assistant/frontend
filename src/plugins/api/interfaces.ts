@@ -780,6 +780,32 @@ export interface LoudnessMeasurement {
   target_offset: number;
 }
 
+export interface SonicSimilarityStatus {
+  aa_provider_domain?: string;
+  index_size?: number;
+  cached_signatures?: number;
+  has_corpus_stats?: boolean;
+  clap_index_enabled?: boolean;
+  clap_index_size?: number;
+}
+
+export interface SonicSimilarItem {
+  item_id: string;
+  provider: string;
+  distance: number;
+  generation?: number;
+  name?: string;
+  artist?: string;
+}
+
+export interface SonicSimilarResponse {
+  analyzed: boolean;
+  seed_track_ids: string[];
+  blend_mode: string;
+  depth: number;
+  items: SonicSimilarItem[];
+}
+
 export interface StreamMetadata {
   // mandatory fields
   title: string;

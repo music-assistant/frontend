@@ -25,6 +25,8 @@ import {
   type QueueItem,
   type Radio,
   type ServerInfoMessage,
+  type SonicSimilarResponse,
+  type SonicSimilarityStatus,
   type SuccessResultMessage,
   type TaskSchedule,
   type Track,
@@ -1348,6 +1350,22 @@ export class MusicAssistantApi {
 
   public async getRecommendations(): Promise<RecommendationFolder[]> {
     return this.sendCommand("music/recommendations");
+  }
+
+  public async getSonicSimilarityStatus(): Promise<SonicSimilarityStatus> {
+    return this.sendCommand<SonicSimilarityStatus>("sonic_similarity/status");
+  }
+
+  public async getSonicSimilar(
+    itemIds: string[],
+    blendMode: "union" | "centroid" = "centroid",
+    limit?: number,
+  ): Promise<SonicSimilarResponse> {
+    return this.sendCommand<SonicSimilarResponse>("sonic_similarity/similar", {
+      item_ids: itemIds,
+      blend_mode: blendMode,
+      ...(limit !== undefined ? { limit } : {}),
+    });
   }
 
   public markItemPlayed(
