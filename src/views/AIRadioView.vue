@@ -2380,21 +2380,23 @@ const closeTutorial = () => {
 
 const defaultGuidedPlacement = (section: AIRadioSection): AIRadioPlacement => {
   const label = `${section.id} ${section.name}`.toLowerCase();
-  if (
-    label.includes("intro") ||
-    label.includes("start") ||
-    label.includes("opening")
-  ) {
-    return "start_of_playlist";
-  }
+  // Check end-of-playlist markers first because section names like
+  // "Song_Introduction_End" otherwise match the loose "intro" substring below.
   if (
     label.includes("outro") ||
-    label.includes("end") ||
+    /(^|[\s_-])end([\s_-]|$)/.test(label) ||
     label.includes("closing") ||
     label.includes("signoff") ||
     label.includes("sign-off")
   ) {
     return "end_of_playlist";
+  }
+  if (
+    /(^|[\s_-])intro([\s_-]|$)/.test(label) ||
+    label.includes("start") ||
+    label.includes("opening")
+  ) {
+    return "start_of_playlist";
   }
   return "between_songs";
 };
