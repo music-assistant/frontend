@@ -2,6 +2,7 @@
 
 import api from ".";
 import {
+  AudioSource,
   MediaItemType,
   ItemMapping,
   MediaType,
@@ -23,6 +24,18 @@ export const isQueueDynamicPlaylist = function (
     source[0].media_type === MediaType.PLAYLIST &&
     (source[0] as Playlist).is_dynamic
   );
+};
+
+/**
+ * Type guard for AudioSource media items.
+ * AudioSource is a first-class MediaItem representing a plugin source
+ * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
+ * flags drive which transport controls are surfaced when active.
+ */
+export const isAudioSource = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is AudioSource {
+  return item?.media_type === MediaType.AUDIO_SOURCE;
 };
 
 /**

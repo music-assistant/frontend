@@ -1,7 +1,7 @@
 <template>
   <!-- play/pause button: disabled if no content -->
   <Icon
-    v-if="isVisible && player"
+    v-if="isVisible && player && showPlayPause"
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
     :disabled="!canPlayPause || isLoading"
@@ -17,7 +17,7 @@
     />
   </Icon>
   <v-progress-circular
-    v-if="isVisible && player && isLoading"
+    v-if="isVisible && player && showPlayPause && isLoading"
     class="play-btn-spinner"
     indeterminate
     :size="compProps.spinnerSize"
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
@@ -55,6 +56,13 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
+const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
+
+// Hide the button entirely when the active queue item is an AudioSource
+// that does not advertise play/pause support.
+const showPlayPause = computed(() =>
+  activeAudioSource.value ? activeAudioSource.value.can_play_pause : true,
+);
 
 const queueCanPlay = computed(() => {
   if (!compProps.playerQueue) return false;
@@ -69,6 +77,10 @@ const playerCanPlay = computed(() => {
 });
 
 const canPlayPause = computed(() => {
+  // AudioSource queue items carry their own capability flags
+  if (activeAudioSource.value) {
+    return activeAudioSource.value.can_play_pause;
+  }
   // Check if active source can play/pause
   if (activeSource.value) {
     return activeSource.value.can_play_pause;
