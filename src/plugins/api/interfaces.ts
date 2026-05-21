@@ -297,12 +297,9 @@ export enum PlayerFeature {
 export enum SourceControl {
   PLAY = "play",
   PAUSE = "pause",
-  STOP = "stop",
   NEXT = "next",
   PREVIOUS = "previous",
   SEEK = "seek",
-  VOLUME = "volume",
-  SELECT = "select",
   UNKNOWN = "unknown",
 }
 
