@@ -12,8 +12,8 @@ import {
   Podcast,
   Radio,
   Tag,
-  type LucideComponent,
 } from "lucide-vue-next";
+import type { LucideComponent } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {
