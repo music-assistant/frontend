@@ -6,11 +6,6 @@ import { store } from "@/plugins/store";
 /**
  * Composable that exposes the AudioSource currently playing on a player,
  * or undefined when the active queue item is not an AudioSource.
- *
- * Plugin sources (Spotify Connect, AirPlay receiver, Snapcast, etc.) are
- * no longer injected into player.source_list — they surface as queue items
- * of type AUDIO_SOURCE with their own capability flags. When present,
- * those flags take precedence over the player's source-list capabilities.
  */
 export function useActiveAudioSource(
   player:
