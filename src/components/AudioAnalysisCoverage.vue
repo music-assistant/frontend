@@ -65,24 +65,6 @@
         </ItemContent>
       </Item>
     </CardContent>
-    <CardFooter class="text-muted-foreground text-xs">
-      {{ $t("settings.audio_analysis_coverage.scan_label") }}:&nbsp;
-      <template v-if="scan.unavailable">
-        {{ $t("settings.audio_analysis_coverage.scan_unavailable") }}
-      </template>
-      <template v-else>
-        {{ scan.status }} · last {{ scan.lastRun || none }} · next
-        {{ scan.nextRun || none }}
-        <template v-if="scan.failureCount > 0">
-          ·
-          {{
-            $t("settings.audio_analysis_coverage.scan_failures", [
-              scan.failureCount,
-            ])
-          }}
-        </template>
-      </template>
-    </CardFooter>
   </Card>
 </template>
 
@@ -91,13 +73,7 @@ import { useAudioAnalysisCoverage } from "@/composables/useAudioAnalysisCoverage
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Item,
   ItemContent,
@@ -107,7 +83,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { onMounted, watch } from "vue";
 
-const { rows, scan, refresh } = useAudioAnalysisCoverage();
+const { rows, refresh } = useAudioAnalysisCoverage();
 
 const none = $t("settings.audio_analysis_coverage.none");
 

@@ -1,30 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
-import { TaskStatus } from "@/plugins/api/interfaces";
-import type {
-  ProviderCoverageRow,
-  ScanStatus,
-} from "@/composables/useAudioAnalysisCoverage";
+import type { ProviderCoverageRow } from "@/composables/useAudioAnalysisCoverage";
 
-// vi.hoisted runs before module bindings — use the raw string value of TaskStatus.IDLE here;
-// the `as ScanStatus` cast below enforces type safety at the call-site level.
 const { mockRefresh } = vi.hoisted(() => ({
   mockRefresh: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Reactive refs — must be created outside vi.hoisted (hoisted callbacks run before imports).
 const mockRows = ref<ProviderCoverageRow[]>([]);
-const mockScan = ref<ScanStatus>({
-  status: TaskStatus.UNKNOWN,
-  failureCount: 0,
-  unavailable: false,
-});
 
 vi.mock("@/composables/useAudioAnalysisCoverage", () => ({
   useAudioAnalysisCoverage: () => ({
     rows: mockRows,
-    scan: mockScan,
     loading: ref(false),
     refresh: mockRefresh,
   }),

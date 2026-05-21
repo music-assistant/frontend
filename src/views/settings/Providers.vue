@@ -1,10 +1,4 @@
 <template>
-  <div
-    v-if="currentType === ProviderType.AUDIO_ANALYSIS"
-    class="px-5 pt-5"
-  >
-    <AudioAnalysisCoverage />
-  </div>
   <div class="providers-header w-100">
     <ProviderFilters @update:search="searchQuery = $event" />
     <Button class="add-provider-btn" @click="showAddProviderDialog = true">
@@ -291,7 +285,6 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import AudioAnalysisCoverage from "@/components/AudioAnalysisCoverage.vue";
 import { Button } from "@/components/ui/button";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";

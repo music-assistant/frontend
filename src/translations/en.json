@@ -759,11 +759,9 @@
             "col_stale": "Stale",
             "col_version": "Version",
             "unavailable": "unavailable",
-            "scan_label": "Background scan",
-            "scan_unavailable": "unavailable",
-            "scan_failures": "{0} failures",
             "none": "—"
-        }
+        },
+        "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
     "similar_tracks": "Similar tracks",
     "show_info": "Show info",

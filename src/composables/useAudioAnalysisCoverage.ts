@@ -1,12 +1,6 @@
 import { api } from "@/plugins/api";
-import {
-  ProviderType,
-  TaskStatus,
-  type BackgroundTask,
-} from "@/plugins/api/interfaces";
+import { ProviderType } from "@/plugins/api/interfaces";
 import { ref, type Ref } from "vue";
-
-export const BACKGROUND_SCAN_TASK_ID = "audio_analysis_background_scan";
 
 export interface CoverageResponse {
   analyzed: number;
@@ -34,26 +28,12 @@ export interface ProviderCoverageRow {
   error: boolean;
 }
 
-export interface ScanStatus {
-  status: TaskStatus;
-  lastRun?: string;
-  nextRun?: string;
-  failureCount: number;
-  unavailable: boolean;
-}
-
 export function useAudioAnalysisCoverage(): {
   rows: Ref<ProviderCoverageRow[]>;
-  scan: Ref<ScanStatus>;
   loading: Ref<boolean>;
   refresh: () => Promise<void>;
 } {
   const rows = ref<ProviderCoverageRow[]>([]);
-  const scan = ref<ScanStatus>({
-    status: TaskStatus.UNKNOWN,
-    failureCount: 0,
-    unavailable: false,
-  });
   const loading = ref(false);
 
   function discover() {
@@ -142,35 +122,14 @@ export function useAudioAnalysisCoverage(): {
     );
   }
 
-  async function fetchScan(): Promise<void> {
-    try {
-      const task = await api.sendCommand<BackgroundTask>("tasks/get", {
-        task_id: BACKGROUND_SCAN_TASK_ID,
-      });
-      scan.value = {
-        status: task.status,
-        lastRun: task.last_run,
-        nextRun: task.next_run,
-        failureCount: task.failure_count ?? 0,
-        unavailable: false,
-      };
-    } catch {
-      scan.value = {
-        status: TaskStatus.UNKNOWN,
-        failureCount: 0,
-        unavailable: true,
-      };
-    }
-  }
-
   async function refresh(): Promise<void> {
     loading.value = true;
     try {
-      await Promise.all([fetchCoverage(), fetchScan()]);
+      await fetchCoverage();
     } finally {
       loading.value = false;
     }
   }
 
-  return { rows, scan, loading, refresh };
+  return { rows, loading, refresh };
 }
