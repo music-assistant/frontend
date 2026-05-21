@@ -65,6 +65,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
+    "change_playback_speed": "Change playback speed",
     "player_type": {
         "group": "Group",
         "player": "Player",
