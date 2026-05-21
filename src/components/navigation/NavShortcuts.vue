@@ -114,7 +114,18 @@ const updateScrollbarWidth = () => {
     contentEl.scrollHeight > contentEl.clientHeight;
 
   if (overflows) {
-    sidebarEl.style.setProperty("--sidebar-width-icon", "calc(3rem + 6px)");
+    // Read the base value only when no override is set yet, so we don't
+    // accumulate additions on repeated calls.
+    if (!sidebarEl.style.getPropertyValue("--sidebar-width-icon")) {
+      const base =
+        getComputedStyle(sidebarEl)
+          .getPropertyValue("--sidebar-width-icon")
+          .trim() || "3rem";
+      sidebarEl.style.setProperty(
+        "--sidebar-width-icon",
+        `calc(${base} + 6px)`,
+      );
+    }
     contentEl.style.scrollbarGutter = "stable";
   } else {
     sidebarEl.style.removeProperty("--sidebar-width-icon");
