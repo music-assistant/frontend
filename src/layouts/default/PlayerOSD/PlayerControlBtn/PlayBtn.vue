@@ -1,14 +1,20 @@
 <template>
-  <!-- play/pause button: disabled if no content -->
+  <!-- play/pause/stop button -->
   <Icon
-    v-if="isVisible && player && showPlayPause"
+    v-if="isVisible && player"
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
-    :disabled="!canPlayPause || isLoading"
+    :disabled="isDisabled"
     variant="button"
-    @click="api.playerCommandPlayPause(player.player_id)"
+    @click="onClick"
   >
-    <Pause v-if="isPlaying" :size="size" fill="currentColor" />
+    <Square
+      v-if="isPlaying && showStop"
+      :size="size"
+      fill="currentColor"
+      stroke-width="0"
+    />
+    <Pause v-else-if="isPlaying" :size="size" fill="currentColor" />
     <Play
       v-else
       :size="size"
@@ -17,7 +23,7 @@
     />
   </Icon>
   <v-progress-circular
-    v-if="isVisible && player && showPlayPause && isLoading"
+    v-if="isVisible && player && isLoading"
     class="play-btn-spinner"
     indeterminate
     :size="compProps.spinnerSize"
@@ -31,8 +37,13 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
-import { PlaybackState, Player, PlayerQueue } from "@/plugins/api/interfaces";
-import { Pause, Play } from "lucide-vue-next";
+import {
+  MediaType,
+  PlaybackState,
+  Player,
+  PlayerQueue,
+} from "@/plugins/api/interfaces";
+import { Pause, Play, Square } from "lucide-vue-next";
 import { computed, toRef } from "vue";
 
 // properties
@@ -57,12 +68,6 @@ const compProps = withDefaults(defineProps<Props>(), {
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
-
-// Hide the button entirely when the active queue item is an AudioSource
-// that does not advertise play/pause support.
-const showPlayPause = computed(() =>
-  activeAudioSource.value ? activeAudioSource.value.can_play_pause : true,
-);
 
 const queueCanPlay = computed(() => {
   if (!compProps.playerQueue) return false;
@@ -89,6 +94,17 @@ const canPlayPause = computed(() => {
   return queueCanPlay.value || playerCanPlay.value;
 });
 
+// When the current media can't be paused, surface Stop while playing so the
+// user always has a way to terminate playback. Covers AudioSources without
+// pause support, external sources that don't advertise it, and radio streams.
+const showStop = computed(() => {
+  if (activeAudioSource.value) return !activeAudioSource.value.can_play_pause;
+  if (compProps.player?.current_media?.media_type === MediaType.RADIO)
+    return true;
+  if (activeSource.value) return !activeSource.value.can_play_pause;
+  return false;
+});
+
 const isPlaying = computed(() => {
   return compProps.player?.playback_state == PlaybackState.PLAYING;
 });
@@ -99,6 +115,22 @@ const isLoading = computed(() => {
     compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
   );
 });
+
+const isDisabled = computed(() => {
+  if (isLoading.value) return true;
+  // Stop is always available while playing, even when pause isn't supported
+  if (isPlaying.value && showStop.value) return false;
+  return !canPlayPause.value;
+});
+
+const onClick = () => {
+  if (!compProps.player) return;
+  if (isPlaying.value && showStop.value) {
+    api.playerCommandStop(compProps.player.player_id);
+  } else {
+    api.playerCommandPlayPause(compProps.player.player_id);
+  }
+};
 </script>
 
 <style>
