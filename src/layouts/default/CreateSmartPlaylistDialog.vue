@@ -16,9 +16,7 @@
       </DialogHeader>
 
       <div class="flex flex-col gap-2 py-2">
-        <div
-          class="flex flex-col gap-4 h-[55vh] overflow-y-auto -mx-6 px-6"
-        >
+        <div class="flex flex-col gap-4 h-[55vh] overflow-y-auto -mx-6 px-6">
           <!-- Playlist name -->
           <div class="flex flex-col gap-2">
             <Label for="sp-name">{{ $t("new_playlist_name") }}</Label>
