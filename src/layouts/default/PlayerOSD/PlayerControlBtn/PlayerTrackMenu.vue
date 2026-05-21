@@ -57,7 +57,7 @@
         <Button
           v-for="option in PLAYBACK_SPEED_OPTIONS"
           :key="option"
-          :variant="option === currentPlaybackSpeed ? 'default' : 'outline'"
+          :variant="option === currentPlaybackSpeed ? 'default' : 'plain'"
           @click="onSelectPlaybackSpeed(option)"
         >
           {{ formatSpeed(option) }}
