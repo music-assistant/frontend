@@ -7,14 +7,16 @@ import type {
   EventMessage,
   Genre,
   ItemMapping,
-  MediaItemType,
   Playlist,
   Podcast,
   Radio,
   Track,
 } from "@/plugins/api/interfaces";
 import { EventType, MediaType } from "@/plugins/api/interfaces";
-import { useUserPreferences } from "@/composables/userPreferences";
+import {
+  useUserPreferences,
+  setUserPreference,
+} from "@/composables/userPreferences";
 import { store } from "@/plugins/store";
 
 export type ShortcutItem =
@@ -39,6 +41,7 @@ const SUPPORTED_TYPES = new Set([
 ]);
 
 const PREF_KEY = "sidebar.shortcuts";
+export const MAX_SHORTCUTS = 50;
 
 interface ParsedShortcutUri {
   provider: string;
@@ -139,18 +142,14 @@ function _getPinnedUris(): string[] {
   return (store.currentUser?.preferences?.[PREF_KEY] as string[]) ?? [];
 }
 
-async function _setPinnedUris(uris: string[]): Promise<void> {
-  if (!store.currentUser) return;
-  if (!store.currentUser.preferences) store.currentUser.preferences = {};
-  const updated = { ...store.currentUser.preferences, [PREF_KEY]: uris };
-  store.currentUser.preferences = updated;
-  await api.updateUser(store.currentUser.user_id, { preferences: updated });
-}
-
 export function isShortcutPinned(uri: string): boolean {
   return _getPinnedUris().some((pinnedUri) =>
     isSameShortcutUri(pinnedUri, uri),
   );
+}
+
+export function isShortcutCapReached(): boolean {
+  return _getPinnedUris().length >= MAX_SHORTCUTS;
 }
 
 export function isShortcutPinnedItem(
@@ -173,7 +172,8 @@ export async function unpinShortcutStandaloneItem(
   item: ShortcutItem | ItemMapping,
 ): Promise<void> {
   const identities = getShortcutIdentities(item);
-  await _setPinnedUris(
+  await setUserPreference(
+    PREF_KEY,
     _getPinnedUris().filter((pinnedUri) => {
       const parsed = parseShortcutUri(pinnedUri);
       if (!parsed) return true;
@@ -192,8 +192,9 @@ export async function pinShortcutStandalone(
 ): Promise<void> {
   if (!isShortcutMediaType(item.media_type)) return;
   const uris = _getPinnedUris();
+  if (uris.length >= MAX_SHORTCUTS) return;
   if (uris.some((pinnedUri) => isSameShortcutUri(pinnedUri, item.uri))) return;
-  await _setPinnedUris([...uris, item.uri]);
+  await setUserPreference(PREF_KEY, [...uris, item.uri]);
 }
 
 export function useShortcuts() {
@@ -201,11 +202,14 @@ export function useShortcuts() {
 
   const pinnedUris = getPreference<string[]>(PREF_KEY, []);
   const resolvedItems = ref<ShortcutItem[]>([]);
+  // true whenever pinnedUris is non-empty but resolvedItems hasn't been populated yet
+  const isLoading = ref(pinnedUris.value.length > 0);
 
   async function loadShortcuts() {
     const uris = pinnedUris.value;
     if (!uris.length) {
       resolvedItems.value = [];
+      isLoading.value = false;
       return;
     }
 
@@ -222,31 +226,36 @@ export function useShortcuts() {
         if (item && SUPPORTED_TYPES.has(item.media_type)) {
           results.push(item as ShortcutItem);
         } else {
-          // Item explicitly gone (null / unsupported type) — prune
+          // Item explicitly gone (null / unsupported type) — prune.
           prunedUris.push(uri);
         }
       }
-      // rejected = network/transport error — keep the URI, don't prune
+      // rejected = network/transport error — keep URI pinned, don't prune.
     });
 
     resolvedItems.value = results;
+    isLoading.value = false;
 
-    // Prune stale URIs from preferences
+    // Prune stale URIs from preferences using the current reactive value so that
+    // any items pinned during the async fetch are not lost.
     if (prunedUris.length > 0) {
       await setPreference(
         PREF_KEY,
-        uris.filter((u) => !prunedUris.includes(u)),
+        pinnedUris.value.filter((u) => !prunedUris.includes(u)),
       );
     }
   }
 
   function isPinned(uri: string): boolean {
-    return pinnedUris.value.includes(uri);
+    return pinnedUris.value.some((pinnedUri) =>
+      isSameShortcutUri(pinnedUri, uri),
+    );
   }
 
   async function pinItem(item: ShortcutItem) {
     const uri = item.uri;
     if (isPinned(uri)) return;
+    if (pinnedUris.value.length >= MAX_SHORTCUTS) return;
     // Add immediately for instant sidebar feedback; watch won't re-add (already present)
     resolvedItems.value = [...resolvedItems.value, item];
     await setPreference(PREF_KEY, [...pinnedUris.value, uri]);
@@ -263,18 +272,18 @@ export function useShortcuts() {
 
   // React to external changes (e.g. pinShortcutStandalone from the context menu)
   watch(pinnedUris, async (newUris) => {
-    const currentUris = resolvedItems.value.map((p) => p.uri);
+    const currentItems = resolvedItems.value;
 
-    // Remove items no longer in pinned list
-    const toRemove = currentUris.filter((uri) => !newUris.includes(uri));
-    if (toRemove.length > 0) {
-      resolvedItems.value = resolvedItems.value.filter(
-        (p) => !toRemove.includes(p.uri),
-      );
-    }
+    // Remove items no longer in pinned list (smart URI matching avoids false removals
+    // when API-returned URIs differ in encoding from stored preference URIs)
+    resolvedItems.value = currentItems.filter((item) =>
+      newUris.some((uri) => isSameShortcutUri(uri, item.uri)),
+    );
 
     // Fetch and add newly pinned items not yet resolved
-    const toAdd = newUris.filter((uri) => !currentUris.includes(uri));
+    const toAdd = newUris.filter(
+      (uri) => !currentItems.some((item) => isSameShortcutUri(uri, item.uri)),
+    );
     if (toAdd.length > 0) {
       const settled = await Promise.allSettled(
         toAdd.map((uri) => api.getItemByUri(uri)),
@@ -308,8 +317,8 @@ export function useShortcuts() {
             unpinItem(evt.object_id as string);
           }
         } else if (evt.event === EventType.MEDIA_ITEM_UPDATED) {
-          const idx = resolvedItems.value.findIndex(
-            (p) => p.uri === evt.object_id,
+          const idx = resolvedItems.value.findIndex((p) =>
+            isSameShortcutUri(p.uri, evt.object_id as string),
           );
           if (idx >= 0) {
             resolvedItems.value[idx] = evt.data as ShortcutItem;
@@ -324,7 +333,17 @@ export function useShortcuts() {
   });
 
   return {
-    pinnedItems: computed(() => resolvedItems.value),
+    // Derive display order from pinnedUris (insertion order) so that resolvedItems
+    // being in any internal order doesn't cause sort-order regressions.
+    pinnedItems: computed(() =>
+      pinnedUris.value
+        .map((uri) =>
+          resolvedItems.value.find((item) => isSameShortcutUri(uri, item.uri)),
+        )
+        .filter((item): item is ShortcutItem => item !== undefined),
+    ),
+    isLoading,
+    pinnedCount: computed(() => pinnedUris.value.length),
     isPinned,
     pinItem,
     unpinItem,

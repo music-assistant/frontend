@@ -239,6 +239,7 @@ import { $t } from "@/plugins/i18n";
 import {
   isShortcutMediaType,
   isShortcutPinnedItem,
+  isShortcutCapReached,
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
@@ -864,6 +865,7 @@ export const getContextMenuItems = async function (
         labelArgs: [],
         action: () => pinShortcutStandalone(shortcutItem),
         icon: "mdi-pin-outline",
+        disabled: isShortcutCapReached(),
       });
     }
   }

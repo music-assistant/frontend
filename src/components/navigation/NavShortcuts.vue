@@ -13,7 +13,7 @@ import {
   Radio,
   Tag,
 } from "lucide-vue-next";
-import type { LucideComponent } from "lucide-vue-next";
+import type { LucideIcon } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
@@ -35,7 +36,7 @@ const { t } = useI18n();
 const { isMobile, setOpenMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
 
-const { pinnedItems } = useShortcuts();
+const { pinnedItems, isLoading, pinnedCount } = useShortcuts();
 
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
@@ -55,7 +56,7 @@ const MEDIA_TYPE_PATH: Partial<Record<MediaType, string>> = {
   [MediaType.GENRE]: "genres",
 };
 
-const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, LucideComponent>> = {
+const MEDIA_TYPE_FALLBACK_ICON: Partial<Record<MediaType, LucideIcon>> = {
   [MediaType.PLAYLIST]: ListMusic,
   [MediaType.ARTIST]: Mic2,
   [MediaType.ALBUM]: Disc3,
@@ -73,7 +74,7 @@ const getItemUrl = (item: ShortcutItem) => {
   return `/${base}/${provider}/${itemId}`;
 };
 
-const getFallbackIcon = (item: ShortcutItem): LucideComponent =>
+const getFallbackIcon = (item: ShortcutItem): LucideIcon =>
   MEDIA_TYPE_FALLBACK_ICON[item.media_type] ?? Music;
 
 const thumbMap = computed(() =>
@@ -101,6 +102,15 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
 const navEl = ref<HTMLElement | null>(null);
 let resizeObserver: ResizeObserver | null = null;
 let mutationObserver: MutationObserver | null = null;
+let rafId: number | null = null;
+
+const debouncedUpdate = () => {
+  if (rafId !== null) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = null;
+    updateScrollbarWidth();
+  });
+};
 
 const updateScrollbarWidth = () => {
   const contentEl = navEl.value?.closest<HTMLElement>(
@@ -143,7 +153,7 @@ onMounted(() => {
   if (contentEl) {
     resizeObserver = new ResizeObserver(updateScrollbarWidth);
     resizeObserver.observe(contentEl);
-    mutationObserver = new MutationObserver(updateScrollbarWidth);
+    mutationObserver = new MutationObserver(debouncedUpdate);
     mutationObserver.observe(contentEl, { childList: true, subtree: true });
   }
 });
@@ -151,11 +161,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   mutationObserver?.disconnect();
+  if (rafId !== null) cancelAnimationFrame(rafId);
 });
 </script>
 
 <template>
-  <template v-if="pinnedItems.length > 0">
+  <template v-if="pinnedItems.length > 0 || isLoading">
     <div ref="navEl"></div>
     <div
       class="my-1 h-px shrink-0 bg-sidebar-border"
@@ -164,6 +175,12 @@ onBeforeUnmount(() => {
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupContent class="flex flex-col gap-0.5">
         <SidebarMenu>
+          <!-- Skeletons while the API calls are in flight -->
+          <template v-if="isLoading">
+            <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
+              <SidebarMenuSkeleton :show-icon="true" />
+            </SidebarMenuItem>
+          </template>
           <!-- Pinned shortcuts -->
           <SidebarMenuItem
             v-for="item in pinnedItems"
