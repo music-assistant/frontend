@@ -160,11 +160,11 @@
             color="primary"
             :offset-x="-5"
             :offset-y="-5"
-            :content="
-              player.type == PlayerType.GROUP
-                ? player.group_members.length
-                : player.group_members.length || 1
+            :model-value="
+              player.type == PlayerType.GROUP ||
+              player.group_members.length >= 2
             "
+            :content="player.group_members.length"
             class="group-badge"
           >
             <Speaker
