@@ -1,7 +1,7 @@
 <template>
   <!-- next button -->
   <Icon
-    v-if="isVisible && player"
+    v-if="isVisible && player && showNextPrev"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!canNext || isLoading"
     variant="button"
@@ -16,6 +16,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
+import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { computed, toRef } from "vue";
 import { SkipForward } from "lucide-vue-next";
@@ -36,6 +37,13 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
+const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
+
+// Hide the button when the active queue item is an AudioSource without
+// next/previous support.
+const showNextPrev = computed(() =>
+  activeAudioSource.value ? activeAudioSource.value.can_next_previous : true,
+);
 
 const queueHasNext = computed(() => {
   if (!compProps.playerQueue?.active) return false;
@@ -54,6 +62,10 @@ const playerHasNext = computed(() => {
 });
 
 const canNext = computed(() => {
+  // AudioSource queue items carry their own capability flags
+  if (activeAudioSource.value) {
+    return activeAudioSource.value.can_next_previous;
+  }
   // Check if active source can next/previous
   if (activeSource.value) {
     return activeSource.value.can_next_previous;
