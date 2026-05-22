@@ -103,6 +103,7 @@ export enum MediaType {
   PLAYLIST = "playlist",
   RADIO = "radio",
   AUDIOBOOK = "audiobook",
+  AUDIO_SOURCE = "audio_source",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
   GENRE = "genre",
@@ -291,6 +292,15 @@ export enum PlayerFeature {
   SELECT_SOURCE = "select_source",
   SELECT_SOUND_MODE = "select_sound_mode",
   OPTIONS = "options",
+}
+
+export enum SourceControl {
+  PLAY = "play",
+  PAUSE = "pause",
+  NEXT = "next",
+  PREVIOUS = "previous",
+  SEEK = "seek",
+  UNKNOWN = "unknown",
 }
 
 export enum EventType {
@@ -701,6 +711,14 @@ export interface Playlist extends MediaItem {
 
 export interface Radio extends MediaItem {}
 
+export interface AudioSource extends MediaItem {
+  can_play_pause: boolean;
+  can_seek: boolean;
+  can_next_previous: boolean;
+  exclusive: boolean;
+  allow_external_trigger: boolean;
+}
+
 export interface Audiobook extends MediaItem {
   publisher: string;
   authors: string[];
@@ -741,6 +759,7 @@ export type MediaItemType =
   | Album
   | Track
   | Radio
+  | AudioSource
   | Playlist
   | Audiobook
   | Podcast
@@ -748,7 +767,12 @@ export type MediaItemType =
   | Genre
   | BrowseFolder;
 
-export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
+export type PlayableMediaItemType =
+  | Track
+  | Radio
+  | AudioSource
+  | Audiobook
+  | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
