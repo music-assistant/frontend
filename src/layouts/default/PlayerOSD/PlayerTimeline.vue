@@ -61,6 +61,7 @@
 import api from "@/plugins/api";
 import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
@@ -78,6 +79,9 @@ withDefaults(defineProps<Props>(), {
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
+const { activeAudioSource } = useActiveAudioSource(
+  toRef(store, "activePlayer"),
+);
 
 // local refs
 const showRemainingTime = ref(false);
@@ -125,14 +129,18 @@ onUnmounted(() => {
 
 // computed properties
 const canSeek = computed(() => {
+  if (store.activePlayer?.powered === false) return false;
+  const currentMediaDuration = store.activePlayer?.current_media?.duration;
+  const currentMediaHasDuration = !!currentMediaDuration;
+
+  // AudioSource queue items carry their own capability flags; defer to them
+  // before falling back to the player's source-list source.
+  if (activeAudioSource.value) {
+    return activeAudioSource.value.can_seek && currentMediaHasDuration;
+  }
+
   // Check if active source allows seeking
   if (activeSource.value) {
-    // Only allow seeking if the source reports that it supports seeking
-    // (can_seek) AND the current media has a known duration.
-    if (store.activePlayer?.powered === false) return false;
-    const currentMediaDuration = store.activePlayer?.current_media?.duration;
-    const currentMediaHasDuration = !!currentMediaDuration;
-
     // Disallow seeking for radio streams (or other duration-less streams)
     const isRadio =
       store.activePlayer?.current_media?.media_type == MediaType.RADIO ||
