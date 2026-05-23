@@ -259,6 +259,33 @@ export const getStreamingProviderMappings = function (
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
 
+// Server API schema version that introduced the opaque /imageproxy/<proxy_id>
+// endpoint, the proxy_id field on MediaItemImage, and the size whitelist
+// enforced on both the new and legacy /imageproxy routes.
+// See music-assistant/server#3960.
+const IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION = 31;
+
+// Sizes accepted by the imageproxy on schema >= 31 (both endpoints). 0 means
+// no resize. Anything else returns HTTP 400, so we round up to the next
+// allowed value for arbitrary caller-supplied sizes.
+const IMAGEPROXY_ALLOWED_SIZES = [80, 160, 256, 512, 1024] as const;
+
+const serverSupportsOpaqueImageProxy = function (): boolean {
+  const schema = api.serverInfo.value?.schema_version;
+  return (
+    typeof schema === "number" && schema >= IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION
+  );
+};
+
+const normalizeImageProxySize = function (size?: number): number {
+  if (!size || size <= 0) return 0;
+  if (!serverSupportsOpaqueImageProxy()) return size;
+  for (const allowed of IMAGEPROXY_ALLOWED_SIZES) {
+    if (size <= allowed) return allowed;
+  }
+  return IMAGEPROXY_ALLOWED_SIZES[IMAGEPROXY_ALLOWED_SIZES.length - 1];
+};
+
 /**
  * Get the proper image URL for player media, handling protocol mismatches
  * and backend-provided imageproxy URLs.
@@ -275,13 +302,21 @@ export const getMediaImageUrl = function (
   // Handle data URLs directly
   if (imageUrl.startsWith("data:image")) return imageUrl;
 
-  // Check if this is already an imageproxy URL from the backend
-  // e.g., http://192.168.1.1:8097/imageproxy?provider=tunein&size=500&path=...
-  if (imageUrl.includes("/imageproxy") && imageUrl.includes("provider=")) {
-    // Extract query params and rebuild with our baseUrl
+  // Rebuild existing imageproxy URLs with our baseUrl. Two URL shapes exist:
+  //   legacy: http://host/imageproxy?provider=tunein&size=500&path=...
+  //   opaque: http://host/imageproxy/<64-hex-id>?size=256&fmt=jpg
+  if (imageUrl.includes("/imageproxy")) {
     const url = new URL(imageUrl);
-    const params = url.searchParams.toString();
-    return `${api.baseUrl}/imageproxy?${params}`;
+    if (url.pathname.startsWith("/imageproxy/")) {
+      const proxyId = url.pathname.slice("/imageproxy/".length);
+      const params = url.searchParams.toString();
+      return params
+        ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
+        : `${api.baseUrl}/imageproxy/${proxyId}`;
+    }
+    if (url.searchParams.has("provider")) {
+      return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
+    }
   }
 
   // Check for protocol mismatch: HTTP image URL but HTTPS frontend
@@ -289,7 +324,9 @@ export const getMediaImageUrl = function (
   const pageProtocol = window.location.protocol.replace(":", "");
 
   if (urlProtocol === "http" && pageProtocol === "https") {
-    // Proxy through imageproxy to avoid mixed content issues
+    // Proxy through imageproxy to avoid mixed content issues. The opaque-id
+    // form requires a server-issued proxy_id which we don't have here, so
+    // fall back to the legacy query-string form (still supported).
     const encUrl = encodeURIComponent(encodeURIComponent(imageUrl));
     return `${api.baseUrl}/imageproxy?path=${encUrl}`;
   }
@@ -388,9 +425,22 @@ export const getMediaItemImageUrl = function (
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
+    const normalizedSize = normalizeImageProxySize(size);
+    if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
+      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
+      // as a cache-buster query param (the server ignores unknown params).
+      const params = new URLSearchParams();
+      if (normalizedSize) params.set("size", String(normalizedSize));
+      if (checksum) params.set("checksum", checksum);
+      const qs = params.toString();
+      return qs
+        ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
+        : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+    }
+    // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
-    if (size) return imageUrl + `&size=${size}`;
+    if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
   // else: return image as-is (use getMediaImageUrl for protocol handling)
