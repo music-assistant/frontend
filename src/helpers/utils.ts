@@ -305,17 +305,23 @@ export const getMediaImageUrl = function (
   // Rebuild existing imageproxy URLs with our baseUrl. Two URL shapes exist:
   //   legacy: http://host/imageproxy?provider=tunein&size=500&path=...
   //   opaque: http://host/imageproxy/<64-hex-id>?size=256&fmt=jpg
+  // Pass a base so relative inputs like `/imageproxy/<id>?size=...` parse,
+  // and swallow parse errors so a malformed input falls through unchanged.
   if (imageUrl.includes("/imageproxy")) {
-    const url = new URL(imageUrl);
-    if (url.pathname.startsWith("/imageproxy/")) {
-      const proxyId = url.pathname.slice("/imageproxy/".length);
-      const params = url.searchParams.toString();
-      return params
-        ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
-        : `${api.baseUrl}/imageproxy/${proxyId}`;
-    }
-    if (url.searchParams.has("provider")) {
-      return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
+    try {
+      const url = new URL(imageUrl, api.baseUrl || window.location.href);
+      if (url.pathname.startsWith("/imageproxy/")) {
+        const proxyId = url.pathname.slice("/imageproxy/".length);
+        const params = url.searchParams.toString();
+        return params
+          ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
+          : `${api.baseUrl}/imageproxy/${proxyId}`;
+      }
+      if (url.searchParams.has("provider")) {
+        return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
+      }
+    } catch {
+      // fall through and return imageUrl as-is below
     }
   }
 
