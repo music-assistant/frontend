@@ -214,6 +214,7 @@ const computedElapsedTime = computed(() => {
       queueTime.elapsed_time,
       queueTime.elapsed_time_last_updated,
       queue!.state,
+      store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
     );
     return computed ?? 0;
   }
@@ -230,6 +231,7 @@ const computedElapsedTime = computed(() => {
       store.activePlayer.current_media.elapsed_time,
       store.activePlayer.current_media.elapsed_time_last_updated,
       store.activePlayer?.playback_state,
+      store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
     );
     return computed ?? 0;
   }
@@ -243,6 +245,7 @@ const computedElapsedTime = computed(() => {
       store.activePlayer.elapsed_time,
       store.activePlayer.elapsed_time_last_updated,
       store.activePlayer?.playback_state,
+      store.curQueueItem?.extra_attributes?.playback_speed ?? 1,
     );
     return computed ?? 0;
   }

@@ -856,6 +856,7 @@ export interface QueueItem {
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
     party_boosted?: boolean; // true if added as "boost" (play next)
+    playback_speed?: number; // current playback speed multiplier (audiobook/podcast)
   };
 }
 
