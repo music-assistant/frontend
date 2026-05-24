@@ -106,8 +106,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 </script>
 
 <template>
+  <div ref="navEl"></div>
   <template v-if="pinnedItems.length > 0 || isLoading">
-    <div ref="navEl"></div>
     <div
       class="my-1 h-px shrink-0 bg-sidebar-border"
       :class="isCollapsed ? 'mx-1' : 'mx-3'"

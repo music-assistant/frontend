@@ -285,7 +285,7 @@ export function useShortcuts() {
     );
     await setPreference(
       PREF_KEY,
-      pinnedUris.value.filter((u) => u !== uri),
+      pinnedUris.value.filter((u) => !isSameShortcutUri(u, uri)),
     );
   }
 
