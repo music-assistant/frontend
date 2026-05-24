@@ -11,7 +11,10 @@ interface SidebarDomOptions {
   clientHeight?: number;
 }
 
-function createSidebarDom({ scrollHeight = 0, clientHeight = 0 }: SidebarDomOptions = {}) {
+function createSidebarDom({
+  scrollHeight = 0,
+  clientHeight = 0,
+}: SidebarDomOptions = {}) {
   const sidebarEl = document.createElement("div");
   sidebarEl.setAttribute("data-slot", "sidebar");
 
