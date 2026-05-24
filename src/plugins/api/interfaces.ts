@@ -626,6 +626,10 @@ export interface MediaItemImage {
   path: string;
   provider: string;
   remotely_accessible: boolean;
+  // Opaque sha256(provider+path) id used to address the image via the
+  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
+  // schema_version >= 31; absent on older servers.
+  proxy_id?: string;
 }
 
 export interface MediaItemChapter {
