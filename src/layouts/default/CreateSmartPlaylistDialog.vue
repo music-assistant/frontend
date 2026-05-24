@@ -68,19 +68,11 @@
           />
         </div>
 
-        <p v-if="isCountingTracks" class="text-sm text-muted-foreground">…</p>
-        <p
-          v-else-if="matchingTrackCount !== null"
-          class="text-sm text-muted-foreground"
-        >
-          ~{{ matchingTrackCount }} {{ $t("tracks") }}
-          <span v-if="matchingDuration !== null" class="ml-1"
-            >(~{{ formatDuration(matchingDuration) }})</span
-          >
-        </p>
-        <p class="text-xs text-muted-foreground/70">
-          {{ $t("smart_playlist.track_count_hint") }}
-        </p>
+        <SmartPlaylistTrackCountDisplay
+          :is-counting-tracks="isCountingTracks"
+          :matching-track-count="matchingTrackCount"
+          :matching-duration="matchingDuration"
+        />
       </div>
 
       <DialogFooter>
@@ -120,7 +112,7 @@ import {
 } from "@/components/ui/number-field";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
-import { formatDuration } from "@/helpers/utils";
+import SmartPlaylistTrackCountDisplay from "@/components/smart_playlist/SmartPlaylistTrackCountDisplay.vue";
 import api from "@/plugins/api";
 import { type CreateSmartPlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
