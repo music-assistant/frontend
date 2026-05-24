@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, markRaw } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
@@ -26,6 +26,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
+import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { MediaType } from "@/plugins/api/interfaces";
@@ -86,6 +87,10 @@ const thumbMap = computed(() =>
   ),
 );
 
+const pinnedItemsWithUrls = computed(() =>
+  pinnedItems.value.map((item) => ({ item, url: getItemUrl(item) })),
+);
+
 const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
   await showContextMenuForMediaItem(
     item,
@@ -97,72 +102,7 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
   );
 };
 
-// Scrollbar gutter logic: when the collapsed sidebar overflows vertically,
-// widen --sidebar-width-icon by 6px so the scrollbar doesn't clip thumbnails.
-const navEl = ref<HTMLElement | null>(null);
-let resizeObserver: ResizeObserver | null = null;
-let mutationObserver: MutationObserver | null = null;
-let rafId: number | null = null;
-
-const debouncedUpdate = () => {
-  if (rafId !== null) return;
-  rafId = requestAnimationFrame(() => {
-    rafId = null;
-    updateScrollbarWidth();
-  });
-};
-
-const updateScrollbarWidth = () => {
-  const contentEl = navEl.value?.closest<HTMLElement>(
-    "[data-slot=sidebar-content]",
-  );
-  const sidebarEl = navEl.value?.closest<HTMLElement>("[data-slot=sidebar]");
-  if (!contentEl || !sidebarEl) return;
-
-  const overflows =
-    state.value === "collapsed" &&
-    contentEl.scrollHeight > contentEl.clientHeight;
-
-  if (overflows) {
-    // Read the base value only when no override is set yet, so we don't
-    // accumulate additions on repeated calls.
-    if (!sidebarEl.style.getPropertyValue("--sidebar-width-icon")) {
-      const base =
-        getComputedStyle(sidebarEl)
-          .getPropertyValue("--sidebar-width-icon")
-          .trim() || "3rem";
-      sidebarEl.style.setProperty(
-        "--sidebar-width-icon",
-        `calc(${base} + 6px)`,
-      );
-    }
-    contentEl.style.scrollbarGutter = "stable";
-  } else {
-    sidebarEl.style.removeProperty("--sidebar-width-icon");
-    contentEl.style.scrollbarGutter = "";
-  }
-};
-
-watch(state, updateScrollbarWidth);
-
-onMounted(() => {
-  const contentEl = navEl.value?.closest<HTMLElement>(
-    "[data-slot=sidebar-content]",
-  );
-  updateScrollbarWidth();
-  if (contentEl) {
-    resizeObserver = new ResizeObserver(updateScrollbarWidth);
-    resizeObserver.observe(contentEl);
-    mutationObserver = new MutationObserver(debouncedUpdate);
-    mutationObserver.observe(contentEl, { childList: true, subtree: true });
-  }
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  mutationObserver?.disconnect();
-  if (rafId !== null) cancelAnimationFrame(rafId);
-});
+const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 </script>
 
 <template>
@@ -183,18 +123,18 @@ onBeforeUnmount(() => {
           </template>
           <!-- Pinned shortcuts -->
           <SidebarMenuItem
-            v-for="item in pinnedItems"
+            v-for="{ item, url } in pinnedItemsWithUrls"
             :key="item.uri"
             class="mr-1.5"
           >
             <SidebarMenuButton
               :as="RouterLinkComponent"
-              :to="getItemUrl(item)"
-              :is-active="isActive(getItemUrl(item))"
+              :to="url"
+              :is-active="isActive(url)"
               :tooltip="item.name"
               :class="[
                 isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
-                isActive(getItemUrl(item))
+                isActive(url)
                   ? 'no-underline font-bold'
                   : 'no-underline font-medium',
               ]"
