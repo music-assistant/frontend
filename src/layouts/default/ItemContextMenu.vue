@@ -236,6 +236,13 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import {
+  isShortcutMediaType,
+  isShortcutPinnedItem,
+  isShortcutCapReached,
+  pinShortcutStandalone,
+  unpinShortcutStandaloneItem,
+} from "@/composables/useShortcuts";
 
 import type { Component } from "vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
@@ -837,6 +844,30 @@ export const getContextMenuItems = async function (
       },
       icon: "mdi-export",
     });
+  }
+  // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
+  if (
+    items.length === 1 &&
+    isShortcutMediaType(items[0].media_type) &&
+    !!items[0].uri
+  ) {
+    const shortcutItem = items[0];
+    if (isShortcutPinnedItem(shortcutItem)) {
+      contextMenuItems.push({
+        label: "shortcut.remove_from",
+        labelArgs: [],
+        action: () => unpinShortcutStandaloneItem(shortcutItem),
+        icon: "mdi-pin-off-outline",
+      });
+    } else {
+      contextMenuItems.push({
+        label: "shortcut.add_to",
+        labelArgs: [],
+        action: () => pinShortcutStandalone(shortcutItem),
+        icon: "mdi-pin-outline",
+        disabled: isShortcutCapReached(),
+      });
+    }
   }
   // map to main item (add provider mapping)
   if (

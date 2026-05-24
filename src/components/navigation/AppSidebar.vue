@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
+import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
 import {
   Sidebar,
   SidebarContent,
@@ -68,6 +69,7 @@ onUnmounted(() => {
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="navItems" />
+      <NavShortcuts />
     </SidebarContent>
     <SidebarFooter>
       <NavMobile v-if="isMobile" />
