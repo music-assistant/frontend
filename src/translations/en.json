@@ -755,7 +755,18 @@
         "genre_table_rows_per_page": "Rows per page",
         "genre_table_page_info": "{0}–{1} of {2}",
         "missing_players_hint": "Missing players? {0}",
-        "add_player_providers": "Add more player providers"
+        "add_player_providers": "Add more player providers",
+        "audio_analysis_coverage": {
+            "title": "Audio Analysis Coverage",
+            "col_provider": "Provider",
+            "col_coverage": "Coverage",
+            "col_pending": "Pending",
+            "col_stale": "Stale",
+            "col_version": "Version",
+            "unavailable": "unavailable",
+            "none": "—"
+        },
+        "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
     "similar_tracks": "Similar tracks",
     "show_info": "Show info",
