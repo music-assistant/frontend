@@ -64,11 +64,7 @@
       <div class="main">
         <!-- left column: media thumb + details-->
         <div
-          v-if="
-            getBreakpointValue('bp7') ||
-            !store.showQueueItems ||
-            isCurAudioSource
-          "
+          v-if="getBreakpointValue('bp7') || !store.showQueueItems"
           class="main-media-details"
         >
           <div
@@ -199,9 +195,7 @@
 
         <!-- right column: queue items-->
         <div
-          v-if="
-            store.showQueueItems && store.activePlayerQueue && !isCurAudioSource
-          "
+          v-if="store.showQueueItems && store.activePlayerQueue"
           class="main-queue-items"
         >
           <v-tabs
@@ -602,7 +596,7 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
-import { getSourceName, isAudioSource } from "@/plugins/api/helpers";
+import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
@@ -683,10 +677,6 @@ const boostBadgeColor = ref("#ff5722");
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
 // Computed properties
-
-const isCurAudioSource = computed(() =>
-  isAudioSource(store.curQueueItem?.media_item),
-);
 
 const nextItems = computed(() => {
   if (store.activePlayerQueue) {

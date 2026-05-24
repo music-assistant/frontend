@@ -7,7 +7,8 @@
       !playerQueue.active ||
       playerQueue.items == 0 ||
       isLoading ||
-      isSingleDynamicPlaylist
+      isSingleDynamicPlaylist ||
+      isInfiniteStream
     "
     :color="
       getValueFromSources(icon?.color, [
@@ -46,7 +47,10 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import {
+  isQueueDynamicPlaylist,
+  isQueueInfiniteStream,
+} from "@/plugins/api/helpers";
 import { computed } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
@@ -71,5 +75,9 @@ const isLoading = computed(() => {
 
 const isSingleDynamicPlaylist = computed(() =>
   isQueueDynamicPlaylist(compProps.playerQueue),
+);
+
+const isInfiniteStream = computed(() =>
+  isQueueInfiniteStream(compProps.playerQueue),
 );
 </script>
