@@ -61,18 +61,20 @@
               </Button>
             </div>
           </div>
-          <Slider
-            :model-value="[rules.min_popularity ?? 0]"
-            thumb-alignment="contain"
-            :min="0"
-            :max="100"
-            :step="5"
-            @update:model-value="
-              (v) => {
-                rules.min_popularity = (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
-              }
-            "
-          />
+          <div class="px-2">
+            <Slider
+              :model-value="[rules.min_popularity ?? 0]"
+              :min="0"
+              :max="100"
+              :step="5"
+              @update:model-value="
+                (v) => {
+                  rules.min_popularity =
+                    (v?.[0] ?? 0) === 0 ? undefined : v?.[0];
+                }
+              "
+            />
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
