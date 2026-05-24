@@ -27,6 +27,17 @@ export const isQueueDynamicPlaylist = function (
 };
 
 /**
+ * Returns true when the queue's current item is an infinite stream
+ * (radio station or AudioSource). Shuffle and repeat don't apply in that case.
+ */
+export const isQueueInfiniteStream = function (
+  queue: PlayerQueue | undefined,
+): boolean {
+  const mediaType = queue?.current_item?.media_item?.media_type;
+  return mediaType === MediaType.RADIO || mediaType === MediaType.AUDIO_SOURCE;
+};
+
+/**
  * Type guard for AudioSource media items.
  * AudioSource is a first-class MediaItem representing a plugin source
  * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability

@@ -1,6 +1,6 @@
 <template>
   <Button
-    v-if="isVisible && !activeAudioSource"
+    v-if="isVisible && store.activePlayerQueue"
     variant="icon"
     :ripple="false"
     icon
@@ -21,7 +21,6 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Button from "@/components/Button.vue";
-import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { store } from "@/plugins/store";
 import { ListVideo } from "lucide-vue-next";
 import { computed } from "vue";
@@ -35,10 +34,6 @@ withDefaults(defineProps<Props>(), {
   isVisible: true,
   size: 20,
 });
-
-const { activeAudioSource } = useActiveAudioSource(
-  computed(() => store.activePlayer),
-);
 
 const activeColor = computed(() =>
   store.showFullscreenPlayer && store.showQueueItems ? "primary" : undefined,
