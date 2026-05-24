@@ -269,6 +269,33 @@ export const getStreamingProviderMappings = function (
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
 
+// Server API schema version that introduced the opaque /imageproxy/<proxy_id>
+// endpoint, the proxy_id field on MediaItemImage, and the size whitelist
+// enforced on both the new and legacy /imageproxy routes.
+// See music-assistant/server#3960.
+const IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION = 31;
+
+// Sizes accepted by the imageproxy on schema >= 31 (both endpoints). 0 means
+// no resize. Anything else returns HTTP 400, so we round up to the next
+// allowed value for arbitrary caller-supplied sizes.
+const IMAGEPROXY_ALLOWED_SIZES = [80, 160, 256, 512, 1024] as const;
+
+const serverSupportsOpaqueImageProxy = function (): boolean {
+  const schema = api.serverInfo.value?.schema_version;
+  return (
+    typeof schema === "number" && schema >= IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION
+  );
+};
+
+const normalizeImageProxySize = function (size?: number): number {
+  if (!size || size <= 0) return 0;
+  if (!serverSupportsOpaqueImageProxy()) return size;
+  for (const allowed of IMAGEPROXY_ALLOWED_SIZES) {
+    if (size <= allowed) return allowed;
+  }
+  return IMAGEPROXY_ALLOWED_SIZES[IMAGEPROXY_ALLOWED_SIZES.length - 1];
+};
+
 /**
  * Get the proper image URL for player media, handling protocol mismatches
  * and backend-provided imageproxy URLs.
@@ -285,13 +312,27 @@ export const getMediaImageUrl = function (
   // Handle data URLs directly
   if (imageUrl.startsWith("data:image")) return imageUrl;
 
-  // Check if this is already an imageproxy URL from the backend
-  // e.g., http://192.168.1.1:8097/imageproxy?provider=tunein&size=500&path=...
-  if (imageUrl.includes("/imageproxy") && imageUrl.includes("provider=")) {
-    // Extract query params and rebuild with our baseUrl
-    const url = new URL(imageUrl);
-    const params = url.searchParams.toString();
-    return `${api.baseUrl}/imageproxy?${params}`;
+  // Rebuild existing imageproxy URLs with our baseUrl. Two URL shapes exist:
+  //   legacy: http://host/imageproxy?provider=tunein&size=500&path=...
+  //   opaque: http://host/imageproxy/<64-hex-id>?size=256&fmt=jpg
+  // Pass a base so relative inputs like `/imageproxy/<id>?size=...` parse,
+  // and swallow parse errors so a malformed input falls through unchanged.
+  if (imageUrl.includes("/imageproxy")) {
+    try {
+      const url = new URL(imageUrl, api.baseUrl || window.location.href);
+      if (url.pathname.startsWith("/imageproxy/")) {
+        const proxyId = url.pathname.slice("/imageproxy/".length);
+        const params = url.searchParams.toString();
+        return params
+          ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
+          : `${api.baseUrl}/imageproxy/${proxyId}`;
+      }
+      if (url.searchParams.has("provider")) {
+        return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
+      }
+    } catch {
+      // fall through and return imageUrl as-is below
+    }
   }
 
   // Check for protocol mismatch: HTTP image URL but HTTPS frontend
@@ -299,7 +340,9 @@ export const getMediaImageUrl = function (
   const pageProtocol = window.location.protocol.replace(":", "");
 
   if (urlProtocol === "http" && pageProtocol === "https") {
-    // Proxy through imageproxy to avoid mixed content issues
+    // Proxy through imageproxy to avoid mixed content issues. The opaque-id
+    // form requires a server-issued proxy_id which we don't have here, so
+    // fall back to the legacy query-string form (still supported).
     const encUrl = encodeURIComponent(encodeURIComponent(imageUrl));
     return `${api.baseUrl}/imageproxy?path=${encUrl}`;
   }
@@ -398,9 +441,22 @@ export const getMediaItemImageUrl = function (
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
+    const normalizedSize = normalizeImageProxySize(size);
+    if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
+      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
+      // as a cache-buster query param (the server ignores unknown params).
+      const params = new URLSearchParams();
+      if (normalizedSize) params.set("size", String(normalizedSize));
+      if (checksum) params.set("checksum", checksum);
+      const qs = params.toString();
+      return qs
+        ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
+        : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+    }
+    // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
-    if (size) return imageUrl + `&size=${size}`;
+    if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
   // else: return image as-is (use getMediaImageUrl for protocol handling)
@@ -661,8 +717,8 @@ export const markdownToHtml = function (text: string): string {
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Try modern Clipboard API first (requires HTTPS or localhost)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  // Modern Clipboard API: only available in secure contexts (HTTPS / localhost).
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -674,29 +730,33 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
-  // Fallback for older browsers or non-secure contexts
+  // Fallback for non-secure contexts. Append inside the active dialog (if any)
+  // so a focus trap (e.g. Reka UI Dialog) does not steal focus and clear the
+  // textarea's selection before execCommand("copy") runs.
+  const host =
+    document.activeElement?.closest<HTMLElement>("[role=dialog]") ??
+    document.body;
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.width = "1px";
+  textArea.style.height = "1px";
+  textArea.style.opacity = "0";
+  textArea.style.pointerEvents = "none";
+  host.appendChild(textArea);
   try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      return true;
-    } else {
-      console.error("Legacy copy method failed");
-      return false;
-    }
+    textArea.setSelectionRange(0, text.length);
+    return document.execCommand("copy");
   } catch (error) {
     console.error("Failed to copy to clipboard:", error);
     return false;
+  } finally {
+    host.removeChild(textArea);
   }
 }
 

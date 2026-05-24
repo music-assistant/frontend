@@ -35,8 +35,10 @@
           :is-progress-bar="false"
           :disabled="
             !store.activePlayerQueue?.active ||
-            store.activePlayerQueue?.current_item?.media_item?.media_type !==
-              MediaType.TRACK
+            !timelineMediaTypes.includes(
+              store.activePlayerQueue?.current_item?.media_item
+                ?.media_type as MediaType,
+            )
           "
         />
       </div>
@@ -150,6 +152,10 @@ const themeColor = computed(() =>
 const playIconStyle = computed(() => ({
   "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
 }));
+
+// Media types that get a fully-featured timeline. AudioSource items decide
+// seekability via their own can_seek flag (read inside PlayerTimeline).
+const timelineMediaTypes = [MediaType.TRACK, MediaType.AUDIO_SOURCE];
 </script>
 
 <style scoped lang="scss">

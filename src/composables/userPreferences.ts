@@ -9,6 +9,7 @@ export interface ItemsListingPreferences {
   libraryFilter?: boolean;
   albumArtistsFilter?: boolean;
   hideEmptyFilter?: boolean | null;
+  hideFullyPlayedFilter?: boolean;
   albumType?: string[];
   providerFilter?: string[];
   expand?: boolean;
