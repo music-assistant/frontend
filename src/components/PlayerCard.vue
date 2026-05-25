@@ -47,6 +47,7 @@
         <!-- special builtin player (web player or companion native player) -->
         <div
           v-if="isBuiltinPlayer(player)"
+          class="player-title-row"
           style="font-size: 0.88rem; line-height: 1.3"
         >
           <span>{{ getPlayerName(player, 12) }}</span>
@@ -62,10 +63,24 @@
               $t("this_device")
             }}</span>
           </v-chip>
+          <NowPlayingBadge
+            v-if="isPlaying"
+            :show-badge="false"
+            :icon-style="{ height: '12px', marginLeft: '4px' }"
+          />
         </div>
         <!-- regular player -->
-        <div v-else style="font-size: 0.88rem; line-height: 1.3">
-          {{ getPlayerName(player, 27) }}
+        <div
+          v-else
+          class="player-title-row"
+          style="font-size: 0.88rem; line-height: 1.3"
+        >
+          <span>{{ getPlayerName(player, 27) }}</span>
+          <NowPlayingBadge
+            v-if="isPlaying"
+            :show-badge="false"
+            :icon-style="{ height: '12px', marginLeft: '4px' }"
+          />
         </div>
       </template>
 
@@ -234,6 +249,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -303,6 +319,10 @@ const openPlayerMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
+
+const isPlaying = computed(
+  () => compProps.player.playback_state == PlaybackState.PLAYING,
+);
 
 const canPlayPause = computed(() => {
   if (activeSource.value) {
@@ -450,5 +470,10 @@ const coverImageColorPalette = computed<ImageColorPalette>(() =>
   height: 16px;
   min-width: 16px;
   padding: 0 4px 0 4px;
+}
+
+.player-title-row {
+  display: flex;
+  align-items: center;
 }
 </style>
