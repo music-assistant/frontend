@@ -30,14 +30,15 @@
           <!-- fallback: display player icon -->
           <div v-else class="icon-thumb">
             <v-icon
-              size="24"
-              :icon="
-                player.type == PlayerType.PLAYER && player.group_members.length
-                  ? 'mdi-speaker-multiple'
-                  : player.icon
+              v-if="
+                player.type == PlayerType.PLAYER &&
+                player.group_members.length
               "
-              style="display: table-cell; opacity: 0.8"
+              size="24"
+              icon="mdi-speaker-multiple"
+              style="opacity: 0.8"
             />
+            <PlayerIcon v-else :icon="player.icon" :size="24" style="opacity: 0.8" />
           </div>
         </div>
       </template>
@@ -255,6 +256,7 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { MoreVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { computed, toRef } from "vue";
 
 // properties
@@ -402,7 +404,9 @@ const coverImageColorPalette = computed<ImageColorPalette>(() =>
   margin-top: 4px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: inline-table;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel-item {

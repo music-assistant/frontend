@@ -11,7 +11,11 @@
       <v-card v-if="config" class="header-card mb-4" elevation="0">
         <div class="header-content">
           <div class="header-icon">
-            <v-icon size="32" color="primary">mdi-speaker</v-icon>
+            <PlayerIcon
+              :icon="api.players[config.player_id]?.icon"
+              :size="32"
+              class="text-primary"
+            />
           </div>
           <div class="header-info">
             <div class="header-title-row">
@@ -244,6 +248,7 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { watch } from "vue";
 
 import { nanoid } from "nanoid";

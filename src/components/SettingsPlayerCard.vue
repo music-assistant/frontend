@@ -11,7 +11,7 @@
     <div class="card-content">
       <div class="card-header">
         <div class="player-icon-wrapper">
-          <v-icon :icon="player?.icon || 'mdi-speaker'" :size="24" />
+          <PlayerIcon :icon="player?.icon" :size="24" />
         </div>
         <div class="player-info">
           <div class="player-name">{{ playerName }}</div>
@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { api } from "@/plugins/api";
 import { PlayerConfig } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";

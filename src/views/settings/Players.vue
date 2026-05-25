@@ -47,8 +47,8 @@
         >
           <template #prepend>
             <div class="player-icon-wrapper">
-              <v-icon
-                :icon="api.players[item.player_id]?.icon || 'mdi-speaker'"
+              <PlayerIcon
+                :icon="api.players[item.player_id]?.icon"
                 :size="20"
                 style="left: 3px"
               />
@@ -179,6 +179,7 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";

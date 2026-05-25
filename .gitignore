@@ -117,9 +117,6 @@ pip-selfcheck.json
 venv/*
 .venv
 
-# generated files
-src/helpers/mdi-icon-names.ts
-
 # vscode
 .vscode/*
 !.vscode/extensions.json

@@ -19,12 +19,7 @@
       <template v-if="showPlayMenuHeader">
         <DropdownMenuSub>
           <DropdownMenuSubTrigger class="gap-3 py-2">
-            <MenuItemIcon
-              :icon="
-                store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
-              "
-              :size="32"
-            />
+            <PlayerIcon :icon="store.activePlayer?.icon" :size="32" />
             <div class="flex flex-col">
               <span>{{ $t("play_on") }}</span>
               <span class="text-muted-foreground text-xs">{{
@@ -116,6 +111,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import PlayerIcon from "@/components/PlayerIcon.vue";
+import { getLucideIcon } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -155,7 +152,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: player.icon,
+    icon: getLucideIcon(player.icon) ?? player.icon,
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));

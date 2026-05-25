@@ -2,21 +2,9 @@
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
-import { execFileSync } from "node:child_process";
 import { fileURLToPath, URL } from "node:url";
 import path from "path";
-import { type Plugin, defineConfig } from "vite";
-
-function genMdiIconNames(): Plugin {
-  return {
-    name: "gen-mdi-icon-names",
-    buildStart() {
-      execFileSync("node", ["scripts/gen-mdi-icon-names.mjs"], {
-        stdio: "inherit",
-      });
-    },
-  };
-}
+import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import webfontDownload from "vite-plugin-webfont-dl";
@@ -25,7 +13,6 @@ import webfontDownload from "vite-plugin-webfont-dl";
 export default defineConfig({
   base: "./",
   plugins: [
-    genMdiIconNames(),
     vue({
       template: { transformAssetUrls },
     }),

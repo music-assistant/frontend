@@ -218,7 +218,7 @@
     />
 
     <!-- icon picker -->
-    <MdiIconPicker
+    <IconPicker
       v-else-if="confEntry.type == ConfigEntryType.ICON"
       :model-value="confEntry.value as string"
       :placeholder="confEntry.default_value?.toString()"
@@ -288,7 +288,7 @@ import {
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
-import MdiIconPicker from "@/components/MdiIconPicker.vue";
+import IconPicker from "@/components/IconPicker.vue";
 import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";

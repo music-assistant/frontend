@@ -33,13 +33,17 @@
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
           <v-icon
-            size="32"
-            :icon="
+            v-if="
               store.activePlayer?.type == PlayerType.PLAYER &&
               store.activePlayer?.group_members.length
-                ? 'mdi-speaker-multiple'
-                : store.activePlayer?.icon || 'mdi-speaker'
             "
+            size="32"
+            icon="mdi-speaker-multiple"
+          />
+          <PlayerIcon
+            v-else
+            :icon="store.activePlayer?.icon"
+            :size="32"
           />
         </div>
       </div>
@@ -176,6 +180,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import {
   ImageColorPalette,
   getMediaImageUrl,
