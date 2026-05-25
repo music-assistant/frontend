@@ -75,11 +75,7 @@
                 size="128"
                 icon="mdi-speaker-multiple"
               />
-              <PlayerIcon
-                v-else
-                :icon="store.activePlayer?.icon"
-                :size="128"
-              />
+              <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="128" />
             </div>
           </div>
           <div class="main-media-details-track-info">
@@ -319,11 +315,7 @@
                 size="128"
                 icon="mdi-speaker-multiple"
               />
-              <PlayerIcon
-                v-else
-                :icon="store.activePlayer?.icon"
-                :size="128"
-              />
+              <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="128" />
             </div>
           </div>
         </div>
@@ -434,7 +426,11 @@
               }
             "
           >
-            <PlayerIcon :icon="store.activePlayer?.icon" :size="20" class="mr-1" />
+            <PlayerIcon
+              :icon="store.activePlayer?.icon"
+              :size="20"
+              class="mr-1"
+            />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
         </div>

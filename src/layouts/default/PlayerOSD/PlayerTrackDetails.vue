@@ -40,11 +40,7 @@
             size="32"
             icon="mdi-speaker-multiple"
           />
-          <PlayerIcon
-            v-else
-            :icon="store.activePlayer?.icon"
-            :size="32"
-          />
+          <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="32" />
         </div>
       </div>
     </template>

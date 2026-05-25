@@ -31,14 +31,18 @@
           <div v-else class="icon-thumb">
             <v-icon
               v-if="
-                player.type == PlayerType.PLAYER &&
-                player.group_members.length
+                player.type == PlayerType.PLAYER && player.group_members.length
               "
               size="24"
               icon="mdi-speaker-multiple"
               style="opacity: 0.8"
             />
-            <PlayerIcon v-else :icon="player.icon" :size="24" style="opacity: 0.8" />
+            <PlayerIcon
+              v-else
+              :icon="player.icon"
+              :size="24"
+              style="opacity: 0.8"
+            />
           </div>
         </div>
       </template>
