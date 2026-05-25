@@ -1,5 +1,5 @@
 <template>
-  <v-icon v-if="isMdiIcon(icon)" :icon="icon" :size="size" v-bind="$attrs" />
+  <v-icon v-if="isMdiIcon(icon)" :icon="icon ?? undefined" :size="size" v-bind="$attrs" />
   <component :is="lucideIcon || Speaker" v-else :size="size" v-bind="$attrs" />
 </template>
 
