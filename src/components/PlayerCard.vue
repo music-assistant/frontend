@@ -44,37 +44,17 @@
 
       <!-- playername -->
       <template #title>
-        <!-- special builtin player (web player or companion native player) -->
         <div
-          v-if="isBuiltinPlayer(player)"
           class="player-title-row"
           style="font-size: 0.88rem; line-height: 1.3"
         >
-          <span>{{ getPlayerName(player, 12) }}</span>
-          <!-- append small icon to the title -->
-          <v-chip density="compact" size="small" class="ml-2" outlined>
-            <v-icon
-              size="14"
-              :icon="
-                store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
-              "
-            />
-            <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
-              $t("this_device")
-            }}</span>
-          </v-chip>
-          <NowPlayingBadge
-            v-if="isPlaying"
-            :show-badge="false"
-            :icon-style="{ height: '12px', marginLeft: '4px' }"
+          <v-icon
+            v-if="isBuiltinPlayer(player)"
+            size="14"
+            class="device-type-icon"
+            :icon="store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'"
+            :aria-label="$t('this_device')"
           />
-        </div>
-        <!-- regular player -->
-        <div
-          v-else
-          class="player-title-row"
-          style="font-size: 0.88rem; line-height: 1.3"
-        >
           <span>{{ getPlayerName(player, 27) }}</span>
           <NowPlayingBadge
             v-if="isPlaying"
@@ -369,6 +349,11 @@ const coverImageColorPalette = computed<ImageColorPalette>(() =>
 
 .player-media-thumb {
   margin-right: 0px;
+}
+
+.device-type-icon {
+  margin-right: 4px;
+  opacity: 0.7;
 }
 
 .volumesliderrow {
