@@ -158,9 +158,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
               />
               <span v-if="!isCollapsed" class="shortcut-label">
                 <span class="shortcut-name">{{ item.name }}</span>
-                <span class="shortcut-type text-muted-foreground">{{
-                  t(item.media_type)
-                }}</span>
+                <span class="shortcut-type">{{ t(item.media_type) }}</span>
               </span>
             </SidebarMenuButton>
             <Button
@@ -247,8 +245,14 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 
 .shortcut-type {
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.3;
+  opacity: var(
+    --v-list-item-subtitle-opacity,
+    var(--v-medium-emphasis-opacity)
+  );
+  /* Match list subtitles (e.g., artist/album in item list) */
+  color: rgb(var(--v-theme-on-panel), 0.6);
 }
 
 /* mdi-dots-vertical v-btn — ensure it appears above the RouterLink */
