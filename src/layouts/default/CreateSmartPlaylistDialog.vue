@@ -31,16 +31,25 @@
           <!-- Mode: Dynamic / Fixed -->
           <div class="flex flex-col gap-2">
             <Label>{{ $t("smart_playlist.mode") }}</Label>
-            <Tabs v-model="mode">
-              <TabsList class="h-8">
-                <TabsTrigger value="dynamic" class="text-xs px-4">
-                  {{ $t("smart_playlist.dynamic") }}
-                </TabsTrigger>
-                <TabsTrigger value="fixed" class="text-xs px-4">
-                  {{ $t("smart_playlist.fixed") }}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <RadioGroup v-model="mode" class="grid grid-cols-2 gap-2">
+              <Label
+                for="smart-playlist-mode-dynamic"
+                class="flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors hover:bg-accent"
+              >
+                <RadioGroupItem
+                  id="smart-playlist-mode-dynamic"
+                  value="dynamic"
+                />
+                <span>{{ $t("smart_playlist.dynamic") }}</span>
+              </Label>
+              <Label
+                for="smart-playlist-mode-fixed"
+                class="flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors hover:bg-accent"
+              >
+                <RadioGroupItem id="smart-playlist-mode-fixed" value="fixed" />
+                <span>{{ $t("smart_playlist.fixed") }}</span>
+              </Label>
+            </RadioGroup>
           </div>
 
           <!-- Track count (fixed mode only) -->
@@ -110,7 +119,7 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
 import SmartPlaylistTrackCountDisplay from "@/components/smart_playlist/SmartPlaylistTrackCountDisplay.vue";
 import api from "@/plugins/api";
