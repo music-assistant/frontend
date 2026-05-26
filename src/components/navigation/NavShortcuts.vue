@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw } from "vue";
-import { RouterLink, useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
+import type { LucideIcon } from "lucide-vue-next";
 import {
   BookAudio,
   Disc3,
@@ -13,7 +11,9 @@ import {
   Radio,
   Tag,
 } from "lucide-vue-next";
-import type { LucideIcon } from "lucide-vue-next";
+import { computed, markRaw } from "vue";
+import { useI18n } from "vue-i18n";
+import { RouterLink, useRoute } from "vue-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,15 +21,15 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 
 const RouterLinkComponent = markRaw(RouterLink);
@@ -158,7 +158,9 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
               />
               <span v-if="!isCollapsed" class="shortcut-label">
                 <span class="shortcut-name">{{ item.name }}</span>
-                <span class="shortcut-type">{{ t(item.media_type) }}</span>
+                <span class="shortcut-type text-muted-foreground">{{
+                  t(item.media_type)
+                }}</span>
               </span>
             </SidebarMenuButton>
             <Button
@@ -231,11 +233,13 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 4px;
   flex: 1;
 }
 
 .shortcut-name {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -243,9 +247,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 }
 
 .shortcut-type {
-  font-size: 0.7rem;
-  font-weight: 300;
-  opacity: 0.55;
+  font-size: 0.8125rem;
+  font-weight: 500;
   line-height: 1.3;
 }
 
@@ -254,8 +257,11 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   z-index: 1;
 }
 
-/* prevent horizontal scrollbar from absolute-positioned action btn */
+/* Clip the absolute-positioned action btn without forcing overflow-y to auto.
+   `overflow-x: hidden` would silently flip overflow-y to auto and create a
+   spurious vertical scrollbar inside the sidebar; `clip` is the only value
+   that does not trigger that side-effect. */
 :deep([data-sidebar="group-content"]) {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 </style>
