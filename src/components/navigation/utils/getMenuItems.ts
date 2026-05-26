@@ -58,6 +58,15 @@ export const getMenuItems = function () {
         group: "discover",
       });
     }
+    if (enabledMenuItemStr === "browse") {
+      items.push({
+        label: "browse",
+        icon: Folder,
+        path: "/browse",
+        isLibraryNode: true,
+        group: "system",
+      });
+    }
     if (enabledMenuItemStr === "party") {
       items.push({
         label: "party_mode",
@@ -140,15 +149,6 @@ export const getMenuItems = function () {
         path: "/genres",
         isLibraryNode: true,
         group: "library",
-      });
-    }
-    if (enabledMenuItemStr === "browse") {
-      items.push({
-        label: "browse",
-        icon: Folder,
-        path: "/browse",
-        isLibraryNode: true,
-        group: "system",
       });
     }
     if (enabledMenuItemStr === "settings") {
