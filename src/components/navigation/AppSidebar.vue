@@ -65,7 +65,11 @@ onUnmounted(() => {
     <SidebarHeader>
       <SidebarMenu>
         <div class="sidebar-header-row">
-          <div class="sidebar-header" @click="router.push('/')">
+          <div
+            class="sidebar-header"
+            :style="{ marginLeft: collapsed ? '2px' : '7px' }"
+            @click="router.push('/')"
+          >
             <img
               src="@/assets/icon.svg"
               alt="Music Assistant"
@@ -117,8 +121,7 @@ onUnmounted(() => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  margin-right: 15px;
-  margin: 2px 15px 8px 7px;
+  margin: 2px 15px 8px 0;
   gap: 6px;
   transition: opacity 0.3s ease;
   position: relative;

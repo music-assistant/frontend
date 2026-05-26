@@ -199,7 +199,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 /* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
   /* explicit height (not auto) so transition-[height] can animate */
-  height: 3.6rem !important;
+  height: 3rem !important;
   padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
   align-items: center !important;
 }
@@ -211,8 +211,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 }
 
 .shortcut-thumb {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 4px;
   object-fit: cover;
   flex-shrink: 0;
@@ -233,7 +233,6 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 4px;
   flex: 1;
 }
 
