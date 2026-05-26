@@ -237,9 +237,9 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 }
 
 .shortcut-name {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 1.3;
+  /* match sidebar menu item label: Tailwind `text-sm font-medium` */
+  font-size: 0.875rem;
+  line-height: 1.25rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
