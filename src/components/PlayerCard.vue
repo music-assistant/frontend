@@ -31,7 +31,10 @@
           <div v-else class="icon-thumb">
             <PlayerIcon
               :icon="player.icon"
-              :grouped="player.type == PlayerType.PLAYER && !!player.group_members.length"
+              :grouped="
+                player.type == PlayerType.PLAYER &&
+                !!player.group_members.length
+              "
               :size="24"
               style="opacity: 0.8"
             />
