@@ -583,17 +583,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "lt",
-    })
-  ) {
-    return 3;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
       breakpoint: "bp6",
       condition: "lt",
     })
@@ -605,62 +594,51 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp7",
+      breakpoint: "bp8",
       condition: "lt",
     })
   ) {
     return 4;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp7",
+      breakpoint: "bp8",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp8",
+      breakpoint: "bp9",
       condition: "lt",
     })
   ) {
     return 5;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp8",
+      breakpoint: "bp9",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp9",
+      breakpoint: "bp10",
       condition: "lt",
     })
   ) {
     return 6;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp9",
+      breakpoint: "bp10",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp10",
+      breakpoint: "bp11",
       condition: "lt",
+    })
+  ) {
+    return 7;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "gt",
     })
   ) {
     return 8;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp10",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
-      breakpoint: "bp11",
-      condition: "lt",
-    })
-  ) {
-    return 9;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp11",
-      condition: "gt",
-    })
-  ) {
-    return 10;
   } else {
     return 0;
   }
