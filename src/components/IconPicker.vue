@@ -14,7 +14,7 @@
     clearable
     auto-select-first
     @update:model-value="onSelect"
-    @click:clear="$emit('update:modelValue', null)"
+    @click:clear="emit('click:clear')"
   >
     <!-- icon preview in the input field -->
     <template #prepend-inner>
@@ -44,11 +44,18 @@
 <script setup lang="ts">
 import {
   getLucideIcon,
-  LUCIDE_ICON_NAMES,
+  getLucideIconNames,
   MA_ICON_NAMES,
   SUGGESTED_ICON_NAMES,
 } from "@/helpers/icon";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+
+const lucideIconNames = ref<readonly string[]>([]);
+onMounted(() => {
+  getLucideIconNames().then((names) => {
+    lucideIconNames.value = names;
+  });
+});
 
 const props = defineProps<{
   modelValue: string | null | undefined;
@@ -59,6 +66,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: string | null): void;
+  (e: "click:clear"): void;
 }>();
 
 const MAX_ITEMS = 100;
@@ -77,7 +85,7 @@ const filteredItems = computed(() => {
   const ranked: { rank: number; name: string }[] = [];
 
   // MA icons searched first so they appear at the top when matched
-  for (const name of [...MA_ICON_NAMES, ...LUCIDE_ICON_NAMES]) {
+  for (const name of [...MA_ICON_NAMES, ...lucideIconNames.value]) {
     const parts = name.split("-");
     let rank: number;
 

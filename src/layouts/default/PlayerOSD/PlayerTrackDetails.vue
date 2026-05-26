@@ -32,15 +32,14 @@
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
-          <v-icon
-            v-if="
+          <PlayerIcon
+            :icon="store.activePlayer?.icon"
+            :grouped="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_members.length
+              !!store.activePlayer?.group_members.length
             "
-            size="32"
-            icon="mdi-speaker-multiple"
+            :size="32"
           />
-          <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="32" />
         </div>
       </div>
     </template>

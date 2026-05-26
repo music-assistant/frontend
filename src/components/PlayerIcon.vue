@@ -1,6 +1,12 @@
 <template>
   <v-icon
-    v-if="isMdiIcon(icon)"
+    v-if="grouped"
+    icon="mdi-speaker-multiple"
+    :size="size"
+    v-bind="$attrs"
+  />
+  <v-icon
+    v-else-if="isMdiIcon(icon)"
     :icon="icon ?? undefined"
     :size="size"
     v-bind="$attrs"
@@ -16,6 +22,7 @@ import { computed } from "vue";
 const props = defineProps<{
   icon?: string | null;
   size?: number | string;
+  grouped?: boolean;
 }>();
 
 const lucideIcon = computed(() => getLucideIcon(props.icon));

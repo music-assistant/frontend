@@ -67,15 +67,14 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                v-if="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
+                  !!store.activePlayer?.group_members.length
                 "
-                size="128"
-                icon="mdi-speaker-multiple"
+                :size="128"
               />
-              <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="128" />
             </div>
           </div>
           <div class="main-media-details-track-info">
@@ -307,15 +306,14 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                v-if="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
+                  !!store.activePlayer?.group_members.length
                 "
-                size="128"
-                icon="mdi-speaker-multiple"
+                :size="128"
               />
-              <PlayerIcon v-else :icon="store.activePlayer?.icon" :size="128" />
             </div>
           </div>
         </div>
