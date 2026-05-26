@@ -1282,3 +1282,36 @@ export interface PartyConfig {
   hide_back_button: boolean;
   show_progress_bar: boolean;
 }
+
+export interface SmartPlaylistRules {
+  genre_ids: number[];
+  artist_ids: number[];
+  album_ids: number[];
+  favorites_only: boolean;
+  seed_track_uri?: string;
+  seed_track_name?: string;
+  seed_artist_uri?: string;
+  seed_artist_name?: string;
+  min_popularity?: number;
+  logic: "AND" | "OR";
+  limit: number;
+  genre_names?: Record<number, string>;
+  artist_names?: Record<number, string>;
+  album_names?: Record<number, string>;
+  year_from?: number;
+  year_to?: number;
+  excluded_artist_ids?: number[];
+  excluded_album_ids?: number[];
+  excluded_genre_ids?: number[];
+  excluded_track_uris?: string[];
+  excluded_artist_names?: Record<number, string>;
+  excluded_album_names?: Record<number, string>;
+  excluded_genre_names?: Record<number, string>;
+  dedup_hours?: number;
+  seed_artist_library_only?: boolean;
+}
+
+export interface SmartPlaylistTrackStats {
+  count: number;
+  duration_seconds: number;
+}

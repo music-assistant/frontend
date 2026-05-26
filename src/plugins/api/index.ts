@@ -53,6 +53,7 @@ import {
   RemoteAccessInfo,
   RepeatMode,
   SearchResults,
+  SmartPlaylistRules,
   UserRole,
 } from "./interfaces";
 
@@ -834,6 +835,54 @@ export class MusicAssistantApi {
       library_matching,
       match_providers,
     });
+  }
+
+  public createSmartPlaylist(
+    name: string,
+    rules: SmartPlaylistRules,
+    is_dynamic: boolean = true,
+  ): Promise<Playlist> {
+    return this.sendCommand("smart_playlists/create", {
+      name,
+      rules,
+      is_dynamic,
+    });
+  }
+
+  public generateSmartPlaylist(
+    name: string,
+    rules: SmartPlaylistRules,
+    count?: number,
+  ): Promise<Playlist> {
+    return this.sendCommand("smart_playlists/generate", {
+      name,
+      rules,
+      count,
+    });
+  }
+
+  public getSmartPlaylistRules(
+    db_playlist_id: string | number,
+  ): Promise<SmartPlaylistRules | null> {
+    return this.sendCommand("smart_playlists/get_rules", {
+      playlist_id: db_playlist_id,
+    });
+  }
+
+  public updateSmartPlaylistRules(
+    db_playlist_id: string | number,
+    rules: SmartPlaylistRules,
+  ): Promise<void> {
+    return this.sendCommand("smart_playlists/update_rules", {
+      playlist_id: db_playlist_id,
+      rules,
+    });
+  }
+
+  public countSmartPlaylistTracks(
+    rules: SmartPlaylistRules,
+  ): Promise<{ count: number; duration_seconds: number }> {
+    return this.sendCommand("smart_playlists/count_tracks", { rules });
   }
 
   /**
