@@ -37,19 +37,13 @@
 </template>
 
 <script lang="ts" setup>
-import AppSidebar from "@/components/navigation/AppSidebar.vue";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { store } from "@/plugins/store";
-import PlayerSelect from "./PlayerSelect.vue";
+import AddManualLink from "@/components/AddManualLink.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
-import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
-import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
-import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
-import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
-import ItemContextMenu from "./ItemContextMenu.vue";
-import AddManualLink from "@/components/AddManualLink.vue";
+import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useRickRoll } from "@/helpers/useRickRoll";
 import {
   MediaType,
   type Playlist,
@@ -57,11 +51,20 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
+import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
+import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
+import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
+import ItemContextMenu from "./ItemContextMenu.vue";
+import PlayerSelect from "./PlayerSelect.vue";
 
 const showEditItemDialog = ref(false);
 const editItem = ref<Radio | Track | Playlist | undefined>(undefined);
 const editItemType = ref<MediaType>(MediaType.RADIO);
+
+useRickRoll();
 
 onMounted(() => {
   eventbus.on("editItemDialog", (item: Radio | Track | Playlist) => {

@@ -64,6 +64,7 @@ export type Events = {
   genreExcluded: void;
   "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
+  rickroll: void;
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

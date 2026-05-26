@@ -51,6 +51,22 @@ const handleOpenSidebar = () => {
   }
 };
 
+let logoClicks = 0;
+let logoClickTimer: ReturnType<typeof setTimeout> | undefined;
+const onLogoClick = () => {
+  router.push("/");
+  logoClicks += 1;
+  if (logoClickTimer) clearTimeout(logoClickTimer);
+  logoClickTimer = setTimeout(() => {
+    logoClicks = 0;
+  }, 600);
+  if (logoClicks >= 7) {
+    logoClicks = 0;
+    if (logoClickTimer) clearTimeout(logoClickTimer);
+    eventbus.emit("rickroll");
+  }
+};
+
 onMounted(() => {
   eventbus.on("mobile-sidebar-open", handleOpenSidebar);
 });
@@ -68,7 +84,7 @@ onUnmounted(() => {
           <div
             class="sidebar-header"
             :style="{ marginLeft: collapsed ? '2px' : '7px' }"
-            @click="router.push('/')"
+            @click="onLogoClick"
           >
             <img
               src="@/assets/icon.svg"
