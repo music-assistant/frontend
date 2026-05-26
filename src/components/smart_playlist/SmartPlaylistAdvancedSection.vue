@@ -73,10 +73,10 @@
             @update:model-value="(v) => (rules.logic = v as 'AND' | 'OR')"
           >
             <TabsList class="h-8">
-              <TabsTrigger value="AND" class="text-xs px-4">
+              <TabsTrigger value="AND" class="text-xs px-4 border-0">
                 {{ $t("smart_playlist.logic_and") }}
               </TabsTrigger>
-              <TabsTrigger value="OR" class="text-xs px-4">
+              <TabsTrigger value="OR" class="text-xs px-4 border-0">
                 {{ $t("smart_playlist.logic_or") }}
               </TabsTrigger>
             </TabsList>
