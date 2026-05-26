@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -108,11 +109,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 <template>
   <div ref="navEl"></div>
   <template v-if="pinnedItems.length > 0 || isLoading">
-    <div
-      class="my-1 h-px shrink-0 bg-sidebar-border"
-      :class="isCollapsed ? 'mx-1' : 'mx-3'"
-    ></div>
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
+      <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
       <SidebarGroupContent class="flex flex-col gap-0.5">
         <SidebarMenu>
           <!-- Skeletons while the API calls are in flight -->

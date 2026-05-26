@@ -170,10 +170,7 @@ const hasSimilarArtistsProvider = computed(() =>
 
 const loadSimilarArtists = async function (_params: LoadDataParams) {
   if (!itemDetails.value) return [];
-  return await api.getSimilarArtists(
-    props.itemId,
-    props.provider,
-  );
+  return await api.getSimilarArtists(props.itemId, props.provider);
 };
 
 const loadArtistTracks = async function (params: LoadDataParams) {
