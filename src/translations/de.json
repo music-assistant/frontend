@@ -5,7 +5,7 @@
     "add_queue": "Zur Warteschlange hinzufügen",
     "add_url_item": "Hinzufügen von URL",
     "album": "Album",
-    "album_tracks": "Album Tracks",
+    "album_tracks": "Album-Titel",
     "album_type": {
         "album": "Album",
         "compilation": "Kompilation",
@@ -21,7 +21,7 @@
     "appears_on": "Erscheint auf",
     "artist": "Künstler",
     "artist_albums": "Alben",
-    "artist_toptracks": "Top Tracks",
+    "artist_toptracks": "Top Titel",
     "artists": "Künstler",
     "browse": "Durchsuchen",
     "clear_selection": "Auswahl aufheben",
@@ -64,7 +64,7 @@
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",
-    "playlist_tracks": "Wiedergabelisten-Tracks",
+    "playlist_tracks": "Wiedergabelisten-Titel",
     "playlists": "Wiedergabelisten",
     "provider_details": "Anbieterdetails",
     "queue": "Warteschlange",
@@ -99,7 +99,7 @@
         "enable_provider": "Diesen Anbietereintrag aktivieren",
         "enabled": "Aktivieren",
         "invalid_input": "Die Eingabe ist ungültig",
-        "metadataproviders": "Anbieter von Metadaten",
+        "metadataproviders": "Metadaten-Anbieter",
         "musicproviders": "Musikanbieter",
         "need_help_setup_provider": "Benötigst du Hilfe bei der Einrichtung dieses Anbieters?",
         "no_providers": "Keine Musikanbieter konfiguriert",
@@ -136,9 +136,9 @@
         "server_as_addon": "Home Assistant Add-on",
         "artists_in_library": "Künstler in Bibliothek",
         "albums_in_library": "Alben in Bibliothek",
-        "tracks_in_library": "Tracks in Bibliothek",
+        "tracks_in_library": "Titel in Bibliothek",
         "playlists_in_library": "Wiedergabelisten in Bibliothek",
-        "radio_in_library": "Radiostationen in Bibliothek",
+        "radio_in_library": "Radiosender in Bibliothek",
         "server_logging": "Server-Protokollierung",
         "download_log": "Protokoll-Datei herunterladen",
         "edit_group_members": "Gruppenmitglieder bearbeiten",
@@ -221,7 +221,7 @@
             "description": "Wenn du ein Album abspielen möchtest, welche Elemente sollten in die Warteschlange aufgenommen werden?",
             "options": {
                 "library_tracks": "Nur Titel in der Bibliothek",
-                "all_tracks": "Alle Titel für das Album beim Anbieter"
+                "all_tracks": "Alle Titel des Albums beim Anbieter"
             }
         },
         "default_enqueue_action_artist": {
@@ -229,7 +229,7 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Spiele jetzt die Titel des Künstlers und behalte die verbleibenden Elemente in der Warteschlange.",
-                "replace": "Lösche die Warteschlange und spiele den\/die Künstler-Titel ab.",
+                "replace": "Lösche die Warteschlange und spiele den\/die Titel des Künstlers ab.",
                 "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
                 "replace_next": "Warteschlange leeren und den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element abspielen.",
                 "add": "Füge den\/die Titel des Künstlers am Ende der Warteschlange hinzu."
@@ -240,10 +240,10 @@
             "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Albumtitel jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
-                "replace": "Lösche die Warteschlange und spiele den\/die Album-Titel ab.",
+                "replace": "Lösche die Warteschlange und spiele den\/die Albumtitel ab.",
                 "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
                 "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten\/gepufferten Titel abspielen.",
-                "add": "Füge den\/die Album-Titel am Ende der Warteschlange hinzu."
+                "add": "Füge den\/die Albumtitel am Ende der Warteschlange hinzu."
             }
         },
         "default_enqueue_action_track": {
@@ -261,7 +261,7 @@
             "label": "Standardmäßige Warteschlangenoption für Wiedergabeliste-Elemente.",
             "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
             "options": {
-                "play": "Wiedergabeliste jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
+                "play": "Titel der Wiedergabeliste jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
                 "replace": "Lösche die Warteschlange und spiele die Wiedergabeliste-Titel ab.",
                 "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
                 "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element der Wiedergabeliste ab.",
@@ -388,7 +388,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Tracks\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Tracks gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Track (erstmals) abgespielt wird. Wenn für einen Track noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Tracks gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\n**Optionen:**\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
+            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Titel\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Titeln gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Titel (erstmals) abgespielt wird. Wenn für einen Titel noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Titeln gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\n**Optionen:**\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
             "options": {
                 "disabled": "Deaktiviert",
                 "dynamic": "Erzwinge dynamisch",
@@ -399,8 +399,8 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Feste\/Fallback Gain-Anpassung für Songs",
-            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Track-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
+            "label": "Feste\/Fallback Gain-Anpassung für Titel",
+            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Titel-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
         },
         "volume_normalization_fixed_gain_radio": {
             "label": "Feste\/Fallback Gain-Anpassung für Radio",
@@ -506,7 +506,7 @@
         "add_group_player_desc_universal": "Durch das Erstellen einer universellen Wiedergabegeräte-Gruppe kannst du Wiedergabegeräte von verschiedenen Anbietern\/Ökosystemen zusammenfassen. \nDadurch werden dieselben Audiodaten an alle Wiedergabegeräte der Gruppe verteilt (jedoch nicht synchron).",
         "edit_provider": "Anbieter bearbeiten: {0}",
         "metadata": "Metadaten",
-        "metadataprovider": "Metadatenanbieter",
+        "metadataprovider": "Metadaten-Anbieter",
         "music": "Musik",
         "musicprovider": "Musikanbieter",
         "player": "Wiedergabegerät",
@@ -716,13 +716,13 @@
         "player_needs_setup": "Dieses Wiedergabegerät erfordert eine Einrichtung.",
         "add_music_provider": "Füge eine Musikquelle hinzu",
         "add_player_provider": "Füge einen Wiedergabegeräte-Anbieter hinzu",
-        "add_metadata_provider": "Füge einen Metadatenanbieter hinzu.",
+        "add_metadata_provider": "Füge einen Metadaten-Anbieter hinzu.",
         "add_plugin_provider": "Plugin hinzufügen",
         "music_sources": "Musikquellen",
         "plugins": "Plugins",
         "music_providers_description": "Verwalte deine Musikstreaming-Dienste und lokalen Bibliotheken.",
         "player_providers_description": "Konfiguriere Anbieter für deine Audioausgabegeräte",
-        "metadata_providers_description": "Metadatenanbieter für Kunstwerke und zusätzliche Informationen verwalten",
+        "metadata_providers_description": "Metadaten-Anbieter für Kunstwerke und zusätzliche Informationen verwalten",
         "plugin_providers_description": "Verwalte Plugins, die die Funktionalität des Musikassistenten erweitern.",
         "restore_genres": "Genres wiederherstellen",
         "scan_ago": "vor {0}",
@@ -740,7 +740,18 @@
         "sendspin_static_delay": {
             "label": "Statische Wiedergabeverzögerung (ms)",
             "description": "Offset in Millisekunden, um dieses Wiedergabegerät mit anderen Playern zu synchronisieren. Erhöhe den Wert, wenn die Audiowiedergabe zu verzögert ist, beispielsweise um Latenzen von einem Verstärker, Aktivlautsprechern oder dem Betriebssystem auszugleichen."
-        }
+        },
+        "audio_analysis_coverage": {
+            "title": "Abdeckung der Audioanalyse",
+            "col_provider": "Anbieter",
+            "col_coverage": "Abdeckung",
+            "col_pending": "Ausstehend",
+            "col_stale": "Veraltet",
+            "col_version": "Version",
+            "unavailable": "nicht verfügbar",
+            "none": "—"
+        },
+        "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern."
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -813,11 +824,12 @@
         "show_empty_genres": "Leere Genres anzeigen",
         "filter_genre": "Nach Genre filtern",
         "show_only_default_genres": "Nur Standardgenres anzeigen",
-        "show_all_genres": "Alle Genres anzeigen"
+        "show_all_genres": "Alle Genres anzeigen",
+        "filter_hide_fully_played": "Ausblenden vollständig abgespielter Folgen"
     },
     "topresult": "Top-Ergebnis",
-    "track": "Track",
-    "track_number": "Disk {0} Track {1}",
+    "track": "Titel",
+    "track_number": "Disk {0} Titel {1}",
     "tracks": "Titel",
     "try_global_search": "Mit der globalen Suche versuchen",
     "type_to_search": "Suchbegriff eingeben…",
@@ -948,7 +960,7 @@
     "this_device": "Dieses Gerät",
     "recommendations": {
         "in_progress_items": "Wiedergabe fortsetzen…",
-        "recommended_new_tracks": "Empfohlene Song-Neuerscheinungen für dich",
+        "recommended_new_tracks": "Empfohlene Titel-Neuerscheinungen für dich",
         "recently_played": "Zuletzt gespielt",
         "suggested_new_albums_for_you": "Empfohlene Album-Neuerscheinungen für dich",
         "random_artists": "Zufällige Interpreten",
@@ -956,12 +968,12 @@
         "custom_mixes": "Benutzerdefinierte Mixe",
         "your_listening_history": "Dein Wiedergabe-Verlauf",
         "popular_albums": "Beliebte Alben",
-        "staff_picks_tracks": "Mitarbeiterempfehlungen: Lieder",
+        "staff_picks_tracks": "Mitarbeiterempfehlungen: Titel",
         "staff_picks_albums": "Mitarbeiterempfehlungen: Alben",
         "radio_stations_for_you": "Radiosender für dich",
         "producers__songwriters": "Produzenten & Songwriter",
         "new_releases_for_you": "Neuerscheinungen für dich",
-        "recent_favorite_tracks": "Zuletzt favorisierte Lieder",
+        "recent_favorite_tracks": "Zuletzt favorisierte Titel",
         "favorite_playlists": "Wiedergabeliste-Favoriten",
         "favorite_radio_stations": "Radiosender-Favoriten",
         "listen_again": "Nochmal hören",
@@ -976,14 +988,15 @@
         "libraries": "Bibliotheken",
         "library": "Bibliothek",
         "trending_podcasts": "Beliebte Podcasts",
-        "trending_stations": "Trendsender",
-        "forgotten_tracks": "Vergessene Tracks",
+        "trending_stations": "Trend-Radiosender",
+        "forgotten_tracks": "Vergessene Titel",
         "forgotten_albums": "Vergessene Alben",
         "forgotten_artists": "Vergessene Künstler",
         "most_played_tracks": "Meistgespielte Titel",
         "never_played_tracks": "Nie \/ selten gespielt",
         "recent_favorite_albums": "Kürzlich favorisierte Alben",
-        "recently_added_tracks": "Kürzlich hinzugefügte Titel"
+        "recently_added_tracks": "Kürzlich hinzugefügte Titel",
+        "inspired_by_recently_played": "Inspiriert von kürzlich gespielt"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
@@ -1450,7 +1463,7 @@
                 "item_added_to_queue": "„{0}“ zur Warteschlange hinzugefügt",
                 "item_boosted": "„{0}“ geboostet",
                 "load_artist_tracks_failed": "Die Titel des Künstlers konnten nicht geladen werden. Bitte versuche es erneut.",
-                "loading_tracks": "Tracks werden geladen...",
+                "loading_tracks": "Titel werden geladen...",
                 "no_results_for": "Keine Ergebnisse gefunden für „{0}“",
                 "no_tracks_for_artist": "Keine Titel für diesen Künstler gefunden",
                 "queue_empty": "Warteschlange ist leer",
@@ -1609,7 +1622,7 @@
     "background_task": {
         "sync_provider_artists": "Künstler für {0} synchronisieren",
         "sync_provider_albums": "Alben für {0} synchronisieren",
-        "sync_provider_tracks": "Tracks für {0} synchronisieren",
+        "sync_provider_tracks": "Titel für {0} synchronisieren",
         "sync_provider_playlists": "Wiedergabelisten für {0} synchronisieren",
         "sync_provider_radios": "Radios für {0} synchronisieren",
         "sync_provider_audiobooks": "Hörbücher für {0} synchronisieren",
@@ -1638,6 +1651,15 @@
     "party_mode": "Party",
     "edit_playlist": "Wiedergabeliste bearbeiten",
     "edit_radio": "Radiosender bearbeiten",
-    "edit_track": "Track bearbeiten",
-    "uri_read_only": "URI (schreibgeschützt)"
+    "edit_track": "Titel bearbeiten",
+    "uri_read_only": "URI (schreibgeschützt)",
+    "lyrics_offset": "Lyrics Offset",
+    "similar_tracks": "Ähnliche Titel",
+    "similar_artists": "Ähnliche Künstler",
+    "audio_source": "Audioquelle",
+    "change_playback_speed": "Wiedergabegeschwindigkeit ändern",
+    "shortcut": {
+        "add_to": "Zu Verknüpfungen hinzufügen",
+        "remove_from": "Aus Verknüpfungen entfernen"
+    }
 }

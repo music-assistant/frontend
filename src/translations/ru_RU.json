@@ -366,7 +366,8 @@
                 "it": "Итальянский",
                 "el_GR": "Греческий",
                 "lt_LT": "Литовский",
-                "lv_LV": "Латышский"
+                "lv_LV": "Латышский",
+                "bg_BG": "Болгарский"
             }
         },
         "no_music_providers": "Музыкальные провайдеры не настроены",
@@ -739,7 +740,18 @@
         "sendspin_static_delay": {
             "label": "Задержка воспроизведения (мс)",
             "description": "Смещение в миллисекундах, используется для синхронизации этого плеера с другими. Увеличьте значение, если воспроизведение звука происходит слишком поздно, например, для компенсации задержки, вызванной усилителем, активными колонками или операционной системой."
-        }
+        },
+        "audio_analysis_coverage": {
+            "title": "Охват аудиоанализа",
+            "col_provider": "Провайдер",
+            "col_coverage": "Охват",
+            "col_pending": "Ожидает",
+            "col_stale": "Устарело",
+            "col_version": "Версия",
+            "unavailable": "недоступно",
+            "none": "—"
+        },
+        "audio_analysis_description": "Отслеживание охвата аудиоанализа всех провайдеров"
     },
     "show_info": "Показать информацию",
     "show_select_boxes": "Показать поля выбора",
@@ -812,7 +824,8 @@
         "show_empty_genres": "Показать пустые жанры",
         "filter_genre": "Фильтр по жанру",
         "show_only_default_genres": "Показать только жанры по умолчанию",
-        "show_all_genres": "Показать все жанры"
+        "show_all_genres": "Показать все жанры",
+        "filter_hide_fully_played": "Скрыть полностью прослушанные эпизоды"
     },
     "topresult": "Лучший результат",
     "track": "Трек",
@@ -950,7 +963,7 @@
         "recommended_new_tracks": "Рекомендуемые новые треки",
         "recently_played": "Недавно прослушанные",
         "suggested_new_albums_for_you": "Предлагаемые новые альбомы для вас",
-        "random_artists": "Случайные артисты",
+        "random_artists": "Случайные исполнители",
         "random_albums": "Случайные альбомы",
         "custom_mixes": "Пользовательские миксы",
         "your_listening_history": "Ваша история прослушивания",
@@ -970,12 +983,20 @@
         "episodes_recently_added": "Недавно добавленные эпизоды",
         "recent_series": "Последние серии",
         "newest_authors": "Новые авторы",
-        "newest_episodes": "Новые серии",
+        "newest_episodes": "Новые эпизоды",
         "discover": "Обзор",
         "libraries": "Библиотеки",
         "library": "Библиотека",
         "trending_podcasts": "Модные подкасты",
-        "trending_stations": "Популярные радиостанции"
+        "trending_stations": "Популярные радиостанции",
+        "forgotten_tracks": "Забытые треки",
+        "forgotten_albums": "Забытые альбомы",
+        "forgotten_artists": "Забытые исполнители",
+        "most_played_tracks": "Чаще всего прослушиваемые треки",
+        "never_played_tracks": "Никогда \/ редко воспроизводимые",
+        "recent_favorite_albums": "Недавно избранные альбомы",
+        "recently_added_tracks": "Недавно добавленные треки",
+        "inspired_by_recently_played": "По мотивам того, что вы слушали"
     },
     "homescreen_edit_enable": "Редактировать главный экран",
     "homescreen_edit_disable": "Выйти из режима редактирования главного экрана",
@@ -1015,8 +1036,8 @@
         "profile": "Профиль",
         "account_settings": "Настройки учетной записи",
         "manage_your_profile_info": "Управление информацией и настройками профиля",
-        "change_password": "Изменить пароль",
-        "update_your_password": "Обновите пароль своей учетной записи",
+        "change_password": "Изменение пароля",
+        "update_your_password": "Обновление пароля вашей учетной записи",
         "old_password": "Текущий пароль",
         "new_password": "Новый пароль",
         "password_changed": "Пароль успешно изменен",
@@ -1456,7 +1477,7 @@
                 "skip": "Пропустить",
                 "song_skipped": "Песня пропущена!",
                 "try_different_search": "Попробуйте другой поисковый запрос",
-                "unknown_artist": "Неизвестный артист",
+                "unknown_artist": "Неизвестный исполнитель",
                 "view_songs": "Просмотреть песни",
                 "added": "Добавлен",
                 "already_in_queue": "Уже в очереди"
@@ -1631,5 +1652,14 @@
     "edit_playlist": "Редактировать плейлист",
     "edit_radio": "Редактировать радиостанцию",
     "edit_track": "Редактировать трек",
-    "uri_read_only": "URI (только для чтения)"
+    "uri_read_only": "URI (только для чтения)",
+    "lyrics_offset": "Смещение текста песни",
+    "similar_tracks": "Похожие треки",
+    "similar_artists": "Похожие исполнители",
+    "audio_source": "Источник звука",
+    "change_playback_speed": "Изменить скорость воспроизведения",
+    "shortcut": {
+        "add_to": "Добавить в ярлыки",
+        "remove_from": "Удалить из ярлыков"
+    }
 }
