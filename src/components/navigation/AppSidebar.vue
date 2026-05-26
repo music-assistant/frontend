@@ -33,7 +33,7 @@ const navItems = computed(() =>
 );
 
 const discoverItems = computed(() =>
-  navItems.value.filter((item) => item.group === "discover"),
+  navItems.value.filter((item) => item.group === "explore"),
 );
 const libraryItems = computed(() =>
   navItems.value.filter((item) => item.group === "library"),

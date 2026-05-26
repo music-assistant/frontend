@@ -17,7 +17,7 @@ import {
 } from "lucide-vue-next";
 import { Component } from "vue";
 
-export type MenuGroup = "discover" | "library" | "system";
+export type MenuGroup = "explore" | "library" | "system";
 
 export interface MenuItem {
   label: string;
@@ -46,7 +46,7 @@ export const getMenuItems = function () {
         icon: Compass,
         path: "/discover",
         isLibraryNode: false,
-        group: "discover",
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "search") {
@@ -55,7 +55,7 @@ export const getMenuItems = function () {
         icon: Search,
         path: "/search",
         isLibraryNode: false,
-        group: "discover",
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "browse") {
@@ -64,7 +64,7 @@ export const getMenuItems = function () {
         icon: Folder,
         path: "/browse",
         isLibraryNode: true,
-        group: "system",
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "party") {
@@ -74,7 +74,7 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
-        group: "discover",
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "artists") {
