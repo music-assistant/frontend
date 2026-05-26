@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw } from "vue";
-import { RouterLink, useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
+import type { LucideIcon } from "lucide-vue-next";
 import {
   BookAudio,
   Disc3,
@@ -13,22 +11,25 @@ import {
   Radio,
   Tag,
 } from "lucide-vue-next";
-import type { LucideIcon } from "lucide-vue-next";
+import { computed, markRaw } from "vue";
+import { useI18n } from "vue-i18n";
+import { RouterLink, useRoute } from "vue-router";
 
 import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
-import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 
 const RouterLinkComponent = markRaw(RouterLink);
@@ -108,11 +109,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 <template>
   <div ref="navEl"></div>
   <template v-if="pinnedItems.length > 0 || isLoading">
-    <div
-      class="my-1 h-px shrink-0 bg-sidebar-border"
-      :class="isCollapsed ? 'mx-1' : 'mx-3'"
-    ></div>
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
+      <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
       <SidebarGroupContent class="flex flex-col gap-0.5">
         <SidebarMenu>
           <!-- Skeletons while the API calls are in flight -->
@@ -199,7 +197,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 /* Override AppSidebar global padding for image-based items */
 :deep([data-sidebar="menu-button"].shortcut-button) {
   /* explicit height (not auto) so transition-[height] can animate */
-  height: 3.6rem !important;
+  height: 3rem !important;
   padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
   align-items: center !important;
 }
@@ -211,8 +209,8 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 }
 
 .shortcut-thumb {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 4px;
   object-fit: cover;
   flex-shrink: 0;
@@ -237,18 +235,24 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 }
 
 .shortcut-name {
+  /* match sidebar menu item label: Tailwind `text-sm font-medium` */
   font-size: 0.875rem;
-  line-height: 1.3;
+  line-height: 1.25rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .shortcut-type {
-  font-size: 0.7rem;
-  font-weight: 300;
-  opacity: 0.55;
+  font-size: 0.8125rem;
+  font-weight: 400;
   line-height: 1.3;
+  opacity: var(
+    --v-list-item-subtitle-opacity,
+    var(--v-medium-emphasis-opacity)
+  );
+  /* Match list subtitles (e.g., artist/album in item list) */
+  color: rgb(var(--v-theme-on-panel), 0.6);
 }
 
 /* mdi-dots-vertical v-btn — ensure it appears above the RouterLink */
@@ -256,8 +260,11 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   z-index: 1;
 }
 
-/* prevent horizontal scrollbar from absolute-positioned action btn */
+/* Clip the absolute-positioned action btn without forcing overflow-y to auto.
+   `overflow-x: hidden` would silently flip overflow-y to auto and create a
+   spurious vertical scrollbar inside the sidebar; `clip` is the only value
+   that does not trigger that side-effect. */
 :deep([data-sidebar="group-content"]) {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 </style>
