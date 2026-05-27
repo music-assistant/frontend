@@ -218,7 +218,7 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 import router from "@/plugins/router";
 
 import { playerVisible } from "@/helpers/utils";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   Album,
   BrowseFolder,
@@ -531,7 +531,7 @@ export const getContextMenuItems = async function (
 
   // add to library
   if (
-    resolvedItem.provider != "library" &&
+    !isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -548,7 +548,12 @@ export const getContextMenuItems = async function (
       label: "add_library",
       labelArgs: [],
       action: () => {
-        for (const item of items) api.addItemToLibrary(item);
+        for (const item of items) {
+          api.addItemToLibrary(item);
+          // optimistically flag the mappings so the derived state re-evaluates
+          if ("provider_mappings" in item)
+            item.provider_mappings.forEach((pm) => (pm.in_library = true));
+        }
         // Clear the multi-select after action
         eventbus.emit("clearSelection");
       },
@@ -557,7 +562,7 @@ export const getContextMenuItems = async function (
   }
   // remove from library
   if (
-    resolvedItem.provider == "library" &&
+    isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -573,8 +578,12 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: () => {
         if (!confirm($t("confirm_library_remove"))) return;
-        for (const item of items)
+        for (const item of items) {
           api.removeItemFromLibrary(item.media_type, item.item_id);
+          // optimistically clear the mappings so the derived state re-evaluates
+          if ("provider_mappings" in item)
+            item.provider_mappings.forEach((pm) => (pm.in_library = false));
+        }
         if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
         // Clear the multi-select after action
         eventbus.emit("clearSelection");

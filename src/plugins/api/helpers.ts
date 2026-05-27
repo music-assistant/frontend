@@ -74,6 +74,51 @@ export function requireServerVersion(minVersion: string): boolean {
   return true; // equal
 }
 
+/**
+ * Whether the item is a member of the user's library.
+ *
+ * Membership is derived from the per-provider-mapping in_library flag, NOT from
+ * provider == "library". The backend creates library DB rows for an item's
+ * relatives (an artist/album reached from a saved track) as relational support,
+ * so a "library" row may exist without the item being a library member.
+ */
+export const isItemInLibrary = function (
+  item: MediaItemType | ItemMapping | null | undefined,
+): boolean {
+  if (!item) return false;
+  // favoriting forces an item into the library, so favorite implies membership
+  if ("favorite" in item && item.favorite === true) return true;
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
+    return item.provider_mappings.some((pm) => !!pm.in_library);
+  }
+  return false;
+};
+
+export const isItemFavorite = function (
+  item: MediaItemType | ItemMapping | null | undefined,
+): boolean {
+  return !!item && "favorite" in item && item.favorite === true;
+};
+
+/**
+ * Domain to feed ProviderIcon for an item's source/membership badge.
+ * In-library items show the library (bookshelf) icon; everything else shows the
+ * icon of its first provider mapping (or the item's own provider as fallback).
+ */
+export const getProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (isItemInLibrary(item)) return "library";
+  if (
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return item.provider;
+};
+
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
