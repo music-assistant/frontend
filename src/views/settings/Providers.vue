@@ -315,8 +315,10 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
+const currentType = computed(() => route.query.types as string | undefined);
+
 const addProviderLabel = computed(() => {
-  const type = route.query.types as string | undefined;
+  const type = currentType.value;
 
   return match(type)
     .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))

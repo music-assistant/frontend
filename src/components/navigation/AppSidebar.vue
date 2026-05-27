@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
+import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
 import {
   Sidebar,
   SidebarContent,
@@ -19,16 +20,27 @@ import { getMenuItems } from "./utils/getMenuItems";
 const router = useRouter();
 const { t } = useI18n();
 
-const navItems = computed(() => {
-  return getMenuItems()
+const navItems = computed(() =>
+  getMenuItems()
     .filter((item) => !item.hidden)
     .map((item) => ({
       title: t(item.label),
       url: item.path,
       icon: item.icon,
       disabled: item.disabled,
-    }));
-});
+      group: item.group,
+    })),
+);
+
+const discoverItems = computed(() =>
+  navItems.value.filter((item) => item.group === "explore"),
+);
+const libraryItems = computed(() =>
+  navItems.value.filter((item) => item.group === "library"),
+);
+const systemItems = computed(() =>
+  navItems.value.filter((item) => item.group === "system"),
+);
 
 const { toggleSidebar, state, isMobile } = useSidebar();
 const collapsed = computed(() => state.value === "collapsed");
@@ -53,7 +65,11 @@ onUnmounted(() => {
     <SidebarHeader>
       <SidebarMenu>
         <div class="sidebar-header-row">
-          <div class="sidebar-header" @click="router.push('/')">
+          <div
+            class="sidebar-header"
+            :style="{ marginLeft: collapsed ? '2px' : '7px' }"
+            @click="router.push('/')"
+          >
             <img
               src="@/assets/icon.svg"
               alt="Music Assistant"
@@ -67,7 +83,10 @@ onUnmounted(() => {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <NavMain :items="navItems" />
+      <NavMain :items="discoverItems" :label="t('explore')" />
+      <NavMain :items="libraryItems" :label="t('library')" />
+      <NavMain :items="systemItems" :label="t('system')" />
+      <NavShortcuts />
     </SidebarContent>
     <SidebarFooter>
       <NavMobile v-if="isMobile" />
@@ -87,7 +106,6 @@ onUnmounted(() => {
 .sidebar-header-logo {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
   flex-shrink: 0;
 }
 
@@ -103,8 +121,7 @@ onUnmounted(() => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  margin-right: 15px;
-  margin: 2px 15px 8px 2px;
+  margin: 2px 15px 8px 0;
   gap: 6px;
   transition: opacity 0.3s ease;
   position: relative;
@@ -135,14 +152,27 @@ onUnmounted(() => {
 :deep([data-sidebar="group"]) {
   padding-left: 0 !important;
   padding-right: 0.5rem !important;
+  padding-top: 0.125rem !important;
+  padding-bottom: 0.125rem !important;
+}
+
+:deep([data-sidebar="group-label"]) {
+  height: 1.75rem !important;
+  padding-left: 1rem !important;
+  font-family: "JetBrains Mono Medium", ui-monospace, monospace !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  color: hsl(var(--sidebar-foreground)) !important;
+  opacity: 0.55;
 }
 
 :deep([data-sidebar="menu-button"]) {
   margin-left: 0.5rem !important;
   margin-right: 0.5rem !important;
-  min-height: 2rem !important;
-  padding-top: 0.25rem !important;
-  padding-bottom: 0.25rem !important;
+  min-height: 1.75rem !important;
+  padding-top: 0.125rem !important;
+  padding-bottom: 0.125rem !important;
 }
 
 :deep([data-sidebar="menu-button"] > svg) {
@@ -165,9 +195,9 @@ onUnmounted(() => {
 
 @media (min-height: 700px) {
   :deep([data-sidebar="menu-button"]) {
-    min-height: 2.5rem !important;
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    min-height: 2.25rem !important;
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
   }
 
   :deep([data-sidebar="menu-button"] > svg) {

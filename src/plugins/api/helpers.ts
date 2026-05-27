@@ -2,12 +2,12 @@
 
 import api from ".";
 import {
+  AudioSource,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
-  Playlist,
 } from "./interfaces";
 
 /**
@@ -17,12 +17,30 @@ import {
 export const isQueueDynamicPlaylist = function (
   queue: PlayerQueue | undefined,
 ): boolean {
-  const source = queue?.radio_source;
-  return (
-    source?.length === 1 &&
-    source[0].media_type === MediaType.PLAYLIST &&
-    (source[0] as Playlist).is_dynamic
-  );
+  return queue?.is_dynamic ?? false;
+};
+
+/**
+ * Returns true when the queue's current item is an infinite stream
+ * (radio station or AudioSource). Shuffle and repeat don't apply in that case.
+ */
+export const isQueueInfiniteStream = function (
+  queue: PlayerQueue | undefined,
+): boolean {
+  const mediaType = queue?.current_item?.media_item?.media_type;
+  return mediaType === MediaType.RADIO || mediaType === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Type guard for AudioSource media items.
+ * AudioSource is a first-class MediaItem representing a plugin source
+ * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
+ * flags drive which transport controls are surfaced when active.
+ */
+export const isAudioSource = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is AudioSource {
+  return item?.media_type === MediaType.AUDIO_SOURCE;
 };
 
 /**

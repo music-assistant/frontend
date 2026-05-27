@@ -46,6 +46,10 @@ export type ImportPlaylistEvent = {
   playlistName: string;
 };
 
+export type CreateSmartPlaylistEvent = {
+  providerId?: string;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -54,6 +58,7 @@ export type Events = {
   deleteGenreDialog: DeleteGenreDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
+  createSmartPlaylist: CreateSmartPlaylistEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;

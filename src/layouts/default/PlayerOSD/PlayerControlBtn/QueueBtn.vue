@@ -1,6 +1,6 @@
 <template>
   <Button
-    v-if="isVisible"
+    v-if="isVisible && store.activePlayerQueue"
     variant="icon"
     :ripple="false"
     icon

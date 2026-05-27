@@ -516,7 +516,12 @@
         "onboarding_title": "Benvenuto in Music Assistant!",
         "profile_description": "Gestisci impostazioni e preferenze tuo account personale",
         "users": "Utenti",
-        "users_description": "Gestisci account utenti, ruoli e autorizzazioni"
+        "users_description": "Gestisci account utenti, ruoli e autorizzazioni",
+        "audio_analysis": "Analisi audio",
+        "sendspin_static_delay": {
+            "label": "Ritardo di riproduzione costante (ms)",
+            "description": "Ritardo in millisecondi per sincronizzare questo lettore con altri lettori. Aumentare in caso di ritardo nella riproduzione dell'audio, ad esempio per compensare la latenza causata da un amplificatore, da altoparlanti attivi o dal sistema operativo."
+        }
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
@@ -547,7 +552,8 @@
         "play_count": "Conteggio delle riproduzioni",
         "play_count_desc": "Conteggio delle riproduzioni (decrescente)",
         "artist_name": "Album artista",
-        "artist_name_desc": "Artista dell'album (decrescente)"
+        "artist_name_desc": "Artista dell'album (decrescente)",
+        "album_sort_name": "Album (in ordine alfabetico)"
     },
     "state": {
         "idle": "Inattivo",
@@ -816,5 +822,9 @@
     "remote": {
         "connect_title": "Connessione a tuo server",
         "subtitle": "Connettiti al tuo home server da ovunque"
-    }
+    },
+    "edit_playlist": "Modifica la playlist",
+    "edit_radio": "Modifica stazione radio",
+    "edit_track": "Modifica il brano",
+    "uri_read_only": "URI (sola lettura)"
 }

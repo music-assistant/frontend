@@ -7,6 +7,7 @@
     :show-provider="false"
     :show-library="false"
     :show-favorites-only-filter="false"
+    :show-hide-fully-played-filter="true"
     :show-track-number="true"
     :show-refresh-button="true"
     :load-items="loadPodcastEpisodes"
