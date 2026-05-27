@@ -61,6 +61,7 @@ interface Store {
   enabledPlugins: Set<string>;
   isPartyGuest: boolean;
   companionPlayerId?: string;
+  homescreenEditMode: boolean;
 }
 
 export const store: Store = reactive({
@@ -133,4 +134,5 @@ export const store: Store = reactive({
   isOnboarding: false,
   enabledPlugins: new Set(),
   isPartyGuest: false,
+  homescreenEditMode: false,
 });

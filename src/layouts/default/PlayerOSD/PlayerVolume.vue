@@ -647,7 +647,6 @@ watch(
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
   min-height: 40px;
   touch-action: pan-x;
   user-select: none;
@@ -716,6 +715,7 @@ watch(
   min-width: 28px;
   text-align: center;
   opacity: 0.8;
+  margin-left: 8px;
 }
 
 /* --- Group volume popout styles are in the unscoped style block below --- */

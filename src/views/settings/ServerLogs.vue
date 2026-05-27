@@ -4,7 +4,7 @@
       <CardHeader class="shrink-0 border-b px-6 py-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
-            <Switch id="auto-refresh" v-model:checked="autoRefresh" />
+            <Switch id="auto-refresh" v-model="autoRefresh" />
             <Label class="cursor-pointer" for="auto-refresh">
               {{ $t("settings.auto_refresh_log") }}
             </Label>

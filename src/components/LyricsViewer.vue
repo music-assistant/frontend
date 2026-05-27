@@ -125,6 +125,7 @@ interface Props {
   anticipation?: number;
   externalLoading?: boolean;
   highlightAhead?: boolean;
+  offset?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -137,6 +138,7 @@ const props = withDefaults(defineProps<Props>(), {
   anticipation: 0,
   externalLoading: false,
   highlightAhead: true,
+  offset: 0,
 });
 
 // Core state
@@ -149,6 +151,10 @@ const lineRefs = new Map<number, HTMLElement>();
 // Transform-based positioning
 const contentTranslateY = ref(0);
 const contentTransitionEnabled = ref(false);
+
+const effectivePosition = computed(() =>
+  props.position === undefined ? undefined : props.position + props.offset,
+);
 
 const setLineRef = (el: HTMLElement | null, index: number) => {
   if (el) {
@@ -164,7 +170,7 @@ const beforeFirstLyric = computed(() => {
   }
   const firstTime = displayLines.value[0].time;
   if (firstTime < 2) return false;
-  const currentPosition = props.position || 0;
+  const currentPosition = effectivePosition.value || 0;
   return currentPosition < firstTime - props.anticipation;
 });
 
@@ -341,7 +347,7 @@ const noteProgressState = computed(() => {
   if (!line?.isBreak || !line.breakEnd) {
     return { filled: NOTE_COUNT, percent: 100 };
   }
-  const pos = props.position || 0;
+  const pos = effectivePosition.value || 0;
   const duration = line.breakEnd - highlightLeadTime.value - line.time;
   if (duration <= 0) return { filled: NOTE_COUNT, percent: 100 };
   const elapsed = Math.max(0, pos - line.time);
@@ -411,43 +417,40 @@ watch(
 );
 
 // Main sync: just find the active index and reposition.
-watch(
-  () => props.position,
-  (newPosition: number | undefined) => {
-    if (
-      newPosition === undefined ||
-      !displayLines.value.length ||
-      !hasTimestamps.value
-    ) {
-      return;
-    }
+watch(effectivePosition, (newPosition: number | undefined) => {
+  if (
+    newPosition === undefined ||
+    !displayLines.value.length ||
+    !hasTimestamps.value
+  ) {
+    return;
+  }
 
-    // Shift position forward by the lead time so the CSS transition
-    // is fully complete exactly when the line's timestamp arrives.
-    const highlightPositionMs = Math.round(
-      (newPosition + highlightLeadTime.value) * 1000,
-    );
-    const newActiveIndex = findActiveLineIndex(highlightPositionMs);
+  // Shift position forward by the lead time so the CSS transition
+  // is fully complete exactly when the line's timestamp arrives.
+  const highlightPositionMs = Math.round(
+    (newPosition + highlightLeadTime.value) * 1000,
+  );
+  const newActiveIndex = findActiveLineIndex(highlightPositionMs);
 
-    if (newActiveIndex !== activeLyricIndex.value) {
-      if (newActiveIndex >= 0) {
-        contentTransitionEnabled.value = true;
-        activeLyricIndex.value = newActiveIndex;
-        nextTick(() => computeTranslateY(newActiveIndex));
-      } else {
-        // Rewound before the first lyric — scroll content back out of view
-        activeLyricIndex.value = -1;
-        contentTransitionEnabled.value = true;
-        const firstEl = lineRefs.get(0);
-        const container = syncedContainerRef.value;
-        if (firstEl && container) {
-          contentTranslateY.value =
-            container.clientHeight - firstEl.offsetTop + 40;
-        }
+  if (newActiveIndex !== activeLyricIndex.value) {
+    if (newActiveIndex >= 0) {
+      contentTransitionEnabled.value = true;
+      activeLyricIndex.value = newActiveIndex;
+      nextTick(() => computeTranslateY(newActiveIndex));
+    } else {
+      // Rewound before the first lyric — scroll content back out of view
+      activeLyricIndex.value = -1;
+      contentTransitionEnabled.value = true;
+      const firstEl = lineRefs.get(0);
+      const container = syncedContainerRef.value;
+      if (firstEl && container) {
+        contentTranslateY.value =
+          container.clientHeight - firstEl.offsetTop + 40;
       }
     }
-  },
-);
+  }
+});
 
 // When the intro screen dismisses, slide content to the first line.
 watch(beforeFirstLyric, (isBefore) => {

@@ -1,6 +1,7 @@
 export const DEFAULT_MENU_ITEMS = [
   "discover",
   "search",
+  "browse",
   "party",
   "artists",
   "albums",
@@ -10,7 +11,6 @@ export const DEFAULT_MENU_ITEMS = [
   "podcasts",
   "radios",
   "genres",
-  "browse",
   "settings",
 ];
 

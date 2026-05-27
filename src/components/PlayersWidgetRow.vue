@@ -27,7 +27,7 @@
     <swiper
       :slides-per-view="'auto'"
       :space-between="15"
-      :free-mode="false"
+      :free-mode="true"
       :navigation="false"
       :mousewheel="{
         forceToAxis: true,

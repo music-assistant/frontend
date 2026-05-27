@@ -96,6 +96,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -117,6 +118,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -147,6 +149,7 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </template>
@@ -194,6 +197,8 @@
                   evt.clientX,
                   evt.clientY,
                   parentItem,
+                  true,
+                  params.sortBy,
                 )
             "
           >
@@ -268,6 +273,7 @@ export interface LoadDataParams {
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
   hideEmptyFilter?: boolean | null;
+  hideFullyPlayed?: boolean;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
@@ -294,6 +300,7 @@ export interface Props {
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
+  showHideFullyPlayedFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
@@ -334,6 +341,7 @@ const props = withDefaults(defineProps<Props>(), {
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
   showHideEmptyFilter: false,
+  showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
@@ -464,6 +472,17 @@ const toggleFavoriteFilter = function () {
     props.itemtype,
     "favoriteFilter",
     params.value.favoritesOnly,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const toggleHideFullyPlayedFilter = function () {
+  params.value.hideFullyPlayed = !params.value.hideFullyPlayed;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "hideFullyPlayedFilter",
+    params.value.hideFullyPlayed,
   );
   loadData(undefined, undefined, true);
 };
@@ -903,6 +922,19 @@ const menuItems = computed(() => {
     });
   }
 
+  // hide fully played filter (e.g. podcast episodes)
+  if (props.showHideFullyPlayedFilter === true) {
+    items.push({
+      label: "tooltip.filter_hide_fully_played",
+      icon: params.value.hideFullyPlayed
+        ? "mdi-eye-off"
+        : "mdi-eye-off-outline",
+      action: toggleHideFullyPlayedFilter,
+      active: params.value.hideFullyPlayed,
+      overflowAllowed: true,
+    });
+  }
+
   // album artists only filter
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
@@ -1165,7 +1197,10 @@ const restoreSettings = async function () {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
     viewMode.value = prefs.viewMode;
-  } else if (props.itemtype == "artists") {
+  } else if (
+    props.itemtype == "artists" ||
+    props.itemtype == "similarartists"
+  ) {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";
@@ -1185,6 +1220,10 @@ const restoreSettings = async function () {
   // get stored/default favoriteOnlyFilter for this itemtype
   if (props.showFavoritesOnlyFilter !== false && prefs.favoriteFilter) {
     params.value.favoritesOnly = prefs.favoriteFilter;
+  }
+
+  if (props.showHideFullyPlayedFilter === true && prefs.hideFullyPlayedFilter) {
+    params.value.hideFullyPlayed = prefs.hideFullyPlayedFilter;
   }
 
   // get stored/default libraryOnlyFilter for this itemtype
@@ -1217,7 +1256,13 @@ const restoreSettings = async function () {
   }
 
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true && prefs.providerFilter) {
+  // only apply stored filter if there are multiple providers available
+  // with a single provider, any stored filter is either redundant or stale
+  if (
+    props.showProviderFilter === true &&
+    prefs.providerFilter &&
+    musicProviders.value.length > 1
+  ) {
     params.value.provider = prefs.providerFilter;
   }
 
@@ -1622,6 +1667,10 @@ const getFilteredItems = function (
     result = result.filter((x) => x.favorite);
   }
 
+  if (params.hideFullyPlayed) {
+    result = result.filter((x) => (x as PodcastEpisode).fully_played !== true);
+  }
+
   if (params.albumType && params.albumType.length > 0) {
     result = result.filter((x) =>
       params.albumType?.includes((x as Album).album_type),
@@ -1653,6 +1702,10 @@ const selectAll = async function () {
     showCheckboxes.value = true;
   }
 };
+
+defineExpose({
+  sortBy: computed(() => params.value.sortBy),
+});
 </script>
 
 <style scoped>

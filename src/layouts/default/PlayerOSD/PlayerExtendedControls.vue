@@ -1,18 +1,18 @@
 <template>
+  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
+
   <ActivePlayerPopover
     v-if="!store.mobileLayout && player && player.isVisible"
     auto-show
     align="end"
     child-element-id="extended-controls-speaker-button"
   />
-  <PlayerTrackMenu v-if="contextMenu && contextMenu.isVisible" />
-
   <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
 
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="queue.color"
-    style="padding-left: 15px; padding-right: 20px"
+    style="padding-right: 5px"
   />
   <PlayerVolume
     v-if="volume && volume.isVisible && store.activePlayer"

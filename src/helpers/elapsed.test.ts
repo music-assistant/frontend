@@ -58,4 +58,36 @@ describe("computeElapsedTime", () => {
     expect(result).toBeGreaterThanOrEqual(31.0 - 0.001);
     expect(result).toBeLessThanOrEqual(31.0 + 0.001);
   });
+
+  it("scales the delta by playback_speed > 1", () => {
+    const t0 = 10;
+    const ts = 1_600_000_000;
+    vi.setSystemTime(ts * 1000 + 4000); // 4s wall-clock
+
+    const result = computeElapsedTime(t0, ts, PlaybackState.PLAYING, 1.5);
+    // 10 + 4 * 1.5 = 16
+    expect(result).toBeGreaterThanOrEqual(15.999);
+    expect(result).toBeLessThanOrEqual(16.001);
+  });
+
+  it("scales the delta by playback_speed < 1", () => {
+    const t0 = 10;
+    const ts = 1_600_000_000;
+    vi.setSystemTime(ts * 1000 + 4000); // 4s wall-clock
+
+    const result = computeElapsedTime(t0, ts, PlaybackState.PLAYING, 0.5);
+    // 10 + 4 * 0.5 = 12
+    expect(result).toBeGreaterThanOrEqual(11.999);
+    expect(result).toBeLessThanOrEqual(12.001);
+  });
+
+  it("defaults playback_speed to 1 when omitted", () => {
+    const t0 = 10;
+    const ts = 1_600_000_000;
+    vi.setSystemTime(ts * 1000 + 2000);
+
+    const result = computeElapsedTime(t0, ts, PlaybackState.PLAYING);
+    expect(result).toBeGreaterThanOrEqual(11.999);
+    expect(result).toBeLessThanOrEqual(12.001);
+  });
 });

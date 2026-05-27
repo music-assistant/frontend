@@ -26,9 +26,8 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import Color from "color";
-import { getPaletteSync } from "colorthief";
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -124,6 +123,16 @@ export const formatRelativeTime = (seconds: number): string => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 };
 
+export const buildItemUri = function (
+  mediaType: MediaType,
+  mapping: ProviderMapping | null,
+  fallbackItemId: string,
+): string {
+  const domain = mapping?.provider_domain ?? "library";
+  const itemId = mapping?.item_id ?? fallbackItemId;
+  return `${domain}://${mediaType}/${itemId}`;
+};
+
 export const kebabize = (str: string) => {
   return str
     .split("")
@@ -167,7 +176,7 @@ export const getGenreDisplayName = function (
   if (te(key)) return t(key);
 
   // No translation found - apply sentence case for user-created/promoted genres
-  return toSentenceCase(name);
+  return name;
 };
 
 export const getGenreDescription = function (
@@ -260,6 +269,33 @@ export const getStreamingProviderMappings = function (
 export const sleep = (delay: number) =>
   new Promise((resolve) => setTimeout(resolve, delay));
 
+// Server API schema version that introduced the opaque /imageproxy/<proxy_id>
+// endpoint, the proxy_id field on MediaItemImage, and the size whitelist
+// enforced on both the new and legacy /imageproxy routes.
+// See music-assistant/server#3960.
+const IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION = 31;
+
+// Sizes accepted by the imageproxy on schema >= 31 (both endpoints). 0 means
+// no resize. Anything else returns HTTP 400, so we round up to the next
+// allowed value for arbitrary caller-supplied sizes.
+const IMAGEPROXY_ALLOWED_SIZES = [80, 160, 256, 512, 1024] as const;
+
+const serverSupportsOpaqueImageProxy = function (): boolean {
+  const schema = api.serverInfo.value?.schema_version;
+  return (
+    typeof schema === "number" && schema >= IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION
+  );
+};
+
+const normalizeImageProxySize = function (size?: number): number {
+  if (!size || size <= 0) return 0;
+  if (!serverSupportsOpaqueImageProxy()) return size;
+  for (const allowed of IMAGEPROXY_ALLOWED_SIZES) {
+    if (size <= allowed) return allowed;
+  }
+  return IMAGEPROXY_ALLOWED_SIZES[IMAGEPROXY_ALLOWED_SIZES.length - 1];
+};
+
 /**
  * Get the proper image URL for player media, handling protocol mismatches
  * and backend-provided imageproxy URLs.
@@ -276,13 +312,27 @@ export const getMediaImageUrl = function (
   // Handle data URLs directly
   if (imageUrl.startsWith("data:image")) return imageUrl;
 
-  // Check if this is already an imageproxy URL from the backend
-  // e.g., http://192.168.1.1:8097/imageproxy?provider=tunein&size=500&path=...
-  if (imageUrl.includes("/imageproxy") && imageUrl.includes("provider=")) {
-    // Extract query params and rebuild with our baseUrl
-    const url = new URL(imageUrl);
-    const params = url.searchParams.toString();
-    return `${api.baseUrl}/imageproxy?${params}`;
+  // Rebuild existing imageproxy URLs with our baseUrl. Two URL shapes exist:
+  //   legacy: http://host/imageproxy?provider=tunein&size=500&path=...
+  //   opaque: http://host/imageproxy/<64-hex-id>?size=256&fmt=jpg
+  // Pass a base so relative inputs like `/imageproxy/<id>?size=...` parse,
+  // and swallow parse errors so a malformed input falls through unchanged.
+  if (imageUrl.includes("/imageproxy")) {
+    try {
+      const url = new URL(imageUrl, api.baseUrl || window.location.href);
+      if (url.pathname.startsWith("/imageproxy/")) {
+        const proxyId = url.pathname.slice("/imageproxy/".length);
+        const params = url.searchParams.toString();
+        return params
+          ? `${api.baseUrl}/imageproxy/${proxyId}?${params}`
+          : `${api.baseUrl}/imageproxy/${proxyId}`;
+      }
+      if (url.searchParams.has("provider")) {
+        return `${api.baseUrl}/imageproxy?${url.searchParams.toString()}`;
+      }
+    } catch {
+      // fall through and return imageUrl as-is below
+    }
   }
 
   // Check for protocol mismatch: HTTP image URL but HTTPS frontend
@@ -290,7 +340,9 @@ export const getMediaImageUrl = function (
   const pageProtocol = window.location.protocol.replace(":", "");
 
   if (urlProtocol === "http" && pageProtocol === "https") {
-    // Proxy through imageproxy to avoid mixed content issues
+    // Proxy through imageproxy to avoid mixed content issues. The opaque-id
+    // form requires a server-issued proxy_id which we don't have here, so
+    // fall back to the legacy query-string form (still supported).
     const encUrl = encodeURIComponent(encodeURIComponent(imageUrl));
     return `${api.baseUrl}/imageproxy?path=${encUrl}`;
   }
@@ -389,9 +441,22 @@ export const getMediaItemImageUrl = function (
   ) {
     // force imageproxy if image is not remotely accessible or we need a resized thumb
     // Note that we play it safe here and always enforce the proxy if the schema is different
+    const normalizedSize = normalizeImageProxySize(size);
+    if (img.proxy_id && serverSupportsOpaqueImageProxy()) {
+      // canonical /imageproxy/<proxy_id>?size=&checksum= form. checksum is kept
+      // as a cache-buster query param (the server ignores unknown params).
+      const params = new URLSearchParams();
+      if (normalizedSize) params.set("size", String(normalizedSize));
+      if (checksum) params.set("checksum", checksum);
+      const qs = params.toString();
+      return qs
+        ? `${api.baseUrl}/imageproxy/${img.proxy_id}?${qs}`
+        : `${api.baseUrl}/imageproxy/${img.proxy_id}`;
+    }
+    // legacy form, for servers on schema < 31 or images without a proxy_id
     const encUrl = encodeURIComponent(encodeURIComponent(img.path));
     const imageUrl = `${api.baseUrl}/imageproxy?path=${encUrl}&provider=${img.provider}&checksum=${checksum}`;
-    if (size) return imageUrl + `&size=${size}`;
+    if (normalizedSize) return imageUrl + `&size=${normalizedSize}`;
     return imageUrl;
   }
   // else: return image as-is (use getMediaImageUrl for protocol handling)
@@ -425,52 +490,28 @@ export const numberRange = function (start: number, end: number): number[] {
 type RGBColor = [number, number, number];
 
 export interface ImageColorPalette {
-  [key: number]: string;
   lightColor: string;
   darkColor: string;
 }
 
-export function getContrastingTextColor(hexColor: string): string {
-  hexColor = hexColor.replace("#", "");
-  if (hexColor.length === 3) {
-    hexColor = hexColor
-      .split("")
-      .map((hex) => hex + hex)
-      .join("");
-  }
+const _rgbTupleToHex = (rgb: RGBColor | null | undefined): string => {
+  if (!rgb) return "";
+  return rgbToHex(rgb);
+};
 
-  const r = parseInt(hexColor.substr(0, 2), 16);
-  const g = parseInt(hexColor.substr(2, 2), 16);
-  const b = parseInt(hexColor.substr(4, 2), 16);
+export const EMPTY_COLOR_PALETTE: ImageColorPalette = {
+  lightColor: "",
+  darkColor: "",
+};
 
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (luminance > 0.7) {
-    return "#000000";
-  } else {
-    return "#FFFFFF";
-  }
-}
-
-export function getContrastRatio(color1: string, color2: string): number {
-  const c1 = Color(color1);
-  const c2 = Color(color2);
-  return c1.contrast(c2);
-}
-
-export function lightenColor(hexCode: string, factor: number): string {
-  if (factor <= 0 || factor > 1) {
-    throw new Error("Factor must be in the range of 0 (exclusive) to 1.");
-  }
-
-  const rgbColor: RGBColor = hexToRgb(hexCode);
-
-  const newRgbColor: RGBColor = [
-    Math.min(255, Math.round(rgbColor[0] + (255 - rgbColor[0]) * factor)),
-    Math.min(255, Math.round(rgbColor[1] + (255 - rgbColor[1]) * factor)),
-    Math.min(255, Math.round(rgbColor[2] + (255 - rgbColor[2]) * factor)),
-  ];
-
-  return rgbToHex(newRgbColor);
+export function paletteFromServer(
+  palette: MediaItemPalette | null | undefined,
+): ImageColorPalette {
+  if (!palette) return { ...EMPTY_COLOR_PALETTE };
+  return {
+    lightColor: _rgbTupleToHex(palette.on_dark),
+    darkColor: _rgbTupleToHex(palette.on_light),
+  };
 }
 
 export function hexToRgb(hex: string): RGBColor {
@@ -487,64 +528,6 @@ export function rgbToHex(rgb: RGBColor): string {
     .toString(16)
     .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
   return hex;
-}
-
-export function findLightColor(colors: RGBColor[]): string {
-  let mostPleasantColor = "";
-  let highestContrastRatio = 0;
-
-  colors.forEach((rgb) => {
-    const hexColor = rgbToHex(rgb);
-    const contrastRatio = getContrastRatio("#000000", hexColor);
-
-    if (
-      (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-      (contrastRatio > highestContrastRatio &&
-        contrastRatio >= highestContrastRatio * 0.7)
-    ) {
-      highestContrastRatio = contrastRatio;
-      mostPleasantColor = hexColor;
-    }
-  });
-  return mostPleasantColor;
-}
-
-export function findDarkColor(colors: RGBColor[]): string {
-  let mostPleasantColor = "";
-  let highestContrastRatio = 0;
-  const maxContrastRatio = 17.35;
-
-  colors.forEach((rgb) => {
-    const hexColor = rgbToHex(rgb);
-    const contrastRatio = getContrastRatio("#fff", hexColor);
-    if (maxContrastRatio >= contrastRatio) {
-      if (
-        (contrastRatio > highestContrastRatio && contrastRatio >= 7) ||
-        (contrastRatio > highestContrastRatio &&
-          contrastRatio >= highestContrastRatio * 0.7)
-      ) {
-        highestContrastRatio = contrastRatio;
-        mostPleasantColor = hexColor;
-      }
-    }
-  });
-  return mostPleasantColor;
-}
-
-export function getColorPalette(img: HTMLImageElement): ImageColorPalette {
-  const palette = getPaletteSync(img, { colorCount: 5 }) ?? [];
-  const colorNumberPalette: RGBColor[] = palette.map((c) => c.array());
-  const colorHexPalette: string[] = palette.map((c) => c.hex());
-
-  return {
-    0: colorHexPalette[0],
-    1: colorHexPalette[1],
-    2: colorHexPalette[2],
-    3: colorHexPalette[3],
-    4: colorHexPalette[4],
-    lightColor: findLightColor(colorNumberPalette),
-    darkColor: findDarkColor(colorNumberPalette),
-  };
 }
 
 export function getValueFromSources<T>(
@@ -610,17 +593,6 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "lt",
-    })
-  ) {
-    return 3;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp5",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
       breakpoint: "bp6",
       condition: "lt",
     })
@@ -632,62 +604,51 @@ export const panelViewItemResponsive = function (displaySize: number) {
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp7",
+      breakpoint: "bp8",
       condition: "lt",
     })
   ) {
     return 4;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp7",
+      breakpoint: "bp8",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp8",
+      breakpoint: "bp9",
       condition: "lt",
     })
   ) {
     return 5;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp8",
+      breakpoint: "bp9",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp9",
+      breakpoint: "bp10",
       condition: "lt",
     })
   ) {
     return 6;
   } else if (
     getBreakpointValue({
-      breakpoint: "bp9",
+      breakpoint: "bp10",
       condition: "gt",
     }) &&
     getBreakpointValue({
-      breakpoint: "bp10",
+      breakpoint: "bp11",
       condition: "lt",
+    })
+  ) {
+    return 7;
+  } else if (
+    getBreakpointValue({
+      breakpoint: "bp11",
+      condition: "gt",
     })
   ) {
     return 8;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp10",
-      condition: "gt",
-    }) &&
-    getBreakpointValue({
-      breakpoint: "bp11",
-      condition: "lt",
-    })
-  ) {
-    return 9;
-  } else if (
-    getBreakpointValue({
-      breakpoint: "bp11",
-      condition: "gt",
-    })
-  ) {
-    return 10;
   } else {
     return 0;
   }
@@ -734,8 +695,8 @@ export const markdownToHtml = function (text: string): string {
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Try modern Clipboard API first (requires HTTPS or localhost)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  // Modern Clipboard API: only available in secure contexts (HTTPS / localhost).
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -747,29 +708,33 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
-  // Fallback for older browsers or non-secure contexts
+  // Fallback for non-secure contexts. Append inside the active dialog (if any)
+  // so a focus trap (e.g. Reka UI Dialog) does not steal focus and clear the
+  // textarea's selection before execCommand("copy") runs.
+  const host =
+    document.activeElement?.closest<HTMLElement>("[role=dialog]") ??
+    document.body;
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.width = "1px";
+  textArea.style.height = "1px";
+  textArea.style.opacity = "0";
+  textArea.style.pointerEvents = "none";
+  host.appendChild(textArea);
   try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      return true;
-    } else {
-      console.error("Legacy copy method failed");
-      return false;
-    }
+    textArea.setSelectionRange(0, text.length);
+    return document.execCommand("copy");
   } catch (error) {
     console.error("Failed to copy to clipboard:", error);
     return false;
+  } finally {
+    host.removeChild(textArea);
   }
 }
 
@@ -824,23 +789,32 @@ export const handlePlayBtnClick = function (
   posY: number,
   parentItem?: MediaItemType,
   forceMenu?: boolean,
+  sortBy?: string,
 ) {
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
     if (
       item.media_type == MediaType.TRACK &&
-      parentItem?.media_type == MediaType.PLAYLIST &&
-      store.activePlayerQueue &&
-      (store.activePlayerQueue.items <= 1 ||
-        store.activePlayerQueue.state != PlaybackState.PLAYING)
+      (parentItem?.media_type == MediaType.PLAYLIST ||
+        parentItem?.media_type == MediaType.ALBUM) &&
+      store.activePlayerQueue
     ) {
-      // special case: playing a track from a playlist - play playlist from here
-      api.playMedia(parentItem.uri, undefined, false, item.item_id);
+      // special case: playing a track from a playlist/album - play from here
+      api.playMedia(
+        parentItem.uri,
+        undefined,
+        false,
+        item.item_id,
+        undefined,
+        sortBy,
+      );
 
       return;
     }
     // else: play the item directly
-    api.playMedia(item).then(() => {});
+    api
+      .playMedia(item, undefined, undefined, undefined, undefined, sortBy)
+      .then(() => {});
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);
@@ -894,6 +868,7 @@ export const handleMenuBtnClick = function (
   posY: number,
   parentItem?: MediaItemType,
   includePlayMenuItems = true,
+  sortBy?: string,
 ) {
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
@@ -905,6 +880,7 @@ export const handleMenuBtnClick = function (
     posY,
     includePlayMenuItems,
     includePlayMenuItems,
+    sortBy,
   );
 };
 

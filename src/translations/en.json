@@ -32,7 +32,11 @@
     "dark_mode": "Dark mode",
     "delete_db": "Delete item from database",
     "details": "Details",
+    "edit_playlist": "Edit playlist",
+    "edit_radio": "Edit radio station",
+    "edit_track": "Edit track",
     "enter_url": "Enter the URL you want to manually add to the database",
+    "uri_read_only": "URI (read-only)",
     "external_source_active": "External source active: {0}",
     "goto_album": "Go to album {0}",
     "goto_artist": "Go to artist {0}",
@@ -42,12 +46,15 @@
     "import_playlist_title": "Import playlist",
     "import_playlist_invalid_file": "Invalid playlist file",
     "import_playlist_search_providers": "Search for tracks on",
+    "explore": "Explore",
     "library": "Library",
     "loading": "Data is being retrieved from the server.",
+    "shortcuts": "Shortcuts",
+    "system": "System",
     "mass": "Music Assistant",
     "new_playlist_name": "Enter a name for the new playlist",
     "no_content": "No items found.",
-    "no_content_filter": "No items found for the current filter\/search conditions.",
+    "no_content_filter": "No items found for the current filter/search conditions.",
     "no_player": "No player selected",
     "off": "Off",
     "on": "On",
@@ -61,6 +68,7 @@
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
     "play_radio": "Start Radio",
+    "change_playback_speed": "Change playback speed",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -89,6 +97,10 @@
     "export_playlist": "Export playlist",
     "remove_library": "Remove from library",
     "remove_playlist": "Remove from playlist",
+    "shortcut": {
+        "add_to": "Add to shortcuts",
+        "remove_from": "Remove from shortcuts"
+    },
     "search": "Search",
     "settings": {
         "add_new": "Add new",
@@ -164,7 +176,7 @@
         },
         "flow_mode": {
             "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream.\nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
+            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream.\nUse for players that do not natively support gapless and/or crossfading or if the player has trouble transitioning between tracks."
         },
         "auto_play": {
             "label": "Automatically play (resume on power on)",
@@ -236,8 +248,8 @@
             "options": {
                 "play": "Play artist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the artist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the artist track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the artist track(s) right after the currently played/buffered item.",
                 "add": "Add the artist track(s) at the end of the queue."
             }
         },
@@ -247,8 +259,8 @@
             "options": {
                 "play": "Play album track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the album track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the album track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the album track(s) right after the currently played/buffered item.",
                 "add": "Add the album track(s) at the end of the queue."
             }
         },
@@ -258,8 +270,8 @@
             "options": {
                 "play": "Play track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the track(s).",
-                "next": "Play the track(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the track(s) right after the currently played\/buffered item.",
+                "next": "Play the track(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the track(s) right after the currently played/buffered item.",
                 "add": "Add the track(s) at the end of the queue."
             }
         },
@@ -269,8 +281,8 @@
             "options": {
                 "play": "Play playlist track(s) now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the playlist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played/buffered item.",
                 "add": "Add the playlist track(s) at the end of the queue."
             }
         },
@@ -280,8 +292,8 @@
             "options": {
                 "play": "Play radio station now and keep the remaining queue item(s).",
                 "replace": "Clear the queue and play the radio station",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the radio station(s) right after the currently played\/buffered item.",
+                "next": "Play the item(s) right after the currently played/buffered item.",
+                "replace_next": "Clear the queue and play the radio station(s) right after the currently played/buffered item.",
                 "add": "Add the radio station(s) at the end of the queue."
             }
         },
@@ -292,7 +304,7 @@
             "generic": "Generic",
             "announcements": "Announcements",
             "player_controls": "Player controls",
-            "sync_options": "Sync\/import options",
+            "sync_options": "Sync/import options",
             "builtin_playlists": "Builtin Playlists",
             "web_player": "Web Player",
             "playback": "Queue Playback",
@@ -329,7 +341,7 @@
         },
         "icon": {
             "label": "Icon",
-            "description": "Material design icon for this player.\n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
+            "description": "Material design icon for this player.\n\nSee https://pictogrammers.com/library/mdi/."
         },
         "theme": {
             "label": "Theme",
@@ -347,6 +359,7 @@
             "label": "Language",
             "options": {
                 "auto": "Auto (follow system configuration)",
+                "bg_BG": "Bulgarian",
                 "cs": "Czech",
                 "da": "Danish",
                 "de": "German",
@@ -381,7 +394,7 @@
         "no_player_providers_detail": "Configure player providers to select devices where Music Assistant can output your music.",
         "volume_normalization_radio": {
             "label": "Volume normalization method to use for radio streams",
-            "description": "Set the preferred volume normalization strategy for radio streams. \nBy default Music Assistant collects a measurement of the radio station's (average perceived) loudness according to the EBU-R128 specification and then adjusts the overall gain\/volume of the stream according to that measurement so the dynamic range of the audio is not affected. When no measurement (yet) exists for a radio station, Music Assistant will fallback to a dynamic (but less accurate) loudness levelling filter.\n\nTIP: Radio streams often have varying loudness levels, especially during announcements and commercials.\nYou can choose to enforce dynamic volume normalization to radio streams, even if a (average) loudness measurement for the radio station exists. \n \n**Options:**\n\n - Disabled - do not apply volume normalization at all for radio streams. \n  - Force dynamic - Enforce dynamic volume levelling at all times. \n  - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalization.\n  - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction.\n - Fixed gain correction - Always apply the fixed volume\/gain correction.\n  - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
+            "description": "Set the preferred volume normalization strategy for radio streams. \nBy default Music Assistant collects a measurement of the radio station's (average perceived) loudness according to the EBU-R128 specification and then adjusts the overall gain/volume of the stream according to that measurement so the dynamic range of the audio is not affected. When no measurement (yet) exists for a radio station, Music Assistant will fallback to a dynamic (but less accurate) loudness levelling filter.\n\nTIP: Radio streams often have varying loudness levels, especially during announcements and commercials.\nYou can choose to enforce dynamic volume normalization to radio streams, even if a (average) loudness measurement for the radio station exists. \n \n**Options:**\n\n - Disabled - do not apply volume normalization at all for radio streams. \n  - Force dynamic - Enforce dynamic volume levelling at all times. \n  - Measurement only (no fallback) - Apply (overall) volume/gain correction based on stored measurement. If we do not have any measurement, do not apply normalization.\n  - Fallback to gain correction - Apply (overall) volume/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction.\n - Fixed gain correction - Always apply the fixed volume/gain correction.\n  - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
             "options": {
                 "disabled": "Disabled",
                 "dynamic": "Force dynamic",
@@ -393,7 +406,7 @@
         },
         "volume_normalization_tracks": {
             "label": "Volume normalization method to use for tracks",
-            "description": "Set the preferred volume normalization strategy for tracks\/songs.\nMusic Assistant uses a measurement of the tracks's (average perceived) loudness according to the EBU-R128 specification to adjust the overall gain\/volume of the stream without affecting the dynamic range of the audio.\nThese measurements are either provided by the streaming provider or in case of local files, can be contained in the ID3 tags (ReplayGain 2.0 \/ Opus R128).\nIf the measurement is not provided, Music Assistant will automatically perform a measurement when\/after the track is (first) played. When no measurement (yet) exists for a track, Music Assistant will by default fallback to a dynamic (but less accurate) loudness levelling filter. This ensures no big spikes\/falls in the volume level between tracks, even if there is no accurate measurement yet but the dynamic leveler can sometimes compress the dynamic range a bit, although that should not be audible in most cases.\n\n\n**Options:**\n\n - Disabled - do not apply volume normalization at all for radio streams.\n - Force dynamic - Enforce dynamic volume levelling at all times. \n - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalization. \n - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction. \n - Fixed gain correction - Always apply the fixed volume\/gain correction. \n - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
+            "description": "Set the preferred volume normalization strategy for tracks/songs.\nMusic Assistant uses a measurement of the tracks's (average perceived) loudness according to the EBU-R128 specification to adjust the overall gain/volume of the stream without affecting the dynamic range of the audio.\nThese measurements are either provided by the streaming provider or in case of local files, can be contained in the ID3 tags (ReplayGain 2.0 / Opus R128).\nIf the measurement is not provided, Music Assistant will automatically perform a measurement when/after the track is (first) played. When no measurement (yet) exists for a track, Music Assistant will by default fallback to a dynamic (but less accurate) loudness levelling filter. This ensures no big spikes/falls in the volume level between tracks, even if there is no accurate measurement yet but the dynamic leveler can sometimes compress the dynamic range a bit, although that should not be audible in most cases.\n\n\n**Options:**\n\n - Disabled - do not apply volume normalization at all for radio streams.\n - Force dynamic - Enforce dynamic volume levelling at all times. \n - Measurement only (no fallback) - Apply (overall) volume/gain correction based on stored measurement. If we do not have any measurement, do not apply normalization. \n - Fallback to gain correction - Apply (overall) volume/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction. \n - Fixed gain correction - Always apply the fixed volume/gain correction. \n - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
             "options": {
                 "disabled": "Disabled",
                 "dynamic": "Force dynamic",
@@ -404,16 +417,16 @@
             }
         },
         "volume_normalization_fixed_gain_tracks": {
-            "label": "Fixed\/fallback gain adjustment for tracks",
-            "description": "Fixed\/fallback gain correction to apply to a track audio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
+            "label": "Fixed/fallback gain adjustment for tracks",
+            "description": "Fixed/fallback gain correction to apply to a track audio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
         "volume_normalization_fixed_gain_radio": {
-            "label": "Fixed\/fallback gain adjustment for radio",
-            "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
+            "label": "Fixed/fallback gain adjustment for radio",
+            "description": "Fixed/fallback gain correction to apply to a radio stream (depends on the 'Volume normalization method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalization method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
         },
         "dynamic_members": {
             "label": "Dynamic group members",
-            "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
+            "description": "Allow members to (temporarily) join/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
         },
         "dsp": {
             "configure_on": "Configuring DSP on: {name}",
@@ -442,7 +455,7 @@
                     "high_pass": "High Pass",
                     "notch": "Notch"
                 },
-                "import_apo": "Import APO\/REW Preset",
+                "import_apo": "Import APO/REW Preset",
                 "export_apo": "Export APO Preset",
                 "preamp": "Preamp",
                 "add_band_channel": "Add Band ({channel} only)",
@@ -486,15 +499,15 @@
         },
         "power_control": {
             "label": "Power control",
-            "description": "Define\/override the power control behavior for this player.\nIt allows you for example to redirect the power on\/off commands to a different appliance, or use a fake power control if your player does not support power on\/off commands but you like to have a dedicated state for a player not in use."
+            "description": "Define/override the power control behavior for this player.\nIt allows you for example to redirect the power on/off commands to a different appliance, or use a fake power control if your player does not support power on/off commands but you like to have a dedicated state for a player not in use."
         },
         "volume_control": {
             "label": "Volume control",
-            "description": "Define\/override the volume control behavior for this player.\nIt allows you for example to redirect the volume control commands to a different appliance, or disable it completely."
+            "description": "Define/override the volume control behavior for this player.\nIt allows you for example to redirect the volume control commands to a different appliance, or disable it completely."
         },
         "mute_control": {
             "label": "Mute control",
-            "description": "Define\/override the mute control behavior for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
+            "description": "Define/override the mute control behavior for this player.\nIt allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
         },
         "output_limiter": {
             "label": "Enable limiting to prevent clipping",
@@ -508,7 +521,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
-        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers\/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
+        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different providers/ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "edit_provider": "Edit provider: {0}",
         "metadata": "Metadata",
         "metadataprovider": "Metadata provider",
@@ -605,7 +618,7 @@
         "remote_access_feature_no_port_forwarding": "No port forwarding or VPN required",
         "remote_access_mode_optimized": "Optimized Mode (HA Cloud)",
         "remote_access_mode_basic": "Running in Basic Mode",
-        "remote_access_mode_optimized_description": "Using STUN\/TURN servers from Home Assistant Cloud for optimal performance. Works reliably in all network configurations.",
+        "remote_access_mode_optimized_description": "Using STUN/TURN servers from Home Assistant Cloud for optimal performance. Works reliably in all network configurations.",
         "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Cloud for the best experience.",
         "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Cloud",
         "remote_access_status": "Remote Access Status",
@@ -633,7 +646,7 @@
         "remote_access_disabled_success": "Remote Access has been disabled",
         "remote_access_signaling_server_description": "Signaling server in the cloud, hosted by the Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
-        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
+        "remote_access_protocol_optimized": "WebRTC with optimized STUN/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "frontend": "User Interface",
         "players_count": "{0} player{1}",
@@ -642,15 +655,11 @@
         "players_total": "{0} total player{1}",
         "api_docs": "API Documentation",
         "no_group_providers": "You currently do not have any providers that support creating groups",
-        "sendspin_sync_delay": {
-            "label": "Sendspin sync delay (ms)",
-            "description": "Static delay in milliseconds to adjust audio synchronization. Positive values delay playback, negative values advance it. Use this to compensate for device-specific audio latency."
+        "sendspin_static_delay": {
+            "label": "Static playback delay (ms)",
+            "description": "Offset in milliseconds to keep this player in sync with other players. Increase if audio plays too late, for example to compensate for latency from an amp, active speakers, or the OS."
         },
-        "sendspin_output_latency_compensation": {
-            "label": "Use browser latency detection",
-            "description": "Automatically compensate for hardware audio latency (e.g., Bluetooth headphones) using the browser's output latency API. This API is fairly new and may not work reliably on all browsers and operating systems."
-        },
-        "provider_codeowners": "This provider is contributed\/maintained by",
+        "provider_codeowners": "This provider is contributed/maintained by",
         "provider_credits": "Made possible by",
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
@@ -674,7 +683,7 @@
         "fix_now": "Fix now",
         "web_player_enabled": {
             "label": "Enable built-in (Sendspin) Web Player",
-            "description": "Allow playback to this device\/browser using the built-in Sendspin web player."
+            "description": "Allow playback to this device/browser using the built-in Sendspin web player."
         },
         "enable_browser_controls": {
             "label": "Enable browser media controls",
@@ -749,11 +758,24 @@
         "genre_table_rows_per_page": "Rows per page",
         "genre_table_page_info": "{0}–{1} of {2}",
         "missing_players_hint": "Missing players? {0}",
-        "add_player_providers": "Add more player providers"
+        "add_player_providers": "Add more player providers",
+        "audio_analysis_coverage": {
+            "title": "Audio Analysis Coverage",
+            "col_provider": "Provider",
+            "col_coverage": "Coverage",
+            "col_pending": "Pending",
+            "col_stale": "Stale",
+            "col_version": "Version",
+            "unavailable": "unavailable",
+            "none": "—"
+        },
+        "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
+    "similar_tracks": "Similar tracks",
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
+    "similar_artists": "Similar artists",
     "sort": {
         "duration": "Duration",
         "position": "Position",
@@ -794,21 +816,22 @@
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
         "explicit": "Explicit",
-        "filter_library": "Toggle in-library\/favorite filter",
-        "library": "Toggle in-library\/favorite",
+        "filter_library": "Toggle in-library/favorite filter",
+        "library": "Toggle in-library/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
-        "search": "Show\/hide search input",
+        "search": "Show/hide search input",
         "select_items": "Select multiple items",
         "sort_options": "Sort options",
-        "toggle_view_mode": "Toggle view mode list\/thumbs",
+        "toggle_view_mode": "Toggle view mode list/thumbs",
         "filter_favorites": "Only show favorites",
+        "filter_hide_fully_played": "Hide fully-played episodes",
         "favorite": "Mark\/unmark as a favorite",
         "open_provider_link": "Open this item on the provider's website",
-        "collapse_expand": "Collapse\/expand this listing",
+        "collapse_expand": "Collapse/expand this listing",
         "back": "Back",
-        "show_menu": "Show\/hide menu",
+        "show_menu": "Show/hide menu",
         "search_filter_active": "Search is currently filtering results",
         "play_sample": "Play sample",
         "album_type": "Album type",
@@ -884,6 +907,7 @@
     "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
     "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
     "open_dsp_settings": "Open DSP settings",
+    "audio_source": "Audio source",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",
@@ -959,6 +983,7 @@
         "in_progress_items": "Continue listening...",
         "recommended_new_tracks": "Recommended new tracks",
         "recently_played": "Recently played",
+        "inspired_by_recently_played": "Inspired by recently played",
         "suggested_new_albums_for_you": "Suggested new albums for you",
         "random_artists": "Random artists",
         "random_albums": "Random albums",
@@ -984,11 +1009,20 @@
         "discover": "Discover",
         "libraries": "Libraries",
         "library": "Library",
-        "trending_podcasts": "Trending podcasts"
+        "trending_podcasts": "Trending podcasts",
+        "trending_stations": "Trending stations",
+        "forgotten_tracks": "Forgotten tracks",
+        "forgotten_albums": "Forgotten albums",
+        "forgotten_artists": "Forgotten artists",
+        "most_played_tracks": "Most played tracks",
+        "never_played_tracks": "Never / rarely played",
+        "recent_favorite_albums": "Recently favorited albums",
+        "recently_added_tracks": "Recently added tracks"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave Home screen edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
+    "lyrics_offset": "Lyrics offset",
     "radiobrowser_by_votes": "By votes",
     "radiobrowser_by_clicks": "By clicks",
     "radiobrowser_by_language": "By language",
@@ -1112,7 +1146,7 @@
         "local_server": "Local Server",
         "remote_server": "Remote",
         "server_address": "Server Address",
-        "server_address_placeholder": "http:\/\/192.168.1.100:8095",
+        "server_address_placeholder": "http://192.168.1.100:8095",
         "remote_id": "Remote ID",
         "remote_id_placeholder": "e.g., MA-X7K9-P2M4",
         "remote_id_hint": "Find this in your server settings under \"Remote Access\"",
@@ -1232,42 +1266,42 @@
     "genre": "Genre",
     "genres": "Genres",
     "genre_names": {
-        "afrobeats": "Afrobeats (west african urban\/pop music)",
+        "afrobeats": "Afrobeats (West African Urban\/Pop Music)",
         "ambient": "Ambient",
-        "anime_and_video_game_music": "Anime & video game music",
-        "asian_music": "Asian music",
+        "anime_and_video_game_music": "Anime & Video Game Music",
+        "asian_music": "Asian Music",
         "bluegrass": "Bluegrass",
         "blues": "Blues",
-        "brazilian_music": "Brazilian music",
+        "brazilian_music": "Brazilian Music",
         "chanson": "Chanson",
-        "childrens_music": "Children's music",
-        "christmas_music": "Christmas music",
-        "church_music": "Church music",
+        "childrens_music": "Children's Music",
+        "christmas_music": "Christmas Music",
+        "church_music": "Church Music",
         "classical": "Classical",
         "comedy": "Comedy",
         "country": "Country",
         "dance": "Dance",
-        "dark_ambient": "Dark ambient",
-        "dark_wave": "Dark wave",
+        "dark_ambient": "Dark Ambient",
+        "dark_wave": "Dark Wave",
         "disco": "Disco",
         "electronic": "Electronic",
         "experimental": "Experimental",
-        "field_recording": "Field recording",
+        "field_recording": "Field Recording",
         "folk": "Folk",
         "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
+        "gangsta_rap": "Gangsta Rap",
         "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indian classical",
+        "hip_hop": "Hip Hop",
+        "indian_classical": "Indian Classical",
         "industrial": "Industrial",
         "jazz": "Jazz",
         "klezmer": "Klezmer",
         "latin": "Latin",
-        "marching_band": "Marching band",
+        "marching_band": "Marching Band",
         "metal": "Metal",
-        "middle_eastern_music": "Middle eastern music",
+        "middle_eastern_music": "Middle Eastern Music",
         "musical": "Musical",
-        "new_age": "New age",
+        "new_age": "New Age",
         "poetry": "Poetry",
         "polka": "Polka",
         "pop": "Pop",
@@ -1280,12 +1314,12 @@
         "reggaeton": "Reggaeton",
         "rock": "Rock",
         "salsa": "Salsa",
-        "singer_songwriter": "Singer-songwriter",
+        "singer_songwriter": "Singer-Songwriter",
         "ska": "Ska",
         "soul": "Soul",
-        "sound_effects": "Sound effects",
+        "sound_effects": "Sound Effects",
         "soundtrack": "Soundtrack",
-        "spoken_word": "Spoken word",
+        "spoken_word": "Spoken Word",
         "swing": "Swing",
         "tango": "Tango",
         "trap": "Trap",
@@ -1322,7 +1356,7 @@
     },
     "genre_descriptions": {
         "afrobeats": "Afrobeats, not to be confused with Afrobeat or Afroswing, is an umbrella term to describe popular music from West Africa and the diaspora that initially developed in Nigeria, Ghana, and the UK in the 2000s and 2010s. Afrobeats is less of a style per se, and more of a descriptor for the fusion of sounds flowing out of Nigeria and Ghana. Genres such as hiplife, jùjú music, highlife, azonto music, and naija beats, among others, were amalgamated under the \"Afrobeats\" umbrella.",
-        "ambient": "Ambient music is a genre of music that emphasizes tone and atmosphere over traditional musical structure or rhythm. Often \"peaceful\" sounding and lacking composition, beat, and\/or structured melody, ambient music uses textural layers of sound that can reward both passive and active listening, and encourage a sense of calm or contemplation. The genre evokes an \"atmospheric\", \"visual\", or \"unobtrusive\" quality. Nature soundscapes may be included, and some works use sustained or repeated notes, as in drone music. Bearing elements associated with new-age music, instruments such as the piano, strings and flute may be emulated through a synthesizer.",
+        "ambient": "Ambient music is a genre of music that emphasizes tone and atmosphere over traditional musical structure or rhythm. Often \"peaceful\" sounding and lacking composition, beat, and/or structured melody, ambient music uses textural layers of sound that can reward both passive and active listening, and encourage a sense of calm or contemplation. The genre evokes an \"atmospheric\", \"visual\", or \"unobtrusive\" quality. Nature soundscapes may be included, and some works use sustained or repeated notes, as in drone music. Bearing elements associated with new-age music, instruments such as the piano, strings and flute may be emulated through a synthesizer.",
         "anime_and_video_game_music": "Video game music (VGM) is the soundtrack that accompanies video games. Early video game music was once limited to sounds of early sound chips, such as programmable sound generators (PSG) or FM synthesis chips. These limitations have led to the style of music known as chiptune, which became the sound of the early video games.",
         "asian_music": "Asian music encompasses numerous musical styles, diverse cultural and religious traditions, and forms originating on the Asian continent.",
         "bluegrass": "Bluegrass music is a genre of American roots music that developed in the 1940s in the Appalachian region of the United States. The genre derives its name from the band Bill Monroe and the Blue Grass Boys. Bluegrass has roots in African American genres like blues and jazz and North European genres, such as Irish ballads and dance tunes. Unlike country, it is traditionally played exclusively on acoustic instruments such as the fiddle, mandolin, banjo, guitar and upright bass. It was further developed by musicians who played with Monroe, including 5-string banjo player Earl Scruggs and guitarist Lester Flatt. Bill Monroe once described bluegrass music as, \"It's a part of Methodist, Holiness and Baptist traditions. It's blues and jazz, and it has a high lonesome sound.\"",
@@ -1341,7 +1375,7 @@
         "disco": "Disco is a genre of dance music and a subculture that emerged in the late 1960s from the United States' urban nightlife scene, particularly in African-American, Italian-American, Latino and queer communities. Its sound is typified by four-on-the-floor beats, syncopated basslines, string sections, brass and horns, electric pianos, synthesizers, and electric rhythm guitars.",
         "electronic": "Electronic music broadly is a group of music genres that employ electronic musical instruments, circuitry-based music technology and software, or general-purpose electronics in its creation. It includes both music made using electronic and electromechanical means. Pure electronic instruments depend entirely on circuitry-based sound generation, for instance using devices such as an electronic oscillator, theremin, or synthesizer: no acoustic waves need to be previously generated by mechanical means and then converted into electrical signals. On the other hand, electromechanical instruments have mechanical parts such as strings or hammers that generate the sound waves, together with electric elements including magnetic pickups, power amplifiers and loudspeakers that convert the acoustic waves into electrical signals, process them and convert them back into sound waves. Such electromechanical devices include the telharmonium, Hammond organ, electric piano and electric guitar.",
         "experimental": "Experimental music is a general label for any music or music genre that pushes existing boundaries and genre definitions. Experimental compositional practice is defined broadly by exploratory sensibilities radically opposed to, and questioning of, institutionalized compositional, performing, and aesthetic conventions in music. Elements of experimental music include indeterminacy, in which the composer introduces the elements of chance or unpredictability with regard to either the composition or its performance. Artists may approach a hybrid of disparate styles or incorporate unorthodox and unique elements.",
-        "field_recording": "Field recording is the production of audio recordings outside recording studios, and the term applies to recordings of both natural and human-produced sounds. It can also include the recording of electromagnetic fields or vibrations using different microphones like a passive magnetic antenna for electromagnetic recordings or contact microphones, or underwater field recordings made with hydrophones to capture the sounds and\/or movements of whales, or other sealife. These recordings are often regarded as being very useful for sound designers and foley artists.",
+        "field_recording": "Field recording is the production of audio recordings outside recording studios, and the term applies to recordings of both natural and human-produced sounds. It can also include the recording of electromagnetic fields or vibrations using different microphones like a passive magnetic antenna for electromagnetic recordings or contact microphones, or underwater field recordings made with hydrophones to capture the sounds and/or movements of whales, or other sealife. These recordings are often regarded as being very useful for sound designers and foley artists.",
         "folk": "Folk music is a music genre that includes traditional folk music and the contemporary genre that evolved from the former during the 20th-century folk revival. Some types of folk music may be called world music. Traditional folk music has been defined in several ways: as music transmitted orally, music with unknown composers, music that is played on traditional instruments, music about cultural or national identity, music that changes between generations, music associated with a people's folklore, or music performed by custom over a long period of time. It has been contrasted with commercial and classical styles. The term originated in the 19th century, but folk music extends beyond that.",
         "funk": "Funk is a music genre that originated in African-American communities in the mid-1960s when musicians created a rhythmic, danceable new form of music through a mixture of various music genres that were popular among African-Americans in the mid-20th century. It deemphasizes melody and chord progressions and focuses on a strong rhythmic groove of a bassline played by an electric bassist and a drum part played by a percussionist, often at slower tempos than other popular music. Funk typically consists of a complex percussive groove with rhythm instruments playing interlocking grooves that create a \"hypnotic\" and \"danceable\" feel. Early funk, specifically James Brown, fused jazz and blues, and added a syncopated drum groove.",
         "gangsta_rap": "Gangsta or gangster rap, initially called reality rap, is a subgenre of hip-hop that conveys the culture, values, and experiences of urban gangs and street hustlers, frequently discussing unpleasant realities of the world in general through an urban lens. Emerging in the late 1980s, gangsta rap's pioneers include Schoolly D and Ice-T, later expanding with artists such as N.W.A. In 1992, via record producer and rapper Dr. Dre, rapper Snoop Dogg, and their G-funk sound, gangster rap broadened to mainstream popularity.",
@@ -1415,7 +1449,7 @@
         "subwoofer_volume": "Subwoofer Volume",
         "surround_3d": "Surround 3D",
         "surround_decoder_type": "Surround decoder type",
-        "tone_control_mode": "Tone controle mode",
+        "tone_control_mode": "Tone control mode",
         "treble": "Treble"
     },
     "select_sound_mode": "Select sound mode",
@@ -1533,7 +1567,7 @@
         "on_demand": "On demand",
         "automatic_schedule": "Automatic schedule",
         "system": "System",
-        "no_value": "n\/a",
+        "no_value": "n/a",
         "loading_log": "Loading log...",
         "no_log_output": "No log output available.",
         "open": "Open background tasks",
@@ -1630,5 +1664,49 @@
     "radiobrowser_by_popularity": "By popularity",
     "radiobrowser_by_category": "By category",
     "restore_genre": "Restore",
+    "smart_playlist": {
+        "any": "Any",
+        "clear": "Clear",
+        "create": "Create Smart Playlist",
+        "created": "Smart playlist created!",
+        "creating": "Creating…",
+        "dedup_hours": "No repeat within",
+        "dedup_hours_tooltip": "Skip tracks that were recently played. Set a window in hours (1–168) during which a track will not be repeated. Leave at 0 to disable.",
+        "desc": "Generate a playlist from your library based on rules.",
+        "dynamic": "Dynamic",
+        "edit_rules": "Edit rules",
+        "excluded_albums": "Exclude albums",
+        "excluded_artists": "Exclude artists",
+        "excluded_genres": "Exclude genres",
+        "favorites_only": "Favorites only",
+        "fixed": "Fixed (one-time)",
+        "limit": "Max tracks",
+        "logic": "Rule combination",
+        "logic_and": "Match ALL rules (AND)",
+        "logic_or": "Match ANY rule (OR)",
+        "logic_tooltip": "AND: a track must match all active rules. OR: a track needs to match at least one rule.",
+        "min_popularity": "Minimum popularity",
+        "min_popularity_tooltip": "Popularity is a score from 0–100 provided by your streaming service. Tracks without a popularity score are always included.",
+        "mode": "Mode",
+        "off": "Off",
+        "saving": "Saving…",
+        "section_advanced": "Advanced",
+        "section_content": "Artists & Albums",
+        "section_filters": "Filters",
+        "section_source": "Source",
+        "seed_artist": "Similar to artist",
+        "seed_artist_library_only": "Only use tracks from my library",
+        "seed_artist_pick": "Pick an artist",
+        "seed_artist_tooltip": "Pick an artist to find similar artists and their tracks via your streaming provider. Artist and album filters are ignored when a seed artist is set.",
+        "seed_overrides_filter": "Not used when a seed track or artist is set",
+        "seed_track": "Similar to track",
+        "seed_track_pick": "Pick a track",
+        "seed_track_tooltip": "Pick a track to find similar tracks via your streaming provider (e.g. Apple Music, Spotify). Artist and album filters are ignored when a seed track is set.",
+        "track_count": "Number of tracks",
+        "track_count_hint": "Without filters, all library tracks are included. Adding filters narrows the selection.",
+        "year_from": "From year",
+        "year_range": "Year range",
+        "year_to": "To year"
+    },
     "genre_name": "Genre name"
 }

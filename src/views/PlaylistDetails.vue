@@ -1,7 +1,24 @@
 <template>
-  <InfoHeader :item="itemDetails" />
+  <InfoHeader :item="itemDetails" :sort-by="listingRef?.sortBy">
+    <template v-if="smartRules" #append-actions>
+      <Settings2
+        :size="22"
+        class="cursor-pointer"
+        :title="$t('smart_playlist.edit_rules')"
+        @click="showEditDialog = true"
+      />
+    </template>
+  </InfoHeader>
+  <EditSmartPlaylistDialog
+    v-if="smartRules"
+    v-model:open="showEditDialog"
+    :db-playlist-id="props.itemId"
+    :playlist-name="itemDetails?.name ?? ''"
+    @saved="loadItemDetails"
+  />
   <ItemsListing
     v-if="itemDetails"
+    ref="listingRef"
     itemtype="playlisttracks"
     :parent-item="itemDetails"
     :show-provider="false"
@@ -36,11 +53,14 @@
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import { Settings2 } from "lucide-vue-next";
 import {
   EventType,
   type Playlist,
   type EventMessage,
   type MediaItemType,
+  type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
@@ -52,9 +72,21 @@ export interface Props {
 const props = defineProps<Props>();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
+const smartRules = ref<SmartPlaylistRules | null>(null);
+const showEditDialog = ref(false);
+const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
+  if (props.provider === "library") {
+    try {
+      smartRules.value = await api.getSmartPlaylistRules(props.itemId);
+    } catch {
+      smartRules.value = null;
+    }
+  } else {
+    smartRules.value = null;
+  }
 };
 
 watch(
