@@ -340,9 +340,13 @@ export const showPlayMenuForMediaItem = async function (
   const firstItem = playableItems[0];
 
   let playMenuItems: ContextMenuItem[] = [];
+  const LiveSourceTypes = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
+  const enqueueConfigKey = LiveSourceTypes.includes(firstItem.media_type)
+    ? "default_enqueue_option_live_sources"
+    : `default_enqueue_option_${firstItem.media_type}`;
   const defaultEnqueueOption = (await api.getCoreConfigValue(
     "player_queues",
-    `default_enqueue_option_${firstItem.media_type}`,
+    enqueueConfigKey,
   )) as QueueOption;
   // Start Radio
   if (radioModeSupported(firstItem)) {
@@ -986,9 +990,13 @@ export const getPlaybackContextMenuItems = async function (
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 
+  const LiveSourceTypes = [MediaType.RADIO, MediaType.AUDIO_SOURCE];
+  const enqueueConfigKey = LiveSourceTypes.includes(firstItem.media_type)
+    ? "default_enqueue_option_live_sources"
+    : `default_enqueue_option_${firstItem.media_type}`;
   const defaultEnqueueOption = (await api.getCoreConfigValue(
     "player_queues",
-    `default_enqueue_option_${firstItem.media_type}`,
+    enqueueConfigKey,
   )) as QueueOption;
 
   if (!store.activePlayer) return playMenuItems;
