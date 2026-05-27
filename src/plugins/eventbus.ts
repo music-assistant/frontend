@@ -2,7 +2,13 @@
 
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import mitt, { Emitter } from "mitt";
-import { MediaItemType, MediaItemTypeOrItemMapping } from "./api/interfaces";
+import {
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
+  Playlist,
+  Radio,
+  Track,
+} from "./api/interfaces";
 
 export type PlaylistDialogEvent = {
   items: MediaItemType[];
@@ -35,9 +41,20 @@ export type LinkGenreDialogEvent = {
   items: MediaItemType[];
 };
 
+export type DeleteConfirmationDialogEvent = {
+  message: string;
+  title?: string;
+  confirmLabel?: string;
+  onConfirm: () => void | Promise<void>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
+};
+
+export type CreateSmartPlaylistEvent = {
+  providerId?: string;
 };
 
 export type Events = {
@@ -46,8 +63,11 @@ export type Events = {
   createPlaylist: CreatePlaylistEvent;
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
+  deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
+  createSmartPlaylist: CreateSmartPlaylistEvent;
+  editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
   "homescreen-edit-toggle": void;

@@ -7,6 +7,7 @@ const RouterLinkComponent = markRaw(RouterLink);
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -23,6 +24,7 @@ interface NavItem {
 
 const props = defineProps<{
   items: NavItem[];
+  label?: string;
 }>();
 
 const route = useRoute();
@@ -46,7 +48,8 @@ const handleClick = (item: NavItem, event: Event) => {
 </script>
 
 <template>
-  <SidebarGroup>
+  <SidebarGroup v-if="items.length > 0">
+    <SidebarGroupLabel v-if="label">{{ label }}</SidebarGroupLabel>
     <SidebarGroupContent class="flex flex-col gap-0.5">
       <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title" class="mr-1.5">

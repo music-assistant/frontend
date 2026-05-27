@@ -318,6 +318,8 @@
               />
               <!-- provider icon -->
               <provider-icon :domain="item.provider" :size="25" />
+              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
               <Merge
                 v-if="
@@ -453,6 +455,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 // properties
 export interface Props {
   item?: MediaItemType;
+  sortBy?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
@@ -595,6 +598,7 @@ const playButtonClick = function (forceMenu = false) {
     playButton.getBoundingClientRect().top + 36,
     undefined,
     forceMenu,
+    compProps.sortBy,
   );
 };
 

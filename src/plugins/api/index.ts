@@ -53,6 +53,7 @@ import {
   RemoteAccessInfo,
   RepeatMode,
   SearchResults,
+  SmartPlaylistRules,
   UserRole,
 } from "./interfaces";
 
@@ -498,6 +499,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public getSimilarTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/tracks/similar_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
+    });
+  }
+
   public getTrackPreviewUrl(
     provider_instance_id_or_domain: string,
     item_id: string,
@@ -630,6 +643,18 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+    });
+  }
+
+  public getSimilarArtists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Artist[]> {
+    return this.sendCommand("music/artists/similar_artists", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
     });
   }
 
@@ -810,6 +835,54 @@ export class MusicAssistantApi {
       library_matching,
       match_providers,
     });
+  }
+
+  public createSmartPlaylist(
+    name: string,
+    rules: SmartPlaylistRules,
+    is_dynamic: boolean = true,
+  ): Promise<Playlist> {
+    return this.sendCommand("smart_playlists/create", {
+      name,
+      rules,
+      is_dynamic,
+    });
+  }
+
+  public generateSmartPlaylist(
+    name: string,
+    rules: SmartPlaylistRules,
+    count?: number,
+  ): Promise<Playlist> {
+    return this.sendCommand("smart_playlists/generate", {
+      name,
+      rules,
+      count,
+    });
+  }
+
+  public getSmartPlaylistRules(
+    db_playlist_id: string | number,
+  ): Promise<SmartPlaylistRules | null> {
+    return this.sendCommand("smart_playlists/get_rules", {
+      playlist_id: db_playlist_id,
+    });
+  }
+
+  public updateSmartPlaylistRules(
+    db_playlist_id: string | number,
+    rules: SmartPlaylistRules,
+  ): Promise<void> {
+    return this.sendCommand("smart_playlists/update_rules", {
+      playlist_id: db_playlist_id,
+      rules,
+    });
+  }
+
+  public countSmartPlaylistTracks(
+    rules: SmartPlaylistRules,
+  ): Promise<{ count: number; duration_seconds: number }> {
+    return this.sendCommand("smart_playlists/count_tracks", { rules });
   }
 
   /**
@@ -1471,6 +1544,16 @@ export class MusicAssistantApi {
       !this.queues[queueId].dont_stop_the_music_enabled,
     );
   }
+  public queueCommandSetPlaybackSpeed(
+    queue_id: string,
+    speed: number,
+    queue_item_id: string,
+  ) {
+    this.playerQueueCommand(queue_id, "set_playback_speed", {
+      speed,
+      queue_item_id,
+    });
+  }
   public playerQueueCommand(
     queue_id: string,
     command: string,
@@ -1754,6 +1837,7 @@ export class MusicAssistantApi {
     radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
+    sort_by?: string,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1770,6 +1854,7 @@ export class MusicAssistantApi {
       option,
       radio_mode,
       start_item,
+      sort_by,
     });
   }
 

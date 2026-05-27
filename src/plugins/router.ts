@@ -351,6 +351,16 @@ const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "audio-analysis",
+            name: "audioanalysissettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "remote-access",
             name: "remoteaccesssettings",
             component: () =>

@@ -17,11 +17,14 @@ import {
 } from "lucide-vue-next";
 import { Component } from "vue";
 
+export type MenuGroup = "explore" | "library" | "system";
+
 export interface MenuItem {
   label: string;
   icon: Component;
   path: string;
   isLibraryNode: boolean;
+  group: MenuGroup;
   hidden?: boolean;
   disabled?: boolean;
 }
@@ -59,6 +62,7 @@ export const getMenuItems = function () {
         icon: Compass,
         path: "/discover",
         isLibraryNode: false,
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "search") {
@@ -67,6 +71,16 @@ export const getMenuItems = function () {
         icon: Search,
         path: "/search",
         isLibraryNode: false,
+        group: "explore",
+      });
+    }
+    if (enabledMenuItemStr === "browse") {
+      items.push({
+        label: "browse",
+        icon: Folder,
+        path: "/browse",
+        isLibraryNode: true,
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "party") {
@@ -76,6 +90,7 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
+        group: "explore",
       });
     }
     if (enabledMenuItemStr === "artists") {
@@ -84,6 +99,7 @@ export const getMenuItems = function () {
         icon: ArtistIcon,
         path: "/artists",
         isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "albums") {
@@ -92,6 +108,7 @@ export const getMenuItems = function () {
         icon: Disc3,
         path: "/albums",
         isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "tracks") {
@@ -100,6 +117,7 @@ export const getMenuItems = function () {
         icon: Music2,
         path: "/tracks",
         isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "playlists") {
@@ -108,6 +126,7 @@ export const getMenuItems = function () {
         icon: ListMusic,
         path: "/playlists",
         isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "audiobooks") {
@@ -117,6 +136,7 @@ export const getMenuItems = function () {
         path: "/audiobooks",
         isLibraryNode: true,
         disabled: store.libraryAudiobooksCount === 0,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "podcasts") {
@@ -126,6 +146,7 @@ export const getMenuItems = function () {
         path: "/podcasts",
         isLibraryNode: true,
         disabled: store.libraryPodcastsCount === 0,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "radios") {
@@ -134,6 +155,7 @@ export const getMenuItems = function () {
         icon: Radio,
         path: "/radios",
         isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "genres") {
@@ -142,14 +164,7 @@ export const getMenuItems = function () {
         icon: GenreIcon,
         path: "/genres",
         isLibraryNode: true,
-      });
-    }
-    if (enabledMenuItemStr === "browse") {
-      items.push({
-        label: "browse",
-        icon: Folder,
-        path: "/browse",
-        isLibraryNode: true,
+        group: "library",
       });
     }
     if (enabledMenuItemStr === "settings") {
@@ -158,6 +173,7 @@ export const getMenuItems = function () {
         icon: Settings,
         path: "/settings",
         isLibraryNode: true,
+        group: "system",
       });
     }
   }
