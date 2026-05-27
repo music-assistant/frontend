@@ -151,7 +151,7 @@
       <!-- provider icon (bookshelf when in library, else source provider) -->
       <provider-icon
         v-if="getBreakpointValue('bp2') && showProvider"
-        :domain="providerIconDomain"
+        :domain="getListItemProviderIconDomain(item)"
         :size="24"
       />
 
@@ -208,7 +208,7 @@ import {
   handlePlayBtnClick,
   truncateString,
 } from "@/helpers/utils";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   AlbumType,
   ContentType,
@@ -306,15 +306,6 @@ const HiResDetails = computed(() => {
     }
   }
   return "";
-});
-
-// playlists always surface their source provider icon; everything else shows
-// the bookshelf when in library and the source provider icon otherwise.
-const providerIconDomain = computed(() => {
-  const item = compProps.item;
-  if (item.media_type == MediaType.PLAYLIST && "provider_mappings" in item)
-    return item.provider_mappings[0].provider_domain;
-  return getProviderIconDomain(item);
 });
 
 // emits

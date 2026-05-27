@@ -316,7 +316,8 @@
                 :title="$t('tooltip.favorite')"
                 @click="api.toggleFavorite(item)"
               />
-              <!-- provider icon (bookshelf when in library, else source provider) -->
+              <!-- details can be reached out of library context, so always show
+              the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
               <!-- slot for extra action icons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>

@@ -96,8 +96,10 @@ export const isItemInLibrary = function (
 
 /**
  * Domain to feed ProviderIcon for an item's source/membership badge.
- * In-library items show the library (bookshelf) icon; everything else shows the
- * icon of its first provider mapping (or the item's own provider as fallback).
+ * Any in-library item shows the library (bookshelf) icon, regardless of media
+ * type, so the user can tell at a glance whether it is in or out of library.
+ * Items outside the library show the icon of their first provider mapping (or
+ * the item's own provider as a fallback).
  */
 export const getProviderIconDomain = function (
   item: MediaItemType | ItemMapping,
@@ -111,6 +113,26 @@ export const getProviderIconDomain = function (
     return item.provider_mappings[0].provider_domain;
   }
   return item.provider;
+};
+
+/**
+ * Provider icon domain for media listing tiles. Playlists always surface their
+ * source provider icon: a playlist listing is library-only by definition, so a
+ * bookshelf icon would be redundant and the source is the useful signal. Every
+ * other item type follows getProviderIconDomain.
+ */
+export const getListItemProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (
+    item.media_type === MediaType.PLAYLIST &&
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return getProviderIconDomain(item);
 };
 
 export const itemIsAvailable = function (

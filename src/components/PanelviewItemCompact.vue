@@ -35,7 +35,7 @@
               (showProviderOnCover || item.media_type === MediaType.PLAYLIST) &&
               'provider_mappings' in item
             "
-            :domain="providerIconDomain"
+            :domain="getListItemProviderIconDomain(item)"
             :size="20"
           />
         </div>
@@ -130,7 +130,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   ItemMapping,
@@ -171,15 +171,6 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 const { t, te } = useI18n();
-
-// playlists always surface their source provider icon; everything else shows
-// the bookshelf when in library and the source provider icon otherwise.
-const providerIconDomain = computed(() => {
-  const item = compProps.item;
-  if (item.media_type == MediaType.PLAYLIST && "provider_mappings" in item)
-    return item.provider_mappings[0].provider_domain;
-  return getProviderIconDomain(item);
-});
 
 const displayName = computed(() => {
   if (compProps.item.media_type === MediaType.GENRE) {
