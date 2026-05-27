@@ -1,15 +1,3 @@
-<!--
-  Generic delete/remove confirmation dialog.
-  Replaces native browser confirm() prompts with a styled dialog.
-  Driven through the centralized eventbus so it can be triggered from anywhere:
-
-    eventbus.emit("deleteConfirmationDialog", {
-      title: $t("remove_library"),
-      message: $t("confirm_library_remove"),
-      confirmLabel: $t("remove"),
-      onConfirm: () => { ... },
-    });
--->
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-[520px]">
