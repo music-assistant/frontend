@@ -94,12 +94,6 @@ export const isItemInLibrary = function (
   return false;
 };
 
-export const isItemFavorite = function (
-  item: MediaItemType | ItemMapping | null | undefined,
-): boolean {
-  return !!item && "favorite" in item && item.favorite === true;
-};
-
 /**
  * Domain to feed ProviderIcon for an item's source/membership badge.
  * In-library items show the library (bookshelf) icon; everything else shows the
