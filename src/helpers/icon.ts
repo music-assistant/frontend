@@ -1,5 +1,6 @@
 import type { Component } from "vue";
 import * as MaIcons from "@/components/ma-icons";
+import * as LucideIcons from "@lucide/vue";
 
 /** All custom MA icon names, shown first in search results. */
 export const MA_ICON_NAMES: readonly string[] = Object.keys(
@@ -15,22 +16,7 @@ function pascalToKebab(name: string): string {
 }
 
 type LucideModule = Record<string, unknown>;
-
-// Start loading Lucide immediately in the background — it lands in its own chunk, not main.
-const lucidePromise = import("@lucide/vue") as Promise<LucideModule>;
-let lucideModule: LucideModule | null = null;
-lucidePromise.then((mod) => {
-  lucideModule = mod;
-});
-
-type LucideModule = Record<string, unknown>;
-
-// Start loading Lucide immediately in the background — it lands in its own chunk, not main.
-const lucidePromise = import("lucide-vue-next") as Promise<LucideModule>;
-let lucideModule: LucideModule | null = null;
-lucidePromise.then((mod) => {
-  lucideModule = mod;
-});
+const lucideModule = LucideIcons as unknown as LucideModule;
 
 /** Returns the Vue component for a Lucide or MA kebab-case icon name, or undefined for MDI names. */
 export function getLucideIcon(
@@ -40,8 +26,7 @@ export function getLucideIcon(
   // Resolve alias first, then look up in registry
   const canonical = MaIcons.aliases[name] ?? name;
   if (MaIcons.registry[canonical]) return MaIcons.registry[canonical];
-  // Fall through to Lucide (returns undefined until module is loaded)
-  if (!lucideModule) return undefined;
+  // Fall through to Lucide
   const comp = lucideModule[kebabToPascal(canonical)];
   return typeof comp === "function" ? (comp as Component) : undefined;
 }
@@ -53,10 +38,9 @@ export function isMdiIcon(name: string | null | undefined): boolean {
 
 /** All Lucide icon names in kebab-case, sorted alphabetically. Awaits the async module. */
 export async function getLucideIconNames(): Promise<readonly string[]> {
-  const mod = await lucidePromise;
-  return Object.keys(mod)
+  return Object.keys(lucideModule)
     .filter((key) => {
-      const val = mod[key];
+      const val = lucideModule[key];
       return (
         typeof val === "function" &&
         /^[A-Z]/.test(key) && // icon exports are PascalCase

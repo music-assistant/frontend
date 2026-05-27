@@ -19,6 +19,10 @@ import { getLucideIcon, isMdiIcon } from "@/helpers/icon";
 import { Speaker } from "@lucide/vue";
 import { computed } from "vue";
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = defineProps<{
   icon?: string | null;
   size?: number | string;
