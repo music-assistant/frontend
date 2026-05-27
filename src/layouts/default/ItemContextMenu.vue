@@ -584,7 +584,9 @@ export const getContextMenuItems = async function (
           onConfirm: () => {
             for (const item of items) {
               api.removeItemFromLibrary(item.media_type, item.item_id);
-              // optimistically clear the mappings so the derived state re-evaluates
+              // optimistically clear membership so the derived state re-evaluates;
+              // favorite implies membership, so it must clear too
+              if ("favorite" in item) item.favorite = false;
               if ("provider_mappings" in item)
                 item.provider_mappings.forEach((pm) => (pm.in_library = false));
             }
