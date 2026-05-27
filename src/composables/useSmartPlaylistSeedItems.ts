@@ -37,20 +37,16 @@ export function useSmartPlaylistSeedItems() {
       .map((p) => p.instance_id),
   );
 
+  // Don't filter results by provider_mappings: the server's similar_*
+  // dispatchers fall back to plugin-tier providers, which never appear there.
   setupDebouncedSearch({
     query: seedTrackSearch,
     results: seedTrackResults,
     isSearching: isSeedSearching,
     searchFn: async (q) => {
-      const providerIds = _similarTrackProviderIds.value;
-      if (providerIds.length === 0) return [];
-
+      if (_similarTrackProviderIds.value.length === 0) return [];
       const result = await api.search(q, [MediaType.TRACK], 20);
-      return result.tracks.filter((t) =>
-        t.provider_mappings?.some((m) =>
-          providerIds.includes(m.provider_instance),
-        ),
-      );
+      return result.tracks;
     },
   });
 
@@ -59,15 +55,9 @@ export function useSmartPlaylistSeedItems() {
     results: seedArtistResults,
     isSearching: isSeedArtistSearching,
     searchFn: async (q) => {
-      const providerIds = _similarArtistProviderIds.value;
-      if (providerIds.length === 0) return [];
-
+      if (_similarArtistProviderIds.value.length === 0) return [];
       const result = await api.search(q, [MediaType.ARTIST], 20);
-      return result.artists.filter((a) =>
-        a.provider_mappings?.some((m) =>
-          providerIds.includes(m.provider_instance),
-        ),
-      );
+      return result.artists;
     },
   });
 

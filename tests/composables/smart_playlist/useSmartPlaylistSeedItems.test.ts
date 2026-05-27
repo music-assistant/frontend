@@ -42,7 +42,12 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
+import api from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/useSmartPlaylistSeedItems";
+
+interface SearchFnArg {
+  searchFn: (q: string) => Promise<unknown[]>;
+}
 
 describe("useSmartPlaylistSeedItems", () => {
   beforeEach(() => {
@@ -105,5 +110,67 @@ describe("useSmartPlaylistSeedItems", () => {
     expect(seed.seedArtistUri.value).toBe("tidal://artist/tidal-artist-1");
     expect(seed.selectedSeedTrack.value).toBeNull();
     expect(seed.seedTrackUri.value).toBe("");
+  });
+
+  describe("seed-track search filter", () => {
+    const originalProviders = (api as unknown as { providers: unknown })
+      .providers;
+
+    beforeEach(() => {
+      vi.mocked(api.search).mockClear();
+      (api as unknown as { providers: unknown }).providers = originalProviders;
+    });
+
+    it("returns library/streaming results when only a plugin supplies SIMILAR_TRACKS", async () => {
+      useSmartPlaylistSeedItems();
+      const trackSearchFn = (
+        mockSetupDebouncedSearch.mock.calls[0][0] as SearchFnArg
+      ).searchFn;
+
+      vi.mocked(api.search).mockResolvedValueOnce({
+        tracks: [
+          {
+            item_id: "lib-1",
+            name: "Library Track",
+            provider_mappings: [
+              { provider_instance: "library", provider_domain: "library" },
+              {
+                provider_instance: "filesystem_local",
+                provider_domain: "filesystem_local",
+              },
+            ],
+          },
+        ],
+        artists: [],
+        albums: [],
+        playlists: [],
+        radio: [],
+        audiobooks: [],
+        podcasts: [],
+      } as never);
+
+      const results = await trackSearchFn("anything");
+
+      expect(results).toHaveLength(1);
+      expect(api.search).toHaveBeenCalledWith("anything", ["track"], 20);
+    });
+
+    it("returns [] without searching when no provider supplies SIMILAR_TRACKS", async () => {
+      (api as unknown as { providers: Record<string, unknown> }).providers = {
+        only_unrelated: {
+          instance_id: "only_unrelated",
+          supported_features: [],
+        },
+      };
+      useSmartPlaylistSeedItems();
+      const trackSearchFn = (
+        mockSetupDebouncedSearch.mock.calls.at(-1)?.[0] as SearchFnArg
+      ).searchFn;
+
+      const results = await trackSearchFn("anything");
+
+      expect(results).toEqual([]);
+      expect(api.search).not.toHaveBeenCalled();
+    });
   });
 });
