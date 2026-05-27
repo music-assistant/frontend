@@ -41,6 +41,13 @@ export type LinkGenreDialogEvent = {
   items: MediaItemType[];
 };
 
+export type DeleteConfirmationDialogEvent = {
+  message: string;
+  title?: string;
+  confirmLabel?: string;
+  onConfirm: () => void | Promise<void>;
+};
+
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
@@ -56,6 +63,7 @@ export type Events = {
   createPlaylist: CreatePlaylistEvent;
   mergeGenreDialog: MergeGenreDialogEvent;
   deleteGenreDialog: DeleteGenreDialogEvent;
+  deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
