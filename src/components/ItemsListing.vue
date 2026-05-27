@@ -1705,6 +1705,7 @@ const selectAll = async function () {
 
 defineExpose({
   sortBy: computed(() => params.value.sortBy),
+  reload: () => loadData(true, true),
 });
 </script>
 
