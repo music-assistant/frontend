@@ -572,12 +572,18 @@ export const getContextMenuItems = async function (
       label: "remove_library",
       labelArgs: [],
       action: () => {
-        if (!confirm($t("confirm_library_remove"))) return;
-        for (const item of items)
-          api.removeItemFromLibrary(item.media_type, item.item_id);
-        if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
-        // Clear the multi-select after action
-        eventbus.emit("clearSelection");
+        eventbus.emit("deleteConfirmationDialog", {
+          title: $t("remove_library"),
+          message: $t("confirm_library_remove"),
+          confirmLabel: $t("remove"),
+          onConfirm: () => {
+            for (const item of items)
+              api.removeItemFromLibrary(item.media_type, item.item_id);
+            if (resolvedItem.item_id == parentItem?.item_id) router.go(-1);
+            // Clear the multi-select after action
+            eventbus.emit("clearSelection");
+          },
+        });
       },
       icon: "mdi-bookshelf",
     });

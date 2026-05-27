@@ -23,6 +23,7 @@
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
+          <dialog-delete-confirmation />
           <item-context-menu />
           <AddManualLink
             v-model="showEditItemDialog"
@@ -44,6 +45,7 @@ import PlayerSelect from "./PlayerSelect.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
+import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import AddToPlaylistDialog from "./AddToPlaylistDialog.vue";
 import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
