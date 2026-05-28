@@ -14,6 +14,10 @@
       </div>
     </div>
 
+    <div class="px-4 pt-4">
+      <Separator />
+    </div>
+
     <div class="px-2 pt-5 pb-2">
       <template v-if="loading">
         <ListViewSkeleton v-for="n in 8" :key="'skeleton-list-' + n" />
@@ -44,6 +48,7 @@
 <script setup lang="ts">
 import ListviewItem from "@/components/ListviewItem.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
