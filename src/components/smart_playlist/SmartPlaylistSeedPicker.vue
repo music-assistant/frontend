@@ -1,113 +1,72 @@
 <template>
-  <div class="flex flex-col gap-2">
-    <Tabs
-      :model-value="kind"
-      @update:model-value="(v) => emit('update:kind', v as 'track' | 'artist')"
-    >
-      <TabsList class="grid grid-cols-2 h-8">
-        <TabsTrigger
-          value="track"
-          class="text-xs border-0 data-[state=active]:bg-muted-foreground/20 data-[state=active]:text-foreground dark:data-[state=active]:bg-muted-foreground/30 dark:data-[state=active]:text-foreground"
-        >
-          {{ $t("track") }}
-        </TabsTrigger>
-        <TabsTrigger
-          value="artist"
-          class="text-xs border-0 data-[state=active]:bg-muted-foreground/20 data-[state=active]:text-foreground dark:data-[state=active]:bg-muted-foreground/30 dark:data-[state=active]:text-foreground"
-        >
-          {{ $t("artist") }}
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
-
-    <div
-      v-if="selectedItem"
-      class="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
-    >
-      <div class="flex flex-col min-w-0">
-        <span class="text-sm font-medium truncate">{{
-          selectedItem.name
-        }}</span>
-        <span v-if="subtitle" class="text-xs text-muted-foreground truncate">
-          {{ subtitle }}
-        </span>
-      </div>
+  <Popover v-model:open="popoverOpen">
+    <PopoverTrigger as-child>
       <Button
         variant="ghost"
-        size="icon"
-        class="h-7 w-7 flex-shrink-0"
-        @click="emit('clear')"
+        size="sm"
+        :disabled="!hasProvider || isFull"
+        :class="[
+          'h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground',
+          invalid ? 'text-destructive' : '',
+        ]"
       >
-        <X class="h-3.5 w-3.5" />
+        <Plus class="h-3 w-3" />
+        {{ buttonLabel }}
       </Button>
-    </div>
-
-    <Popover v-else>
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :disabled="!hasProvider"
-          :class="[
-            'h-9 justify-start gap-2 text-sm font-normal text-muted-foreground',
-            invalid ? 'border-destructive ring-1 ring-destructive/40' : '',
-          ]"
-        >
-          <Search class="h-3.5 w-3.5" />
-          {{
-            hasProvider
-              ? kind === "track"
-                ? $t("smart_playlist.seed_track_pick")
-                : $t("smart_playlist.seed_artist_pick")
-              : kind === "track"
-                ? $t("smart_playlist.seed_no_track_provider")
-                : $t("smart_playlist.seed_no_artist_provider")
-          }}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        class="w-[var(--reka-popover-trigger-width)] p-2"
+    </PopoverTrigger>
+    <PopoverContent align="start" class="w-[280px] p-2">
+      <Tabs
+        :model-value="kind"
+        @update:model-value="(v) => emit('update:kind', v as SeedKind)"
       >
-        <Input
-          :model-value="searchQuery"
-          :placeholder="$t('search')"
-          class="mb-2 h-8 text-sm"
-          @update:model-value="emit('update:searchQuery', $event as string)"
-          @keydown.stop
-        />
-        <div class="max-h-56 overflow-y-auto flex flex-col">
-          <div v-if="isSearching" class="flex justify-center py-2">
-            <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
-          </div>
-          <div
+        <TabsList class="grid grid-cols-4 h-8 mb-2">
+          <TabsTrigger
+            v-for="opt in tabs"
+            :key="opt.value"
+            :value="opt.value"
+            class="h-full text-[11px] border-0 data-[state=active]:bg-muted-foreground/20 data-[state=active]:text-foreground dark:data-[state=active]:bg-muted-foreground/30 dark:data-[state=active]:text-foreground"
+          >
+            {{ opt.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <Input
+        :model-value="searchQuery"
+        :placeholder="$t('search')"
+        class="mb-2 h-8 text-sm"
+        @update:model-value="emit('update:searchQuery', $event as string)"
+        @keydown.stop
+      />
+      <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
+        <div v-if="isSearching" class="flex justify-center py-6">
+          <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+        <template v-else-if="results.length > 0">
+          <button
             v-for="item in results"
             :key="item.item_id"
-            class="flex flex-col py-1 px-1.5 cursor-pointer text-sm hover:bg-accent rounded-sm"
-            @click.stop="emit('select', item)"
+            type="button"
+            class="flex flex-col py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+            @click.stop="onPick(item)"
           >
             <span class="truncate font-medium">{{ item.name }}</span>
             <slot name="item-sub" :item="item"></slot>
-          </div>
-          <p
-            v-if="searchQuery.length < 2"
-            class="text-xs text-muted-foreground py-1.5 px-1.5"
-          >
-            {{ $t("search") }}…
-          </p>
-          <p
-            v-else-if="!isSearching && results.length === 0"
-            class="text-xs text-muted-foreground py-1.5 px-1.5"
-          >
-            {{ $t("no_results") }}
+          </button>
+        </template>
+        <div
+          v-else
+          class="flex-1 flex items-center justify-center text-center py-3 px-2"
+        >
+          <p class="text-xs text-muted-foreground leading-relaxed">
+            {{ emptyStateText }}
           </p>
         </div>
-      </PopoverContent>
-    </Popover>
-  </div>
+      </div>
+    </PopoverContent>
+  </Popover>
 </template>
 
 <script setup lang="ts">
-import { Loader2, Search, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -116,27 +75,70 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { SeedKind } from "@/composables/useSmartPlaylistSeedItems";
+import { $t } from "@/plugins/i18n";
+import { Loader2, Plus } from "lucide-vue-next";
+import { match } from "ts-pattern";
+import { computed, ref } from "vue";
 
 interface SearchItem {
   item_id: string;
   name: string;
 }
 
-defineProps<{
-  kind: "track" | "artist";
-  selectedItem: SearchItem | null;
+const props = defineProps<{
+  kind: SeedKind;
   searchQuery: string;
   results: SearchItem[];
   isSearching: boolean;
   hasProvider: boolean;
-  subtitle?: string;
+  isFull: boolean;
   invalid?: boolean;
 }>();
 
 const emit = defineEmits<{
-  "update:kind": [value: "track" | "artist"];
+  "update:kind": [value: SeedKind];
   "update:searchQuery": [value: string];
   select: [item: SearchItem];
-  clear: [];
 }>();
+
+const popoverOpen = ref(false);
+
+function onPick(item: SearchItem) {
+  emit("select", item);
+  popoverOpen.value = false;
+}
+
+const tabs = computed(() => [
+  { value: "track" as SeedKind, label: $t("track") },
+  { value: "artist" as SeedKind, label: $t("artist") },
+  { value: "album" as SeedKind, label: $t("album") },
+  { value: "playlist" as SeedKind, label: $t("playlist") },
+]);
+
+const kindLabel = computed(() =>
+  match(props.kind)
+    .with("track", () => $t("track"))
+    .with("artist", () => $t("artist"))
+    .with("album", () => $t("album"))
+    .with("playlist", () => $t("playlist"))
+    .exhaustive(),
+);
+
+const buttonLabel = computed(() => {
+  if (!props.hasProvider) return $t("smart_playlist.seed_no_provider");
+  if (props.isFull) return $t("smart_playlist.seed_full");
+  return $t("smart_playlist.add_seed");
+});
+
+const emptyStateText = computed(() => {
+  if (props.searchQuery.length < 2) {
+    return $t("smart_playlist.picker_empty_search", {
+      label: kindLabel.value.toLowerCase(),
+    });
+  }
+  return $t("smart_playlist.picker_empty_no_match", {
+    label: kindLabel.value.toLowerCase(),
+  });
+});
 </script>

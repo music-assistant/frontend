@@ -1,14 +1,14 @@
 import api from "@/plugins/api";
-import type {
-  Artist,
-  SmartPlaylistRules,
-  Track,
-} from "@/plugins/api/interfaces";
+import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useSmartPlaylistGenres } from "./useSmartPlaylistGenres";
-import { useSmartPlaylistSeedItems } from "./useSmartPlaylistSeedItems";
+import {
+  SEED_MAX,
+  useSmartPlaylistSeedItems,
+  type SeedKind,
+} from "./useSmartPlaylistSeedItems";
 
 export type SmartPlaylistMode = "library" | "seed";
 export type RuleField = "genre" | "artist" | "album" | "favorite" | "year";
@@ -79,8 +79,7 @@ export function useSmartPlaylistRulesForm(
   function setMode(next: SmartPlaylistMode) {
     if (next === mode.value) return;
     if (next === "library") {
-      seedItems.clearSeedTrack();
-      seedItems.clearSeedArtist();
+      seedItems.clearSeeds();
     }
     mode.value = next;
   }
@@ -131,8 +130,11 @@ export function useSmartPlaylistRulesForm(
     try {
       const finalRules: SmartPlaylistRules = {
         ...buildFinalRules(),
-        seed_track_uri: undefined,
-        seed_artist_uri: undefined,
+        seed_track_uris: undefined,
+        seed_artist_uris: undefined,
+        seed_album_uris: undefined,
+        seed_playlist_uris: undefined,
+        seed_names: undefined,
       };
       const stats = await api.countSmartPlaylistTracks(finalRules);
       if (requestId === trackCountRequestId.value) {
@@ -146,15 +148,7 @@ export function useSmartPlaylistRulesForm(
   }, 600);
 
   watch(
-    [
-      libraryRules,
-      seedRules,
-      mode,
-      logic,
-      dedupHours,
-      seedItems.seedTrackUri,
-      seedItems.seedArtistUri,
-    ],
+    [libraryRules, seedRules, mode, logic, dedupHours, seedItems.seeds],
     () => {
       _updateTrackCount();
     },
@@ -168,7 +162,25 @@ export function useSmartPlaylistRulesForm(
     async (initial) => {
       if (!initial) return;
 
-      const isSeed = !!(initial.seed_track_uri || initial.seed_artist_uri);
+      const seedEntries: { uri: string; kind: SeedKind }[] = [
+        ...(initial.seed_track_uris ?? []).map((uri) => ({
+          uri,
+          kind: "track" as SeedKind,
+        })),
+        ...(initial.seed_artist_uris ?? []).map((uri) => ({
+          uri,
+          kind: "artist" as SeedKind,
+        })),
+        ...(initial.seed_album_uris ?? []).map((uri) => ({
+          uri,
+          kind: "album" as SeedKind,
+        })),
+        ...(initial.seed_playlist_uris ?? []).map((uri) => ({
+          uri,
+          kind: "playlist" as SeedKind,
+        })),
+      ];
+      const isSeed = seedEntries.length > 0;
       mode.value = isSeed ? "seed" : "library";
       logic.value = initial.logic ?? "AND";
       dedupHours.value = initial.dedup_hours ?? undefined;
@@ -259,30 +271,35 @@ export function useSmartPlaylistRulesForm(
 
       rules.value = fresh;
 
-      seedItems.clearSeedTrack();
-      seedItems.clearSeedArtist();
-      if (initial.seed_track_uri) {
-        seedItems.seedKind.value = "track";
-        seedItems.seedTrackUri.value = initial.seed_track_uri;
-        try {
-          const item = await api.getItemByUri(initial.seed_track_uri);
-          if (item.media_type === MediaType.TRACK) {
-            seedItems.selectedSeedTrack.value = item as Track;
-          }
-        } catch {
-          // unresolved seed — leave URI but no item details
-        }
-      } else if (initial.seed_artist_uri) {
-        seedItems.seedKind.value = "artist";
-        seedItems.seedArtistUri.value = initial.seed_artist_uri;
-        try {
-          const item = await api.getItemByUri(initial.seed_artist_uri);
-          if (item.media_type === MediaType.ARTIST) {
-            seedItems.selectedSeedArtist.value = item as Artist;
-          }
-        } catch {
-          // unresolved seed
-        }
+      seedItems.clearSeeds();
+      if (isSeed) {
+        seedItems.loadSeedsFromUris(seedEntries, initial.seed_names);
+        // Hydrate display info (subtitles) where possible from the live items.
+        // The cap is 10 seeds so this is bounded.
+        await Promise.all(
+          seedEntries.map(async ({ uri }, idx) => {
+            try {
+              const item = await api.getItemByUri(uri);
+              const current = seedItems.seeds.value[idx];
+              if (!current || current.uri !== uri) return;
+              const next = { ...current, name: item.name };
+              if (item.media_type === MediaType.TRACK) {
+                const firstArtist = (item as { artists?: { name: string }[] })
+                  .artists?.[0]?.name;
+                if (firstArtist) next.subtitle = firstArtist;
+              } else if (item.media_type === MediaType.ALBUM) {
+                const firstArtist = (item as { artists?: { name: string }[] })
+                  .artists?.[0]?.name;
+                if (firstArtist) next.subtitle = firstArtist;
+              }
+              const list = seedItems.seeds.value.slice();
+              list[idx] = next;
+              seedItems.seeds.value = list;
+            } catch {
+              // unresolved seed — keep the URI as a placeholder name
+            }
+          }),
+        );
       }
 
       await nextTick();
@@ -351,23 +368,27 @@ export function useSmartPlaylistRulesForm(
       year_from: yr?.yearFrom ?? undefined,
       year_to: yr?.yearTo ?? undefined,
       dedup_hours: dedupHours.value,
-      seed_track_uri:
-        isSeed && seedItems.seedKind.value === "track"
-          ? seedItems.seedTrackUri.value || undefined
-          : undefined,
-      seed_track_name:
-        isSeed && seedItems.selectedSeedTrack.value
-          ? `${seedItems.selectedSeedTrack.value.name} – ${(seedItems.selectedSeedTrack.value.artists as Artist[])?.[0]?.name ?? ""}`
-          : undefined,
-      seed_artist_uri:
-        isSeed && seedItems.seedKind.value === "artist"
-          ? seedItems.seedArtistUri.value || undefined
-          : undefined,
-      seed_artist_name:
-        isSeed && seedItems.selectedSeedArtist.value
-          ? seedItems.selectedSeedArtist.value.name
-          : undefined,
     };
+
+    if (isSeed) {
+      const trackUris: string[] = [];
+      const artistUris: string[] = [];
+      const albumUris: string[] = [];
+      const playlistUris: string[] = [];
+      const names: Record<string, string> = {};
+      for (const s of seedItems.seeds.value) {
+        if (s.kind === "track") trackUris.push(s.uri);
+        else if (s.kind === "artist") artistUris.push(s.uri);
+        else if (s.kind === "album") albumUris.push(s.uri);
+        else playlistUris.push(s.uri);
+        names[s.uri] = s.subtitle ? `${s.name} – ${s.subtitle}` : s.name;
+      }
+      final.seed_track_uris = trackUris;
+      final.seed_artist_uris = artistUris;
+      final.seed_album_uris = albumUris;
+      final.seed_playlist_uris = playlistUris;
+      final.seed_names = names;
+    }
 
     return final;
   }
@@ -408,12 +429,13 @@ export function useSmartPlaylistRulesForm(
     const invalid = new Set<string>();
 
     if (mode.value === "seed") {
-      const hasSeed =
-        !!seedItems.seedTrackUri.value || !!seedItems.seedArtistUri.value;
-      if (!hasSeed) {
+      if (!seedItems.hasSeed.value) {
         errors.push(
-          "Pick a track or artist to find similar tracks from your streaming provider.",
+          "Pick at least one track, artist, album, or playlist to seed the playlist from.",
         );
+        seedInvalid.value = true;
+      } else if (seedItems.seeds.value.length > SEED_MAX) {
+        errors.push(`A smart playlist accepts up to ${SEED_MAX} seeds.`);
         seedInvalid.value = true;
       } else {
         seedInvalid.value = false;
@@ -452,11 +474,13 @@ export function useSmartPlaylistRulesForm(
     if (seedInvalid.value) seedInvalid.value = false;
   }
 
-  watch([seedItems.seedTrackUri, seedItems.seedArtistUri], () => {
-    if (seedItems.seedTrackUri.value || seedItems.seedArtistUri.value) {
-      clearSeedValidation();
-    }
-  });
+  watch(
+    seedItems.seeds,
+    (seeds) => {
+      if (seeds.length > 0) clearSeedValidation();
+    },
+    { deep: true },
+  );
 
   return {
     mode,
