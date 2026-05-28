@@ -8,6 +8,21 @@
         @click="showEditDialog = true"
       />
     </template>
+    <template v-if="smartRules" #description-dialog="{ open, onOpenChange }">
+      <Dialog :open="open" @update:open="onOpenChange">
+        <DialogContent class="sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle>
+              {{ $t("smart_playlist.rules_dialog_title") }}
+            </DialogTitle>
+            <DialogDescription>
+              {{ itemDetails?.name }}
+            </DialogDescription>
+          </DialogHeader>
+          <SmartPlaylistRulesView :rules="smartRules" />
+        </DialogContent>
+      </Dialog>
+    </template>
   </InfoHeader>
   <EditSmartPlaylistDialog
     v-if="smartRules"
@@ -64,7 +79,15 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import DynamicPlaylistSample from "@/components/DynamicPlaylistSample.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Settings2 } from "lucide-vue-next";
 import {
   EventType,
