@@ -15,13 +15,22 @@
     </div>
 
     <div
-      v-if="seedLabel"
-      class="rounded-md border bg-card px-3 py-2 flex flex-col gap-0.5"
+      v-if="seedLabels.length"
+      class="rounded-md border bg-card px-3 py-2 flex flex-col gap-1"
     >
       <span class="text-xs text-muted-foreground uppercase tracking-wide">
         {{ $t("smart_playlist.seed_heading") }}
       </span>
-      <span class="text-sm font-medium truncate">{{ seedLabel }}</span>
+      <div class="flex flex-wrap gap-1">
+        <Badge
+          v-for="(label, i) in seedLabels"
+          :key="i"
+          variant="default"
+          class="text-xs"
+        >
+          {{ label }}
+        </Badge>
+      </div>
     </div>
 
     <div v-if="!isSeed && hasAnyInclude" class="text-xs text-muted-foreground">
@@ -65,7 +74,7 @@
       </div>
     </div>
     <div
-      v-else-if="!seedLabel"
+      v-else-if="!seedLabels.length"
       class="rounded-md border bg-card/40 px-3 py-3 flex items-start gap-2"
     >
       <Library class="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -124,17 +133,18 @@ const props = defineProps<{
   rules: SmartPlaylistRules;
 }>();
 
-const isSeed = computed(
-  () => !!(props.rules.seed_track_uri || props.rules.seed_artist_uri),
-);
+const allSeedUris = computed<string[]>(() => [
+  ...(props.rules.seed_track_uris ?? []),
+  ...(props.rules.seed_artist_uris ?? []),
+  ...(props.rules.seed_album_uris ?? []),
+  ...(props.rules.seed_playlist_uris ?? []),
+]);
 
-const seedLabel = computed(() => {
-  if (props.rules.seed_track_uri)
-    return props.rules.seed_track_name ?? props.rules.seed_track_uri;
-  if (props.rules.seed_artist_uri)
-    return props.rules.seed_artist_name ?? props.rules.seed_artist_uri;
-  return "";
-});
+const isSeed = computed(() => allSeedUris.value.length > 0);
+
+const seedLabels = computed<string[]>(() =>
+  allSeedUris.value.map((uri) => props.rules.seed_names?.[uri] ?? uri),
+);
 
 function namesFor(
   ids: number[] | undefined,
