@@ -66,9 +66,17 @@
     </div>
     <div
       v-else-if="!seedLabel"
-      class="rounded-md border border-dashed text-xs text-muted-foreground py-3 px-3 text-center"
+      class="rounded-md border bg-card/40 px-3 py-3 flex items-start gap-2"
     >
-      {{ $t("smart_playlist.empty_title") }}
+      <Library class="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
+      <div class="flex flex-col gap-0.5 min-w-0">
+        <span class="text-sm font-medium">
+          {{ $t("smart_playlist.no_rules_title") }}
+        </span>
+        <span class="text-xs text-muted-foreground leading-relaxed">
+          {{ $t("smart_playlist.no_rules_desc") }}
+        </span>
+      </div>
     </div>
 
     <div

@@ -1701,6 +1701,8 @@
         "match_following": "of the following rules",
         "no_filters": "No filters yet. Add one to narrow the result.",
         "no_rules": "No rules yet. Add one to start matching tracks.",
+        "no_rules_desc": "Tracks are picked from your entire library at random. Add a rule to narrow the selection.",
+        "no_rules_title": "All library tracks",
         "off": "Off",
         "op_between": "between",
         "picker_empty_no_match": "No {label} matches your search.",
