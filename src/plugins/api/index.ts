@@ -849,18 +849,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public generateSmartPlaylist(
-    name: string,
-    rules: SmartPlaylistRules,
-    count?: number,
-  ): Promise<Playlist> {
-    return this.sendCommand("smart_playlists/generate", {
-      name,
-      rules,
-      count,
-    });
-  }
-
   public getSmartPlaylistRules(
     db_playlist_id: string | number,
   ): Promise<SmartPlaylistRules | null> {

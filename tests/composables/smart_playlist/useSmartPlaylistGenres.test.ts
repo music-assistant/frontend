@@ -1,4 +1,3 @@
-import { ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("vue", async () => {
@@ -11,61 +10,34 @@ vi.mock("vue", async () => {
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    getLibraryGenres: vi.fn().mockResolvedValue([]),
+    getLibraryGenres: vi.fn().mockResolvedValue([
+      { item_id: "9", name: "Synthwave" },
+      { item_id: "2", name: "Rock" },
+    ]),
   },
 }));
 
 import { useSmartPlaylistGenres } from "@/composables/useSmartPlaylistGenres";
 
 describe("useSmartPlaylistGenres", () => {
-  it("moves genre from excluded to included on toggle", () => {
-    const genreIds = ref<number[] | undefined>([]);
-    const excludedGenreIds = ref<number[] | undefined>([2]);
-    const genreNames = ref<Record<number, string> | undefined>({ 2: "Rock" });
-
-    const genres = useSmartPlaylistGenres(
-      genreIds,
-      excludedGenreIds,
-      genreNames,
-    );
-
-    genres.toggleGenreById(2);
-
-    expect(genreIds.value).toEqual([2]);
-    expect(excludedGenreIds.value).toEqual([]);
+  it("loads the genre list on mount and exposes options", async () => {
+    const { genres, genreOptions } = useSmartPlaylistGenres();
+    // wait a microtask for onMounted's promise resolution
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(genres.value.length).toBe(2);
+    expect(genreOptions.value).toEqual([
+      { id: 9, name: "Synthwave" },
+      { id: 2, name: "Rock" },
+    ]);
   });
 
-  it("moves genre from included to excluded on excluded toggle", () => {
-    const genreIds = ref<number[] | undefined>([5]);
-    const excludedGenreIds = ref<number[] | undefined>([]);
-    const genreNames = ref<Record<number, string> | undefined>();
-
-    const genres = useSmartPlaylistGenres(
-      genreIds,
-      excludedGenreIds,
-      genreNames,
-    );
-
-    genres.toggleExcludedGenreById(5);
-
-    expect(genreIds.value).toEqual([]);
-    expect(excludedGenreIds.value).toEqual([5]);
-  });
-
-  it("resolves genre name from ruleGenreNames fallback", () => {
-    const genreIds = ref<number[] | undefined>([]);
-    const excludedGenreIds = ref<number[] | undefined>([]);
-    const genreNames = ref<Record<number, string> | undefined>({
-      9: "Synthwave",
-    });
-
-    const genres = useSmartPlaylistGenres(
-      genreIds,
-      excludedGenreIds,
-      genreNames,
-    );
-
-    expect(genres.genreName(9)).toBe("Synthwave");
-    expect(genres.genreName(99)).toBe("99");
+  it("resolves genre name from loaded list, then fallback, then stringified id", async () => {
+    const { genreName } = useSmartPlaylistGenres();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(genreName(9)).toBe("Synthwave");
+    expect(genreName(99, "Lost Genre")).toBe("Lost Genre");
+    expect(genreName(42)).toBe("42");
   });
 });

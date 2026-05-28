@@ -1,9 +1,9 @@
 <!--
-  Dialog to edit the rules of an existing dynamic smart playlist.
+  Dialog to edit the rules of an existing smart playlist.
 -->
 <template>
   <Dialog v-model:open="showDialog">
-    <DialogContent class="sm:max-w-[520px]">
+    <DialogContent class="sp-fluid sm:max-w-[560px]">
       <DialogHeader>
         <DialogTitle class="mb-2">
           {{ $t("smart_playlist.edit_rules") }}
@@ -20,8 +20,8 @@
         {{ $t("loading") }}
       </div>
 
-      <div v-else class="flex flex-col gap-2 py-2">
-        <div class="h-[55vh] overflow-y-auto -mx-6 px-6">
+      <div v-else class="flex flex-col gap-3 py-2">
+        <div class="max-h-[60vh] overflow-y-auto -mx-6 px-6">
           <SmartPlaylistRulesForm
             ref="rulesForm"
             :initial-rules="loadedRules"
@@ -29,11 +29,13 @@
             :initial-album-items="loadedAlbumItems"
             :initial-excluded-artist-items="loadedExcludedArtistItems"
             :initial-excluded-album-items="loadedExcludedAlbumItems"
+            lock-type
             @track-count-update="onTrackCountUpdate"
           />
         </div>
 
         <SmartPlaylistTrackCountDisplay
+          :mode="rulesForm?.mode ?? 'library'"
           :is-counting-tracks="isCountingTracks"
           :matching-track-count="matchingTrackCount"
           :matching-duration="matchingDuration"
@@ -44,7 +46,10 @@
         <Button variant="outline" @click="showDialog = false">
           {{ $t("close") }}
         </Button>
-        <Button :disabled="loading || isSaving" @click="doSave">
+        <Button
+          :disabled="loading || isSaving || !rulesForm?.hasChanges"
+          @click="doSave"
+        >
           <span v-if="isSaving">{{ $t("smart_playlist.saving") }}</span>
           <span v-else>{{ $t("settings.save") }}</span>
         </Button>
@@ -57,6 +62,8 @@
 import { ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
+import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
+import SmartPlaylistTrackCountDisplay from "@/components/smart_playlist/SmartPlaylistTrackCountDisplay.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,8 +73,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
-import SmartPlaylistTrackCountDisplay from "@/components/smart_playlist/SmartPlaylistTrackCountDisplay.vue";
 import api from "@/plugins/api";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -123,6 +128,11 @@ watch(showDialog, async (open) => {
       if (fetchedRules) {
         await Promise.all([
           ...fetchedRules.artist_ids.map(async (id) => {
+            const nameFromRules = fetchedRules.artist_names?.[id];
+            if (nameFromRules) {
+              loadedArtistItems.value.push({ id, name: nameFromRules });
+              return;
+            }
             try {
               const artist = await api.getArtist(String(id), "library");
               loadedArtistItems.value.push({ id, name: artist.name });
@@ -131,6 +141,11 @@ watch(showDialog, async (open) => {
             }
           }),
           ...fetchedRules.album_ids.map(async (id) => {
+            const nameFromRules = fetchedRules.album_names?.[id];
+            if (nameFromRules) {
+              loadedAlbumItems.value.push({ id, name: nameFromRules });
+              return;
+            }
             try {
               const album = await api.getAlbum(String(id), "library");
               loadedAlbumItems.value.push({ id, name: album.name });
@@ -188,11 +203,16 @@ function onTrackCountUpdate(
 
 async function doSave() {
   if (isSaving.value) return;
+  const errors = rulesForm.value!.validate();
+  if (errors.length) {
+    toast.error(errors[0]);
+    return;
+  }
   isSaving.value = true;
   try {
     const finalRules = rulesForm.value!.getFinalRules();
     await api.updateSmartPlaylistRules(props.dbPlaylistId, finalRules);
-    toast.success($t("settings.save"));
+    toast.success($t("smart_playlist.edited", { name: props.playlistName }));
     showDialog.value = false;
     emit("saved");
   } catch (e) {

@@ -1,22 +1,39 @@
-import { reactive, ref, toRef, watch } from "vue";
-import { useDebounceFn } from "@vueuse/core";
 import api from "@/plugins/api";
 import type {
+  Artist,
   SmartPlaylistRules,
   Track,
-  Artist,
 } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
-import { useSmartPlaylistSeedItems } from "./useSmartPlaylistSeedItems";
+import { useDebounceFn } from "@vueuse/core";
+import { computed, nextTick, ref, watch } from "vue";
 import { useSmartPlaylistGenres } from "./useSmartPlaylistGenres";
-import { useSmartPlaylistContentFilters } from "./useSmartPlaylistContentFilters";
+import { useSmartPlaylistSeedItems } from "./useSmartPlaylistSeedItems";
+
+export type SmartPlaylistMode = "library" | "seed";
+export type RuleField = "genre" | "artist" | "album" | "favorite" | "year";
+export type RuleOperator = "is" | "is_not";
+
+export interface RuleValue {
+  id: number;
+  name: string;
+}
+
+export interface RuleRow {
+  uid: string;
+  field: RuleField;
+  operator: RuleOperator;
+  values: RuleValue[];
+  yearFrom?: number;
+  yearTo?: number;
+}
 
 export interface SmartPlaylistRulesFormInit {
   initialRules?: SmartPlaylistRules | null;
-  initialArtistItems?: { id: number; name: string }[];
-  initialAlbumItems?: { id: number; name: string }[];
-  initialExcludedArtistItems?: { id: number; name: string }[];
-  initialExcludedAlbumItems?: { id: number; name: string }[];
+  initialArtistItems?: RuleValue[];
+  initialAlbumItems?: RuleValue[];
+  initialExcludedArtistItems?: RuleValue[];
+  initialExcludedAlbumItems?: RuleValue[];
 }
 
 export type TrackCountUpdateHandler = (
@@ -25,56 +42,82 @@ export type TrackCountUpdateHandler = (
   counting: boolean,
 ) => void;
 
+const DEFAULT_LIMIT = 100;
+
+let uidCounter = 0;
+function nextUid(): string {
+  uidCounter += 1;
+  return `rule-${uidCounter}`;
+}
+
+function newRule(field: RuleField, operator: RuleOperator = "is"): RuleRow {
+  return { uid: nextUid(), field, operator, values: [] };
+}
+
 export function useSmartPlaylistRulesForm(
   props: SmartPlaylistRulesFormInit,
   onTrackCountUpdate: TrackCountUpdateHandler,
 ) {
-  // Core rules object
-  const rules = reactive<SmartPlaylistRules>({
-    genre_ids: [],
-    artist_ids: [],
-    album_ids: [],
-    favorites_only: false,
-    seed_track_uri: undefined,
-    seed_track_name: undefined,
-    seed_artist_uri: undefined,
-    seed_artist_name: undefined,
-    seed_artist_library_only: false,
-    excluded_artist_ids: [],
-    excluded_album_ids: [],
-    excluded_genre_ids: [],
-    excluded_track_uris: [],
-    excluded_artist_names: {},
-    excluded_album_names: {},
-    excluded_genre_names: {},
-    min_popularity: undefined,
-    dedup_hours: undefined,
-    logic: "AND",
-    limit: 100,
-    year_from: undefined,
-    year_to: undefined,
+  const mode = ref<SmartPlaylistMode>("library");
+  const logic = ref<"AND" | "OR">("AND");
+  const dedupHours = ref<number | undefined>(undefined);
+
+  const libraryRules = ref<RuleRow[]>([]);
+  const seedRules = ref<RuleRow[]>([]);
+
+  const rules = computed<RuleRow[]>({
+    get: () => (mode.value === "seed" ? seedRules.value : libraryRules.value),
+    set: (next: RuleRow[]) => {
+      if (mode.value === "seed") seedRules.value = next;
+      else libraryRules.value = next;
+    },
   });
 
-  // Initialize sub-composables
+  const genresComposable = useSmartPlaylistGenres();
   const seedItems = useSmartPlaylistSeedItems();
-  const genresComposable = useSmartPlaylistGenres(
-    toRef(rules, "genre_ids"),
-    toRef(rules, "excluded_genre_ids"),
-    toRef(rules, "genre_names"),
-  );
-  const contentFilters = useSmartPlaylistContentFilters(
-    toRef(rules, "artist_ids"),
-    toRef(rules, "album_ids"),
-    toRef(rules, "excluded_artist_ids"),
-    toRef(rules, "excluded_album_ids"),
-  );
+
+  function setMode(next: SmartPlaylistMode) {
+    if (next === mode.value) return;
+    if (next === "library") {
+      seedItems.clearSeedTrack();
+      seedItems.clearSeedArtist();
+    }
+    mode.value = next;
+  }
+
+  function addRule(field: RuleField) {
+    const list = rules.value;
+    if (field === "year") {
+      const row = newRule("year", "is");
+      row.yearFrom = undefined;
+      row.yearTo = undefined;
+      list.push(row);
+    } else if (field === "favorite") {
+      list.push(newRule("favorite", "is"));
+    } else {
+      list.push(newRule(field));
+    }
+  }
+
+  function removeRule(uid: string) {
+    rules.value = rules.value.filter((r) => r.uid !== uid);
+  }
+
+  function fieldAlreadyUsed(field: RuleField): boolean {
+    if (field === "favorite" || field === "year") {
+      return rules.value.some((r) => r.field === field);
+    }
+    return false;
+  }
+
   const trackCountRequestId = ref(0);
 
-  // Track count update with request-id guard
   const _updateTrackCount = useDebounceFn(async () => {
     const requestId = ++trackCountRequestId.value;
 
-    if (seedItems.seedTrackUri.value || seedItems.seedArtistUri.value) {
+    if (mode.value === "seed") {
+      // Backend doesn't currently expose a "count via streaming similar" query.
+      // Show an estimate based on the limit instead (handled in the display component).
       if (requestId === trackCountRequestId.value) {
         onTrackCountUpdate(null, null, false);
       }
@@ -87,7 +130,7 @@ export function useSmartPlaylistRulesForm(
 
     try {
       const finalRules: SmartPlaylistRules = {
-        ...rules,
+        ...buildFinalRules(),
         seed_track_uri: undefined,
         seed_artist_uri: undefined,
       };
@@ -102,206 +145,339 @@ export function useSmartPlaylistRulesForm(
     }
   }, 600);
 
-  // Watch rules and seed changes for track count updates
-  watch(rules, () => {
-    _updateTrackCount();
-  });
+  watch(
+    [
+      libraryRules,
+      seedRules,
+      mode,
+      logic,
+      dedupHours,
+      seedItems.seedTrackUri,
+      seedItems.seedArtistUri,
+    ],
+    () => {
+      _updateTrackCount();
+    },
+    { deep: true },
+  );
 
-  watch(seedItems.seedTrackUri, () => {
-    _updateTrackCount();
-  });
-
-  watch(seedItems.seedArtistUri, () => {
-    _updateTrackCount();
-  });
-
-  // Trigger initial track count on mount
   _updateTrackCount();
 
-  // Initialize from props
   watch(
     () => props.initialRules,
     async (initial) => {
       if (!initial) return;
 
-      // Sync rules
-      rules.genre_ids = [...initial.genre_ids];
-      rules.artist_ids = [...initial.artist_ids];
-      rules.album_ids = [...initial.album_ids];
-      rules.favorites_only = initial.favorites_only;
-      rules.seed_track_uri = initial.seed_track_uri;
-      rules.seed_track_name = initial.seed_track_name;
-      rules.min_popularity = initial.min_popularity ?? undefined;
-      rules.logic = initial.logic;
-      rules.limit = initial.limit;
-      rules.year_from = initial.year_from ?? undefined;
-      rules.year_to = initial.year_to ?? undefined;
-      rules.excluded_artist_ids = initial.excluded_artist_ids
-        ? [...initial.excluded_artist_ids]
-        : [];
-      rules.excluded_album_ids = initial.excluded_album_ids
-        ? [...initial.excluded_album_ids]
-        : [];
-      rules.excluded_genre_ids = initial.excluded_genre_ids
-        ? [...initial.excluded_genre_ids]
-        : [];
-      rules.excluded_track_uris = initial.excluded_track_uris
-        ? [...initial.excluded_track_uris]
-        : [];
-      rules.dedup_hours = initial.dedup_hours ?? undefined;
-      rules.seed_artist_uri = initial.seed_artist_uri;
-      rules.seed_artist_name = initial.seed_artist_name;
-      rules.seed_artist_library_only =
-        initial.seed_artist_library_only ?? false;
-      rules.genre_names = initial.genre_names
-        ? { ...initial.genre_names }
-        : undefined;
-      rules.artist_names = initial.artist_names
-        ? { ...initial.artist_names }
-        : undefined;
-      rules.album_names = initial.album_names
-        ? { ...initial.album_names }
-        : undefined;
+      const isSeed = !!(initial.seed_track_uri || initial.seed_artist_uri);
+      mode.value = isSeed ? "seed" : "library";
+      logic.value = initial.logic ?? "AND";
+      dedupHours.value = initial.dedup_hours ?? undefined;
 
-      // Sync seed items
-      seedItems.seedTrackUri.value = initial.seed_track_uri ?? "";
-      seedItems.selectedSeedTrack.value = null;
-      seedItems.seedArtistUri.value = initial.seed_artist_uri ?? "";
-      seedItems.selectedSeedArtist.value = null;
+      const fresh: RuleRow[] = [];
 
-      if (initial.seed_artist_uri) {
-        try {
-          const item = await api.getItemByUri(initial.seed_artist_uri);
-          if (item.media_type === MediaType.ARTIST) {
-            seedItems.selectedSeedArtist.value = item as Artist;
+      if (initial.genre_ids?.length) {
+        const row = newRule("genre", "is");
+        row.values = initial.genre_ids.map((id) => ({
+          id,
+          name: initial.genre_names?.[id] ?? String(id),
+        }));
+        fresh.push(row);
+      }
+      if (initial.excluded_genre_ids?.length) {
+        const row = newRule("genre", "is_not");
+        row.values = initial.excluded_genre_ids.map((id) => ({
+          id,
+          name: initial.excluded_genre_names?.[id] ?? String(id),
+        }));
+        fresh.push(row);
+      }
+
+      if (!isSeed) {
+        if (initial.artist_ids?.length) {
+          const row = newRule("artist", "is");
+          row.values = (props.initialArtistItems ?? []).slice();
+          if (!row.values.length) {
+            row.values = initial.artist_ids.map((id) => ({
+              id,
+              name: initial.artist_names?.[id] ?? String(id),
+            }));
           }
-        } catch {
-          // not resolvable
+          fresh.push(row);
+        }
+        if (initial.excluded_artist_ids?.length) {
+          const row = newRule("artist", "is_not");
+          row.values = (props.initialExcludedArtistItems ?? []).slice();
+          if (!row.values.length) {
+            row.values = initial.excluded_artist_ids.map((id) => ({
+              id,
+              name: initial.excluded_artist_names?.[id] ?? String(id),
+            }));
+          }
+          fresh.push(row);
+        }
+        if (initial.album_ids?.length) {
+          const row = newRule("album", "is");
+          row.values = (props.initialAlbumItems ?? []).slice();
+          if (!row.values.length) {
+            row.values = initial.album_ids.map((id) => ({
+              id,
+              name: initial.album_names?.[id] ?? String(id),
+            }));
+          }
+          fresh.push(row);
+        }
+        if (initial.excluded_album_ids?.length) {
+          const row = newRule("album", "is_not");
+          row.values = (props.initialExcludedAlbumItems ?? []).slice();
+          if (!row.values.length) {
+            row.values = initial.excluded_album_ids.map((id) => ({
+              id,
+              name: initial.excluded_album_names?.[id] ?? String(id),
+            }));
+          }
+          fresh.push(row);
+        }
+        if (initial.favorites_only) {
+          fresh.push(newRule("favorite", "is"));
         }
       }
 
+      const yearFrom =
+        typeof initial.year_from === "number" && initial.year_from > 0
+          ? initial.year_from
+          : undefined;
+      const yearTo =
+        typeof initial.year_to === "number" && initial.year_to > 0
+          ? initial.year_to
+          : undefined;
+      if (yearFrom !== undefined || yearTo !== undefined) {
+        const row = newRule("year", "is");
+        row.yearFrom = yearFrom;
+        row.yearTo = yearTo;
+        fresh.push(row);
+      }
+
+      rules.value = fresh;
+
+      seedItems.clearSeedTrack();
+      seedItems.clearSeedArtist();
       if (initial.seed_track_uri) {
+        seedItems.seedKind.value = "track";
+        seedItems.seedTrackUri.value = initial.seed_track_uri;
         try {
           const item = await api.getItemByUri(initial.seed_track_uri);
           if (item.media_type === MediaType.TRACK) {
             seedItems.selectedSeedTrack.value = item as Track;
           }
         } catch {
-          // URI not resolvable
+          // unresolved seed — leave URI but no item details
+        }
+      } else if (initial.seed_artist_uri) {
+        seedItems.seedKind.value = "artist";
+        seedItems.seedArtistUri.value = initial.seed_artist_uri;
+        try {
+          const item = await api.getItemByUri(initial.seed_artist_uri);
+          if (item.media_type === MediaType.ARTIST) {
+            seedItems.selectedSeedArtist.value = item as Artist;
+          }
+        } catch {
+          // unresolved seed
         }
       }
+
+      await nextTick();
+      initialSnapshot.value = JSON.stringify(buildFinalRules());
     },
     { immediate: true },
   );
 
-  watch(
-    () => props.initialArtistItems,
-    (items) => {
-      contentFilters.selectedArtistItems.value = [...(items ?? [])];
-    },
-    { immediate: true },
-  );
+  function pickRuleValues(field: RuleField, op: RuleOperator): RuleValue[] {
+    const list: RuleValue[] = [];
+    for (const r of rules.value) {
+      if (r.field === field && r.operator === op) {
+        for (const v of r.values) {
+          if (!list.some((x) => x.id === v.id)) list.push(v);
+        }
+      }
+    }
+    return list;
+  }
 
-  watch(
-    () => props.initialAlbumItems,
-    (items) => {
-      contentFilters.selectedAlbumItems.value = [...(items ?? [])];
-    },
-    { immediate: true },
-  );
+  function yearRule(): RuleRow | undefined {
+    return rules.value.find((r) => r.field === "year");
+  }
 
-  watch(
-    () => props.initialExcludedArtistItems,
-    (items) => {
-      contentFilters.selectedExcludedArtistItems.value = [...(items ?? [])];
-    },
-    { immediate: true },
-  );
+  function favoriteRule(): RuleRow | undefined {
+    return rules.value.find((r) => r.field === "favorite");
+  }
 
-  watch(
-    () => props.initialExcludedAlbumItems,
-    (items) => {
-      contentFilters.selectedExcludedAlbumItems.value = [...(items ?? [])];
-    },
-    { immediate: true },
-  );
+  function buildFinalRules(): SmartPlaylistRules {
+    const isSeed = mode.value === "seed";
 
-  function clearYear() {
-    rules.year_from = undefined;
-    rules.year_to = undefined;
+    const genreInclude = pickRuleValues("genre", "is");
+    const genreExclude = pickRuleValues("genre", "is_not");
+    const artistInclude = isSeed ? [] : pickRuleValues("artist", "is");
+    const artistExclude = isSeed ? [] : pickRuleValues("artist", "is_not");
+    const albumInclude = isSeed ? [] : pickRuleValues("album", "is");
+    const albumExclude = isSeed ? [] : pickRuleValues("album", "is_not");
+    const yr = yearRule();
+    const fav = !isSeed && !!favoriteRule();
+
+    const final: SmartPlaylistRules = {
+      genre_ids: genreInclude.map((v) => v.id),
+      artist_ids: artistInclude.map((v) => v.id),
+      album_ids: albumInclude.map((v) => v.id),
+      favorites_only: fav,
+      excluded_genre_ids: genreExclude.map((v) => v.id),
+      excluded_artist_ids: artistExclude.map((v) => v.id),
+      excluded_album_ids: albumExclude.map((v) => v.id),
+      excluded_track_uris: [],
+      genre_names: Object.fromEntries(genreInclude.map((v) => [v.id, v.name])),
+      artist_names: Object.fromEntries(
+        artistInclude.map((v) => [v.id, v.name]),
+      ),
+      album_names: Object.fromEntries(albumInclude.map((v) => [v.id, v.name])),
+      excluded_genre_names: Object.fromEntries(
+        genreExclude.map((v) => [v.id, v.name]),
+      ),
+      excluded_artist_names: Object.fromEntries(
+        artistExclude.map((v) => [v.id, v.name]),
+      ),
+      excluded_album_names: Object.fromEntries(
+        albumExclude.map((v) => [v.id, v.name]),
+      ),
+      logic: isSeed ? "AND" : logic.value,
+      limit: DEFAULT_LIMIT,
+      year_from: yr?.yearFrom ?? undefined,
+      year_to: yr?.yearTo ?? undefined,
+      dedup_hours: dedupHours.value,
+      seed_track_uri:
+        isSeed && seedItems.seedKind.value === "track"
+          ? seedItems.seedTrackUri.value || undefined
+          : undefined,
+      seed_track_name:
+        isSeed && seedItems.selectedSeedTrack.value
+          ? `${seedItems.selectedSeedTrack.value.name} – ${(seedItems.selectedSeedTrack.value.artists as Artist[])?.[0]?.name ?? ""}`
+          : undefined,
+      seed_artist_uri:
+        isSeed && seedItems.seedKind.value === "artist"
+          ? seedItems.seedArtistUri.value || undefined
+          : undefined,
+      seed_artist_name:
+        isSeed && seedItems.selectedSeedArtist.value
+          ? seedItems.selectedSeedArtist.value.name
+          : undefined,
+    };
+
+    return final;
   }
 
   function getFinalRules(): SmartPlaylistRules {
-    // Build genre names map
-    const genreNamesMap: Record<number, string> = {};
-    for (const id of rules.genre_ids) {
-      const found = genresComposable.genres.value.find(
-        (g) => parseInt(g.item_id) === id,
-      );
-      if (found) genreNamesMap[id] = found.name;
-    }
-
-    // Build artist names map
-    const artistNamesMap: Record<number, string> = {};
-    for (const item of contentFilters.selectedArtistItems.value) {
-      artistNamesMap[item.id] = item.name;
-    }
-
-    // Build album names map
-    const albumNamesMap: Record<number, string> = {};
-    for (const item of contentFilters.selectedAlbumItems.value) {
-      albumNamesMap[item.id] = item.name;
-    }
-
-    return {
-      ...rules,
-      seed_track_uri: seedItems.seedTrackUri.value || undefined,
-      seed_track_name: seedItems.selectedSeedTrack.value
-        ? `${seedItems.selectedSeedTrack.value.name} – ${(seedItems.selectedSeedTrack.value.artists as Artist[])[0]?.name ?? ""}`
-        : undefined,
-      seed_artist_uri: seedItems.seedArtistUri.value || undefined,
-      seed_artist_name: seedItems.selectedSeedArtist.value?.name,
-      excluded_artist_ids: rules.excluded_artist_ids,
-      excluded_album_ids: rules.excluded_album_ids,
-      excluded_genre_ids: rules.excluded_genre_ids,
-      excluded_track_uris: rules.excluded_track_uris,
-      excluded_artist_names: Object.fromEntries(
-        contentFilters.selectedExcludedArtistItems.value.map((a) => [
-          a.id,
-          a.name,
-        ]),
-      ),
-      excluded_album_names: Object.fromEntries(
-        contentFilters.selectedExcludedAlbumItems.value.map((a) => [
-          a.id,
-          a.name,
-        ]),
-      ),
-      excluded_genre_names: Object.fromEntries(
-        (rules.excluded_genre_ids ?? []).map((id) => [
-          id,
-          genresComposable.genres.value.find((g) => parseInt(g.item_id) === id)
-            ?.name ??
-            rules.excluded_genre_names?.[id] ??
-            String(id),
-        ]),
-      ),
-      dedup_hours: rules.dedup_hours,
-      genre_names: genreNamesMap,
-      artist_names: artistNamesMap,
-      album_names: albumNamesMap,
-    };
+    return buildFinalRules();
   }
 
-  // Return combined interface with all exports from sub-composables
+  const availableFields = computed<RuleField[]>(() => {
+    if (mode.value === "seed") {
+      return (["genre", "year"] as RuleField[]).filter(
+        (f) => !fieldAlreadyUsed(f),
+      );
+    }
+    return (
+      ["genre", "artist", "album", "favorite", "year"] as RuleField[]
+    ).filter((f) => !fieldAlreadyUsed(f));
+  });
+
+  const initialSnapshot = ref<string | null>(null);
+  const hasChanges = computed(() => {
+    if (initialSnapshot.value === null) return true;
+    return JSON.stringify(buildFinalRules()) !== initialSnapshot.value;
+  });
+
+  const invalidRuleUids = ref<Set<string>>(new Set());
+  const seedInvalid = ref(false);
+
+  function ruleIsEmpty(r: RuleRow): boolean {
+    if (r.field === "year")
+      return r.yearFrom === undefined && r.yearTo === undefined;
+    if (r.field === "favorite") return false;
+    return r.values.length === 0;
+  }
+
+  function validate(): string[] {
+    const errors: string[] = [];
+    const invalid = new Set<string>();
+
+    if (mode.value === "seed") {
+      const hasSeed =
+        !!seedItems.seedTrackUri.value || !!seedItems.seedArtistUri.value;
+      if (!hasSeed) {
+        errors.push(
+          "Pick a track or artist to find similar tracks from your streaming provider.",
+        );
+        seedInvalid.value = true;
+      } else {
+        seedInvalid.value = false;
+      }
+    } else {
+      seedInvalid.value = false;
+    }
+
+    rules.value = rules.value.filter((r) => !ruleIsEmpty(r));
+
+    for (const r of rules.value) {
+      if (
+        r.field === "year" &&
+        r.yearFrom !== undefined &&
+        r.yearTo !== undefined &&
+        r.yearFrom > r.yearTo
+      ) {
+        invalid.add(r.uid);
+        errors.push("Year 'from' must be ≤ 'to'.");
+      }
+    }
+
+    invalidRuleUids.value = invalid;
+    return errors;
+  }
+
+  function clearRuleValidation(uid: string) {
+    if (invalidRuleUids.value.has(uid)) {
+      const next = new Set(invalidRuleUids.value);
+      next.delete(uid);
+      invalidRuleUids.value = next;
+    }
+  }
+
+  function clearSeedValidation() {
+    if (seedInvalid.value) seedInvalid.value = false;
+  }
+
+  watch([seedItems.seedTrackUri, seedItems.seedArtistUri], () => {
+    if (seedItems.seedTrackUri.value || seedItems.seedArtistUri.value) {
+      clearSeedValidation();
+    }
+  });
+
   return {
+    mode,
+    logic,
+    dedupHours,
     rules,
-    ...seedItems,
-    ...genresComposable,
-    ...contentFilters,
-    clearYear,
-    _updateTrackCount,
+    invalidRuleUids,
+    seedInvalid,
+    hasChanges,
+    genres: genresComposable.genres,
+    genreOptions: genresComposable.genreOptions,
+    genreName: genresComposable.genreName,
+    seedItems,
+    setMode,
+    addRule,
+    removeRule,
+    availableFields,
     getFinalRules,
+    validate,
+    clearRuleValidation,
+    clearSeedValidation,
   };
 }
 

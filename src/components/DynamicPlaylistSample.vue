@@ -38,9 +38,23 @@
         />
       </template>
 
-      <v-alert v-else color="transparent" class="ma-2">
-        {{ $t("no_content") }}
-      </v-alert>
+      <Empty v-else class="border-none mt-2 mx-2">
+        <EmptyMedia variant="icon">
+          <Music2 class="h-5 w-5" />
+        </EmptyMedia>
+        <EmptyHeader>
+          <EmptyTitle>{{ $t("smart_playlist.empty_title") }}</EmptyTitle>
+          <EmptyDescription>
+            {{ $t("smart_playlist.empty_desc") }}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" size="sm" @click="emit('edit-rules')">
+            <SlidersHorizontal class="h-3.5 w-3.5 mr-1.5" />
+            {{ $t("smart_playlist.edit_rules") }}
+          </Button>
+        </EmptyContent>
+      </Empty>
     </div>
   </div>
 </template>
@@ -48,7 +62,17 @@
 <script setup lang="ts">
 import ListviewItem from "@/components/ListviewItem.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
+import { Music2, SlidersHorizontal } from "lucide-vue-next";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -68,6 +92,7 @@ export interface Props {
   provider: string;
 }
 const props = defineProps<Props>();
+const emit = defineEmits<{ (e: "edit-rules"): void }>();
 
 const loading = ref(true);
 const tracks = ref<(Track | Radio | PodcastEpisode | Audiobook)[]>([]);
