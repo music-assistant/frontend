@@ -212,6 +212,31 @@ export async function pinShortcutStandalone(
   await setUserPreference(PREF_KEY, [...uris, maUri]);
 }
 
+let _globalShortcutsSyncInitialized = false;
+
+async function removePinnedUriIfPresent(uri: string): Promise<void> {
+  const currentUris = _getPinnedUris();
+  const nextUris = currentUris.filter((u) => !isSameShortcutUri(u, uri));
+  if (nextUris.length !== currentUris.length) {
+    await setUserPreference(PREF_KEY, nextUris);
+  }
+}
+
+export function initGlobalShortcutsSync(): void {
+  if (_globalShortcutsSyncInitialized) return;
+  _globalShortcutsSyncInitialized = true;
+
+  api.subscribe_multi(
+    [EventType.MEDIA_ITEM_DELETED, EventType.MEDIA_ITEM_UPDATED],
+    (evt: EventMessage) => {
+      if (evt.event === EventType.MEDIA_ITEM_DELETED) {
+        // Keep sidebar preferences clean even when nav components are unmounted.
+        void removePinnedUriIfPresent(evt.object_id as string);
+      }
+    },
+  );
+}
+
 export function useShortcuts() {
   const { getPreference, setPreference } = useUserPreferences();
 
@@ -318,37 +343,37 @@ export function useShortcuts() {
             result.value as ShortcutItem,
           ];
         }
-        // rejected = network error — don't prune, the URI stays pinned
+        // rejected = network/backend error — don't mutate pinned URIs here.
       });
     }
   });
 
-  let _unsubscribe: (() => void) | undefined;
+  let _unsubscribeUpdated: (() => void) | undefined;
 
   onMounted(async () => {
     await loadShortcuts();
 
-    _unsubscribe = api.subscribe_multi(
-      [EventType.MEDIA_ITEM_DELETED, EventType.MEDIA_ITEM_UPDATED],
+    _unsubscribeUpdated = api.subscribe_multi(
+      [EventType.MEDIA_ITEM_UPDATED],
       (evt: EventMessage) => {
-        if (evt.event === EventType.MEDIA_ITEM_DELETED) {
-          if (isPinned(evt.object_id as string)) {
-            unpinItem(evt.object_id as string);
-          }
-        } else if (evt.event === EventType.MEDIA_ITEM_UPDATED) {
-          const idx = resolvedItems.value.findIndex((p) =>
-            isSameShortcutUri(evt.object_id as string, p),
-          );
-          if (idx >= 0) {
-            resolvedItems.value[idx] = evt.data as ShortcutItem;
-          }
+        const objectId = evt.object_id as string | undefined;
+        if (!objectId) return;
+        const idx = resolvedItems.value.findIndex((item) =>
+          isSameShortcutUri(objectId, item),
+        );
+        if (
+          idx >= 0 &&
+          evt.data &&
+          SUPPORTED_TYPES.has((evt.data as ShortcutItem).media_type)
+        ) {
+          resolvedItems.value[idx] = evt.data as ShortcutItem;
         }
       },
     );
   });
 
   onUnmounted(() => {
-    _unsubscribe?.();
+    _unsubscribeUpdated?.();
   });
 
   return {
