@@ -10,12 +10,10 @@ vi.mock("vue", async () => {
 
 vi.mock("@/plugins/api", () => ({
   default: {
-    getLibraryGenres: vi
-      .fn()
-      .mockResolvedValue([
-        { item_id: "9", name: "Synthwave" },
-        { item_id: "2", name: "Rock" },
-      ]),
+    getLibraryGenres: vi.fn().mockResolvedValue([
+      { item_id: "9", name: "Synthwave" },
+      { item_id: "2", name: "Rock" },
+    ]),
   },
 }));
 

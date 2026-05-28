@@ -55,7 +55,8 @@ const props = defineProps<ToasterProps>();
  * Each toast type swaps the bg/text vars so the button picks up the
  * toast's strong color as its background.
  */
-[data-rich-colors="true"][data-sonner-toast][data-type="success"] [data-button] {
+[data-rich-colors="true"][data-sonner-toast][data-type="success"]
+  [data-button] {
   background: var(--success-text);
   color: var(--success-bg);
 }
@@ -63,7 +64,8 @@ const props = defineProps<ToasterProps>();
   background: var(--info-text);
   color: var(--info-bg);
 }
-[data-rich-colors="true"][data-sonner-toast][data-type="warning"] [data-button] {
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"]
+  [data-button] {
   background: var(--warning-text);
   color: var(--warning-bg);
 }
