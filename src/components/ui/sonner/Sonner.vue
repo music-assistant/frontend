@@ -47,3 +47,28 @@ const props = defineProps<ToasterProps>();
     </template>
   </Sonner>
 </template>
+
+<style>
+/*
+ * Make the toast action button read as a darker variant of the toast bg
+ * instead of the default high-contrast popover-foreground button.
+ * Each toast type swaps the bg/text vars so the button picks up the
+ * toast's strong color as its background.
+ */
+[data-rich-colors="true"][data-sonner-toast][data-type="success"] [data-button] {
+  background: var(--success-text);
+  color: var(--success-bg);
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="info"] [data-button] {
+  background: var(--info-text);
+  color: var(--info-bg);
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"] [data-button] {
+  background: var(--warning-text);
+  color: var(--warning-bg);
+}
+[data-rich-colors="true"][data-sonner-toast][data-type="error"] [data-button] {
+  background: var(--error-text);
+  color: var(--error-bg);
+}
+</style>

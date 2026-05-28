@@ -1,28 +1,78 @@
 <template>
   <TooltipProvider :delay-duration="150">
-    <Accordion type="multiple" :default-value="['source']" class="w-full">
-      <SmartPlaylistSourceSection :form="form" />
-      <SmartPlaylistContentSection :form="form" />
-      <SmartPlaylistFiltersSection :form="form" />
-      <SmartPlaylistAdvancedSection :form="form" />
-    </Accordion>
+    <div class="flex flex-col gap-5">
+      <SmartPlaylistTypeSelector
+        v-if="!lockType"
+        :model-value="form.mode.value"
+        @update:model-value="form.setMode"
+      />
+      <div
+        v-else
+        class="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2"
+      >
+        <component
+          :is="form.mode.value === 'seed' ? Sparkles : Library"
+          class="h-3.5 w-3.5 text-muted-foreground"
+        />
+        <span class="text-xs font-medium text-muted-foreground">
+          {{
+            form.mode.value === "seed"
+              ? $t("smart_playlist.type_seed")
+              : $t("smart_playlist.type_library")
+          }}
+        </span>
+      </div>
+
+      <SmartPlaylistSeedSection
+        v-if="form.mode.value === 'seed'"
+        :seed-items="form.seedItems"
+        :invalid="form.seedInvalid.value"
+      />
+
+      <Separator />
+
+      <SmartPlaylistRulesList
+        :mode="form.mode.value"
+        :rules="form.rules.value"
+        :logic="form.logic.value"
+        :available-fields="form.availableFields.value"
+        :genre-options="form.genreOptions.value"
+        :invalid-rule-uids="form.invalidRuleUids.value"
+        @update:logic="(v) => (form.logic.value = v)"
+        @add-rule="form.addRule"
+        @remove-rule="form.removeRule"
+        @update-rule="onUpdateRule"
+      />
+
+      <Separator />
+
+      <SmartPlaylistDedupField
+        :model-value="form.dedupHours.value"
+        @update:model-value="(v) => (form.dedupHours.value = v)"
+      />
+    </div>
   </TooltipProvider>
 </template>
 
 <script setup lang="ts">
-import { Accordion } from "@/components/ui/accordion";
+import { Library, Sparkles } from "lucide-vue-next";
+import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { $t } from "@/plugins/i18n";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import {
   useSmartPlaylistRulesForm,
+  type RuleRow,
   type SmartPlaylistRulesFormInit,
 } from "@/composables/useSmartPlaylistRulesForm";
-import SmartPlaylistAdvancedSection from "@/components/smart_playlist/SmartPlaylistAdvancedSection.vue";
-import SmartPlaylistContentSection from "@/components/smart_playlist/SmartPlaylistContentSection.vue";
-import SmartPlaylistFiltersSection from "@/components/smart_playlist/SmartPlaylistFiltersSection.vue";
-import SmartPlaylistSourceSection from "@/components/smart_playlist/SmartPlaylistSourceSection.vue";
+import SmartPlaylistDedupField from "./SmartPlaylistDedupField.vue";
+import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
+import SmartPlaylistSeedSection from "./SmartPlaylistSeedSection.vue";
+import SmartPlaylistTypeSelector from "./SmartPlaylistTypeSelector.vue";
 
-type Props = SmartPlaylistRulesFormInit;
+type Props = SmartPlaylistRulesFormInit & {
+  lockType?: boolean;
+};
 
 const props = withDefaults(defineProps<Props>(), {
   initialRules: null,
@@ -30,6 +80,7 @@ const props = withDefaults(defineProps<Props>(), {
   initialAlbumItems: () => [],
   initialExcludedArtistItems: () => [],
   initialExcludedAlbumItems: () => [],
+  lockType: false,
 });
 
 const emit = defineEmits<{
@@ -45,7 +96,22 @@ const form = useSmartPlaylistRulesForm(props, (count, duration, counting) => {
   emit("trackCountUpdate", count, duration, counting);
 });
 
-defineExpose<{ getFinalRules: () => SmartPlaylistRules }>({
+function onUpdateRule(uid: string, patch: Partial<RuleRow>) {
+  const idx = form.rules.value.findIndex((r) => r.uid === uid);
+  if (idx < 0) return;
+  form.rules.value[idx] = { ...form.rules.value[idx], ...patch };
+  form.clearRuleValidation(uid);
+}
+
+defineExpose<{
+  getFinalRules: () => SmartPlaylistRules;
+  validate: () => string[];
+  mode: typeof form.mode;
+  hasChanges: typeof form.hasChanges;
+}>({
   getFinalRules: form.getFinalRules,
+  validate: form.validate,
+  mode: form.mode,
+  hasChanges: form.hasChanges,
 });
 </script>

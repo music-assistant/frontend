@@ -57,8 +57,8 @@ describe("useSmartPlaylistSeedItems", () => {
   it("collects provider ids for similar tracks and artists", () => {
     const seed = useSmartPlaylistSeedItems();
 
-    expect(seed._similarTrackProviderIds.value).toEqual(["spotify_instance"]);
-    expect(seed._similarArtistProviderIds.value).toEqual(["tidal_instance"]);
+    expect(seed.similarTrackProviderIds.value).toEqual(["spotify_instance"]);
+    expect(seed.similarArtistProviderIds.value).toEqual(["tidal_instance"]);
     expect(mockSetupDebouncedSearch).toHaveBeenCalledTimes(2);
   });
 

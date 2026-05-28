@@ -8,20 +8,24 @@ import {
 } from "@/plugins/api/interfaces";
 import { setupDebouncedSearch } from "./useSmartPlaylistSearchHelpers";
 
+export type SeedKind = "track" | "artist";
+
 export function useSmartPlaylistSeedItems() {
-  const seedTrackUri = ref("");
+  const seedKind = ref<SeedKind>("track");
+
   const selectedSeedTrack = ref<Track | null>(null);
+  const seedTrackUri = ref("");
   const seedTrackSearch = ref("");
   const seedTrackResults = ref<Track[]>([]);
+  const isSeedTrackSearching = ref(false);
 
-  const seedArtistUri = ref("");
   const selectedSeedArtist = ref<Artist | null>(null);
+  const seedArtistUri = ref("");
   const seedArtistSearch = ref("");
   const seedArtistResults = ref<Artist[]>([]);
   const isSeedArtistSearching = ref(false);
-  const isSeedSearching = ref(false);
 
-  const _similarTrackProviderIds = computed(() =>
+  const similarTrackProviderIds = computed(() =>
     Object.values(api.providers)
       .filter((p) =>
         p.supported_features.includes(ProviderFeatureEnum.SIMILAR_TRACKS),
@@ -29,7 +33,7 @@ export function useSmartPlaylistSeedItems() {
       .map((p) => p.instance_id),
   );
 
-  const _similarArtistProviderIds = computed(() =>
+  const similarArtistProviderIds = computed(() =>
     Object.values(api.providers)
       .filter((p) =>
         p.supported_features.includes(ProviderFeatureEnum.SIMILAR_ARTISTS),
@@ -37,14 +41,19 @@ export function useSmartPlaylistSeedItems() {
       .map((p) => p.instance_id),
   );
 
-  // Don't filter results by provider_mappings: the server's similar_*
-  // dispatchers fall back to plugin-tier providers, which never appear there.
+  const hasTrackProvider = computed(
+    () => similarTrackProviderIds.value.length > 0,
+  );
+  const hasArtistProvider = computed(
+    () => similarArtistProviderIds.value.length > 0,
+  );
+
   setupDebouncedSearch({
     query: seedTrackSearch,
     results: seedTrackResults,
-    isSearching: isSeedSearching,
+    isSearching: isSeedTrackSearching,
     searchFn: async (q) => {
-      if (_similarTrackProviderIds.value.length === 0) return [];
+      if (!hasTrackProvider.value) return [];
       const result = await api.search(q, [MediaType.TRACK], 20);
       return result.tracks;
     },
@@ -55,7 +64,7 @@ export function useSmartPlaylistSeedItems() {
     results: seedArtistResults,
     isSearching: isSeedArtistSearching,
     searchFn: async (q) => {
-      if (_similarArtistProviderIds.value.length === 0) return [];
+      if (!hasArtistProvider.value) return [];
       const result = await api.search(q, [MediaType.ARTIST], 20);
       return result.artists;
     },
@@ -64,7 +73,7 @@ export function useSmartPlaylistSeedItems() {
   function selectSeedTrack(track: Track) {
     selectedSeedTrack.value = track;
     const mapping = track.provider_mappings?.find((m) =>
-      _similarTrackProviderIds.value.includes(m.provider_instance),
+      similarTrackProviderIds.value.includes(m.provider_instance),
     );
     seedTrackUri.value = buildItemUri(
       MediaType.TRACK,
@@ -73,6 +82,7 @@ export function useSmartPlaylistSeedItems() {
     );
     seedTrackSearch.value = "";
     seedTrackResults.value = [];
+    clearSeedArtist();
   }
 
   function clearSeedTrack() {
@@ -85,7 +95,7 @@ export function useSmartPlaylistSeedItems() {
   function selectSeedArtist(artist: Artist) {
     selectedSeedArtist.value = artist;
     const mapping = artist.provider_mappings?.find((m) =>
-      _similarArtistProviderIds.value.includes(m.provider_instance),
+      similarArtistProviderIds.value.includes(m.provider_instance),
     );
     seedArtistUri.value = buildItemUri(
       MediaType.ARTIST,
@@ -94,8 +104,7 @@ export function useSmartPlaylistSeedItems() {
     );
     seedArtistSearch.value = "";
     seedArtistResults.value = [];
-    selectedSeedTrack.value = null;
-    seedTrackUri.value = "";
+    clearSeedTrack();
   }
 
   function clearSeedArtist() {
@@ -105,22 +114,30 @@ export function useSmartPlaylistSeedItems() {
     seedArtistResults.value = [];
   }
 
+  const hasSeed = computed(
+    () => !!selectedSeedTrack.value || !!selectedSeedArtist.value,
+  );
+
   return {
-    seedTrackUri,
+    seedKind,
     selectedSeedTrack,
+    seedTrackUri,
     seedTrackSearch,
     seedTrackResults,
-    isSeedSearching,
-    seedArtistUri,
+    isSeedTrackSearching,
     selectedSeedArtist,
+    seedArtistUri,
     seedArtistSearch,
     seedArtistResults,
     isSeedArtistSearching,
-    _similarTrackProviderIds,
-    _similarArtistProviderIds,
+    similarTrackProviderIds,
+    similarArtistProviderIds,
+    hasTrackProvider,
+    hasArtistProvider,
     selectSeedTrack,
     clearSeedTrack,
     selectSeedArtist,
     clearSeedArtist,
+    hasSeed,
   };
 }

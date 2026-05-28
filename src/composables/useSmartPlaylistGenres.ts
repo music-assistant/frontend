@@ -1,121 +1,25 @@
 import { computed, onMounted, ref } from "vue";
-import type { Ref } from "vue";
 import api from "@/plugins/api";
 import type { Genre } from "@/plugins/api/interfaces";
 
-export function useSmartPlaylistGenres(
-  ruleGenreIds: Ref<number[] | undefined>,
-  ruleExcludedGenreIds: Ref<number[] | undefined>,
-  ruleGenreNames: Ref<Record<number, string> | undefined>,
-) {
+export function useSmartPlaylistGenres() {
   const genres = ref<Genre[]>([]);
-  const genreSearch = ref("");
-  const excludedGenreSearch = ref("");
-
-  const filteredGenres = computed(() => {
-    const excluded = ruleExcludedGenreIds.value ?? [];
-    const included = ruleGenreIds.value ?? [];
-    const base = genres.value.filter(
-      (g) =>
-        !excluded.includes(parseInt(g.item_id)) &&
-        !included.includes(parseInt(g.item_id)),
-    );
-    return genreSearch.value
-      ? base.filter((g) =>
-          g.name.toLowerCase().includes(genreSearch.value.toLowerCase()),
-        )
-      : base;
-  });
-
-  const filteredExcludedGenres = computed(() => {
-    const included = ruleGenreIds.value ?? [];
-    const excluded = ruleExcludedGenreIds.value ?? [];
-    const base = genres.value.filter(
-      (g) =>
-        !included.includes(parseInt(g.item_id)) &&
-        !excluded.includes(parseInt(g.item_id)),
-    );
-    return excludedGenreSearch.value
-      ? base.filter((g) =>
-          g.name
-            .toLowerCase()
-            .includes(excludedGenreSearch.value.toLowerCase()),
-        )
-      : base;
-  });
-
-  const genreModelValue = computed({
-    get: () => (ruleGenreIds.value ?? []).map(String),
-    set: (vals: string[]) => {
-      ruleGenreIds.value = vals.map(Number);
-    },
-  });
-
-  const excludedGenreModelValue = computed({
-    get: () => (ruleExcludedGenreIds.value ?? []).map(String),
-    set: (vals: string[]) => {
-      ruleExcludedGenreIds.value = vals.map(Number);
-    },
-  });
 
   onMounted(async () => {
     genres.value = await api.getLibraryGenres({ hide_empty: false });
   });
 
-  function genreName(id: number): string {
+  const genreOptions = computed(() =>
+    genres.value.map((g) => ({ id: parseInt(g.item_id), name: g.name })),
+  );
+
+  function genreName(id: number, fallback?: string): string {
     return (
       genres.value.find((g) => parseInt(g.item_id) === id)?.name ??
-      ruleGenreNames.value?.[id] ??
+      fallback ??
       String(id)
     );
   }
 
-  function toggleGenreById(id: number) {
-    const genreIds = ruleGenreIds.value ?? [];
-    const idx = genreIds.indexOf(id);
-    if (idx >= 0) {
-      genreIds.splice(idx, 1);
-      ruleGenreIds.value = genreIds;
-    } else {
-      const excludedGenreIds = ruleExcludedGenreIds.value ?? [];
-      const excIdx = excludedGenreIds.indexOf(id);
-      if (excIdx >= 0) {
-        excludedGenreIds.splice(excIdx, 1);
-        ruleExcludedGenreIds.value = excludedGenreIds;
-      }
-      genreIds.push(id);
-      ruleGenreIds.value = genreIds;
-    }
-  }
-
-  function toggleExcludedGenreById(id: number) {
-    const excludedGenreIds = ruleExcludedGenreIds.value ?? [];
-    const excIdx = excludedGenreIds.indexOf(id);
-    if (excIdx >= 0) {
-      excludedGenreIds.splice(excIdx, 1);
-      ruleExcludedGenreIds.value = excludedGenreIds;
-    } else {
-      const genreIds = ruleGenreIds.value ?? [];
-      const incIdx = genreIds.indexOf(id);
-      if (incIdx >= 0) {
-        genreIds.splice(incIdx, 1);
-        ruleGenreIds.value = genreIds;
-      }
-      excludedGenreIds.push(id);
-      ruleExcludedGenreIds.value = excludedGenreIds;
-    }
-  }
-
-  return {
-    genres,
-    genreSearch,
-    excludedGenreSearch,
-    filteredGenres,
-    filteredExcludedGenres,
-    genreModelValue,
-    excludedGenreModelValue,
-    genreName,
-    toggleGenreById,
-    toggleExcludedGenreById,
-  };
+  return { genres, genreOptions, genreName };
 }

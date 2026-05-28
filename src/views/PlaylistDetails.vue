@@ -21,6 +21,7 @@
     v-if="itemDetails && itemDetails.is_dynamic"
     :item-details="itemDetails"
     :provider="props.provider"
+    @edit-rules="showEditDialog = true"
   />
   <ItemsListing
     v-else-if="itemDetails"
