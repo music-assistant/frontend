@@ -1,60 +1,59 @@
 <template>
-  <div class="flex items-center justify-between gap-3">
+  <div class="flex items-center justify-between gap-3 mb-1">
     <div class="flex items-center gap-2">
-      <Label class="text-sm">{{ $t("smart_playlist.dedup_hours") }}</Label>
+      <Label for="sp-dedup" class="text-sm">
+        {{ $t("smart_playlist.dedup_hours") }}
+      </Label>
       <Tooltip>
         <TooltipTrigger as-child>
           <span class="cursor-help inline-flex">
             <HelpCircle class="h-3.5 w-3.5 text-muted-foreground" />
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" class="max-w-[220px] z-[10001]">
+        <TooltipContent side="top" class="max-w-[260px] z-[10001]">
           {{ $t("smart_playlist.dedup_hours_tooltip") }}
         </TooltipContent>
       </Tooltip>
     </div>
-    <div class="flex items-center gap-2">
-      <Select
-        :model-value="String(modelValue ?? 0)"
+    <div class="flex items-center gap-1.5">
+      <NumberField
+        id="sp-dedup"
+        :model-value="modelValue ?? 0"
+        :min="0"
+        :max="8760"
+        :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+        class="w-[120px]"
         @update:model-value="onChange"
+        @keydown.stop
       >
-        <SelectTrigger class="h-8 w-[110px] text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="0" class="text-xs">
-            {{ $t("smart_playlist.off") }}
-          </SelectItem>
-          <SelectItem
-            v-for="h in presets"
-            :key="h"
-            :value="String(h)"
-            class="text-xs"
-          >
-            {{ h }}h
-          </SelectItem>
-        </SelectContent>
-      </Select>
+        <NumberFieldContent>
+          <NumberFieldDecrement />
+          <NumberFieldInput class="h-8 text-sm" />
+          <NumberFieldIncrement />
+        </NumberFieldContent>
+      </NumberField>
+      <span class="text-xs text-muted-foreground">
+        {{ $t("smart_playlist.hours_unit") }}
+      </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { AcceptableValue } from "reka-ui";
-import { HelpCircle } from "lucide-vue-next";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-vue-next";
 
 defineProps<{
   modelValue: number | undefined;
@@ -64,10 +63,11 @@ const emit = defineEmits<{
   "update:modelValue": [value: number | undefined];
 }>();
 
-const presets = [1, 2, 4, 6, 12, 24, 48, 72, 168];
-
-function onChange(v: AcceptableValue) {
-  const n = Number(v ?? 0);
-  emit("update:modelValue", !n ? undefined : n);
+function onChange(v: number) {
+  if (!v || v <= 0) {
+    emit("update:modelValue", undefined);
+    return;
+  }
+  emit("update:modelValue", Math.min(8760, Math.floor(v)));
 }
 </script>
