@@ -4,6 +4,14 @@
       <Label for="sp-dedup" class="text-sm">
         {{ $t("smart_playlist.dedup_hours") }}
       </Label>
+      <Badge
+        v-if="isInactive"
+        variant="outline"
+        class="text-[10px] py-0 px-1.5 h-5 gap-1 text-muted-foreground border-muted-foreground/30"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-muted-foreground/60"></span>
+        {{ $t("smart_playlist.filter_inactive") }}
+      </Badge>
       <Tooltip>
         <TooltipTrigger as-child>
           <span class="cursor-help inline-flex">
@@ -40,6 +48,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   NumberField,
@@ -55,13 +65,17 @@ import {
 } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-vue-next";
 
-defineProps<{
+const props = defineProps<{
   modelValue: number | undefined;
 }>();
 
 const emit = defineEmits<{
   "update:modelValue": [value: number | undefined];
 }>();
+
+const isInactive = computed(
+  () => props.modelValue === undefined || props.modelValue <= 0,
+);
 
 function onChange(v: number) {
   if (!v || v <= 0) {

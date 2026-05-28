@@ -1676,6 +1676,7 @@
         "creating": "Creating…",
         "dedup_hours": "Do not repeat the same song for",
         "dedup_hours_tooltip": "Skip tracks that were recently played. Set the number of hours during which a track will not be repeated. 0 disables the limit.",
+        "filter_inactive": "Inactive",
         "hours_unit": "hours",
         "desc": "Generate a playlist from your library based on rules.",
         "dynamic_sample_heading": "Dynamic playlist",
