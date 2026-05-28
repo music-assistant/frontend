@@ -4,6 +4,8 @@
     "add_playlist": "Add to playlist...",
     "add_queue": "Add to Queue",
     "add_url_item": "Add item from URL",
+    "add_url_item_failed": "Failed to add item",
+    "added_to_library": "\"{0}\" added to library",
     "album": "Album",
     "album_tracks": "Album tracks",
     "album_type": {
