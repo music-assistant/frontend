@@ -14,7 +14,7 @@
           (~{{ formatDuration(matchingDuration) }})
         </span>
       </p>
-      <p class="text-xs text-muted-foreground/70">
+      <p class="text-sm text-muted-foreground/70">
         {{ $t("smart_playlist.track_count_hint") }}
       </p>
     </template>
@@ -22,8 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import { formatDuration } from "@/helpers/utils";
 import type { SmartPlaylistMode } from "@/composables/useSmartPlaylistRulesForm";
+import { formatDuration } from "@/helpers/utils";
 
 defineProps<{
   mode: SmartPlaylistMode;

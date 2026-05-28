@@ -3,7 +3,7 @@
 -->
 <template>
   <Dialog v-model:open="showDialog">
-    <DialogContent class="sm:max-w-[560px]">
+    <DialogContent class="sp-fluid sm:max-w-[560px]">
       <DialogHeader>
         <DialogTitle class="mb-2">
           {{ $t("smart_playlist.edit_rules") }}

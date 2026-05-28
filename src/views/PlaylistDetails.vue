@@ -10,7 +10,7 @@
     </template>
     <template v-if="smartRules" #description-dialog="{ open, onOpenChange }">
       <Dialog :open="open" @update:open="onOpenChange">
-        <DialogContent class="sm:max-w-[640px]">
+        <DialogContent class="sp-fluid sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle>
               {{ $t("smart_playlist.rules_dialog_title") }}

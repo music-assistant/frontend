@@ -29,10 +29,16 @@
     <Select
       v-if="rule.field !== 'favorite'"
       :model-value="rule.operator"
+      :disabled="rule.field === 'year'"
       @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
     >
       <SelectTrigger
-        class="h-7 w-[90px] text-xs border-0 bg-transparent shadow-none hover:bg-accent px-2"
+        :class="[
+          'h-7 w-[90px] text-xs border-0 bg-transparent shadow-none px-2',
+          rule.field === 'year'
+            ? 'opacity-70 cursor-default'
+            : 'hover:bg-accent',
+        ]"
       >
         <SelectValue />
       </SelectTrigger>
