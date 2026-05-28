@@ -80,7 +80,7 @@ const loadSample = async function () {
     const result = await api.getPlaylistTracks(
       props.itemDetails.item_id,
       props.provider,
-      false,
+      true,
     );
     // the provider returns a bounded sample for dynamic playlists; cap defensively
     tracks.value = result.slice(0, 25);
