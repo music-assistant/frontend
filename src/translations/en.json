@@ -1676,6 +1676,8 @@
         "dedup_hours_tooltip": "Skip tracks that were recently played. Set a window in hours (1–168) during which a track will not be repeated. Leave at 0 to disable.",
         "desc": "Generate a playlist from your library based on rules.",
         "dynamic": "Dynamic",
+        "dynamic_sample_heading": "Dynamic playlist",
+        "dynamic_sample_note": "Songs change each play. These are examples of what to expect.",
         "edit_rules": "Edit rules",
         "excluded_albums": "Exclude albums",
         "excluded_artists": "Exclude artists",

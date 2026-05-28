@@ -16,8 +16,14 @@
     :playlist-name="itemDetails?.name ?? ''"
     @saved="loadItemDetails"
   />
+  <!-- dynamic playlist: content is generated on the fly, so show a sample instead of a fixed tracklist -->
+  <DynamicPlaylistSample
+    v-if="itemDetails && itemDetails.is_dynamic"
+    :item-details="itemDetails"
+    :provider="props.provider"
+  />
   <ItemsListing
-    v-if="itemDetails"
+    v-else-if="itemDetails"
     ref="listingRef"
     itemtype="playlisttracks"
     :parent-item="itemDetails"
@@ -45,12 +51,16 @@
     :no-server-side-sorting="true"
   />
 
-  <!-- provider mapping details -->
-  <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
+  <!-- provider mapping details + genre exclusions: not relevant for dynamic playlists -->
+  <ProviderDetails
+    v-if="itemDetails && !itemDetails.is_dynamic"
+    :item-details="itemDetails"
+  />
 </template>
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import DynamicPlaylistSample from "@/components/DynamicPlaylistSample.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
