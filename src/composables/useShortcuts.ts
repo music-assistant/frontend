@@ -226,15 +226,10 @@ export function initGlobalShortcutsSync(): void {
   if (_globalShortcutsSyncInitialized) return;
   _globalShortcutsSyncInitialized = true;
 
-  api.subscribe_multi(
-    [EventType.MEDIA_ITEM_DELETED, EventType.MEDIA_ITEM_UPDATED],
-    (evt: EventMessage) => {
-      if (evt.event === EventType.MEDIA_ITEM_DELETED) {
-        // Keep sidebar preferences clean even when nav components are unmounted.
-        void removePinnedUriIfPresent(evt.object_id as string);
-      }
-    },
-  );
+  api.subscribe(EventType.MEDIA_ITEM_DELETED, (evt: EventMessage) => {
+    // Keep sidebar preferences clean even when nav components are unmounted.
+    void removePinnedUriIfPresent(evt.object_id as string);
+  });
 }
 
 export function useShortcuts() {
@@ -353,8 +348,8 @@ export function useShortcuts() {
   onMounted(async () => {
     await loadShortcuts();
 
-    _unsubscribeUpdated = api.subscribe_multi(
-      [EventType.MEDIA_ITEM_UPDATED],
+    _unsubscribeUpdated = api.subscribe(
+      EventType.MEDIA_ITEM_UPDATED,
       (evt: EventMessage) => {
         const objectId = evt.object_id as string | undefined;
         if (!objectId) return;
