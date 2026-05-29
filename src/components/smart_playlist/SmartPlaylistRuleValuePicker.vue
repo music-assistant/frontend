@@ -12,7 +12,6 @@
     </PopoverTrigger>
     <PopoverContent align="start" class="w-[340px] p-2">
       <Input
-        v-if="searchable"
         v-model="query"
         :placeholder="$t('search')"
         class="mb-2 h-8 text-sm"
@@ -62,7 +61,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import api from "@/plugins/api";
-import type { Album, Artist } from "@/plugins/api/interfaces";
+import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { useDebounceFn } from "@vueuse/core";
 import { Loader2, Plus } from "lucide-vue-next";
@@ -71,7 +70,7 @@ import { computed, ref, watch } from "vue";
 interface Option {
   id: number;
   name: string;
-  item?: Artist | Album;
+  item?: Artist | Album | Genre;
 }
 
 type Source = "genre" | "artist" | "album";
@@ -91,10 +90,6 @@ const open = ref(false);
 const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
-
-const searchable = computed(
-  () => props.source === "artist" || props.source === "album",
-);
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(
@@ -145,7 +140,7 @@ const runSearch = useDebounceFn(async (q: string) => {
 }, 400);
 
 watch(query, (q) => {
-  if (!searchable.value) return;
+  if (props.source === "genre") return;
   if (q.length < 2) {
     remoteResults.value = [];
     isSearching.value = false;
@@ -172,7 +167,7 @@ function onPick(opt: Option) {
 }
 
 const emptyStateText = computed(() => {
-  if (searchable.value && query.value.length < 2) {
+  if (props.source !== "genre" && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {
       label: props.addLabel.toLowerCase(),
     });

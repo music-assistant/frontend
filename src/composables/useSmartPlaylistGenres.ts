@@ -10,7 +10,11 @@ export function useSmartPlaylistGenres() {
   });
 
   const genreOptions = computed(() =>
-    genres.value.map((g) => ({ id: parseInt(g.item_id), name: g.name })),
+    genres.value.map((g) => ({
+      id: parseInt(g.item_id),
+      name: g.name,
+      item: g,
+    })),
   );
 
   function genreName(id: number, fallback?: string): string {
