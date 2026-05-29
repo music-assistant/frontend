@@ -67,11 +67,7 @@
     :no-server-side-sorting="true"
   />
 
-  <!-- provider mapping details + genre exclusions: not relevant for dynamic playlists -->
-  <ProviderDetails
-    v-if="itemDetails && !itemDetails.is_dynamic"
-    :item-details="itemDetails"
-  />
+  <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
 
 <script setup lang="ts">
