@@ -10,7 +10,7 @@
         {{ addLabel }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[260px] p-2">
+    <PopoverContent align="start" class="w-[340px] p-2">
       <Input
         v-if="searchable"
         v-model="query"
@@ -27,9 +27,15 @@
             v-for="opt in displayedOptions"
             :key="opt.id"
             type="button"
-            class="flex items-center gap-2 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+            class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
             @click.stop="onPick(opt)"
           >
+            <div
+              v-if="opt.item"
+              class="h-8 w-8 flex-none overflow-hidden rounded"
+            >
+              <MediaItemThumb :item="opt.item" :size="32" />
+            </div>
             <span class="truncate">{{ opt.name }}</span>
           </button>
         </template>
@@ -47,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,6 +62,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import api from "@/plugins/api";
+import type { Album, Artist } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { useDebounceFn } from "@vueuse/core";
 import { Loader2, Plus } from "lucide-vue-next";
@@ -63,6 +71,7 @@ import { computed, ref, watch } from "vue";
 interface Option {
   id: number;
   name: string;
+  item?: Artist | Album;
 }
 
 type Source = "genre" | "artist" | "album";
@@ -112,10 +121,18 @@ const runSearch = useDebounceFn(async (q: string) => {
     let results: Option[] = [];
     if (props.source === "artist") {
       const res = await api.getLibraryArtists(undefined, q, 20);
-      results = res.map((a) => ({ id: parseInt(a.item_id), name: a.name }));
+      results = res.map((a) => ({
+        id: parseInt(a.item_id),
+        name: a.name,
+        item: a,
+      }));
     } else if (props.source === "album") {
       const res = await api.getLibraryAlbums(undefined, q, 20);
-      results = res.map((a) => ({ id: parseInt(a.item_id), name: a.name }));
+      results = res.map((a) => ({
+        id: parseInt(a.item_id),
+        name: a.name,
+        item: a,
+      }));
     }
     if (query.value === q) {
       remoteResults.value = results;
@@ -148,7 +165,7 @@ watch(open, (isOpen) => {
 });
 
 function onPick(opt: Option) {
-  emit("add", opt);
+  emit("add", { id: opt.id, name: opt.name });
   query.value = "";
   remoteResults.value = [];
   open.value = false;
