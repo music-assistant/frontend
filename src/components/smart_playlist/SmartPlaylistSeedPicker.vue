@@ -14,7 +14,7 @@
         {{ buttonLabel }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[280px] p-2">
+    <PopoverContent align="start" class="w-[340px] p-2">
       <Tabs
         :model-value="kind"
         @update:model-value="(v) => emit('update:kind', v as SeedKind)"
@@ -42,16 +42,50 @@
           <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
         <template v-else-if="results.length > 0">
-          <button
-            v-for="item in results"
-            :key="item.item_id"
-            type="button"
-            class="flex flex-col py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
-            @click.stop="onPick(item)"
-          >
-            <span class="truncate font-medium">{{ item.name }}</span>
-            <slot name="item-sub" :item="item"></slot>
-          </button>
+          <template v-if="libraryResults.length > 0">
+            <div
+              class="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              {{ $t("smart_playlist.results_library") }}
+            </div>
+            <button
+              v-for="item in libraryResults"
+              :key="`lib-${item.item_id}`"
+              type="button"
+              class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+              @click.stop="onPick(item)"
+            >
+              <div class="h-8 w-8 flex-none overflow-hidden rounded">
+                <MediaItemThumb :item="item" :size="32" />
+              </div>
+              <div class="flex flex-col min-w-0 flex-1">
+                <span class="truncate font-medium">{{ item.name }}</span>
+                <slot name="item-sub" :item="item"></slot>
+              </div>
+            </button>
+          </template>
+          <template v-if="otherResults.length > 0">
+            <div
+              class="px-1.5 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              {{ $t("smart_playlist.results_other") }}
+            </div>
+            <button
+              v-for="item in otherResults"
+              :key="`oth-${item.item_id}`"
+              type="button"
+              class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+              @click.stop="onPick(item)"
+            >
+              <div class="h-8 w-8 flex-none overflow-hidden rounded">
+                <MediaItemThumb :item="item" :size="32" />
+              </div>
+              <div class="flex flex-col min-w-0 flex-1">
+                <span class="truncate font-medium">{{ item.name }}</span>
+                <slot name="item-sub" :item="item"></slot>
+              </div>
+            </button>
+          </template>
         </template>
         <div
           v-else
@@ -67,6 +101,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -76,15 +111,13 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeedKind } from "@/composables/useSmartPlaylistSeedItems";
+import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Loader2, Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, ref } from "vue";
 
-interface SearchItem {
-  item_id: string;
-  name: string;
-}
+type SearchItem = Track | Artist | Album | Playlist;
 
 const props = defineProps<{
   kind: SeedKind;
@@ -103,6 +136,13 @@ const emit = defineEmits<{
 }>();
 
 const popoverOpen = ref(false);
+
+const libraryResults = computed(() =>
+  props.results.filter((r) => r.provider === "library"),
+);
+const otherResults = computed(() =>
+  props.results.filter((r) => r.provider !== "library"),
+);
 
 function onPick(item: SearchItem) {
   emit("select", item);

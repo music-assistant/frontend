@@ -1710,6 +1710,8 @@
         "picker_empty_no_match": "No {label} matches your search.",
         "picker_empty_remote": "Type to search for a {label}.",
         "picker_empty_search": "Type at least 2 characters to find a {label}.",
+        "results_library": "Library results",
+        "results_other": "Other results",
         "op_is": "is",
         "op_is_not": "is not",
         "saving": "Saving…",
