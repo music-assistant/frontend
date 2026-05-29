@@ -1685,6 +1685,8 @@
         "dynamic_sample_note": "Songs change each play. These are examples of what to expect.",
         "edit_rules": "Edit rules",
         "edited": "“{name}” updated",
+        "name_label": "Name",
+        "name_required": "Please enter a name.",
         "empty_desc": "No tracks match your current rules. Loosen a filter or pick a different seed to get started.",
         "empty_title": "Nothing to play yet",
         "favorites_yes": "Yes",
