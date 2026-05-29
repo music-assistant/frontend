@@ -91,6 +91,10 @@ const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
 
+// Genre options are preloaded and filtered client-side; artist/album are
+// fetched remotely as the user types.
+const isRemote = computed(() => props.source !== "genre");
+
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(
     (o) => !props.selectedIds.includes(o.id),
@@ -102,7 +106,7 @@ const filteredPreloaded = computed(() => {
 });
 
 const displayedOptions = computed(() => {
-  if (props.source === "genre") return filteredPreloaded.value;
+  if (!isRemote.value) return filteredPreloaded.value;
   return remoteResults.value.filter((o) => !props.selectedIds.includes(o.id));
 });
 
@@ -140,7 +144,7 @@ const runSearch = useDebounceFn(async (q: string) => {
 }, 400);
 
 watch(query, (q) => {
-  if (props.source === "genre") return;
+  if (!isRemote.value) return;
   if (q.length < 2) {
     remoteResults.value = [];
     isSearching.value = false;
@@ -167,7 +171,7 @@ function onPick(opt: Option) {
 }
 
 const emptyStateText = computed(() => {
-  if (props.source !== "genre" && query.value.length < 2) {
+  if (isRemote.value && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {
       label: props.addLabel.toLowerCase(),
     });

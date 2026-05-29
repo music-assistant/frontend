@@ -42,49 +42,34 @@
           <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
         <template v-else-if="results.length > 0">
-          <template v-if="libraryResults.length > 0">
+          <template v-for="(group, index) in resultGroups" :key="group.key">
             <div
-              class="px-1.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+              v-if="group.items.length > 0"
+              role="group"
+              :aria-label="group.heading"
             >
-              {{ $t("smart_playlist.results_library") }}
+              <div
+                class="px-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+                :class="index === 0 ? 'pt-1' : 'pt-2'"
+              >
+                {{ group.heading }}
+              </div>
+              <button
+                v-for="item in group.items"
+                :key="`${group.key}-${item.item_id}`"
+                type="button"
+                class="w-full flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+                @click.stop="onPick(item)"
+              >
+                <div class="h-8 w-8 flex-none overflow-hidden rounded">
+                  <MediaItemThumb :item="item" :size="32" />
+                </div>
+                <div class="flex flex-col min-w-0 flex-1">
+                  <span class="truncate font-medium">{{ item.name }}</span>
+                  <slot name="item-sub" :item="item"></slot>
+                </div>
+              </button>
             </div>
-            <button
-              v-for="item in libraryResults"
-              :key="`lib-${item.item_id}`"
-              type="button"
-              class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
-              @click.stop="onPick(item)"
-            >
-              <div class="h-8 w-8 flex-none overflow-hidden rounded">
-                <MediaItemThumb :item="item" :size="32" />
-              </div>
-              <div class="flex flex-col min-w-0 flex-1">
-                <span class="truncate font-medium">{{ item.name }}</span>
-                <slot name="item-sub" :item="item"></slot>
-              </div>
-            </button>
-          </template>
-          <template v-if="otherResults.length > 0">
-            <div
-              class="px-1.5 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              {{ $t("smart_playlist.results_other") }}
-            </div>
-            <button
-              v-for="item in otherResults"
-              :key="`oth-${item.item_id}`"
-              type="button"
-              class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
-              @click.stop="onPick(item)"
-            >
-              <div class="h-8 w-8 flex-none overflow-hidden rounded">
-                <MediaItemThumb :item="item" :size="32" />
-              </div>
-              <div class="flex flex-col min-w-0 flex-1">
-                <span class="truncate font-medium">{{ item.name }}</span>
-                <slot name="item-sub" :item="item"></slot>
-              </div>
-            </button>
           </template>
         </template>
         <div
@@ -137,12 +122,18 @@ const emit = defineEmits<{
 
 const popoverOpen = ref(false);
 
-const libraryResults = computed(() =>
-  props.results.filter((r) => r.provider === "library"),
-);
-const otherResults = computed(() =>
-  props.results.filter((r) => r.provider !== "library"),
-);
+const resultGroups = computed(() => [
+  {
+    key: "lib",
+    heading: $t("smart_playlist.results_library"),
+    items: props.results.filter((r) => r.provider === "library"),
+  },
+  {
+    key: "oth",
+    heading: $t("smart_playlist.results_other"),
+    items: props.results.filter((r) => r.provider !== "library"),
+  },
+]);
 
 function onPick(item: SearchItem) {
   emit("select", item);
