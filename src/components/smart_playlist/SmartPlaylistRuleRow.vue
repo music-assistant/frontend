@@ -28,6 +28,7 @@
 
     <Select
       v-if="rule.field !== 'favorite'"
+      :key="`operator-${rule.field}`"
       :model-value="rule.operator"
       :disabled="rule.field === 'year'"
       @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
