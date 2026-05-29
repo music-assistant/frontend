@@ -27,8 +27,12 @@ describe("useSmartPlaylistGenres", () => {
     await Promise.resolve();
     expect(genres.value.length).toBe(2);
     expect(genreOptions.value).toEqual([
-      { id: 9, name: "Synthwave" },
-      { id: 2, name: "Rock" },
+      {
+        id: 9,
+        name: "Synthwave",
+        item: { item_id: "9", name: "Synthwave" },
+      },
+      { id: 2, name: "Rock", item: { item_id: "2", name: "Rock" } },
     ]);
   });
 

@@ -819,6 +819,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public updatePlaylist(
+    item_id: string | number,
+    update: Playlist,
+    overwrite: boolean = false,
+  ): Promise<Playlist> {
+    return this.sendCommand("music/playlists/update", {
+      item_id,
+      update,
+      overwrite,
+    });
+  }
+
   public exportPlaylist(db_playlist_id: string | number): Promise<string> {
     return this.sendCommand("music/playlists/export_playlist", {
       db_playlist_id,

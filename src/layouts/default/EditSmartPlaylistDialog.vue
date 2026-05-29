@@ -8,9 +8,6 @@
         <DialogTitle class="mb-2">
           {{ $t("smart_playlist.edit_rules") }}
         </DialogTitle>
-        <DialogDescription>
-          {{ playlistName }}
-        </DialogDescription>
       </DialogHeader>
 
       <div
@@ -21,6 +18,13 @@
       </div>
 
       <div v-else class="flex flex-col gap-3 py-2">
+        <div class="flex flex-col gap-2">
+          <Label for="sp-edit-name">{{
+            $t("smart_playlist.name_label")
+          }}</Label>
+          <Input id="sp-edit-name" v-model="name" />
+        </div>
+
         <div class="max-h-[60vh] overflow-y-auto -mx-6 px-6">
           <SmartPlaylistRulesForm
             ref="rulesForm"
@@ -47,7 +51,9 @@
           {{ $t("close") }}
         </Button>
         <Button
-          :disabled="loading || isSaving || !rulesForm?.hasChanges"
+          :disabled="
+            loading || isSaving || (!rulesForm?.hasChanges && !nameDirty)
+          "
           @click="doSave"
         >
           <span v-if="isSaving">{{ $t("smart_playlist.saving") }}</span>
@@ -59,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 import SmartPlaylistRulesForm from "@/components/smart_playlist/SmartPlaylistRulesForm.vue";
@@ -68,18 +74,19 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import api from "@/plugins/api";
-import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
+import type { Playlist, SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
 export interface Props {
   dbPlaylistId: string;
-  playlistName: string;
+  playlist: Playlist;
 }
 
 const props = defineProps<Props>();
@@ -89,6 +96,11 @@ const showDialog = defineModel<boolean>("open", { default: false });
 
 const loading = ref(false);
 const isSaving = ref(false);
+const name = ref("");
+
+const nameDirty = computed(
+  () => name.value.trim() !== "" && name.value.trim() !== props.playlist.name,
+);
 const matchingTrackCount = ref<number | null>(null);
 const matchingDuration = ref<number | null>(null);
 const isCountingTracks = ref(false);
@@ -103,6 +115,7 @@ const loadedExcludedAlbumItems = ref<{ id: number; name: string }[]>([]);
 function resetDialogState() {
   loading.value = false;
   isSaving.value = false;
+  name.value = "";
   matchingTrackCount.value = null;
   matchingDuration.value = null;
   isCountingTracks.value = false;
@@ -116,6 +129,7 @@ function resetDialogState() {
 watch(showDialog, async (open) => {
   if (open) {
     loading.value = true;
+    name.value = props.playlist.name;
     loadedRules.value = null;
     loadedArtistItems.value = [];
     loadedAlbumItems.value = [];
@@ -208,11 +222,25 @@ async function doSave() {
     toast.error(errors[0]);
     return;
   }
+  const trimmedName = name.value.trim();
+  if (!trimmedName) {
+    toast.error($t("smart_playlist.name_required"));
+    return;
+  }
   isSaving.value = true;
   try {
-    const finalRules = rulesForm.value!.getFinalRules();
-    await api.updateSmartPlaylistRules(props.dbPlaylistId, finalRules);
-    toast.success($t("smart_playlist.edited", { name: props.playlistName }));
+    if (nameDirty.value) {
+      await api.updatePlaylist(
+        props.dbPlaylistId,
+        { ...props.playlist, name: trimmedName },
+        true,
+      );
+    }
+    if (rulesForm.value!.hasChanges) {
+      const finalRules = rulesForm.value!.getFinalRules();
+      await api.updateSmartPlaylistRules(props.dbPlaylistId, finalRules);
+    }
+    toast.success($t("smart_playlist.edited", { name: trimmedName }));
     showDialog.value = false;
     emit("saved");
   } catch (e) {

@@ -116,6 +116,7 @@ import type {
   RuleOperator,
   RuleRow,
 } from "@/composables/useSmartPlaylistRulesForm";
+import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Info, Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
@@ -126,7 +127,7 @@ defineProps<{
   rules: RuleRow[];
   logic: "AND" | "OR";
   availableFields: RuleField[];
-  genreOptions: { id: number; name: string }[];
+  genreOptions: { id: number; name: string; item?: Genre }[];
   invalidRuleUids: Set<string>;
 }>();
 

@@ -25,10 +25,10 @@
     </template>
   </InfoHeader>
   <EditSmartPlaylistDialog
-    v-if="smartRules"
+    v-if="smartRules && itemDetails"
     v-model:open="showEditDialog"
     :db-playlist-id="props.itemId"
-    :playlist-name="itemDetails?.name ?? ''"
+    :playlist="itemDetails"
     @saved="loadItemDetails"
   />
   <!-- dynamic playlist: content is generated on the fly, so show a sample instead of a fixed tracklist -->
@@ -67,11 +67,7 @@
     :no-server-side-sorting="true"
   />
 
-  <!-- provider mapping details + genre exclusions: not relevant for dynamic playlists -->
-  <ProviderDetails
-    v-if="itemDetails && !itemDetails.is_dynamic"
-    :item-details="itemDetails"
-  />
+  <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
 
 <script setup lang="ts">

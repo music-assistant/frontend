@@ -10,9 +10,8 @@
         {{ addLabel }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" class="w-[260px] p-2">
+    <PopoverContent align="start" class="w-[340px] p-2">
       <Input
-        v-if="searchable"
         v-model="query"
         :placeholder="$t('search')"
         class="mb-2 h-8 text-sm"
@@ -27,9 +26,15 @@
             v-for="opt in displayedOptions"
             :key="opt.id"
             type="button"
-            class="flex items-center gap-2 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
+            class="flex items-center gap-1.5 py-1 px-1.5 text-sm rounded-sm hover:bg-accent text-left"
             @click.stop="onPick(opt)"
           >
+            <div
+              v-if="opt.item"
+              class="h-8 w-8 flex-none overflow-hidden rounded"
+            >
+              <MediaItemThumb :item="opt.item" :size="32" />
+            </div>
             <span class="truncate">{{ opt.name }}</span>
           </button>
         </template>
@@ -47,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,6 +61,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import api from "@/plugins/api";
+import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { useDebounceFn } from "@vueuse/core";
 import { Loader2, Plus } from "lucide-vue-next";
@@ -63,6 +70,7 @@ import { computed, ref, watch } from "vue";
 interface Option {
   id: number;
   name: string;
+  item?: Artist | Album | Genre;
 }
 
 type Source = "genre" | "artist" | "album";
@@ -83,9 +91,9 @@ const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
 
-const searchable = computed(
-  () => props.source === "artist" || props.source === "album",
-);
+// Genre options are preloaded and filtered client-side; artist/album are
+// fetched remotely as the user types.
+const isRemote = computed(() => props.source !== "genre");
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(
@@ -98,7 +106,7 @@ const filteredPreloaded = computed(() => {
 });
 
 const displayedOptions = computed(() => {
-  if (props.source === "genre") return filteredPreloaded.value;
+  if (!isRemote.value) return filteredPreloaded.value;
   return remoteResults.value.filter((o) => !props.selectedIds.includes(o.id));
 });
 
@@ -112,10 +120,18 @@ const runSearch = useDebounceFn(async (q: string) => {
     let results: Option[] = [];
     if (props.source === "artist") {
       const res = await api.getLibraryArtists(undefined, q, 20);
-      results = res.map((a) => ({ id: parseInt(a.item_id), name: a.name }));
+      results = res.map((a) => ({
+        id: parseInt(a.item_id),
+        name: a.name,
+        item: a,
+      }));
     } else if (props.source === "album") {
       const res = await api.getLibraryAlbums(undefined, q, 20);
-      results = res.map((a) => ({ id: parseInt(a.item_id), name: a.name }));
+      results = res.map((a) => ({
+        id: parseInt(a.item_id),
+        name: a.name,
+        item: a,
+      }));
     }
     if (query.value === q) {
       remoteResults.value = results;
@@ -128,7 +144,7 @@ const runSearch = useDebounceFn(async (q: string) => {
 }, 400);
 
 watch(query, (q) => {
-  if (!searchable.value) return;
+  if (!isRemote.value) return;
   if (q.length < 2) {
     remoteResults.value = [];
     isSearching.value = false;
@@ -148,14 +164,14 @@ watch(open, (isOpen) => {
 });
 
 function onPick(opt: Option) {
-  emit("add", opt);
+  emit("add", { id: opt.id, name: opt.name });
   query.value = "";
   remoteResults.value = [];
   open.value = false;
 }
 
 const emptyStateText = computed(() => {
-  if (searchable.value && query.value.length < 2) {
+  if (isRemote.value && query.value.length < 2) {
     return $t("smart_playlist.picker_empty_search", {
       label: props.addLabel.toLowerCase(),
     });
