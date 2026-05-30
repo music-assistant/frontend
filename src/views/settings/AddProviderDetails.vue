@@ -61,7 +61,7 @@
           >
         </CardHeader>
         <CardContent>
-          <a id="auth" href="" target="_blank"
+          <a id="auth" href="" target="_blank" rel="noopener noreferrer"
             ><Button>Click here if the popup did not open</Button></a
           >
         </CardContent>

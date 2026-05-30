@@ -539,13 +539,16 @@ const syncFromProps = (val: ConfigEntryUI[] | undefined) => {
   const captureAll = !oldValuesInitialized.value;
   for (const [key, newVal] of Object.entries(incoming)) {
     const isNew = !(key in oldValues.value);
+    const entry = entries.value.find((e) => e.key === key);
+    const rebaseline = captureAll || isNew || !!entry?.immediate_apply;
     if (
-      captureAll ||
-      isNew ||
+      rebaseline ||
       JSON.stringify(oldValues.value[key]) !== JSON.stringify(newVal)
     ) {
-      oldValues.value[key] = clone(newVal);
       form.setFieldValue(key, newVal);
+    }
+    if (rebaseline) {
+      oldValues.value[key] = clone(newVal);
     }
   }
   oldValuesInitialized.value = true;

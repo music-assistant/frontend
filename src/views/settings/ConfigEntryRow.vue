@@ -104,6 +104,7 @@ const openLink = (url: string) => {
   const a = document.createElement("a");
   a.setAttribute("href", url);
   a.setAttribute("target", "_blank");
+  a.setAttribute("rel", "noopener noreferrer");
   a.click();
 };
 </script>

@@ -3,12 +3,14 @@
     <div v-if="config && api.providerManifests[config.domain]">
       <!-- Disabled banner -->
       <Alert v-if="!config.enabled" variant="warning" class="mb-4">
-        <div class="disabled-banner">
-          <span>{{ $t("settings.provider_disabled") }}</span>
-          <Button size="sm" variant="default" @click="config.enabled = true">
-            {{ $t("settings.enable_provider") }}
-          </Button>
-        </div>
+        <AlertDescription>
+          <div class="disabled-banner">
+            <span>{{ $t("settings.provider_disabled") }}</span>
+            <Button size="sm" variant="default" @click="config.enabled = true">
+              {{ $t("settings.enable_provider") }}
+            </Button>
+          </div>
+        </AlertDescription>
       </Alert>
 
       <!-- Header card -->
@@ -115,7 +117,7 @@
           >
         </CardHeader>
         <CardContent>
-          <a id="auth" href="" target="_blank"
+          <a id="auth" href="" target="_blank" rel="noopener noreferrer"
             ><Button>Click here if the popup did not open</Button></a
           >
         </CardContent>
@@ -127,7 +129,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -401,6 +403,7 @@ const saveRename = function () {
 }
 
 .disabled-banner {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;

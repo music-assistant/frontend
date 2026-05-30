@@ -4,7 +4,9 @@
     <Field>
       <FieldLabel>{{ getTranslatedLabel() }}</FieldLabel>
       <Select
-        :model-value="String(playerOption.value)"
+        :model-value="
+          playerOption.value == null ? undefined : String(playerOption.value)
+        "
         :disabled="playerOption.read_only"
         @update:model-value="
           (v) => uiSetPlayerOption(playerOption.key, rawForString(v as string))
