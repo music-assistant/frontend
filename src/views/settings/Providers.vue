@@ -668,6 +668,12 @@ const getAllFilteredProviders = function () {
   padding-left: 0;
 }
 
+@media (max-width: 960px) {
+  .providers-list :deep(.list-item-main) {
+    padding-left: 0 !important;
+  }
+}
+
 .provider-name-title {
   font-weight: 500;
   font-size: 16px;
