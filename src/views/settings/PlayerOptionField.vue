@@ -1,25 +1,40 @@
 <template>
   <!-- drop down for multiple options -->
   <div v-if="playerOption.options && playerOption.options.length > 0">
-    <v-select
-      :model-value="playerOption.value"
-      :items="translatedOptions"
-      :label="getTranslatedLabel()"
-      variant="outlined"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
+    <Field>
+      <FieldLabel>{{ getTranslatedLabel() }}</FieldLabel>
+      <Select
+        :model-value="String(playerOption.value)"
+        :disabled="playerOption.read_only"
+        @update:model-value="
+          (v) => uiSetPlayerOption(playerOption.key, rawForString(v as string))
+        "
+      >
+        <SelectTrigger class="w-full"
+          ><SelectValue :placeholder="getTranslatedLabel()"
+        /></SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="opt in selectOptions"
+            :key="opt.value"
+            :value="opt.value"
+            >{{ opt.label }}</SelectItem
+          >
+        </SelectContent>
+      </Select>
+    </Field>
   </div>
 
   <!-- toggle for boolean values -->
   <div v-else-if="playerOption.type === PlayerOptionType.BOOLEAN">
-    <v-switch
-      :label="getTranslatedLabel()"
-      :model-value="playerOption.value"
-      :readonly="playerOption.read_only"
-      hide-details
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
+    <Field orientation="horizontal">
+      <Switch
+        :model-value="!!playerOption.value"
+        :disabled="playerOption.read_only"
+        @update:model-value="(v) => uiSetPlayerOption(playerOption.key, v)"
+      />
+      <FieldLabel class="font-normal">{{ getTranslatedLabel() }}</FieldLabel>
+    </Field>
   </div>
 
   <!-- slider for int/ float with min/max -->
@@ -32,28 +47,29 @@
       playerOption.step
     "
   >
-    <div style="padding-bottom: 25px">
-      {{ getTranslatedLabel() }}
-    </div>
-    <v-slider
-      :model-value="playerOption.value as number"
-      :min="playerOption.min_value"
-      :max="playerOption.max_value"
-      :step="playerOption.step"
-      thumb-label="always"
-      :thumb-size="20"
-      show-ticks="always"
-      :tick-size="4"
-      :readonly="playerOption.read_only"
-      @end="uiSetPlayerOption(playerOption.key, $event)"
-    >
-      <template #prepend>
-        <v-label :text="playerOption.min_value as unknown as string" />
-      </template>
-      <template #append>
-        <v-label :text="playerOption.max_value as unknown as string" />
-      </template>
-    </v-slider>
+    <Field>
+      <FieldLabel>{{ getTranslatedLabel() }}</FieldLabel>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-muted-foreground">{{
+          playerOption.min_value
+        }}</span>
+        <Slider
+          class="flex-1"
+          :model-value="[playerOption.value as number]"
+          :min="playerOption.min_value"
+          :max="playerOption.max_value"
+          :step="playerOption.step"
+          :disabled="playerOption.read_only"
+          @update:model-value="
+            (v: number[] | undefined) =>
+              uiSetPlayerOption(playerOption.key, v?.[0])
+          "
+        />
+        <span class="text-xs text-muted-foreground">{{
+          playerOption.max_value
+        }}</span>
+      </div>
+    </Field>
   </div>
 
   <!-- text field for int/ float where some of the above are missing -->
@@ -63,40 +79,59 @@
       playerOption.type === PlayerOptionType.FLOAT
     "
   >
-    <v-text-field
-      :model-value="playerOption.value"
-      :label="getTranslatedLabel()"
-      :clearable="false"
-      :min="playerOption.min_value"
-      :max="playerOption.max_value"
-      :step="playerOption.step"
-      type="number"
-      variant="outlined"
-      density="comfortable"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
+    <Field>
+      <FieldLabel>{{ getTranslatedLabel() }}</FieldLabel>
+      <Input
+        type="number"
+        :model-value="playerOption.value as number"
+        :min="playerOption.min_value"
+        :max="playerOption.max_value"
+        :step="playerOption.step"
+        :readonly="playerOption.read_only"
+        @update:model-value="
+          (v) =>
+            uiSetPlayerOption(
+              playerOption.key,
+              v === '' ? undefined : Number(v),
+            )
+        "
+      />
+    </Field>
   </div>
 
   <!-- text field for string -->
   <div v-else-if="playerOption.type === PlayerOptionType.STRING">
-    <v-text-field
-      :model-value="playerOption.value"
-      :label="getTranslatedLabel()"
-      :clearable="false"
-      type="string"
-      variant="outlined"
-      density="comfortable"
-      :readonly="playerOption.read_only"
-      @update:model-value="uiSetPlayerOption(playerOption.key, $event)"
-    />
+    <Field>
+      <FieldLabel>{{ getTranslatedLabel() }}</FieldLabel>
+      <Input
+        :model-value="playerOption.value as string"
+        :readonly="playerOption.read_only"
+        @update:model-value="
+          (v) => uiSetPlayerOption(playerOption.key, v as string)
+        "
+      />
+    </Field>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import api from "@/plugins/api";
-import { PlayerOption, PlayerOptionValueType } from "@/plugins/api/interfaces";
-import { PlayerOptionType } from "@/plugins/api/interfaces";
+import {
+  PlayerOption,
+  PlayerOptionType,
+  PlayerOptionValueType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
@@ -172,4 +207,18 @@ const translatedOptions = computed(() => {
   }
   return options;
 });
+
+const selectOptions = computed(() =>
+  translatedOptions.value.map((o) => ({
+    label: o.title,
+    value: String(o.value),
+  })),
+);
+
+const rawForString = (str: string): PlayerOptionValueType => {
+  const match = props.playerOption.options?.find(
+    (o) => String(o.value) === str,
+  );
+  return match ? match.value : str;
+};
 </script>

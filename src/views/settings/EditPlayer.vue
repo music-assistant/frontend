@@ -8,10 +8,10 @@
       "
     >
       <!-- Header card -->
-      <v-card v-if="config" class="header-card mb-4" elevation="0">
+      <div v-if="config" class="header-card mb-4">
         <div class="header-content">
           <div class="header-icon">
-            <v-icon size="32" color="primary">mdi-speaker</v-icon>
+            <span class="mdi mdi-speaker text-3xl text-primary"></span>
           </div>
           <div class="header-info">
             <div class="header-title-row">
@@ -22,22 +22,22 @@
                   config.default_name
                 }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
+              <Button
+                variant="ghost"
+                size="icon"
                 class="rename-btn"
                 @click="showRenameDialog = true"
-              />
+              >
+                <span class="mdi mdi-pencil text-lg"></span>
+              </Button>
             </div>
             <div class="header-meta">
               <span class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
+                <span class="mdi mdi-identifier mr-1 text-sm"></span>
                 {{ config.player_id }}
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-information</v-icon>
+                <span class="mdi mdi-information mr-1 text-sm"></span>
                 {{ api.players[config.player_id].device_info.manufacturer }} /
                 {{ api.players[config.player_id].device_info.model }}
               </span>
@@ -49,7 +49,7 @@
                 "
                 class="meta-item"
               >
-                <v-icon size="14" class="mr-1">mdi-ip-network</v-icon>
+                <span class="mdi mdi-ip-network mr-1 text-sm"></span>
                 {{
                   api.players[config.player_id]?.device_info.identifiers[
                     IdentifierType.IP_ADDRESS
@@ -64,7 +64,7 @@
                 "
                 class="meta-item"
               >
-                <v-icon size="14" class="mr-1">mdi-network</v-icon>
+                <span class="mdi mdi-network mr-1 text-sm"></span>
                 {{
                   api.players[config.player_id]?.device_info.identifiers[
                     IdentifierType.MAC_ADDRESS
@@ -72,7 +72,7 @@
                 }}
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
-                <v-icon size="14" class="mr-1">mdi-tag</v-icon>
+                <span class="mdi mdi-tag mr-1 text-sm"></span>
                 {{ $t(`player_type.${api.players[config.player_id].type}`) }}
               </span>
             </div>
@@ -80,12 +80,11 @@
               v-if="api.players[config.player_id]?.output_protocols?.length"
               class="protocol-chips"
             >
-              <v-chip
+              <Badge
                 v-for="protocol in api.players[config.player_id]
                   .output_protocols"
                 :key="protocol.output_protocol_id"
-                size="x-small"
-                variant="tonal"
+                variant="secondary"
                 class="protocol-chip"
                 :class="{
                   'protocol-chip--clickable': api.getProviderManifest(
@@ -102,81 +101,70 @@
                   )
                 "
               >
-                <template #prepend>
-                  <ProviderIcon
-                    :domain="protocol.protocol_domain!"
-                    :size="14"
-                    class="chip-icon"
-                  />
-                </template>
+                <ProviderIcon
+                  :domain="protocol.protocol_domain!"
+                  :size="14"
+                  class="chip-icon"
+                />
                 {{
                   api.getProviderManifest(protocol.protocol_domain!)?.name ||
                   protocol.protocol_domain
                 }}
-                <v-icon
+                <span
                   v-if="
                     api.getProviderManifest(protocol.protocol_domain!)
                       ?.documentation
                   "
-                  size="12"
-                  class="ml-1"
-                  >mdi-open-in-new</v-icon
-                >
-              </v-chip>
+                  class="mdi mdi-open-in-new ml-1 text-xs"
+                ></span>
+              </Badge>
             </div>
           </div>
         </div>
-      </v-card>
+      </div>
     </div>
 
     <!-- Disabled banner -->
-    <v-alert
-      v-if="config && !config.enabled"
-      type="warning"
-      variant="tonal"
-      class="mb-4"
-      closable
-    >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_disabled") }}</span>
-        <v-btn
-          size="small"
-          color="warning"
-          variant="flat"
-          @click="enablePlayer"
-        >
-          {{ $t("settings.enable_player") }}
-        </v-btn>
-      </div>
-    </v-alert>
+    <Alert v-if="config && !config.enabled" variant="warning" class="mb-4">
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_disabled") }}</span>
+          <Button size="sm" @click="enablePlayer">
+            {{ $t("settings.enable_player") }}
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <!-- Needs setup banner -->
-    <v-alert
+    <Alert
       v-if="
         config && config.enabled && api.players[config.player_id]?.needs_setup
       "
-      type="warning"
-      variant="tonal"
+      variant="warning"
       class="mb-4"
     >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_needs_setup") }}</span>
-      </div>
-    </v-alert>
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_needs_setup") }}</span>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <!-- Not available banner -->
-    <v-alert
+    <Alert
       v-else-if="
         config && config.enabled && !api.players[config.player_id]?.available
       "
-      type="warning"
-      variant="tonal"
+      variant="warning"
       class="mb-4"
     >
-      <div class="disabled-banner">
-        <span>{{ $t("settings.player_not_available") }}</span>
-      </div>
-    </v-alert>
+      <AlertDescription>
+        <div class="disabled-banner">
+          <span>{{ $t("settings.player_not_available") }}</span>
+        </div>
+      </AlertDescription>
+    </Alert>
 
     <edit-config
       v-if="config"
@@ -189,65 +177,72 @@
     />
 
     <!-- Rename dialog -->
-    <v-dialog v-model="showRenameDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("settings.player_name") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editName"
-            :placeholder="
-              api.players[config?.player_id!]?.name || config?.default_name
-            "
-            variant="outlined"
-            density="comfortable"
-            autofocus
-            clearable
-            @keyup.enter="saveRename"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showRenameDialog = false">
+    <Dialog v-model:open="showRenameDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.player_name") }}</DialogTitle>
+        </DialogHeader>
+        <Input
+          :model-value="editName ?? undefined"
+          :placeholder="
+            api.players[config?.player_id!]?.name || config?.default_name
+          "
+          autofocus
+          @update:model-value="editName = $event as string"
+          @keyup.enter="saveRename"
+        />
+        <DialogFooter>
+          <Button variant="outline" @click="showRenameDialog = false">
             {{ $t("close") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          </Button>
+          <Button @click="saveRename">
             {{ $t("settings.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Spinner class="size-16" />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
-import { useRouter } from "vue-router";
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
   DSPConfig,
   EventType,
+  IdentifierType,
   PlayerConfig,
   PlayerFeature,
   PlayerType,
-  IdentifierType,
 } from "@/plugins/api/interfaces";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { watch } from "vue";
 
-import { nanoid } from "nanoid";
 import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { nanoid } from "nanoid";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -484,7 +479,7 @@ const onAction = async function (
 }
 
 .header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -499,7 +494,7 @@ const onAction = async function (
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -521,7 +516,7 @@ const onAction = async function (
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--foreground);
 }
 
 .rename-btn {
@@ -550,7 +545,7 @@ const onAction = async function (
   display: inline-flex;
   align-items: center;
   font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: var(--muted-foreground);
 }
 
 .protocol-chips {
