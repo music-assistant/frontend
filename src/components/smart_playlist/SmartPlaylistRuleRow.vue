@@ -1,63 +1,78 @@
 <template>
   <div
     :class="[
-      'group flex items-center gap-2 rounded-md border bg-card/40 px-2 py-1.5 hover:bg-card transition-colors',
+      'group flex min-w-0 flex-col gap-2 overflow-hidden rounded-md border bg-card/40 px-2 py-1.5 transition-colors hover:bg-card sm:flex-row sm:items-center',
       invalid ? 'border-destructive ring-1 ring-destructive/40' : '',
     ]"
   >
-    <Select
-      :model-value="rule.field"
-      @update:model-value="(v) => emit('change-field', v as RuleField)"
-    >
-      <SelectTrigger
-        class="h-7 w-[110px] text-xs font-medium border-0 bg-transparent shadow-none hover:bg-accent px-2"
+    <div class="flex min-w-0 items-center gap-2">
+      <Select
+        :model-value="rule.field"
+        @update:model-value="(v) => emit('change-field', v as RuleField)"
       >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem
-          v-for="opt in fieldOptions"
-          :key="opt.value"
-          :value="opt.value"
-          class="text-xs"
+        <SelectTrigger
+          class="h-7 w-[110px] shrink-0 text-xs font-medium border-0 bg-transparent px-2 shadow-none hover:bg-accent"
         >
-          {{ opt.label }}
-        </SelectItem>
-      </SelectContent>
-    </Select>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="opt in fieldOptions"
+            :key="opt.value"
+            :value="opt.value"
+            class="text-xs"
+          >
+            {{ opt.label }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
-    <Select
-      v-if="rule.field !== 'favorite'"
-      :key="`operator-${rule.field}`"
-      :model-value="rule.operator"
-      :disabled="rule.field === 'year'"
-      @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
-    >
-      <SelectTrigger
-        :class="[
-          'h-7 w-[90px] text-xs border-0 bg-transparent shadow-none px-2',
-          rule.field === 'year'
-            ? 'opacity-70 cursor-default'
-            : 'hover:bg-accent',
-        ]"
+      <Select
+        v-if="rule.field !== 'favorite'"
+        :key="`operator-${rule.field}`"
+        :model-value="rule.operator"
+        :disabled="rule.field === 'year'"
+        @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="is" class="text-xs">
-          {{
-            rule.field === "year"
-              ? $t("smart_playlist.op_between")
-              : $t("smart_playlist.op_is")
-          }}
-        </SelectItem>
-        <SelectItem v-if="rule.field !== 'year'" value="is_not" class="text-xs">
-          {{ $t("smart_playlist.op_is_not") }}
-        </SelectItem>
-      </SelectContent>
-    </Select>
+        <SelectTrigger
+          :class="[
+            'h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
+            rule.field === 'year'
+              ? 'cursor-default opacity-70'
+              : 'hover:bg-accent',
+          ]"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="is" class="text-xs">
+            {{
+              rule.field === "year"
+                ? $t("smart_playlist.op_between")
+                : $t("smart_playlist.op_is")
+            }}
+          </SelectItem>
+          <SelectItem
+            v-if="rule.field !== 'year'"
+            value="is_not"
+            class="text-xs"
+          >
+            {{ $t("smart_playlist.op_is_not") }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
-    <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap">
+      <Button
+        variant="ghost"
+        size="icon"
+        class="ml-auto h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive sm:hidden"
+        @click="emit('remove')"
+      >
+        <X class="h-3.5 w-3.5" />
+      </Button>
+    </div>
+
+    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:min-w-0">
       <span
         v-if="rule.field === 'favorite'"
         class="text-xs text-muted-foreground px-1"
@@ -106,9 +121,9 @@
           v-for="v in rule.values"
           :key="v.id"
           variant="default"
-          class="gap-1 max-w-[200px] pr-1"
+          class="max-w-full min-w-0 gap-1 pr-1 sm:max-w-[200px]"
         >
-          <span class="truncate text-xs">{{ v.name }}</span>
+          <span class="min-w-0 truncate text-xs">{{ v.name }}</span>
           <button
             type="button"
             class="hover:bg-primary-foreground/20 rounded-full p-0.5 pt-1 flex-shrink-0 transition-colors"
@@ -131,7 +146,7 @@
     <Button
       variant="ghost"
       size="icon"
-      class="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive"
+      class="hidden h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive sm:flex"
       @click="emit('remove')"
     >
       <X class="h-3.5 w-3.5" />

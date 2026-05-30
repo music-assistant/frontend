@@ -4,7 +4,7 @@
       <Button
         variant="ghost"
         size="sm"
-        class="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+        class="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
       >
         <Plus class="h-3 w-3" />
         {{ addLabel }}

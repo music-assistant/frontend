@@ -25,7 +25,7 @@
           <Input id="sp-edit-name" v-model="name" />
         </div>
 
-        <div class="max-h-[60vh] overflow-y-auto -mx-6 px-6">
+        <div class="max-h-[60vh] overflow-x-hidden overflow-y-auto -mx-6 px-6">
           <SmartPlaylistRulesForm
             ref="rulesForm"
             :initial-rules="loadedRules"

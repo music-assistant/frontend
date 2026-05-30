@@ -12,7 +12,7 @@
 
       <div class="flex flex-col gap-3 py-2">
         <div
-          class="flex flex-col gap-5 max-h-[60vh] overflow-y-auto -mx-6 px-6"
+          class="flex max-h-[60vh] flex-col gap-5 overflow-x-hidden overflow-y-auto -mx-6 px-6"
         >
           <div class="flex flex-col gap-2">
             <Label for="sp-name">{{ $t("new_playlist_name") }}</Label>
