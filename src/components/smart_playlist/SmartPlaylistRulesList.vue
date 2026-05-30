@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-3">
     <div
       v-if="mode === 'library'"
-      class="flex items-center gap-2 text-sm text-muted-foreground"
+      class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground"
     >
       <span>{{ $t("smart_playlist.match") }}</span>
       <Select
