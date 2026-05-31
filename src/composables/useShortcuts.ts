@@ -397,11 +397,13 @@ export function useShortcuts() {
     sourceItem: ShortcutItem,
     targetItem: ShortcutItem,
   ) {
-    const sourceUri = pinnedUris.value.find((uri) =>
-      isSameShortcutUri(uri, sourceItem),
+    const sourceUri = findPinnedUriByIdentities(
+      getShortcutIdentities(sourceItem),
+      pinnedUris.value,
     );
-    const targetUri = pinnedUris.value.find((uri) =>
-      isSameShortcutUri(uri, targetItem),
+    const targetUri = findPinnedUriByIdentities(
+      getShortcutIdentities(targetItem),
+      pinnedUris.value,
     );
     if (!sourceUri || !targetUri) return;
 
