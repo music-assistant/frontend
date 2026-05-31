@@ -136,7 +136,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
                   ? 'no-underline font-bold'
                   : 'no-underline font-medium',
               ]"
-              @click="handleClick($event)"
+              @click="handleClick"
               @contextmenu.prevent="openContextMenu($event, item)"
             >
               <img
