@@ -123,7 +123,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
           <SidebarMenuItem
             v-for="{ item, url } in pinnedItemsWithUrls"
             :key="item.uri"
-            class="mr-1.5"
+            class="mr-1.5 transition-colors"
           >
             <SidebarMenuButton
               :as="RouterLinkComponent"
@@ -136,7 +136,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
                   ? 'no-underline font-bold'
                   : 'no-underline font-medium',
               ]"
-              @click="handleClick"
+              @click="handleClick($event)"
               @contextmenu.prevent="openContextMenu($event, item)"
             >
               <img

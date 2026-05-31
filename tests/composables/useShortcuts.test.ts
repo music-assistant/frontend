@@ -24,9 +24,12 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 import {
+  getShortcutMoveAvailability,
   isShortcutPinned,
   isShortcutPinnedItem,
+  moveShortcutStandaloneItem,
   pinShortcutStandalone,
+  reorderShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 
@@ -119,6 +122,107 @@ describe("useShortcuts standalone helpers", () => {
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
       ENCODED_PODCAST_URI,
+    ]);
+  });
+
+  it("reorders shortcuts by URI match", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+      "library://playlist/99",
+    ];
+
+    await reorderShortcutStandalone("library://playlist/99", RAW_PODCAST_URI);
+
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      "library://playlist/99",
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+    ]);
+  });
+
+  it("does not update when reorder source is missing", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+    ];
+
+    await reorderShortcutStandalone(
+      "library://playlist/does-not-exist",
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+    );
+
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+    ]);
+  });
+
+  it("returns move availability for pinned shortcut", () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+      "library://playlist/99",
+    ];
+
+    const podcastItem = {
+      provider: "itunes_podcasts",
+      media_type: MediaType.PODCAST,
+      item_id: PODCAST_FEED,
+      uri: RAW_PODCAST_URI,
+    };
+
+    expect(getShortcutMoveAvailability(podcastItem as any)).toEqual({
+      canMoveUp: false,
+      canMoveDown: true,
+    });
+  });
+
+  it("moves pinned shortcut down by one position", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+      "library://playlist/99",
+    ];
+
+    const podcastItem = {
+      provider: "itunes_podcasts",
+      media_type: MediaType.PODCAST,
+      item_id: PODCAST_FEED,
+      uri: RAW_PODCAST_URI,
+    };
+
+    await moveShortcutStandaloneItem(podcastItem as any, "down");
+
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+      ENCODED_PODCAST_URI,
+      "library://playlist/99",
+    ]);
+  });
+
+  it("does not move when pinned shortcut is already at boundary", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
+    ];
+
+    const podcastItem = {
+      provider: "itunes_podcasts",
+      media_type: MediaType.PODCAST,
+      item_id: PODCAST_FEED,
+      uri: RAW_PODCAST_URI,
+    };
+
+    await moveShortcutStandaloneItem(podcastItem as any, "up");
+
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      ENCODED_PODCAST_URI,
+      "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
     ]);
   });
 });

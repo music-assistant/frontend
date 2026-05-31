@@ -237,9 +237,11 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import {
+  getShortcutMoveAvailability,
   isShortcutMediaType,
   isShortcutPinnedItem,
   isShortcutCapReached,
+  moveShortcutStandaloneItem,
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
@@ -863,6 +865,22 @@ export const getContextMenuItems = async function (
   ) {
     const shortcutItem = items[0];
     if (isShortcutPinnedItem(shortcutItem)) {
+      const { canMoveUp, canMoveDown } =
+        getShortcutMoveAvailability(shortcutItem);
+      contextMenuItems.push({
+        label: "queue_move_up",
+        labelArgs: [],
+        action: () => moveShortcutStandaloneItem(shortcutItem, "up"),
+        icon: "mdi-arrow-up",
+        disabled: !canMoveUp,
+      });
+      contextMenuItems.push({
+        label: "queue_move_down",
+        labelArgs: [],
+        action: () => moveShortcutStandaloneItem(shortcutItem, "down"),
+        icon: "mdi-arrow-down",
+        disabled: !canMoveDown,
+      });
       contextMenuItems.push({
         label: "shortcut.remove_from",
         labelArgs: [],
