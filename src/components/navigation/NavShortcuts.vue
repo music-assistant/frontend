@@ -123,7 +123,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
           <SidebarMenuItem
             v-for="{ item, url } in pinnedItemsWithUrls"
             :key="item.uri"
-            class="mr-1.5 transition-colors"
+            class="mr-1.5"
           >
             <SidebarMenuButton
               :as="RouterLinkComponent"
