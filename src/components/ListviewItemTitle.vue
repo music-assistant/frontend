@@ -8,7 +8,11 @@
   </span>
   <span
     v-else
-    :class="{ 'is-playing': isPlaying, 'checkbox-label': showCheckboxes }"
+    :class="{
+      'is-playing': isPlaying,
+      'checkbox-label': showCheckboxes,
+      'album-track-title': albumTrackView,
+    }"
     class="v-list-item-title"
   >
     {{ displayName }}
@@ -61,6 +65,7 @@ export interface Props {
   item: MediaItemType;
   showCheckboxes: boolean;
   isPlaying: boolean;
+  albumTrackView?: boolean;
 }
 
 // global refs
@@ -70,12 +75,23 @@ withDefaults(defineProps<Props>(), {
   displayName: "",
   showCheckboxes: false,
   isPlaying: false,
+  albumTrackView: false,
 });
 </script>
 
 <style scoped>
 .checkbox-label {
   margin-left: 23px;
+}
+
+.album-track-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.

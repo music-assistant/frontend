@@ -129,12 +129,17 @@
           v-if="viewMode == 'list'"
           :item-height="70"
           height="100%"
-          :items="pagedItems"
+          :items="listDisplayItems"
           style="height: 100%; overflow: hidden"
         >
           <template #default="{ item }">
+            <div v-if="'isDiscHeader' in item" class="disc-header">
+              {{ $t("disc", { number: item.disc }) }}
+            </div>
             <ListviewItem
+              v-else
               :item="item"
+              :album-track-view="itemtype === 'albumtracks'"
               :show-track-number="showTrackNumber"
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
@@ -383,6 +388,36 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+interface DiscHeader {
+  isDiscHeader: true;
+  disc: number;
+}
+
+const discNumber = (i: MediaItemType) =>
+  "disc_number" in i ? i.disc_number : undefined;
+
+// for multi-disc albums (in default track order), insert a "Disc X" header
+// before the first track of each disc.
+const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
+  const multiDisc =
+    props.itemtype === "albumtracks" &&
+    allItems.value.some((i) => (discNumber(i) ?? 0) > 1);
+  if (!multiDisc || params.value.sortBy !== "track_number") {
+    return pagedItems.value;
+  }
+  const result: (MediaItemType | DiscHeader)[] = [];
+  let lastDisc: number | undefined;
+  for (const item of pagedItems.value) {
+    const disc = discNumber(item);
+    if (disc && disc !== lastDisc) {
+      result.push({ isDiscHeader: true, disc });
+      lastDisc = disc;
+    }
+    result.push(item);
+  }
+  return result;
+});
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -1710,6 +1745,16 @@ defineExpose({
 </script>
 
 <style scoped>
+.disc-header {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 16px 8px 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;
