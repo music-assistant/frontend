@@ -61,9 +61,12 @@
           >
         </CardHeader>
         <CardContent>
-          <a id="auth" href="" target="_blank" rel="noopener noreferrer"
-            ><Button>Click here if the popup did not open</Button></a
-          >
+          <Button as-child>
+            <a id="auth" href="" target="_blank" rel="noopener noreferrer">
+              Click here if the popup did not open
+            </a>
+          </Button>
+        </CardContent>
         </CardContent>
       </Card>
       <Spinner v-else class="size-16" />
