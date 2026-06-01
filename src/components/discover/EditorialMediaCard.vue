@@ -93,7 +93,7 @@ const onMenu = (e: MouseEvent) =>
 <style scoped>
 .ed-card {
   --ed-card-pad: 8px;
-  --ed-art-size: 168px;
+  --ed-art-size: var(--ed-tile-art, 168px);
   position: relative;
   flex: 0 0 auto;
   width: calc(var(--ed-art-size) + 2 * var(--ed-card-pad));

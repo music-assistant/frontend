@@ -81,6 +81,7 @@
         :key="row.folder.uri"
         :title="folderTitle(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
+        :tiles-per-view="tilesPerView"
       >
         <template v-if="editMode" #actions>
           <v-btn
@@ -133,10 +134,12 @@
 import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
-import EditorialShelf from "@/components/discover/EditorialShelf.vue";
+import EditorialShelf, {
+  type EditorialShelfExpose,
+} from "@/components/discover/EditorialShelf.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { playerVisible } from "@/helpers/utils";
+import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   type EventMessage,
@@ -167,10 +170,15 @@ const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
 const { getPreference, setPreference } = useUserPreferences();
 
 const loading = ref(true);
-const playersShelf = ref<InstanceType<typeof EditorialShelf> | null>(null);
+const playersShelf = ref<EditorialShelfExpose | null>(null);
 const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
+
+// Size the recommendation tiles on the same responsive curve as the rest of
+// the app (panelViewItemResponsive), plus the half-tile peek. Recomputes on
+// resize because panelViewItemResponsive reads the reactive breakpoint width.
+const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 
 const players = computed(() =>
   Object.values(api.players)
@@ -459,7 +467,6 @@ onMounted(async () => {
 
 .ed-hero-row {
   padding: 0 28px;
-  margin-top: 20px;
 }
 .ed-hero-row__head {
   display: flex;
@@ -511,16 +518,32 @@ onMounted(async () => {
 }
 
 @media (max-width: 900px) {
-  .ed-hero-grid {
-    grid-template-columns: 1fr 1fr;
-    height: auto;
-  }
-  .ed-hero-grid__lead {
-    grid-column: 1 / -1;
-    min-height: 240px;
-  }
   .ed-genres__grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .ed-hero-grid {
+    display: flex;
+    height: auto;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    margin-inline: -28px;
+    padding-inline: 28px;
+  }
+  .ed-hero-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .ed-hero-grid__col {
+    display: contents;
+  }
+  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+    flex: 0 0 44%;
+    height: 220px;
+    min-height: 0;
+    scroll-snap-align: start;
   }
 }
 
@@ -531,7 +554,12 @@ onMounted(async () => {
     padding-right: 16px;
   }
   .ed-hero-grid {
-    grid-template-columns: 1fr;
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
+    flex: 0 0 82%;
+    height: 200px;
   }
   .ed-hero-row__title {
     font-size: 22px;

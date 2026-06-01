@@ -35,7 +35,10 @@
       <div
         ref="track"
         class="ed-shelf__track ma-scroll"
-        :style="{ '--ed-gap': gap + 'px' }"
+        :style="{
+          '--ed-gap': gap + 'px',
+          ...(tileArt != null ? { '--ed-tile-art': tileArt + 'px' } : {}),
+        }"
         @scroll="onScroll"
       >
         <slot></slot>
@@ -54,9 +57,16 @@
   </section>
 </template>
 
+<script lang="ts">
+export interface EditorialShelfExpose {
+  scrollToStart: () => void;
+  alignItemStart: (selector: string) => void;
+}
+</script>
+
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
@@ -64,6 +74,7 @@ interface Props {
   gap?: number;
   navCenter?: number;
   dimmed?: boolean;
+  tilesPerView?: number;
 }
 const props = withDefaults(defineProps<Props>(), {
   title: "",
@@ -71,12 +82,18 @@ const props = withDefaults(defineProps<Props>(), {
   gap: 14,
   navCenter: 92,
   dimmed: false,
+  tilesPerView: 0,
 });
+
+const CARD_PAD = 16;
+const MIN_ART = 120;
+const MAX_ART = 280;
 
 const track = ref<HTMLElement | null>(null);
 const hovering = ref(false);
 const canLeft = ref(false);
 const canRight = ref(false);
+const tileArt = ref<number | null>(null);
 
 const verticalScrollParent = (el: HTMLElement): HTMLElement => {
   let node: HTMLElement | null = el.parentElement;
@@ -100,13 +117,26 @@ const onWheel = (e: WheelEvent) => {
   scroller.scrollTop += e.deltaY;
 };
 
+const updateTileArt = () => {
+  const el = track.value;
+  if (!el || !props.tilesPerView || props.tilesPerView <= 0) {
+    tileArt.value = null;
+    return;
+  }
+  const size = el.clientWidth / props.tilesPerView - props.gap - CARD_PAD;
+  tileArt.value = Math.round(Math.max(MIN_ART, Math.min(MAX_ART, size)));
+};
+
 const update = () => {
   const el = track.value;
   if (!el) return;
   canLeft.value = el.scrollLeft > 1;
   canRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+  updateTileArt();
 };
 const onScroll = () => update();
+
+watch(() => props.tilesPerView, updateTileArt);
 
 const scroll = (dir: number) => {
   const el = track.value;
@@ -120,7 +150,6 @@ function scrollToStart() {
   el.scrollLeft = 0;
 }
 
-/** Align a shelf item with the start of the horizontal scrollport. */
 function alignItemStart(selector: string) {
   const el = track.value;
   if (!el) return;
@@ -131,6 +160,11 @@ function alignItemStart(selector: string) {
     scrollToStart();
   }
 }
+
+defineExpose<EditorialShelfExpose>({
+  scrollToStart,
+  alignItemStart,
+});
 
 let ro: ResizeObserver | undefined;
 onMounted(() => {
@@ -145,11 +179,6 @@ onBeforeUnmount(() => {
   window.removeEventListener("resize", update);
   ro?.disconnect();
 });
-
-defineExpose({
-  scrollToStart,
-  alignItemStart,
-});
 </script>
 
 <style scoped>
@@ -157,6 +186,7 @@ defineExpose({
   --ed-gutter: 28px;
   --ed-card-pad: 8px;
   position: relative;
+  margin-bottom: 32px;
 }
 .ed-shelf__head {
   display: flex;
