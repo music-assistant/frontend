@@ -114,6 +114,24 @@ const scroll = (dir: number) => {
   el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
 };
 
+function scrollToStart() {
+  const el = track.value;
+  if (!el) return;
+  el.scrollLeft = 0;
+}
+
+/** Align a shelf item with the start of the horizontal scrollport. */
+function alignItemStart(selector: string) {
+  const el = track.value;
+  if (!el) return;
+  const item = el.querySelector(selector);
+  if (item) {
+    item.scrollIntoView({ inline: "start", block: "nearest" });
+  } else {
+    scrollToStart();
+  }
+}
+
 let ro: ResizeObserver | undefined;
 onMounted(() => {
   update();
@@ -126,6 +144,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("resize", update);
   ro?.disconnect();
+});
+
+defineExpose({
+  scrollToStart,
+  alignItemStart,
 });
 </script>
 
@@ -187,6 +210,8 @@ onBeforeUnmount(() => {
   padding-block: 4px;
   touch-action: pan-x;
   scroll-snap-type: x proximity;
+  overflow-anchor: none;
+  scroll-padding-inline: calc(var(--ed-gutter) - var(--ed-card-pad));
 }
 .ed-shelf__track::after {
   content: "";

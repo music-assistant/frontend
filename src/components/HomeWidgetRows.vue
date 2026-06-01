@@ -7,6 +7,7 @@
     <template v-else>
       <EditorialShelf
         v-if="showPlayers"
+        ref="playersShelf"
         class="ed-players"
         :gap="12"
         :nav-center="42"
@@ -32,6 +33,7 @@
           v-for="player in players"
           :key="player.player_id"
           class="ed-player-slot"
+          :data-player-id="player.player_id"
         >
           <PlayerCard
             :player="player"
@@ -149,7 +151,14 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
@@ -158,6 +167,7 @@ const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
 const { getPreference, setPreference } = useUserPreferences();
 
 const loading = ref(true);
+const playersShelf = ref<InstanceType<typeof EditorialShelf> | null>(null);
 const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
@@ -198,6 +208,38 @@ function playerSortScore(player: Player) {
 function playerClicked(player: Player) {
   store.activePlayerId = player.player_id;
 }
+
+const playersOrderKey = computed(() =>
+  players.value.map((p) => p.player_id).join(","),
+);
+
+function alignPlayersShelf() {
+  const shelf = playersShelf.value;
+  if (!shelf) return;
+  const activeId = store.activePlayerId;
+  if (activeId) {
+    shelf.alignItemStart(`[data-player-id="${activeId}"]`);
+  } else {
+    shelf.scrollToStart();
+  }
+}
+
+watch(playersOrderKey, () => {
+  if (!showPlayers.value) return;
+  nextTick(alignPlayersShelf);
+});
+
+watch(loading, (isLoading) => {
+  if (!isLoading) nextTick(alignPlayersShelf);
+});
+
+watch(
+  () => store.activePlayerId,
+  () => {
+    if (!showPlayers.value) return;
+    nextTick(alignPlayersShelf);
+  },
+);
 
 const folderTitle = (folder: RecommendationFolder) =>
   folder.translation_key
@@ -408,6 +450,11 @@ onMounted(async () => {
   height: auto;
   margin-top: 0;
   margin-bottom: 0;
+  max-width: 100%;
+}
+.ed-player-slot :deep(.panel-item-details .v-list-item__content) {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ed-hero-row {
