@@ -19,7 +19,7 @@
 
     <div
       class="ed-shelf__viewport"
-      :style="{ '--ed-nav-top': navCenter + 'px' }"
+      :style="{ '--ed-nav-top': navTop + 'px' }"
       @wheel="onWheel"
     >
       <!-- prev -->
@@ -66,7 +66,7 @@ export interface EditorialShelfExpose {
 
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
@@ -88,12 +88,17 @@ const props = withDefaults(defineProps<Props>(), {
 const CARD_PAD = 16;
 const MIN_ART = 120;
 const MAX_ART = 280;
+const ART_TOP_OFFSET = 12;
 
 const track = ref<HTMLElement | null>(null);
 const hovering = ref(false);
 const canLeft = ref(false);
 const canRight = ref(false);
 const tileArt = ref<number | null>(null);
+
+const navTop = computed(() =>
+  tileArt.value != null ? ART_TOP_OFFSET + tileArt.value / 2 : props.navCenter,
+);
 
 const verticalScrollParent = (el: HTMLElement): HTMLElement => {
   let node: HTMLElement | null = el.parentElement;
@@ -111,8 +116,11 @@ const verticalScrollParent = (el: HTMLElement): HTMLElement => {
 };
 
 const onWheel = (e: WheelEvent) => {
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
   e.preventDefault();
+
   if (Math.abs(e.deltaY) < 1) return;
+
   const scroller = verticalScrollParent(e.currentTarget as HTMLElement);
   scroller.scrollTop += e.deltaY;
 };
@@ -237,6 +245,7 @@ onBeforeUnmount(() => {
   gap: var(--ed-gap, 14px);
   overflow-x: auto;
   overflow-y: visible;
+  overscroll-behavior-x: contain;
   padding-block: 4px;
   touch-action: pan-x;
   scroll-snap-type: x proximity;
