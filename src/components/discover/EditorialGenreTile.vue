@@ -1,17 +1,21 @@
 <template>
-  <button
-    class="ed-genre ma-tap"
-    :style="{ background: art.gradient }"
-    @click="onClick"
-  >
+  <button class="ed-genre ma-tap" @click="onClick">
     <img
-      v-if="art.image"
-      class="ed-genre__img"
+      class="ed-genre__bg"
       loading="lazy"
-      :src="art.image"
-      :alt="item.name"
+      :src="genreBanner"
+      alt=""
+      aria-hidden="true"
     />
     <div class="ed-genre__scrim"></div>
+    <img
+      v-if="iconImage"
+      class="ed-genre__icon"
+      loading="lazy"
+      :src="iconImage"
+      alt=""
+      aria-hidden="true"
+    />
     <div class="ed-genre__content">
       <div class="ed-genre__name">{{ displayName }}</div>
     </div>
@@ -31,7 +35,12 @@ interface Props {
 const props = defineProps<Props>();
 const { t, te } = useI18n();
 
-const art = computed(() => itemArtwork(props.item, 320));
+const genreBanner = new URL(
+  "@/assets/logo/banner-no-logo.png",
+  import.meta.url,
+).href;
+
+const iconImage = computed(() => itemArtwork(props.item, 320).image);
 const displayName = computed(() =>
   getGenreDisplayName(props.item.name, props.item.translation_key, t, te),
 );
@@ -58,9 +67,10 @@ const onClick = (e: MouseEvent) =>
 .ma-tap:active {
   transform: scale(0.97);
 }
-.ed-genre__img {
+.ed-genre__bg {
   position: absolute;
   inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -68,15 +78,30 @@ const onClick = (e: MouseEvent) =>
 .ed-genre__scrim {
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(
-    135deg,
-    rgba(0, 0, 0, 0.1) 0%,
-    rgba(0, 0, 0, 0.55) 100%
+    to right,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.2) 45%,
+    transparent 70%
   );
+}
+.ed-genre__icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 2;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  transform: translateY(-50%);
+  filter: brightness(0) invert(1);
+  opacity: 1;
+  pointer-events: none;
 }
 .ed-genre__content {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   height: 100%;
   padding: 14px 16px;
   display: flex;

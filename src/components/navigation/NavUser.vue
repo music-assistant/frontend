@@ -15,9 +15,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Settings } from "lucide-vue-next";
+import { LogOut, MoreVertical, Pencil, Settings } from "lucide-vue-next";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
+
+const isEditMode = computed(() => store.homescreenEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
@@ -30,6 +34,12 @@ const initial = displayName ? displayName[0].toUpperCase() : "U";
 const handleProfile = () => {
   setOpenMobile(false);
   router.push({ name: "profile" });
+};
+
+const handleEditHomescreen = () => {
+  setOpenMobile(false);
+  router.push("/");
+  eventbus.emit("homescreen-edit-toggle");
 };
 
 const handleLogout = () => {
@@ -72,7 +82,10 @@ const handleLogout = () => {
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          class="z-[100001] w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          :class="[
+            'z-[100001] w-(--reka-dropdown-menu-trigger-width) rounded-lg',
+            isEditMode ? 'min-w-64' : 'min-w-56',
+          ]"
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
@@ -103,6 +116,16 @@ const handleLogout = () => {
           <DropdownMenuItem @click="handleProfile">
             <Settings class="size-4" />
             {{ $t("auth.profile") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @click="handleEditHomescreen">
+            <Pencil class="size-4" />
+            {{
+              $t(
+                isEditMode
+                  ? "homescreen_edit_disable"
+                  : "homescreen_edit_enable",
+              )
+            }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"

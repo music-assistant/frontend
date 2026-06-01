@@ -1,6 +1,7 @@
 <template>
   <section
     class="ed-shelf"
+    :class="{ 'ed-shelf--dimmed': dimmed }"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
   >
@@ -11,6 +12,9 @@
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
+      <div v-if="$slots.actions" class="ed-shelf__actions">
+        <slot name="actions"></slot>
+      </div>
     </div>
 
     <div
@@ -59,12 +63,14 @@ interface Props {
   subtitle?: string;
   gap?: number;
   navCenter?: number;
+  dimmed?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   title: "",
   subtitle: "",
   gap: 14,
   navCenter: 92,
+  dimmed: false,
 });
 
 const track = ref<HTMLElement | null>(null);
@@ -157,6 +163,15 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
+}
+.ed-shelf__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.ed-shelf--dimmed {
+  opacity: 0.4;
 }
 
 .ed-shelf__viewport {

@@ -66,12 +66,37 @@
       </section>
 
       <EditorialShelf
-        v-for="folder in shelfFolders"
-        :key="folder.uri"
-        :title="folderTitle(folder)"
+        v-for="(row, idx) in displayedRows"
+        :key="row.folder.uri"
+        :title="folderTitle(row.folder)"
+        :dimmed="editMode && !row.setting.enabled"
       >
+        <template v-if="editMode" #actions>
+          <v-btn
+            :icon="
+              row.setting.enabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
+            "
+            size="small"
+            variant="text"
+            @click="toggleRow(row.folder.uri)"
+          />
+          <v-btn
+            icon="mdi-chevron-up"
+            size="small"
+            variant="text"
+            :disabled="idx === 0"
+            @click="moveRow(row.folder.uri, -1)"
+          />
+          <v-btn
+            icon="mdi-chevron-down"
+            size="small"
+            variant="text"
+            :disabled="idx === displayedRows.length - 1"
+            @click="moveRow(row.folder.uri, 1)"
+          />
+        </template>
         <EditorialMediaCard
-          v-for="item in folder.items"
+          v-for="item in row.folder.items"
           :key="item.uri"
           :item="item"
         />
@@ -99,6 +124,7 @@ import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
@@ -114,6 +140,10 @@ import {
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+
+const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
+  editMode: false,
+});
 
 const loading = ref(true);
 const recommendations = ref<RecommendationFolder[]>([]);
@@ -175,11 +205,65 @@ const heroTag = computed(() =>
   heroFolder.value ? folderTitle(heroFolder.value) : $t("recently_played"),
 );
 
-const shelfFolders = computed(() =>
-  recommendations.value.filter(
-    (f) => f.items.length && f.uri !== heroFolder.value?.uri,
-  ),
+// --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
+interface RowSetting {
+  position: number;
+  enabled: boolean;
+}
+const { getPreference, setPreference } = useUserPreferences();
+const savedRowSettings = getPreference<Record<string, RowSetting>>(
+  "discoverRowSettings",
+  {},
 );
+const rowSettings = ref<Record<string, RowSetting>>({});
+
+const ensureRowSettings = () => {
+  const settings: Record<string, RowSetting> = { ...savedRowSettings.value };
+  let maxPos = Object.values(settings).reduce(
+    (m, s) => Math.max(m, s.position),
+    -1,
+  );
+  for (const f of recommendations.value) {
+    if (!settings[f.uri])
+      settings[f.uri] = { position: ++maxPos, enabled: true };
+  }
+  rowSettings.value = settings;
+};
+
+const orderedRows = computed(() =>
+  recommendations.value
+    .filter((f) => f.items.length && f.uri !== heroFolder.value?.uri)
+    .map((f) => ({
+      folder: f,
+      setting: rowSettings.value[f.uri] ?? { position: 9999, enabled: true },
+    }))
+    .sort((a, b) => a.setting.position - b.setting.position),
+);
+const displayedRows = computed(() =>
+  props.editMode
+    ? orderedRows.value
+    : orderedRows.value.filter((r) => r.setting.enabled),
+);
+
+const persistRowSettings = () =>
+  setPreference("discoverRowSettings", rowSettings.value);
+
+const toggleRow = (uri: string) => {
+  const s = rowSettings.value[uri];
+  if (!s) return;
+  s.enabled = !s.enabled;
+  persistRowSettings();
+};
+const moveRow = (uri: string, dir: number) => {
+  const rows = orderedRows.value;
+  const i = rows.findIndex((r) => r.folder.uri === uri);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= rows.length) return;
+  const a = rowSettings.value[rows[i].folder.uri];
+  const b = rowSettings.value[rows[j].folder.uri];
+  [a.position, b.position] = [b.position, a.position];
+  persistRowSettings();
+};
 
 const loadRecommendations = async () => {
   const [recs, recent] = await Promise.all([
@@ -188,6 +272,7 @@ const loadRecommendations = async () => {
   ]);
   recommendations.value = recs;
   recentlyPlayed.value = recent;
+  ensureRowSettings();
 };
 
 onMounted(async () => {
