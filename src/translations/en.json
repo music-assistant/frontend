@@ -26,6 +26,7 @@
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
     "browse": "Browse",
+    "browse_by_genre": "Browse by Genre",
     "clear_selection": "Clear selection",
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
@@ -850,6 +851,7 @@
         "show_all_genres": "Show all genres"
     },
     "topresult": "Top result",
+    "top_picks_for_you": "Top Picks for You",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
     "tracks": "Tracks",
