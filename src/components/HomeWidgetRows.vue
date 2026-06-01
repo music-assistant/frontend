@@ -140,7 +140,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
