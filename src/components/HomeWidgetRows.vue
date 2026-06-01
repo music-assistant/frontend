@@ -267,7 +267,7 @@ const findFolder = (...needles: string[]) =>
     return needles.some((n) => hay.includes(n));
   });
 
-const heroEntries = computed<HeroEntry[]>(() => {
+const buildHeroEntries = (): HeroEntry[] => {
   const playlists = findFolder("playlists made for you", "made for you");
   const mood = findFolder("find your mood", "mood");
   const stations = findFolder("stations for you", "radio stations for you");
@@ -324,7 +324,58 @@ const heroEntries = computed<HeroEntry[]>(() => {
     }
   }
   return out.slice(0, 5);
-});
+};
+
+// Top Picks are cached for a couple of hours (per user, in localStorage) so the
+// selection stays stable across refreshes instead of reshuffling every load.
+const heroEntries = ref<HeroEntry[]>([]);
+const HERO_CACHE_KEY = "discoverTopPicks";
+const HERO_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
+
+interface HeroCache {
+  ts: number;
+  userId?: string;
+  entries: HeroEntry[];
+}
+
+const readHeroCache = (): HeroEntry[] | null => {
+  try {
+    const raw = localStorage.getItem(HERO_CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw) as HeroCache;
+    if (!cache?.entries?.length) return null;
+    if (Date.now() - cache.ts > HERO_CACHE_TTL) return null;
+    if (cache.userId !== store.currentUser?.user_id) return null;
+    return cache.entries;
+  } catch {
+    return null;
+  }
+};
+
+const writeHeroCache = (entries: HeroEntry[]) => {
+  try {
+    const cache: HeroCache = {
+      ts: Date.now(),
+      userId: store.currentUser?.user_id,
+      entries,
+    };
+    localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore quota / serialization errors — caching is best-effort
+  }
+};
+
+// Reuse the cached picks while still fresh; otherwise rebuild and re-cache.
+const resolveHeroPicks = () => {
+  const cached = readHeroCache();
+  if (cached) {
+    heroEntries.value = cached;
+    return;
+  }
+  const fresh = buildHeroEntries();
+  heroEntries.value = fresh;
+  if (fresh.length) writeHeroCache(fresh);
+};
 
 // --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
 interface RowSetting {
@@ -405,13 +456,16 @@ onMounted(async () => {
       .then((g) => (genres.value = g))
       .catch(() => {}),
   ]);
+  resolveHeroPicks();
   loading.value = false;
 
   const unsub = api.subscribe(
     EventType.MEDIA_ITEM_PLAYED,
     async (evt: EventMessage) => {
       if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        loadRecommendations();
+        await loadRecommendations();
+        // Keeps the same picks while the cache is fresh; rebuilds once expired.
+        resolveHeroPicks();
       }
     },
   );
