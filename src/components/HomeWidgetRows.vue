@@ -326,8 +326,6 @@ const buildHeroEntries = (): HeroEntry[] => {
   return out.slice(0, 5);
 };
 
-// Top Picks are cached for a couple of hours (per user, in localStorage) so the
-// selection stays stable across refreshes instead of reshuffling every load.
 const heroEntries = ref<HeroEntry[]>([]);
 const HERO_CACHE_KEY = "discoverTopPicks";
 const HERO_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
@@ -361,7 +359,7 @@ const writeHeroCache = (entries: HeroEntry[]) => {
     };
     localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(cache));
   } catch {
-    // ignore quota / serialization errors — caching is best-effort
+    // ignore quota / serialization errors
   }
 };
 

@@ -9,6 +9,7 @@
       <slot name="header">
         <div class="ed-shelf__titles">
           <h2 class="ed-shelf__title">{{ title }}</h2>
+          <slot name="title-append"></slot>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>

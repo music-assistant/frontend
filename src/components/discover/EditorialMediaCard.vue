@@ -1,5 +1,10 @@
 <template>
-  <button class="ed-card ma-tap" @click="onClick" @contextmenu.prevent="onMenu">
+  <button
+    class="ed-card ma-tap"
+    :class="{ 'ed-card--unavailable': !isAvailable }"
+    @click="onClick"
+    @contextmenu.prevent="onMenu"
+  >
     <div class="ed-card__art" :style="{ background: art.gradient }">
       <img
         v-if="art.image"
@@ -8,24 +13,31 @@
         :src="art.image"
         :alt="item.name"
       />
-      <span v-if="isPlayable" class="ed-card__play" @click.stop="onPlay">
-        <Play
-          :size="18"
-          fill="currentColor"
-          :stroke-width="0"
-          class="ed-card__play-icon"
-        />
-      </span>
+      <ProviderIcon
+        v-if="providerDomain"
+        class="ed-card__provider"
+        :domain="providerDomain"
+        :size="20"
+      />
     </div>
     <div class="ed-card__meta">
       <div class="ed-card__title">{{ displayName }}</div>
       <div class="ed-card__sub">{{ subtitle }}</div>
     </div>
+    <span v-if="isPlayable" class="ed-card__play" @click.stop="onPlay">
+      <Play
+        :size="18"
+        fill="currentColor"
+        :stroke-width="0"
+        class="ed-card__play-icon"
+      />
+    </span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   getArtistsString,
   getGenreDisplayName,
@@ -46,13 +58,31 @@ import { useI18n } from "vue-i18n";
 
 interface Props {
   item: MediaItemType | ItemMapping;
+  showProviderOnCover?: boolean;
+  isAvailable?: boolean;
 }
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  showProviderOnCover: false,
+  isAvailable: true,
+});
 const { t, te } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
 const isPlayable = computed(() => props.item.is_playable !== false);
+
+// Provider badge on the cover — always for playlists (to show the source),
+// otherwise only when the consumer opts in via showProviderOnCover.
+const providerDomain = computed<string | undefined>(() => {
+  const it = props.item;
+  if (!("provider_mappings" in it)) return undefined;
+  if (!props.showProviderOnCover && it.media_type !== MediaType.PLAYLIST) {
+    return undefined;
+  }
+  return it.media_type === MediaType.PLAYLIST
+    ? it.provider_mappings[0]?.provider_domain
+    : it.provider;
+});
 
 const displayName = computed(() => {
   if (props.item.media_type === MediaType.GENRE) {
@@ -111,7 +141,11 @@ const onMenu = (e: MouseEvent) =>
 .ed-card:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
+.ed-card--unavailable {
+  opacity: 0.3;
+}
 .ed-card__art {
+  position: relative;
   width: var(--ed-art-size);
   height: var(--ed-art-size);
   border-radius: var(--ed-card-pad);
@@ -119,6 +153,12 @@ const onMenu = (e: MouseEvent) =>
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.ed-card__provider {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
 }
 .ed-card__img {
   width: 100%;
@@ -128,7 +168,7 @@ const onMenu = (e: MouseEvent) =>
 }
 .ed-card__play {
   position: absolute;
-  bottom: 8px;
+  bottom: 10px;
   right: 8px;
   width: 38px;
   height: 38px;
