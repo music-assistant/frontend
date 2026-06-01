@@ -362,7 +362,7 @@ onMounted(async () => {
 }
 .ed-players__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
 }
 .ed-players__label {
