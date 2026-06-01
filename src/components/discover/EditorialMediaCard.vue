@@ -1,8 +1,16 @@
 <template>
-  <button
+  <div
     class="ed-card ma-tap"
-    :class="{ 'ed-card--unavailable': !isAvailable }"
+    role="button"
+    tabindex="0"
+    :class="{
+      'ed-card--unavailable': !isAvailable,
+      'ed-card--fluid': fluid,
+      'ed-card--disabled': disabled,
+    }"
     @click="onClick"
+    @keydown.enter.self="onClick"
+    @keydown.space.self.prevent="onClick"
     @contextmenu.prevent="onMenu"
   >
     <div class="ed-card__art" :style="{ background: art.gradient }">
@@ -19,27 +27,55 @@
         :domain="providerDomain"
         :size="20"
       />
+      <NowPlayingBadge
+        v-if="isPlaying"
+        :show-badge="false"
+        icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
+      />
+      <div
+        v-if="showCheckboxes"
+        class="ed-card__select"
+        :class="{ 'ed-card__select--on': isSelected }"
+      >
+        <v-icon
+          size="30"
+          :icon="
+            isSelected
+              ? 'mdi-check-circle'
+              : 'mdi-checkbox-blank-circle-outline'
+          "
+        />
+      </div>
     </div>
     <div class="ed-card__meta">
-      <div class="ed-card__title">{{ displayName }}</div>
+      <div
+        class="ed-card__title"
+        :class="{ 'ed-card__title--playing': isPlaying }"
+      >
+        {{ displayName }}
+      </div>
       <div class="ed-card__sub">{{ subtitle }}</div>
+      <span v-if="showPlay" class="ed-card__play" @click.stop="onPlay">
+        <Play
+          :size="18"
+          fill="currentColor"
+          :stroke-width="0"
+          class="ed-card__play-icon"
+        />
+      </span>
     </div>
-    <span v-if="isPlayable" class="ed-card__play" @click.stop="onPlay">
-      <Play
-        :size="18"
-        fill="currentColor"
-        :stroke-width="0"
-        class="ed-card__play-icon"
-      />
-    </span>
-  </button>
+
+    <slot name="actions"></slot>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   getArtistsString,
+  getBrowseFolderName,
   getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -47,6 +83,7 @@ import {
 } from "@/helpers/utils";
 import {
   type Album,
+  type BrowseFolder,
   type ItemMapping,
   type MediaItemType,
   MediaType,
@@ -60,16 +97,40 @@ interface Props {
   item: MediaItemType | ItemMapping;
   showProviderOnCover?: boolean;
   isAvailable?: boolean;
+  fluid?: boolean;
+  isSelected?: boolean;
+  showCheckboxes?: boolean;
+  isPlaying?: boolean;
+  disablePlayButton?: boolean;
+  disabled?: boolean;
+  parentItem?: MediaItemType;
+  sortBy?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   showProviderOnCover: false,
   isAvailable: true,
+  fluid: false,
+  isSelected: false,
+  showCheckboxes: false,
+  isPlaying: false,
+  disablePlayButton: false,
+  disabled: false,
+  parentItem: undefined,
+  sortBy: undefined,
 });
+
+const emit = defineEmits<{
+  (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
+}>();
+
 const { t, te } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
 const isPlayable = computed(() => props.item.is_playable !== false);
+const showPlay = computed(
+  () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
+);
 
 // Provider badge on the cover — always for playlists (to show the source),
 // otherwise only when the consumer opts in via showProviderOnCover.
@@ -85,15 +146,16 @@ const providerDomain = computed<string | undefined>(() => {
 });
 
 const displayName = computed(() => {
-  if (props.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      props.item.name,
-      props.item.translation_key,
-      t,
-      te,
-    );
+  const it = props.item;
+  if (it.media_type === MediaType.FOLDER) {
+    return getBrowseFolderName(it as BrowseFolder, t);
   }
-  return props.item.name;
+  let name =
+    it.media_type === MediaType.GENRE
+      ? getGenreDisplayName(it.name, it.translation_key, t, te)
+      : it.name;
+  if ("version" in it && it.version) name += ` - ${it.version}`;
+  return name;
 });
 
 const subtitle = computed(() => {
@@ -112,12 +174,38 @@ const subtitle = computed(() => {
   return t(props.item.media_type);
 });
 
-const onClick = (e: MouseEvent) =>
-  handleMediaItemClick(props.item, e.clientX, e.clientY);
-const onPlay = (e: MouseEvent) =>
-  handlePlayBtnClick(props.item, e.clientX, e.clientY);
-const onMenu = (e: MouseEvent) =>
-  handleMenuBtnClick(props.item, e.clientX, e.clientY);
+const onClick = (e: MouseEvent | KeyboardEvent) => {
+  if (props.disabled) return;
+  if (props.showCheckboxes) {
+    emit("select", props.item, !props.isSelected);
+    return;
+  }
+  const x = "clientX" in e ? e.clientX : 0;
+  const y = "clientY" in e ? e.clientY : 0;
+  handleMediaItemClick(props.item, x, y, props.parentItem);
+};
+const onPlay = (e: MouseEvent) => {
+  if (props.showCheckboxes || props.disablePlayButton) return;
+  handlePlayBtnClick(
+    props.item,
+    e.clientX,
+    e.clientY,
+    props.parentItem,
+    undefined,
+    props.sortBy,
+  );
+};
+const onMenu = (e: MouseEvent) => {
+  if (props.showCheckboxes) return;
+  handleMenuBtnClick(
+    props.item,
+    e.clientX,
+    e.clientY,
+    props.parentItem,
+    true,
+    props.sortBy,
+  );
+};
 </script>
 
 <style scoped>
@@ -138,11 +226,25 @@ const onMenu = (e: MouseEvent) =>
   scroll-snap-align: start;
   transition: background 0.15s ease;
 }
+.ed-card--fluid {
+  width: 100%;
+}
+.ed-card--fluid .ed-card__art {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+.ed-card--fluid .ed-card__meta {
+  width: 100%;
+}
 .ed-card:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
 .ed-card--unavailable {
   opacity: 0.3;
+}
+.ed-card--disabled {
+  pointer-events: none;
 }
 .ed-card__art {
   position: relative;
@@ -166,10 +268,24 @@ const onMenu = (e: MouseEvent) =>
   object-fit: cover;
   display: block;
 }
+.ed-card__select {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 8px;
+  z-index: 3;
+  color: #fff;
+  transition: background 0.15s ease;
+}
+.ed-card__select--on {
+  background: rgba(0, 0, 0, 0.45);
+}
 .ed-card__play {
   position: absolute;
-  bottom: 10px;
-  right: 8px;
+  bottom: 2px;
+  right: 0;
   width: 38px;
   height: 38px;
   border-radius: 999px;
@@ -184,6 +300,7 @@ const onMenu = (e: MouseEvent) =>
     opacity 0.18s,
     transform 0.18s;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 4;
 }
 .ed-card__play-icon {
   margin-left: 2px;
@@ -199,6 +316,7 @@ const onMenu = (e: MouseEvent) =>
   transform: scale(0.97);
 }
 .ed-card__meta {
+  position: relative;
   width: var(--ed-art-size);
   margin-top: 10px;
 }
@@ -208,6 +326,9 @@ const onMenu = (e: MouseEvent) =>
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.ed-card__title--playing {
+  color: rgb(var(--v-theme-primary));
 }
 .ed-card__sub {
   font-size: 12px;
