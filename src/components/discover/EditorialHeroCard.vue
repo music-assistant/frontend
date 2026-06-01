@@ -1,5 +1,6 @@
 <template>
   <button
+    type="button"
     class="ed-hero ma-tap"
     :class="{ 'ed-hero--large': large }"
     @click="onClick"
