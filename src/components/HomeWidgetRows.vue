@@ -6,10 +6,11 @@
 
     <template v-else>
       <EditorialShelf
-        v-if="players.length"
+        v-if="showPlayers"
         class="ed-players"
         :gap="12"
         :nav-center="42"
+        :dimmed="editMode && !playersEnabled"
       >
         <template #header>
           <div class="ed-players__head">
@@ -18,6 +19,14 @@
               {{ activeCount }} {{ $t("state.playing") }}
             </span>
           </div>
+        </template>
+        <template v-if="editMode" #actions>
+          <v-btn
+            :icon="playersEnabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+            size="small"
+            variant="text"
+            @click="togglePlayers"
+          />
         </template>
         <div
           v-for="player in players"
@@ -146,6 +155,8 @@ const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
 
+const { getPreference, setPreference } = useUserPreferences();
+
 const loading = ref(true);
 const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
@@ -163,6 +174,18 @@ const activeCount = computed(
     players.value.filter((p) => p.playback_state == PlaybackState.PLAYING)
       .length,
 );
+
+// --- Players shelf visibility (edit mode) ---
+const playersEnabledPref = getPreference<boolean>(
+  "discoverPlayersEnabled",
+  true,
+);
+const playersEnabled = computed(() => playersEnabledPref.value !== false);
+const showPlayers = computed(
+  () => players.value.length > 0 && (props.editMode || playersEnabled.value),
+);
+const togglePlayers = () =>
+  setPreference("discoverPlayersEnabled", !playersEnabled.value);
 
 function playerSortScore(player: Player) {
   if (player.playback_state == PlaybackState.PLAYING) return 0;
@@ -258,7 +281,6 @@ interface RowSetting {
   position: number;
   enabled: boolean;
 }
-const { getPreference, setPreference } = useUserPreferences();
 const savedRowSettings = getPreference<Record<string, RowSetting>>(
   "discoverRowSettings",
   {},
@@ -390,6 +412,7 @@ onMounted(async () => {
 
 .ed-hero-row {
   padding: 0 28px;
+  margin-top: 20px;
 }
 .ed-hero-row__head {
   display: flex;

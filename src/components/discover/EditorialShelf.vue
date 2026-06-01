@@ -134,7 +134,6 @@ onBeforeUnmount(() => {
   --ed-gutter: 28px;
   --ed-card-pad: 8px;
   position: relative;
-  margin-bottom: 32px;
 }
 .ed-shelf__head {
   display: flex;
