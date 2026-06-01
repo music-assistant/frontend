@@ -278,6 +278,8 @@ const ensureRowSettings = () => {
   rowSettings.value = settings;
 };
 
+watch(savedRowSettings, ensureRowSettings, { deep: true });
+
 const orderedRows = computed(() =>
   recommendations.value
     .filter((f) => f.items.length)
