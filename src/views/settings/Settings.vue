@@ -9,35 +9,40 @@
           v-if="isOverview"
           :icon="settingsViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
-          :title="t('tooltip.toggle_view_mode')"
+          :title="getToggleViewModeLabel(settingsViewMode)"
+          :aria-label="getToggleViewModeLabel(settingsViewMode)"
           @click="toggleSettingsViewMode()"
         />
         <v-btn
           v-if="isPlayersPage"
           :icon="playersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
-          :title="t('tooltip.toggle_view_mode')"
+          :title="getToggleViewModeLabel(playersViewMode)"
+          :aria-label="getToggleViewModeLabel(playersViewMode)"
           @click="togglePlayersViewMode()"
         />
         <v-btn
           v-if="isProvidersPage"
           :icon="providersViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
-          :title="t('tooltip.toggle_view_mode')"
+          :title="getToggleViewModeLabel(providersViewMode)"
+          :aria-label="getToggleViewModeLabel(providersViewMode)"
           @click="toggleProvidersViewMode()"
         />
         <v-btn
           v-if="isTasksPage"
           :icon="tasksViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
-          :title="t('tooltip.toggle_view_mode')"
+          :title="getToggleViewModeLabel(tasksViewMode)"
+          :aria-label="getToggleViewModeLabel(tasksViewMode)"
           @click="toggleTasksViewMode()"
         />
         <v-btn
           v-if="isSystemPage"
           :icon="systemViewMode === 'list' ? 'mdi-view-list' : 'mdi-grid'"
           variant="text"
-          :title="t('tooltip.toggle_view_mode')"
+          :title="getToggleViewModeLabel(systemViewMode)"
+          :aria-label="getToggleViewModeLabel(systemViewMode)"
           @click="toggleSystemViewMode()"
         />
         <v-btn
@@ -317,6 +322,26 @@ const savedSettingsViewMode = getPreference<"list" | "card">(
   "settings.overview.viewMode",
   "card",
 );
+
+type SettingsViewMode = "list" | "card";
+
+const getSettingsViewModeLabel = function (mode: SettingsViewMode) {
+  return mode === "list" ? t("view.list") : t("view.card");
+};
+
+const getNextSettingsViewMode = function (
+  mode: SettingsViewMode,
+): SettingsViewMode {
+  return mode === "list" ? "card" : "list";
+};
+
+const getToggleViewModeLabel = function (mode: SettingsViewMode) {
+  const nextMode = getNextSettingsViewMode(mode);
+  return t("tooltip.view_mode_switch", [
+    getSettingsViewModeLabel(mode),
+    getSettingsViewModeLabel(nextMode),
+  ]);
+};
 
 watch(
   () => savedSettingsViewMode.value,

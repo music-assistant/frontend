@@ -16,7 +16,10 @@
         v-if="showMenuBtn"
         variant="icon"
         icon="mdi-dots-vertical"
-        aria-label="Show context menu"
+        :aria-label="
+          menuButtonLabel ||
+          (title ? `${$t('more_options')}: ${title}` : $t('more_options'))
+        "
         @click.stop="(v: Event) => $emit('menu', v)"
       />
     </template>

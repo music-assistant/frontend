@@ -16,6 +16,7 @@
             !api.getProvider(providerMapping.provider_instance)
           "
           show-menu-btn
+          :menu-button-label="`${$t('more_options')}: ${getProviderName(providerMapping)}`"
           @menu.stop="(evt) => onMenu(evt, providerMapping)"
         >
           <template #prepend>
@@ -100,6 +101,7 @@
         <ListItem
           v-if="itemDetails.provider == 'library'"
           show-menu-btn
+          :menu-button-label="`${$t('more_options')}: ${$t('music_assistant_library')}`"
           @menu.stop="
             (evt) =>
               onMenu(evt, {

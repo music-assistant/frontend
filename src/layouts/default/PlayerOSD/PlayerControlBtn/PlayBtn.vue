@@ -5,6 +5,8 @@
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
     :disabled="isDisabled"
+    :aria-label="playButtonLabel"
+    :title="playButtonLabel"
     variant="button"
     @click="onClick"
   >
@@ -45,6 +47,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "lucide-vue-next";
 import { computed, toRef } from "vue";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -65,6 +68,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 24,
   playOffset: 1,
 });
+const { t } = useI18n();
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
@@ -107,6 +111,11 @@ const showStop = computed(() => {
 
 const isPlaying = computed(() => {
   return compProps.player?.playback_state == PlaybackState.PLAYING;
+});
+
+const playButtonLabel = computed(() => {
+  if (isPlaying.value && showStop.value) return t("stop_playback");
+  return isPlaying.value ? t("pause") : t("play");
 });
 
 const isLoading = computed(() => {

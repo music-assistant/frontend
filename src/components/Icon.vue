@@ -3,7 +3,15 @@
     ref="iconContainer"
     :class="containerClasses"
     :style="containerStyle"
+    :role="isButtonVariant ? 'button' : undefined"
+    :tabindex="isButtonVariant && !disabled ? 0 : undefined"
+    :title="title"
+    :aria-label="accessibleLabel"
+    :aria-disabled="isButtonVariant ? disabled : undefined"
+    :aria-pressed="ariaPressed"
     @click="handleClick"
+    @keydown.enter.prevent="handleKeyboardClick"
+    @keydown.space.prevent="handleKeyboardClick"
   >
     <v-badge :model-value="badge === true" color="error" dot>
       <v-icon ref="iconElement" v-bind="iconProps" :class="iconClasses">
@@ -26,7 +34,7 @@ import {
   type IconEmits,
   type IconProps,
 } from "@/composables/useIcon";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { VIcon } from "vuetify/components";
 
 const props = withDefaults(defineProps<IconProps>(), defaultIconProps);
@@ -63,6 +71,12 @@ const adjustIconSize = async () => {
   }
 };
 
+const isButtonVariant = computed(() => props.variant === "button");
+const accessibleLabel = computed(
+  () => props.ariaLabel || props["aria-label"] || props.title,
+);
+const ariaPressed = computed(() => props["aria-pressed"]);
+
 const handleClick = (event: MouseEvent) => {
   if (props.disabled) {
     event.preventDefault();
@@ -70,7 +84,18 @@ const handleClick = (event: MouseEvent) => {
     return;
   }
 
-  emit("click", event);
+  emit("click", event as unknown as MouseEvent);
+};
+
+const handleKeyboardClick = (event: KeyboardEvent) => {
+  if (!isButtonVariant.value) return;
+  if (props.disabled) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  emit("click", event as unknown as MouseEvent);
 };
 
 onMounted(() => {

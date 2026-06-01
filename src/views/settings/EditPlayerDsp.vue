@@ -3,6 +3,8 @@
     <v-toolbar color="transparent" class="border-b pr-4">
       <v-switch
         v-model="dsp.enabled"
+        :aria-label="dspToggleLabel"
+        :title="dspToggleLabel"
         hide-details
         color="primary"
         class="pl-4"
@@ -12,7 +14,13 @@
       }}</v-toolbar-title>
       <v-menu offset-y transition="slide-y-transition">
         <template #activator="{ props: menuProps }">
-          <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
+          <v-btn
+            v-bind="menuProps"
+            class="mr-4"
+            :class="getButtonClass()"
+            :aria-label="$t('settings.dsp.presets.load')"
+            :title="$t('settings.dsp.presets.load')"
+          >
             <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
             <span class="d-none d-md-inline">
               {{ $t("settings.dsp.presets.load") }}
@@ -37,13 +45,20 @@
                 icon="mdi-delete"
                 variant="text"
                 density="compact"
+                :aria-label="`${$t('settings.delete')}: ${preset.name}`"
+                :title="`${$t('settings.delete')}: ${preset.name}`"
                 @click.stop="removePreset(preset.preset_id)"
               />
             </template>
           </v-list-item>
         </v-list>
       </v-menu>
-      <v-btn :class="getButtonClass()" @click="showSavePresetDialog = true">
+      <v-btn
+        :class="getButtonClass()"
+        :aria-label="$t('settings.dsp.presets.save')"
+        :title="$t('settings.dsp.presets.save')"
+        @click="showSavePresetDialog = true"
+      >
         <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-content-save </v-icon>
         <span class="d-none d-md-inline">
           {{ $t("settings.dsp.presets.save") }}
@@ -85,6 +100,8 @@
               v-if="mobile"
               class="hidden-xs-only"
               icon
+              :aria-label="$t('back')"
+              :title="$t('back')"
               @click="selectedStage = null"
             >
               <v-icon>mdi-arrow-left</v-icon>
@@ -97,6 +114,8 @@
                 selectedStage > 0
               "
               icon
+              :aria-label="$t('settings.dsp.move_up')"
+              :title="$t('settings.dsp.move_up')"
               @click="moveFilter(selectedStage, 'up')"
             >
               <v-icon>mdi-arrow-up</v-icon>
@@ -108,6 +127,8 @@
                 selectedStage < dsp.filters.length - 1
               "
               icon
+              :aria-label="$t('settings.dsp.move_down')"
+              :title="$t('settings.dsp.move_down')"
               @click="moveFilter(selectedStage, 'down')"
             >
               <v-icon>mdi-arrow-down</v-icon>
@@ -116,6 +137,8 @@
             <v-switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
+              :aria-label="selectedFilterToggleLabel"
+              :title="selectedFilterToggleLabel"
               hide-details
               color="primary"
               class="mr-4"
@@ -123,6 +146,8 @@
             <v-btn
               v-if="typeof selectedStage === 'number'"
               icon
+              :aria-label="$t('settings.dsp.delete_filter')"
+              :title="$t('settings.dsp.delete_filter')"
               @click="removeFilter(selectedStage)"
             >
               <v-icon>mdi-delete</v-icon>
@@ -396,6 +421,13 @@ watch(
 const playerName = computed(() =>
   getPlayerName(api.players[props.playerId!], 27),
 );
+const dspToggleLabel = computed(() => `${t("settings.enable")}: DSP`);
+const selectedFilterToggleLabel = computed(() => {
+  if (typeof selectedStage.value !== "number") {
+    return t("settings.enable");
+  }
+  return `${t("settings.enable")}: ${stageTitle(selectedStage.value)}`;
+});
 
 watch(
   () => props.playerId,

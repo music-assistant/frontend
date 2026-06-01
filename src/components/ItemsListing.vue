@@ -458,6 +458,10 @@ const selectViewMode = function (newMode: string) {
   }
 };
 
+const getViewModeLabel = function (mode: string) {
+  return t(`view.${mode}`);
+};
+
 watch(
   () => props.forcedViewMode,
   (newMode) => {
@@ -1067,7 +1071,8 @@ const menuItems = computed(() => {
   // toggle view mode (hidden when view mode is controlled externally)
   if (!props.forcedViewMode)
     items.push({
-      label: "tooltip.toggle_view_mode",
+      label: "tooltip.view_mode_current",
+      labelArgs: [getViewModeLabel(viewMode.value)],
       icon: viewMode.value == "list" ? "mdi-view-list" : "mdi-grid",
       overflowAllowed: true,
       subItems: [

@@ -25,6 +25,7 @@
               class="media-thumb"
               size="44"
               :src="getMediaImageUrl(player.current_media.image_url)"
+              alt=""
             />
           </div>
           <!-- fallback: display player icon -->
@@ -115,10 +116,9 @@
             {{ player.current_media.album }}
           </div>
           <!-- queue empty (hidden visually, announced by screen readers) -->
-          <div
-            v-else-if="playerQueue?.items == 0"
-            :aria-label="$t('queue_empty')"
-          ></div>
+          <div v-else-if="playerQueue?.items == 0">
+            <span class="sr-only">{{ $t("queue_empty") }}</span>
+          </div>
         </div>
       </template>
 
@@ -134,6 +134,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :aria-label="powerButtonLabel"
           @click.stop="
             api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
@@ -154,6 +155,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn group-expand-btn"
+          :aria-label="syncButtonLabel"
           @click.stop="$emit('toggle-expand', player)"
         >
           <v-badge
@@ -179,6 +181,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :aria-label="playPauseButtonLabel"
           :disabled="
             api.queues[player.player_id]?.extra_attributes
               ?.play_action_in_progress === true
@@ -211,6 +214,7 @@
           size="icon"
           class="player-command-btn"
           style="margin-right: -5px"
+          :aria-label="menuButtonLabel"
           @click.stop="openPlayerMenu"
         >
           <MoreVertical
@@ -258,6 +262,7 @@ import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
 import { computed, toRef } from "vue";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -271,6 +276,7 @@ export interface Props {
 
 const compProps = defineProps<Props>();
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
+const { t } = useI18n();
 
 // emits
 defineEmits<{
@@ -310,6 +316,30 @@ const canPlayPause = computed(() => {
   }
   return false;
 });
+
+const accessiblePlayerName = computed(() =>
+  getPlayerName(compProps.player, 27),
+);
+
+const powerButtonLabel = computed(
+  () => `${t("power_on_player")} ${accessiblePlayerName.value}`,
+);
+
+const syncButtonLabel = computed(
+  () => `${t("sync_player_with")} ${accessiblePlayerName.value}`,
+);
+
+const playPauseButtonLabel = computed(() => {
+  const action =
+    compProps.player.playback_state == PlaybackState.PLAYING
+      ? t("pause")
+      : t("play");
+  return `${action} ${accessiblePlayerName.value}`;
+});
+
+const menuButtonLabel = computed(
+  () => `${t("more_options")} ${accessiblePlayerName.value}`,
+);
 
 // Use the server-derived palette from the now-playing media.
 const coverImageColorPalette = computed<ImageColorPalette>(() =>

@@ -53,6 +53,8 @@
             v-if="isFullscreen && !hideBackButton"
             variant="ghost-icon"
             size="icon-sm"
+            :aria-label="$t('providers.party.exit_fullscreen')"
+            :title="$t('providers.party.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
             <Minimize2 :size="13" />
@@ -82,6 +84,8 @@
               v-if="partyInstanceId"
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('providers.party.open_settings')"
+              :title="$t('providers.party.open_settings')"
               @click="goToSettings"
             >
               <Settings :size="13" />
@@ -89,6 +93,8 @@
             <Button
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('providers.party.enter_fullscreen')"
+              :title="$t('providers.party.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
               <Maximize2 :size="13" />

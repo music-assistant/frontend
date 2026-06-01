@@ -112,6 +112,7 @@
         icon="mdi-play"
         color="primary"
         fab
+        :aria-label="playButtonLabel"
         :disabled="disablePlayButton"
         :style="`position: absolute; right: 15px; bottom: ${showActions ? 90 : 35}px; opacity: 0.8`"
         @click.stop="onPlayClick"
@@ -163,6 +164,7 @@
           variant="list"
           icon="mdi-dots-vertical"
           style="padding-right: 0; margin-right: -5px"
+          :aria-label="menuButtonLabel"
           @click.stop="onMenu"
         />
       </v-card-actions>
@@ -236,6 +238,10 @@ const displayName = computed(() => {
   }
   return compProps.item.name;
 });
+const playButtonLabel = computed(() => `${t("play")} ${displayName.value}`);
+const menuButtonLabel = computed(
+  () => `${t("more_options")} ${displayName.value}`,
+);
 
 // computed properties
 const HiResDetails = computed(() => {

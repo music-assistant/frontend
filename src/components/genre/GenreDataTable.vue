@@ -318,7 +318,11 @@ const table = useVueTable({
       </div>
       <div class="flex items-center gap-2">
         <Select v-model="filter">
-          <SelectTrigger size="sm" class="w-fit">
+          <SelectTrigger
+            size="sm"
+            class="w-fit"
+            :aria-label="$t('tooltip.filter_genre')"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -471,7 +475,12 @@ const table = useVueTable({
             :model-value="`${table.getState().pagination.pageSize}`"
             @update:model-value="(value) => table.setPageSize(Number(value))"
           >
-            <SelectTrigger id="rows-per-page" size="sm" class="w-20">
+            <SelectTrigger
+              id="rows-per-page"
+              size="sm"
+              class="w-20"
+              :aria-label="$t('settings.genre_table_rows_per_page')"
+            >
               <SelectValue
                 :placeholder="`${table.getState().pagination.pageSize}`"
               />

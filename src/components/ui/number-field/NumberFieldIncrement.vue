@@ -19,6 +19,8 @@ const forwarded = useForwardProps(delegatedProps);
   <NumberFieldIncrement
     data-slot="increment"
     v-bind="forwarded"
+    aria-label="Increase value"
+    title="Increase value"
     :class="
       cn(
         'absolute top-1/2 -translate-y-1/2 right-0 disabled:cursor-not-allowed disabled:opacity-20 p-3 w-10 h-full flex items-center justify-center',

@@ -4,7 +4,9 @@
     v-bind="props.icon"
     :disabled="disabled || !item"
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
-    :title="$t('tooltip.favorite')"
+    :aria-label="favoriteButtonLabel"
+    :aria-pressed="item?.favorite ? 'true' : 'false'"
+    :title="favoriteButtonLabel"
     variant="button"
     @click="onClick"
   />
@@ -14,6 +16,8 @@
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
 import { type MediaItemType } from "@/plugins/api/interfaces";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 // properties
 export interface Props {
@@ -29,6 +33,11 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   disabled: false,
 });
+const { t } = useI18n();
+
+const favoriteButtonLabel = computed(() =>
+  props.item?.favorite ? t("favorites_remove") : t("favorites_add"),
+);
 
 const onClick = function () {
   if (!props.item) return;

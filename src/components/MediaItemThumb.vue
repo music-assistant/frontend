@@ -7,6 +7,7 @@
     :src="imgData"
     :class="{ rounded: rounded }"
     contain
+    :alt="alt"
     :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"
   />
 </template>
@@ -33,6 +34,7 @@ export interface Props {
   fallback?: string;
   rounded?: boolean;
   thumbnail?: boolean;
+  alt?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -41,6 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
   fallback: undefined,
   rounded: true,
   thumbnail: true,
+  alt: "",
 });
 
 const theme = useTheme();

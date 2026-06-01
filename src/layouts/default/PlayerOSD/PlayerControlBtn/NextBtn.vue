@@ -4,6 +4,8 @@
     v-if="isVisible && player && showNextPrev"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="!canNext || isLoading"
+    :aria-label="$t('next_track')"
+    :title="$t('next_track')"
     variant="button"
     @click="api.playerCommandNext(player.player_id)"
   >

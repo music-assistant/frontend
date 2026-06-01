@@ -62,6 +62,7 @@
             icon="mdi-play"
             color="white"
             fab
+            :aria-label="playButtonLabel"
             :disabled="disablePlayButton"
             style="opacity: 0.6; font-size: 20px"
             @click.stop="onPlayClick"
@@ -185,6 +186,7 @@ const displayName = computed(() => {
   }
   return compProps.item.name;
 });
+const playButtonLabel = computed(() => `${t("play")} ${displayName.value}`);
 
 // emits
 const emit = defineEmits<{

@@ -28,6 +28,8 @@
                 size="small"
                 density="compact"
                 class="rename-btn"
+                :aria-label="$t('settings.player_name')"
+                :title="$t('settings.player_name')"
                 @click="showRenameDialog = true"
               />
             </div>

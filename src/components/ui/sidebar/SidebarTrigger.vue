@@ -19,6 +19,9 @@ const props = defineProps<{
 const { toggleSidebar, state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === "collapsed");
+const sidebarToggleLabel = computed(() =>
+  isCollapsed.value ? "Expand sidebar" : "Collapse sidebar",
+);
 
 // const showHaButton = computed(() => store.isIngressSession);
 
@@ -90,14 +93,17 @@ const isCollapsed = computed(() => state.value === "collapsed");
             variant="ghost"
             size="icon"
             :class="['flex-shrink-0', !isCollapsed && 'ml-auto']"
+            :aria-label="sidebarToggleLabel"
+            :aria-expanded="!isCollapsed"
+            :title="sidebarToggleLabel"
             @click="toggleSidebar"
           >
             <PanelLeft />
-            <span class="sr-only">Toggle Sidebar</span>
+            <span class="sr-only">{{ sidebarToggleLabel }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" align="center" :hidden="!isCollapsed">
-          {{ isCollapsed ? "Expand Sidebar" : "Collapse Sidebar" }}
+          {{ sidebarToggleLabel }}
         </TooltipContent>
       </Tooltip>
     </div>

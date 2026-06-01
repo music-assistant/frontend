@@ -43,6 +43,8 @@
                 size="small"
                 density="compact"
                 class="rename-btn"
+                :aria-label="$t('settings.provider_name')"
+                :title="$t('settings.provider_name')"
                 @click="showRenameDialog = true"
               />
             </div>
