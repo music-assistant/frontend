@@ -29,7 +29,11 @@
   >
     <Tooltip>
       <TooltipTrigger as-child>
-        <span :aria-label="t('tooltip.explicit')" tabindex="0">
+        <span
+          :aria-label="t('tooltip.explicit')"
+          tabindex="0"
+          :class="{ 'explicit-icon-align': albumTrackView }"
+        >
           <v-icon
             :class="{ 'explicit-icon-margin-left': showCheckboxes }"
             icon="mdi-alpha-e-box"
@@ -89,9 +93,17 @@ withDefaults(defineProps<Props>(), {
   font-weight: 500;
   white-space: normal;
   overflow: hidden;
-  display: -webkit-box;
+  display: -webkit-inline-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  vertical-align: middle;
+}
+
+/* Vertically center the explicit icon against the title in the album track view. */
+.explicit-icon-align {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 12px;
 }
 
 /* When checkbox is displayed, explicit icon will be shown to the right of the title.
