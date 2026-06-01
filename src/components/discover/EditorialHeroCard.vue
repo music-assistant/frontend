@@ -87,7 +87,7 @@ const onMenu = (e: MouseEvent) =>
 .ed-hero {
   position: relative;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
   cursor: pointer;
   text-align: left;

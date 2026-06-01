@@ -3,9 +3,19 @@ import {
   ImageType,
   type ItemMapping,
   type MediaItemType,
+  MediaType,
 } from "@/plugins/api/interfaces";
 
 type AnyItem = MediaItemType | ItemMapping;
+
+/** Up-to-two-letter initials from a name (first letters of the first two
+ * words, or the first two characters of a single word). */
+export function itemInitials(name: string): string {
+  const words = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
 
 function hash(str: string): number {
   let h = 2166136261;
@@ -57,7 +67,16 @@ export function itemSeed(item: AnyItem): string {
 export function itemArtwork(
   item: AnyItem,
   size = 320,
-): { image: string | undefined; gradient: string } {
+): { image: string | undefined; gradient: string; initials?: string } {
   const image = getImageThumbForItem(item, ImageType.THUMB, size);
-  return { image, gradient: gradientArtwork(itemSeed(item)) };
+  // For artists/albums with no artwork, surface the initials over the gradient.
+  const showInitials =
+    !image &&
+    (item.media_type === MediaType.ARTIST ||
+      item.media_type === MediaType.ALBUM);
+  return {
+    image,
+    gradient: gradientArtwork(itemSeed(item)),
+    initials: showInitials ? itemInitials(item.name) : undefined,
+  };
 }

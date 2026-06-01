@@ -15,7 +15,9 @@
       >
         <template #header>
           <div class="ed-players__head">
-            <h2 class="ed-players__label">{{ $t("players") }}</h2>
+            <h2 class="ed-players__label text-foreground">
+              {{ $t("players") }}
+            </h2>
             <span v-if="activeCount" class="ed-players__count">
               {{ activeCount }} {{ $t("state.playing") }}
             </span>
@@ -57,17 +59,13 @@
             :tag="heroEntries[0].tag"
             large
           />
-          <div v-if="heroEntries.length > 1" class="ed-hero-grid__col">
+          <div
+            v-for="(col, i) in heroColumns"
+            :key="i"
+            class="ed-hero-grid__col"
+          >
             <EditorialHeroCard
-              v-for="entry in heroEntries.slice(1, 3)"
-              :key="entry.item.uri"
-              :item="entry.item"
-              :tag="entry.tag"
-            />
-          </div>
-          <div v-if="heroEntries.length > 3" class="ed-hero-grid__col">
-            <EditorialHeroCard
-              v-for="entry in heroEntries.slice(3, 5)"
+              v-for="entry in col"
               :key="entry.item.uri"
               :item="entry.item"
               :tag="entry.tag"
@@ -259,6 +257,8 @@ interface HeroEntry {
   item: MediaItemTypeOrItemMapping;
   tag: string;
 }
+// 1 large lead card + the rest split into columns of 2 (a horizontal scroller).
+const HERO_COUNT = 9;
 
 const norm = (s: string) => (s || "").toLowerCase();
 const findFolder = (...needles: string[]) =>
@@ -291,6 +291,9 @@ const buildHeroEntries = (): HeroEntry[] => {
     entry(stations?.items[0], stations),
     entry(releases?.items[1], releases),
     entry(artistStations[1], stations),
+    entry(playlists?.items[1], playlists),
+    entry(mood?.items[1], mood),
+    entry(releases?.items[2], releases),
   ];
 
   const seen = new Set<string>();
@@ -303,8 +306,8 @@ const buildHeroEntries = (): HeroEntry[] => {
   };
   recipe.forEach(push);
 
-  // Top up to 5 with random unused items from any folder (then recently played).
-  if (out.length < 5) {
+  // Top up with random unused items from any folder (then recently played).
+  if (out.length < HERO_COUNT) {
     const pool: HeroEntry[] = [
       ...recommendations.value.flatMap((f) =>
         f.items.map((item) => ({ item, tag: folderTitle(f) })),
@@ -319,20 +322,28 @@ const buildHeroEntries = (): HeroEntry[] => {
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     for (const e of pool) {
-      if (out.length >= 5) break;
+      if (out.length >= HERO_COUNT) break;
       push(e);
     }
   }
-  return out.slice(0, 5);
+  return out.slice(0, HERO_COUNT);
 };
 
 const heroEntries = ref<HeroEntry[]>([]);
+// Everything after the lead card, grouped into columns of 2 stacked cards.
+const heroColumns = computed<HeroEntry[][]>(() => {
+  const rest = heroEntries.value.slice(1);
+  const cols: HeroEntry[][] = [];
+  for (let i = 0; i < rest.length; i += 2) cols.push(rest.slice(i, i + 2));
+  return cols;
+});
 const HERO_CACHE_KEY = "discoverTopPicks";
 const HERO_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
 interface HeroCache {
   ts: number;
   userId?: string;
+  count?: number;
   entries: HeroEntry[];
 }
 
@@ -344,6 +355,8 @@ const readHeroCache = (): HeroEntry[] | null => {
     if (!cache?.entries?.length) return null;
     if (Date.now() - cache.ts > HERO_CACHE_TTL) return null;
     if (cache.userId !== store.currentUser?.user_id) return null;
+    // Invalidate when the target count changes (e.g. layout now wants more).
+    if (cache.count !== HERO_COUNT) return null;
     return cache.entries;
   } catch {
     return null;
@@ -355,6 +368,7 @@ const writeHeroCache = (entries: HeroEntry[]) => {
     const cache: HeroCache = {
       ts: Date.now(),
       userId: store.currentUser?.user_id,
+      count: HERO_COUNT,
       entries,
     };
     localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(cache));
@@ -446,14 +460,27 @@ const loadRecommendations = async () => {
   ensureRowSettings();
 };
 
+// "Browse by genre": show the 8 genres with the most linked media items
+// (most relevant to the user) rather than the first 8 alphabetically.
+const loadGenres = async () => {
+  const all = await api
+    .getLibraryGenres({ hide_empty: true })
+    .catch(() => [] as Genre[]);
+  if (!all.length) return;
+  let ranked = all;
+  try {
+    const counts = await api.getGenreMediaCounts(all.map((g) => g.item_id));
+    const total = (id: string) =>
+      Object.values(counts[id] ?? {}).reduce((sum, n) => sum + n, 0);
+    ranked = [...all].sort((a, b) => total(b.item_id) - total(a.item_id));
+  } catch {
+    // counts endpoint unavailable on older servers → keep server (name) order
+  }
+  genres.value = ranked.slice(0, 8);
+};
+
 onMounted(async () => {
-  await Promise.all([
-    loadRecommendations(),
-    api
-      .getLibraryGenres({ limit: 8, hide_empty: true })
-      .then((g) => (genres.value = g))
-      .catch(() => {}),
-  ]);
+  await Promise.all([loadRecommendations(), loadGenres()]);
   resolveHeroPicks();
   loading.value = false;
 
@@ -495,7 +522,6 @@ onMounted(async () => {
   font-weight: 600;
   letter-spacing: 0.2px;
   text-transform: uppercase;
-  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .ed-players__count {
   font-size: 12px;
@@ -533,16 +559,32 @@ onMounted(async () => {
   letter-spacing: -0.6px;
   color: rgb(var(--v-theme-on-background));
 }
+/* Horizontal scroller: fixed-size lead + columns of 2, so cards don't stretch
+   on wide screens. Big screens fit them all; narrower ones scroll. */
 .ed-hero-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  display: flex;
   gap: 14px;
   height: 280px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.ed-hero-grid::-webkit-scrollbar {
+  display: none;
+}
+.ed-hero-grid__lead {
+  flex: 1.5 0 384px;
+  height: 100%;
+  scroll-snap-align: start;
 }
 .ed-hero-grid__col {
+  flex: 1 0 256px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  scroll-snap-align: start;
 }
 .ed-hero-grid__col > * {
   flex: 1;
@@ -596,6 +638,13 @@ onMounted(async () => {
     height: 220px;
     min-height: 0;
     scroll-snap-align: start;
+  }
+
+  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__title) {
+    font-size: 18px;
+  }
+  .ed-hero-row .ed-hero-grid :deep(.ed-hero--large .ed-hero__content) {
+    padding: 16px;
   }
 }
 

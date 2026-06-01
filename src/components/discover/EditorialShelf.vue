@@ -162,12 +162,14 @@ function scrollToStart() {
 function alignItemStart(selector: string) {
   const el = track.value;
   if (!el) return;
-  const item = el.querySelector(selector);
-  if (item) {
-    item.scrollIntoView({ inline: "start", block: "nearest" });
-  } else {
+  const item = el.querySelector(selector) as HTMLElement | null;
+  if (!item) {
     scrollToStart();
+    return;
   }
+  const delta =
+    item.getBoundingClientRect().left - el.getBoundingClientRect().left;
+  el.scrollBy({ left: delta, behavior: "smooth" });
 }
 
 defineExpose<EditorialShelfExpose>({

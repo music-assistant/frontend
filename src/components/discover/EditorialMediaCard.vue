@@ -21,6 +21,9 @@
         :src="art.image"
         :alt="item.name"
       />
+      <span v-else-if="art.initials" class="ed-card__initials">{{
+        art.initials
+      }}</span>
       <ProviderIcon
         v-if="providerDomain"
         class="ed-card__provider"
@@ -248,6 +251,7 @@ const onMenu = (e: MouseEvent) => {
 }
 .ed-card__art {
   position: relative;
+  container-type: inline-size;
   width: var(--ed-art-size);
   height: var(--ed-art-size);
   border-radius: var(--ed-card-pad);
@@ -256,11 +260,25 @@ const onMenu = (e: MouseEvent) => {
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
+.ed-card__initials {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34cqw;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
 .ed-card__provider {
   position: absolute;
   top: 6px;
   left: 6px;
   z-index: 2;
+  margin: 0 !important;
 }
 .ed-card__img {
   width: 100%;

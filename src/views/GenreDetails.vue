@@ -173,8 +173,9 @@ import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { genreMediaTypeIconMap, folderIdToRoute } from "@/helpers/genre";
+import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { getGenreDisplayName, panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -182,13 +183,12 @@ import {
   EventMessage,
   EventType,
   Genre,
+  MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
-  MediaItemType,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Button } from "@/components/ui/button";
 import { SquareArrowRightEnter } from "lucide-vue-next";
 import {
   computed,
@@ -509,7 +509,11 @@ onMounted(() => {
 }
 
 .overview-container {
-  padding: 0 16px 16px 16px;
+  padding: 16px 10px 16px 10px;
+}
+
+.overview-container :deep(.ed-shelf) {
+  --ed-gutter: 16px;
 }
 
 .navigate-icon {
