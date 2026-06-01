@@ -35,10 +35,8 @@ interface Props {
 const props = defineProps<Props>();
 const { t, te } = useI18n();
 
-const genreBanner = new URL(
-  "@/assets/logo/banner-no-logo.png",
-  import.meta.url,
-).href;
+const genreBanner = new URL("@/assets/logo/banner-no-logo.png", import.meta.url)
+  .href;
 
 const iconImage = computed(() => itemArtwork(props.item, 320).image);
 const displayName = computed(() =>

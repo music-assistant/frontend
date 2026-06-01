@@ -26,8 +26,13 @@
         <div v-if="subtitle" class="ed-hero__subtitle">{{ subtitle }}</div>
       </div>
     </div>
-    <span v-if="large" class="ed-hero__play" @click.stop="onPlay">
-      <Play :size="20" />
+    <span class="ed-hero__play" @click.stop="onPlay">
+      <Play
+        :size="18"
+        fill="currentColor"
+        :stroke-width="0"
+        class="ed-hero__play-icon"
+      />
     </span>
   </button>
 </template>
@@ -172,17 +177,31 @@ const onMenu = (e: MouseEvent) =>
 }
 .ed-hero__play {
   position: absolute;
-  bottom: 18px;
-  right: 18px;
-  width: 48px;
-  height: 48px;
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #0a0b0d;
+  background: rgb(var(--v-theme-primary));
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
   z-index: 2;
+}
+.ed-hero__play-icon {
+  margin-left: 2px;
+  fill: currentColor;
+  stroke: none;
+}
+.ed-hero:hover .ed-hero__play {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>

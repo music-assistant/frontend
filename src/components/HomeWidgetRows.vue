@@ -35,31 +35,31 @@
         </div>
       </EditorialShelf>
 
-      <section v-if="heroItems.length" class="ed-section ed-hero-row">
+      <section v-if="heroEntries.length" class="ed-section ed-hero-row">
         <div class="ed-hero-row__head">
           <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
         </div>
         <div class="ed-hero-grid">
           <EditorialHeroCard
             class="ed-hero-grid__lead"
-            :item="heroItems[0]"
-            :tag="heroTag"
+            :item="heroEntries[0].item"
+            :tag="heroEntries[0].tag"
             large
           />
-          <div v-if="heroItems.length > 1" class="ed-hero-grid__col">
+          <div v-if="heroEntries.length > 1" class="ed-hero-grid__col">
             <EditorialHeroCard
-              v-for="item in heroItems.slice(1, 3)"
-              :key="item.uri"
-              :item="item"
-              :tag="heroTag"
+              v-for="entry in heroEntries.slice(1, 3)"
+              :key="entry.item.uri"
+              :item="entry.item"
+              :tag="entry.tag"
             />
           </div>
-          <div v-if="heroItems.length > 3" class="ed-hero-grid__col">
+          <div v-if="heroEntries.length > 3" class="ed-hero-grid__col">
             <EditorialHeroCard
-              v-for="item in heroItems.slice(3, 5)"
-              :key="item.uri"
-              :item="item"
-              :tag="heroTag"
+              v-for="entry in heroEntries.slice(3, 5)"
+              :key="entry.item.uri"
+              :item="entry.item"
+              :tag="entry.tag"
             />
           </div>
         </div>
@@ -132,6 +132,7 @@ import {
   EventType,
   type Genre,
   type ItemMapping,
+  type MediaItemTypeOrItemMapping,
   MediaType,
   PlaybackState,
   type Player,
@@ -180,30 +181,77 @@ const folderTitle = (folder: RecommendationFolder) =>
     ? $t(`recommendations.${folder.translation_key}`, folder.name)
     : folder.name;
 
-const HERO_MEDIA_TYPES = [
-  MediaType.ALBUM,
-  MediaType.PLAYLIST,
-  MediaType.ARTIST,
-  MediaType.TRACK,
-];
+// --- Top Picks: a curated mix from specific recommendation folders ---
+interface HeroEntry {
+  item: MediaItemTypeOrItemMapping;
+  tag: string;
+}
 
-const heroFolder = computed(() => {
-  const folders = recommendations.value.filter((f) => f.items.length);
-  return (
-    folders.find((f) =>
-      f.items.some((it) => HERO_MEDIA_TYPES.includes(it.media_type)),
-    ) || folders[0]
+const norm = (s: string) => (s || "").toLowerCase();
+const findFolder = (...needles: string[]) =>
+  recommendations.value.find((f) => {
+    const hay = `${norm(f.name)} ${norm(folderTitle(f))}`;
+    return needles.some((n) => hay.includes(n));
+  });
+
+const heroEntries = computed<HeroEntry[]>(() => {
+  const playlists = findFolder("playlists made for you", "made for you");
+  const mood = findFolder("find your mood", "mood");
+  const stations = findFolder("stations for you", "radio stations for you");
+  const releases = findFolder("new releases for you");
+  // "Artist-focused" stations = artist items inside the stations folder.
+  const artistStations = (stations?.items ?? []).filter(
+    (i) => i.media_type === MediaType.ARTIST,
   );
-});
 
-const heroItems = computed(() => {
-  if (heroFolder.value) return heroFolder.value.items.slice(0, 5);
-  return recentlyPlayed.value.slice(0, 5);
-});
+  const entry = (
+    item: MediaItemTypeOrItemMapping | undefined,
+    folder: RecommendationFolder | undefined,
+  ): HeroEntry | null =>
+    item && folder ? { item, tag: folderTitle(folder) } : null;
 
-const heroTag = computed(() =>
-  heroFolder.value ? folderTitle(heroFolder.value) : $t("recently_played"),
-);
+  const recipe = [
+    entry(playlists?.items[0], playlists),
+    entry(mood?.items[0], mood),
+    entry(artistStations[0], stations),
+    entry(releases?.items[0], releases),
+    entry(stations?.items[0], stations),
+    entry(releases?.items[1], releases),
+    entry(artistStations[1], stations),
+  ];
+
+  const seen = new Set<string>();
+  const out: HeroEntry[] = [];
+  const push = (e: HeroEntry | null) => {
+    if (e && !seen.has(e.item.uri)) {
+      seen.add(e.item.uri);
+      out.push(e);
+    }
+  };
+  recipe.forEach(push);
+
+  // Top up to 5 with random unused items from any folder (then recently played).
+  if (out.length < 5) {
+    const pool: HeroEntry[] = [
+      ...recommendations.value.flatMap((f) =>
+        f.items.map((item) => ({ item, tag: folderTitle(f) })),
+      ),
+      ...recentlyPlayed.value.map((item) => ({
+        item,
+        tag: $t("recently_played"),
+      })),
+    ].filter((e) => !seen.has(e.item.uri));
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    for (const e of pool) {
+      if (out.length >= 5) break;
+      push(e);
+    }
+  }
+  return out.slice(0, 5);
+});
 
 // --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
 interface RowSetting {
@@ -232,7 +280,7 @@ const ensureRowSettings = () => {
 
 const orderedRows = computed(() =>
   recommendations.value
-    .filter((f) => f.items.length && f.uri !== heroFolder.value?.uri)
+    .filter((f) => f.items.length)
     .map((f) => ({
       folder: f,
       setting: rowSettings.value[f.uri] ?? { position: 9999, enabled: true },
