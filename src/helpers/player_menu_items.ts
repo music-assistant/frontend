@@ -54,6 +54,7 @@ export const getPlayerMenuItems = (
       p.player_id != player.player_id &&
       p.available &&
       p.enabled &&
+      !p.hide_in_ui &&
       (p.can_group_with.includes(player.provider) ||
         p.can_group_with.includes(player.player_id)) &&
       p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
