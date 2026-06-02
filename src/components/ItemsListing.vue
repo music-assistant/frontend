@@ -906,6 +906,29 @@ const renderedRow = function (content: HTMLElement, index: number) {
   ) as HTMLElement | null;
 };
 
+// page items in until the given index is loaded. Hardened against an infinite
+// loop: loadData early-returns while another load is in flight (e.g. the
+// infinite-scroll firing during momentum scrolling on touch devices), which
+// would otherwise spin forever without making progress.
+const ensurePagedTo = async function (index: number) {
+  let stalled = 0;
+  while (
+    pagedItems.value.length <= index &&
+    !allItemsReceived.value &&
+    stalled < 100
+  ) {
+    const before = pagedItems.value.length;
+    if (loading.value) {
+      // a load is already running - wait for it instead of calling again
+      await waitFrames(2);
+    } else {
+      await loadNextPage({ done: function () {} });
+    }
+    if (pagedItems.value.length === before) stalled++;
+    else stalled = 0;
+  }
+};
+
 // jump the listing so the item at the given (display-order) index sits at the
 // top of the viewport. The list is virtualized with *measured* (not fixed) row
 // heights, so a plain index*70 estimate drifts further down the list. Instead
@@ -913,9 +936,7 @@ const renderedRow = function (content: HTMLElement, index: number) {
 // then land exactly on the measured row position once it is rendered.
 const jumpToIndex = async function (displayIndex: number) {
   // make sure enough items are paged in to reach the target row
-  while (pagedItems.value.length <= displayIndex && !allItemsReceived.value) {
-    await loadNextPage({ done: function () {} });
-  }
+  await ensurePagedTo(displayIndex);
   const targetIndex = Math.min(displayIndex, pagedItems.value.length - 1);
   if (targetIndex < 0) return;
 
