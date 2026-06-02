@@ -136,7 +136,10 @@
         >
           <template #default="{ item, index }">
             <div :data-listing-item="index">
+              <!-- windowed mode: not-yet-loaded rows render as skeletons -->
+              <ListViewSkeleton v-if="isPlaceholder(item)" />
               <ListviewItem
+                v-else
                 :item="item"
                 :show-track-number="showTrackNumber"
                 :show-disc-number="showTrackNumber"
@@ -324,6 +327,9 @@ export interface Props {
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   // loadLetterIndex callback enables the A-Z quick-jump bar (alphabetical sorts)
   loadLetterIndex?: (params: LoadDataParams) => Promise<LibraryLetterIndex>;
+  // windowed enables lazy/windowed loading (list view, alphabetical sorts) so a
+  // far letter-jump only loads the visible window instead of every row above it
+  windowed?: boolean;
   limit?: number;
   total?: number;
   infiniteScroll?: boolean;
@@ -362,6 +368,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadPagedData: undefined,
   loadItems: undefined,
   loadLetterIndex: undefined,
+  windowed: false,
   path: undefined,
   icon: undefined,
   restoreState: false,
@@ -525,6 +532,8 @@ const toggleExpand = function () {
 };
 
 const selectViewMode = function (newMode: string) {
+  const crossedWindowedBoundary =
+    props.windowed && (viewMode.value === "list") !== (newMode === "list");
   viewMode.value = newMode;
   if (!props.forcedViewMode) {
     setItemsListingPreference(
@@ -534,6 +543,9 @@ const selectViewMode = function (newMode: string) {
       newMode,
     );
   }
+  // windowed mode is list-only; rebuild the data model when toggling in/out of
+  // list view so we switch between the sparse window and the contiguous list
+  if (crossedWindowedBoundary) loadData(true);
 };
 
 watch(
@@ -845,10 +857,14 @@ const loadLetterIndex = async function () {
   if (!props.loadLetterIndex || !isAlphaSort.value || params.value.search) {
     letterBuckets.value = [];
     letterIndexSignature = "";
+    if (windowedActive.value) teardownWindowed();
     return;
   }
   const signature = letterIndexParamsSignature();
-  if (signature === letterIndexSignature) return;
+  if (signature === letterIndexSignature) {
+    syncWindowed();
+    return;
+  }
   const token = ++letterIndexToken;
   try {
     const result = await props.loadLetterIndex(params.value);
@@ -857,11 +873,13 @@ const loadLetterIndex = async function () {
     letterBuckets.value = result.buckets || [];
     letterTotal.value = result.total || 0;
     letterIndexSignature = signature;
+    syncWindowed();
   } catch {
     if (token !== letterIndexToken) return;
     letterBuckets.value = [];
     letterTotal.value = 0;
     letterIndexSignature = "";
+    if (windowedActive.value) teardownWindowed();
   }
 };
 
@@ -1019,8 +1037,10 @@ const ensurePagedTo = async function (index: number) {
 // we home in: estimate -> render -> measure real row height -> re-estimate,
 // then land exactly on the measured row position once it is rendered.
 const jumpToIndex = async function (displayIndex: number) {
-  // make sure enough items are paged in to reach the target row
-  await ensurePagedTo(displayIndex);
+  // make sure the target row is loaded. In windowed mode this is just the one
+  // page containing the target (fast); otherwise page in everything up to it.
+  if (windowedActive.value) await ensureWindowForIndex(displayIndex);
+  else await ensurePagedTo(displayIndex);
   const targetIndex = Math.min(displayIndex, pagedItems.value.length - 1);
   if (targetIndex < 0) return;
 
@@ -1070,6 +1090,167 @@ const jumpToIndex = async function (displayIndex: number) {
     }
     await nextTick();
     await waitFrames(2);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Windowed / lazy loading (opt-in via the `windowed` prop, list view only).
+//
+// Instead of loading a contiguous array from row 0 up to the target (which on
+// large libraries means loading thousands of full objects), we size the array
+// to the full `total` with cheap placeholder rows and only fetch the page(s)
+// around what's visible. A far letter-jump then loads just one small page.
+// Tied to the letter-index `total` (computed with the same filters as the
+// list), and only active for alphabetical sorts without a search filter - which
+// is exactly when the quick-jump bar is shown.
+// ---------------------------------------------------------------------------
+const windowedActive = ref(false);
+const loadedPages = new Set<number>();
+const loadingPages = new Set<number>();
+let windowScrollEl: HTMLElement | null = null;
+let windowScrollScheduled = false;
+
+const isPlaceholder = function (item: unknown) {
+  return (
+    !!item && typeof item === "object" && (item as any).__placeholder === true
+  );
+};
+
+const makePlaceholders = function (count: number) {
+  return Array.from(
+    { length: count },
+    (_, i) =>
+      ({ __placeholder: true, uri: `__ph__${i}` }) as unknown as MediaItemType,
+  );
+};
+
+const windowConditionsMet = function () {
+  return (
+    props.windowed &&
+    !!props.loadPagedData &&
+    viewMode.value === "list" &&
+    isAlphaSort.value &&
+    !params.value.search &&
+    (letterTotal.value || 0) > 0
+  );
+};
+
+// fetch a single page and splice the real items into the sparse array
+const loadWindowPage = async function (pageIndex: number) {
+  const ps = props.limit;
+  if (pageIndex < 0) return;
+  const offset = pageIndex * ps;
+  if (offset >= pagedItems.value.length) return;
+  if (loadedPages.has(pageIndex) || loadingPages.has(pageIndex)) return;
+  loadingPages.add(pageIndex);
+  try {
+    const items = await props.loadPagedData!({
+      ...params.value,
+      offset,
+      limit: ps,
+    });
+    for (let i = 0; i < items.length; i++) {
+      if (offset + i < pagedItems.value.length)
+        pagedItems.value[offset + i] = items[i];
+    }
+    loadedPages.add(pageIndex);
+  } finally {
+    loadingPages.delete(pageIndex);
+  }
+};
+
+// ensure the page containing the given row (and its neighbours) is loaded
+const ensureWindowForIndex = async function (index: number) {
+  const ps = props.limit;
+  const page = Math.floor(index / ps);
+  await Promise.all([page - 1, page, page + 1].map((p) => loadWindowPage(p)));
+};
+
+// load whichever pages are currently scrolled into view (plus a buffer)
+const loadVisibleWindow = function () {
+  if (!windowedActive.value) return;
+  const content = windowScrollEl;
+  if (!content) return;
+  const listEl = content.querySelector(
+    ".v-virtual-scroll",
+  ) as HTMLElement | null;
+  const listTop = listEl ? offsetWithin(listEl, content) : 0;
+  // estimate row height from a rendered row, fall back to the item-height
+  let rowH = 70;
+  const rendered = content.querySelectorAll("[data-listing-item]");
+  if (rendered.length >= 2) {
+    const a = rendered[0] as HTMLElement;
+    const b = rendered[rendered.length - 1] as HTMLElement;
+    const ia = Number(a.getAttribute("data-listing-item"));
+    const ib = Number(b.getAttribute("data-listing-item"));
+    if (ib > ia)
+      rowH = (offsetWithin(b, content) - offsetWithin(a, content)) / (ib - ia);
+  }
+  const top = content.scrollTop - listTop;
+  const first = Math.floor(top / rowH);
+  const last = Math.ceil((top + content.clientHeight) / rowH);
+  const ps = props.limit;
+  const startPage = Math.max(0, Math.floor(first / ps) - 1);
+  const endPage = Math.floor(last / ps) + 1;
+  for (let p = startPage; p <= endPage; p++) loadWindowPage(p);
+};
+
+const onWindowScroll = function () {
+  if (windowScrollScheduled) return;
+  windowScrollScheduled = true;
+  requestAnimationFrame(() => {
+    windowScrollScheduled = false;
+    loadVisibleWindow();
+  });
+};
+
+const attachWindowScroll = function () {
+  if (windowScrollEl) return;
+  const el = document.querySelector(".content-section") as HTMLElement | null;
+  if (!el) return;
+  windowScrollEl = el;
+  el.addEventListener("scroll", onWindowScroll, { passive: true });
+};
+
+const detachWindowScroll = function () {
+  if (windowScrollEl) {
+    windowScrollEl.removeEventListener("scroll", onWindowScroll);
+    windowScrollEl = null;
+  }
+};
+
+// turn the freshly-loaded contiguous list into a sparse, full-length window
+const upgradeToWindowed = function () {
+  if (windowedActive.value || !windowConditionsMet()) return;
+  const total = letterTotal.value;
+  const loaded = pagedItems.value;
+  const arr = makePlaceholders(total);
+  for (let i = 0; i < loaded.length && i < total; i++) arr[i] = loaded[i];
+  pagedItems.value = arr;
+  loadedPages.clear();
+  loadingPages.clear();
+  const pages = Math.ceil(Math.min(loaded.length, total) / props.limit);
+  for (let p = 0; p < pages; p++) loadedPages.add(p);
+  // stop the infinite-scroller; the window handler drives loading from here
+  allItemsReceived.value = true;
+  windowedActive.value = true;
+  attachWindowScroll();
+  nextTick(loadVisibleWindow);
+};
+
+const teardownWindowed = function () {
+  windowedActive.value = false;
+  loadedPages.clear();
+  loadingPages.clear();
+  detachWindowScroll();
+};
+
+// activate or deactivate windowed mode to match the current conditions
+const syncWindowed = function () {
+  if (windowConditionsMet()) {
+    if (!windowedActive.value) upgradeToWindowed();
+  } else if (windowedActive.value) {
+    teardownWindowed();
   }
 };
 
@@ -1468,6 +1649,8 @@ const loadData = async function (
     allItemsReceived.value = false;
     initialDataReceived.value = false;
     newContentAvailable.value = false;
+    // drop any windowed state; it is re-established after the letter index loads
+    if (windowedActive.value) teardownWindowed();
   }
 
   params.value.offset = offset;
@@ -1642,6 +1825,10 @@ if (props.restoreState) {
       allItemsReceived: allItemsReceived.value,
       initialDataReceived: initialDataReceived.value,
       params: params.value,
+      windowedActive: windowedActive.value,
+      loadedPages: Array.from(loadedPages),
+      letterBuckets: letterBuckets.value,
+      letterTotal: letterTotal.value,
     };
   });
 }
@@ -1749,6 +1936,7 @@ let _unsubscribeMediaEvents: (() => void) | undefined;
 onBeforeUnmount(() => {
   eventbus.off("clearSelection");
   _unsubscribeMediaEvents?.();
+  detachWindowScroll();
 });
 
 onMounted(async () => {
@@ -1761,6 +1949,17 @@ onMounted(async () => {
     allItems.value = store.prevState.allItems;
     allItemsReceived.value = store.prevState.allItemsReceived;
     initialDataReceived.value = store.prevState.initialDataReceived;
+    // restore windowed state (sparse array + which pages were loaded)
+    if (store.prevState.windowedActive) {
+      letterBuckets.value = store.prevState.letterBuckets || [];
+      letterTotal.value = store.prevState.letterTotal || 0;
+      letterIndexSignature = letterIndexParamsSignature();
+      loadedPages.clear();
+      for (const p of store.prevState.loadedPages || []) loadedPages.add(p);
+      windowedActive.value = true;
+      attachWindowScroll();
+      nextTick(loadVisibleWindow);
+    }
     // scroll the main listing back to its previous scroll position
     nextTick(() => {
       const el = document.querySelector(".content-section") as HTMLElement;
@@ -1840,6 +2039,10 @@ export interface StoredState {
   allItemsReceived: boolean;
   initialDataReceived: boolean;
   params: LoadDataParams;
+  windowedActive?: boolean;
+  loadedPages?: number[];
+  letterBuckets?: LetterIndexBucket[];
+  letterTotal?: number;
 }
 
 const getSortName = function (
@@ -2028,7 +2231,11 @@ const selectAll = async function () {
 
   if (confirmed) {
     await loadAllItems();
-    selectedItems.value = pagedItems.value;
+    // in windowed mode the array contains placeholders for unloaded rows; only
+    // select the rows actually loaded
+    selectedItems.value = windowedActive.value
+      ? pagedItems.value.filter((i) => !isPlaceholder(i))
+      : pagedItems.value;
     showCheckboxes.value = true;
   }
 };

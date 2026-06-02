@@ -8,6 +8,7 @@
     :show-track-number="false"
     :load-paged-data="loadItems"
     :load-letter-index="loadLetterIndex"
+    :windowed="true"
     :sort-keys="sortKeys"
     :show-album="true"
     :update-available="updateAvailable"
