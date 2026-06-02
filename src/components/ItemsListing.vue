@@ -1142,33 +1142,22 @@ const loadingPages = new Set<number>();
 let windowScrollEl: HTMLElement | null = null;
 let windowScrollScheduled = false;
 
-// Windowing builds a full-length virtual list (one row per item in the whole
-// library). That's fine on desktop but iOS Safari/iPadOS chokes on such a large
-// virtual list and locks up, so we only enable it for fine-pointer (non-touch)
-// devices; touch devices fall back to the regular infinite-scroll path.
-const supportsWindowing =
-  typeof window === "undefined" ||
-  !window.matchMedia ||
-  !window.matchMedia("(pointer: coarse)").matches;
-
 const isPlaceholder = function (item: unknown) {
-  return (
-    !!item && typeof item === "object" && (item as any).__placeholder === true
-  );
+  // unloaded rows are stored as null (kept lightweight - allocating an object
+  // per row freezes iOS Safari on large libraries)
+  return item == null;
 };
 
 const makePlaceholders = function (count: number) {
   return Array.from(
     { length: count },
-    (_, i) =>
-      ({ __placeholder: true, uri: `__ph__${i}` }) as unknown as MediaItemType,
-  );
+    () => null,
+  ) as unknown as MediaItemType[];
 };
 
 const windowConditionsMet = function () {
   return (
     props.windowed &&
-    supportsWindowing &&
     !!props.loadPagedData &&
     viewMode.value === "list" &&
     isAlphaSort.value &&
@@ -1191,10 +1180,11 @@ const loadWindowPage = async function (pageIndex: number) {
       offset,
       limit: ps,
     });
-    for (let i = 0; i < items.length; i++) {
-      if (offset + i < pagedItems.value.length)
-        pagedItems.value[offset + i] = items[i];
-    }
+    // splice the whole page in one go - a single reactive update (and so one
+    // virtual-list recompute) instead of one per row, which matters on iOS
+    const count = Math.min(items.length, pagedItems.value.length - offset);
+    if (count > 0)
+      pagedItems.value.splice(offset, count, ...items.slice(0, count));
     loadedPages.add(pageIndex);
   } finally {
     loadingPages.delete(pageIndex);
@@ -2037,17 +2027,17 @@ onMounted(async () => {
     (evt: EventMessage) => {
       if (evt.event == EventType.MEDIA_ITEM_DELETED) {
         pagedItems.value = pagedItems.value.filter(
-          (i) => i.uri != evt.object_id,
+          (i) => i?.uri != evt.object_id,
         );
       } else if (evt.event == EventType.MEDIA_ITEM_UPDATED) {
         // update item
-        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        const idx = pagedItems.value.findIndex((i) => i?.uri == evt.object_id);
         if (idx >= 0) {
           pagedItems.value[idx] = evt.data as MediaItemType;
         }
       } else if (evt.event == EventType.MEDIA_ITEM_PLAYED) {
         // update item
-        const idx = pagedItems.value.findIndex((i) => i.uri == evt.object_id);
+        const idx = pagedItems.value.findIndex((i) => i?.uri == evt.object_id);
         if (idx >= 0) {
           const playData = evt.data as Record<string, unknown>;
           if ("fully_played" in pagedItems.value[idx])
