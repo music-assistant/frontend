@@ -117,9 +117,13 @@ with offsets recomputed for the descending row order:
 
 - Bucket by the **same field used for sorting** (`sort_name` when
   `order_by=sort_name`, else `name`) so the index lines up with row positions.
-- Use the same locale/collation the list query uses (the frontend currently
-  uses `localeCompare` with `{ numeric: true }` for client-side sorts —
-  `ItemsListing.vue:1561`).
+- **Use the exact collation the library list query uses** — this is the
+  overriding constraint, because offsets must be real row positions. MA's
+  library listing sorts by a **binary comparison over a normalized ASCII key**
+  (lowercased, diacritics folded via `unidecode`, non-alphanumerics removed) —
+  **not** `localeCompare`. The index therefore folds diacritics (e.g. "Ä" → "A"
+  bucket) and is not locale/numeric-aware, matching the list. The frontend must
+  **not** re-sort the list with `localeCompare` and expect offsets to match.
 - Anything not starting A–Z collapses into a single `#` bucket (top for
   ascending, bottom for descending).
 - Only include letters that actually have items (so the bar can grey-out / skip
@@ -219,9 +223,12 @@ If the endpoint can't land soon, ship a degraded version:
 
 1. When the bar is first shown (alpha sort active), call the existing
    `loadAllItems()` (`ItemsListing.vue:745`) to pull the whole list.
-2. Build buckets client-side from `sort_name ?? name` of `pagedItems`, reusing
-   the existing `localeCompare({ numeric: true })` ordering
-   (`ItemsListing.vue:1561`).
+2. Build buckets client-side from `sort_name ?? name` of `pagedItems`. The list
+   already arrives in the server's order, so bucket purely by the leading
+   character of each item **without re-sorting** — do not apply `localeCompare`,
+   as that would diverge from the server's normalized-ASCII order and misplace
+   the jumps. Fold the leading char (uppercase, treat non-A–Z as `#`) to match
+   the server's diacritic folding as closely as the client can.
 3. Jump by index as above.
 
 **Trade-off:** for large libraries (thousands of items) this is many sequential
@@ -244,8 +251,12 @@ swapping in the endpoint later is low-risk.
    characters not folded to A–Z): include at top (asc) / bottom (desc).
 4. **Panel-mode precision:** approve `scrollIntoView` (option b) vs computed
    grid offset (option a). Recommend `scrollIntoView` for panel modes.
-5. **Collation parity:** confirm the server query and the index use identical
-   collation so offsets are exact.
+5. ~~**Collation parity:**~~ **RESOLVED** — the index uses the same collation as
+   the library list query: MA's binary comparison over a normalized ASCII key
+   (lowercased, `unidecode` diacritic folding, non-alphanumerics removed), **not**
+   `localeCompare`. Offsets are guaranteed to match real row positions. Locale/
+   numeric-aware ordering would be a larger change to `library_items` sorting
+   itself (not the index) and is out of scope here.
 
 ---
 
