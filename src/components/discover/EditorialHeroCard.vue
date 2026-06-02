@@ -8,7 +8,7 @@
     @contextmenu.prevent="onMenu"
     @touchstart.passive="holdFired = false"
   >
-    <div class="ed-hero__bg">
+    <div class="ed-hero__bg" :style="{ background: art.gradient }">
       <img
         v-if="art.image"
         class="ed-hero__img"
