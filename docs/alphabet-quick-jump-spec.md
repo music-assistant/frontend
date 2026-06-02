@@ -175,8 +175,14 @@ On tapping a letter, resolve it to the nearest **available** letter (scan
 forward/down the bar to the next non-empty letter; if none, back up to the last
 non-empty one), then jump to that letter's target display index `D`:
 
-1. **Ensure the target row is loaded.** Paging is incremental, so loop
-   `loadNextPage` until `pagedItems.length > D` (or `allItemsReceived`).
+1. **Ensure the target row is loaded** (`ensurePagedTo`). The virtual list needs
+   a contiguous array from 0, so a far jump must load every row up to `D`. To
+   keep this fast without hammering low-power servers (e.g. a Raspberry Pi), the
+   server-paged path issues **one** request to discover the effective page size,
+   then fetches the remaining offsets with **bounded concurrency** (3 at a time).
+   Completion is detected via the known `total` (cap-agnostic). The first far
+   jump loads most of the library; later jumps are then instant. Non-paged
+   (`loadItems`) listings already hold everything client-side.
 2. **Scroll to the row — by measurement, not estimate.** The list is virtualized
    with *measured* (not fixed) row heights, so `index * 70` drifts further down
    the list. Instead, tag every rendered row with `data-listing-item="index"`

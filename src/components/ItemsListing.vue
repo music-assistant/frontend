@@ -906,59 +906,108 @@ const renderedRow = function (content: HTMLElement, index: number) {
   ) as HTMLElement | null;
 };
 
+// run async tasks with a bounded number running at once (keeps load gentle on
+// low-power servers like a Raspberry Pi). Results preserve task order.
+const runPool = async function <T>(
+  tasks: Array<() => Promise<T>>,
+  concurrency: number,
+) {
+  const results = new Array<T>(tasks.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const cur = next++;
+      results[cur] = await tasks[cur]();
+    }
+  };
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    worker,
+  );
+  await Promise.all(workers);
+  return results;
+};
+
+// max simultaneous page requests when bulk-loading toward a jump target
+const JUMP_MAX_PARALLEL = 3;
+
 // page items in until the given index is loaded. The virtual list needs a
 // contiguous array from 0, so reaching a far letter (e.g. Z in a 4500-item
-// library) would mean ~90 sequential 50-item requests. Instead we fetch the
-// whole gap in large chunks (a handful of requests) using the known total to
-// detect completion. Hardened against an infinite loop: loadData early-returns
-// while another load is in flight (e.g. the infinite-scroll firing during
-// momentum scrolling on touch devices), which would otherwise spin forever.
+// library) would otherwise mean ~90 sequential 50-item requests (the scrollbar
+// slowly creeping). For server-paged listings we fetch the gap in parallel
+// (bounded concurrency): one request first to discover the server's effective
+// page size, then the remaining offsets in parallel waves so the data stays
+// contiguous even if the server caps the page limit.
 const ensurePagedTo = async function (index: number) {
-  let stalled = 0;
-  const total = letterTotal.value || props.total || 0;
+  if (pagedItems.value.length > index || allItemsReceived.value) return;
 
+  if (props.loadPagedData) {
+    // wait out any in-flight load to avoid racing the infinite scroller
+    let guard = 0;
+    while (loading.value && guard < 100) {
+      await waitFrames(2);
+      guard++;
+    }
+    if (pagedItems.value.length > index || allItemsReceived.value) return;
+
+    loading.value = true;
+    try {
+      const total = letterTotal.value || props.total || 0;
+      const needTo = total
+        ? Math.min(index + 20, Math.max(0, total - 1))
+        : index + 20;
+
+      // 1) one request to discover the server's effective page size
+      const first = await props.loadPagedData({
+        ...params.value,
+        offset: pagedItems.value.length,
+        limit: Math.max(props.limit, 1000),
+      });
+      if (first.length) pagedItems.value.push(...first);
+      const step = first.length;
+
+      // 2) fetch the remaining offsets in parallel using that page size
+      if (
+        step > 0 &&
+        pagedItems.value.length <= needTo &&
+        !(total && pagedItems.value.length >= total)
+      ) {
+        const offsets: number[] = [];
+        for (let o = pagedItems.value.length; o <= needTo; o += step)
+          offsets.push(o);
+        const tasks = offsets.map(
+          (o) => () =>
+            props.loadPagedData!({ ...params.value, offset: o, limit: step }),
+        );
+        const chunks = await runPool(tasks, JUMP_MAX_PARALLEL);
+        // append in order; once a chunk is short the rest are empty (skipped)
+        for (const c of chunks) if (c.length) pagedItems.value.push(...c);
+      }
+
+      if (total && pagedItems.value.length >= total)
+        allItemsReceived.value = true;
+      else if (step === 0) allItemsReceived.value = true;
+
+      // keep infinite-scroll bookkeeping consistent for later scrolling
+      params.value.offset = Math.max(0, pagedItems.value.length - props.limit);
+      params.value.limit = props.limit;
+    } finally {
+      loading.value = false;
+    }
+    return;
+  }
+
+  // non-paged (loadItems) listings already hold everything client-side; just
+  // page the in-memory slices incrementally, guarding against a stall.
+  let stalled = 0;
   while (
     pagedItems.value.length <= index &&
     !allItemsReceived.value &&
     stalled < 100
   ) {
-    if (loading.value) {
-      // a load is already running - wait for it instead of racing it
-      await waitFrames(2);
-      stalled++;
-      continue;
-    }
     const before = pagedItems.value.length;
-
-    if (props.loadPagedData) {
-      // bulk-fetch the remaining gap (plus a small buffer past the target)
-      loading.value = true;
-      try {
-        const want = index - before + 1 + 20;
-        const fetchParams: LoadDataParams = {
-          ...params.value,
-          offset: before,
-          limit: Math.max(props.limit, want),
-        };
-        const nextItems = await props.loadPagedData(fetchParams);
-        if (nextItems.length) pagedItems.value.push(...nextItems);
-        // detect end via total when known (cap-agnostic), else an empty page
-        if (total && pagedItems.value.length >= total)
-          allItemsReceived.value = true;
-        else if (nextItems.length === 0) allItemsReceived.value = true;
-        // keep infinite-scroll bookkeeping consistent for later scrolling
-        params.value.offset = Math.max(
-          0,
-          pagedItems.value.length - props.limit,
-        );
-        params.value.limit = props.limit;
-      } finally {
-        loading.value = false;
-      }
-    } else {
-      await loadNextPage({ done: function () {} });
-    }
-
+    if (loading.value) await waitFrames(2);
+    else await loadNextPage({ done: function () {} });
     if (pagedItems.value.length === before) stalled++;
     else stalled = 0;
   }
