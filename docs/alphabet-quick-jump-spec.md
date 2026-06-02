@@ -70,19 +70,20 @@ index matches what the list actually shows):
 }
 ```
 
-> **LOCKED CONTRACT (resolves former open question #1 — descending):**
-> The endpoint receives the **full `order_by` string including any `_desc`
-> suffix** and MUST return the buckets **in the same order, with `offset` values
-> that are the actual 0-based row positions for that sort**. In other words, for
-> `sort_name_desc` the first bucket is `Z` at offset 0, then `Y`, etc. The
-> frontend renders the returned buckets verbatim and jumps straight to
-> `bucket.offset` — it performs **no** reversal or offset arithmetic of its own.
-> This keeps the frontend dumb and guarantees the index always lines up with the
-> exact rows the list query returns for the same params.
+> **CONTRACT (as implemented):**
+> Offsets are **always computed in ascending order**, regardless of the
+> `order_by` direction. Each bucket's `offset` is the **0-based index of the
+> bucket's first item in the ascending sort** (implemented server-side as
+> `MIN(ROW_NUMBER() OVER (ORDER BY sort_key ASC) - 1)` per bucket). The `total`
+> item count is returned alongside. **The frontend handles reversal** for
+> `_desc` sorts: the displayed top row of a bucket in descending order is
+> `total - asc_offset_of_next_bucket`. This keeps the offsets in one canonical
+> orientation and uses the exact same collation as the list query, so they line
+> up with real row positions.
 
-**Response:** ordered list of buckets in the **requested sort order**. Server
-owns bucketing rules so the frontend stays dumb. Example for `order_by=sort_name`
-(ascending):
+**Response:** buckets with their ascending offsets, plus the total count.
+Example for either `order_by=sort_name` or `sort_name_desc` (offsets are the
+same ascending values; the frontend reverses for `_desc`):
 
 ```jsonc
 {
@@ -97,21 +98,10 @@ owns bucketing rules so the frontend stays dumb. Example for `order_by=sort_name
 }
 ```
 
-For `order_by=sort_name_desc` the same library returns the buckets reversed,
-with offsets recomputed for the descending row order:
-
-```jsonc
-{
-  "buckets": [
-    { "label": "Z", "offset": 0 },
-    { "label": "Y", "offset": 44 },
-    // ...
-    { "label": "A", "offset": 1012 },
-    { "label": "#", "offset": 1024 - countOfNonAlpha }
-  ],
-  "total": 1024
-}
-```
+To get a bucket's first **displayed** row index, the frontend computes:
+`order_by` ascending → `offset`; descending → `total - nextBucketAscOffset`
+(where `nextBucketAscOffset` is the ascending offset of the next bucket, or
+`total` for the last bucket).
 
 **Server-side rules:**
 
@@ -129,8 +119,8 @@ with offsets recomputed for the descending row order:
 - Only include letters that actually have items (so the bar can grey-out / skip
   empties). Returning all 26 with the offset of the next non-empty bucket is an
   acceptable alternative — see "Empty letters" below.
-- Honour the `_desc` suffix per the LOCKED CONTRACT above: return buckets in the
-  requested order with offsets that are real row positions for that sort.
+- Offsets are always ascending (see CONTRACT above); the frontend reverses for
+  `_desc` sorts. The server does not need to special-case `_desc`.
 
 ---
 
@@ -166,39 +156,37 @@ const showAlphabetBar = computed(() =>
 );
 ```
 
-Per the LOCKED CONTRACT the server already returns buckets in the requested
-order (Z→A for `_desc`), so the bar renders `letterBuckets` **verbatim** — no
-client-side reversal. Fetch `letterBuckets` whenever `isAlphaSort`, the filters,
-or `sortBy` change (the same signature that triggers a full `loadData`). Cache
-per sort+filter signature to avoid refetching on every scroll.
+The server returns ascending offsets; the frontend builds a per-letter target
+**display index** (`labelTargets`) — ascending → `offset`, descending →
+`total - nextBucketAscOffset`. The bar shows the **full A–Z** (plus `#` when
+present) in display order, with empty letters dimmed but still clickable. Fetch
+the index whenever `isAlphaSort`, the filters, or `sortBy` change (the same
+signature that triggers a full `loadData`). Cache per sort+filter signature to
+avoid refetching on every scroll.
 
 ### 3. Jump-to-letter behaviour
 
-On tapping a bucket with `offset = O`:
+On tapping a letter, resolve it to the nearest **available** letter (scan
+forward/down the bar to the next non-empty letter; if none, back up to the last
+non-empty one), then jump to that letter's target display index `D`:
 
-1. **Ensure the target page is loaded.** Because paging is incremental, page in
-   up to `O` first: loop `loadNextPage` until `pagedItems.length > O` (or
-   `allItemsReceived`). For descending, translate `O` to its display index
-   first.
-2. **Scroll to the row.**
-   - **`list` mode** — fixed 70px rows: `scrollTop = displayIndex * 70`. Use the
-     existing `scrollElement(contentSection, scrollTop, 0)` helper
-     (`utils.ts`). The `v-virtual-scroll` reacts to container scroll, so this
-     "just works" once items are loaded.
-   - **`panel` / `panel_compact` modes** — variable/grid heights, no fixed row
-     height. Two options:
-     - (a) Compute the grid row: `Math.floor(displayIndex / columns) * rowHeight`,
-       where `columns` comes from the existing `panelViewItemResponsive()` helper
-       and `rowHeight` from a measured card. Approximate but smooth.
-     - (b) After paging in the target item, `scrollIntoView()` on the rendered
-       element keyed by item id (`:key` already set per item). More robust for
-       variable heights; recommended for panel modes.
+1. **Ensure the target row is loaded.** Paging is incremental, so loop
+   `loadNextPage` until `pagedItems.length > D` (or `allItemsReceived`).
+2. **Scroll to the row — by measurement, not estimate.** The list is virtualized
+   with *measured* (not fixed) row heights, so `index * 70` drifts further down
+   the list. Instead, tag every rendered row with `data-listing-item="index"`
+   and home in: estimate a scroll position, let the virtualizer render, measure
+   the real row height from rendered rows, re-estimate, and once the target row
+   is in the DOM, animate `.content-section` so the measured row sits exactly at
+   the top. Panel/compact modes render every item, so the target is measured
+   directly. The eased `scrollElement(contentSection, …)` helper does the final
+   animation.
 
 ### 4. The bar component
 
 New presentational child, e.g. `src/components/AlphabetIndexBar.vue`:
 
-- Props: `buckets` (already reversed by parent), `disabledLabels?`.
+- Props: `letters` (`{ label, available }[]` in display order, built by parent).
 - Fixed-position vertical strip pinned to the right of the scroll area; absolute
   within `ItemsListing`'s content wrapper so it floats over the list.
 - Emits `jump(label)` → parent runs the jump logic above.
@@ -241,16 +229,18 @@ swapping in the endpoint later is low-risk.
 
 ## Open questions / decisions
 
-1. ~~**Descending from server or client?**~~ **RESOLVED** — see LOCKED CONTRACT:
-   the endpoint accepts the full `order_by` (incl. `_desc`) and returns buckets
-   already ordered with real row offsets. The frontend renders verbatim.
-2. **Empty letters:** skip them, or show greyed-out and snap to the next
-   non-empty bucket? Recommend showing all A–Z greyed where empty for a stable
-   bar height; requires the endpoint to report which letters exist.
+1. ~~**Descending from server or client?**~~ **RESOLVED** — server returns
+   always-ascending offsets + `total`; the **frontend** reverses for `_desc`
+   (display index = `total - nextBucketAscOffset`).
+2. ~~**Empty letters:**~~ **RESOLVED** — the bar shows the full A–Z (and `#`
+   when present); empty letters are dimmed but clickable and snap to the nearest
+   available letter (forward, else back to the last available).
 3. **`#` bucket** for non-alpha leading chars (numbers, symbols, accented
-   characters not folded to A–Z): include at top (asc) / bottom (desc).
-4. **Panel-mode precision:** approve `scrollIntoView` (option b) vs computed
-   grid offset (option a). Recommend `scrollIntoView` for panel modes.
+   characters not folded to A–Z): rendered at top (asc) / bottom (desc) when the
+   server returns it.
+4. ~~**Panel-mode precision:**~~ **RESOLVED** — all view modes use the same
+   measure-the-rendered-row approach (`data-listing-item` + measured offset),
+   which self-corrects for variable row/card heights.
 5. ~~**Collation parity:**~~ **RESOLVED** — the index uses the same collation as
    the library list query: MA's binary comparison over a normalized ASCII key
    (lowercased, `unidecode` diacritic folding, non-alphanumerics removed), **not**

@@ -134,26 +134,28 @@
           :items="pagedItems"
           style="height: 100%; overflow: hidden"
         >
-          <template #default="{ item }">
-            <ListviewItem
-              :item="item"
-              :show-track-number="showTrackNumber"
-              :show-disc-number="showTrackNumber"
-              :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
-              :show-menu="item.is_playable"
-              :show-provider="showProvider"
-              :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
-              :is-selected="isSelected(item)"
-              :is-available="itemIsAvailable(item)"
-              :is-playing="isPlaying(item, itemtype)"
-              :show-details="itemtype.includes('versions')"
-              :disable-play-button="isPlayActionInProgress"
-              :parent-item="parentItem"
-              :sort-by="params.sortBy"
-              @select="onSelect"
-            />
+          <template #default="{ item, index }">
+            <div :data-listing-item="index">
+              <ListviewItem
+                :item="item"
+                :show-track-number="showTrackNumber"
+                :show-disc-number="showTrackNumber"
+                :show-duration="showDuration"
+                :show-favorite="showFavoritesOnlyFilter"
+                :show-menu="item.is_playable"
+                :show-provider="showProvider"
+                :show-album="showAlbum"
+                :show-checkboxes="showCheckboxes"
+                :is-selected="isSelected(item)"
+                :is-available="itemIsAvailable(item)"
+                :is-playing="isPlaying(item, itemtype)"
+                :show-details="itemtype.includes('versions')"
+                :disable-play-button="isPlayActionInProgress"
+                :parent-item="parentItem"
+                :sort-by="params.sortBy"
+                @select="onSelect"
+              />
+            </div>
           </template>
         </v-virtual-scroll>
       </v-infinite-scroll>
@@ -184,8 +186,8 @@
       <!-- alphabet quick-jump bar (only for alphabetical sorts) -->
       <AlphabetIndexBar
         v-if="showAlphabetBar"
-        :buckets="letterBuckets"
-        @jump="jumpToBucket"
+        :letters="displayLetters"
+        @jump="onLetterJump"
       />
 
       <!-- box shown when item(s) selected -->
@@ -401,7 +403,11 @@ const genreOptions = ref<{ label: string; value: number }[]>([]);
 
 // alphabet quick-jump state
 const ALPHA_SORTS = ["name", "sort_name"];
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const letterBuckets = ref<LetterIndexBucket[]>([]);
+// total item count the current index was computed against (needed to convert
+// the server's always-ascending offsets into descending display positions)
+const letterTotal = ref(0);
 // signature of the params the current letterBuckets were fetched for, so we
 // only refetch when something that affects the index actually changes
 let letterIndexSignature = "";
@@ -409,6 +415,7 @@ let letterIndexToken = 0;
 
 const baseSortKey = computed(() => params.value.sortBy.replace(/_desc$/, ""));
 const isAlphaSort = computed(() => ALPHA_SORTS.includes(baseSortKey.value));
+const isDescendingSort = computed(() => params.value.sortBy.endsWith("_desc"));
 const showAlphabetBar = computed(
   () =>
     isAlphaSort.value &&
@@ -416,6 +423,44 @@ const showAlphabetBar = computed(
     !params.value.search &&
     letterBuckets.value.length > 1,
 );
+
+// server offsets are always ascending; pair each bucket with the next bucket's
+// offset (its ascending "end") so we can derive descending positions too
+const ascBuckets = computed(() => {
+  const sorted = [...letterBuckets.value].sort((a, b) => a.offset - b.offset);
+  return sorted.map((b, i) => ({
+    label: b.label,
+    start: b.offset,
+    end: i + 1 < sorted.length ? sorted[i + 1].offset : letterTotal.value,
+  }));
+});
+
+// map of letter -> target row index in the *displayed* (current sort) order
+const labelTargets = computed(() => {
+  const m = new Map<string, number>();
+  for (const b of ascBuckets.value) {
+    // descending: the bucket's first displayed row is total - itsAscendingEnd
+    const target = isDescendingSort.value ? letterTotal.value - b.end : b.start;
+    m.set(b.label, Math.max(0, target));
+  }
+  return m;
+});
+
+// full A-Z (+ optional #) in display order, flagged with availability so empty
+// letters render dimmed but remain clickable (they snap to the nearest letter)
+const displayLetters = computed(() => {
+  const hasHash = labelTargets.value.has("#");
+  const letters = isDescendingSort.value ? [...ALPHABET].reverse() : ALPHABET;
+  const result: { label: string; available: boolean }[] = [];
+  // "#" (non-alphabetic) sorts at the top ascending / bottom descending
+  if (hasHash && !isDescendingSort.value)
+    result.push({ label: "#", available: true });
+  for (const l of letters)
+    result.push({ label: l, available: labelTargets.value.has(l) });
+  if (hasHash && isDescendingSort.value)
+    result.push({ label: "#", available: true });
+  return result;
+});
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -810,48 +855,116 @@ const loadLetterIndex = async function () {
     // ignore stale responses if params changed while we were waiting
     if (token !== letterIndexToken) return;
     letterBuckets.value = result.buckets || [];
+    letterTotal.value = result.total || 0;
     letterIndexSignature = signature;
   } catch {
     if (token !== letterIndexToken) return;
     letterBuckets.value = [];
+    letterTotal.value = 0;
     letterIndexSignature = "";
   }
 };
 
-// jump the listing to the first item of the tapped letter bucket
-const jumpToBucket = async function (bucket: LetterIndexBucket) {
-  const targetOffset = Math.max(0, bucket.offset);
+// resolve a tapped letter to the nearest available one and jump there.
+// empty letters snap forward (down the bar) to the next available letter, or
+// back to the last available letter if there is none after it.
+const onLetterJump = function (label: string) {
+  const list = displayLetters.value;
+  const idx = list.findIndex((e) => e.label === label);
+  if (idx < 0) return;
+  for (let i = idx; i < list.length; i++) {
+    if (list[i].available)
+      return jumpToIndex(labelTargets.value.get(list[i].label)!);
+  }
+  for (let i = idx - 1; i >= 0; i--) {
+    if (list[i].available)
+      return jumpToIndex(labelTargets.value.get(list[i].label)!);
+  }
+};
+
+const offsetWithin = function (el: HTMLElement, container: HTMLElement) {
+  return (
+    el.getBoundingClientRect().top -
+    container.getBoundingClientRect().top +
+    container.scrollTop
+  );
+};
+
+// wait a couple of animation frames so the virtual scroller can render the
+// rows around a newly-set scroll position
+const waitFrames = function (frames: number) {
+  return new Promise<void>((resolve) => {
+    const step = (n: number) =>
+      n <= 0 ? resolve() : requestAnimationFrame(() => step(n - 1));
+    step(frames);
+  });
+};
+
+const renderedRow = function (content: HTMLElement, index: number) {
+  return content.querySelector(
+    `[data-listing-item="${index}"]`,
+  ) as HTMLElement | null;
+};
+
+// jump the listing so the item at the given (display-order) index sits at the
+// top of the viewport. The list is virtualized with *measured* (not fixed) row
+// heights, so a plain index*70 estimate drifts further down the list. Instead
+// we home in: estimate -> render -> measure real row height -> re-estimate,
+// then land exactly on the measured row position once it is rendered.
+const jumpToIndex = async function (displayIndex: number) {
   // make sure enough items are paged in to reach the target row
-  while (pagedItems.value.length <= targetOffset && !allItemsReceived.value) {
+  while (pagedItems.value.length <= displayIndex && !allItemsReceived.value) {
     await loadNextPage({ done: function () {} });
   }
-  const targetIndex = Math.min(targetOffset, pagedItems.value.length - 1);
+  const targetIndex = Math.min(displayIndex, pagedItems.value.length - 1);
   if (targetIndex < 0) return;
 
-  await nextTick();
   const content = document.querySelector(".content-section") as HTMLElement;
   if (!content) return;
-  const contentTop = content.getBoundingClientRect().top;
 
-  if (viewMode.value === "list") {
-    // list rows have a fixed 70px height; offset relative to the list container
-    const listEl = content.querySelector(
-      ".v-virtual-scroll",
-    ) as HTMLElement | null;
-    const base = listEl
-      ? listEl.getBoundingClientRect().top - contentTop + content.scrollTop
-      : 0;
-    scrollElement(content, base + targetIndex * 70, 200);
-  } else {
-    // panel/compact modes render every item; locate the target element
-    const el = content.querySelector(
-      `[data-listing-item="${targetIndex}"]`,
-    ) as HTMLElement | null;
-    if (el) {
-      const top =
-        el.getBoundingClientRect().top - contentTop + content.scrollTop;
-      scrollElement(content, top, 200);
+  // panel/compact modes render every item, so the target is always in the DOM
+  if (viewMode.value !== "list") {
+    await nextTick();
+    const el = renderedRow(content, targetIndex);
+    if (el) scrollElement(content, offsetWithin(el, content), 200);
+    return;
+  }
+
+  const listEl = content.querySelector(
+    ".v-virtual-scroll",
+  ) as HTMLElement | null;
+  const base = listEl ? offsetWithin(listEl, content) : 0;
+  let rowH = 70; // initial estimate, refined from real rows below
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const target = renderedRow(content, targetIndex);
+    if (target) {
+      // target is rendered - land exactly on its measured position
+      scrollElement(content, offsetWithin(target, content), 150);
+      return;
     }
+    // refine the row height from whatever rows are currently rendered, then
+    // jump close to the target using a known rendered row as the anchor
+    const rendered = content.querySelectorAll("[data-listing-item]");
+    if (rendered.length >= 2) {
+      const first = rendered[0] as HTMLElement;
+      const last = rendered[rendered.length - 1] as HTMLElement;
+      const i0 = Number(first.getAttribute("data-listing-item"));
+      const i1 = Number(last.getAttribute("data-listing-item"));
+      if (i1 > i0) {
+        rowH =
+          (offsetWithin(last, content) - offsetWithin(first, content)) /
+          (i1 - i0);
+        content.scrollTop =
+          offsetWithin(first, content) + (targetIndex - i0) * rowH;
+      } else {
+        content.scrollTop = base + targetIndex * rowH;
+      }
+    } else {
+      content.scrollTop = base + targetIndex * rowH;
+    }
+    await nextTick();
+    await waitFrames(2);
   }
 };
 

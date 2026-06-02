@@ -8,48 +8,56 @@
     @pointerleave="activeLabel = null"
   >
     <button
-      v-for="bucket in buckets"
-      :key="bucket.label"
+      v-for="letter in letters"
+      :key="letter.label"
       type="button"
       class="alphabet-index-letter"
-      :class="{ 'alphabet-index-letter--active': activeLabel === bucket.label }"
-      :aria-label="bucket.label"
-      @pointerdown.prevent="onActivate(bucket)"
-      @pointerenter="onPointerEnter($event, bucket)"
+      :class="{
+        'alphabet-index-letter--active': activeLabel === letter.label,
+        'alphabet-index-letter--empty': !letter.available,
+      }"
+      :aria-label="letter.label"
+      @pointerdown.prevent="onActivate(letter.label)"
+      @pointerenter="onPointerEnter($event, letter.label)"
     >
-      {{ bucket.label }}
+      {{ letter.label }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { LetterIndexBucket } from "@/plugins/api/interfaces";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
+export interface AlphabetLetter {
+  label: string;
+  // whether this letter has any items; empty letters are still clickable and
+  // resolve to the nearest available letter by the parent
+  available: boolean;
+}
+
 interface Props {
-  // Buckets in the exact order they should be displayed (already reversed by
-  // the server for descending sorts).
-  buckets: LetterIndexBucket[];
+  // full set of letters in display order (already reversed for descending sorts)
+  letters: AlphabetLetter[];
 }
 defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: "jump", bucket: LetterIndexBucket): void;
+  (e: "jump", label: string): void;
 }>();
 
 const activeLabel = ref<string | null>(null);
 
-const onActivate = function (bucket: LetterIndexBucket) {
-  activeLabel.value = bucket.label;
-  emit("jump", bucket);
+const onActivate = function (label: string) {
+  activeLabel.value = label;
+  emit("jump", label);
 };
 
 // Support dragging a finger/cursor down the bar to scrub through letters,
 // matching the iOS-style fast-scroller UX. Only react while a pointer button
 // is held down (buttons !== 0) so plain hover doesn't trigger jumps.
-const onPointerEnter = function (evt: PointerEvent, bucket: LetterIndexBucket) {
+const onPointerEnter = function (evt: PointerEvent, label: string) {
   if (evt.buttons === 0) return;
-  onActivate(bucket);
+  onActivate(label);
 };
 
 // Size the bar to the available vertical space of the scroll viewport, so the
@@ -119,6 +127,11 @@ onBeforeUnmount(() => window.removeEventListener("resize", updateSize));
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.alphabet-index-letter--empty {
+  /* letters with no items are dimmed but still clickable (snap to nearest) */
+  opacity: 0.3;
 }
 
 .alphabet-index-letter:hover,
