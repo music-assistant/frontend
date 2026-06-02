@@ -275,3 +275,42 @@ swapping in the endpoint later is low-risk.
 
 **Frontend total:** ~2.5–3 days. **+ backend:** ~0.5–1 day in the server repo.
 Fallback-only (no backend) trims to ~2 days but with the large-library caveat.
+
+---
+
+## Addendum — fast jumps on large libraries (windowed list)
+
+**Problem.** The shipped jump loads a contiguous array from row 0 up to the
+target, so jumping to a far letter in a large library (e.g. T in ~4500 tracks)
+loads thousands of full item objects. On a Raspberry Pi this is ~20s+ —
+serializing/holding thousands of objects, not query speed. Bounded-parallel
+chunk loading didn't help (the single Pi just contends on the parallel queries).
+
+**Root cause.** A contiguous virtual list needs every row above the target in
+memory, even though only ~10 are visible.
+
+**Fix (frontend-led, no server change required).** Switch server-paged listings
+to a **windowed / lazy** model:
+
+1. Size the list to `total` up front (cheap), using lightweight **placeholder**
+   rows for everything not yet loaded.
+2. Render placeholders as skeleton rows (fixed height, so positions stay exact).
+3. On scroll (throttled), compute the visible index range and fetch only the
+   **windows** that intersect it (one small `offset/limit` request each) — the
+   server already supports this. Cache loaded windows.
+4. A letter jump becomes: set `scrollTop = targetIndex * rowHeight`, then load
+   just that window — **one ~50-item request**, instant regardless of library
+   size.
+
+**Server.** No new endpoint needed; existing `library_items` offset pagination
++ the `letter_index` offsets suffice. (Optional later optimization: have
+`letter_index`/list pages return the leading **sort_key** so the client can use
+keyset pagination instead of large SQL `OFFSET`, if offset scans prove slow on
+the Pi for single windows.)
+
+**Scope / risk.** This replaces the infinite-scroll/append model in the shared
+`ItemsListing` component, which **every** library view uses. It needs careful
+handling of: window load/cancel on fast scrolling, placeholder rendering in all
+three view modes, scroll-position restore (back-nav), search/filter resets, and
+selection. Medium rework (~2–3 days) with broad QA across all library views —
+the regression surface is the main cost, not the core idea.
