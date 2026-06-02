@@ -98,14 +98,14 @@
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
-              :style="`font-size: ${titleFontSize};`"
+              :style="`font-size: ${titleFontSize};font-weight:600;`"
             >
               {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- current media title -->
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="onTitleClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -115,7 +115,7 @@
             <!-- no player selected message -->
             <v-card-title
               v-else
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -856,22 +856,9 @@ const titleFontSize = computed(() => {
 });
 
 const subTitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.95em";
-    case "sm":
-      return "1.15em";
-    case "md":
-      return "1.3em";
-    case "lg":
-      return store.showQueueItems ? "1.2em" : "1.5em";
-    case "xl":
-      return store.showQueueItems ? "1.3em" : "1.65em";
-    case "xxl":
-      return store.showQueueItems ? "1.35em" : "1.8em";
-    default:
-      return "1.0em";
-  }
+  // Anchor album/artist size to the track title using the EditorialMediaCard
+  // tile ratio (subtitle 12px / title 14px).
+  return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
 });
 
 const queueTitleFontSize = computed(() => {
