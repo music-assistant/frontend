@@ -395,20 +395,28 @@
         </div>
       </v-layout>
     </v-card>
-    <v-dialog v-model="showFullInfo" max-width="975" width="auto">
-      <v-card>
+    <Dialog v-if="!$slots['description-dialog']" v-model:open="showFullInfo">
+      <DialogContent class="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>{{ headerTitle }}</DialogTitle>
+        </DialogHeader>
         <!-- eslint-disable vue/no-v-html -->
-        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-        <v-card-text v-html="fullDescription" />
+        <div
+          class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+          v-html="fullDescription"
+        ></div>
         <!-- eslint-enable vue/no-v-html -->
-        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-        <v-card-actions>
-          <v-btn color="primary" block @click="showFullInfo = false">
-            {{ $t("close") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+        <DialogFooter>
+          <Button @click="showFullInfo = false">{{ $t("close") }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <slot
+      name="description-dialog"
+      :open="showFullInfo"
+      :on-open-change="(v: boolean) => (showFullInfo = v)"
+      :close="() => (showFullInfo = false)"
+    ></slot>
   </div>
 </template>
 
@@ -451,6 +459,14 @@ import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // properties
 export interface Props {

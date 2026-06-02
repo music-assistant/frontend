@@ -50,79 +50,21 @@
       />
 
       <!-- compact all-media-types searchresult -->
-      <div v-if="!store.globalSearchType">
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('tracks'),
-            icon: 'mdi-file-music',
-            items: searchResult.tracks,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('artists'),
-            icon: 'mdi-account-music',
-            items: searchResult.artists,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('albums'),
-            icon: 'mdi-album',
-            items: searchResult.albums,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('playlists'),
-            icon: 'mdi-playlist-music',
-            items: searchResult.playlists,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('podcasts'),
-            icon: 'mdi-podcast',
-            items: searchResult.podcasts,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('audiobooks'),
-            icon: 'mdi-book-play-outline',
-            items: searchResult.audiobooks,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('radios'),
-            icon: 'mdi-radio',
-            items: searchResult.radio,
-          }"
-          :show-provider-on-cover="true"
-        />
-        <WidgetRow
-          v-if="searchResult && !loading"
-          :widget-row="{
-            title: $t('genres'),
-            icon: GenreIcon,
-            items: searchResult.genres,
-          }"
-          :show-provider-on-cover="true"
-        />
+      <div v-if="!store.globalSearchType" class="search-shelves">
+        <EditorialShelf
+          v-for="section in searchSections"
+          :key="section.key"
+          :title="section.title"
+          :tiles-per-view="tilesPerView"
+        >
+          <EditorialMediaCard
+            v-for="item in section.items"
+            :key="item.uri"
+            :item="item"
+            :show-provider-on-cover="true"
+            :is-available="itemIsAvailable(item)"
+          />
+        </EditorialShelf>
       </div>
       <!-- tracks-only searchresult -->
       <div v-else-if="!loading">
@@ -152,12 +94,15 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import Container from "@/components/Container.vue";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
+import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
+import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
-import WidgetRow from "@/components/WidgetRow.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
+import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import { MediaType, SearchResults } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
@@ -178,6 +123,25 @@ const searchResult = ref<SearchResults>();
 const loading = ref(false);
 const throttleId = ref();
 const { getPreference, setPreference } = useUserPreferences();
+
+// Responsive tile sizing, shared curve with the rest of the app.
+const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
+
+// Compact "all" results as horizontal shelves; empty categories are hidden.
+const searchSections = computed(() => {
+  const r = searchResult.value;
+  if (!r || loading.value) return [];
+  return [
+    { key: "tracks", title: $t("tracks"), items: r.tracks },
+    { key: "artists", title: $t("artists"), items: r.artists },
+    { key: "albums", title: $t("albums"), items: r.albums },
+    { key: "playlists", title: $t("playlists"), items: r.playlists },
+    { key: "podcasts", title: $t("podcasts"), items: r.podcasts },
+    { key: "audiobooks", title: $t("audiobooks"), items: r.audiobooks },
+    { key: "radios", title: $t("radios"), items: r.radio },
+    { key: "genres", title: $t("genres"), items: r.genres },
+  ].filter((s) => s.items?.length);
+});
 
 // watchers
 watch(

@@ -8,16 +8,38 @@
         @click="showEditDialog = true"
       />
     </template>
+    <template v-if="smartRules" #description-dialog="{ open, onOpenChange }">
+      <Dialog :open="open" @update:open="onOpenChange">
+        <DialogContent class="sp-fluid sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle>
+              {{ $t("smart_playlist.rules_dialog_title") }}
+            </DialogTitle>
+            <DialogDescription>
+              {{ itemDetails?.name }}
+            </DialogDescription>
+          </DialogHeader>
+          <SmartPlaylistRulesView :rules="smartRules" />
+        </DialogContent>
+      </Dialog>
+    </template>
   </InfoHeader>
   <EditSmartPlaylistDialog
-    v-if="smartRules"
+    v-if="smartRules && itemDetails"
     v-model:open="showEditDialog"
     :db-playlist-id="props.itemId"
-    :playlist-name="itemDetails?.name ?? ''"
+    :playlist="itemDetails"
     @saved="loadItemDetails"
   />
+  <!-- dynamic playlist: content is generated on the fly, so show a sample instead of a fixed tracklist -->
+  <DynamicPlaylistSample
+    v-if="itemDetails && itemDetails.is_dynamic"
+    :item-details="itemDetails"
+    :provider="props.provider"
+    @edit-rules="showEditDialog = true"
+  />
   <ItemsListing
-    v-if="itemDetails"
+    v-else-if="itemDetails"
     ref="listingRef"
     itemtype="playlisttracks"
     :parent-item="itemDetails"
@@ -45,15 +67,23 @@
     :no-server-side-sorting="true"
   />
 
-  <!-- provider mapping details -->
   <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
 </template>
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import DynamicPlaylistSample from "@/components/DynamicPlaylistSample.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Settings2 } from "lucide-vue-next";
 import {
   EventType,
@@ -78,7 +108,10 @@ const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const loadItemDetails = async function () {
   itemDetails.value = await api.getPlaylist(props.itemId, props.provider);
-  if (props.provider === "library") {
+  const isSmartPlaylist = itemDetails.value?.provider_mappings?.some(
+    (m) => m.provider_domain === "smart_playlist",
+  );
+  if (isSmartPlaylist) {
     try {
       smartRules.value = await api.getSmartPlaylistRules(props.itemId);
     } catch {
