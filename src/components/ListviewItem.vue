@@ -73,11 +73,11 @@
     <!-- subtitle -->
     <template #subtitle>
       <!-- album track view: only show collaborating artist(s), if any -->
-      <div v-if="albumTrackView" class="ma-line-clamp-1">
-        <span v-if="collabArtists">{{
-          $t("with_artists", { artists: collabArtists })
-        }}</span>
-      </div>
+      <template v-if="albumTrackView">
+        <div v-if="collabArtists" class="ma-line-clamp-1">
+          {{ $t("with_artists", { artists: collabArtists }) }}
+        </div>
+      </template>
       <!-- track: artists(s) + album (check for provider_mappings to filter out ItemMapping) -->
       <div
         v-else-if="
@@ -187,6 +187,7 @@
       <span
         v-if="
           albumTrackView &&
+          showDuration &&
           'duration' in item &&
           item.duration &&
           !$vuetify.display.mobile
