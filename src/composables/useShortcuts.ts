@@ -393,48 +393,6 @@ export function useShortcuts() {
     );
   }
 
-  async function reorderItems(
-    sourceItem: ShortcutItem,
-    targetItem: ShortcutItem,
-  ) {
-    const sourceUri = findPinnedUriByIdentities(
-      getShortcutIdentities(sourceItem),
-      pinnedUris.value,
-    );
-    const targetUri = findPinnedUriByIdentities(
-      getShortcutIdentities(targetItem),
-      pinnedUris.value,
-    );
-    if (!sourceUri || !targetUri) return;
-
-    const nextUris = reorderShortcutUris(
-      pinnedUris.value,
-      sourceUri,
-      targetUri,
-    );
-    if (!nextUris) return;
-
-    // Keep local UI in sync immediately while preference update propagates.
-    const fromItemIndex = resolvedItems.value.findIndex((item) =>
-      isSameShortcutUri(sourceUri, item),
-    );
-    const toItemIndex = resolvedItems.value.findIndex((item) =>
-      isSameShortcutUri(targetUri, item),
-    );
-    if (
-      fromItemIndex >= 0 &&
-      toItemIndex >= 0 &&
-      fromItemIndex !== toItemIndex
-    ) {
-      const nextItems = [...resolvedItems.value];
-      const [movedItem] = nextItems.splice(fromItemIndex, 1);
-      nextItems.splice(toItemIndex, 0, movedItem);
-      resolvedItems.value = nextItems;
-    }
-
-    await setPreference(PREF_KEY, nextUris);
-  }
-
   // React to external changes (e.g. pinShortcutStandalone from the context menu)
   watch(pinnedUris, async (newUris) => {
     const currentItems = resolvedItems.value;
@@ -512,6 +470,5 @@ export function useShortcuts() {
     isPinned,
     pinItem,
     unpinItem,
-    reorderItems,
   };
 }
