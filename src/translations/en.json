@@ -26,6 +26,7 @@
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
     "browse": "Browse",
+    "browse_by_genre": "Browse by Genre",
     "clear_selection": "Clear selection",
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
@@ -850,6 +851,7 @@
         "show_all_genres": "Show all genres"
     },
     "topresult": "Top result",
+    "top_picks_for_you": "Top Picks for You",
     "track": "Track",
     "track_number": "Disc {0} Track {1}",
     "tracks": "Tracks",
@@ -1022,7 +1024,7 @@
         "recently_added_tracks": "Recently added tracks"
     },
     "homescreen_edit_enable": "Edit Home screen",
-    "homescreen_edit_disable": "Leave Home screen edit mode",
+    "homescreen_edit_disable": "Leave edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "lyrics_offset": "Lyrics offset",
     "radiobrowser_by_votes": "By votes",
