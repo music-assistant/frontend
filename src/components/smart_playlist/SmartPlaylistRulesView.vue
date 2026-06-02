@@ -245,7 +245,9 @@ const ruleRows = computed<RuleViewRow[]>(() => {
     });
   }
 
-  const albumTypeNames = (r.album_types ?? []).map((at) => $t(`album_type.${at}`));
+  const albumTypeNames = (r.album_types ?? []).map((at) =>
+    $t(`album_type.${at}`),
+  );
   if (albumTypeNames.length) {
     rows.push({
       key: "album-type-is",
@@ -255,7 +257,9 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       tags: albumTypeNames,
     });
   }
-  const exAlbumTypeNames = (r.excluded_album_types ?? []).map((at) => $t(`album_type.${at}`));
+  const exAlbumTypeNames = (r.excluded_album_types ?? []).map((at) =>
+    $t(`album_type.${at}`),
+  );
   if (exAlbumTypeNames.length) {
     rows.push({
       key: "album-type-not",
