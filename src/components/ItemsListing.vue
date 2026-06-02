@@ -1142,6 +1142,17 @@ const loadingPages = new Set<number>();
 let windowScrollEl: HTMLElement | null = null;
 let windowScrollScheduled = false;
 
+// Windowing builds a full-length virtual list (one row per item in the whole
+// library). On desktop that's fine, but on iOS/iPadOS Safari the resulting
+// scroll layer (millions of pixels tall for a large library) exhausts memory
+// and crashes the whole tab. Lightening the rows didn't help - it's the size
+// of the layer itself - so we keep windowing off for touch (coarse-pointer)
+// devices, which fall back to the regular infinite-scroll path.
+const supportsWindowing =
+  typeof window === "undefined" ||
+  !window.matchMedia ||
+  !window.matchMedia("(pointer: coarse)").matches;
+
 const isPlaceholder = function (item: unknown) {
   // unloaded rows are stored as null (kept lightweight - allocating an object
   // per row freezes iOS Safari on large libraries)
@@ -1158,6 +1169,7 @@ const makePlaceholders = function (count: number) {
 const windowConditionsMet = function () {
   return (
     props.windowed &&
+    supportsWindowing &&
     !!props.loadPagedData &&
     viewMode.value === "list" &&
     isAlphaSort.value &&
