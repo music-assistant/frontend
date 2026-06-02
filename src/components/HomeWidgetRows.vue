@@ -370,8 +370,7 @@ const heroColumns = computed<HeroEntry[][]>(() => {
 // Only track hover (for the nav chevrons) on hover-capable devices. On touch
 // devices the emulated mouseenter would mutate the DOM, which makes mobile
 // Safari swallow the first tap as "hover" instead of a click.
-const canHover = window.matchMedia?.("(hover: hover)").matches ?? true;
-
+const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const heroGrid = ref<HTMLElement | null>(null);
 const heroHovering = ref(false);
 const heroCanLeft = ref(false);
