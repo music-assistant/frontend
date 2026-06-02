@@ -52,25 +52,51 @@
         <div class="ed-hero-row__head">
           <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
         </div>
-        <div class="ed-hero-grid">
-          <EditorialHeroCard
-            class="ed-hero-grid__lead"
-            :item="heroEntries[0].item"
-            :tag="heroEntries[0].tag"
-            large
-          />
-          <div
-            v-for="(col, i) in heroColumns"
-            :key="i"
-            class="ed-hero-grid__col"
+        <div
+          class="ed-hero-row__viewport"
+          @mouseenter="heroHovering = true"
+          @mouseleave="heroHovering = false"
+        >
+          <!-- prev -->
+          <button
+            v-show="heroHovering && heroCanLeft"
+            class="ed-hero-nav ed-hero-nav--left"
+            aria-label="Scroll left"
+            @click="scrollHero(-1)"
           >
+            <ChevronLeft :size="20" />
+          </button>
+
+          <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
             <EditorialHeroCard
-              v-for="entry in col"
-              :key="entry.item.uri"
-              :item="entry.item"
-              :tag="entry.tag"
+              class="ed-hero-grid__lead"
+              :item="heroEntries[0].item"
+              :tag="heroEntries[0].tag"
+              large
             />
+            <div
+              v-for="(col, i) in heroColumns"
+              :key="i"
+              class="ed-hero-grid__col"
+            >
+              <EditorialHeroCard
+                v-for="entry in col"
+                :key="entry.item.uri"
+                :item="entry.item"
+                :tag="entry.tag"
+              />
+            </div>
           </div>
+
+          <!-- next -->
+          <button
+            v-show="heroHovering && heroCanRight"
+            class="ed-hero-nav ed-hero-nav--right"
+            aria-label="Scroll right"
+            @click="scrollHero(1)"
+          >
+            <ChevronRight :size="20" />
+          </button>
         </div>
       </section>
 
@@ -152,6 +178,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import {
   computed,
   nextTick,
@@ -337,6 +364,39 @@ const heroColumns = computed<HeroEntry[][]>(() => {
   for (let i = 0; i < rest.length; i += 2) cols.push(rest.slice(i, i + 2));
   return cols;
 });
+
+// --- Top Picks horizontal scroller (lead + columns that overflow on narrower
+// screens) with hover chevrons, mirroring EditorialShelf's nav affordance. ---
+const heroGrid = ref<HTMLElement | null>(null);
+const heroHovering = ref(false);
+const heroCanLeft = ref(false);
+const heroCanRight = ref(false);
+
+const updateHeroNav = () => {
+  const el = heroGrid.value;
+  if (!el) return;
+  heroCanLeft.value = el.scrollLeft > 1;
+  heroCanRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+};
+
+const scrollHero = (dir: number) => {
+  const el = heroGrid.value;
+  if (!el) return;
+  el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+};
+
+let heroRo: ResizeObserver | undefined;
+const observeHero = () => {
+  const el = heroGrid.value;
+  if (!el) return;
+  updateHeroNav();
+  if ("ResizeObserver" in window && !heroRo) {
+    heroRo = new ResizeObserver(updateHeroNav);
+    heroRo.observe(el);
+  }
+};
+
+watch(heroEntries, () => nextTick(observeHero), { deep: false });
 const HERO_CACHE_KEY = "discoverTopPicks";
 const HERO_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
@@ -483,6 +543,8 @@ onMounted(async () => {
   await Promise.all([loadRecommendations(), loadGenres()]);
   resolveHeroPicks();
   loading.value = false;
+  nextTick(observeHero);
+  window.addEventListener("resize", updateHeroNav);
 
   const unsub = api.subscribe(
     EventType.MEDIA_ITEM_PLAYED,
@@ -495,6 +557,11 @@ onMounted(async () => {
     },
   );
   onBeforeUnmount(unsub);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateHeroNav);
+  heroRo?.disconnect();
 });
 </script>
 
@@ -518,10 +585,9 @@ onMounted(async () => {
 }
 .ed-players__label {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  text-transform: uppercase;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
 }
 .ed-players__count {
   font-size: 12px;
@@ -559,12 +625,16 @@ onMounted(async () => {
   letter-spacing: -0.6px;
   color: rgb(var(--v-theme-on-background));
 }
+.ed-hero-row__viewport {
+  position: relative;
+}
 /* Horizontal scroller: fixed-size lead + columns of 2, so cards don't stretch
-   on wide screens. Big screens fit them all; narrower ones scroll. */
+   on wide screens. The default viewport shows the lead + 2 columns; the
+   remaining columns scroll into view (and fit outright on big screens). */
 .ed-hero-grid {
   display: flex;
   gap: 14px;
-  height: 280px;
+  height: 320px;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x proximity;
@@ -574,12 +644,12 @@ onMounted(async () => {
   display: none;
 }
 .ed-hero-grid__lead {
-  flex: 1.5 0 384px;
+  flex: 1.5 0 520px;
   height: 100%;
   scroll-snap-align: start;
 }
 .ed-hero-grid__col {
-  flex: 1 0 256px;
+  flex: 1 0 360px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -589,6 +659,38 @@ onMounted(async () => {
 .ed-hero-grid__col > * {
   flex: 1;
   min-height: 0;
+}
+.ed-hero-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgb(var(--v-theme-on-background));
+  background: rgb(var(--v-theme-panel));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.ed-hero-nav:hover {
+  background: rgb(var(--v-theme-surface));
+}
+.ed-hero-nav:active {
+  transform: translateY(-50%) scale(0.94);
+}
+.ed-hero-nav--left {
+  left: 12px;
+}
+.ed-hero-nav--right {
+  right: 12px;
 }
 
 .ed-genres {
@@ -664,6 +766,9 @@ onMounted(async () => {
   }
   .ed-hero-row__title {
     font-size: 22px;
+  }
+  .ed-hero-nav {
+    display: none;
   }
 }
 </style>
