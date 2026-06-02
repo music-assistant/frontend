@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
+import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { api, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
@@ -318,6 +319,8 @@ const completeInitialization = async () => {
 };
 
 onMounted(async () => {
+  initGlobalShortcutsSync();
+
   // Detect if running as installed PWA (works across iOS, Android, and desktop)
   const nav = window.navigator as Navigator & { standalone?: boolean };
   store.isInPWAMode =

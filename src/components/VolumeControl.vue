@@ -201,6 +201,11 @@ const getChildPlayers = function (player: Player) {
       // skip unavailable players
       if (!syncPlayer.available) continue;
 
+      // skip players hidden from the UI (only filters the add-candidate
+      // path; current group members above are always shown so they don't
+      // become invisible participants).
+      if (syncPlayer.hide_in_ui) continue;
+
       // skip for group players
       if (syncPlayer.type == PlayerType.GROUP) continue;
 

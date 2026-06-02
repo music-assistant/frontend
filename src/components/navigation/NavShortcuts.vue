@@ -100,6 +100,8 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
     event.clientY,
     true,
     true,
+    undefined,
+    { shortcutContext: true },
   );
 };
 

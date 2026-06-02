@@ -72,6 +72,10 @@ function parseShortcutUri(uri: string): ParsedShortcutUri | null {
   };
 }
 
+export function getShortcutUri(item: ShortcutItem | ItemMapping): string {
+  return `${item.provider}://${item.media_type}/${item.item_id}`;
+}
+
 // When right is a ShortcutItem, also matches by constructed MA URI so items
 // whose uri is a non-MA URL (e.g. a podcast RSS <link> website) still match.
 function isSameShortcutUri(
@@ -81,10 +85,7 @@ function isSameShortcutUri(
   const candidates: string[] =
     typeof right === "string"
       ? [right]
-      : [
-          `${right.provider}://${right.media_type}/${right.item_id}`,
-          ...(right.uri ? [right.uri] : []),
-        ];
+      : [getShortcutUri(right), ...(right.uri ? [right.uri] : [])];
 
   const a = parseShortcutUri(left);
   for (const candidate of candidates) {
@@ -142,6 +143,32 @@ function getShortcutIdentities(
   return identities;
 }
 
+function hasShortcutIdentityMatch(
+  parsedUri: ParsedShortcutUri,
+  identities: ParsedShortcutUri[],
+): boolean {
+  return identities.some(
+    (identity) =>
+      parsedUri.mediaType === identity.mediaType &&
+      parsedUri.provider === identity.provider &&
+      parsedUri.itemId === identity.itemId,
+  );
+}
+
+function findPinnedUriByIdentities(
+  identities: ParsedShortcutUri[],
+  pinnedUris: string[],
+): string | null {
+  for (const pinnedUri of pinnedUris) {
+    const parsed = parseShortcutUri(pinnedUri);
+    if (!parsed) continue;
+    if (hasShortcutIdentityMatch(parsed, identities)) {
+      return pinnedUri;
+    }
+  }
+  return null;
+}
+
 export function isShortcutMediaType(mediaType: MediaType): boolean {
   return SUPPORTED_TYPES.has(mediaType);
 }
@@ -171,12 +198,7 @@ export function isShortcutPinnedItem(
   return _getPinnedUris().some((pinnedUri) => {
     const parsed = parseShortcutUri(pinnedUri);
     if (!parsed) return false;
-    return identities.some(
-      (identity) =>
-        parsed.mediaType === identity.mediaType &&
-        parsed.provider === identity.provider &&
-        parsed.itemId === identity.itemId,
-    );
+    return hasShortcutIdentityMatch(parsed, identities);
   });
 }
 
@@ -189,12 +211,7 @@ export async function unpinShortcutStandaloneItem(
     _getPinnedUris().filter((pinnedUri) => {
       const parsed = parseShortcutUri(pinnedUri);
       if (!parsed) return true;
-      return !identities.some(
-        (identity) =>
-          parsed.mediaType === identity.mediaType &&
-          parsed.provider === identity.provider &&
-          parsed.itemId === identity.itemId,
-      );
+      return !hasShortcutIdentityMatch(parsed, identities);
     }),
   );
 }
@@ -207,9 +224,96 @@ export async function pinShortcutStandalone(
   if (uris.length >= MAX_SHORTCUTS) return;
   // Always construct a proper MA URI from provider/media_type/item_id.
   // item.uri may be a non-MA URL (e.g. a podcast website link).
-  const maUri = `${item.provider}://${item.media_type}/${item.item_id}`;
+  const maUri = getShortcutUri(item);
   if (uris.some((pinnedUri) => isSameShortcutUri(pinnedUri, maUri))) return;
   await setUserPreference(PREF_KEY, [...uris, maUri]);
+}
+
+let _globalShortcutsSyncInitialized = false;
+
+async function removePinnedUriIfPresent(uri: string): Promise<void> {
+  const currentUris = _getPinnedUris();
+  const nextUris = currentUris.filter((u) => !isSameShortcutUri(u, uri));
+  if (nextUris.length !== currentUris.length) {
+    await setUserPreference(PREF_KEY, nextUris);
+  }
+}
+
+export function initGlobalShortcutsSync(): void {
+  if (_globalShortcutsSyncInitialized) return;
+  _globalShortcutsSyncInitialized = true;
+
+  api.subscribe(EventType.MEDIA_ITEM_DELETED, (evt: EventMessage) => {
+    // Keep sidebar preferences clean even when nav components are unmounted.
+    void removePinnedUriIfPresent(evt.object_id as string);
+  });
+}
+
+function reorderShortcutUris(
+  uris: string[],
+  sourceUri: string,
+  targetUri: string,
+): string[] | null {
+  const fromIndex = uris.findIndex((uri) => isSameShortcutUri(uri, sourceUri));
+  const toIndex = uris.findIndex((uri) => isSameShortcutUri(uri, targetUri));
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+    return null;
+  }
+  const nextUris = [...uris];
+  const [movedUri] = nextUris.splice(fromIndex, 1);
+  nextUris.splice(toIndex, 0, movedUri);
+  return nextUris;
+}
+
+export async function reorderShortcutStandalone(
+  sourceUri: string,
+  targetUri: string,
+): Promise<void> {
+  const currentUris = _getPinnedUris();
+  const nextUris = reorderShortcutUris(currentUris, sourceUri, targetUri);
+  if (!nextUris) return;
+  await setUserPreference(PREF_KEY, nextUris);
+}
+
+function findPinnedUriForItem(item: ShortcutItem | ItemMapping): string | null {
+  const identities = getShortcutIdentities(item);
+  return findPinnedUriByIdentities(identities, _getPinnedUris());
+}
+
+export function getShortcutMoveAvailability(item: ShortcutItem | ItemMapping): {
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+} {
+  const uris = _getPinnedUris();
+  const uri = findPinnedUriForItem(item);
+  if (!uri) return { canMoveUp: false, canMoveDown: false };
+  const index = uris.findIndex((pinnedUri) =>
+    isSameShortcutUri(pinnedUri, uri),
+  );
+  if (index < 0) return { canMoveUp: false, canMoveDown: false };
+  return {
+    canMoveUp: index > 0,
+    canMoveDown: index < uris.length - 1,
+  };
+}
+
+export async function moveShortcutStandaloneItem(
+  item: ShortcutItem | ItemMapping,
+  direction: "up" | "down",
+): Promise<void> {
+  const uris = _getPinnedUris();
+  const uri = findPinnedUriForItem(item);
+  if (!uri) return;
+
+  const index = uris.findIndex((pinnedUri) =>
+    isSameShortcutUri(pinnedUri, uri),
+  );
+  if (index < 0) return;
+
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= uris.length) return;
+
+  await reorderShortcutStandalone(uri, uris[targetIndex]);
 }
 
 export function useShortcuts() {
@@ -270,7 +374,7 @@ export function useShortcuts() {
   async function pinItem(item: ShortcutItem) {
     // Always construct a proper MA URI from provider/media_type/item_id.
     // item.uri may be a non-MA URL (e.g. a podcast website link).
-    const maUri = `${item.provider}://${item.media_type}/${item.item_id}`;
+    const maUri = getShortcutUri(item);
     if (isPinned(maUri)) return;
     if (pinnedUris.value.length >= MAX_SHORTCUTS) return;
     // Add immediately for instant sidebar feedback; watch won't re-add (already present)
@@ -318,37 +422,37 @@ export function useShortcuts() {
             result.value as ShortcutItem,
           ];
         }
-        // rejected = network error — don't prune, the URI stays pinned
+        // rejected = network/backend error — don't mutate pinned URIs here.
       });
     }
   });
 
-  let _unsubscribe: (() => void) | undefined;
+  let _unsubscribeUpdated: (() => void) | undefined;
 
   onMounted(async () => {
     await loadShortcuts();
 
-    _unsubscribe = api.subscribe_multi(
-      [EventType.MEDIA_ITEM_DELETED, EventType.MEDIA_ITEM_UPDATED],
+    _unsubscribeUpdated = api.subscribe(
+      EventType.MEDIA_ITEM_UPDATED,
       (evt: EventMessage) => {
-        if (evt.event === EventType.MEDIA_ITEM_DELETED) {
-          if (isPinned(evt.object_id as string)) {
-            unpinItem(evt.object_id as string);
-          }
-        } else if (evt.event === EventType.MEDIA_ITEM_UPDATED) {
-          const idx = resolvedItems.value.findIndex((p) =>
-            isSameShortcutUri(evt.object_id as string, p),
-          );
-          if (idx >= 0) {
-            resolvedItems.value[idx] = evt.data as ShortcutItem;
-          }
+        const objectId = evt.object_id as string | undefined;
+        if (!objectId) return;
+        const idx = resolvedItems.value.findIndex((item) =>
+          isSameShortcutUri(objectId, item),
+        );
+        if (
+          idx >= 0 &&
+          evt.data &&
+          SUPPORTED_TYPES.has((evt.data as ShortcutItem).media_type)
+        ) {
+          resolvedItems.value[idx] = evt.data as ShortcutItem;
         }
       },
     );
   });
 
   onUnmounted(() => {
-    _unsubscribe?.();
+    _unsubscribeUpdated?.();
   });
 
   return {
