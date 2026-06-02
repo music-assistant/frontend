@@ -584,6 +584,26 @@ export class MusicAssistantApi {
       genre,
     });
   }
+
+  /**
+   * Get the alphabet quick-jump index for the library tracks listing.
+   * See getLibraryArtistsLetterIndex for the bucket ordering contract.
+   */
+  public getLibraryTracksLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    order_by?: string,
+    provider?: string | string[],
+    genre?: number | number[],
+  ): Promise<LibraryLetterIndex> {
+    return this.sendCommand("music/tracks/library_items/letter_index", {
+      favorite,
+      search,
+      order_by,
+      provider,
+      genre,
+    });
+  }
   public getLibraryTracksCount(
     favorite_only: boolean = false,
   ): Promise<number> {

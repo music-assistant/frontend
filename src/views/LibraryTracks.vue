@@ -7,6 +7,7 @@
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :sort-keys="sortKeys"
     :show-album="true"
     :update-available="updateAvailable"
@@ -92,6 +93,16 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
+    params.sortBy,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
+  );
+};
+
+const loadLetterIndex = async function (params: LoadDataParams) {
+  return await api.getLibraryTracksLetterIndex(
+    params.favoritesOnly || undefined,
+    params.search,
     params.sortBy,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,

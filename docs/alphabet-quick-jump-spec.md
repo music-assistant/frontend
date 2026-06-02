@@ -2,9 +2,14 @@
 
 ## Goal
 
-Add a vertical A–Z index bar down the right side of the Artists and Albums
-library views (and ideally any alphabetically-sortable list). Tapping a letter
+Add a vertical A–Z index bar down the right side of the Artists, Albums and
+Tracks library views (and any alphabetically-sortable list). Tapping a letter
 jumps the list to the first item in that letter's bucket.
+
+Each view is wired by passing a `loadLetterIndex` callback to `ItemsListing`,
+backed by a per-type server command (`music/<type>/library_items/letter_index`):
+`getLibraryArtistsLetterIndex`, `getLibraryAlbumsLetterIndex`,
+`getLibraryTracksLetterIndex`.
 
 Requirements from the request:
 
