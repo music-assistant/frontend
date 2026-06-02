@@ -536,5 +536,7 @@
         "scan_qr": "Escanear QR",
         "qr_invalid": "Código QR no válido. Por favor escanea el código ID QR remoto de Music Assistant."
     },
-    "narrators": "Narradores"
+    "narrators": "Narradores",
+    "similar_tracks": "Pistas Similares",
+    "similar_artists": "Artistas Similares"
 }
