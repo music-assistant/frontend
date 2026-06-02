@@ -1,6 +1,7 @@
 import api from "@/plugins/api";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useSmartPlaylistGenres } from "./useSmartPlaylistGenres";
@@ -11,7 +12,27 @@ import {
 } from "./useSmartPlaylistSeedItems";
 
 export type SmartPlaylistMode = "library" | "seed";
-export type RuleField = "genre" | "artist" | "album" | "favorite" | "year";
+export type RuleField =
+  | "genre"
+  | "artist"
+  | "album"
+  | "album_type"
+  | "favorite"
+  | "year";
+
+// Stable numeric id ↔ string value mapping for album types.
+// These ids are UI-only and are never persisted; the API receives the string value.
+const ALBUM_TYPE_ID_TO_VALUE: Record<number, string> = {
+  1: "album",
+  2: "single",
+  3: "ep",
+  4: "live",
+  5: "soundtrack",
+  6: "compilation",
+};
+const ALBUM_TYPE_VALUE_TO_ID: Record<string, number> = Object.fromEntries(
+  Object.entries(ALBUM_TYPE_ID_TO_VALUE).map(([k, v]) => [v, Number(k)]),
+);
 export type RuleOperator = "is" | "is_not";
 
 export interface RuleValue {
@@ -269,6 +290,27 @@ export function useSmartPlaylistRulesForm(
         fresh.push(row);
       }
 
+      if (initial.album_types?.length) {
+        const row = newRule("album_type", "is");
+        row.values = initial.album_types
+          .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
+          .map((at) => ({
+            id: ALBUM_TYPE_VALUE_TO_ID[at],
+            name: $t(`album_type.${at}`),
+          }));
+        if (row.values.length) fresh.push(row);
+      }
+      if (initial.excluded_album_types?.length) {
+        const row = newRule("album_type", "is_not");
+        row.values = initial.excluded_album_types
+          .filter((at) => ALBUM_TYPE_VALUE_TO_ID[at] !== undefined)
+          .map((at) => ({
+            id: ALBUM_TYPE_VALUE_TO_ID[at],
+            name: $t(`album_type.${at}`),
+          }));
+        if (row.values.length) fresh.push(row);
+      }
+
       rules.value = fresh;
 
       seedItems.clearSeeds();
@@ -337,6 +379,8 @@ export function useSmartPlaylistRulesForm(
     const artistExclude = isSeed ? [] : pickRuleValues("artist", "is_not");
     const albumInclude = isSeed ? [] : pickRuleValues("album", "is");
     const albumExclude = isSeed ? [] : pickRuleValues("album", "is_not");
+    const albumTypeInclude = pickRuleValues("album_type", "is");
+    const albumTypeExclude = pickRuleValues("album_type", "is_not");
     const yr = yearRule();
     const fav = !isSeed && !!favoriteRule();
 
@@ -368,6 +412,12 @@ export function useSmartPlaylistRulesForm(
       year_from: yr?.yearFrom ?? undefined,
       year_to: yr?.yearTo ?? undefined,
       dedup_hours: dedupHours.value,
+      album_types: albumTypeInclude
+        .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
+        .filter((x): x is string => !!x),
+      excluded_album_types: albumTypeExclude
+        .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
+        .filter((x): x is string => !!x),
     };
 
     if (isSeed) {
@@ -399,14 +449,21 @@ export function useSmartPlaylistRulesForm(
 
   const availableFields = computed<RuleField[]>(() => {
     if (mode.value === "seed") {
-      return (["genre", "year"] as RuleField[]).filter(
+      return (["genre", "album_type", "year"] as RuleField[]).filter(
         (f) => !fieldAlreadyUsed(f),
       );
     }
     return (
-      ["genre", "artist", "album", "favorite", "year"] as RuleField[]
+      ["genre", "album_type", "artist", "album", "favorite", "year"] as RuleField[]
     ).filter((f) => !fieldAlreadyUsed(f));
   });
+
+  const albumTypeOptions = computed(() =>
+    Object.entries(ALBUM_TYPE_ID_TO_VALUE).map(([idStr, value]) => ({
+      id: Number(idStr),
+      name: $t(`album_type.${value}`),
+    })),
+  );
 
   const initialSnapshot = ref<string | null>(null);
   const hasChanges = computed(() => {
@@ -493,6 +550,7 @@ export function useSmartPlaylistRulesForm(
     genres: genresComposable.genres,
     genreOptions: genresComposable.genreOptions,
     genreName: genresComposable.genreName,
+    albumTypeOptions,
     seedItems,
     setMode,
     addRule,

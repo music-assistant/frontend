@@ -136,7 +136,13 @@
         <SmartPlaylistRuleValuePicker
           :source="pickerSource"
           :selected-ids="rule.values.map((v) => v.id)"
-          :preloaded-options="rule.field === 'genre' ? genreOptions : []"
+          :preloaded-options="
+            rule.field === 'genre'
+              ? genreOptions
+              : rule.field === 'album_type'
+                ? albumTypeOptions
+                : []
+          "
           :add-label="pickerAddLabel"
           @add="(opt) => emit('add-value', opt)"
         />
@@ -184,6 +190,7 @@ const props = defineProps<{
   rule: RuleRow;
   availableFields: RuleField[];
   genreOptions: { id: number; name: string; item?: Genre }[];
+  albumTypeOptions: { id: number; name: string }[];
   invalid?: boolean;
 }>();
 
@@ -199,6 +206,7 @@ const emit = defineEmits<{
 const fieldOptions = computed(() => {
   const all: { value: RuleField; label: string }[] = [
     { value: "genre", label: $t("genre") },
+    { value: "album_type", label: $t("smart_playlist.field_album_type_is").replace(/ is$/, "") },
     { value: "artist", label: $t("artist") },
     { value: "album", label: $t("album") },
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
@@ -211,13 +219,15 @@ const fieldOptions = computed(() => {
 });
 
 const pickerSource = computed(
-  () => props.rule.field as "genre" | "artist" | "album",
+  () => props.rule.field as "genre" | "artist" | "album" | "album_type",
 );
 
 const pickerAddLabel = computed(() => {
   switch (props.rule.field) {
     case "genre":
       return $t("genre");
+    case "album_type":
+      return $t("smart_playlist.field_album_type_is").replace(/ is$/, "");
     case "artist":
       return $t("artist");
     case "album":

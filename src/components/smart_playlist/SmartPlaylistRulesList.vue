@@ -40,6 +40,7 @@
         :rule="rule"
         :available-fields="availableFields"
         :genre-options="genreOptions"
+        :album-type-options="albumTypeOptions"
         :invalid="invalidRuleUids.has(rule.uid)"
         @change-field="(field) => onChangeField(rule, field)"
         @change-operator="(op) => onChangeOperator(rule, op)"
@@ -128,6 +129,7 @@ defineProps<{
   logic: "AND" | "OR";
   availableFields: RuleField[];
   genreOptions: { id: number; name: string; item?: Genre }[];
+  albumTypeOptions: { id: number; name: string }[];
   invalidRuleUids: Set<string>;
 }>();
 
@@ -141,6 +143,7 @@ const emit = defineEmits<{
 function fieldLabel(field: RuleField): string {
   return match(field)
     .with("genre", () => $t("genre"))
+    .with("album_type", () => $t("smart_playlist.field_album_type_is").replace(/ is$/, ""))
     .with("artist", () => $t("artist"))
     .with("album", () => $t("album"))
     .with("favorite", () => $t("smart_playlist.field_favorite"))

@@ -160,6 +160,7 @@ const hasAnyInclude = computed(() => {
     !!r.genre_ids?.length ||
     !!r.artist_ids?.length ||
     !!r.album_ids?.length ||
+    !!r.album_types?.length ||
     !!r.favorites_only
   );
 });
@@ -241,6 +242,25 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       label: $t("smart_playlist.field_favorite"),
       exclude: false,
       value: $t("smart_playlist.favorites_yes"),
+    });
+  }
+
+  if (r.album_types?.length) {
+    rows.push({
+      key: "album-type-is",
+      icon: Disc3,
+      label: $t("smart_playlist.field_album_type_is"),
+      exclude: false,
+      tags: r.album_types.map((at) => $t(`album_type.${at}`)),
+    });
+  }
+  if (r.excluded_album_types?.length) {
+    rows.push({
+      key: "album-type-not",
+      icon: Ban,
+      label: $t("smart_playlist.field_album_type_is_not"),
+      exclude: true,
+      tags: r.excluded_album_types.map((at) => $t(`album_type.${at}`)),
     });
   }
 
