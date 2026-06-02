@@ -39,6 +39,7 @@ import {
   DSPConfigPreset,
   EventType,
   ItemMapping,
+  LibraryLetterIndex,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlayableMediaItemType,
@@ -535,6 +536,52 @@ export class MusicAssistantApi {
     return this.sendCommand("music/albums/count", {
       favorite_only,
       album_types,
+    });
+  }
+
+  /**
+   * Get the alphabet quick-jump index for the library artists listing.
+   * Buckets are returned in the requested sort order (Z->A for *_desc) with
+   * offsets that are real row positions for that sort. Only meaningful for
+   * alphabetical sorts (order_by 'name(_desc)' or 'sort_name(_desc)').
+   */
+  public getLibraryArtistsLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    order_by?: string,
+    album_artists_only?: boolean,
+    provider?: string | string[],
+    genre?: number | number[],
+  ): Promise<LibraryLetterIndex> {
+    return this.sendCommand("music/artists/library_items/letter_index", {
+      favorite,
+      search,
+      order_by,
+      album_artists_only,
+      provider,
+      genre,
+    });
+  }
+
+  /**
+   * Get the alphabet quick-jump index for the library albums listing.
+   * See getLibraryArtistsLetterIndex for the bucket ordering contract.
+   */
+  public getLibraryAlbumsLetterIndex(
+    favorite?: boolean,
+    search?: string,
+    order_by?: string,
+    album_types?: Array<AlbumType | string>,
+    provider?: string | string[],
+    genre?: number | number[],
+  ): Promise<LibraryLetterIndex> {
+    return this.sendCommand("music/albums/library_items/letter_index", {
+      favorite,
+      search,
+      order_by,
+      album_types,
+      provider,
+      genre,
     });
   }
   public getLibraryTracksCount(

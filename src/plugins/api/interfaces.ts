@@ -1315,3 +1315,19 @@ export interface SmartPlaylistTrackStats {
   count: number;
   duration_seconds: number;
 }
+
+// A single entry in an alphabet quick-jump index: the leading character
+// "bucket" (e.g. "A", or "#" for non-alphabetic) and the 0-based row offset of
+// the first item in that bucket, for the requested sort order.
+export interface LetterIndexBucket {
+  label: string;
+  offset: number;
+}
+
+// Result of a library letter-index lookup. Buckets are returned in the same
+// order as the requested order_by (so a *_desc sort yields Z->A) with offsets
+// that are real row positions for that sort.
+export interface LibraryLetterIndex {
+  buckets: LetterIndexBucket[];
+  total: number;
+}

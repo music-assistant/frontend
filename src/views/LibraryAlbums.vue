@@ -5,6 +5,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :sort-keys="sortKeys"
     :update-available="updateAvailable"
     :title="$t('albums')"
@@ -73,6 +74,17 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
+    params.sortBy,
+    params.albumType,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
+  );
+};
+
+const loadLetterIndex = async function (params: LoadDataParams) {
+  return await api.getLibraryAlbumsLetterIndex(
+    params.favoritesOnly || undefined,
+    params.search,
     params.sortBy,
     params.albumType,
     params.provider && params.provider.length > 0 ? params.provider : undefined,

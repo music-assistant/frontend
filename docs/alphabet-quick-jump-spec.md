@@ -60,18 +60,29 @@ index matches what the list actually shows):
 
 ```jsonc
 {
-  "favorite":            false,        // bool, optional
-  "search":              "",           // string, optional
-  "order_by":            "sort_name",  // "name" | "sort_name" only (alpha sorts)
-  "album_artists_only":  false,        // artists only
-  "album_types":         [...],        // albums only
-  "provider":            "...",        // optional
-  "genre":               [...]         // optional
+  "favorite":            false,            // bool, optional
+  "search":              "",               // string, optional
+  "order_by":            "sort_name_desc", // "name(_desc)" | "sort_name(_desc)"
+  "album_artists_only":  false,            // artists only
+  "album_types":         [...],            // albums only
+  "provider":            "...",            // optional
+  "genre":               [...]             // optional
 }
 ```
 
-**Response:** ordered list of buckets (ascending). Server owns bucketing rules
-so the frontend stays dumb:
+> **LOCKED CONTRACT (resolves former open question #1 — descending):**
+> The endpoint receives the **full `order_by` string including any `_desc`
+> suffix** and MUST return the buckets **in the same order, with `offset` values
+> that are the actual 0-based row positions for that sort**. In other words, for
+> `sort_name_desc` the first bucket is `Z` at offset 0, then `Y`, etc. The
+> frontend renders the returned buckets verbatim and jumps straight to
+> `bucket.offset` — it performs **no** reversal or offset arithmetic of its own.
+> This keeps the frontend dumb and guarantees the index always lines up with the
+> exact rows the list query returns for the same params.
+
+**Response:** ordered list of buckets in the **requested sort order**. Server
+owns bucketing rules so the frontend stays dumb. Example for `order_by=sort_name`
+(ascending):
 
 ```jsonc
 {
@@ -86,6 +97,22 @@ so the frontend stays dumb:
 }
 ```
 
+For `order_by=sort_name_desc` the same library returns the buckets reversed,
+with offsets recomputed for the descending row order:
+
+```jsonc
+{
+  "buckets": [
+    { "label": "Z", "offset": 0 },
+    { "label": "Y", "offset": 44 },
+    // ...
+    { "label": "A", "offset": 1012 },
+    { "label": "#", "offset": 1024 - countOfNonAlpha }
+  ],
+  "total": 1024
+}
+```
+
 **Server-side rules:**
 
 - Bucket by the **same field used for sorting** (`sort_name` when
@@ -93,15 +120,13 @@ so the frontend stays dumb:
 - Use the same locale/collation the list query uses (the frontend currently
   uses `localeCompare` with `{ numeric: true }` for client-side sorts —
   `ItemsListing.vue:1561`).
-- Anything not starting A–Z collapses into a single `#` bucket at offset 0.
+- Anything not starting A–Z collapses into a single `#` bucket (top for
+  ascending, bottom for descending).
 - Only include letters that actually have items (so the bar can grey-out / skip
   empties). Returning all 26 with the offset of the next non-empty bucket is an
   acceptable alternative — see "Empty letters" below.
-- Always return **ascending**; the frontend reverses for descending sorts (a
-  descending list of N items puts bucket-offset `O` at display row
-  `total - O - countInBucket`; simplest is for the server to also accept the
-  `_desc` order and return descending offsets — **decision needed**, see Open
-  Questions).
+- Honour the `_desc` suffix per the LOCKED CONTRACT above: return buckets in the
+  requested order with offsets that are real row positions for that sort.
 
 ---
 
@@ -129,22 +154,19 @@ set in `LibraryArtists.vue` / `LibraryAlbums.vue` next to the existing
 
 ```ts
 const ALPHA_SORTS = ["name", "sort_name"];
-const isAlphaSort  = computed(() => ALPHA_SORTS.includes(baseSortKey.value));
-const isDescending = computed(() => params.value.sortBy.endsWith("_desc"));
 const baseSortKey  = computed(() => params.value.sortBy.replace(/_desc$/, ""));
+const isAlphaSort  = computed(() => ALPHA_SORTS.includes(baseSortKey.value));
 
 const showAlphabetBar = computed(() =>
   isAlphaSort.value && !!props.loadLetterIndex && letterBuckets.value.length > 1
 );
-
-const displayedBuckets = computed(() =>
-  isDescending.value ? [...letterBuckets.value].reverse() : letterBuckets.value
-);
 ```
 
-Fetch `letterBuckets` whenever `isAlphaSort`, the filters, or `sortBy` change
-(watch the same params that trigger `loadData`). Cache per
-sort+filter signature to avoid refetching on every scroll.
+Per the LOCKED CONTRACT the server already returns buckets in the requested
+order (Z→A for `_desc`), so the bar renders `letterBuckets` **verbatim** — no
+client-side reversal. Fetch `letterBuckets` whenever `isAlphaSort`, the filters,
+or `sortBy` change (the same signature that triggers a full `loadData`). Cache
+per sort+filter signature to avoid refetching on every scroll.
 
 ### 3. Jump-to-letter behaviour
 
@@ -212,10 +234,9 @@ swapping in the endpoint later is low-risk.
 
 ## Open questions / decisions
 
-1. **Descending from server or client?** Either the endpoint accepts `_desc`
-   and returns descending offsets, or it always returns ascending and the
-   frontend converts. Recommend: server returns **ascending only**; frontend
-   reverses labels and maps offset → display index. Keeps the endpoint simple.
+1. ~~**Descending from server or client?**~~ **RESOLVED** — see LOCKED CONTRACT:
+   the endpoint accepts the full `order_by` (incl. `_desc`) and returns buckets
+   already ordered with real row offsets. The frontend renders verbatim.
 2. **Empty letters:** skip them, or show greyed-out and snap to the next
    non-empty bucket? Recommend showing all A–Z greyed where empty for a stable
    bar height; requires the endpoint to report which letters exist.

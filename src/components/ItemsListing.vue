@@ -79,8 +79,9 @@
         <!-- panel view -->
         <v-row v-if="viewMode == 'panel'">
           <v-col
-            v-for="item in pagedItems"
+            v-for="(item, index) in pagedItems"
             :key="item.uri"
+            :data-listing-item="index"
             cols="12"
             :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
           >
@@ -105,8 +106,9 @@
         <!-- compact panel view -->
         <v-row v-if="viewMode == 'panel_compact'">
           <v-col
-            v-for="item in pagedItems"
+            v-for="(item, index) in pagedItems"
             :key="item.uri"
+            :data-listing-item="index"
             cols="12"
             :class="`col-${panelViewItemResponsive($vuetify.display.width)}`"
           >
@@ -179,6 +181,13 @@
         </v-alert>
       </div>
 
+      <!-- alphabet quick-jump bar (only for alphabetical sorts) -->
+      <AlphabetIndexBar
+        v-if="showAlphabetBar"
+        :buckets="letterBuckets"
+        @jump="jumpToBucket"
+      />
+
       <!-- box shown when item(s) selected -->
       <v-snackbar
         :model-value="selectedItems.length > 1"
@@ -219,6 +228,7 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { Eye, EyeClosed, Layers } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import AlphabetIndexBar from "@/components/AlphabetIndexBar.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
@@ -233,6 +243,8 @@ import {
   EventMessage,
   EventType,
   ItemMapping,
+  LetterIndexBucket,
+  LibraryLetterIndex,
   MediaItemTypeOrItemMapping,
   MediaType,
   PlaybackState,
@@ -308,6 +320,8 @@ export interface Props {
   loadPagedData?: (params: LoadDataParams) => Promise<MediaItemType[]>;
   // loadItems callback is provided for flat non-paged listings
   loadItems?: (params: LoadDataParams) => Promise<MediaItemType[]>;
+  // loadLetterIndex callback enables the A-Z quick-jump bar (alphabetical sorts)
+  loadLetterIndex?: (params: LoadDataParams) => Promise<LibraryLetterIndex>;
   limit?: number;
   total?: number;
   infiniteScroll?: boolean;
@@ -345,6 +359,7 @@ const props = withDefaults(defineProps<Props>(), {
   extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
+  loadLetterIndex: undefined,
   path: undefined,
   icon: undefined,
   restoreState: false,
@@ -383,6 +398,24 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// alphabet quick-jump state
+const ALPHA_SORTS = ["name", "sort_name"];
+const letterBuckets = ref<LetterIndexBucket[]>([]);
+// signature of the params the current letterBuckets were fetched for, so we
+// only refetch when something that affects the index actually changes
+let letterIndexSignature = "";
+let letterIndexToken = 0;
+
+const baseSortKey = computed(() => params.value.sortBy.replace(/_desc$/, ""));
+const isAlphaSort = computed(() => ALPHA_SORTS.includes(baseSortKey.value));
+const showAlphabetBar = computed(
+  () =>
+    isAlphaSort.value &&
+    !!props.loadLetterIndex &&
+    !params.value.search &&
+    letterBuckets.value.length > 1,
+);
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -745,6 +778,80 @@ const loadNextPage = async function ({
 const loadAllItems = async function () {
   while (!allItemsReceived.value) {
     await loadNextPage({ done: function () {} });
+  }
+};
+
+// build a signature for the params that influence the letter index, so we can
+// skip refetching when only the offset (scroll position) changed
+const letterIndexParamsSignature = function () {
+  const p = params.value;
+  return JSON.stringify([
+    p.sortBy,
+    p.favoritesOnly || false,
+    p.albumArtistsFilter || false,
+    p.albumType || null,
+    p.provider || null,
+    p.genreIds ?? null,
+  ]);
+};
+
+// (re)load the alphabet quick-jump index when an alphabetical sort is active
+const loadLetterIndex = async function () {
+  if (!props.loadLetterIndex || !isAlphaSort.value || params.value.search) {
+    letterBuckets.value = [];
+    letterIndexSignature = "";
+    return;
+  }
+  const signature = letterIndexParamsSignature();
+  if (signature === letterIndexSignature) return;
+  const token = ++letterIndexToken;
+  try {
+    const result = await props.loadLetterIndex(params.value);
+    // ignore stale responses if params changed while we were waiting
+    if (token !== letterIndexToken) return;
+    letterBuckets.value = result.buckets || [];
+    letterIndexSignature = signature;
+  } catch {
+    if (token !== letterIndexToken) return;
+    letterBuckets.value = [];
+    letterIndexSignature = "";
+  }
+};
+
+// jump the listing to the first item of the tapped letter bucket
+const jumpToBucket = async function (bucket: LetterIndexBucket) {
+  const targetOffset = Math.max(0, bucket.offset);
+  // make sure enough items are paged in to reach the target row
+  while (pagedItems.value.length <= targetOffset && !allItemsReceived.value) {
+    await loadNextPage({ done: function () {} });
+  }
+  const targetIndex = Math.min(targetOffset, pagedItems.value.length - 1);
+  if (targetIndex < 0) return;
+
+  await nextTick();
+  const content = document.querySelector(".content-section") as HTMLElement;
+  if (!content) return;
+  const contentTop = content.getBoundingClientRect().top;
+
+  if (viewMode.value === "list") {
+    // list rows have a fixed 70px height; offset relative to the list container
+    const listEl = content.querySelector(
+      ".v-virtual-scroll",
+    ) as HTMLElement | null;
+    const base = listEl
+      ? listEl.getBoundingClientRect().top - contentTop + content.scrollTop
+      : 0;
+    scrollElement(content, base + targetIndex * 70, 200);
+  } else {
+    // panel/compact modes render every item; locate the target element
+    const el = content.querySelector(
+      `[data-listing-item="${targetIndex}"]`,
+    ) as HTMLElement | null;
+    if (el) {
+      const top =
+        el.getBoundingClientRect().top - contentTop + content.scrollTop;
+      scrollElement(content, top, 200);
+    }
   }
 };
 
@@ -1180,6 +1287,11 @@ const loadData = async function (
   params.value.refresh = false;
   loading.value = false;
   tempHide.value = false;
+
+  // refresh the alphabet quick-jump index on a full (re)load, not on paging
+  if (!offset) {
+    loadLetterIndex();
+  }
 };
 
 // Get preferences as a computed ref that updates automatically

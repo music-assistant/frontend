@@ -5,6 +5,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
     :title="$t('artists')"
@@ -55,6 +56,17 @@ const loadItems = async function (params: LoadDataParams) {
     params.search,
     params.limit,
     params.offset,
+    params.sortBy,
+    params.albumArtistsFilter,
+    params.provider && params.provider.length > 0 ? params.provider : undefined,
+    params.genreIds,
+  );
+};
+
+const loadLetterIndex = async function (params: LoadDataParams) {
+  return await api.getLibraryArtistsLetterIndex(
+    params.favoritesOnly || undefined,
+    params.search,
     params.sortBy,
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
