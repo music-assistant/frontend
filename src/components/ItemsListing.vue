@@ -250,6 +250,7 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
@@ -839,6 +840,13 @@ const musicProviders = computed(() => {
 
   return Object.values(api.providers)
     .filter((provider) => {
+      // include Smart Playlist plugin provider in the playlists filter
+      if (
+        props.itemtype === "playlists" &&
+        provider.domain === SMART_PLAYLIST_PROVIDER_DOMAIN
+      ) {
+        return provider.available;
+      }
       if (provider.type !== ProviderType.MUSIC) return false;
       if (
         store.currentUser &&
