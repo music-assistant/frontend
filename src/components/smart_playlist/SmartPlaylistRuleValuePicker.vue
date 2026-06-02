@@ -93,7 +93,9 @@ const isSearching = ref(false);
 
 // Genre and album_type options are preloaded and filtered client-side; artist/album are
 // fetched remotely as the user types.
-const isRemote = computed(() => props.source !== "genre" && props.source !== "album_type");
+const isRemote = computed(
+  () => props.source !== "genre" && props.source !== "album_type",
+);
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(

@@ -206,7 +206,7 @@ const emit = defineEmits<{
 const fieldOptions = computed(() => {
   const all: { value: RuleField; label: string }[] = [
     { value: "genre", label: $t("genre") },
-    { value: "album_type", label: $t("smart_playlist.field_album_type_is").replace(/ is$/, "") },
+    { value: "album_type", label: $t("album_type_label") },
     { value: "artist", label: $t("artist") },
     { value: "album", label: $t("album") },
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
@@ -227,7 +227,7 @@ const pickerAddLabel = computed(() => {
     case "genre":
       return $t("genre");
     case "album_type":
-      return $t("smart_playlist.field_album_type_is").replace(/ is$/, "");
+      return $t("album_type_label");
     case "artist":
       return $t("artist");
     case "album":

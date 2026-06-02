@@ -245,22 +245,24 @@ const ruleRows = computed<RuleViewRow[]>(() => {
     });
   }
 
-  if (r.album_types?.length) {
+  const albumTypeNames = (r.album_types ?? []).map((at) => $t(`album_type.${at}`));
+  if (albumTypeNames.length) {
     rows.push({
       key: "album-type-is",
       icon: Disc3,
       label: $t("smart_playlist.field_album_type_is"),
       exclude: false,
-      tags: r.album_types.map((at) => $t(`album_type.${at}`)),
+      tags: albumTypeNames,
     });
   }
-  if (r.excluded_album_types?.length) {
+  const exAlbumTypeNames = (r.excluded_album_types ?? []).map((at) => $t(`album_type.${at}`));
+  if (exAlbumTypeNames.length) {
     rows.push({
       key: "album-type-not",
       icon: Ban,
       label: $t("smart_playlist.field_album_type_is_not"),
       exclude: true,
-      tags: r.excluded_album_types.map((at) => $t(`album_type.${at}`)),
+      tags: exAlbumTypeNames,
     });
   }
 

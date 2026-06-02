@@ -143,7 +143,7 @@ const emit = defineEmits<{
 function fieldLabel(field: RuleField): string {
   return match(field)
     .with("genre", () => $t("genre"))
-    .with("album_type", () => $t("smart_playlist.field_album_type_is").replace(/ is$/, ""))
+    .with("album_type", () => $t("album_type_label"))
     .with("artist", () => $t("artist"))
     .with("album", () => $t("album"))
     .with("favorite", () => $t("smart_playlist.field_favorite"))

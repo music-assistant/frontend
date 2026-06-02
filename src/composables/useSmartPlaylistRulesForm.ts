@@ -454,7 +454,14 @@ export function useSmartPlaylistRulesForm(
       );
     }
     return (
-      ["genre", "album_type", "artist", "album", "favorite", "year"] as RuleField[]
+      [
+        "genre",
+        "album_type",
+        "artist",
+        "album",
+        "favorite",
+        "year",
+      ] as RuleField[]
     ).filter((f) => !fieldAlreadyUsed(f));
   });
 
