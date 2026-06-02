@@ -227,7 +227,7 @@ const completeInitialization = async () => {
     // Full initialization for regular and non-party guest users
     await api.fetchState();
     // Drop persisted filters for providers that are no longer installed.
-    await pruneStaleProviderFilters(new Set(Object.keys(api.providers)));
+    await pruneStaleProviderFilters();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
     store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
@@ -428,7 +428,7 @@ onMounted(async () => {
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    pruneStaleProviderFilters(new Set(Object.keys(api.providers)));
+    pruneStaleProviderFilters();
   });
 });
 

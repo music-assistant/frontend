@@ -1375,8 +1375,11 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
-// Drop ids from the active filter when a provider is removed at runtime and
-// reload, so the view refreshes without waiting for remount.
+// When a provider stops being usable at runtime, drop it from the active filter
+// and reload so the view refreshes without a remount. Only the live query is
+// touched, not the saved preference: a temporarily unavailable provider keeps
+// its filter so it is reapplied on return. Cleaning up removed providers from
+// the saved preference is handled by pruneStaleProviderFilters.
 watch(
   () => musicProviders.value.map((p) => p.value).join("|"),
   () => {
@@ -1385,12 +1388,6 @@ watch(
     const next = params.value.provider.filter((id) => validIds.has(id));
     if (next.length === params.value.provider.length) return;
     params.value.provider = next.length > 0 ? next : undefined;
-    setItemsListingPreference(
-      props.path || props.itemtype,
-      props.itemtype,
-      "providerFilter",
-      params.value.provider,
-    );
     loadData(true, undefined, true);
   },
 );
