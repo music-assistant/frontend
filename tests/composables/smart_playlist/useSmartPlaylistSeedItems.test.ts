@@ -42,68 +42,199 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
+import api from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/useSmartPlaylistSeedItems";
+
+interface SearchFnArg {
+  searchFn: (q: string) => Promise<unknown[]>;
+}
 
 describe("useSmartPlaylistSeedItems", () => {
   beforeEach(() => {
     mockSetupDebouncedSearch.mockClear();
   });
 
-  it("collects provider ids for similar tracks and artists", () => {
+  it("reports SIMILAR_TRACKS provider availability and wires four searches", () => {
     const seed = useSmartPlaylistSeedItems();
 
-    expect(seed._similarTrackProviderIds.value).toEqual(["spotify_instance"]);
-    expect(seed._similarArtistProviderIds.value).toEqual(["tidal_instance"]);
-    expect(mockSetupDebouncedSearch).toHaveBeenCalledTimes(2);
+    expect(seed.hasSimilarTracksProvider.value).toBe(true);
+    expect(mockSetupDebouncedSearch).toHaveBeenCalledTimes(4);
   });
 
-  it("selectSeedTrack stores URI and clears search state", () => {
+  it("addSeedFromSearch picks a SIMILAR_TRACKS-capable mapping URI and clears search state", () => {
     const seed = useSmartPlaylistSeedItems();
 
-    seed.seedTrackSearch.value = "query";
-    seed.seedTrackResults.value = [{ item_id: "x" } as any];
+    seed.trackSearch.value = "query";
+    seed.trackResults.value = [{ item_id: "x" } as any];
 
-    seed.selectSeedTrack({
-      item_id: "fallback-track-id",
-      provider_mappings: [
-        {
-          item_id: "sp-track-1",
-          provider_instance: "spotify_instance",
-          provider_domain: "spotify",
-        },
-      ],
-      artists: [{ name: "Artist" }],
-      name: "Song",
-    } as any);
+    const added = seed.addSeedFromSearch(
+      {
+        item_id: "fallback-track-id",
+        provider_mappings: [
+          {
+            item_id: "lib-1",
+            provider_instance: "library",
+            provider_domain: "library",
+          },
+          {
+            item_id: "sp-track-1",
+            provider_instance: "spotify_instance",
+            provider_domain: "spotify",
+          },
+        ],
+        artists: [{ name: "Artist" }],
+        name: "Song",
+      } as any,
+      "track",
+    );
 
-    expect(seed.seedTrackUri.value).toBe("spotify://track/sp-track-1");
-    expect(seed.seedTrackSearch.value).toBe("");
-    expect(seed.seedTrackResults.value).toEqual([]);
+    expect(added).toBe(true);
+    expect(seed.seeds.value).toEqual([
+      {
+        uri: "spotify://track/sp-track-1",
+        kind: "track",
+        name: "Song",
+        subtitle: "Artist",
+      },
+    ]);
+    expect(seed.trackSearch.value).toBe("");
+    expect(seed.trackResults.value).toEqual([]);
   });
 
-  it("selectSeedArtist stores URI and clears selected seed track", () => {
+  it("addSeedFromSearch falls back to library:// when no SIMILAR_TRACKS mapping exists", () => {
     const seed = useSmartPlaylistSeedItems();
 
-    seed.selectedSeedTrack.value = {
-      item_id: "old-track",
-      provider_mappings: [],
-    } as any;
-    seed.seedTrackUri.value = "spotify://track/old-track";
+    const added = seed.addSeedFromSearch(
+      {
+        item_id: "62",
+        provider_mappings: [
+          {
+            item_id: "tidal-album",
+            provider_instance: "tidal_instance",
+            provider_domain: "tidal",
+          },
+        ],
+        artists: [{ name: "RAM" }],
+        name: "One Last Call",
+      } as any,
+      "album",
+    );
 
-    seed.selectSeedArtist({
-      item_id: "fallback-artist-id",
-      provider_mappings: [
-        {
-          item_id: "tidal-artist-1",
-          provider_instance: "tidal_instance",
-          provider_domain: "tidal",
-        },
+    expect(added).toBe(true);
+    expect(seed.seeds.value[0]).toMatchObject({
+      uri: "library://album/62",
+      kind: "album",
+      name: "One Last Call",
+      subtitle: "RAM",
+    });
+  });
+
+  it("rejects duplicate seed URIs and enforces the 10-seed cap", () => {
+    const seed = useSmartPlaylistSeedItems();
+
+    for (let i = 0; i < 10; i++) {
+      expect(
+        seed.addSeed({
+          uri: `library://track/${i}`,
+          kind: "track",
+          name: `t${i}`,
+        }),
+      ).toBe(true);
+    }
+    expect(seed.isFull.value).toBe(true);
+    expect(
+      seed.addSeed({ uri: "library://track/extra", kind: "track", name: "x" }),
+    ).toBe(false);
+    expect(
+      seed.addSeed({ uri: "library://track/0", kind: "track", name: "dup" }),
+    ).toBe(false);
+    expect(seed.seeds.value).toHaveLength(10);
+  });
+
+  it("removeSeed removes the matching URI", () => {
+    const seed = useSmartPlaylistSeedItems();
+    seed.addSeed({ uri: "library://track/1", kind: "track", name: "a" });
+    seed.addSeed({ uri: "library://artist/2", kind: "artist", name: "b" });
+    seed.removeSeed("library://track/1");
+    expect(seed.seeds.value).toEqual([
+      { uri: "library://artist/2", kind: "artist", name: "b" },
+    ]);
+  });
+
+  it("loadSeedsFromUris hydrates seeds with names lookup", () => {
+    const seed = useSmartPlaylistSeedItems();
+    seed.loadSeedsFromUris(
+      [
+        { uri: "library://track/1", kind: "track" },
+        { uri: "library://artist/2", kind: "artist" },
       ],
-      name: "Artist",
-    } as any);
+      { "library://track/1": "Song" },
+    );
+    expect(seed.seeds.value).toEqual([
+      { uri: "library://track/1", kind: "track", name: "Song" },
+      { uri: "library://artist/2", kind: "artist", name: "library://artist/2" },
+    ]);
+  });
 
-    expect(seed.seedArtistUri.value).toBe("tidal://artist/tidal-artist-1");
-    expect(seed.selectedSeedTrack.value).toBeNull();
-    expect(seed.seedTrackUri.value).toBe("");
+  describe("track search filter", () => {
+    const originalProviders = (api as unknown as { providers: unknown })
+      .providers;
+
+    beforeEach(() => {
+      vi.mocked(api.search).mockClear();
+      (api as unknown as { providers: unknown }).providers = originalProviders;
+    });
+
+    it("returns library/streaming results when a provider supplies SIMILAR_TRACKS", async () => {
+      useSmartPlaylistSeedItems();
+      const trackSearchFn = (
+        mockSetupDebouncedSearch.mock.calls[0][0] as SearchFnArg
+      ).searchFn;
+
+      vi.mocked(api.search).mockResolvedValueOnce({
+        tracks: [
+          {
+            item_id: "lib-1",
+            name: "Library Track",
+            provider_mappings: [
+              { provider_instance: "library", provider_domain: "library" },
+              {
+                provider_instance: "filesystem_local",
+                provider_domain: "filesystem_local",
+              },
+            ],
+          },
+        ],
+        artists: [],
+        albums: [],
+        playlists: [],
+        radio: [],
+        audiobooks: [],
+        podcasts: [],
+      } as never);
+
+      const results = await trackSearchFn("anything");
+
+      expect(results).toHaveLength(1);
+      expect(api.search).toHaveBeenCalledWith("anything", ["track"], 20);
+    });
+
+    it("returns [] without searching when no provider supplies SIMILAR_TRACKS", async () => {
+      (api as unknown as { providers: Record<string, unknown> }).providers = {
+        only_unrelated: {
+          instance_id: "only_unrelated",
+          supported_features: [],
+        },
+      };
+      useSmartPlaylistSeedItems();
+      const trackSearchFn = (
+        mockSetupDebouncedSearch.mock.calls.at(-1)?.[0] as SearchFnArg
+      ).searchFn;
+
+      const results = await trackSearchFn("anything");
+
+      expect(results).toEqual([]);
+      expect(api.search).not.toHaveBeenCalled();
+    });
   });
 });
