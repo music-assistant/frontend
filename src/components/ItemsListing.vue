@@ -1142,6 +1142,15 @@ const loadingPages = new Set<number>();
 let windowScrollEl: HTMLElement | null = null;
 let windowScrollScheduled = false;
 
+// Windowing builds a full-length virtual list (one row per item in the whole
+// library). That's fine on desktop but iOS Safari/iPadOS chokes on such a large
+// virtual list and locks up, so we only enable it for fine-pointer (non-touch)
+// devices; touch devices fall back to the regular infinite-scroll path.
+const supportsWindowing =
+  typeof window === "undefined" ||
+  !window.matchMedia ||
+  !window.matchMedia("(pointer: coarse)").matches;
+
 const isPlaceholder = function (item: unknown) {
   return (
     !!item && typeof item === "object" && (item as any).__placeholder === true
@@ -1159,6 +1168,7 @@ const makePlaceholders = function (count: number) {
 const windowConditionsMet = function () {
   return (
     props.windowed &&
+    supportsWindowing &&
     !!props.loadPagedData &&
     viewMode.value === "list" &&
     isAlphaSort.value &&
