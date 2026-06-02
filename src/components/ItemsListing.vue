@@ -906,24 +906,59 @@ const renderedRow = function (content: HTMLElement, index: number) {
   ) as HTMLElement | null;
 };
 
-// page items in until the given index is loaded. Hardened against an infinite
-// loop: loadData early-returns while another load is in flight (e.g. the
-// infinite-scroll firing during momentum scrolling on touch devices), which
-// would otherwise spin forever without making progress.
+// page items in until the given index is loaded. The virtual list needs a
+// contiguous array from 0, so reaching a far letter (e.g. Z in a 4500-item
+// library) would mean ~90 sequential 50-item requests. Instead we fetch the
+// whole gap in large chunks (a handful of requests) using the known total to
+// detect completion. Hardened against an infinite loop: loadData early-returns
+// while another load is in flight (e.g. the infinite-scroll firing during
+// momentum scrolling on touch devices), which would otherwise spin forever.
 const ensurePagedTo = async function (index: number) {
   let stalled = 0;
+  const total = letterTotal.value || props.total || 0;
+
   while (
     pagedItems.value.length <= index &&
     !allItemsReceived.value &&
     stalled < 100
   ) {
-    const before = pagedItems.value.length;
     if (loading.value) {
-      // a load is already running - wait for it instead of calling again
+      // a load is already running - wait for it instead of racing it
       await waitFrames(2);
+      stalled++;
+      continue;
+    }
+    const before = pagedItems.value.length;
+
+    if (props.loadPagedData) {
+      // bulk-fetch the remaining gap (plus a small buffer past the target)
+      loading.value = true;
+      try {
+        const want = index - before + 1 + 20;
+        const fetchParams: LoadDataParams = {
+          ...params.value,
+          offset: before,
+          limit: Math.max(props.limit, want),
+        };
+        const nextItems = await props.loadPagedData(fetchParams);
+        if (nextItems.length) pagedItems.value.push(...nextItems);
+        // detect end via total when known (cap-agnostic), else an empty page
+        if (total && pagedItems.value.length >= total)
+          allItemsReceived.value = true;
+        else if (nextItems.length === 0) allItemsReceived.value = true;
+        // keep infinite-scroll bookkeeping consistent for later scrolling
+        params.value.offset = Math.max(
+          0,
+          pagedItems.value.length - props.limit,
+        );
+        params.value.limit = props.limit;
+      } finally {
+        loading.value = false;
+      }
     } else {
       await loadNextPage({ done: function () {} });
     }
+
     if (pagedItems.value.length === before) stalled++;
     else stalled = 0;
   }
