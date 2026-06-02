@@ -237,9 +237,11 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import {
+  getShortcutMoveAvailability,
   isShortcutMediaType,
   isShortcutPinnedItem,
   isShortcutCapReached,
+  moveShortcutStandaloneItem,
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
@@ -268,6 +270,7 @@ export const showContextMenuForMediaItem = async function (
   includePlayMenuItems = false,
   showPlayMenuHeader = false,
   sortBy?: string,
+  options?: ContextMenuOptions,
 ) {
   // show ContextMenu for given MediaItem(s)
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
@@ -284,7 +287,11 @@ export const showContextMenuForMediaItem = async function (
     return;
   }
 
-  const contextMenuItems = await getContextMenuItems(mediaItems, parentItem);
+  const contextMenuItems = await getContextMenuItems(
+    mediaItems,
+    parentItem,
+    options,
+  );
 
   let menuItems: ContextMenuItem[] = [];
 
@@ -396,9 +403,16 @@ export const showPlayMenuForMediaItem = async function (
   });
 };
 
+export interface ContextMenuOptions {
+  // true when the menu is opened from the sidebar shortcuts list,
+  // enabling actions that only make sense there (e.g. move up/down).
+  shortcutContext?: boolean;
+}
+
 export const getContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
+  options?: ContextMenuOptions,
 ) {
   const contextMenuItems: ContextMenuItem[] = [];
   if (items.length == 0) {
@@ -863,6 +877,26 @@ export const getContextMenuItems = async function (
   ) {
     const shortcutItem = items[0];
     if (isShortcutPinnedItem(shortcutItem)) {
+      // move up/down only make sense when the menu is opened on the
+      // sidebar shortcuts list itself
+      if (options?.shortcutContext) {
+        const { canMoveUp, canMoveDown } =
+          getShortcutMoveAvailability(shortcutItem);
+        contextMenuItems.push({
+          label: "queue_move_up",
+          labelArgs: [],
+          action: () => moveShortcutStandaloneItem(shortcutItem, "up"),
+          icon: "mdi-arrow-up",
+          disabled: !canMoveUp,
+        });
+        contextMenuItems.push({
+          label: "queue_move_down",
+          labelArgs: [],
+          action: () => moveShortcutStandaloneItem(shortcutItem, "down"),
+          icon: "mdi-arrow-down",
+          disabled: !canMoveDown,
+        });
+      }
       contextMenuItems.push({
         label: "shortcut.remove_from",
         labelArgs: [],
