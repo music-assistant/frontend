@@ -20,13 +20,28 @@
       </div>
 
       <div class="overview-container">
-        <div v-for="row in displayRows" :key="row.title" class="overview-row">
-          <WidgetRow
-            :widget-row="row"
+        <EditorialShelf
+          v-for="row in displayRows"
+          :key="row.title"
+          :title="row.title"
+          :tiles-per-view="tilesPerView"
+          class="overview-row"
+        >
+          <template v-if="row.action" #title-append>
+            <SquareArrowRightEnter
+              :size="18"
+              class="overview-row__nav"
+              @click="row.action"
+            />
+          </template>
+          <EditorialMediaCard
+            v-for="item in row.items"
+            :key="item.uri"
+            :item="item"
             :show-provider-on-cover="true"
-            :show-action-icon="true"
+            :is-available="itemIsAvailable(item)"
           />
-        </div>
+        </EditorialShelf>
       </div>
     </template>
 
@@ -153,25 +168,27 @@
 </template>
 
 <script setup lang="ts">
+import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
+import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import GenreAliasManager from "@/components/genre/GenreAliasManager.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import WidgetRow from "@/components/WidgetRow.vue";
+import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { genreMediaTypeIconMap, folderIdToRoute } from "@/helpers/genre";
-import { getGenreDisplayName } from "@/helpers/utils";
+import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
+import { getGenreDisplayName, panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
   Genre,
+  MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
-  MediaItemType,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Button } from "@/components/ui/button";
 import { SquareArrowRightEnter } from "lucide-vue-next";
 import {
   computed,
@@ -228,6 +245,9 @@ watch(viewMode, (newVal) => {
 const displayRows = computed(() =>
   overviewRows.value.filter((row) => row.items?.length),
 );
+
+// Responsive tile sizing, shared curve with the rest of the app.
+const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 
 const viewModeIcon = computed(() => {
   if (viewMode.value === "discovery") return "mdi-view-dashboard";
@@ -479,8 +499,21 @@ onMounted(() => {
   margin-top: 10px;
 }
 
+.overview-row__nav {
+  align-self: center;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.overview-row__nav:hover {
+  opacity: 1;
+}
+
 .overview-container {
-  padding: 0 16px 16px 16px;
+  padding: 16px 10px 16px 10px;
+}
+
+.overview-container :deep(.ed-shelf) {
+  --ed-gutter: 16px;
 }
 
 .navigate-icon {

@@ -1288,10 +1288,11 @@ export interface SmartPlaylistRules {
   artist_ids: number[];
   album_ids: number[];
   favorites_only: boolean;
-  seed_track_uri?: string;
-  seed_track_name?: string;
-  seed_artist_uri?: string;
-  seed_artist_name?: string;
+  seed_track_uris?: string[];
+  seed_artist_uris?: string[];
+  seed_album_uris?: string[];
+  seed_playlist_uris?: string[];
+  seed_names?: Record<string, string>;
   min_popularity?: number;
   logic: "AND" | "OR";
   limit: number;
@@ -1308,7 +1309,6 @@ export interface SmartPlaylistRules {
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
   dedup_hours?: number;
-  seed_artist_library_only?: boolean;
 }
 
 export interface SmartPlaylistTrackStats {

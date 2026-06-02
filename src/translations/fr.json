@@ -282,15 +282,16 @@
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
         "category": {
-            "advanced": "Paramètres avancés",
-            "generic": "Paramètres génériques",
-            "announcements": "Paramètres des annonces",
+            "advanced": "Avancés",
+            "generic": "Génériques",
+            "announcements": "Annonces",
             "player_controls": "Contrôles du lecteur",
             "sync_options": "Options de synchronisation\/importation",
-            "builtin_playlists": "Paramètres de liste de lecture intégrés",
+            "builtin_playlists": "Listes de lecture intégrées",
             "web_player": "Lecteur Web",
-            "playback": "Paramètres de lecture",
-            "protocol_settings": "Paramètres du protocole",
+            "playback": "Lecture en file d'attente",
+            "protocol_settings": "Protocole(s) de sortie",
+            "protocol_output_settings": "Activer la prise en charge de {0}",
             "dsp": "Traitement numérique du signal (DSP)"
         },
         "tts_pre_announce": {
@@ -364,7 +365,8 @@
                 "it": "Italien",
                 "el_GR": "Grec",
                 "lt_LT": "Lituanien",
-                "lv_LV": "Letton"
+                "lv_LV": "Letton",
+                "bg_BG": "Bulgare"
             }
         },
         "no_music_providers": "Aucun fournisseur de musique configuré",
@@ -678,7 +680,25 @@
                 "right": "Droite"
             }
         },
-        "add_group_player_desc_sync": "Créer un SyncGroup avec des lecteurs qui sont compatibles pour la synchronisation. Lorsque vous jouez avec un groupe de lecteurs, les lecteurs membres seront automatiquement synchronisés."
+        "add_group_player_desc_sync": "Créer un SyncGroup avec des lecteurs qui sont compatibles pour la synchronisation. Lorsque vous jouez avec un groupe de lecteurs, les lecteurs membres seront automatiquement synchronisés.",
+        "add_audio_analysis_provider": "Ajouter un fournisseur d'analyse audio",
+        "audio_analysis_providers": "Analyse audio",
+        "audio_analysis_providers_description": "Gérer les fournisseurs qui analysent votre audio",
+        "audio_analysis": "Analyse audio",
+        "sendspin_static_delay": {
+            "label": "Délai de lecture statique (ms)",
+            "description": "Décalage en millisecondes pour synchroniser ce lecteur avec les autres. Augmentez cette valeur si la lecture audio est trop tardive, par exemple pour compenser la latence d'un amplificateur, d'enceintes actives ou du système d'exploitation."
+        },
+        "audio_analysis_coverage": {
+            "title": "Couverture de l'analyse audio",
+            "col_provider": "Fournisseur",
+            "col_coverage": "Couverture",
+            "col_pending": "En attente",
+            "col_version": "Version",
+            "unavailable": "indisponible",
+            "none": "—"
+        },
+        "audio_analysis_description": "Suivi de la couverture de l'analyse audio pour l'ensemble de vos fournisseurs"
     },
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -691,7 +711,7 @@
         "track_number": "Numéro de piste",
         "year": "Année de sortie",
         "position_desc": "Position (décroissante)",
-        "album": "Album",
+        "album": "Album (alphabétique)",
         "artist": "Artiste",
         "name": "Alphabétiquement",
         "name_desc": "Par ordre alphabétique (décroissant)",
@@ -709,7 +729,8 @@
         "play_count": "Nombre de lectures",
         "play_count_desc": "Nombre de lectures (décroissant)",
         "artist_name": "Artiste de l'album",
-        "artist_name_desc": "Artiste de l'album (décroissant)"
+        "artist_name_desc": "Artiste de l'album (décroissant)",
+        "album_sort_name": "Album (nom de tri)"
     },
     "state": {
         "idle": "en attente",
@@ -745,7 +766,8 @@
         "copy_uri": "Copier l'URI dans le presse-papiers",
         "select_all": "Sélectionner tous les éléments",
         "filter_provider": "Filtrer par fournisseur de musique",
-        "in_provider_library": "Cet élément se trouve dans la bibliothèque du fournisseur"
+        "in_provider_library": "Cet élément se trouve dans la bibliothèque du fournisseur",
+        "filter_hide_fully_played": "Masquer les épisodes entièrement écoutés"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",
@@ -906,7 +928,15 @@
         "discover": "Découvrir",
         "libraries": "Bibliothèques",
         "library": "Bibliothèque",
-        "trending_podcasts": "Podcasts populaires"
+        "trending_podcasts": "Podcasts populaires",
+        "trending_stations": "Stations tendances",
+        "forgotten_tracks": "Pistes oubliées",
+        "forgotten_albums": "Albums oubliés",
+        "forgotten_artists": "Artistes oubliés",
+        "most_played_tracks": "Titres les plus joués",
+        "never_played_tracks": "Jamais\/rarement joué",
+        "recent_favorite_albums": "Albums récemment ajoutés à vos favoris",
+        "recently_added_tracks": "Morceaux récemment ajoutés"
     },
     "homescreen_edit_enable": "Modifier la page d'accueil",
     "homescreen_edit_disable": "Quitter le mode Modifier la page d'accueil",
@@ -1145,6 +1175,7 @@
     "aliases": "Alias",
     "confirm_delete_genre": "Êtes-vous sûr de vouloir supprimer ce genre ? Le genre lui-même sera supprimé, ainsi que ses alias.",
     "confirm_delete_genre_2": "Êtes-vous absolument sûr ? Cette action est irréversible.",
+    "confirm_promote_alias": "Promouvoir « {0} » en tant que genre à part entière ? Cela créera un nouveau genre et supprimera l’alias du genre actuel.",
     "confirm_remove_alias": "Êtes-vous sûr de vouloir supprimer l'alias « {0} » de ce genre ?",
     "delete": "Supprimer",
     "delete_genre": "Supprimer le genre",
@@ -1152,20 +1183,42 @@
     "genre": "Genre",
     "genres": "Genres",
     "genre_names": {
-        "afrobeats": "Afrobeats (musique urbaine\/pop d'Afrique de l'Ouest)",
+        "afrobeats": "Afrobeats (Musique urbaine\/pop d'Afrique de l'Ouest)",
         "ambient": "Musique d'ambiance",
-        "anime_and_video_game_music": "Musique d'anime\/jeu vidéo",
+        "anime_and_video_game_music": "Musique d'anime et de jeux vidéo",
         "asian_music": "Musique asiatique",
         "bluegrass": "Bluegrass",
         "blues": "Blues",
         "brazilian_music": "Musique brésilienne",
+        "chanson": "Chanson",
+        "childrens_music": "Musique pour enfants",
+        "christmas_music": "Musique de Noël",
+        "church_music": "Musique d'église",
+        "classical": "Classique",
+        "comedy": "Comédie",
+        "country": "Country",
+        "dance": "Dance",
+        "dark_ambient": "Dark Ambient",
+        "dark_wave": "Dark Wave",
+        "disco": "Disco",
+        "electronic": "Électronique",
+        "experimental": "Expérimentale",
+        "field_recording": "Enregistrement de terrain",
+        "folk": "Folk",
+        "funk": "Funk",
+        "gangsta_rap": "Gangsta Rap",
+        "gospel": "Gospel",
+        "hip_hop": "Hip-Hop",
         "indian_classical": "Musique classique indienne",
         "industrial": "Industriel",
         "jazz": "Jazz",
         "klezmer": "Klezmer",
         "latin": "Musique latine",
+        "marching_band": "Fanfare",
         "metal": "Metal",
         "middle_eastern_music": "Musique du Moyen-Orient",
+        "musical": "Musical",
+        "new_age": "New Age",
         "poetry": "Poésie",
         "polka": "Polka",
         "pop": "Pop",
@@ -1182,7 +1235,10 @@
         "ska": "Ska",
         "soul": "Musique soul",
         "sound_effects": "Effets sonores",
-        "soundtrack": "Bande originale"
+        "soundtrack": "Bande originale",
+        "spoken_word": "Spoken Word",
+        "swing": "Swing",
+        "tango": "Tango"
     },
     "background_tasks": {
         "toast": {
@@ -1214,5 +1270,47 @@
     },
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",
-    "genre_name": "Nom du genre"
+    "genre_name": "Nom du genre",
+    "player_options": {
+        "enhancer": "Améliorateur",
+        "equalizer_high": "Égaliseur aigus",
+        "equalizer_low": "Égaliseur graves",
+        "equalizer_mid": "Égaliseur médiums",
+        "equalizer_mode": "Mode égaliseur",
+        "extra_bass": "Basses renforcées",
+        "link_audio_delay": "Délai audio du lien",
+        "link_control": "Contrôle du lien",
+        "link_audio_quality": "Qualité audio du lien",
+        "party_mode": "Mode fête",
+        "pure_direct": "Direct pur",
+        "sleep": "Minuterie de mise en veille",
+        "speaker_a": "Haut-parleur A",
+        "speaker_b": "Haut-parleur B",
+        "subwoofer_volume": "Volume du subwoofer",
+        "surround_3d": "Surround 3D",
+        "surround_decoder_type": "Type de décodeur surround",
+        "tone_control_mode": "Mode de contrôle de tonalité",
+        "treble": "Aigus"
+    },
+    "providers": {
+        "party": {
+            "guest_page": {
+                "added": "Ajouté",
+                "already_in_queue": "Déjà dans la file d'attente"
+            }
+        }
+    },
+    "edit_playlist": "Modifier la liste de lecture",
+    "edit_radio": "Modifier la station radio",
+    "edit_track": "Modifier la piste",
+    "uri_read_only": "URI (lecture seule)",
+    "lyrics_offset": "Décalage des paroles",
+    "similar_tracks": "Morceaux similaires",
+    "similar_artists": "Artistes similaires",
+    "audio_source": "Source audio",
+    "change_playback_speed": "Modifier la vitesse de lecture",
+    "shortcut": {
+        "add_to": "Ajouter aux raccourcis",
+        "remove_from": "Supprimer des raccourcis"
+    }
 }
