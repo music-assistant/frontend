@@ -37,6 +37,27 @@
       :variant="viewMode == 'list' ? 'default' : 'panel'"
       style="overflow: hidden"
     >
+      <!-- windowed letter-jump: spinner while the target page loads -->
+      <div
+        v-if="jumpLoading"
+        style="
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          z-index: 10;
+        "
+      >
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="48"
+          width="4"
+        />
+      </div>
+
       <!-- Skeleton loading states -->
       <template v-if="loading && pagedItems.length === 0">
         <div v-if="viewMode === 'list'">
@@ -1037,10 +1058,18 @@ const ensurePagedTo = async function (index: number) {
 // we home in: estimate -> render -> measure real row height -> re-estimate,
 // then land exactly on the measured row position once it is rendered.
 const jumpToIndex = async function (displayIndex: number) {
-  // make sure the target row is loaded. In windowed mode this is just the one
-  // page containing the target (fast); otherwise page in everything up to it.
-  if (windowedActive.value) await ensureWindowForIndex(displayIndex);
-  else await ensurePagedTo(displayIndex);
+  // make sure the target row is loaded. In windowed mode the array is already
+  // full-length with placeholders, so we kick off the (background) fetch for
+  // the target page and scroll straight away - the row shows a skeleton with a
+  // spinner until the data arrives. Otherwise page in everything up to it.
+  if (windowedActive.value) {
+    jumpLoading.value = true;
+    ensureWindowForIndex(displayIndex).finally(() => {
+      jumpLoading.value = false;
+    });
+  } else {
+    await ensurePagedTo(displayIndex);
+  }
   const targetIndex = Math.min(displayIndex, pagedItems.value.length - 1);
   if (targetIndex < 0) return;
 
@@ -1105,6 +1134,9 @@ const jumpToIndex = async function (displayIndex: number) {
 // is exactly when the quick-jump bar is shown.
 // ---------------------------------------------------------------------------
 const windowedActive = ref(false);
+// true while a letter-jump is waiting for its target page to load (drives a
+// loading spinner so the jump doesn't look frozen)
+const jumpLoading = ref(false);
 const loadedPages = new Set<number>();
 const loadingPages = new Set<number>();
 let windowScrollEl: HTMLElement | null = null;
