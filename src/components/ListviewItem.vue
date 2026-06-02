@@ -28,8 +28,34 @@
           />
         </label>
       </div>
-      <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+      <div v-else class="listitem-prepend">
+        <div
+          v-if="
+            albumTrackView &&
+            showTrackNumber &&
+            'track_number' in item &&
+            item.track_number
+          "
+          class="track-number"
+        >
+          {{ item.track_number }}
+        </div>
+        <div
+          v-if="albumTrackView && item.is_playable"
+          class="listitem-play-thumb"
+        >
+          <v-btn
+            icon
+            variant="text"
+            :disabled="disablePlayButton"
+            @click.stop="onPlayClick"
+          >
+            <v-icon size="24">mdi-play-circle-outline</v-icon>
+          </v-btn>
+        </div>
+        <div v-else class="media-thumb listitem-media-thumb">
+          <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+        </div>
       </div>
     </template>
 
@@ -40,14 +66,23 @@
         :item="item"
         :show-checkboxes="showCheckboxes"
         :is-playing="isPlaying"
+        :album-track-view="albumTrackView"
       />
     </template>
 
     <!-- subtitle -->
     <template #subtitle>
+      <!-- album track view: only show collaborating artist(s), if any -->
+      <template v-if="albumTrackView">
+        <div v-if="collabArtists" class="ma-line-clamp-1">
+          {{ $t("with_artists", { artists: collabArtists }) }}
+        </div>
+      </template>
       <!-- track: artists(s) + album (check for provider_mappings to filter out ItemMapping) -->
       <div
-        v-if="item.media_type == MediaType.TRACK && 'provider_mappings' in item"
+        v-else-if="
+          item.media_type == MediaType.TRACK && 'provider_mappings' in item
+        "
         class="ma-line-clamp-1"
       >
         <v-item-group>
@@ -148,6 +183,20 @@
         </v-tooltip>
       </v-img>
 
+      <!-- track duration (album track view) -->
+      <span
+        v-if="
+          albumTrackView &&
+          showDuration &&
+          'duration' in item &&
+          item.duration &&
+          !$vuetify.display.mobile
+        "
+        class="track-duration"
+      >
+        {{ formatDuration(item.duration) }}
+      </span>
+
       <!-- provider icon -->
       <provider-icon
         v-if="getBreakpointValue('bp2') && showProvider"
@@ -186,7 +235,11 @@
 
       <!-- play button -->
       <v-btn
-        v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
+        v-if="
+          !albumTrackView &&
+          item.is_playable &&
+          (showPlayButton ?? getBreakpointValue('bp0'))
+        "
         icon
         variant="text"
         size="small"
@@ -232,6 +285,7 @@ import ListviewItemTitle from "./ListviewItemTitle.vue";
 // properties
 export interface Props {
   item: MediaItemType;
+  albumTrackView?: boolean;
   showTrackNumber?: boolean;
   showDiscNumber?: boolean;
   showPosition?: boolean;
@@ -268,6 +322,7 @@ const displayName = computed(() => {
 });
 
 const compProps = withDefaults(defineProps<Props>(), {
+  albumTrackView: false,
   showTrackNumber: true,
   showDiscNumber: true,
   showProvider: true,
@@ -285,6 +340,19 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
+const collabArtists = computed(() => {
+  if (!("artists" in compProps.item) || !compProps.item.artists) return "";
+  const albumArtists =
+    compProps.parentItem && "artists" in compProps.parentItem
+      ? compProps.parentItem.artists
+      : [];
+  const albumNames = new Set(albumArtists.map((a) => a.name.toLowerCase()));
+  const collab = compProps.item.artists.filter(
+    (a) => !albumNames.has(a.name.toLowerCase()),
+  );
+  return collab.map((a) => a.name).join(" | ");
+});
+
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
@@ -363,6 +431,37 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .unavailable {
   opacity: 0.3;
+}
+
+.listitem-prepend {
+  display: flex;
+  align-items: center;
+}
+
+.listitem-play-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+}
+
+.track-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  margin-right: 2px;
+  font-size: 0.875rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.track-duration {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  margin-right: 12px;
+  white-space: nowrap;
 }
 
 .dimmed {
