@@ -366,7 +366,8 @@
                 "it": "Olasz",
                 "el_GR": "Görög",
                 "lt_LT": "Litván",
-                "lv_LV": "Lett"
+                "lv_LV": "Lett",
+                "bg_BG": "Bolgár"
             }
         },
         "no_music_providers": "Nincs zeneszolgáltató konfigurálva",
