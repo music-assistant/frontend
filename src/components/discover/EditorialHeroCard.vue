@@ -1,12 +1,14 @@
 <template>
   <button
+    v-hold="onHold"
     type="button"
     class="ed-hero ma-tap"
     :class="{ 'ed-hero--large': large }"
     @click="onClick"
     @contextmenu.prevent="onMenu"
+    @touchstart.passive="holdFired = false"
   >
-    <div class="ed-hero__bg" :style="{ background: art.gradient }">
+    <div class="ed-hero__bg">
       <img
         v-if="art.image"
         class="ed-hero__img"
@@ -53,7 +55,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { Play, Sparkles } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
@@ -75,12 +77,27 @@ const subtitle = computed(() => {
   return undefined;
 });
 
-const onClick = (e: MouseEvent) =>
+// Set while a long-press opened the context menu, so the click that fires on
+// finger-lift does not also navigate. Reset on the next touchstart.
+const holdFired = ref(false);
+
+const onClick = (e: MouseEvent) => {
+  if (holdFired.value) {
+    holdFired.value = false;
+    return;
+  }
   handleMediaItemClick(props.item, e.clientX, e.clientY);
+};
 const onPlay = (e: MouseEvent) =>
   handlePlayBtnClick(props.item, e.clientX, e.clientY);
 const onMenu = (e: MouseEvent) =>
   handleMenuBtnClick(props.item, e.clientX, e.clientY);
+// Long-press on touch devices: open the same context menu as right-click.
+const onHold = (e: TouchEvent) => {
+  holdFired.value = true;
+  const touch = e.touches?.[0];
+  handleMenuBtnClick(props.item, touch?.clientX ?? 0, touch?.clientY ?? 0);
+};
 </script>
 
 <style scoped>
@@ -95,7 +112,6 @@ const onMenu = (e: MouseEvent) =>
   background: transparent;
   color: #fff;
   min-height: 133px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   transition: transform 0.18s ease;
 }
 .ed-hero--large {
@@ -189,6 +205,7 @@ const onMenu = (e: MouseEvent) =>
   align-items: center;
   justify-content: center;
   opacity: 0;
+  pointer-events: none;
   transform: translateY(8px);
   transition:
     opacity 0.18s,
@@ -203,6 +220,14 @@ const onMenu = (e: MouseEvent) =>
 }
 .ed-hero:hover .ed-hero__play {
   opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
+}
+/* Touch devices: no hover-revealed play button — tap goes straight to the
+   content and long-press opens the context menu instead. */
+@media (hover: none) {
+  .ed-hero__play {
+    display: none;
+  }
 }
 </style>
