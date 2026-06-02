@@ -366,7 +366,8 @@
                 "it": "Italų",
                 "el_GR": "Graikų",
                 "lt_LT": "Lietuvių",
-                "lv_LV": "Latvių"
+                "lv_LV": "Latvių",
+                "bg_BG": "Bulgarų"
             }
         },
         "no_music_providers": "Nėra sukonfigūruotų muzikos tiekėjų",

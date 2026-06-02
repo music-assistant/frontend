@@ -243,3 +243,36 @@ html {
 .v-main__wrap {
   -webkit-overflow-scrolling: touch;
 }
+
+/*
+ * Fluid-scale opt-in helper.
+ * Add `.sp-fluid` to a container root (e.g. <DialogContent>) and its
+ * descendants will scale together with the viewport:
+ *   - The root font-size follows clamp() between phone and wide-monitor sizes.
+ *   - Tailwind's text-xs/sm/base/lg/xl tokens are redefined as em-based inside
+ *     this scope, so they ride the clamp'd root instead of the html-root rem.
+ *
+ * :where() keeps specificity at 0, so explicit per-element overrides still win.
+ * Pure CSS — does not require the fluid-tailwind plugin.
+ */
+.sp-fluid {
+  font-size: clamp(0.875rem, 0.75rem + 0.35vw, 1.0625rem);
+}
+.sp-fluid :where(.text-\[10px\]) {
+  font-size: 0.625em;
+}
+.sp-fluid :where(.text-xs) {
+  font-size: 0.75em;
+}
+.sp-fluid :where(.text-sm) {
+  font-size: 0.875em;
+}
+.sp-fluid :where(.text-base) {
+  font-size: 1em;
+}
+.sp-fluid :where(.text-lg) {
+  font-size: 1.125em;
+}
+.sp-fluid :where(.text-xl) {
+  font-size: 1.25em;
+}
