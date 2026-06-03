@@ -1,4 +1,4 @@
-import { onUnmounted, ref, watch, type Ref } from "vue";
+import { onScopeDispose, ref, watch, type Ref } from "vue";
 import type { PlayerQueue } from "@/plugins/api/interfaces";
 
 // `play_action_in_progress` blips true for ~50ms during a seek (the stream
@@ -28,7 +28,7 @@ export function usePlayActionInProgress(
     { immediate: true },
   );
 
-  onUnmounted(() => {
+  onScopeDispose(() => {
     if (timer) clearTimeout(timer);
   });
 
