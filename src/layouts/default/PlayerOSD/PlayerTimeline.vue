@@ -4,7 +4,7 @@
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
-        class="relative flex items-center select-none touch-none w-full h-5 mb-8"
+        class="relative flex items-center select-none touch-none w-full h-5 mb-2"
         :disabled="!canSeek"
         :min="0"
         :max="store.activePlayer?.current_media?.duration ?? 0"
@@ -16,14 +16,14 @@
         <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
-          class="relative grow rounded-full h-2"
+          class="relative grow rounded-full h-1"
           :style="{
             'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
           }"
         >
           <SliderRange
             data-slot="slider-range"
-            class="absolute rounded-full h-full"
+            class="absolute rounded-full h-1.5 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
@@ -48,7 +48,7 @@
           :style="{ 'background-color': color }"
           :class="
             cn(
-              'w-6 h-6 rounded-full shadow-sm',
+              'w-2.5 h-2.5 rounded-full shadow-sm',
               !isThumbHidden || isDragging ? 'block' : 'hidden',
             )
           "
