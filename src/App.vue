@@ -92,22 +92,22 @@ const setTheme = function () {
 
   if (themePref == "dark") {
     // forced dark mode
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else if (themePref == "light") {
     // forced light mode
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   } else if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   ) {
     // dark mode is enabled in browser
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else {
     // light mode is enabled in browser
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   }
 
