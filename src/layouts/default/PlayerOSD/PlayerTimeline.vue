@@ -46,7 +46,12 @@
         <SliderThumb
           data-slot="slider-thumb"
           :style="{ 'background-color': color }"
-          :class="!isThumbHidden || isDragging ? 'block' : 'hidden'"
+          :class="
+            cn(
+              'w-6 h-6 rounded-full shadow-sm',
+              !isThumbHidden || isDragging ? 'block' : 'hidden',
+            )
+          "
         />
         <!-- chapter labels below the track -->
         <template
@@ -97,6 +102,7 @@ import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
+import { cn } from "@/lib/utils";
 
 // properties
 export interface Props {
@@ -106,7 +112,7 @@ export interface Props {
 
 withDefaults(defineProps<Props>(), {
   showLabels: false,
-  color: "#fff",
+  color: "var(--foreground)",
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
