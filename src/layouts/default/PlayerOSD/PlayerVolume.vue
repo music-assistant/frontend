@@ -530,18 +530,13 @@ const onTouchEnd = (event: TouchEvent) => {
     if (hasGroupPopout.value) {
       toggleGroupPopout();
     } else {
-      // Single player: tap before/after handle for volume up/down
+      // Single player: jump to the tapped position (absolute), matching the
+      // desktop click behaviour instead of stepping volume up/down.
       const touch = event.changedTouches[0];
-      const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
-      if (thumb) {
-        const thumbRect = thumb.getBoundingClientRect();
-        const thumbCenter = thumbRect.left + thumbRect.width / 2;
-        if (touch.clientX > thumbCenter) {
-          volumeUp();
-        } else {
-          volumeDown();
-        }
-      }
+      const finalValue = getPercentageFromX(touch.clientX);
+      displayValue.value = finalValue;
+      emit("update:local-value", finalValue);
+      setVolume(finalValue);
     }
   } else {
     // Drag end: send the final absolute value to the server
