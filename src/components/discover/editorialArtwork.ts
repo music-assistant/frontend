@@ -39,8 +39,7 @@ export function itemArtwork(
     !image &&
     (item.media_type === MediaType.ARTIST ||
       item.media_type === MediaType.ALBUM);
-  const useBanner =
-    !image || showInitials || item.media_type === MediaType.GENRE;
+  const useBanner = !image || item.media_type === MediaType.GENRE;
   const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
 
   return {
