@@ -1322,7 +1322,9 @@ const restoreSettings = async function () {
     prefs.providerFilter &&
     musicProviders.value.length > 1
   ) {
-    params.value.provider = prefs.providerFilter;
+    const validIds = new Set(musicProviders.value.map((p) => p.value));
+    const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
+    params.value.provider = filtered.length > 0 ? filtered : undefined;
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
@@ -1431,6 +1433,23 @@ watch(
 
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
+
+// When a provider stops being usable at runtime, drop it from the active filter
+// and reload so the view refreshes without a remount. Only the live query is
+// touched, not the saved preference: a temporarily unavailable provider keeps
+// its filter so it is reapplied on return. Cleaning up removed providers from
+// the saved preference is handled by pruneStaleProviderFilters.
+watch(
+  () => musicProviders.value.map((p) => p.value).join("|"),
+  () => {
+    if (!params.value.provider || params.value.provider.length === 0) return;
+    const validIds = new Set(musicProviders.value.map((p) => p.value));
+    const next = params.value.provider.filter((id) => validIds.has(id));
+    if (next.length === params.value.provider.length) return;
+    params.value.provider = next.length > 0 ? next : undefined;
+    loadData(true, undefined, true);
+  },
+);
 
 const itemtypeToMediaType: Partial<Record<string, MediaType>> = {
   tracks: MediaType.TRACK,
