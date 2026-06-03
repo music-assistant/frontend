@@ -88,7 +88,10 @@ const showRemainingTime = ref(false);
 const isThumbHidden = ref(true);
 const isDragging = ref(false);
 const curTimeValue = ref(0);
-const tempTime = ref(0);
+// After a seek, hold the slider at the target until the backend's elapsed time
+// catches up, so it doesn't briefly snap back to the pre-seek position.
+const pendingSeek = ref<number | null>(null);
+let pendingSeekTimer: ReturnType<typeof setTimeout> | null = null;
 // ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
 // rAF drives smooth 60fps slider movement; a 1s interval keeps text
 // labels up-to-date when the tab is backgrounded (rAF pauses).
@@ -125,6 +128,7 @@ const stopTick = () => {
 
 onUnmounted(() => {
   stopTick();
+  if (pendingSeekTimer) clearTimeout(pendingSeekTimer);
 });
 
 // computed properties
@@ -180,25 +184,38 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
-const computedElapsedTime = computed(() => {
-  // include nowTick.value so this computed re-evaluates periodically while mounted
-  // and updates UI for fallback player-level current_media that relies on Date.now()
-  void nowTick.value;
-
-  // Adaptive tick: only run the timer when we have a playing source that relies on time progression
+// Whether the elapsed-time ticker should run: only while a source is actively
+// playing and its position advances with wall-clock time (a live MA queue, or an
+// external source reporting current_media). Gating the rAF/interval loop from a
+// dedicated watch — rather than from inside computedElapsedTime — keeps that
+// getter pure: a computed must not start/stop timers as a side effect (it can be
+// re-evaluated any number of times, and Vue gives no ordering guarantees).
+const shouldTick = computed(() => {
   const isPlaying = store.activePlayer?.playback_state === "playing";
   const usingQueue = !!(
     store.activePlayerQueue && store.activePlayerQueue.active
   );
   const hasCurrentMedia =
     store.activePlayer?.current_media?.elapsed_time != null;
+  return isPlaying && (usingQueue || hasCurrentMedia);
+});
 
-  // Start ticking when playing and either using queue or external current_media
-  if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
-  else stopTick();
+watch(
+  shouldTick,
+  (active) => {
+    if (active) startTick();
+    else stopTick();
+  },
+  { immediate: true },
+);
+
+const computedElapsedTime = computed(() => {
+  // Read nowTick so this getter re-evaluates on each ticker frame, refreshing the
+  // wall-clock extrapolation below. The ticker is started/stopped by the
+  // shouldTick watch above — never here — so this computed stays side-effect-free.
+  void nowTick.value;
+
   if (isDragging.value) {
-    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-    tempTime.value = curTimeValue.value;
     return curTimeValue.value;
   }
 
@@ -265,9 +282,17 @@ const chapterTicks = computed(() => {
 
 //watch
 watch(computedElapsedTime, (newTime) => {
-  if (!isDragging.value) {
-    curTimeValue.value = newTime;
+  if (isDragging.value) return;
+  if (pendingSeek.value !== null) {
+    // Ignore stale pre-seek values; release once the backend confirms (±2s).
+    if (Math.abs(newTime - pendingSeek.value) > 2) return;
+    pendingSeek.value = null;
+    if (pendingSeekTimer) {
+      clearTimeout(pendingSeekTimer);
+      pendingSeekTimer = null;
+    }
   }
+  curTimeValue.value = newTime;
 });
 
 // methods
@@ -275,14 +300,20 @@ const startDragging = function () {
   isDragging.value = true;
 };
 
-const stopDragging = () => {
+const stopDragging = (value: number) => {
   isDragging.value = false;
-  if (!isDragging.value && store.activePlayer) {
-    api.playerCommandSeek(
-      store.activePlayer.player_id,
-      Math.round(tempTime.value),
-    );
-  }
+  if (!store.activePlayer) return;
+  const target = Math.round(value);
+  // Optimistic: show the target immediately and hold it until the backend
+  // reports a matching elapsed time (or the safety timeout fires).
+  curTimeValue.value = target;
+  pendingSeek.value = target;
+  if (pendingSeekTimer) clearTimeout(pendingSeekTimer);
+  pendingSeekTimer = setTimeout(() => {
+    pendingSeek.value = null;
+    pendingSeekTimer = null;
+  }, 3000);
+  api.playerCommandSeek(store.activePlayer.player_id, target);
 };
 
 const chapterClicked = function (chaperPos: number) {
