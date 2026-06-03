@@ -18,6 +18,7 @@ import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import { usePlayActionInProgress } from "@/composables/playActionInProgress";
 import { computed, toRef } from "vue";
 import { SkipBack } from "lucide-vue-next";
 
@@ -74,10 +75,5 @@ const canPrevious = computed(() => {
   return queueHasPrevious.value || playerHasPrevious.value;
 });
 
-const isLoading = computed(() => {
-  if (!compProps.player) return false;
-  return (
-    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const { isLoading } = usePlayActionInProgress(toRef(compProps, "playerQueue"));
 </script>

@@ -51,7 +51,8 @@ import {
   isQueueDynamicPlaylist,
   isQueueInfiniteStream,
 } from "@/plugins/api/helpers";
-import { computed } from "vue";
+import { usePlayActionInProgress } from "@/composables/playActionInProgress";
+import { computed, toRef } from "vue";
 import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
 // properties
@@ -67,11 +68,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const isLoading = computed(() => {
-  return (
-    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const { isLoading } = usePlayActionInProgress(toRef(compProps, "playerQueue"));
 
 const isSingleDynamicPlaylist = computed(() =>
   isQueueDynamicPlaylist(compProps.playerQueue),

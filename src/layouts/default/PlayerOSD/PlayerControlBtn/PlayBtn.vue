@@ -36,6 +36,7 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import { usePlayActionInProgress } from "@/composables/playActionInProgress";
 import api from "@/plugins/api";
 import {
   MediaType,
@@ -109,12 +110,7 @@ const isPlaying = computed(() => {
   return compProps.player?.playback_state == PlaybackState.PLAYING;
 });
 
-const isLoading = computed(() => {
-  if (!compProps.player) return false;
-  return (
-    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const { isLoading } = usePlayActionInProgress(toRef(compProps, "playerQueue"));
 
 const isDisabled = computed(() => {
   if (isLoading.value) return true;

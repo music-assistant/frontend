@@ -38,9 +38,10 @@ import {
   isQueueDynamicPlaylist,
   isQueueInfiniteStream,
 } from "@/plugins/api/helpers";
+import { usePlayActionInProgress } from "@/composables/playActionInProgress";
 import { IconArrowsRight } from "@tabler/icons-vue";
 import { Shuffle } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, toRef } from "vue";
 
 // properties
 export interface Props {
@@ -55,11 +56,7 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const isLoading = computed(() => {
-  return (
-    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const { isLoading } = usePlayActionInProgress(toRef(compProps, "playerQueue"));
 
 const isSingleDynamicPlaylist = computed(() =>
   isQueueDynamicPlaylist(compProps.playerQueue),
