@@ -1,58 +1,59 @@
 <template>
   <!-- Header -->
-  <v-container>
+  <div class="p-4">
     <div v-if="props.playerId">
       <!-- Settable options -->
       <div v-if="playerOptionsSettable.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.settable', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
-            <div v-for="option in playerOptionsSettable" :key="option.key">
-              <PlayerOptionField
-                :player-option="option"
-                :player-id="props.playerId"
-              />
-            </div>
-          </div>
-        </v-card>
+        <Card class="my-8 w-full">
+          <CardHeader
+            ><CardTitle>{{
+              $t("player_options.settable", [playerName])
+            }}</CardTitle></CardHeader
+          >
+          <CardContent class="flex flex-col gap-2">
+            <PlayerOptionField
+              v-for="option in playerOptionsSettable"
+              :key="option.key"
+              :player-option="option"
+              :player-id="props.playerId"
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <!-- Read-only options -->
       <div v-if="playerOptionsReadOnly.length > 0">
-        <v-card
-          class="mx-auto my-8"
-          elevation="2"
-          min-width="100%"
-          :title="$t('player_options.read_only', [playerName])"
-        >
-          <div style="padding: 0px 20px 20px 20px">
-            <div v-for="option in playerOptionsReadOnly" :key="option.key">
-              <PlayerOptionField
-                :player-option="option"
-                :player-id="props.playerId"
-              />
-            </div>
-          </div>
-        </v-card>
+        <Card class="my-8 w-full">
+          <CardHeader
+            ><CardTitle>{{
+              $t("player_options.read_only", [playerName])
+            }}</CardTitle></CardHeader
+          >
+          <CardContent class="flex flex-col gap-2">
+            <PlayerOptionField
+              v-for="option in playerOptionsReadOnly"
+              :key="option.key"
+              :player-option="option"
+              :player-id="props.playerId"
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "@/plugins/api";
 import {
   EventType,
   PlayerOption,
   PlayerOptionType,
 } from "@/plugins/api/interfaces";
-import { onBeforeUnmount, computed, ref, watch } from "vue";
-import PlayerOptionField from "./PlayerOptionField.vue";
 import { $t } from "@/plugins/i18n";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import PlayerOptionField from "./PlayerOptionField.vue";
 
 // props
 const props = defineProps<{

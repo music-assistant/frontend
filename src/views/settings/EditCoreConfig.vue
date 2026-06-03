@@ -2,12 +2,13 @@
   <section class="edit-core-config">
     <div v-if="config && api.providerManifests[config.domain]">
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
+      <div class="header-card mb-4">
         <div class="header-content">
           <div class="header-icon">
-            <v-icon size="32" color="primary">{{
-              getCoreIcon(config.domain)
-            }}</v-icon>
+            <span
+              class="mdi text-3xl text-primary"
+              :class="getCoreIcon(config.domain)"
+            ></span>
           </div>
           <div class="header-info">
             <h2 class="header-title">
@@ -18,7 +19,7 @@
             </p>
           </div>
         </div>
-      </v-card>
+      </div>
     </div>
 
     <edit-config
@@ -30,18 +31,17 @@
       @immediate-apply="onImmediateApply"
     />
 
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      class="loading-overlay"
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
-    </v-overlay>
+      <Spinner class="size-16" />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
 import { nanoid } from "nanoid";
@@ -191,7 +191,7 @@ const onAction = async function (
 }
 
 .header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -206,7 +206,7 @@ const onAction = async function (
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,20 +221,14 @@ const onAction = async function (
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--foreground);
 }
 
 .header-description {
   font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: var(--muted-foreground);
   margin: 0;
   line-height: 1.5;
-}
-
-.loading-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @media (max-width: 600px) {

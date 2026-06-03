@@ -2,28 +2,19 @@
   <section class="edit-provider">
     <div v-if="config && api.providerManifests[config.domain]">
       <!-- Disabled banner -->
-      <v-alert
-        v-if="!config.enabled"
-        type="warning"
-        variant="tonal"
-        class="mb-4"
-        closable
-      >
-        <div class="disabled-banner">
-          <span>{{ $t("settings.provider_disabled") }}</span>
-          <v-btn
-            size="small"
-            color="warning"
-            variant="flat"
-            @click="config.enabled = true"
-          >
-            {{ $t("settings.enable_provider") }}
-          </v-btn>
-        </div>
-      </v-alert>
+      <Alert v-if="!config.enabled" variant="warning" class="mb-4">
+        <AlertDescription>
+          <div class="disabled-banner">
+            <span>{{ $t("settings.provider_disabled") }}</span>
+            <Button size="sm" variant="default" @click="config.enabled = true">
+              {{ $t("settings.enable_provider") }}
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
 
       <!-- Header card -->
-      <v-card class="header-card mb-4" elevation="0">
+      <div class="header-card mb-4">
         <div class="header-content">
           <div class="header-icon">
             <provider-icon :domain="config.domain" :size="48" />
@@ -37,14 +28,14 @@
                   api.providerManifests[config.domain].name
                 }}
               </h2>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                density="compact"
+              <Button
+                variant="ghost"
+                size="icon"
                 class="rename-btn"
                 @click="showRenameDialog = true"
-              />
+              >
+                <span class="mdi mdi-pencil text-lg"></span>
+              </Button>
             </div>
             <p class="header-description">
               {{ api.providerManifests[config.domain].description }}
@@ -73,7 +64,7 @@
             ></div>
           </div>
         </div>
-      </v-card>
+      </div>
     </div>
 
     <edit-config
@@ -86,59 +77,78 @@
     />
 
     <!-- Rename dialog -->
-    <v-dialog v-model="showRenameDialog" max-width="400">
-      <v-card>
-        <v-card-title>{{ $t("settings.provider_name") }}</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editName"
-            :placeholder="
-              api.getProvider(config?.instance_id ?? '')?.name ||
-              api.providerManifests[config?.domain ?? '']?.name
-            "
-            variant="outlined"
-            density="comfortable"
-            autofocus
-            clearable
-            @keyup.enter="saveRename"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showRenameDialog = false">
+    <Dialog v-model:open="showRenameDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ $t("settings.provider_name") }}</DialogTitle>
+        </DialogHeader>
+        <Input
+          :model-value="editName ?? undefined"
+          :placeholder="
+            api.getProvider(config?.instance_id ?? '')?.name ||
+            api.providerManifests[config?.domain ?? '']?.name
+          "
+          autofocus
+          @update:model-value="editName = ($event as string) || null"
+          @keyup.enter="saveRename"
+        />
+        <DialogFooter>
+          <Button variant="outline" @click="showRenameDialog = false">
             {{ $t("close") }}
-          </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          </Button>
+          <Button @click="saveRename">
             {{ $t("settings.save") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-overlay
-      v-model="loading"
-      scrim="true"
-      persistent
-      style="display: flex; align-items: center; justify-content: center"
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Loading overlay -->
+    <div
+      v-if="loading"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
     >
-      <v-card v-if="showAuthLink" style="background-color: white">
-        <v-card-title>Authenticating...</v-card-title>
-        <v-card-subtitle
-          >A new tab/popup should be opened where you can
-          authenticate</v-card-subtitle
-        >
-        <v-card-actions>
-          <a id="auth" href="" target="_blank"
-            ><v-btn>Click here if the popup did not open</v-btn></a
+      <Card v-if="showAuthLink" class="bg-card">
+        <CardHeader>
+          <CardTitle>Authenticating...</CardTitle>
+          <CardDescription
+            >A new tab/popup should be opened where you can
+            authenticate</CardDescription
           >
-        </v-card-actions>
-      </v-card>
-      <v-progress-circular v-else indeterminate size="64" color="primary" />
-    </v-overlay>
+        </CardHeader>
+        <CardContent>
+          <Button as-child>
+            <a id="auth" href="" target="_blank" rel="noopener noreferrer">
+              Click here if the popup did not open
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
+      <Spinner v-else class="size-16" />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -352,7 +362,7 @@ const saveRename = function () {
 }
 
 .header-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -382,7 +392,7 @@ const saveRename = function () {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--foreground);
 }
 
 .rename-btn {
@@ -395,6 +405,7 @@ const saveRename = function () {
 }
 
 .disabled-banner {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -403,18 +414,18 @@ const saveRename = function () {
 
 .header-description {
   font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  color: var(--muted-foreground);
   margin: 0 0 12px 0;
   line-height: 1.5;
 }
 
 .header-authors {
   font-size: 0.813rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: var(--muted-foreground);
 }
 
 .header-authors :deep(a) {
-  color: rgb(var(--v-theme-primary));
+  color: var(--primary);
   text-decoration: none;
 }
 

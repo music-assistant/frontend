@@ -1,5 +1,9 @@
 <template>
-  <v-form v-if="entries" ref="form" v-model="valid" :disabled="disabled">
+  <form
+    v-if="entries"
+    :class="{ 'pointer-events-none opacity-60': disabled }"
+    @submit.prevent="form.handleSubmit"
+  >
     <!-- Generic settings section -->
     <div
       v-for="panel of regularPanels.filter(
@@ -9,61 +13,35 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
+        <span
+          class="mdi text-xl text-primary"
+          :class="getCategoryIcon(panel)"
+        ></span>
+        <span class="category-title">{{ getCategoryTranslation(panel) }}</span>
       </div>
       <div class="category-content">
-        <div
+        <form.Field
           v-for="conf_entry of entriesForCategory(panel)"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
+          :name="conf_entry.key"
+          :listeners="listenersFor(conf_entry)"
         >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          <template #default="{ field }">
+            <ConfigEntryRow
+              :entry="conf_entry"
+              :field="field"
+              :field-value="field.state.value"
+              :invalid="field.state.meta.isTouched && !field.state.meta.isValid"
+              :errors="field.state.meta.errors"
+              :show-password-values="showPasswordValues"
+              :disabled="isDisabledNow(conf_entry)"
+              @action="onEntryAction"
+              @toggle-password="showPasswordValues = !showPasswordValues"
+              @open-dsp="openDspConfig"
+              @open-options="openPlayerOptions"
+            />
+          </template>
+        </form.Field>
       </div>
     </div>
 
@@ -78,7 +56,7 @@
       class="protocol-section"
     >
       <div class="protocol-section-header">
-        <v-icon icon="mdi-swap-horizontal" class="mr-3" size="24" />
+        <span class="mdi mdi-swap-horizontal text-2xl text-primary"></span>
         <span class="protocol-section-title">
           {{ $t("settings.category.protocol_settings") }}
         </span>
@@ -88,55 +66,28 @@
         v-if="protocolGeneralEntries.length > 0"
         class="protocol-general-settings"
       >
-        <div
+        <form.Field
           v-for="conf_entry of protocolGeneralEntries"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
+          :name="conf_entry.key"
+          :listeners="listenersFor(conf_entry)"
         >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          <template #default="{ field }">
+            <ConfigEntryRow
+              :entry="conf_entry"
+              :field="field"
+              :field-value="field.state.value"
+              :invalid="field.state.meta.isTouched && !field.state.meta.isValid"
+              :errors="field.state.meta.errors"
+              :show-password-values="showPasswordValues"
+              :disabled="isDisabledNow(conf_entry)"
+              @action="onEntryAction"
+              @toggle-password="showPasswordValues = !showPasswordValues"
+              @open-dsp="openDspConfig"
+              @open-options="openPlayerOptions"
+            />
+          </template>
+        </form.Field>
       </div>
       <!-- Single protocol: show directly without expansion -->
       <div
@@ -159,64 +110,44 @@
           >
             {{ getProtocolEmptyMessage(panel) }}
           </div>
-          <div
+          <form.Field
             v-for="conf_entry of entriesForCategory(panel)"
             :key="conf_entry.key"
-            class="config-entry"
-            :class="{ 'config-entry-advanced': conf_entry.advanced }"
+            :name="conf_entry.key"
+            :listeners="listenersFor(conf_entry)"
           >
-            <ConfigEntryField
-              :conf-entry="conf_entry"
-              :show-password-values="showPasswordValues"
-              :disabled="isDisabled(conf_entry)"
-              @toggle-password="showPasswordValues = !showPasswordValues"
-              @update:value="onValueUpdate(conf_entry, $event)"
-              @action="
-                action(
-                  conf_entry.action || conf_entry.key,
-                  !!conf_entry.immediate_apply,
-                );
-                conf_entry.value = conf_entry.action ? null : conf_entry.key;
-              "
-              @open-dsp="openDspConfig"
-              @open-options="openPlayerOptions"
-            />
-            <v-chip
-              v-if="conf_entry.advanced"
-              size="x-small"
-              color="grey"
-              variant="outlined"
-              class="advanced-badge"
-            >
-              {{ $t("settings.advanced") }}
-            </v-chip>
-            <Button
-              v-if="hasDescriptionOrHelpLink(conf_entry)"
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="help-btn"
-              @click="
-                $t(
-                  `settings.${conf_entry?.key}.description`,
-                  conf_entry.description || '',
-                )
-                  ? (showHelpInfo = conf_entry)
-                  : openLink(conf_entry.help_link!)
-              "
-            >
-              <HelpCircle :size="20" />
-            </Button>
-          </div>
+            <template #default="{ field }">
+              <ConfigEntryRow
+                :entry="conf_entry"
+                :field="field"
+                :field-value="field.state.value"
+                :invalid="
+                  field.state.meta.isTouched && !field.state.meta.isValid
+                "
+                :errors="field.state.meta.errors"
+                :show-password-values="showPasswordValues"
+                :disabled="isDisabledNow(conf_entry)"
+                @action="onEntryAction"
+                @toggle-password="showPasswordValues = !showPasswordValues"
+                @open-dsp="openDspConfig"
+                @open-options="openPlayerOptions"
+              />
+            </template>
+          </form.Field>
         </div>
       </div>
       <!-- Multiple protocols: show as accordion -->
-      <v-expansion-panels
+      <Accordion
         v-else
-        v-model="activeProtocolPanel"
+        type="single"
+        collapsible
+        :model-value="activeProtocolPanel"
         class="protocol-panels"
+        @update:model-value="
+          (v) => (activeProtocolPanel = v as string | undefined)
+        "
       >
-        <v-expansion-panel
+        <AccordionItem
           v-for="panel of protocolPanels.filter(
             (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
           )"
@@ -224,50 +155,28 @@
           :value="panel"
           class="protocol-panel"
         >
-          <v-expansion-panel-title class="protocol-panel-title">
-            <div class="protocol-title-content">
-              <ProviderIcon
-                v-if="getProtocolDomain(panel)"
-                :domain="getProtocolDomain(panel)!"
-                :size="24"
-              />
-              <span class="panel-title-text">
-                {{ getCategoryTranslation(panel) }}
-              </span>
-            </div>
-            <!-- Show toggle switch for protocol categories -->
-            <template #actions="{ expanded }">
-              <div class="protocol-actions">
-                <v-switch
-                  v-if="getProtocolEnabledEntry(panel)"
-                  :model-value="getProtocolEnabledEntry(panel)?.value"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  @click.stop
-                  @update:model-value="
-                    onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
-                  "
+          <div class="flex items-center gap-2 pr-4 pl-5">
+            <AccordionTrigger class="flex-1">
+              <div class="flex items-center gap-2">
+                <ProviderIcon
+                  v-if="getProtocolDomain(panel)"
+                  :domain="getProtocolDomain(panel)!"
+                  :size="24"
                 />
-                <v-switch
-                  v-else
-                  :model-value="true"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  disabled
-                  @click.stop
-                />
-                <v-icon
-                  :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                  class="protocol-expand-icon"
-                />
+                <span class="text-sm">{{ getCategoryTranslation(panel) }}</span>
               </div>
-            </template>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
+            </AccordionTrigger>
+            <Switch
+              v-if="getProtocolEnabledEntry(panel)"
+              :model-value="!!protocolEnabledValue(panel)"
+              @click.stop
+              @update:model-value="
+                (v) => toggleProtocolEnabled(getProtocolEnabledEntry(panel)!, v)
+              "
+            />
+            <Switch v-else :model-value="true" disabled @click.stop />
+          </div>
+          <AccordionContent>
             <div class="config-panel-content">
               <div
                 v-if="entriesForCategory(panel).length === 0"
@@ -275,61 +184,34 @@
               >
                 {{ getProtocolEmptyMessage(panel) }}
               </div>
-              <div
+              <form.Field
                 v-for="conf_entry of entriesForCategory(panel)"
                 :key="conf_entry.key"
-                class="config-entry"
-                :class="{ 'config-entry-advanced': conf_entry.advanced }"
+                :name="conf_entry.key"
+                :listeners="listenersFor(conf_entry)"
               >
-                <ConfigEntryField
-                  :conf-entry="conf_entry"
-                  :show-password-values="showPasswordValues"
-                  :disabled="isDisabled(conf_entry)"
-                  @toggle-password="showPasswordValues = !showPasswordValues"
-                  @update:value="onValueUpdate(conf_entry, $event)"
-                  @action="
-                    action(
-                      conf_entry.action || conf_entry.key,
-                      !!conf_entry.immediate_apply,
-                    );
-                    conf_entry.value = conf_entry.action
-                      ? null
-                      : conf_entry.key;
-                  "
-                  @open-dsp="openDspConfig"
-                  @open-options="openPlayerOptions"
-                />
-                <v-chip
-                  v-if="conf_entry.advanced"
-                  size="x-small"
-                  color="grey"
-                  variant="outlined"
-                  class="advanced-badge"
-                >
-                  {{ $t("settings.advanced") }}
-                </v-chip>
-                <Button
-                  v-if="hasDescriptionOrHelpLink(conf_entry)"
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  class="help-btn"
-                  @click="
-                    $t(
-                      `settings.${conf_entry?.key}.description`,
-                      conf_entry.description || '',
-                    )
-                      ? (showHelpInfo = conf_entry)
-                      : openLink(conf_entry.help_link!)
-                  "
-                >
-                  <HelpCircle :size="20" />
-                </Button>
-              </div>
+                <template #default="{ field }">
+                  <ConfigEntryRow
+                    :entry="conf_entry"
+                    :field="field"
+                    :field-value="field.state.value"
+                    :invalid="
+                      field.state.meta.isTouched && !field.state.meta.isValid
+                    "
+                    :errors="field.state.meta.errors"
+                    :show-password-values="showPasswordValues"
+                    :disabled="isDisabledNow(conf_entry)"
+                    @action="onEntryAction"
+                    @toggle-password="showPasswordValues = !showPasswordValues"
+                    @open-dsp="openDspConfig"
+                    @open-options="openPlayerOptions"
+                  />
+                </template>
+              </form.Field>
             </div>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
 
     <!-- Other regular settings sections -->
@@ -341,178 +223,150 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
-        <span class="category-title">
-          {{ getCategoryTranslation(panel) }}
-        </span>
+        <span
+          class="mdi text-xl text-primary"
+          :class="getCategoryIcon(panel)"
+        ></span>
+        <span class="category-title">{{ getCategoryTranslation(panel) }}</span>
       </div>
       <div class="category-content">
-        <div
+        <form.Field
           v-for="conf_entry of entriesForCategory(panel)"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
+          :name="conf_entry.key"
+          :listeners="listenersFor(conf_entry)"
         >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          <template #default="{ field }">
+            <ConfigEntryRow
+              :entry="conf_entry"
+              :field="field"
+              :field-value="field.state.value"
+              :invalid="field.state.meta.isTouched && !field.state.meta.isValid"
+              :errors="field.state.meta.errors"
+              :show-password-values="showPasswordValues"
+              :disabled="isDisabledNow(conf_entry)"
+              @action="onEntryAction"
+              @toggle-password="showPasswordValues = !showPasswordValues"
+              @open-dsp="openDspConfig"
+              @open-options="openPlayerOptions"
+            />
+          </template>
+        </form.Field>
       </div>
     </div>
 
     <div v-if="!disabled" class="config-actions">
       <!-- Show advanced settings toggle -->
       <div class="advanced-toggle-wrapper">
-        <v-switch
-          v-model="showAdvancedSettings"
-          color="primary"
-          hide-details
-          density="comfortable"
-          :label="$t('settings.show_advanced_settings')"
-          class="advanced-settings-switch"
-        />
+        <Switch id="advanced-toggle" v-model="showAdvancedSettings" />
+        <Label for="advanced-toggle" class="text-sm font-normal opacity-85">
+          {{ $t("settings.show_advanced_settings") }}
+        </Label>
       </div>
-      <v-btn
-        block
-        color="primary"
-        size="large"
-        :disabled="!requiredValuesPresent || !hasUnsavedChanges"
-        @click="submit"
-      >
+      <Button type="submit" size="lg" class="w-full" :disabled="!canSave">
         {{ $t("settings.save") }}
-      </v-btn>
-      <v-btn block variant="outlined" size="large" @click="handleClose">
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        class="w-full"
+        @click="handleClose"
+      >
         {{ $t("close") }}
-      </v-btn>
-      <v-btn block variant="text" size="large" @click="resetToDefaults">
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="lg"
+        class="w-full"
+        @click="resetToDefaults"
+      >
         {{ $t("settings.reset_to_defaults") }}
-      </v-btn>
+      </Button>
     </div>
-  </v-form>
-  <v-dialog
-    :model-value="showHelpInfo !== undefined"
-    width="auto"
-    @update:model-value="showHelpInfo = undefined"
-  >
-    <v-card>
-      <v-card-text>
-        <h2>
-          {{
-            $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
-          }}
-        </h2>
-      </v-card-text>
-      <!-- eslint-disable vue/no-v-html -->
-      <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text
-        v-html="
-          markdownToHtml(
-            $t(
-              `settings.${showHelpInfo?.key}.description`,
-              showHelpInfo?.description || '',
-            ),
-          )
-        "
-      />
-      <!-- eslint-enable vue/no-v-html -->
-      <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-      <v-card-actions>
-        <v-btn
-          v-if="showHelpInfo?.help_link"
-          @click="openLink(showHelpInfo!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="showHelpInfo = undefined">
-          {{ $t("close") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  </form>
+
   <!-- Unsaved changes confirmation dialog -->
-  <v-dialog v-model="showUnsavedDialog" max-width="400" persistent>
-    <v-card>
-      <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
-      <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="cancelDiscard">
+  <AlertDialog
+    :open="showUnsavedDialog"
+    @update:open="(o) => (showUnsavedDialog = o)"
+  >
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{
+          $t("settings.unsaved_changes")
+        }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t("settings.unsaved_changes_message") }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter class="sm:items-center">
+        <AlertDialogCancel class="mt-0" @click="cancelDiscard">
           {{ $t("settings.stay") }}
-        </v-btn>
-        <v-btn color="warning" variant="flat" @click="confirmDiscard">
+        </AlertDialogCancel>
+        <AlertDialogAction
+          class="bg-destructive text-white hover:bg-destructive/90"
+          @click="confirmDiscard"
+        >
           {{ $t("settings.discard") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
+import { useForm } from "@tanstack/vue-form";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { onBeforeRouteLeave, useRouter } from "vue-router";
+
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { markdownToHtml } from "@/helpers/utils";
 import {
-  ConfigEntry,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
+import {
+  buildConfigDefaults,
+  buildConfigSchema,
+  isEntryDisabled,
+  isFormValueEntry,
+} from "@/lib/forms/config-entry";
+import {
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { HelpCircle } from "lucide-vue-next";
-import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
-import { onBeforeRouteLeave, useRouter } from "vue-router";
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
-import ConfigEntryField from "./ConfigEntryField.vue";
+import ConfigEntryRow from "./ConfigEntryRow.vue";
 
 const router = useRouter();
-const showUnsavedDialog = ref(false);
-const allowNavigation = ref(false);
+const { t } = useI18n();
 
 export interface Props {
   configEntries: ConfigEntryUI[];
   disabled: boolean;
   defaultExpandedProtocol?: string;
 }
+
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
@@ -525,128 +379,140 @@ const emit = defineEmits<{
   (e: "immediateApply", values: Record<string, ConfigValueType>): void;
 }>();
 
+type FormValues = Record<string, ConfigValueType>;
+
+const clone = <T,>(v: T): T =>
+  typeof v === "object" && v !== null ? JSON.parse(JSON.stringify(v)) : v;
+
 // global refs
 const entries = ref<ConfigEntryUI[]>();
-const valid = ref(false);
-const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
-const activePanel = ref<string[]>([]);
 const activeProtocolPanel = ref<string | undefined>(undefined);
 const showPasswordValues = ref(false);
 const showAdvancedSettings = ref(false);
-const showHelpInfo = ref<ConfigEntryUI>();
-const oldValues = ref<Record<string, ConfigValueType>>({});
+const showUnsavedDialog = ref(false);
+const allowNavigation = ref(false);
+const oldValues = ref<FormValues>({});
 const oldValuesInitialized = ref(false);
 
-// props
-const props = defineProps<Props>();
+const schema = ref(buildConfigSchema(props.configEntries, t));
+
+const form = useForm({
+  defaultValues: buildConfigDefaults(props.configEntries) as FormValues,
+  validators: {
+    onChange: ({ value }: { value: FormValues }) => validate(value),
+    onSubmit: ({ value }: { value: FormValues }) => validate(value),
+  },
+  onSubmit: () => {
+    allowNavigation.value = true;
+    emit("submit", getCurrentValues());
+  },
+});
+
+const validate = (value: FormValues) => {
+  const result = schema.value.safeParse(value);
+  if (result.success) return undefined;
+  const fields: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = String(issue.path[0] ?? "");
+    if (key && !(key in fields)) fields[key] = issue.message;
+  }
+  return { fields };
+};
+
+const formValues = form.useStore((s) => s.values as FormValues);
 
 // computed props
 const panels = computed(() => {
-  // determine all unique categories from the config entries
   const allCategories = new Set(
     entries
       .value!.map((x) => x.category)
       .filter((x) => !["generic", "advanced", "protocol_general"].includes(x)),
   );
-  // ensure generic is always first
-  // advanced category is deprecated - advanced settings are now distributed across categories
-  // protocol_general is handled separately in the protocol section
   return ["generic", ...allCategories];
 });
 
-const regularPanels = computed(() => {
-  return panels.value.filter((p) => !isProtocolRelated(p));
-});
+const regularPanels = computed(() =>
+  panels.value.filter((p) => !isProtocolRelated(p)),
+);
 
-const protocolPanels = computed(() => {
-  return panels.value.filter((p) => isProtocolCategory(p));
-});
+const protocolPanels = computed(() =>
+  panels.value.filter((p) => isProtocolCategory(p)),
+);
 
-const protocolGeneralEntries = computed(() => {
-  return entriesForCategory("protocol_general");
-});
+const protocolGeneralEntries = computed(() =>
+  entriesForCategory("protocol_general"),
+);
 
-const requiredValuesPresent = computed(() => {
-  if (entries.value) {
-    for (const entry of entries.value) {
-      if (
-        entry.required &&
-        !(
-          !isNullOrUndefined(entry.value) ||
-          !isNullOrUndefined(entry.default_value) ||
-          entry.type == ConfigEntryType.DIVIDER ||
-          entry.type == ConfigEntryType.LABEL ||
-          entry.type == ConfigEntryType.ALERT ||
-          entry.type == ConfigEntryType.ACTION
-        )
-      )
-        return false;
-    }
-    return true;
-  }
-  return false;
-});
+const isValid = computed(
+  () => schema.value.safeParse(formValues.value).success,
+);
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
   for (const entry of entries.value) {
-    // Skip non-value entry types
-    if (
-      entry.type == ConfigEntryType.DIVIDER ||
-      entry.type == ConfigEntryType.LABEL ||
-      entry.type == ConfigEntryType.ALERT ||
-      entry.type == ConfigEntryType.ACTION ||
-      isInjected(entry)
-    ) {
-      continue;
-    }
-    // Skip secure strings that haven't been modified (still showing substitute)
+    if (!isFormValueEntry(entry)) continue;
+    const currentValue = formValues.value[entry.key];
     if (
       entry.type == ConfigEntryType.SECURE_STRING &&
-      entry.value == SECURE_STRING_SUBSTITUTE
+      currentValue == SECURE_STRING_SUBSTITUTE
     ) {
       continue;
     }
-    const oldValue = oldValues.value[entry.key];
-    const currentValue = entry.value;
-    // Compare values (handle arrays and objects)
-    if (JSON.stringify(oldValue) !== JSON.stringify(currentValue)) {
+    if (
+      JSON.stringify(oldValues.value[entry.key]) !==
+      JSON.stringify(currentValue)
+    ) {
       return true;
     }
   }
   return false;
 });
 
+const canSave = computed(() => isValid.value && hasUnsavedChanges.value);
+
+const listenersFor = (entry: ConfigEntryUI) =>
+  entry.immediate_apply
+    ? {
+        onChange: ({ value }: { value: ConfigValueType }) =>
+          onFieldChange(entry, value),
+      }
+    : undefined;
+
 // Helper functions for protocol categories
-const isProtocolCategory = function (category: string): boolean {
-  return category.startsWith("protocol_");
-};
+const isProtocolCategory = (category: string): boolean =>
+  category.startsWith("protocol_");
 
-const isProtocolRelated = function (category: string): boolean {
-  return category === "protocol_general" || isProtocolCategory(category);
-};
+const isProtocolRelated = (category: string): boolean =>
+  category === "protocol_general" || isProtocolCategory(category);
 
-const getProtocolDomain = function (category: string): string | undefined {
+const getProtocolDomain = (category: string): string | undefined => {
   if (!isProtocolCategory(category)) return undefined;
-  // Extract domain from "protocol_{domain}" format
   return category.replace("protocol_", "");
 };
 
-const getProtocolEnabledEntry = function (
+const getProtocolEnabledEntry = (
   category: string,
-): ConfigEntryUI | undefined {
+): ConfigEntryUI | undefined => {
   if (!isProtocolCategory(category) || !entries.value) return undefined;
-
-  // Look for an entry in this category with a key ending in "||protocol||enabled"
   return entries.value.find(
     (entry) =>
       entry.category === category && entry.key.endsWith("||protocol||enabled"),
   );
 };
 
-const hasHiddenAdvancedSettings = function (category: string): boolean {
+const protocolEnabledValue = (category: string): boolean => {
+  const entry = getProtocolEnabledEntry(category);
+  if (!entry) return true;
+  return !!formValues.value[entry.key];
+};
+
+const toggleProtocolEnabled = (entry: ConfigEntryUI, value: boolean) => {
+  form.setFieldValue(entry.key, value);
+  onFieldChange(entry, value);
+};
+
+const hasHiddenAdvancedSettings = (category: string): boolean => {
   if (!entries.value) return false;
-  // Check if there are any advanced settings in this category that are currently hidden
   return entries.value.some(
     (entry) =>
       entry.category === category &&
@@ -656,118 +522,84 @@ const hasHiddenAdvancedSettings = function (category: string): boolean {
   );
 };
 
-const getProtocolEmptyMessage = function (category: string): string {
-  const enabledEntry = getProtocolEnabledEntry(category);
-  const isEnabled = enabledEntry?.value !== false;
-
-  if (!isEnabled) {
-    return $t("settings.protocol_disabled_message");
-  }
-
-  // Protocol is enabled but no settings visible
+const getProtocolEmptyMessage = (category: string): string => {
+  const isEnabled = protocolEnabledValue(category);
+  if (!isEnabled) return $t("settings.protocol_disabled_message");
   if (hasHiddenAdvancedSettings(category)) {
     return $t("settings.protocol_no_settings_with_advanced");
   }
-
   return $t("settings.protocol_no_settings");
 };
 
-// watchers
-watch(
-  () => props.configEntries,
-  (val) => {
-    entries.value = [];
-    // Only capture oldValues on the FIRST load, not on subsequent updates from actions.
-    // This ensures that action-triggered changes (like OAuth tokens being set) are
-    // still detected as unsaved changes that need to be saved.
-    const shouldCaptureOldValues = !oldValuesInitialized.value;
-    if (shouldCaptureOldValues) {
-      oldValues.value = {};
-    }
-    for (const entry of val || []) {
-      // handle missing values (undefined or null)
-      if (entry.value == undefined || entry.value == null)
-        entry.value = entry.default_value;
-      // Store the initial value AFTER applying defaults (deep clone for arrays/objects)
-      // Also update oldValues for immediate_apply entries on subsequent updates,
-      // since their values are already saved to the backend.
-      if (shouldCaptureOldValues || entry.immediate_apply) {
-        oldValues.value[entry.key] =
-          typeof entry.value === "object" && entry.value !== null
-            ? JSON.parse(JSON.stringify(entry.value))
-            : entry.value;
-      }
-      entries.value.push(entry);
-    }
-    oldValuesInitialized.value = true;
-    // Set active panels after entries are populated
-    // Expand all panels by default, except protocol categories which stay collapsed
-    const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
-    activePanel.value = expandedPanels;
-    // Auto-expand the native protocol panel if specified
+const syncFromProps = (val: ConfigEntryUI[] | undefined) => {
+  entries.value = [...(val || [])];
+  schema.value = buildConfigSchema(entries.value, t);
+
+  const incoming = buildConfigDefaults(entries.value);
+  const captureAll = !oldValuesInitialized.value;
+  for (const [key, newVal] of Object.entries(incoming)) {
+    const isNew = !(key in oldValues.value);
+    const entry = entries.value.find((e) => e.key === key);
+    const rebaseline = captureAll || isNew || !!entry?.immediate_apply;
     if (
-      props.defaultExpandedProtocol &&
-      protocolPanels.value.includes(props.defaultExpandedProtocol)
+      rebaseline ||
+      JSON.stringify(oldValues.value[key]) !== JSON.stringify(newVal)
     ) {
-      activeProtocolPanel.value = props.defaultExpandedProtocol;
+      form.setFieldValue(key, newVal);
     }
-  },
-  { immediate: true },
-);
+    if (rebaseline) {
+      oldValues.value[key] = clone(newVal);
+    }
+  }
+  oldValuesInitialized.value = true;
+
+  if (
+    props.defaultExpandedProtocol &&
+    protocolPanels.value.includes(props.defaultExpandedProtocol)
+  ) {
+    activeProtocolPanel.value = props.defaultExpandedProtocol;
+  }
+};
+
+watch(() => props.configEntries, syncFromProps, { immediate: true });
 
 // methods
-const validate = async function () {
-  const { valid } = await form.value!.validate();
-  return valid;
-};
-const submit = async function () {
-  // submit button is pressed
-  if (await validate()) {
-    allowNavigation.value = true;
-    emit("submit", getCurrentValues());
+const onFieldChange = (entry: ConfigEntryUI, value: ConfigValueType) => {
+  if (!entry.immediate_apply) return;
+  if (JSON.stringify(oldValues.value[entry.key]) === JSON.stringify(value)) {
+    return;
   }
-};
-const action = async function (action: string, immediateApply: boolean) {
-  // call config entries action
-  emit("action", action, getCurrentValues(), immediateApply);
+  oldValues.value[entry.key] = clone(value);
+  emit("immediateApply", { [entry.key]: value });
 };
 
-const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
-  entry.value = value;
-  // If immediate_apply is set, emit the value change immediately
-  // and update oldValues so the form doesn't show as "unsaved"
-  if (entry.immediate_apply) {
-    emit("immediateApply", { [entry.key]: value });
-    oldValues.value[entry.key] =
-      typeof value === "object" && value !== null
-        ? JSON.parse(JSON.stringify(value))
-        : value;
-  }
-};
-const openLink = function (url: string) {
-  // window.open(url, "_blank");
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.click();
+const onEntryAction = (entry: ConfigEntryUI) => {
+  emit(
+    "action",
+    entry.action || entry.key,
+    getCurrentValues(),
+    !!entry.immediate_apply,
+  );
+  form.setFieldValue(entry.key, entry.action ? null : entry.key);
 };
 
-const openDspConfig = function () {
+const openDspConfig = () => {
   router.push(`${router.currentRoute.value.path}/dsp`);
 };
 
-const openPlayerOptions = function () {
+const openPlayerOptions = () => {
   router.push(`${router.currentRoute.value.path}/options`);
 };
 
-const resetToDefaults = function () {
+const resetToDefaults = () => {
   if (!entries.value) return;
   for (const entry of entries.value) {
-    entry.value = entry.default_value;
+    if (!isFormValueEntry(entry)) continue;
+    form.setFieldValue(entry.key, entry.default_value ?? null);
   }
 };
 
-const handleClose = function () {
+const handleClose = () => {
   if (hasUnsavedChanges.value) {
     showUnsavedDialog.value = true;
   } else {
@@ -775,14 +607,13 @@ const handleClose = function () {
   }
 };
 
-const confirmDiscard = function () {
+const confirmDiscard = () => {
   showUnsavedDialog.value = false;
   allowNavigation.value = true;
-  // Navigate back after setting the flag
   router.back();
 };
 
-const cancelDiscard = function () {
+const cancelDiscard = () => {
   showUnsavedDialog.value = false;
 };
 
@@ -796,7 +627,6 @@ onBeforeRouteLeave((_to, _from, next) => {
   }
 });
 
-// Handle browser back/refresh
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (hasUnsavedChanges.value) {
     e.preventDefault();
@@ -804,82 +634,45 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   }
 };
 
+window.addEventListener("beforeunload", handleBeforeUnload);
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
-// Add listener when component mounts
-window.addEventListener("beforeunload", handleBeforeUnload);
-const isNullOrUndefined = function (value: unknown) {
-  return value === null || value === undefined;
-};
+const isNullOrUndefined = (value: unknown) =>
+  value === null || value === undefined;
 
-const isVisible = function (entry: ConfigEntryUI) {
-  return !entry.hidden;
-};
+const isVisible = (entry: ConfigEntryUI) => !entry.hidden;
 
-const isDisabled = function (entry: ConfigEntryUI) {
-  if (!isNullOrUndefined(entry.depends_on)) {
-    const dependentEntry = entries.value?.find(
-      (x) => x.key == entry.depends_on,
-    );
-    if (!dependentEntry) return false;
-
-    const dependentValue = dependentEntry.value;
-
-    if (!isNullOrUndefined(entry.depends_on_value)) {
-      return dependentValue != entry.depends_on_value;
-    }
-
-    if (!isNullOrUndefined(entry.depends_on_value_not)) {
-      return dependentValue == entry.depends_on_value_not;
-    }
-
-    return !dependentValue;
-  }
-  return false;
-};
+const isDisabledNow = (entry: ConfigEntryUI) =>
+  isEntryDisabled(entry, formValues.value, entries.value || []);
 
 const visibleEntriesByCategory = computed(() => {
   const result: Record<string, ConfigEntryUI[]> = {};
   if (!entries.value) return result;
-
   for (const entry of entries.value) {
     if (!isVisible(entry)) continue;
-    // Always skip 'enabled' and 'name' entries - they're either handled via dedicated props
-    // or shouldn't be shown (e.g., when adding a new provider)
     if (entry.key === "enabled" || entry.key === "name") continue;
-    // Skip protocol-specific enabled entries (they're shown in the header)
     if (entry.key.includes("||protocol||enabled")) continue;
-    // Skip advanced entries if advanced settings are not shown
     if (entry.advanced && !showAdvancedSettings.value) continue;
     const category = entry.category || "generic";
-    if (!result[category]) {
-      result[category] = [];
-    }
+    if (!result[category]) result[category] = [];
     result[category].push(entry);
   }
   return result;
 });
 
-const entriesForCategory = function (category: string) {
-  return visibleEntriesByCategory.value[category] || [];
-};
+const entriesForCategory = (category: string) =>
+  visibleEntriesByCategory.value[category] || [];
 
-const getCategoryTranslation = function (category: string) {
-  // Find the first entry in this category that has a category_translation_key
-  // prefer translation_key over key (using key for translations is deprecated)
+const getCategoryTranslation = (category: string) => {
   const entriesInCategory = entriesForCategory(category);
-
-  // For protocol categories with no visible entries, check all entries (including enabled entry)
   let entryWithTranslation: ConfigEntryUI | undefined = entriesInCategory[0];
   if (!entryWithTranslation && isProtocolCategory(category) && entries.value) {
     entryWithTranslation = entries.value.find((e) => e.category === category);
   }
-
   if (entryWithTranslation?.category_translation_key) {
     const translationKey = entryWithTranslation.category_translation_key;
-    // If category_translation_params are provided, pass them directly
     if (
       entryWithTranslation.category_translation_params &&
       entryWithTranslation.category_translation_params.length > 0
@@ -891,21 +684,16 @@ const getCategoryTranslation = function (category: string) {
     }
     return $t(translationKey, category);
   }
-  // Fallback to the old/deprecated pattern of using the category directly
   return $t(`settings.category.${category}`, category);
 };
 
-const getCurrentValues = function () {
+const getCurrentValues = () => {
   const values: Record<string, ConfigValueType> = {};
-  // Iterate over props.configEntries to include all entries
-  // Note: entries.value contains the same object references as props.configEntries
-  // (pushed in the watch), so user modifications via the form update both
+  const vals = form.state.values as FormValues;
   for (const entry of props.configEntries!) {
     if (isInjected(entry)) continue;
-    let value = entry.value;
-    // filter out undefined values
-    if (value == undefined) value = null;
-    // filter out obfuscated strings (only skip if it's the substitute placeholder)
+    let value = entry.key in vals ? vals[entry.key] : entry.value;
+    if (isNullOrUndefined(value)) value = null;
     if (
       entry.type == ConfigEntryType.SECURE_STRING &&
       value == SECURE_STRING_SUBSTITUTE
@@ -916,7 +704,8 @@ const getCurrentValues = function () {
   }
   return values;
 };
-const getCategoryIcon = function (category: string): string {
+
+const getCategoryIcon = (category: string): string => {
   const iconMap: Record<string, string> = {
     generic: "mdi-cog",
     audio: "mdi-volume-high",
@@ -933,7 +722,6 @@ const getCategoryIcon = function (category: string): string {
     sync: "mdi-sync",
     web_player: "mdi-play-network",
     player_controls: "mdi-tune-variant",
-    // Protocol-specific categories
     protocol_sonos: "mdi-speaker",
     protocol_airplay: "mdi-apple",
     protocol_dlna: "mdi-cast-variant",
@@ -943,34 +731,13 @@ const getCategoryIcon = function (category: string): string {
   };
   return iconMap[category] || "mdi-cog-outline";
 };
-
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
-  // overly complicated way to determine we have a description for the entry
-  // in either the translations (by entry key), on the entry itself as fallback
-  // OR it has a help link
-  return (
-    (
-      $t(
-        `settings.${conf_entry?.key}.description`,
-        conf_entry.description || " ",
-      ) ||
-      conf_entry.help_link ||
-      " "
-    )?.length > 1
-  );
-};
 </script>
 
 <style scoped>
-/* Config sections */
-.config-section {
-  margin-bottom: 16px;
-}
-
 /* Category sections (non-collapsible) */
 .category-section {
   margin-bottom: 16px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -978,111 +745,20 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 .category-header {
   display: flex;
   align-items: center;
+  gap: 12px;
   padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.category-header .v-icon {
-  color: rgb(var(--v-theme-primary));
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .category-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: var(--primary);
 }
 
 .category-content {
   padding: 20px;
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-/* Config entry row */
-.config-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.config-entry:last-child {
-  margin-bottom: 0;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
-}
-
-/* Help button */
-.help-btn {
-  flex-shrink: 0;
-  margin-top: 8px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-  height: 36px;
-}
-
-.help-btn:hover {
-  opacity: 1;
-}
-
-@media (min-width: 601px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    margin-top: 0;
-    align-self: center;
-  }
-}
-
-@media (max-width: 600px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    align-self: flex-start;
-    margin-top: 0;
-  }
-}
-
-/* Expansion panels */
-.config-panels {
-  margin-top: 16px;
-}
-
-.config-panel {
-  margin-bottom: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.config-panel::before {
-  display: none;
-}
-
-.config-panel-title {
-  min-height: 52px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.config-panel-title .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.panel-title-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  background: var(--card);
 }
 
 /* Action buttons */
@@ -1094,76 +770,23 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   padding-top: 16px;
 }
 
-.config-actions .v-btn--disabled {
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  color: rgba(var(--v-theme-on-surface), 0.38) !important;
-}
-
-/* Protocol panel actions (toggle + chevron) */
-.protocol-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Protocol toggle switch styling */
-.protocol-toggle {
-  flex-shrink: 0;
-}
-
-.protocol-toggle :deep(.v-switch__track) {
-  height: 20px;
-  width: 36px;
-}
-
-.protocol-toggle :deep(.v-switch__thumb) {
-  height: 16px;
-  width: 16px;
-}
-
-.protocol-expand-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  transition: transform 0.2s ease;
-  font-size: 20px;
-}
-
 /* Protocol disabled message */
 .protocol-disabled-message {
   padding: 16px;
   text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: var(--muted-foreground);
   font-style: italic;
 }
 
 /* Advanced settings toggle */
 .advanced-toggle-wrapper {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
   padding: 8px 0 16px 0;
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.advanced-settings-switch {
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.advanced-settings-switch:hover {
-  opacity: 1;
-}
-
-/* Advanced badge */
-.advanced-badge {
-  margin-left: 8px;
-  margin-top: 8px;
-  flex-shrink: 0;
-  height: 20px;
-}
-
-/* Advanced entry styling */
-.config-entry-advanced {
-  opacity: 0.9;
+  border-bottom: 1px solid var(--border);
 }
 
 /* Protocol section */
@@ -1175,102 +798,51 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 .protocol-section-header {
   display: flex;
   align-items: center;
+  gap: 12px;
   padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
   border-radius: 8px 8px 0 0;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
   border-bottom: none;
-}
-
-/* Protocol general settings (before accordion) */
-.protocol-general-settings {
-  padding: 20px;
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-.protocol-section-header .v-icon {
-  color: rgb(var(--v-theme-primary));
 }
 
 .protocol-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: var(--primary);
 }
 
-/* Single protocol (non-collapsible) */
+.protocol-general-settings {
+  padding: 20px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--card);
+}
+
 .protocol-single-panel {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
+  border-top: none;
   border-radius: 0 0 8px 8px;
-  background: rgba(var(--v-theme-surface), 1);
+  background: var(--card);
   padding: 20px;
 }
 
 .protocol-panels {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border: 1px solid var(--border);
+  border-top: none;
   border-radius: 0 0 8px 8px;
+  background: var(--card);
 }
 
 .protocol-panel {
-  border: none !important;
-  background: rgba(var(--v-theme-surface), 1);
-  box-shadow: none !important;
+  border-bottom: 1px solid var(--border);
 }
 
-.protocol-panel::before {
-  display: none !important;
+.protocol-panel:last-child {
+  border-bottom: none;
 }
 
-.protocol-panel::after {
-  display: none !important;
-}
-
-.protocol-panel + .protocol-panel {
-  border-top: none !important;
-  margin-top: 0 !important;
-}
-
-.protocol-panel-title {
-  min-height: 56px;
-  padding: 12px 20px;
-  background: rgba(var(--v-theme-surface), 1);
-  border: none !important;
-  display: flex;
-  align-items: center;
-}
-
-.protocol-title-content {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 4px;
-}
-
-.protocol-title-content :deep(> div) {
-  display: flex;
-  align-items: center;
-  margin: 0;
-}
-
-.protocol-panel-title .panel-title-text {
-  font-size: 1rem;
-  font-weight: 400;
-  color: rgba(var(--v-theme-on-surface), 0.87);
-  line-height: 1.5;
-}
-
-.protocol-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.protocol-panel .config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+.config-panel-content {
+  padding: 0 20px 20px;
 }
 </style>
