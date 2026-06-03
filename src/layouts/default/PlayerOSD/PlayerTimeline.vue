@@ -101,6 +101,7 @@ import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
+import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
 
@@ -303,19 +304,12 @@ const computedElapsedTime = computed(() => {
   return 0;
 });
 
-const chapterTicks = computed(() => {
-  const duration = store.activePlayer?.current_media?.duration ?? 0;
-  if (!duration) return [];
-
-  const chapters = store.curQueueItem?.media_item?.metadata?.chapters;
-
-  if (chapters === undefined || chapters.length === 0) return [];
-  return chapters.map((chapter) => ({
-    ...chapter,
-    // clamp so a stray out-of-range chapter can't push a tick off the track
-    percent: Math.min(100, Math.max(0, (chapter.start / duration) * 100)),
-  }));
-});
+const chapterTicks = computed(() =>
+  computeChapterTicks(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    store.activePlayer?.current_media?.duration,
+  ),
+);
 
 //watch
 watch(computedElapsedTime, (newTime) => {
