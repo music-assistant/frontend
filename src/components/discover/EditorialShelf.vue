@@ -2,7 +2,7 @@
   <section
     class="ed-shelf"
     :class="{ 'ed-shelf--dimmed': dimmed }"
-    @mouseenter="hovering = true"
+    @mouseenter="hovering = canHover"
     @mouseleave="hovering = false"
   >
     <div class="ed-shelf__head">
@@ -91,6 +91,10 @@ const MIN_ART = 120;
 const MAX_ART = 280;
 const ART_TOP_OFFSET = 12;
 
+// Only track hover (for the nav chevrons) on hover-capable devices. On touch
+// devices the emulated mouseenter would mutate the DOM, which makes mobile
+// Safari swallow the first tap as "hover" instead of a click.
+const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const track = ref<HTMLElement | null>(null);
 const hovering = ref(false);
 const canLeft = ref(false);
@@ -250,7 +254,8 @@ onBeforeUnmount(() => {
   overflow-y: visible;
   overscroll-behavior-x: contain;
   padding-block: 4px;
-  touch-action: pan-x;
+  /* pan-y too: a vertical swipe starting on a tile must scroll the page */
+  touch-action: pan-x pan-y;
   scroll-snap-type: x proximity;
   overflow-anchor: none;
   scroll-padding-inline: calc(var(--ed-gutter) - var(--ed-card-pad));

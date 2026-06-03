@@ -47,6 +47,7 @@ import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 // import {
 //   subscribeToHAProperties,
@@ -92,22 +93,22 @@ const setTheme = function () {
 
   if (themePref == "dark") {
     // forced dark mode
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else if (themePref == "light") {
     // forced light mode
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   } else if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   ) {
     // dark mode is enabled in browser
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else {
     // light mode is enabled in browser
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   }
 
@@ -226,6 +227,8 @@ const completeInitialization = async () => {
   if (!isPartyGuest) {
     // Full initialization for regular and non-party guest users
     await api.fetchState();
+    // Drop persisted filters for providers that are no longer installed.
+    await pruneStaleProviderFilters();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
     store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
@@ -424,6 +427,11 @@ onMounted(async () => {
     } catch (error) {
       console.error("[App] Failed to update party status:", error);
     }
+  });
+
+  // Re-prune when the provider set changes at runtime.
+  api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    pruneStaleProviderFilters();
   });
 });
 

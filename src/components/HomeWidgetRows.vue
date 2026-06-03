@@ -54,7 +54,7 @@
         </div>
         <div
           class="ed-hero-row__viewport"
-          @mouseenter="heroHovering = true"
+          @mouseenter="heroHovering = canHover"
           @mouseleave="heroHovering = false"
         >
           <!-- prev -->
@@ -367,6 +367,10 @@ const heroColumns = computed<HeroEntry[][]>(() => {
 
 // --- Top Picks horizontal scroller (lead + columns that overflow on narrower
 // screens) with hover chevrons, mirroring EditorialShelf's nav affordance. ---
+// Only track hover (for the nav chevrons) on hover-capable devices. On touch
+// devices the emulated mouseenter would mutate the DOM, which makes mobile
+// Safari swallow the first tap as "hover" instead of a click.
+const canHover = window.matchMedia?.("(hover: hover)")?.matches ?? true;
 const heroGrid = ref<HTMLElement | null>(null);
 const heroHovering = ref(false);
 const heroCanLeft = ref(false);
@@ -724,10 +728,13 @@ onBeforeUnmount(() => {
     overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
-    touch-action: pan-x;
+    /* pan-y too: a vertical swipe starting on a tile must scroll the page */
+    touch-action: pan-x pan-y;
     scrollbar-width: none;
     margin-inline: -28px;
     padding-inline: 28px;
+    /* snap tiles to the gutter so the first tile lines up with the title */
+    scroll-padding-inline: 28px;
   }
   .ed-hero-grid::-webkit-scrollbar {
     display: none;
@@ -759,6 +766,7 @@ onBeforeUnmount(() => {
   .ed-hero-grid {
     margin-inline: -16px;
     padding-inline: 16px;
+    scroll-padding-inline: 16px;
   }
   .ed-hero-row .ed-hero-grid :deep(.ed-hero) {
     flex: 0 0 82%;

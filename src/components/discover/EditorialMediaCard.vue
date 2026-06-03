@@ -1,5 +1,6 @@
 <template>
   <div
+    v-hold="onHold"
     class="ed-card ma-tap"
     role="button"
     tabindex="0"
@@ -12,11 +13,13 @@
     @keydown.enter.self="onClick"
     @keydown.space.self.prevent="onClick"
     @contextmenu.prevent="onMenu"
+    @touchstart.passive="holdFired = false"
   >
     <div class="ed-card__art" :style="{ background: art.gradient }">
       <img
         v-if="art.image"
         class="ed-card__img"
+        :class="{ 'ed-card__img--genre': isGenre }"
         loading="lazy"
         :src="art.image"
         :alt="item.name"
@@ -84,6 +87,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   type Album,
   type BrowseFolder,
@@ -93,7 +97,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { Play } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 interface Props {
@@ -130,6 +134,8 @@ const { t, te } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
+const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+
 const isPlayable = computed(() => props.item.is_playable !== false);
 const showPlay = computed(
   () => isPlayable.value && props.isAvailable && !props.showCheckboxes,
@@ -143,9 +149,7 @@ const providerDomain = computed<string | undefined>(() => {
   if (!props.showProviderOnCover && it.media_type !== MediaType.PLAYLIST) {
     return undefined;
   }
-  return it.media_type === MediaType.PLAYLIST
-    ? it.provider_mappings[0]?.provider_domain
-    : it.provider;
+  return getListItemProviderIconDomain(it);
 });
 
 const displayName = computed(() => {
@@ -177,8 +181,16 @@ const subtitle = computed(() => {
   return t(props.item.media_type);
 });
 
+// Set while a long-press opened the context menu, so the click that fires on
+// finger-lift does not also navigate. Reset on the next touchstart.
+const holdFired = ref(false);
+
 const onClick = (e: MouseEvent | KeyboardEvent) => {
   if (props.disabled) return;
+  if (holdFired.value) {
+    holdFired.value = false;
+    return;
+  }
   if (props.showCheckboxes) {
     emit("select", props.item, !props.isSelected);
     return;
@@ -186,6 +198,20 @@ const onClick = (e: MouseEvent | KeyboardEvent) => {
   const x = "clientX" in e ? e.clientX : 0;
   const y = "clientY" in e ? e.clientY : 0;
   handleMediaItemClick(props.item, x, y, props.parentItem);
+};
+// Long-press on touch devices: open the same context menu as right-click.
+const onHold = (e: TouchEvent) => {
+  if (props.disabled || props.showCheckboxes) return;
+  holdFired.value = true;
+  const touch = e.touches?.[0];
+  handleMenuBtnClick(
+    props.item,
+    touch?.clientX ?? 0,
+    touch?.clientY ?? 0,
+    props.parentItem,
+    true,
+    props.sortBy,
+  );
 };
 const onPlay = (e: MouseEvent) => {
   if (props.showCheckboxes || props.disablePlayButton) return;
@@ -286,6 +312,13 @@ const onMenu = (e: MouseEvent) => {
   object-fit: cover;
   display: block;
 }
+/* Genre icons render in white over the banner background (same treatment as
+   the "Browse by genre" tiles on the home screen). */
+.ed-card__img--genre {
+  object-fit: contain;
+  padding: 18%;
+  filter: brightness(0) invert(1);
+}
 .ed-card__select {
   position: absolute;
   inset: 0;
@@ -313,6 +346,7 @@ const onMenu = (e: MouseEvent) => {
   align-items: center;
   justify-content: center;
   opacity: 0;
+  pointer-events: none;
   transform: translateY(8px);
   transition:
     opacity 0.18s,
@@ -328,7 +362,15 @@ const onMenu = (e: MouseEvent) => {
 }
 .ed-card:hover .ed-card__play {
   opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
+}
+/* Touch devices: no hover-revealed play button — tap goes straight to the
+   content and long-press opens the context menu instead. */
+@media (hover: none) {
+  .ed-card__play {
+    display: none;
+  }
 }
 .ma-tap:active {
   transform: scale(0.97);

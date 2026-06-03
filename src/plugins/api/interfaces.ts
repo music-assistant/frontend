@@ -348,7 +348,9 @@ export enum ProviderFeature {
   LIBRARY_GENRES = "library_genres",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
+  ARTIST_TOPALBUMS = "artist_topalbums",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",

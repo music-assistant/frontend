@@ -74,6 +74,67 @@ export function requireServerVersion(minVersion: string): boolean {
   return true; // equal
 }
 
+/**
+ * Whether the item is a member of the user's library.
+ *
+ * Membership is derived from the per-provider-mapping in_library flag, NOT from
+ * provider == "library". The backend creates library DB rows for an item's
+ * relatives (an artist/album reached from a saved track) as relational support,
+ * so a "library" row may exist without the item being a library member.
+ */
+export const isItemInLibrary = function (
+  item: MediaItemType | ItemMapping | null | undefined,
+): boolean {
+  if (!item) return false;
+  // favoriting forces an item into the library, so favorite implies membership
+  if ("favorite" in item && item.favorite === true) return true;
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
+    return item.provider_mappings.some((pm) => !!pm.in_library);
+  }
+  return false;
+};
+
+/**
+ * Domain to feed ProviderIcon for an item's source/membership badge.
+ * Any in-library item shows the library (bookshelf) icon, regardless of media
+ * type, so the user can tell at a glance whether it is in or out of library.
+ * Items outside the library show the icon of their first provider mapping (or
+ * the item's own provider as a fallback).
+ */
+export const getProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (isItemInLibrary(item)) return "library";
+  if (
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return item.provider;
+};
+
+/**
+ * Provider icon domain for media listing tiles. Playlists always surface their
+ * source provider icon: a playlist listing is library-only by definition, so a
+ * bookshelf icon would be redundant and the source is the useful signal. Every
+ * other item type follows getProviderIconDomain.
+ */
+export const getListItemProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (
+    item.media_type === MediaType.PLAYLIST &&
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return getProviderIconDomain(item);
+};
+
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
