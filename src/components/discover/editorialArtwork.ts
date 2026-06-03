@@ -33,15 +33,20 @@ export function itemArtwork(
   item: AnyItem,
   size = 320,
 ): { image: string | undefined; gradient: string; initials?: string } {
-  const image = getImageThumbForItem(item, ImageType.THUMB, size);
+  const image =
+    getImageThumbForItem(item, ImageType.FANART, size) ??
+    getImageThumbForItem(item, ImageType.THUMB, size);
   // For artists/albums with no artwork, surface the initials over the banner.
   const showInitials =
     !image &&
     (item.media_type === MediaType.ARTIST ||
       item.media_type === MediaType.ALBUM);
+  const useBanner = !image || item.media_type === MediaType.GENRE;
+  const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
+
   return {
     image,
-    gradient: `url("${bannerArtwork}") center / cover no-repeat`,
+    gradient: useBanner ? bannerGradient : "rgb(28, 28, 28)",
     initials: showInitials ? itemInitials(item.name) : undefined,
   };
 }
