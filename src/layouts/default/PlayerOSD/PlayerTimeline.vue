@@ -53,14 +53,14 @@
             )
           "
         />
-        <!-- chapter labels below the track -->
+        <!-- chapter labels above the track -->
         <template
           v-if="showLabels && !isThumbHidden && chapterTicks.length < 6"
         >
           <a
             v-for="tick in chapterTicks"
             :key="`label-${tick.position}`"
-            class="absolute top-full mt-1 -translate-x-1/2 text-caption cursor-pointer whitespace-nowrap"
+            class="absolute bottom-full mb-1 -translate-x-1/2 text-caption cursor-pointer whitespace-nowrap"
             :style="{ left: `${tick.percent}%` }"
             @pointerdown.stop
             @click="chapterClicked(tick)"
