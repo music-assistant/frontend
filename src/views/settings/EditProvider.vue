@@ -116,6 +116,7 @@
             authenticate</CardDescription
           >
         </CardHeader>
+        <CardContent>
           <Button as-child>
             <a id="auth" href="" target="_blank" rel="noopener noreferrer">
               Click here if the popup did not open

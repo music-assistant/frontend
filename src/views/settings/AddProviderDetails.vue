@@ -67,7 +67,6 @@
             </a>
           </Button>
         </CardContent>
-        </CardContent>
       </Card>
       <Spinner v-else class="size-16" />
     </div>

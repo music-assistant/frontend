@@ -84,20 +84,20 @@
                 v-for="protocol in api.players[config.player_id]
                   .output_protocols"
                 :key="protocol.output_protocol_id"
+                as="button"
+                type="button"
                 variant="secondary"
                 class="protocol-chip"
+                :disabled="!getProtocolDocumentation(protocol.protocol_domain)"
                 :class="{
-                  'protocol-chip--clickable': api.getProviderManifest(
-                    protocol.protocol_domain!,
-                  )?.documentation,
+                  'protocol-chip--clickable': getProtocolDocumentation(
+                    protocol.protocol_domain,
+                  ),
                   'protocol-chip--unavailable': !protocol.available,
                 }"
                 @click="
-                  api.getProviderManifest(protocol.protocol_domain!)
-                    ?.documentation &&
                   openLinkInNewTab(
-                    api.getProviderManifest(protocol.protocol_domain!)!
-                      .documentation!,
+                    getProtocolDocumentation(protocol.protocol_domain)!,
                   )
                 "
               >
@@ -111,10 +111,7 @@
                   protocol.protocol_domain
                 }}
                 <span
-                  v-if="
-                    api.getProviderManifest(protocol.protocol_domain!)
-                      ?.documentation
-                  "
+                  v-if="getProtocolDocumentation(protocol.protocol_domain)"
                   class="mdi mdi-open-in-new ml-1 text-xs"
                 ></span>
               </Badge>
@@ -255,6 +252,12 @@ const editName = ref<string | null>(null);
 const props = defineProps<{
   playerId?: string;
 }>();
+
+// Resolve the documentation URL for a protocol, if its provider exposes one
+const getProtocolDocumentation = (protocolDomain?: string | null) =>
+  protocolDomain
+    ? api.getProviderManifest(protocolDomain)?.documentation
+    : undefined;
 
 const dspEnabled = ref(false);
 

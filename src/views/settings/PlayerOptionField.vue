@@ -57,14 +57,18 @@
         }}</span>
         <Slider
           class="flex-1"
-          :model-value="[playerOption.value as number]"
+          :model-value="sliderValue"
           :min="playerOption.min_value"
           :max="playerOption.max_value"
           :step="playerOption.step"
           :disabled="playerOption.read_only"
           @update:model-value="
-            (v: number[] | undefined) =>
-              uiSetPlayerOption(playerOption.key, v?.[0])
+            (v: number[] | undefined) => {
+              if (v) sliderValue = v;
+            }
+          "
+          @value-commit="
+            (v: number[]) => uiSetPlayerOption(playerOption.key, v?.[0])
           "
         />
         <span class="text-xs text-muted-foreground">{{
@@ -135,13 +139,23 @@ import {
   PlayerOptionValueType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const props = defineProps<{
   playerOption: PlayerOption;
   playerId: string;
 }>();
+
+// Local copy of the slider value so dragging stays smooth while we only
+// persist to the backend on `value-commit` (drag end / keyboard settle).
+const sliderValue = ref<number[]>([props.playerOption.value as number]);
+watch(
+  () => props.playerOption.value,
+  (value) => {
+    sliderValue.value = [value as number];
+  },
+);
 
 const uiSetPlayerOption = async (
   key: string,
