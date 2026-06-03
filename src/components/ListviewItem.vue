@@ -47,6 +47,7 @@
           <v-btn
             icon
             variant="text"
+            size="small"
             :disabled="disablePlayButton"
             @click.stop="onPlayClick"
           >
@@ -441,6 +442,10 @@ const onPlayClick = function (evt: PointerEvent) {
   justify-content: center;
   width: 50px;
   height: 50px;
+}
+
+.listitem-prepend .listitem-play-thumb :deep(.v-icon) {
+  margin-inline-end: 0 !important;
 }
 
 .track-number {

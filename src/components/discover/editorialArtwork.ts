@@ -39,9 +39,13 @@ export function itemArtwork(
     !image &&
     (item.media_type === MediaType.ARTIST ||
       item.media_type === MediaType.ALBUM);
+  const useBanner =
+    !image || showInitials || item.media_type === MediaType.GENRE;
+  const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
+
   return {
     image,
-    gradient: `url("${bannerArtwork}") center / cover no-repeat`,
+    gradient: useBanner ? bannerGradient : "rgb(28, 28, 28)",
     initials: showInitials ? itemInitials(item.name) : undefined,
   };
 }
