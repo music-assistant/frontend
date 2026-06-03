@@ -3,6 +3,7 @@
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
+        data-slot="slider"
         class="relative flex items-center select-none touch-none w-full h-5 mb-8"
         :disabled="!canSeek"
         :min="0"
@@ -14,12 +15,14 @@
       >
         <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
+          data-slot="slider-track"
           class="relative grow rounded-full h-2"
           :style="{
             'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
           }"
         >
           <SliderRange
+            data-slot="slider-range"
             class="absolute rounded-full h-full"
             :style="{ 'background-color': color }"
           />
@@ -30,14 +33,18 @@
             type="button"
             class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-4 w-3 items-center justify-center"
             :style="{ left: `${tick.percent}%` }"
+            :aria-label="tick.name"
             @pointerdown.stop
             @click.stop="chapterClicked(tick)"
           >
-            <span class="w-1 h-2 rounded-full bg-white/70"></span>
+            <span
+              class="w-1 h-2 rounded-full bg-white/70"
+              aria-hidden="true"
+            ></span>
           </button>
         </SliderTrack>
         <SliderThumb
-          class="w-6 h-6 rounded-full shadow-sm focus:outline-none focus:shadow-[0_0_0_2px]"
+          data-slot="slider-thumb"
           :style="{ 'background-color': color }"
           :class="!isThumbHidden || isDragging ? 'block' : 'hidden'"
         />
@@ -50,6 +57,7 @@
             :key="`label-${tick.position}`"
             class="absolute top-full mt-1 -translate-x-1/2 text-caption cursor-pointer whitespace-nowrap"
             :style="{ left: `${tick.percent}%` }"
+            @pointerdown.stop
             @click="chapterClicked(tick)"
           >
             {{ tick.name }}
