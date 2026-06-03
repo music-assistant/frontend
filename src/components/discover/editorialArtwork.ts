@@ -33,7 +33,9 @@ export function itemArtwork(
   item: AnyItem,
   size = 320,
 ): { image: string | undefined; gradient: string; initials?: string } {
-  const image = getImageThumbForItem(item, ImageType.THUMB, size);
+  const image =
+    getImageThumbForItem(item, ImageType.FANART, size) ??
+    getImageThumbForItem(item, ImageType.THUMB, size);
   // For artists/albums with no artwork, surface the initials over the banner.
   const showInitials =
     !image &&
