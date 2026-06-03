@@ -200,11 +200,7 @@
       <!-- provider icon -->
       <provider-icon
         v-if="getBreakpointValue('bp2') && showProvider"
-        :domain="
-          item.media_type == MediaType.PLAYLIST
-            ? item.provider_mappings[0].provider_domain
-            : item.provider
-        "
+        :domain="getListItemProviderIconDomain(item)"
         :size="24"
       />
 
@@ -265,6 +261,7 @@ import {
   handlePlayBtnClick,
   truncateString,
 } from "@/helpers/utils";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   AlbumType,
   ContentType,

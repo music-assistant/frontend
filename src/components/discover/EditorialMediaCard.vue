@@ -87,6 +87,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/utils";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   type Album,
   type BrowseFolder,
@@ -148,9 +149,7 @@ const providerDomain = computed<string | undefined>(() => {
   if (!props.showProviderOnCover && it.media_type !== MediaType.PLAYLIST) {
     return undefined;
   }
-  return it.media_type === MediaType.PLAYLIST
-    ? it.provider_mappings[0]?.provider_domain
-    : it.provider;
+  return getListItemProviderIconDomain(it);
 });
 
 const displayName = computed(() => {

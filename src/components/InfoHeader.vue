@@ -316,8 +316,9 @@
                 :title="$t('tooltip.favorite')"
                 @click="api.toggleFavorite(item)"
               />
-              <!-- provider icon -->
-              <provider-icon :domain="item.provider" :size="25" />
+              <!-- details can be reached out of library context, so always show
+              the membership badge (bookshelf when in library, else source) -->
+              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
               <!-- slot for extra action icons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
@@ -438,6 +439,7 @@ import {
   getContextMenuItems,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
+import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
