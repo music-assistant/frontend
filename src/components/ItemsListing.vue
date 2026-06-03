@@ -819,20 +819,39 @@ const isPlayActionInProgress = computed(() => {
 });
 
 const musicProviders = computed(() => {
-  // Map itemtype to required ProviderFeature(s)
-  const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
-    artists: ProviderFeature.LIBRARY_ARTISTS,
-    albums: ProviderFeature.LIBRARY_ALBUMS,
-    tracks: ProviderFeature.LIBRARY_TRACKS,
+  // Map itemtype to the ProviderFeatures that mark a provider as a possible
+  // source of that mediatype. This is intentionally broader than the
+  // LIBRARY_* (sync) features: a provider without a syncable library can still
+  // contribute items to the library by being browsed/searched and favorited
+  // (e.g. catalog providers exposing an artist's albums/tracks).
+  const featureMap: Record<string, ProviderFeature[]> = {
+    artists: [
+      ProviderFeature.LIBRARY_ARTISTS,
+      ProviderFeature.ARTIST_ALBUMS,
+      ProviderFeature.ARTIST_TOPALBUMS,
+      ProviderFeature.ARTIST_TRACKS,
+      ProviderFeature.ARTIST_TOPTRACKS,
+    ],
+    albums: [
+      ProviderFeature.LIBRARY_ALBUMS,
+      ProviderFeature.ARTIST_ALBUMS,
+      ProviderFeature.ARTIST_TOPALBUMS,
+    ],
+    tracks: [
+      ProviderFeature.LIBRARY_TRACKS,
+      ProviderFeature.ARTIST_TRACKS,
+      ProviderFeature.ARTIST_TOPTRACKS,
+    ],
     artisttracks: [
+      ProviderFeature.ARTIST_TRACKS,
       ProviderFeature.ARTIST_TOPTRACKS,
       ProviderFeature.LIBRARY_TRACKS,
     ],
-    playlists: ProviderFeature.LIBRARY_PLAYLISTS,
-    radios: ProviderFeature.LIBRARY_RADIOS,
-    podcasts: ProviderFeature.LIBRARY_PODCASTS,
-    audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
-    genres: ProviderFeature.LIBRARY_GENRES,
+    playlists: [ProviderFeature.LIBRARY_PLAYLISTS],
+    radios: [ProviderFeature.LIBRARY_RADIOS],
+    podcasts: [ProviderFeature.LIBRARY_PODCASTS],
+    audiobooks: [ProviderFeature.LIBRARY_AUDIOBOOKS],
+    genres: [ProviderFeature.LIBRARY_GENRES],
   };
 
   const requiredFeatures = featureMap[props.itemtype];
@@ -851,10 +870,7 @@ const musicProviders = computed(() => {
       }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
-        const features = Array.isArray(requiredFeatures)
-          ? requiredFeatures
-          : [requiredFeatures];
-        return features.some((feature) =>
+        return requiredFeatures.some((feature) =>
           provider.supported_features.includes(feature),
         );
       }
