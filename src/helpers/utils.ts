@@ -813,7 +813,7 @@ export const handlePlayBtnClick = function (
     }
     // else: play the item directly
     api
-      .playMedia(item, undefined, undefined, undefined, undefined, sortBy)
+      .playMedia(item, undefined, undefined, undefined, undefined)
       .then(() => {});
     return;
   }
