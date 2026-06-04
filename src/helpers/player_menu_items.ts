@@ -10,6 +10,7 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import { groupMemberPickerVisible } from "@/helpers/utils";
 import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -54,7 +55,7 @@ export const getPlayerMenuItems = (
       p.player_id != player.player_id &&
       p.available &&
       p.enabled &&
-      !p.hide_in_ui &&
+      groupMemberPickerVisible(p) &&
       (p.can_group_with.includes(player.provider) ||
         p.can_group_with.includes(player.player_id)) &&
       p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
