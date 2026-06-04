@@ -772,6 +772,11 @@
             "unavailable": "unavailable",
             "none": "—"
         },
+        "audio_analysis_concurrency": {
+            "title": "Background analysis concurrency",
+            "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
+            "open_settings": "Open Streams settings"
+        },
         "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
     "similar_tracks": "Similar tracks",
