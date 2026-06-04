@@ -265,8 +265,13 @@ export enum PlaybackState {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  GROUP = "group", // A (dedicated) group player or playergroup.
   STEREO_PAIR = "stereo_pair",
+  GROUP = "group", // A (dedicated) group player or playergroup.
+  PROTOCOL = "protocol",
+  DISPLAY = "display",
+  VISUALIZER = "visualizer",
+  LIGHT = "light",
+  UNKNOWN = "unknown",
 }
 
 export enum PlayerOptionType {
