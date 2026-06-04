@@ -26,11 +26,16 @@ export interface ProviderCoverageRow {
   hasData: boolean;
 }
 
-export function useAudioAnalysisCoverage(): {
+const DEFAULT_POLL_INTERVAL_MS = 5000;
+
+export function useAudioAnalysisCoverage(options?: { intervalMs?: number }): {
   rows: Ref<ProviderCoverageRow[]>;
   loading: Ref<boolean>;
   refresh: () => Promise<void>;
+  startAutoRefresh: () => Promise<void>;
+  stopAutoRefresh: () => void;
 } {
+  const intervalMs = options?.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const rows = ref<ProviderCoverageRow[]>([]);
   const loading = ref(false);
 
@@ -109,5 +114,64 @@ export function useAudioAnalysisCoverage(): {
     }
   }
 
-  return { rows, loading, refresh };
+  // --- Auto-refresh ---------------------------------------------------------
+  // Adaptive polling: re-query coverage every `intervalMs` only while some
+  // provider still has pending work, and pause while the tab is hidden. This
+  // lets the page tick down live as analysis runs without hammering a
+  // fully-analyzed library.
+  let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  let autoRefreshEnabled = false;
+
+  function hasPendingWork(): boolean {
+    return rows.value.some((row) => row.pending > 0);
+  }
+
+  function clearPollTimer(): void {
+    if (pollTimer !== null) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  function scheduleNextPoll(): void {
+    if (!autoRefreshEnabled || document.hidden || !hasPendingWork()) return;
+    if (pollTimer !== null) return;
+    pollTimer = setTimeout(() => {
+      pollTimer = null;
+      void poll();
+    }, intervalMs);
+  }
+
+  async function poll(): Promise<void> {
+    // Silent refresh: background polls must not toggle the visible loading
+    // state, only the initial/manual refresh() does.
+    await fetchCoverage();
+    scheduleNextPoll();
+  }
+
+  function handleVisibilityChange(): void {
+    if (!autoRefreshEnabled) return;
+    if (document.hidden) {
+      clearPollTimer();
+    } else if (pollTimer === null) {
+      // Becoming visible refreshes immediately, then resumes polling.
+      void poll();
+    }
+  }
+
+  async function startAutoRefresh(): Promise<void> {
+    if (autoRefreshEnabled) return;
+    autoRefreshEnabled = true;
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    await refresh();
+    scheduleNextPoll();
+  }
+
+  function stopAutoRefresh(): void {
+    autoRefreshEnabled = false;
+    clearPollTimer();
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }
+
+  return { rows, loading, refresh, startAutoRefresh, stopAutoRefresh };
 }

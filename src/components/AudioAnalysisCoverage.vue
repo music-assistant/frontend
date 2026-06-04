@@ -81,14 +81,20 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
-import { onMounted, watch } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 
-const { rows, refresh } = useAudioAnalysisCoverage();
+const { rows, refresh, startAutoRefresh, stopAutoRefresh } =
+  useAudioAnalysisCoverage();
 
 const none = $t("settings.audio_analysis_coverage.none");
 
 onMounted(() => {
-  refresh();
+  // Loads coverage immediately, then polls while analysis is in progress.
+  startAutoRefresh();
+});
+
+onUnmounted(() => {
+  stopAutoRefresh();
 });
 
 watch(

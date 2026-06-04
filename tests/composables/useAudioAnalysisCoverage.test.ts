@@ -1,5 +1,5 @@
 import { ProviderType } from "@/plugins/api/interfaces";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSendCommand, providersMock } = vi.hoisted(() => {
   return {
@@ -211,5 +211,149 @@ describe("useAudioAnalysisCoverage", () => {
     expect(bad.hasData).toBe(false);
     expect(good.hasData).toBe(true);
     expect(good.coveragePct).toBe(100);
+  });
+});
+
+/** Force `document.hidden` / `visibilityState` and fire the change event. */
+function setTabHidden(hidden: boolean) {
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    get: () => hidden,
+  });
+  Object.defineProperty(document, "visibilityState", {
+    configurable: true,
+    get: () => (hidden ? "hidden" : "visible"),
+  });
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+
+const AA_PROVIDER = {
+  type: ProviderType.AUDIO_ANALYSIS,
+  domain: "sonic_analysis",
+  name: "Sonic Analysis",
+  instance_id: "sa1",
+  available: true,
+} as const;
+
+const POLL_MS = 5000;
+
+describe("useAudioAnalysisCoverage auto-refresh", () => {
+  beforeEach(() => {
+    mockSendCommand.mockReset();
+    setProviders([]);
+    setTabHidden(false);
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("re-queries coverage every interval while pending > 0", async () => {
+    setProviders([AA_PROVIDER]);
+    mockAa({
+      sonic_analysis: {
+        analyzed: 50,
+        pending: 50,
+        stale_version: 0,
+        analysis_version: 1,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage({ intervalMs: POLL_MS });
+    await c.startAutoRefresh();
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS);
+    expect(mockSendCommand).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS);
+    expect(mockSendCommand).toHaveBeenCalledTimes(3);
+
+    c.stopAutoRefresh();
+  });
+
+  it("stops polling once every provider reaches pending 0", async () => {
+    setProviders([AA_PROVIDER]);
+    // First poll still has pending work; second poll reports fully analyzed.
+    mockSendCommand
+      .mockResolvedValueOnce({
+        analyzed: 90,
+        pending: 10,
+        stale_version: 0,
+        analysis_version: 1,
+      })
+      .mockResolvedValue({
+        analyzed: 100,
+        pending: 0,
+        stale_version: 0,
+        analysis_version: 1,
+      });
+
+    const c = useAudioAnalysisCoverage({ intervalMs: POLL_MS });
+    await c.startAutoRefresh(); // call 1: pending 10 -> keep polling
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS); // call 2: pending 0 -> go dormant
+    expect(mockSendCommand).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3); // no further polls
+    expect(mockSendCommand).toHaveBeenCalledTimes(2);
+
+    c.stopAutoRefresh();
+  });
+
+  it("pauses polling while the tab is hidden and resumes when visible", async () => {
+    setProviders([AA_PROVIDER]);
+    mockAa({
+      sonic_analysis: {
+        analyzed: 50,
+        pending: 50,
+        stale_version: 0,
+        analysis_version: 1,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage({ intervalMs: POLL_MS });
+    await c.startAutoRefresh();
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
+
+    setTabHidden(true);
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3);
+    expect(mockSendCommand).toHaveBeenCalledTimes(1); // no polling while hidden
+
+    setTabHidden(false); // becoming visible refreshes immediately
+    await Promise.resolve();
+    expect(mockSendCommand).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS);
+    expect(mockSendCommand).toHaveBeenCalledTimes(3);
+
+    c.stopAutoRefresh();
+  });
+
+  it("stopAutoRefresh halts polling and detaches the visibility listener", async () => {
+    setProviders([AA_PROVIDER]);
+    mockAa({
+      sonic_analysis: {
+        analyzed: 50,
+        pending: 50,
+        stale_version: 0,
+        analysis_version: 1,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage({ intervalMs: POLL_MS });
+    await c.startAutoRefresh();
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
+
+    c.stopAutoRefresh();
+
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3);
+    expect(mockSendCommand).toHaveBeenCalledTimes(1); // timer cleared
+
+    setTabHidden(false); // listener detached -> no resume refresh
+    await Promise.resolve();
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
   });
 });
