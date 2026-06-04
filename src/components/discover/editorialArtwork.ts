@@ -32,10 +32,14 @@ export function itemInitials(name: string): string {
 export function itemArtwork(
   item: AnyItem,
   size = 320,
+  preferFanart = false,
 ): { image: string | undefined; gradient: string; initials?: string } {
-  const image =
-    getImageThumbForItem(item, ImageType.FANART, size) ??
-    getImageThumbForItem(item, ImageType.THUMB, size);
+  // Square tiles use the thumb; only the wide hero card prefers fanart, falling
+  // back to the thumb when no fanart is available.
+  const image = preferFanart
+    ? (getImageThumbForItem(item, ImageType.FANART, size) ??
+      getImageThumbForItem(item, ImageType.THUMB, size))
+    : getImageThumbForItem(item, ImageType.THUMB, size);
   // For artists/albums with no artwork, surface the initials over the banner.
   const showInitials =
     !image &&
