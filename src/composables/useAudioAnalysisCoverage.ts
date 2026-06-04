@@ -158,7 +158,7 @@ export function useAudioAnalysisCoverage(options?: { intervalMs?: number }): {
     if (document.hidden) {
       clearPollTimer();
     } else if (pollTimer === null) {
-      // Becoming visible refreshes immediately, then resumes polling.
+      // Refresh now rather than waiting out a full interval after returning.
       void poll();
     }
   }

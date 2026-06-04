@@ -89,7 +89,6 @@ const { rows, refresh, startAutoRefresh, stopAutoRefresh } =
 const none = $t("settings.audio_analysis_coverage.none");
 
 onMounted(() => {
-  // Loads coverage immediately, then polls while analysis is in progress.
   void startAutoRefresh();
 });
 
