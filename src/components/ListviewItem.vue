@@ -52,7 +52,11 @@
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
         <template v-else>
           <!-- album view: track number that swaps to the blue play on hover -->
-          <div v-if="albumTrackView" class="track-number-play">
+          <div
+            v-if="albumTrackView"
+            class="track-number-play"
+            :class="{ 'is-playable': item.is_playable }"
+          >
             <div
               v-if="
                 showTrackNumber && 'track_number' in item && item.track_number
@@ -71,7 +75,10 @@
           </div>
           <!-- other rows: blue play overlays the art on hover -->
           <div v-else class="listitem-thumb-area">
-            <div class="media-thumb listitem-media-thumb">
+            <div
+              class="media-thumb listitem-media-thumb"
+              :class="{ 'is-playable': item.is_playable }"
+            >
               <MediaItemThumb
                 size="50"
                 :item="isAvailable ? item : undefined"
@@ -536,7 +543,7 @@ const onPlayClick = function (evt: PointerEvent) {
     margin-right: 0;
   }
 
-  .list-item-main:hover .track-number-play > .track-number {
+  .list-item-main:hover .track-number-play.is-playable > .track-number {
     opacity: 0;
   }
 
@@ -548,7 +555,7 @@ const onPlayClick = function (evt: PointerEvent) {
     z-index: 1;
   }
 
-  .list-item-main:hover .listitem-media-thumb :deep(.v-img) {
+  .list-item-main:hover .listitem-media-thumb.is-playable :deep(.v-img) {
     filter: blur(4px) brightness(0.35);
   }
 
