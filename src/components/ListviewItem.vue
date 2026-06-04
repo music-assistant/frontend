@@ -33,20 +33,63 @@
         </label>
       </div>
       <div v-else class="listitem-prepend">
-        <div
-          v-if="
-            albumTrackView &&
-            showTrackNumber &&
-            'track_number' in item &&
-            item.track_number
-          "
-          class="track-number"
-        >
-          {{ item.track_number }}
-        </div>
-        <div v-else class="media-thumb listitem-media-thumb">
-          <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
-        </div>
+        <!-- ===== TOUCH (phone/tablet): number / art stay on the left; play moves to the right (see #append) ===== -->
+        <template v-if="isTouch">
+          <div
+            v-if="
+              albumTrackView &&
+              showTrackNumber &&
+              'track_number' in item &&
+              item.track_number
+            "
+            class="track-number"
+          >
+            {{ item.track_number }}
+          </div>
+          <div
+            v-else-if="!albumTrackView"
+            class="media-thumb listitem-media-thumb"
+          >
+            <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+          </div>
+        </template>
+        <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
+        <template v-else>
+          <!-- album view: track number that swaps to the blue play on hover -->
+          <div v-if="albumTrackView" class="track-number-play">
+            <div
+              v-if="
+                showTrackNumber && 'track_number' in item && item.track_number
+              "
+              class="track-number"
+            >
+              {{ item.track_number }}
+            </div>
+            <span
+              v-if="item.is_playable"
+              class="listitem-play-blue"
+              @click.stop="onPlayClick"
+            >
+              <Play :size="16" fill="currentColor" :stroke-width="0" />
+            </span>
+          </div>
+          <!-- other rows: blue play overlays the art on hover -->
+          <div v-else class="listitem-thumb-area">
+            <div class="media-thumb listitem-media-thumb">
+              <MediaItemThumb
+                size="50"
+                :item="isAvailable ? item : undefined"
+              />
+              <span
+                v-if="item.is_playable"
+                class="listitem-play-blue"
+                @click.stop="onPlayClick"
+              >
+                <Play :size="16" fill="currentColor" :stroke-width="0" />
+              </span>
+            </div>
+          </div>
+        </template>
       </div>
     </template>
 
@@ -57,7 +100,6 @@
         :item="item"
         :show-checkboxes="showCheckboxes"
         :is-playing="isPlaying"
-        :album-track-view="albumTrackView"
       />
     </template>
 
@@ -91,24 +133,6 @@
           >
             <v-icon style="margin-left: 5px" icon="md:album" />
             {{ item.disc_number }}
-          </v-item>
-          <v-item
-            v-if="
-              showTrackNumber && 'track_number' in item && item.track_number
-            "
-          >
-            <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
-            {{ item.track_number }}
-          </v-item>
-          <v-item
-            v-else-if="showPosition && 'position' in item && item.position"
-          >
-            <v-icon style="margin-left: 5px" icon="mdi-music-circle-outline" />
-            {{ item.position }}
-          </v-item>
-          <!-- track duration -->
-          <v-item v-if="showDuration && 'duration' in item && item.duration">
-            <span> • [{{ formatDuration(item.duration) }}]</span>
           </v-item>
         </v-item-group>
       </div>
@@ -175,10 +199,9 @@
         </v-tooltip>
       </v-img>
 
-      <!-- track duration (album track view) -->
+      <!-- track duration -->
       <span
         v-if="
-          albumTrackView &&
           showDuration &&
           'duration' in item &&
           item.duration &&
@@ -222,15 +245,20 @@
         <FavouriteButton :item="item" />
       </div>
 
+      <!-- touch devices: play button on the right, just left of the ⋮ menu, so
+           tapping the album art never triggers (possibly remote) playback -->
       <v-btn
-        v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
+        v-if="isTouch && item.is_playable"
         icon
         variant="text"
         size="small"
+        class="listitem-mobile-play"
         :disabled="disablePlayButton"
         @click.stop="onPlayClick"
       >
-        <v-icon size="24">mdi-play-circle-outline</v-icon>
+        <span class="listitem-play-blue-mobile">
+          <Play :size="11" fill="currentColor" :stroke-width="0" />
+        </span>
       </v-btn>
     </template>
   </ListItem>
@@ -256,6 +284,8 @@ import {
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import { useMediaQuery } from "@vueuse/core";
+import { Play } from "@lucide/vue";
 import { computed } from "vue";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
@@ -271,7 +301,6 @@ export interface Props {
   albumTrackView?: boolean;
   showTrackNumber?: boolean;
   showDiscNumber?: boolean;
-  showPosition?: boolean;
   showProvider?: boolean;
   showAlbum?: boolean;
   showMenu?: boolean;
@@ -283,11 +312,14 @@ export interface Props {
   isPlaying?: boolean;
   showCheckboxes?: boolean;
   showDetails?: boolean;
-  showPlayButton?: boolean;
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
 }
+
+// touch devices (phones + tablets like iPad) can't hover, so they get an
+// explicit play button; only hover-capable desktops use the hover-reveal play.
+const isTouch = useMediaQuery("(hover: none)");
 
 const displayName = computed(() => compProps.item.name);
 
@@ -296,13 +328,11 @@ const compProps = withDefaults(defineProps<Props>(), {
   showTrackNumber: true,
   showDiscNumber: true,
   showProvider: true,
-  showPosition: true,
   showAlbum: true,
   showMenu: true,
   showFavorite: false,
   showDuration: true,
   showCheckboxes: false,
-  showPlayButton: undefined,
   disablePlayButton: false,
   isDisabled: false,
   isAvailable: true,
@@ -413,10 +443,111 @@ const onPlayClick = function (evt: PointerEvent) {
   align-items: center;
   justify-content: center;
   min-width: 22px;
-  margin-right: 12px;
+  /* spacing after the number so the title isn't cramped on mobile;
+     desktop resets this to 0 via .track-number-play > .track-number */
+  margin-right: 16px;
   font-size: 0.875rem;
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
+  transition: opacity 0.18s ease;
+}
+
+/* album view: track number and play button share one slot */
+.track-number-play {
+  display: flex;
+  align-items: center;
+}
+
+/* other rows: album art with the outline play to its right on touch */
+.listitem-thumb-area {
+  display: flex;
+  align-items: center;
+}
+
+.listitem-media-thumb {
+  position: relative;
+}
+
+.listitem-media-thumb :deep(.v-img) {
+  transition: filter 0.15s ease;
+}
+
+/* discover-style blue play button: desktop hover only */
+.listitem-play-blue {
+  display: none;
+}
+
+/* mobile: tighten the gap between the play button and the ⋮ menu */
+.listitem-mobile-play {
+  margin-right: -10px;
+}
+
+/* mobile: small blue play disc on the right, sized to match the old icon */
+.listitem-play-blue-mobile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgb(var(--v-theme-primary));
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .listitem-play-blue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgb(var(--v-theme-primary));
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  /* album view: overlay the number and the blue play in one centered cell.
+     The extra right margin (more breathing room for the title) is desktop-only
+     and exclusive to this view, where the prepend is just the narrow slot. */
+  .track-number-play {
+    display: grid;
+    place-items: center;
+    margin-right: 12px;
+  }
+
+  .track-number-play > .track-number,
+  .track-number-play > .listitem-play-blue {
+    grid-area: 1 / 1;
+  }
+
+  .track-number-play > .track-number {
+    margin-right: 0;
+  }
+
+  .list-item-main:hover .track-number-play > .track-number {
+    opacity: 0;
+  }
+
+  /* other rows: blue play overlays the dimmed album art on row hover */
+  .listitem-media-thumb .listitem-play-blue {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    z-index: 1;
+  }
+
+  .list-item-main:hover .listitem-media-thumb :deep(.v-img) {
+    filter: blur(4px) brightness(0.35);
+  }
+
+  .list-item-main:hover .listitem-play-blue {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .album-track-row :deep(.v-list-item__content) {
@@ -430,6 +561,9 @@ const onPlayClick = function (evt: PointerEvent) {
 .track-duration {
   font-size: 0.875rem;
   opacity: 0.7;
+  /* 16px + the now-playing bars' 6px margin = 22px, matching the gap on the
+     duration's right (12px here + the provider icon's 10px) so it sits evenly */
+  margin-left: 16px;
   margin-right: 12px;
   white-space: nowrap;
 }
