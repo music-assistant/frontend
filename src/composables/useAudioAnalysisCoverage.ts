@@ -105,15 +105,6 @@ export function useAudioAnalysisCoverage(options?: { intervalMs?: number }): {
     );
   }
 
-  async function refresh(): Promise<void> {
-    loading.value = true;
-    try {
-      await fetchCoverage();
-    } finally {
-      loading.value = false;
-    }
-  }
-
   // --- Auto-refresh ---------------------------------------------------------
   // Adaptive polling: re-query coverage every `intervalMs` only while some
   // provider still has pending work, and pause while the tab is hidden. This
@@ -121,6 +112,19 @@ export function useAudioAnalysisCoverage(options?: { intervalMs?: number }): {
   // fully-analyzed library.
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let autoRefreshEnabled = false;
+
+  async function refresh(): Promise<void> {
+    loading.value = true;
+    try {
+      await fetchCoverage();
+    } finally {
+      loading.value = false;
+    }
+    // When auto-refresh is active, re-arm polling so a manual or
+    // providers-driven refresh that surfaces new pending work resumes the
+    // live tick-down even after the loop has gone dormant.
+    if (autoRefreshEnabled) scheduleNextPoll();
+  }
 
   function hasPendingWork(): boolean {
     return rows.value.some((row) => row.pending > 0);
@@ -163,8 +167,8 @@ export function useAudioAnalysisCoverage(options?: { intervalMs?: number }): {
     if (autoRefreshEnabled) return;
     autoRefreshEnabled = true;
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    // refresh() re-arms polling when work remains.
     await refresh();
-    scheduleNextPoll();
   }
 
   function stopAutoRefresh(): void {

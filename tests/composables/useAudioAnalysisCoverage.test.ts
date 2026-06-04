@@ -332,6 +332,39 @@ describe("useAudioAnalysisCoverage auto-refresh", () => {
     c.stopAutoRefresh();
   });
 
+  it("resumes polling when a refresh surfaces new pending work after going dormant", async () => {
+    setProviders([AA_PROVIDER]);
+    // Starts fully analyzed -> the loop goes dormant after the first load.
+    mockSendCommand
+      .mockResolvedValueOnce({
+        analyzed: 100,
+        pending: 0,
+        stale_version: 0,
+        analysis_version: 1,
+      })
+      .mockResolvedValue({
+        analyzed: 100,
+        pending: 20,
+        stale_version: 0,
+        analysis_version: 1,
+      });
+
+    const c = useAudioAnalysisCoverage({ intervalMs: POLL_MS });
+    await c.startAutoRefresh(); // call 1: pending 0 -> dormant
+    expect(mockSendCommand).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(POLL_MS * 2);
+    expect(mockSendCommand).toHaveBeenCalledTimes(1); // confirmed dormant
+
+    // New pending work appears; the component's providers watch calls refresh().
+    await c.refresh(); // call 2: pending 20 -> should re-arm polling
+    expect(mockSendCommand).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(POLL_MS);
+    expect(mockSendCommand).toHaveBeenCalledTimes(3); // polling resumed
+
+    c.stopAutoRefresh();
+  });
+
   it("stopAutoRefresh halts polling and detaches the visibility listener", async () => {
     setProviders([AA_PROVIDER]);
     mockAa({
