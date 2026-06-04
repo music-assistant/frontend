@@ -28,7 +28,7 @@
         id="sp-dedup"
         :model-value="modelValue ?? 0"
         :min="0"
-        :max="8760"
+        :max="2160"
         :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
         class="w-[120px]"
         @update:model-value="onChange"
@@ -82,6 +82,6 @@ function onChange(v: number) {
     emit("update:modelValue", undefined);
     return;
   }
-  emit("update:modelValue", Math.min(8760, Math.floor(v)));
+  emit("update:modelValue", Math.min(2160, Math.floor(v)));
 }
 </script>
