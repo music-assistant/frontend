@@ -104,6 +104,7 @@
         v-for="(row, idx) in displayedRows"
         :key="row.folder.uri"
         :title="folderTitle(row.folder)"
+        :provider="folderProvider(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
         :tiles-per-view="tilesPerView"
       >
@@ -278,6 +279,8 @@ const folderTitle = (folder: RecommendationFolder) =>
   folder.translation_key
     ? $t(`recommendations.${folder.translation_key}`, folder.name)
     : folder.name;
+
+const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
 // --- Top Picks: a curated mix from specific recommendation folders ---
 interface HeroEntry {
