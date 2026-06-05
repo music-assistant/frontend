@@ -10,7 +10,7 @@
     </CardHeader>
     <CardContent>
       <Button as-child variant="outline">
-        <RouterLink to="/settings/editcore/streams">
+        <RouterLink to="/settings/editcore/streams" class="no-underline">
           {{ $t("settings.audio_analysis_concurrency.open_settings") }}
         </RouterLink>
       </Button>
