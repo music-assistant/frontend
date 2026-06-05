@@ -3,7 +3,11 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
-    :class="{ unavailable: !isAvailable, 'listitem-selecting': showCheckboxes }"
+    :class="{
+      unavailable: !isAvailable,
+      'listitem-selecting': showCheckboxes,
+      'album-track-row': albumTrackView,
+    }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -39,20 +43,6 @@
           class="track-number"
         >
           {{ item.track_number }}
-        </div>
-        <div
-          v-if="albumTrackView && item.is_playable"
-          class="listitem-play-thumb"
-        >
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :disabled="disablePlayButton"
-            @click.stop="onPlayClick"
-          >
-            <v-icon size="24">mdi-play-circle-outline</v-icon>
-          </v-btn>
         </div>
         <div v-else class="media-thumb listitem-media-thumb">
           <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
@@ -230,13 +220,8 @@
         <FavouriteButton :item="item" />
       </div>
 
-      <!-- play button -->
       <v-btn
-        v-if="
-          !albumTrackView &&
-          item.is_playable &&
-          (showPlayButton ?? getBreakpointValue('bp0'))
-        "
+        v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
         icon
         variant="text"
         size="small"
@@ -436,27 +421,19 @@ const onPlayClick = function (evt: PointerEvent) {
   align-items: center;
 }
 
-.listitem-play-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-}
-
-.listitem-prepend .listitem-play-thumb :deep(.v-icon) {
-  margin-inline-end: 0 !important;
-}
-
 .track-number {
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 22px;
-  margin-right: 2px;
+  margin-right: 12px;
   font-size: 0.875rem;
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
+}
+
+.album-track-row :deep(.v-list-item__content) {
+  margin-bottom: 1px;
 }
 
 .track-duration {
