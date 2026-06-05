@@ -24,12 +24,10 @@
           </div>
         </template>
         <template v-if="editMode" #actions>
-          <v-btn
-            :icon="playersEnabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
-            size="small"
-            variant="text"
-            @click="togglePlayers"
-          />
+          <Button variant="ghost" size="icon-sm" @click="togglePlayers">
+            <Eye v-if="playersEnabled" />
+            <EyeOff v-else />
+          </Button>
         </template>
         <div
           v-for="player in players"
@@ -48,9 +46,22 @@
         </div>
       </EditorialShelf>
 
-      <section v-if="heroEntries.length" class="ed-section ed-hero-row">
+      <section
+        v-if="showTopPicks"
+        class="ed-section ed-hero-row"
+        :class="{ 'ed-dimmed': editMode && !topPicksEnabled }"
+      >
         <div class="ed-hero-row__head">
           <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
+          <Button
+            v-if="editMode"
+            variant="ghost"
+            size="icon-sm"
+            @click="toggleTopPicks"
+          >
+            <Eye v-if="topPicksEnabled" />
+            <EyeOff v-else />
+          </Button>
         </div>
         <div
           class="ed-hero-row__viewport"
@@ -109,28 +120,30 @@
         :tiles-per-view="tilesPerView"
       >
         <template v-if="editMode" #actions>
-          <v-btn
-            :icon="
-              row.setting.enabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
-            "
-            size="small"
-            variant="text"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             @click="toggleRow(row.folder.uri)"
-          />
-          <v-btn
-            icon="mdi-chevron-up"
-            size="small"
-            variant="text"
+          >
+            <Eye v-if="row.setting.enabled" />
+            <EyeOff v-else />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             :disabled="idx === 0"
             @click="moveRow(row.folder.uri, -1)"
-          />
-          <v-btn
-            icon="mdi-chevron-down"
-            size="small"
-            variant="text"
+          >
+            <ChevronUp />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             :disabled="idx === displayedRows.length - 1"
             @click="moveRow(row.folder.uri, 1)"
-          />
+          >
+            <ChevronDown />
+          </Button>
         </template>
         <EditorialMediaCard
           v-for="item in row.folder.items"
@@ -163,6 +176,7 @@ import EditorialShelf, {
   type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
@@ -179,7 +193,14 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Eye,
+  EyeOff,
+} from "lucide-vue-next";
 import {
   computed,
   nextTick,
@@ -230,6 +251,18 @@ const showPlayers = computed(
 );
 const togglePlayers = () =>
   setPreference("discoverPlayersEnabled", !playersEnabled.value);
+
+const topPicksEnabledPref = getPreference<boolean>(
+  "discoverTopPicksEnabled",
+  true,
+);
+const topPicksEnabled = computed(() => topPicksEnabledPref.value !== false);
+const showTopPicks = computed(
+  () =>
+    heroEntries.value.length > 0 && (props.editMode || topPicksEnabled.value),
+);
+const toggleTopPicks = () =>
+  setPreference("discoverTopPicksEnabled", !topPicksEnabled.value);
 
 function playerSortScore(player: Player) {
   if (player.playback_state == PlaybackState.PLAYING) return 0;
@@ -618,6 +651,10 @@ onBeforeUnmount(() => {
 
 .ed-hero-row {
   padding: 0 28px;
+}
+
+.ed-dimmed {
+  opacity: 0.4;
 }
 .ed-hero-row__head {
   display: flex;
