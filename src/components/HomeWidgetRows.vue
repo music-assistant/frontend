@@ -182,6 +182,7 @@ import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
+  type EventMessage,
   type Genre,
   type ItemMapping,
   type MediaItemTypeOrItemMapping,
@@ -592,9 +593,16 @@ onMounted(async () => {
     resolveHeroPicks();
   }, 1500);
 
-  const unsub = api.subscribe(EventType.MEDIA_ITEM_PLAYED, () => {
-    refreshRecommendations();
-  });
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_PLAYED,
+    (evt: EventMessage) => {
+      // Only refetch when a track actually finished (is_playing = false),
+      // not on the periodic ~30s progress reports that also emit this event.
+      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
+        refreshRecommendations();
+      }
+    },
+  );
   onBeforeUnmount(unsub);
 });
 
