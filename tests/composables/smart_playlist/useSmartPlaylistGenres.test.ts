@@ -8,6 +8,14 @@ vi.mock("vue", async () => {
   };
 });
 
+vi.mock("vue-i18n", () => ({
+  useI18n: () => ({ t: (k: string) => k, te: () => false }),
+}));
+
+vi.mock("@/helpers/utils", () => ({
+  getGenreDisplayName: (name: string) => name,
+}));
+
 vi.mock("@/plugins/api", () => ({
   default: {
     getLibraryGenres: vi.fn().mockResolvedValue([
