@@ -89,7 +89,9 @@
         :model-value="rule.operator"
         @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
-        <SelectTrigger class="h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent">
+        <SelectTrigger
+          class="h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
