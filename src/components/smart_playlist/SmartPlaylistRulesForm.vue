@@ -37,6 +37,7 @@
         :logic="form.logic.value"
         :available-fields="form.availableFields.value"
         :genre-options="form.genreOptions.value"
+        :album-type-options="form.albumTypeOptions.value"
         :invalid-rule-uids="form.invalidRuleUids.value"
         @update:logic="(v) => (form.logic.value = v)"
         @add-rule="form.addRule"

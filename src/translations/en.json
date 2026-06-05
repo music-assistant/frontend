@@ -19,6 +19,7 @@
         "live": "Live",
         "soundtrack": "Soundtrack"
     },
+    "album_type_label": "Album type",
     "albums": "Albums",
     "appears_on": "Appears on",
     "artist": "Artist",
@@ -1701,6 +1702,8 @@
         "favorites_yes": "Yes",
         "field_album_is": "Album is",
         "field_album_is_not": "Album is not",
+        "field_album_type_is": "Album type is",
+        "field_album_type_is_not": "Album type is not",
         "field_artist_is": "Artist is",
         "field_artist_is_not": "Artist is not",
         "field_favorite": "Favorite",
