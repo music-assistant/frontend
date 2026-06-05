@@ -1650,7 +1650,8 @@
             "log_load_failed": "Failed to load log for {0}.",
             "log_copied": "Task log copied to clipboard.",
             "log_copy_failed": "Failed to copy task log.",
-            "log_download_started": "Task log download started."
+            "log_download_started": "Task log download started.",
+            "log_download_failed": "No task log available to download."
         }
     },
     "background_task": {
