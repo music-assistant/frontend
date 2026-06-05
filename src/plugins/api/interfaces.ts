@@ -1296,6 +1296,7 @@ export interface SmartPlaylistRules {
   artist_ids: number[];
   album_ids: number[];
   favorites_only: boolean;
+  explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];
   seed_album_uris?: string[];

@@ -32,7 +32,7 @@
       </Select>
 
       <Select
-        v-if="rule.field !== 'favorite'"
+        v-if="rule.field !== 'favorite' && rule.field !== 'explicit'"
         :key="`operator-${rule.field}`"
         :model-value="rule.operator"
         :disabled="rule.field === 'year'"
@@ -83,6 +83,24 @@
       >
         {{ $t("smart_playlist.favorites_yes") }}
       </span>
+
+      <Select
+        v-else-if="rule.field === 'explicit'"
+        :model-value="rule.operator"
+        @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
+      >
+        <SelectTrigger class="h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="is" class="text-xs">
+            {{ $t("smart_playlist.explicit_yes") }}
+          </SelectItem>
+          <SelectItem value="is_not" class="text-xs">
+            {{ $t("smart_playlist.explicit_no") }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <template v-else-if="rule.field === 'year'">
         <NumberField
@@ -215,6 +233,7 @@ const fieldOptions = computed(() => {
     { value: "artist", label: $t("artist") },
     { value: "album", label: $t("album") },
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
+    { value: "explicit", label: $t("smart_playlist.field_explicit") },
     { value: "year", label: $t("smart_playlist.field_year") },
   ];
   return all.filter(
