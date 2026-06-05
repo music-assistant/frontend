@@ -181,7 +181,6 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  type EventMessage,
   EventType,
   type Genre,
   type ItemMapping,
@@ -193,6 +192,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { useDebounceFn } from "@vueuse/core";
 import {
   ChevronDown,
   ChevronLeft,
@@ -586,16 +586,15 @@ onMounted(async () => {
   nextTick(observeHero);
   window.addEventListener("resize", updateHeroNav);
 
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_PLAYED,
-    async (evt: EventMessage) => {
-      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        await loadRecommendations();
-        // Keeps the same picks while the cache is fresh; rebuilds once expired.
-        resolveHeroPicks();
-      }
-    },
-  );
+  const refreshRecommendations = useDebounceFn(async () => {
+    await loadRecommendations();
+    // Keeps the same picks while the cache is fresh; rebuilds once expired.
+    resolveHeroPicks();
+  }, 1500);
+
+  const unsub = api.subscribe(EventType.MEDIA_ITEM_PLAYED, () => {
+    refreshRecommendations();
+  });
   onBeforeUnmount(unsub);
 });
 
