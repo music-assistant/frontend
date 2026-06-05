@@ -7,6 +7,7 @@
     z-index="9000"
     :retain-focus="false"
     persistent
+    no-click-animation
   >
     <v-card
       class="fullscreen-player-card"
