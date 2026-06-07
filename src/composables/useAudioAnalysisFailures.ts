@@ -65,8 +65,22 @@ interface ServerFailure {
 
 const DEFAULT_PAGE_SIZE = 25;
 
+/**
+ * Name-resolution cache key. The resolved track name is the same regardless of
+ * which AA provider failed it, so this intentionally omits the AA domain.
+ */
 function cacheKey(f: RawFailure): string {
   return `${f.provider}::${f.itemId}`;
+}
+
+/**
+ * Stable row identity: the server's natural key for a failure is the
+ * (item_id, provider, aa_provider_domain) triple, so the same track can appear
+ * as distinct rows under different AA providers. Used for row equality, the
+ * delete predicate, and the Vue list key.
+ */
+export function rowId(f: RawFailure): string {
+  return `${f.provider}::${f.itemId}::${f.aaDomain}`;
 }
 
 export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
@@ -154,10 +168,12 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
       }));
       page.value = 1;
       await resolveCurrentPage();
-    } catch {
-      // The command is unavailable on servers without failure tracking (or the
-      // bus is briefly down). Degrade to an empty list rather than throwing,
-      // matching how the coverage card handles an unavailable provider.
+    } catch (error) {
+      // The `audio_analysis/failures` command is absent on servers without
+      // failure tracking (version skew), so degrade to an empty list rather
+      // than throwing and breaking the rest of the settings page. Logged so a
+      // genuine (non-version-skew) failure still leaves a diagnostic trail.
+      console.warn("Failed to load audio analysis failures:", error);
       failures.value = [];
       pageRows.value = [];
       page.value = 1;
@@ -187,9 +203,7 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
         aa_domain: row.aaDomain,
       },
     );
-    failures.value = failures.value.filter(
-      (f) => cacheKey(f) !== cacheKey(row),
-    );
+    failures.value = failures.value.filter((f) => rowId(f) !== rowId(row));
     if (page.value > pageCount.value) page.value = pageCount.value;
     await resolveCurrentPage();
     return count;
@@ -197,14 +211,23 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
 
   async function clearAll(): Promise<number> {
     const domains = [...new Set(failures.value.map((f) => f.aaDomain))];
-    const counts = await Promise.all(
+    const results = await Promise.allSettled(
       domains.map((aa_domain) =>
         api.sendCommand<number>("audio_analysis/failures/clear", { aa_domain }),
       ),
     );
-    const total = counts.reduce((sum, c) => sum + c, 0);
+    // Re-sync from the server regardless of partial outcomes so the table
+    // reflects what was actually cleared rather than an optimistic guess.
     await refresh();
-    return total;
+    const deleted = results.reduce(
+      (sum, r) => sum + (r.status === "fulfilled" ? r.value : 0),
+      0,
+    );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      throw new Error(`Failed to clear ${failed} of ${domains.length} domains`);
+    }
+    return deleted;
   }
 
   return {

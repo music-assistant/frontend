@@ -247,6 +247,147 @@ describe("useAudioAnalysisFailures", () => {
     expect(f.pageRows.value.map((r) => r.itemId)).toEqual(["2"]);
   });
 
+  it("resolves names independently for the same item_id under different providers", async () => {
+    mockFailures([
+      serverFailure({ item_id: "1", provider: "tidal" }),
+      serverFailure({ item_id: "1", provider: "qobuz" }),
+    ]);
+    mockGetTrack.mockImplementation((_itemId: string, provider: string) =>
+      Promise.resolve({
+        name: provider === "tidal" ? "Tidal Track" : "Qobuz Track",
+        artists: [],
+      }),
+    );
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+
+    const tidal = f.pageRows.value.find((r) => r.provider === "tidal")!;
+    const qobuz = f.pageRows.value.find((r) => r.provider === "qobuz")!;
+    expect(tidal.name).toBe("Tidal Track");
+    expect(qobuz.name).toBe("Qobuz Track");
+  });
+
+  it("does not re-fetch names when paging back to a visited page", async () => {
+    mockFailures([
+      serverFailure({ item_id: "1" }),
+      serverFailure({ item_id: "2" }),
+      serverFailure({ item_id: "3" }),
+    ]);
+
+    const f = useAudioAnalysisFailures({ pageSize: 2 });
+    await f.refresh();
+    expect(mockGetTrack).toHaveBeenCalledTimes(2);
+    await f.next();
+    expect(mockGetTrack).toHaveBeenCalledTimes(3);
+    await f.prev();
+    // page 1 is already resolved -> no new lookups
+    expect(mockGetTrack).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry a failed name lookup when paging back", async () => {
+    mockFailures([
+      serverFailure({ item_id: "1" }),
+      serverFailure({ item_id: "2" }),
+    ]);
+    mockGetTrack.mockImplementation((itemId: string) =>
+      itemId === "1"
+        ? Promise.reject(new Error("not found"))
+        : Promise.resolve({ name: "Two", artists: [] }),
+    );
+
+    const f = useAudioAnalysisFailures({ pageSize: 1 });
+    await f.refresh(); // page 1: item "1" rejects -> negative cache
+    await f.next(); // page 2: item "2"
+    await f.prev(); // page 1 again: must not retry "1"
+
+    const lookupsForOne = mockGetTrack.mock.calls.filter(
+      (c) => c[0] === "1",
+    ).length;
+    expect(lookupsForOne).toBe(1);
+  });
+
+  it("clearOne removes only the targeted row when a track failed under multiple AA domains", async () => {
+    mockFailures([
+      serverFailure({
+        item_id: "1",
+        provider: "tidal",
+        aa_provider_domain: "sonic_analysis",
+      }),
+      serverFailure({
+        item_id: "1",
+        provider: "tidal",
+        aa_provider_domain: "loudness",
+      }),
+    ]);
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    expect(f.total.value).toBe(2);
+
+    const target = f.pageRows.value.find(
+      (r) => r.aaDomain === "sonic_analysis",
+    )!;
+    await f.clearOne(target);
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "audio_analysis/failures/clear",
+      { item_id: "1", provider: "tidal", aa_domain: "sonic_analysis" },
+    );
+    expect(f.total.value).toBe(1);
+    expect(f.pageRows.value.map((r) => r.aaDomain)).toEqual(["loudness"]);
+  });
+
+  it("clearOne on the last row of the last page steps back a page", async () => {
+    mockFailures([
+      serverFailure({ item_id: "1" }),
+      serverFailure({ item_id: "2" }),
+      serverFailure({ item_id: "3" }),
+    ]);
+
+    const f = useAudioAnalysisFailures({ pageSize: 2 });
+    await f.refresh();
+    await f.next();
+    expect(f.page.value).toBe(2);
+
+    await f.clearOne(f.pageRows.value[0]);
+
+    expect(f.page.value).toBe(1);
+    expect(f.pageRows.value.map((r) => r.itemId)).toEqual(["1", "2"]);
+  });
+
+  it("clearAll re-syncs from the server and throws when a domain clear fails", async () => {
+    const rows = [
+      serverFailure({ item_id: "1", aa_provider_domain: "sonic_analysis" }),
+      serverFailure({ item_id: "2", aa_provider_domain: "loudness" }),
+    ];
+    mockSendCommand.mockImplementation(
+      (cmd: string, args?: { aa_domain?: string }) => {
+        if (cmd === "audio_analysis/failures") return Promise.resolve(rows);
+        if (cmd === "audio_analysis/failures/clear") {
+          return args?.aa_domain === "sonic_analysis"
+            ? Promise.reject(new Error("boom"))
+            : Promise.resolve(1);
+        }
+        return Promise.resolve(undefined);
+      },
+    );
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    const fetchesBefore = mockSendCommand.mock.calls.filter(
+      (c) => c[0] === "audio_analysis/failures",
+    ).length;
+
+    await expect(f.clearAll()).rejects.toThrow();
+
+    // refresh() must still run so the table reflects what was actually cleared.
+    const fetchesAfter = mockSendCommand.mock.calls.filter(
+      (c) => c[0] === "audio_analysis/failures",
+    ).length;
+    expect(fetchesAfter).toBe(fetchesBefore + 1);
+  });
+
   it("clearAll deletes once per distinct AA domain and re-syncs from the server", async () => {
     const rows = [
       serverFailure({ item_id: "1", aa_provider_domain: "sonic_analysis" }),

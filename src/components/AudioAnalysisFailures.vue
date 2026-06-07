@@ -76,7 +76,7 @@
           <TableBody>
             <TableRow
               v-for="row in pageRows"
-              :key="rowKey(row)"
+              :key="rowId(row)"
               data-test="aa-failure-row"
             >
               <TableCell>
@@ -98,12 +98,12 @@
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  :disabled="pendingKey === rowKey(row)"
+                  :disabled="pendingKey === rowId(row)"
                   :aria-label="$t('settings.audio_analysis_failures.delete')"
                   :title="$t('settings.audio_analysis_failures.delete')"
                   @click="onClearOne(row)"
                 >
-                  <Spinner v-if="pendingKey === rowKey(row)" class="size-3.5" />
+                  <Spinner v-if="pendingKey === rowId(row)" class="size-3.5" />
                   <Trash2 v-else class="size-3.5" />
                 </Button>
               </TableCell>
@@ -128,6 +128,7 @@
 <script setup lang="ts">
 import {
   classifyRetry,
+  rowId,
   useAudioAnalysisFailures,
   type FailureRow,
 } from "@/composables/useAudioAnalysisFailures";
@@ -186,10 +187,6 @@ const {
 const pendingKey = ref<string | null>(null);
 const clearingAll = ref(false);
 
-function rowKey(row: FailureRow): string {
-  return `${row.provider}::${row.itemId}`;
-}
-
 function retryVariant(row: FailureRow): "warning" | "secondary" | "outline" {
   const status = classifyRetry(row.nextRetry, Math.floor(Date.now() / 1000));
   if (status.kind === "blocked") return "warning";
@@ -209,7 +206,7 @@ function retryLabel(row: FailureRow): string {
 }
 
 async function onClearOne(row: FailureRow): Promise<void> {
-  pendingKey.value = rowKey(row);
+  pendingKey.value = rowId(row);
   try {
     await clearOne(row);
     toast.success($t("settings.audio_analysis_failures.cleared_one"));
