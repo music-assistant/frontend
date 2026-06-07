@@ -23,7 +23,7 @@
     "artist_albums": "Albumi",
     "artist_toptracks": "Najpopularnije numere",
     "artists": "Izvođači",
-    "browse": "Pregledajte",
+    "browse": "Pregled",
     "clear_selection": "Poništite izbor",
     "close": "Zatvorite",
     "create_playlist": "Kreirajte novu plejlistu na {0}",
@@ -83,7 +83,7 @@
     "refresh_item": "Ponovo učitaj",
     "remove_library": "Uklonite iz biblioteke",
     "remove_playlist": "Uklonite iz plejliste",
-    "search": "Pretražite",
+    "search": "Pretraga",
     "settings": {
         "add_new": "Dodajte novi",
         "add_provider": "Dodajte novu integraciju",
@@ -649,7 +649,7 @@
         "onboarding_footer": "Nove servise uvek možete dodati kasnije preko ove stranice podešavanja.",
         "remote_access_qr_code": "QR kod",
         "remote_access_qr_code_description": "Skenirajte kamerom telefona da biste se odmah povezali.",
-        "reset_to_defaults": "Vrati na podrazumevano",
+        "reset_to_defaults": "Vratite na podrazumevano",
         "reset_to_defaults_confirm": "Da li ste sigurni da želite da vratite sva podešavanja na podrazumevane vrednosti? Ova akcija će odmah sačuvati izmene.",
         "unsaved_changes": "Nesačuvane izmene",
         "unsaved_changes_message": "Imate nesačuvane izmene. Da li ste sigurni da želite da napustite stranicu bez čuvanja?",
@@ -751,7 +751,12 @@
             "unavailable": "nedostupno",
             "none": "—"
         },
-        "audio_analysis_description": "Pratite pokrivenost analize zvuka kroz svoje servise"
+        "audio_analysis_description": "Pratite pokrivenost analize zvuka kroz svoje servise",
+        "audio_analysis_concurrency": {
+            "title": "Istovremenost analize u pozadini",
+            "description": "Kontrolišite koliko pesama se analizira istovremeno tokom noćnog skeniranja u pozadini. Ovo podešavanje se nalazi u glavnoj konfiguraciji strimova.",
+            "open_settings": "Otvorite podešavanja strimova"
+        }
     },
     "show_info": "Prikažite informacije",
     "show_select_boxes": "Prikažite polja za potvrdu",
@@ -999,7 +1004,7 @@
         "inspired_by_recently_played": "Inspirisano nedavno reprodukovanim"
     },
     "homescreen_edit_enable": "Uredite početni ekran",
-    "homescreen_edit_disable": "Napustite režim uređivanja početnog ekrana",
+    "homescreen_edit_disable": "Napustite režim uređivanja",
     "lyrics_will_appear_soon": "Tekst pesme će se pojaviti kada numera počne...",
     "radiobrowser_by_votes": "Po glasovima",
     "radiobrowser_by_clicks": "Po kliku",
@@ -1037,7 +1042,7 @@
         "account_settings": "Podešavanja naloga",
         "manage_your_profile_info": "Upravljajte informacijama i podešavanjima svog profila",
         "change_password": "Promenite lozinku",
-        "update_your_password": "Ažuriraj lozinku svog naloga",
+        "update_your_password": "Ažurirajte lozinku vašeg naloga",
         "old_password": "Trenutna lozinka",
         "new_password": "Nova lozinka",
         "password_changed": "Lozinka je uspešno promenjena",
@@ -1112,7 +1117,7 @@
         "select_players": "Izaberite plejere",
         "select_providers": "Izaberite servise",
         "save_changes": "Sačuvajte izmene",
-        "update_password": "Ažuriraj lozinku",
+        "update_password": "Ažurirajte lozinku",
         "guest_role": "Gost"
     },
     "login": {
@@ -1220,7 +1225,7 @@
     "series_plural": "Serije",
     "series_singular": "Serije",
     "queue_move_end": "Pomerite na kraj reda čekanja",
-    "discover": "Istražite",
+    "discover": "Početna",
     "save_queue_as_playlist": "Sačuvajte red čekanja kao plejlistu",
     "playlist_created": "Plejlista je napravljena",
     "open_playlist": "Otvorite plejlistu",
@@ -1322,11 +1327,11 @@
     "genres_deleted": "Uspešno obrisano žanrova: {0}",
     "merge_into": "Pridružite postojećem žanrom",
     "merge_genres": "Spojite žanrove",
-    "merge_genres_description": "Izaberite ciljni žanr za spajanje. Svi pseudonimi i mapirani mediji iz izabranih žanrova biće preneti u ciljni žanr.",
+    "merge_genres_description": "Izaberite željeni žanr za spajanje. Svi pseudonimi i mapirani mediji iz izabranih žanrova biće preneti u željeni žanr.",
     "merge_genres_warning": "Sledeći žanrovi će biti obrisani: {0}",
     "merge_genres_success": "Žanrovi su uspešno spojeni",
     "merge_genres_failed": "Spajanje žanrova nije uspelo",
-    "select_target_genre": "Izaberite ciljni žanr",
+    "select_target_genre": "Izaberite željeni žanr",
     "server_state": {
         "starting": "Server se pokreće; neki servisi, plejeri ili funkcije možda neće biti dostupni dok se pokretanje ne završi.",
         "stopping": "Server se gasi...",
@@ -1521,7 +1526,7 @@
         "disable_schedule": "Onemogućite raspored",
         "retry": "Pokušajte ponovo zadatak",
         "cancel": "Otkažite zadatak",
-        "view_log": "Prikažite zapisnik zadatka",
+        "view_log": "Prikažite dnevnik zadatka",
         "view_details": "Prikažite detalje zadatka",
         "remove_history": "Uklonite zadatak iz istorije",
         "log_title": "Dnevnik rada zadatka",
@@ -1616,7 +1621,8 @@
             "log_load_failed": "Učitavanje dnevnika rada za {0} nije uspelo.",
             "log_copied": "Dnevnik rada je kopiran u privremenu memoriju.",
             "log_copy_failed": "Kopiranje dnevnika rada nije uspelo.",
-            "log_download_started": "Započeto je preuzimanje dnevnika rada."
+            "log_download_started": "Započeto je preuzimanje dnevnika rada.",
+            "log_download_failed": "Nije dostupan dnevnik zadatka  za preuzimanje."
         }
     },
     "background_task": {
@@ -1641,7 +1647,7 @@
     "not_found_subtext": "Numera koju tražište se izgubila između servisa. Vrati se nazad ili pronađi nešto novo.",
     "radiobrowser_by_popularity": "Po popularnosti",
     "radiobrowser_by_category": "Po kategorijama",
-    "restore_genre": "Vrati",
+    "restore_genre": "Vratite",
     "genre_name": "Naziv žanra",
     "export_playlist": "Izvoz plejliste",
     "import_playlist": "Uvezite plejlistu",
@@ -1669,7 +1675,7 @@
         "dedup_hours": "Nemoj ponavljati istu numeru",
         "dedup_hours_tooltip": "Preskoči numere koje su nedavno puštane. Podesite broj sati tokom kojih se numera neće ponavljati. 0 onemogućava ograničenje.\"",
         "desc": "Generišite plejlistu iz svoje biblioteke na osnovu pravila.",
-        "edit_rules": "Uredi pravila",
+        "edit_rules": "Uredite pravila",
         "off": "Isključeno",
         "saving": "Čuvanje...",
         "seed_artist_pick": "Izaberite izvođača",
@@ -1720,19 +1726,26 @@
         "type_library_desc": "Sastavite je od muzike koju već imate u svojoj biblioteci.",
         "type_seed": "Otkrijte",
         "type_seed_desc": "Otkrijte muziku preko svojih striming servisa.",
-        "add_seed": "Dodaj polaznu tačku",
+        "add_seed": "Dodajte polaznu tačku",
         "seed_label": "Polazna tačka",
-        "seed_album_pick": "Izaberi album",
+        "seed_album_pick": "Izaberite album",
         "seed_full": "Limit polaznih tačaka je dostignut",
-        "seed_playlist_pick": "Izaberi plejlistu",
+        "seed_playlist_pick": "Izaberite plejlistu",
         "name_label": "Ime",
-        "name_required": "Unesite ime.",
+        "name_required": "Unesite naziv.",
         "results_library": "Rezultati iz biblioteke",
-        "results_other": "Ostali rezultati"
+        "results_other": "Ostali rezultati",
+        "field_album_type_is": "Tip albuma je",
+        "field_album_type_is_not": "Tip albuma nije"
     },
-    "explore": "Istraži",
+    "explore": "Istraživanje",
     "shortcuts": "Prečice",
     "system": "Sistem",
     "add_url_item_failed": "Dodavanje stavke nije uspelo",
-    "added_to_library": "Stavka „{0}” je dodata u biblioteku"
+    "added_to_library": "Stavka „{0}” je dodata u biblioteku",
+    "browse_by_genre": "Pretražujte po žanru",
+    "top_picks_for_you": "Preporučeno za vas",
+    "with_artists": "sa {artists}",
+    "disc": "Disk {number}",
+    "album_type_label": "Tip albuma"
 }

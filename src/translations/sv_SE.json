@@ -751,7 +751,12 @@
             "unavailable": "inte tillgänglig",
             "none": "—"
         },
-        "audio_analysis_description": "Spåra ljudanalystäckningen hos dina leverantörer"
+        "audio_analysis_description": "Spåra ljudanalystäckningen hos dina leverantörer",
+        "audio_analysis_concurrency": {
+            "title": "Samtidig bakgrundsanalys",
+            "description": "Styr hur många spår som analyseras samtidigt under den nattliga bakgrundsskanningen. Den här inställningen finns i Strömningens kärnkonfiguration.",
+            "open_settings": "Öppna strömningsinställningarna"
+        }
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -999,7 +1004,7 @@
         "inspired_by_recently_played": "Inspirerad av nyligen spelade"
     },
     "homescreen_edit_enable": "Redigera startskärm",
-    "homescreen_edit_disable": "Lämna redigeringsläget för startskärmen",
+    "homescreen_edit_disable": "Lämna redigeringsläget",
     "lyrics_will_appear_soon": "Texten kommer att visas när låten börjar...",
     "radiobrowser_by_votes": "Genom röster",
     "radiobrowser_by_clicks": "Genom klick",
@@ -1616,7 +1621,8 @@
             "log_load_failed": "Misslyckades med att läsa in loggen för {0}.",
             "log_copied": "Uppgiftslogg kopierad till urklipp.",
             "log_copy_failed": "Misslyckades med att kopiera uppgiftsloggen.",
-            "log_download_started": "Nerladdning av uppgiftslogg har startat."
+            "log_download_started": "Nerladdning av uppgiftslogg har startat.",
+            "log_download_failed": "Ingen uppgiftslogg tillgänglig för nerladdning."
         }
     },
     "background_task": {
@@ -1728,11 +1734,18 @@
         "name_label": "Namn",
         "name_required": "Vänligen ange ett namn.",
         "results_library": "Biblioteksresultat",
-        "results_other": "Andra resultat"
+        "results_other": "Andra resultat",
+        "field_album_type_is": "Albumtypen är",
+        "field_album_type_is_not": "Albumtypen är inte"
     },
     "explore": "Utforska",
     "shortcuts": "Genvägar",
     "system": "System",
     "add_url_item_failed": "Misslyckades med att lägga till objekt",
-    "added_to_library": "\"{0}\" tillagd i biblioteket"
+    "added_to_library": "\"{0}\" tillagd i biblioteket",
+    "browse_by_genre": "Bläddra efter genre",
+    "top_picks_for_you": "Toppenval för dig",
+    "with_artists": "med {artists}",
+    "disc": "Skiva {number}",
+    "album_type_label": "Albumtyp"
 }

@@ -26,7 +26,7 @@
     "browse": "Durchsuchen",
     "clear_selection": "Auswahl aufheben",
     "close": "Schließen",
-    "create_playlist": "Wiedergabeliste auf {0} erstellen",
+    "create_playlist": "Erstelle Wiedergabeliste auf {0}",
     "crossfade_disabled": "Crossfade ist deaktiviert",
     "crossfade_enabled": "Überblenden ist eingeschaltet",
     "dark_mode": "Dunkler Modus",
@@ -751,7 +751,12 @@
             "unavailable": "nicht verfügbar",
             "none": "—"
         },
-        "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern."
+        "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern.",
+        "audio_analysis_concurrency": {
+            "title": "Hintergrundanalyse der Gleichzeitigkeit",
+            "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
+            "open_settings": "Streams-Einstellungen öffnen"
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -855,7 +860,7 @@
     "image_url": "URL zu einem Bild oder Icon eingeben (optional)",
     "invalid_input": "Ungültige Eingabe",
     "new_playlist": "Neue Wiedergabeliste",
-    "create_playlist_on": "Wiedergabeliste auf {0} erstellen",
+    "create_playlist_on": "Erstelle Wiedergabeliste auf {0}",
     "view": {
         "list": "Listenansicht",
         "panel": "Panelansicht",
@@ -999,7 +1004,7 @@
         "inspired_by_recently_played": "Inspiriert von kürzlich gespielt"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
-    "homescreen_edit_disable": "Bearbeitungsmodus für den Startbildschirm verlassen",
+    "homescreen_edit_disable": "Bearbeitungsmodus verlassen",
     "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
     "radiobrowser_by_votes": "Nach Stimmen",
     "radiobrowser_by_clicks": "Nach Klicks",
@@ -1616,7 +1621,8 @@
             "log_load_failed": "Fehler beim Laden des Protokolls für {0}.",
             "log_copied": "Aufgabenprotokoll in die Zwischenablage kopiert.",
             "log_copy_failed": "Fehler beim Kopieren des Aufgabenprotokolls.",
-            "log_download_started": "Der Download des Aufgabenprotokolls wurde gestartet."
+            "log_download_started": "Der Download des Aufgabenprotokolls wurde gestartet.",
+            "log_download_failed": "Kein Aufgabenprotokoll zum Herunterladen verfügbar."
         }
     },
     "background_task": {
@@ -1728,11 +1734,18 @@
         "name_label": "Name",
         "name_required": "Bitte gib einen Namen ein.",
         "results_library": "Ergebnisse der Bibliothek",
-        "results_other": "Weitere Ergebnisse"
+        "results_other": "Weitere Ergebnisse",
+        "field_album_type_is": "Albumtyp ist",
+        "field_album_type_is_not": "Albumtyp ist nicht"
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
     "system": "System",
     "add_url_item_failed": "Fehler beim Hinzufügen des Artikels",
-    "added_to_library": "\"{0}\"zur Bibliothek hinzugefügt"
+    "added_to_library": "\"{0}\"zur Bibliothek hinzugefügt",
+    "browse_by_genre": "Nach Genre durchsuchen",
+    "top_picks_for_you": "Top-Auswahl für dich",
+    "with_artists": "mit {artists}",
+    "disc": "Disk {number}",
+    "album_type_label": "Albumtyp"
 }
