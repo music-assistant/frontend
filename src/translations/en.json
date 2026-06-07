@@ -778,6 +778,26 @@
             "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
             "open_settings": "Open Streams settings"
         },
+        "audio_analysis_failures": {
+            "title": "Audio Analysis Failures",
+            "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
+            "col_item": "Item",
+            "col_reason": "Reason",
+            "col_retry": "Next retry",
+            "col_actions": "Actions",
+            "retry_blocked": "Blocked",
+            "retry_eligible": "Eligible now",
+            "retry_in": "Retries in {0}",
+            "none": "No recorded analysis failures.",
+            "count": "{0} failures",
+            "delete": "Delete failure (force re-run)",
+            "clear_all": "Clear all",
+            "clear_all_confirm": "Clear all failures?",
+            "clear_all_description": "This removes all {0} recorded failures so the tracks will be analyzed again on the next scan.",
+            "cleared_one": "Failure cleared — the track will be analyzed again.",
+            "cleared_many": "Cleared {0} failures.",
+            "clear_error": "Couldn't clear failures. Please try again."
+        },
         "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
     "similar_tracks": "Similar tracks",
