@@ -9,7 +9,7 @@
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="true"
-      :show-provider-filter="mappingProviderIds.length > 1"
+      :show-provider-filter="true"
       :single-provider-filter="true"
       :provider-filter-options="mappingProviderIds"
       :show-album-type-filter="true"
