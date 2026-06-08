@@ -226,7 +226,7 @@ const genres = ref<Genre[]>([]);
 
 const tilesPerView = computed(() => {
   const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  return isPhone ? 1.8 : panelViewItemResponsive(0) + 0.5;
+  return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
 });
 
 const players = computed(() =>
@@ -806,6 +806,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 600px) {
+  .ed-section {
+    margin-bottom: 16px;
+  }
   .ed-hero-row,
   .ed-genres {
     padding-left: 16px;
