@@ -38,7 +38,7 @@
             @click.stop="chapterClicked(tick)"
           >
             <span
-              class="w-1 h-2 rounded-full bg-white/70"
+              class="w-1 h-1 rounded-full bg-background"
               aria-hidden="true"
             ></span>
           </button>
@@ -57,16 +57,17 @@
         <template
           v-if="showLabels && !isThumbHidden && chapterTicks.length < 6"
         >
-          <a
+          <button
             v-for="tick in chapterTicks"
             :key="`label-${tick.position}`"
-            class="absolute bottom-full mb-1 -translate-x-1/2 text-caption cursor-pointer whitespace-nowrap"
+            type="button"
+            class="absolute bottom-full mb-1 -translate-x-1/2 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
             :style="{ left: `${tick.percent}%` }"
             @pointerdown.stop
             @click="chapterClicked(tick)"
           >
             {{ tick.name }}
-          </a>
+          </button>
         </template>
       </SliderRoot>
 
@@ -364,9 +365,5 @@ const chapterClicked = function (chapter: MediaItemChapter) {
 }
 .time-text-row > div {
   width: calc(100% / 2);
-}
-.v-slider.v-input--horizontal {
-  align-items: center;
-  margin-inline: 0px;
 }
 </style>
