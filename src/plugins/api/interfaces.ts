@@ -265,8 +265,13 @@ export enum PlaybackState {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  GROUP = "group", // A (dedicated) group player or playergroup.
   STEREO_PAIR = "stereo_pair",
+  GROUP = "group", // A (dedicated) group player or playergroup.
+  PROTOCOL = "protocol",
+  DISPLAY = "display",
+  VISUALIZER = "visualizer",
+  LIGHT = "light",
+  UNKNOWN = "unknown",
 }
 
 export enum PlayerOptionType {
@@ -1311,6 +1316,8 @@ export interface SmartPlaylistRules {
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
   dedup_hours?: number;
+  album_types?: string[];
+  excluded_album_types?: string[];
 }
 
 export interface SmartPlaylistTrackStats {

@@ -207,9 +207,9 @@
 </template>
 
 <script setup lang="ts">
+import { Copy, Download, Pencil } from "lucide-vue-next";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { Copy, Download, Pencil } from "lucide-vue-next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -462,6 +462,11 @@ const formatDate = (value: string | undefined) =>
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text;
 }
 
 @media (min-width: 900px) {

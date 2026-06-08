@@ -13,8 +13,16 @@
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
-      <div v-if="$slots.actions" class="ed-shelf__actions">
-        <slot name="actions"></slot>
+      <div v-if="provider || $slots.actions" class="ed-shelf__aside">
+        <ProviderIcon
+          v-if="provider"
+          class="ed-shelf__provider"
+          :domain="provider"
+          :size="20"
+        />
+        <div v-if="$slots.actions" class="ed-shelf__actions">
+          <slot name="actions"></slot>
+        </div>
       </div>
     </div>
 
@@ -66,12 +74,14 @@ export interface EditorialShelfExpose {
 </script>
 
 <script setup lang="ts">
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
   subtitle?: string;
+  provider?: string;
   gap?: number;
   navCenter?: number;
   dimmed?: boolean;
@@ -80,6 +90,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: "",
   subtitle: "",
+  provider: "",
   gap: 14,
   navCenter: 92,
   dimmed: false,
@@ -230,6 +241,19 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
+}
+.ed-shelf__aside {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ed-shelf__provider {
+  flex-shrink: 0;
+  /* ProviderIcon ships with its own horizontal margins; cancel them so it
+     lines up with the shelf gutter and the aside gap is consistent. */
+  margin-left: -10px;
+  margin-right: -10px;
 }
 .ed-shelf__actions {
   display: flex;

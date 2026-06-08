@@ -19,6 +19,7 @@
         "live": "Live",
         "soundtrack": "Soundtrack"
     },
+    "album_type_label": "Album type",
     "albums": "Albums",
     "appears_on": "Appears on",
     "artist": "Artist",
@@ -27,6 +28,16 @@
     "artists": "Artists",
     "browse": "Browse",
     "browse_by_genre": "Browse by Genre",
+    "builtin_playlist": {
+        "all_favorite_tracks": "All favorited tracks",
+        "random_artist": "Random Artist (from library)",
+        "random_album": "Random Album (from library)",
+        "random_tracks": "500 Random tracks (from library)",
+        "recently_played": "Recently played tracks",
+        "recently_added_tracks": "Recently added tracks",
+        "infinite_mix": "Infinite Mix (library)",
+        "infinite_mix_favorites": "Infinite Mix (favorites)"
+    },
     "clear_selection": "Clear selection",
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
@@ -772,7 +783,44 @@
             "unavailable": "unavailable",
             "none": "—"
         },
-        "audio_analysis_description": "Track audio analysis coverage across your providers"
+        "audio_analysis_concurrency": {
+            "title": "Background analysis concurrency",
+            "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
+            "open_settings": "Open Streams settings"
+        },
+        "audio_analysis_description": "Track audio analysis coverage across your providers",
+        "all_favorite_tracks": {
+            "label": "All favorited tracks",
+            "description": "Generate a playlist containing every track marked as favorite in your library."
+        },
+        "random_artist": {
+            "label": "Random Artist (from library)",
+            "description": "Pick a random artist from your library and queue their tracks."
+        },
+        "random_album": {
+            "label": "Random Album (from library)",
+            "description": "Pick a random album from your library and queue its tracks."
+        },
+        "random_tracks": {
+            "label": "500 Random tracks (from library)",
+            "description": "Generate a playlist of 500 random tracks drawn from your library."
+        },
+        "recently_played": {
+            "label": "Recently played tracks",
+            "description": "Show the tracks you've played most recently as a playlist."
+        },
+        "recently_added_tracks": {
+            "label": "Recently added tracks",
+            "description": "Show the tracks most recently added to your library as a playlist."
+        },
+        "infinite_mix": {
+            "label": "Infinite Mix (library)",
+            "description": "An endless, ever-changing playlist that draws 25 random tracks from your full library each time the queue is about to run out. No pre-loading — memory usage stays constant regardless of library size."
+        },
+        "infinite_mix_favorites": {
+            "label": "Infinite Mix (favorites)",
+            "description": "Like Infinite Mix, but limited to your favorited tracks. 25 fresh random favorites are added whenever the queue is nearly empty."
+        }       
     },
     "similar_tracks": "Similar tracks",
     "show_info": "Show info",
@@ -1644,7 +1692,8 @@
             "log_load_failed": "Failed to load log for {0}.",
             "log_copied": "Task log copied to clipboard.",
             "log_copy_failed": "Failed to copy task log.",
-            "log_download_started": "Task log download started."
+            "log_download_started": "Task log download started.",
+            "log_download_failed": "No task log available to download."
         }
     },
     "background_task": {
@@ -1696,6 +1745,8 @@
         "favorites_yes": "Yes",
         "field_album_is": "Album is",
         "field_album_is_not": "Album is not",
+        "field_album_type_is": "Album type is",
+        "field_album_type_is_not": "Album type is not",
         "field_artist_is": "Artist is",
         "field_artist_is_not": "Artist is not",
         "field_favorite": "Favorite",

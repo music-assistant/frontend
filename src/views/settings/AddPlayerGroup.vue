@@ -91,7 +91,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/plugins/api";
-import { markdownToHtml } from "@/helpers/utils";
+import { groupMemberPickerVisible, markdownToHtml } from "@/helpers/utils";
 import { PlayerFeature, PlayerType } from "@/plugins/api/interfaces";
 
 // global refs
@@ -116,7 +116,12 @@ const syncPlayers = computed(() => {
   if (props.provider === "universal_group") {
     // for universal groups, show all available non-group players, regardless of provider
     return Object.values(api.players)
-      .filter((x) => x.available && x.type != PlayerType.GROUP && !x.hide_in_ui)
+      .filter(
+        (x) =>
+          x.available &&
+          x.type != PlayerType.GROUP &&
+          groupMemberPickerVisible(x),
+      )
       .sort((a, b) =>
         (a.name ?? "")
           .toUpperCase()
@@ -127,7 +132,11 @@ const syncPlayers = computed(() => {
     // for sync groups, show all available non-group players that are sync compatible
     return Object.values(api.players)
       .filter((x) => {
-        if (!x.available || x.type === PlayerType.GROUP || x.hide_in_ui)
+        if (
+          !x.available ||
+          x.type === PlayerType.GROUP ||
+          !groupMemberPickerVisible(x)
+        )
           return false;
         if (!x.supported_features.includes(PlayerFeature.SET_MEMBERS))
           return false;
@@ -157,7 +166,7 @@ const syncPlayers = computed(() => {
       (x) =>
         x.available &&
         x.type != PlayerType.GROUP &&
-        !x.hide_in_ui &&
+        groupMemberPickerVisible(x) &&
         x.provider == providerDetails.value?.instance_id,
     )
     .sort((a, b) =>

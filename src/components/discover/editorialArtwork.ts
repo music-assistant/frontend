@@ -32,10 +32,14 @@ export function itemInitials(name: string): string {
 export function itemArtwork(
   item: AnyItem,
   size = 320,
+  preferFanart = false,
 ): { image: string | undefined; gradient: string; initials?: string } {
-  const image =
-    getImageThumbForItem(item, ImageType.FANART, size) ??
-    getImageThumbForItem(item, ImageType.THUMB, size);
+  // When requested, prefer wide fanart for the background and fall back to the
+  // regular thumbnail art (which itself falls back to landscape) when none.
+  const image = preferFanart
+    ? (getImageThumbForItem(item, ImageType.FANART, size) ??
+      getImageThumbForItem(item, ImageType.THUMB, size))
+    : getImageThumbForItem(item, ImageType.THUMB, size);
   // For artists/albums with no artwork, surface the initials over the banner.
   const showInitials =
     !image &&
