@@ -115,6 +115,7 @@
         v-for="(row, idx) in displayedRows"
         :key="row.folder.uri"
         :title="folderTitle(row.folder)"
+        :subtitle="row.folder.subtitle"
         :provider="folderProvider(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
         :tiles-per-view="tilesPerView"

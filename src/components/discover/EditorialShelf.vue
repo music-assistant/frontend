@@ -9,7 +9,6 @@
       <slot name="header">
         <div class="ed-shelf__titles">
           <h2 class="ed-shelf__title">{{ title }}</h2>
-          <slot name="title-append"></slot>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
@@ -100,7 +99,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const CARD_PAD = 16;
 const PHONE_GAP = 4;
-const PHONE_CARD_PAD = 8
+const PHONE_CARD_PAD = 8;
 const MIN_ART = 120;
 const MAX_ART = 280;
 const ART_TOP_OFFSET = 12;
@@ -229,6 +228,11 @@ onBeforeUnmount(() => {
 }
 .ed-shelf__titles {
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ed-shelf__title-row {
+  display: flex;
   align-items: baseline;
   gap: 12px;
   min-width: 0;
@@ -247,6 +251,7 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
+  margin-left: 1px;
 }
 .ed-shelf__aside {
   display: flex;
