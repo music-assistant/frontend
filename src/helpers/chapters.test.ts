@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeChapterTicks } from "./chapters";
-import type { MediaItemChapter } from "../plugins/api/interfaces";
+import type { MediaItemChapter } from "@/plugins/api/interfaces";
 
 const chapters: MediaItemChapter[] = [
   { position: 1, name: "Intro", start: 0 },
