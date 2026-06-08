@@ -13,14 +13,17 @@
     </template>
 
     <template #title>
-      <slot name="title">
-        <button
-          v-if="title || (store.mobileLayout && isDiscoverPage)"
-          @click="emit('titleClicked')"
-        >
-          {{ title || (isDiscoverPage ? $t("discover") : "") }}
-        </button>
-      </slot>
+      <div :class="{ 'toolbar-title-wrapper': subtitle }">
+        <slot name="title">
+          <button
+            v-if="title || (store.mobileLayout && isDiscoverPage)"
+            @click="emit('titleClicked')"
+          >
+            {{ title || (isDiscoverPage ? $t("discover") : "") }}
+          </button>
+        </slot>
+        <span v-if="subtitle" class="toolbar-subtitle">{{ subtitle }}</span>
+      </div>
     </template>
 
     <template v-if="$slots.append || menuItems?.length" #append>
@@ -174,6 +177,7 @@ interface Props {
   color?: string;
   icon?: string | Component;
   title?: string;
+  subtitle?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
   isDiscoverPage?: boolean;
@@ -183,6 +187,7 @@ withDefaults(defineProps<Props>(), {
   color: "transparent",
   icon: undefined,
   title: undefined,
+  subtitle: undefined,
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
@@ -241,5 +246,19 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.toolbar-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.toolbar-subtitle {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.6;
 }
 </style>

@@ -623,13 +623,23 @@ export class MusicAssistantApi {
   public getArtistTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
-    in_library_only = false,
-    provider_filter?: string[],
+    provider_filter?: string,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
       provider_instance_id_or_domain,
-      in_library_only,
+      provider_filter,
+    });
+  }
+
+  public getArtistTopTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/artists/top_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
       provider_filter,
     });
   }
@@ -637,23 +647,37 @@ export class MusicAssistantApi {
   public getArtistAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
-    in_library_only = false,
+    provider_filter?: string,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
       item_id,
       provider_instance_id_or_domain,
-      in_library_only,
+      provider_filter,
+    });
+  }
+
+  public getArtistTopAlbums(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/top_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
     });
   }
 
   public getSimilarArtists(
     item_id: string,
     provider_instance_id_or_domain: string,
+    provider_filter?: string,
     limit = 25,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/similar_artists", {
       item_id,
       provider_instance_id_or_domain,
+      provider_filter,
       limit,
     });
   }

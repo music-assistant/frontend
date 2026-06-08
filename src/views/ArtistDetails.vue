@@ -1,47 +1,49 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
+    <!-- albums in library (library artists only) -->
     <ItemsListing
-      v-if="itemDetails && !loading"
+      v-if="itemDetails && !loading && itemDetails.provider == 'library'"
       itemtype="artistalbums"
+      :path="`artistalbums.${itemId}.${provider}`"
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="true"
-      :show-library-only-filter="
-        itemDetails.provider == 'library' && api.hasStreamingProviders.value
-      "
+      :show-provider-filter="true"
+      :single-provider-filter="true"
+      :provider-filter-options="mappingProviderIds"
       :show-album-type-filter="true"
       :show-refresh-button="false"
       :load-items="loadArtistAlbums"
       :sort-keys="[
-        'name',
         'sort_name',
+        'name',
         'year',
         'name_desc',
         'sort_name_desc',
         'year_desc',
       ]"
       :title="$t('albums')"
+      :subtitle="$t('in_library')"
       :allow-collapse="true"
     />
-    <br />
+    <!-- tracks in library (library artists only) -->
     <ItemsListing
-      v-if="itemDetails && !loading"
+      v-if="itemDetails && !loading && itemDetails.provider == 'library'"
       itemtype="artisttracks"
+      :path="`artisttracks.${itemId}.${provider}`"
       :parent-item="itemDetails"
       :show-provider="true"
       :show-favorites-only-filter="true"
-      :show-library-only-filter="
-        itemDetails.provider == 'library' && api.hasStreamingProviders.value
-      "
-      :show-provider-filter="itemDetails.provider == 'library'"
+      :show-provider-filter="mappingProviderIds.length > 1"
+      :single-provider-filter="true"
+      :provider-filter-options="mappingProviderIds"
       :show-refresh-button="false"
       :show-track-number="false"
       :load-items="loadArtistTracks"
       :sort-keys="[
-        'original',
-        'name',
         'sort_name',
+        'name',
         'album',
         'album_sort_name',
         'duration',
@@ -50,23 +52,64 @@
         'duration_desc',
       ]"
       :title="$t('tracks')"
+      :subtitle="$t('in_library')"
       :allow-collapse="true"
     />
-    <br />
+    <!-- top albums -->
+    <ItemsListing
+      v-if="itemDetails && !loading && hasTopAlbumsProvider"
+      itemtype="artistalbums"
+      :path="`artisttopalbums.${itemId}.${provider}`"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
+      :show-provider-filter="itemDetails.provider == 'library'"
+      :single-provider-filter="true"
+      :provider-filter-options="topAlbumsProviderIds"
+      :show-refresh-button="false"
+      :load-items="loadArtistTopAlbums"
+      :sort-keys="['original', 'name', 'year', 'year_desc']"
+      :title="$t('artist_topalbums')"
+      :allow-collapse="true"
+      :hide-on-empty="true"
+    />
+    <!-- top tracks -->
+    <ItemsListing
+      v-if="itemDetails && !loading && hasTopTracksProvider"
+      itemtype="artisttracks"
+      :path="`artisttoptracks.${itemId}.${provider}`"
+      :parent-item="itemDetails"
+      :show-provider="true"
+      :show-favorites-only-filter="false"
+      :show-provider-filter="itemDetails.provider == 'library'"
+      :single-provider-filter="true"
+      :provider-filter-options="topTracksProviderIds"
+      :show-refresh-button="false"
+      :show-track-number="false"
+      :load-items="loadArtistTopTracks"
+      :sort-keys="['original', 'name', 'duration', 'duration_desc']"
+      :title="$t('artist_toptracks')"
+      :allow-collapse="true"
+      :hide-on-empty="true"
+    />
     <!-- similar artists -->
     <ItemsListing
       v-if="itemDetails && !loading && hasSimilarArtistsProvider"
       itemtype="similarartists"
+      :path="`similarartists.${itemId}.${provider}`"
       :parent-item="itemDetails"
       :show-provider="false"
       :show-favorites-only-filter="false"
       :show-library-only-filter="false"
+      :show-provider-filter="itemDetails.provider == 'library'"
+      :single-provider-filter="true"
+      :provider-filter-options="similarArtistsProviderIds"
       :show-refresh-button="false"
       :load-items="loadSimilarArtists"
       :title="$t('similar_artists')"
       :allow-collapse="true"
+      :hide-on-empty="true"
     />
-    <br />
     <!-- media images -->
     <MediaItemImages
       v-if="
@@ -77,7 +120,6 @@
       v-model="itemDetails.metadata.images"
       @update:model-value="UpdateItemInDb"
     />
-    <br />
     <!-- provider mapping details -->
     <ProviderDetails v-if="itemDetails" :item-details="itemDetails" />
     <br />
@@ -154,31 +196,89 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
+// instance_ids of every provider supporting a given feature (any type)
+const providersWithFeature = (feature: ProviderFeature) =>
+  computed(() =>
+    Object.values(api.providers)
+      .filter((p) => p.supported_features.includes(feature))
+      .map((p) => p.instance_id),
+  );
+
+// library albums/tracks can be filtered to the providers the artist is
+// actually mapped to.
+const mappingProviderIds = computed(() => [
+  ...new Set(
+    (itemDetails.value?.provider_mappings || []).map(
+      (mapping) => mapping.provider_instance,
+    ),
+  ),
+]);
+
+// top albums/tracks and similar artists can be filtered to any provider
+// supporting the respective feature.
+const topAlbumsProviderIds = providersWithFeature(
+  ProviderFeature.ARTIST_TOPALBUMS,
+);
+const topTracksProviderIds = providersWithFeature(
+  ProviderFeature.ARTIST_TOPTRACKS,
+);
+const similarArtistsProviderIds = providersWithFeature(
+  ProviderFeature.SIMILAR_ARTISTS,
+);
+
+// a listing is shown when at least one provider can supply it
+const hasTopAlbumsProvider = computed(
+  () => topAlbumsProviderIds.value.length > 0,
+);
+const hasTopTracksProvider = computed(
+  () => topTracksProviderIds.value.length > 0,
+);
+const hasSimilarArtistsProvider = computed(
+  () => similarArtistsProviderIds.value.length > 0,
+);
+
 const loadArtistAlbums = async function (params: LoadDataParams) {
+  if (!itemDetails.value) return [];
   return await api.getArtistAlbums(
-    props.itemId,
-    props.provider,
-    params.libraryOnly,
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    params.provider?.[0],
   );
 };
 
-const hasSimilarArtistsProvider = computed(() =>
-  Object.values(api.providers).some((p) =>
-    p.supported_features.includes(ProviderFeature.SIMILAR_ARTISTS),
-  ),
-);
-
-const loadSimilarArtists = async function (_params: LoadDataParams) {
+const loadArtistTracks = async function (params: LoadDataParams) {
   if (!itemDetails.value) return [];
-  return await api.getSimilarArtists(props.itemId, props.provider);
+  return await api.getArtistTracks(
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    params.provider?.[0],
+  );
 };
 
-const loadArtistTracks = async function (params: LoadDataParams) {
-  return await api.getArtistTracks(
-    props.itemId,
-    props.provider,
-    params.libraryOnly,
-    params.provider && params.provider.length > 0 ? params.provider : undefined,
+const loadArtistTopAlbums = async function (params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  return await api.getArtistTopAlbums(
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    params.provider?.[0],
+  );
+};
+
+const loadArtistTopTracks = async function (params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  return await api.getArtistTopTracks(
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    params.provider?.[0],
+  );
+};
+
+const loadSimilarArtists = async function (params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  return await api.getSimilarArtists(
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    params.provider?.[0],
   );
 };
 

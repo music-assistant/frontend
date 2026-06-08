@@ -5,6 +5,7 @@
     <Toolbar
       :icon="icon"
       :title="title"
+      :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
@@ -302,8 +303,15 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  // when set, the provider filter allows only a single selection at a time
+  singleProviderFilter?: boolean;
+  // explicit list of provider instance_ids to offer in the provider filter.
+  // when set, it replaces the itemtype-derived list (and is not limited to
+  // music providers).
+  providerFilterOptions?: string[];
   updateAvailable?: boolean;
   title?: string;
+  subtitle?: string;
   hideOnEmpty?: boolean;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
@@ -340,12 +348,15 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  singleProviderFilter: false,
+  providerFilterOptions: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
   total: undefined,
   infiniteScroll: true,
   title: undefined,
+  subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
   showHideEmptyFilter: false,
@@ -717,16 +728,22 @@ const changeAlbumTypeFilter = function (albumType: string) {
 };
 
 const changeProviderFilter = function (providerId: string) {
-  if (params.value.provider?.includes(providerId))
+  if (props.singleProviderFilter) {
+    // single-select: clicking the active provider clears it, otherwise it
+    // replaces the current selection.
+    params.value.provider = params.value.provider?.includes(providerId)
+      ? undefined
+      : [providerId];
+  } else if (params.value.provider?.includes(providerId)) {
     params.value.provider = params.value.provider?.filter(
       (id) => id !== providerId,
     );
-  else {
+  } else {
     params.value.provider = params.value.provider || [];
     params.value.provider.push(providerId);
   }
   // If the array is empty, set to undefined (show all)
-  if (params.value.provider.length === 0) {
+  if (params.value.provider?.length === 0) {
     params.value.provider = undefined;
   }
   setItemsListingPreference(
@@ -822,6 +839,30 @@ const isPlayActionInProgress = computed(() => {
 });
 
 const musicProviders = computed(() => {
+  // explicit provider list supplied by the parent: resolve the given
+  // instance_ids to labels as-is, without any itemtype/type filtering.
+  if (props.providerFilterOptions) {
+    return props.providerFilterOptions
+      .map((instanceId) => api.providers[instanceId])
+      .filter((provider) => provider !== undefined)
+      .filter(
+        // honour an admin's personal provider filter, like the default branch
+        // (but without the music-only type guard: these options are
+        // intentionally allowed to include any provider type).
+        (provider) =>
+          !(
+            store.currentUser &&
+            store.currentUser.provider_filter.length &&
+            !store.currentUser.provider_filter.includes(provider.instance_id)
+          ),
+      )
+      .map((provider) => ({
+        label: provider.name,
+        value: provider.instance_id,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
   // source of that mediatype. This is intentionally broader than the
   // LIBRARY_* (sync) features: a provider without a syncable library can still
@@ -1326,7 +1367,10 @@ const restoreSettings = async function () {
   ) {
     const validIds = new Set(musicProviders.value.map((p) => p.value));
     const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
-    params.value.provider = filtered.length > 0 ? filtered : undefined;
+    // single-select mode keeps at most one provider, so collapse any stored
+    // multi-select value (e.g. left over from a previous multi-select listing).
+    const next = props.singleProviderFilter ? filtered.slice(0, 1) : filtered;
+    params.value.provider = next.length > 0 ? next : undefined;
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
