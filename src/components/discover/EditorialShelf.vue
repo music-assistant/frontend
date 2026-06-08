@@ -99,8 +99,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const CARD_PAD = 16;
-const PHONE_GAP = 10;
-const PHONE_CARD_PAD = 8;
+const PHONE_GAP = 4;
+const PHONE_CARD_PAD = 8
 const MIN_ART = 120;
 const MAX_ART = 280;
 const ART_TOP_OFFSET = 12;
