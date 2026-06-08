@@ -398,4 +398,16 @@ const onMenu = (e: MouseEvent) => {
   text-overflow: ellipsis;
   margin-top: 2px;
 }
+
+@media (max-width: 500px) {
+  .ed-card {
+    --ed-card-pad: 4px;
+  }
+  .ed-card__meta {
+    margin-top: 4px;
+  }
+  .ed-card__sub {
+    margin-top: 0;
+  }
+}
 </style>
