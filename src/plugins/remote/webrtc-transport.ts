@@ -156,7 +156,6 @@ export class WebRTCTransport extends BaseTransport {
   disconnect(): void {
     this.intentionalClose = true;
     this.clearReconnectTimer();
-    this.clearStableConnectionTimer();
     this.cleanup();
     this.setState(TransportState.DISCONNECTED);
     this.emit("close", "Disconnected by user");
@@ -553,6 +552,9 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private cleanup(): void {
+    // Cancel the pending backoff reset so it can't fire after teardown.
+    this.clearStableConnectionTimer();
+
     if (this.dataChannel) {
       // Detach first so our own close doesn't fire onclose -> scheduleReconnect (the loop).
       this.dataChannel.onopen = null;
