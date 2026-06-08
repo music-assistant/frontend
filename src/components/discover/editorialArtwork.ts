@@ -47,10 +47,11 @@ export function itemArtwork(
       item.media_type === MediaType.ALBUM);
   const useBanner = !image || item.media_type === MediaType.GENRE;
   const bannerGradient = `url("${bannerArtwork}") center / cover no-repeat`;
+  const placeholder = "rgba(var(--v-theme-on-surface), 0.08)";
 
   return {
     image,
-    gradient: useBanner ? bannerGradient : "rgb(28, 28, 28)",
+    gradient: useBanner ? bannerGradient : placeholder,
     initials: showInitials ? itemInitials(item.name) : undefined,
   };
 }
