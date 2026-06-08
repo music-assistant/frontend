@@ -61,11 +61,7 @@ import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import { handleMenuBtnClick, parseBool } from "@/helpers/utils";
-import {
-  ContentType,
-  type MediaItemType,
-  type ItemMapping,
-} from "@/plugins/api/interfaces";
+import { ContentType, type MediaItemType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
@@ -142,7 +138,7 @@ const onMenu = function (evt: MouseEvent) {
 .panel-item-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   margin-top: 8px;
   height: 32px;
 }

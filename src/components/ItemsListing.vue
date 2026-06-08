@@ -89,7 +89,9 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+                ['tracks', 'albums', 'albumtracks', 'artists'].includes(
+                  itemtype,
+                )
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
