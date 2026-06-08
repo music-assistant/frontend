@@ -182,15 +182,16 @@ import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
+  MediaType,
+  PlaybackState,
   type EventMessage,
   type Genre,
   type ItemMapping,
   type MediaItemTypeOrItemMapping,
-  MediaType,
-  PlaybackState,
   type Player,
   type RecommendationFolder,
 } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useDebounceFn } from "@vueuse/core";
@@ -223,10 +224,10 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
 
-// Size the recommendation tiles on the same responsive curve as the rest of
-// the app (panelViewItemResponsive), plus the half-tile peek. Recomputes on
-// resize because panelViewItemResponsive reads the reactive breakpoint width.
-const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
+const tilesPerView = computed(() => {
+  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
+  return isPhone ? 1.8 : panelViewItemResponsive(0) + 0.5;
+});
 
 const players = computed(() =>
   Object.values(api.players)
