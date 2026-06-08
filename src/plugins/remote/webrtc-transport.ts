@@ -481,6 +481,9 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private scheduleReconnect(): void {
+    // Connection is down; cancel any pending backoff reset before we bail or retry.
+    this.clearStableConnectionTimer();
+
     // One reconnect at a time: bail if a timer is pending or a connect is in flight.
     if (this.reconnectTimer || this.connectInFlight) {
       return;
@@ -494,8 +497,6 @@ export class WebRTCTransport extends BaseTransport {
       return;
     }
 
-    // Connection is down; cancel any pending backoff reset.
-    this.clearStableConnectionTimer();
     this.setState(TransportState.RECONNECTING);
     this.emit("close", "Connection lost, reconnecting...");
 
