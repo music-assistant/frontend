@@ -45,6 +45,10 @@ const FALLBACK_ICE_SERVERS: IceServerConfig[] = [
   { urls: "stun:stun.cloudflare.com:3478" },
 ];
 
+// A connection must hold this long before its success resets the backoff,
+// otherwise a flapping loop (which briefly connects) keeps backoff flat.
+const STABLE_CONNECTION_THRESHOLD_MS = 5000;
+
 export class WebRTCTransport extends BaseTransport {
   private options: Required<WebRTCTransportOptions>;
   private signaling: SignalingClient;
@@ -54,7 +58,10 @@ export class WebRTCTransport extends BaseTransport {
   private remoteDescriptionSet = false;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalClose = false;
+  // Serialises connect(); concurrent negotiation corrupts the shared pc/SDP state.
+  private connectInFlight = false;
   private httpProxyCallbacks = new Map<
     string,
     {
@@ -91,6 +98,11 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   async connect(): Promise<void> {
+    // Let the in-flight attempt finish; a concurrent negotiation corrupts pc/SDP state.
+    if (this.connectInFlight) {
+      return;
+    }
+    this.connectInFlight = true;
     this.intentionalClose = false;
     this.setState(TransportState.CONNECTING);
 
@@ -117,8 +129,8 @@ export class WebRTCTransport extends BaseTransport {
       // Wait for connection to be established
       await this.waitForConnection();
 
-      // Reset reconnect attempts on successful connection
-      this.reconnectAttempts = 0;
+      // Reset backoff only once the connection proves stable, not on every connect.
+      this.scheduleBackoffReset();
       this.setState(TransportState.CONNECTED);
     } catch (error) {
       console.error("[WebRTCTransport] Connection failed:", error);
@@ -136,12 +148,15 @@ export class WebRTCTransport extends BaseTransport {
       // else: keep RECONNECTING state for next retry
 
       throw error;
+    } finally {
+      this.connectInFlight = false;
     }
   }
 
   disconnect(): void {
     this.intentionalClose = true;
     this.clearReconnectTimer();
+    this.clearStableConnectionTimer();
     this.cleanup();
     this.setState(TransportState.DISCONNECTED);
     this.emit("close", "Disconnected by user");
@@ -187,7 +202,9 @@ export class WebRTCTransport extends BaseTransport {
 
     this.peerConnection.oniceconnectionstatechange = () => {
       const state = this.peerConnection?.iceConnectionState;
-      if (state === "failed" || state === "disconnected") {
+      // `disconnected` is transient and usually self-heals; only act on the
+      // terminal `failed` state (the browser escalates `disconnected` to it).
+      if (state === "failed") {
         this.handleConnectionFailure();
       }
     };
@@ -465,9 +482,8 @@ export class WebRTCTransport extends BaseTransport {
   }
 
   private scheduleReconnect(): void {
-    // Prevent duplicate reconnect schedules
-    if (this._state === TransportState.RECONNECTING && this.reconnectTimer) {
-      console.log("[WebRTCTransport] Reconnect already scheduled, ignoring");
+    // One reconnect at a time: bail if a timer is pending or a connect is in flight.
+    if (this.reconnectTimer || this.connectInFlight) {
       return;
     }
 
@@ -479,21 +495,25 @@ export class WebRTCTransport extends BaseTransport {
       return;
     }
 
-    this.clearReconnectTimer();
+    // Connection is down; cancel any pending backoff reset.
+    this.clearStableConnectionTimer();
     this.setState(TransportState.RECONNECTING);
     this.emit("close", "Connection lost, reconnecting...");
 
-    const delay = Math.min(
+    const backoff = Math.min(
       this.options.reconnectDelay *
         Math.pow(this.options.reconnectDelayGrowth, this.reconnectAttempts),
       this.options.maxReconnectDelay,
     );
+    // Jitter so reconnects don't line up at fixed intervals.
+    const delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
 
     console.log(
       `[WebRTCTransport] Scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${delay}ms`,
     );
 
     this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null;
       this.reconnectAttempts++;
       // Clean up old connection first
       this.cleanup();
@@ -517,13 +537,37 @@ export class WebRTCTransport extends BaseTransport {
     }
   }
 
+  private scheduleBackoffReset(): void {
+    this.clearStableConnectionTimer();
+    this.stableConnectionTimer = setTimeout(() => {
+      this.reconnectAttempts = 0;
+      this.stableConnectionTimer = null;
+    }, STABLE_CONNECTION_THRESHOLD_MS);
+  }
+
+  private clearStableConnectionTimer(): void {
+    if (this.stableConnectionTimer) {
+      clearTimeout(this.stableConnectionTimer);
+      this.stableConnectionTimer = null;
+    }
+  }
+
   private cleanup(): void {
     if (this.dataChannel) {
+      // Detach first so our own close doesn't fire onclose -> scheduleReconnect (the loop).
+      this.dataChannel.onopen = null;
+      this.dataChannel.onclose = null;
+      this.dataChannel.onerror = null;
+      this.dataChannel.onmessage = null;
       this.dataChannel.close();
       this.dataChannel = null;
     }
 
     if (this.peerConnection) {
+      // Detach first so close doesn't re-enter handleConnectionFailure().
+      this.peerConnection.onicecandidate = null;
+      this.peerConnection.oniceconnectionstatechange = null;
+      this.peerConnection.onconnectionstatechange = null;
       this.peerConnection.close();
       this.peerConnection = null;
     }
