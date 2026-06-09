@@ -25,6 +25,7 @@
       ]"
       :title="$t('albums')"
       :subtitle="$t('in_library')"
+      :empty-message="$t('artist_no_library_albums')"
       :allow-collapse="true"
     />
     <!-- tracks in library (library artists only) -->
@@ -53,6 +54,7 @@
       ]"
       :title="$t('tracks')"
       :subtitle="$t('in_library')"
+      :empty-message="$t('artist_no_library_tracks')"
       :allow-collapse="true"
     />
     <!-- top albums -->

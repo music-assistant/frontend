@@ -24,6 +24,8 @@
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
+    "artist_no_library_albums": "You don't have any albums in your library for this artist.",
+    "artist_no_library_tracks": "You don't have any tracks in your library for this artist.",
     "artist_topalbums": "Top albums",
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
@@ -823,7 +825,7 @@
         "infinite_mix_favorites": {
             "label": "Infinite Mix (favorites)",
             "description": "Like Infinite Mix, but limited to your favorited tracks. 25 fresh random favorites are added whenever the queue is nearly empty."
-        }       
+        }
     },
     "similar_tracks": "Similar tracks",
     "show_info": "Show info",
