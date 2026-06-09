@@ -96,6 +96,29 @@
     "playlist": "Playlist",
     "playlist_tracks": "Playlist tracks",
     "playlists": "Playlists",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Listen Live",
+            "schedule_programmes": "Schedule and Programmes",
+            "today": "Today",
+            "yesterday": "Yesterday"
+        },
+        "deezer": {
+            "genre_flows": "Deezer Genre Flows",
+            "mood_flows": "Deezer Mood Flows",
+            "radios": "Deezer Radios"
+        },
+        "lastfm": {
+            "country_top_artists": "Top artists for {0}",
+            "country_top_tracks": "Top tracks for {0}",
+            "tag_albums": "Discover {0} Albums",
+            "tag_artists": "Discover {0} Artists",
+            "tag_tracks": "Discover {0} Tracks"
+        },
+        "opensubsonic": {
+            "starred_items": "Starred Items"
+        }
+    },
     "provider_details": "Provider details",
     "queue": "Queue",
     "queue_clear": "Clear queue",
@@ -823,7 +846,7 @@
         "infinite_mix_favorites": {
             "label": "Infinite Mix (favorites)",
             "description": "Like Infinite Mix, but limited to your favorited tracks. 25 fresh random favorites are added whenever the queue is nearly empty."
-        }       
+        }
     },
     "similar_tracks": "Similar tracks",
     "show_info": "Show info",
@@ -1073,7 +1096,16 @@
         "most_played_tracks": "Most played tracks",
         "never_played_tracks": "Never / rarely played",
         "recent_favorite_albums": "Recently favorited albums",
-        "recently_added_tracks": "Recently added tracks"
+        "recently_added_tracks": "Recently added tracks",
+        "discover_similar_artists": "Discover similar artists",
+        "discover_similar_tracks": "Discover similar tracks",
+        "global_top_artists": "Global top artists",
+        "global_top_tracks": "Global top tracks",
+        "made_for_you": "Made for you",
+        "most_played_albums": "Most played albums",
+        "recently_added_albums": "New albums",
+        "recommended_albums": "Recommended albums",
+        "recommended_artists": "Recommended artists"
     },
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave edit mode",
