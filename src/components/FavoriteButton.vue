@@ -33,6 +33,7 @@ const toggle = (e: Event) => {
 <style scoped>
 .favorite-icon {
   cursor: pointer;
+  display: block;
   flex-shrink: 0;
   opacity: 0.7;
   outline: none;
