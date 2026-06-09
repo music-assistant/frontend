@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
@@ -9,6 +9,8 @@
       :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
+      :enforce-overflow-menu="true"
+      :menu-active="hasActiveFilters"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -164,28 +166,28 @@
         </v-virtual-scroll>
       </v-infinite-scroll>
 
-      <!-- show alert if no item found -->
-      <div v-if="!loading && pagedItems.length == 0">
-        <v-alert
-          v-if="
-            !loading &&
-            pagedItems.length == 0 &&
-            (params.search || params.favoritesOnly)
-          "
-          :title="$t('no_content_filter')"
-        >
-          <v-btn
-            v-if="params.search"
-            style="margin-top: 15px"
-            @click="redirectSearch"
-          >
+      <!-- subtle message shown when there are no items to display -->
+      <Empty
+        v-if="!loading && pagedItems.length == 0"
+        class="border-none gap-3 py-8"
+      >
+        <EmptyMedia variant="icon">
+          <FilterX v-if="hasActiveFilters" class="h-5 w-5" />
+          <ListMusic v-else class="h-5 w-5" />
+        </EmptyMedia>
+        <EmptyDescription>
+          {{
+            hasActiveFilters
+              ? $t("no_content_filter")
+              : emptyMessage || $t("no_content")
+          }}
+        </EmptyDescription>
+        <EmptyContent v-if="hasActiveFilters && params.search">
+          <Button variant="outline" size="sm" @click="redirectSearch">
             {{ $t("try_global_search") }}
-          </v-btn>
-        </v-alert>
-        <v-alert v-else-if="!loading && pagedItems.length == 0">
-          {{ $t("no_content") }}
-        </v-alert>
-      </div>
+          </Button>
+        </EmptyContent>
+      </Empty>
 
       <!-- box shown when item(s) selected -->
       <v-snackbar
@@ -224,7 +226,14 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed, Layers } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyMedia,
+} from "@/components/ui/empty";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -313,6 +322,8 @@ export interface Props {
   title?: string;
   subtitle?: string;
   hideOnEmpty?: boolean;
+  // custom message shown when the listing has no items and no active filters
+  emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
@@ -343,6 +354,7 @@ const props = withDefaults(defineProps<Props>(), {
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
+  emptyMessage: undefined,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
@@ -402,6 +414,10 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// below this item count, the per-listing search option is hidden to reduce
+// clutter (consumers can force it on/off via the showSearchButton prop).
+const SEARCH_ITEM_THRESHOLD = 25;
 
 interface DiscHeader {
   isDiscHeader: true;
@@ -812,8 +828,56 @@ const isSearchActive = computed(() => {
   return searchActive;
 });
 
+// true when the listing has been narrowed by any user-controllable filter
+// (search, favorites, provider, genre, album-type, ...). Used to keep an
+// otherwise hidden-on-empty listing visible — and to explain an empty result —
+// whenever the emptiness might be caused by filtering rather than missing data.
+const hasActiveFilters = computed(() => {
+  const p = params.value;
+  const genreActive = Array.isArray(p.genreIds)
+    ? p.genreIds.length > 0
+    : p.genreIds !== undefined;
+  return Boolean(
+    (p.search && p.search.length > 0) ||
+    p.favoritesOnly ||
+    p.libraryOnly ||
+    p.albumArtistsFilter ||
+    p.hideFullyPlayed ||
+    (p.provider && p.provider.length > 0) ||
+    (p.albumType && p.albumType.length > 0) ||
+    genreActive ||
+    // hide-empty genres filter: true (hide empty) and null (defaults only)
+    // both narrow the result; false/undefined means "show all"
+    p.hideEmptyFilter === true ||
+    p.hideEmptyFilter === null,
+  );
+});
+
+// total number of items this listing represents. For flat (loadItems)
+// listings every item is loaded up front, so allItems holds the true total.
+// Server-paged listings only know their total when the parent passes it.
+const totalItemCount = computed(() => {
+  if (props.total !== undefined) return props.total;
+  if (props.loadItems != null) return allItems.value.length;
+  // server-paged without a known total: assume large enough to warrant search
+  return Number.POSITIVE_INFINITY;
+});
+
+// whether the search option is offered. An explicit showSearchButton wins;
+// otherwise search is auto-hidden for small listings to reduce clutter, but
+// kept available while a search is actually in progress.
+const searchAvailable = computed(() => {
+  if (props.showSearchButton === true) return true;
+  if (props.showSearchButton === false) return false;
+  return (
+    isSearchActive.value ||
+    showSearch.value ||
+    totalItemCount.value >= SEARCH_ITEM_THRESHOLD
+  );
+});
+
 const showSearchInput = computed(() => {
-  return showSearch.value && expanded.value;
+  return searchAvailable.value && showSearch.value && expanded.value;
 });
 
 const isLibraryItem = computed(() => {
@@ -1152,8 +1216,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search
-  if (props.showSearchButton !== false) {
+  // toggle search (auto-hidden for small listings; always lives in the menu)
+  if (searchAvailable.value) {
     items.push({
       label: isSearchActive.value
         ? "tooltip.search_filter_active"
@@ -1162,7 +1226,6 @@ const menuItems = computed(() => {
       action: toggleSearch,
       active: isSearchActive.value,
       disabled: loading.value,
-      overflowAllowed: false,
     });
   }
 
@@ -1204,12 +1267,13 @@ const menuItems = computed(() => {
     items.push(...props.extraMenuItems);
   }
 
-  // toggle expand
+  // toggle collapse/expand — kept as a dedicated button next to the menu
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
       icon: "mdi-chevron-up",
       action: toggleExpand,
+      overflowAllowed: false,
     });
   }
 

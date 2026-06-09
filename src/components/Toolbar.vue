@@ -32,8 +32,8 @@
         v-for="menuItem of menuItems?.filter(
           (x) =>
             !x.hide &&
-            !enforceOverflowMenu &&
-            (getBreakpointValue('bp8') || x.overflowAllowed === false),
+            (x.overflowAllowed === false ||
+              (!enforceOverflowMenu && getBreakpointValue('bp8'))),
         )"
         :key="menuItem.label"
         variant="text"
@@ -79,12 +79,14 @@
               style="width: 15px; margin-left: -10px"
               v-bind="props"
             >
-              <v-icon
-                icon="mdi-dots-vertical"
-                :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                size="22"
-                style="margin-right: -5px; width: 15px"
-              />
+              <v-badge :model-value="menuActive == true" color="primary" dot>
+                <v-icon
+                  icon="mdi-dots-vertical"
+                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                  size="22"
+                  style="margin-right: -5px; width: 15px"
+                />
+              </v-badge>
             </v-btn>
           </template>
           <v-list density="compact" slim tile>
@@ -180,6 +182,8 @@ interface Props {
   subtitle?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
+  // shows an "active" dot on the overflow (3-dots) button, e.g. when filters apply
+  menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
 }
@@ -191,6 +195,7 @@ withDefaults(defineProps<Props>(), {
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
+  menuActive: false,
   iconAction: undefined,
 });
 
