@@ -2141,10 +2141,10 @@
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-2.2.0.tgz#1311378ed247df6d58f8eb8941921965e97e5747"
   integrity sha512-b8XEupJibegiXV+tDUseI8oLQc8ei3d/4Jkb2RpbHh3MfE054ov3uIz2dhFkB3FI8iwYkEh0gGCApkrYggkPNg==
 
-"@sendspin/sendspin-js@3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@sendspin/sendspin-js/-/sendspin-js-3.1.0.tgz#b62b6447dcb4740bf3c61aafc20097b21f9de63e"
-  integrity sha512-tljpoE7JwGIvAMk9M+UBGKkur4ME1RyZRxIV/FFJ0trp6fJOC5bWjewaO8bgm9ybEKO64su5PMbn/u63YzlaMQ==
+"@sendspin/sendspin-js@3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@sendspin/sendspin-js/-/sendspin-js-3.2.0.tgz#504b8cc10c61722ea02541b4dc98ce1005e82ed7"
+  integrity sha512-sxMibcr9eiue5yT0viXxCruq8LTRSEzaz9epmhSp3Qe4gHcksE+JwFOTEJfgkY5kJBmPq22CkYlyvJXcHacK2g==
   dependencies:
     opus-encdec "^0.1.1"
 
