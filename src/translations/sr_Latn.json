@@ -756,6 +756,38 @@
             "title": "Istovremenost analize u pozadini",
             "description": "Kontrolišite koliko pesama se analizira istovremeno tokom noćnog skeniranja u pozadini. Ovo podešavanje se nalazi u glavnoj konfiguraciji strimova.",
             "open_settings": "Otvorite podešavanja strimova"
+        },
+        "all_favorite_tracks": {
+            "label": "Sve omiljene numere",
+            "description": "Napravite plejlistu koja sadrži svaku numeru označenu kao omiljenu u vašoj biblioteci."
+        },
+        "random_artist": {
+            "label": "Nasumični izvođač (iz biblioteke)",
+            "description": "Izaberite nasumičnog izvođača iz biblioteke i dodajte njegove numere u red za reprodukciju."
+        },
+        "random_album": {
+            "label": "Nasumični album (iz biblioteke)",
+            "description": "Izaberite nasumičan album iz biblioteke i dodajte njegove numere u red za reprodukciju."
+        },
+        "random_tracks": {
+            "label": "500 nasumičnih numera (iz biblioteke)",
+            "description": "Napravite plejlistu od 500 nasumičnih numera iz vaše biblioteke."
+        },
+        "recently_played": {
+            "label": "Nedavno puštane numere",
+            "description": "Prikažite nedavno puštane numere u vidu plejliste."
+        },
+        "recently_added_tracks": {
+            "label": "Nedavno dodate numere",
+            "description": "Prikažite poslednje dodate numere u vašu biblioteku u vidu plejliste."
+        },
+        "infinite_mix": {
+            "label": "Infinite Mix (library)",
+            "description": "Beskrajna plejlista koja se stalno menja i povlači 25 nasumičnih numera iz vaše cele biblioteke svaki put kada je red za reprodukciju pri kraju. Bez unapred učitavanja — potrošnja memorije ostaje ista bez obzira na veličinu biblioteke."
+        },
+        "infinite_mix_favorites": {
+            "label": "Beskonačni miks (omiljeno)",
+            "description": "Kao Beskonačni miks, ali ograničeno na vaše omiljene numere. 25 novih nasumičnih omiljenih numera dodaje se kada je red za reprodukciju skoro prazan."
         }
     },
     "show_info": "Prikažite informacije",
@@ -1747,5 +1779,16 @@
     "top_picks_for_you": "Preporučeno za vas",
     "with_artists": "sa {artists}",
     "disc": "Disk {number}",
-    "album_type_label": "Tip albuma"
+    "album_type_label": "Tip albuma",
+    "builtin_playlist": {
+        "all_favorite_tracks": "Sve omiljene numere",
+        "random_artist": "Nasumični izvođač (iz biblioteke)",
+        "random_album": "Nasumični album (iz biblioteke)",
+        "random_tracks": "500 nasumičnih numera (iz biblioteke)",
+        "recently_played": "Nedavno reprodukovane numere",
+        "recently_added_tracks": "Nedavno dodate numere",
+        "infinite_mix": "Beskonačni miks (biblioteka)",
+        "infinite_mix_favorites": "Beskonačni miks (omiljeno)"
+    },
+    "now_playing": "Trenutna reprodukcija"
 }

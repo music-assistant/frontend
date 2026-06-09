@@ -1621,7 +1621,8 @@
             "log_load_failed": "Falha ao carregar o registo para {0}.",
             "log_copied": "Registo de tarefas copiado para a área de transferência.",
             "log_copy_failed": "Falha ao copiar o registo de tarefas.",
-            "log_download_started": "Iniciada a transferência do registo de tarefas."
+            "log_download_started": "Iniciada a transferência do registo de tarefas.",
+            "log_download_failed": "Não há registo de tarefas disponível para descarregar."
         }
     },
     "background_task": {
@@ -1733,7 +1734,9 @@
         "name_label": "Nome",
         "name_required": "Por favor, introduza um nome.",
         "results_library": "Resultados da biblioteca",
-        "results_other": "Outros resultados"
+        "results_other": "Outros resultados",
+        "field_album_type_is": "O tipo de álbum é",
+        "field_album_type_is_not": "O tipo de álbum não é"
     },
     "explore": "Explorar",
     "shortcuts": "Atalhos",
@@ -1743,5 +1746,6 @@
     "browse_by_genre": "Procurar por género",
     "top_picks_for_you": "As melhores escolhas para si",
     "with_artists": "com {artists}",
-    "disc": "Disco {number}"
+    "disc": "Disco {number}",
+    "album_type_label": "Tipo de álbum"
 }
