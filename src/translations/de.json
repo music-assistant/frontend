@@ -756,6 +756,38 @@
             "title": "Hintergrundanalyse der Gleichzeitigkeit",
             "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
             "open_settings": "Streams-Einstellungen öffnen"
+        },
+        "all_favorite_tracks": {
+            "label": "Alle favorisierten Titel",
+            "description": "Erstelle eine Playlist, die alle in deiner Bibliothek als Favoriten markierten Titel enthält."
+        },
+        "random_artist": {
+            "label": "Zufälliger Künstler (aus der Bibliothek)",
+            "description": "Wähle einen zufälligen Künstler aus deiner Bibliothek aus und füge seine Titel der Warteschlange hinzu."
+        },
+        "random_album": {
+            "label": "Zufälliges Album (aus der Bibliothek)",
+            "description": "Wähle ein zufälliges Album aus deiner Bibliothek aus und füge dessen Titel zur Warteschlange hinzu."
+        },
+        "random_tracks": {
+            "label": "500 zufällige Titel (aus der Bibliothek)",
+            "description": "Erstelle eine Playlist mit 500 zufällig ausgewählten Titeln aus deiner Bibliothek."
+        },
+        "recently_played": {
+            "label": "Zuletzt gespielte Titel",
+            "description": "Zeige die zuletzt abgespielten Titel als Playlist an."
+        },
+        "recently_added_tracks": {
+            "label": "Kürzlich hinzugefügte Titel",
+            "description": "Zeige die zuletzt zu deiner Bibliothek hinzugefügten Titel als Wiedergabeliste an."
+        },
+        "infinite_mix": {
+            "label": "Unendlicher Mix (Bibliothek)",
+            "description": "Eine endlose, sich ständig verändernde Playlist, die jedes Mal, wenn die Warteschlange fast leer ist, 25 zufällige Titel aus deiner gesamten Bibliothek auswählt. Kein Vorladen – der Speicherverbrauch bleibt unabhängig von der Größe deiner Bibliothek konstant."
+        },
+        "infinite_mix_favorites": {
+            "label": "Unendlicher Mix (Favoriten)",
+            "description": "Wie unendlicher Mix, aber beschränkt auf deine Lieblingstitel. Sobald die Warteschlange fast leer ist, werden 25 neue, zufällig ausgewählte Favoriten hinzugefügt."
         }
     },
     "show_info": "Zeige Informationen",
@@ -1747,5 +1779,18 @@
     "top_picks_for_you": "Top-Auswahl für dich",
     "with_artists": "mit {artists}",
     "disc": "Disk {number}",
-    "album_type_label": "Albumtyp"
+    "album_type_label": "Albumtyp",
+    "builtin_playlist": {
+        "all_favorite_tracks": "Alle favorisierten Titel",
+        "random_artist": "Zufälliger Künstler (aus der Bibliothek)",
+        "random_album": "Zufälliges Album (aus der Bibliothek)",
+        "random_tracks": "500 zufällige Titel (aus der Bibliothek)",
+        "recently_played": "Zuletzt gespielte Titel",
+        "recently_added_tracks": "Kürzlich hinzugefügte Titel",
+        "infinite_mix": "Unendlicher Mix (Bibliothek)",
+        "infinite_mix_favorites": "Unendlicher Mix (Favoriten)"
+    },
+    "now_playing": "Aktuell läuft",
+    "artist_topalbums": "Top-Alben",
+    "in_library": "In deiner Bibliothek"
 }
