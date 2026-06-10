@@ -293,7 +293,11 @@
             "protocol_settings": "Uitvoerprotocol(len)",
             "protocol_output_settings": "{0} ondersteuning inschakelen",
             "dsp": "Digitale signaalverwerking (DSP)",
-            "options": "Speleropties"
+            "options": "Speleropties",
+            "audio": "Audio",
+            "preferences": "Voorkeuren",
+            "display_settings": "Weergave",
+            "airplay": "AirPlay-specifieke instellingen"
         },
         "tts_pre_announce": {
             "label": "Kondig TTS-aankondigingen vooraf aan",
@@ -864,7 +868,7 @@
         "show_all_genres": "Toon alle genres",
         "filter_hide_fully_played": "Verberg volledig afgespeelde afleveringen"
     },
-    "topresult": "Top resultaat",
+    "topresult": "Topresultaat",
     "track": "Nummer",
     "track_number": "Schijf {0} Nummer {1}",
     "tracks": "Nummers",
@@ -921,7 +925,7 @@
     },
     "shuffle_disable": "Shuffle uitschakelen",
     "shuffle_enable": "Shuffle inschakelen",
-    "dont_stop_the_music_enable": "'Don't Stop The Music' inschakelen",
+    "dont_stop_the_music_enable": "'Don't Stop The Music!' inschakelen",
     "dont_stop_the_music_disable": "'Don't Stop The Music!' uitschakelen",
     "open_dsp_settings": "Open DSP-instellingen",
     "audiobook": "Luisterboek",
@@ -1033,7 +1037,16 @@
         "never_played_tracks": "Zelden of nooit afgespeeld",
         "recent_favorite_albums": "Nieuwe favoriete albums",
         "recently_added_tracks": "Onlangs toegevoegde nummers",
-        "inspired_by_recently_played": "Geïnspireerd door onlangs afgespeeld"
+        "inspired_by_recently_played": "Geïnspireerd door onlangs afgespeeld",
+        "discover_similar_artists": "Ontdek vergelijkbare artiesten",
+        "discover_similar_tracks": "Ontdek vergelijkbare nummers",
+        "global_top_artists": "Wereldwijde topartiesten",
+        "global_top_tracks": "Wereldwijde topnummers",
+        "made_for_you": "Voor jou gemaakt",
+        "most_played_albums": "Meest gespeelde albums",
+        "recently_added_albums": "Nieuwe albums",
+        "recommended_albums": "Aanbevolen albums",
+        "recommended_artists": "Aanbevolen artiesten"
     },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
@@ -1713,8 +1726,8 @@
         "seed_artist_pick": "Kies een artiest",
         "seed_track_pick": "Kies een nummer",
         "track_count_hint": "Zonder filters worden alle nummers uit de bibliotheek weergegeven. Door filters toe te voegen, wordt de selectie beperkt.",
-        "year_from": "Vanaf jaar",
-        "year_to": "Naar jaar",
+        "year_from": "Vanaf",
+        "year_to": "Tot",
         "dynamic_sample_heading": "Dynamische afspeellijst",
         "dynamic_sample_note": "De nummers veranderen bij elke speelbeurt. Dit zijn voorbeelden van wat je kunt verwachten.",
         "add_filter": "Filter toevoegen",
@@ -1775,7 +1788,7 @@
     "system": "Systeem",
     "add_url_item_failed": "Item toevoegen mislukt",
     "added_to_library": "\"{0}\" toegevoegd aan bibliotheek",
-    "browse_by_genre": "Bladeren op Genre",
+    "browse_by_genre": "Bladeren op genre",
     "top_picks_for_you": "Topkeuzes voor jou",
     "with_artists": "met {artists}",
     "disc": "Schijf {number}",
@@ -1792,5 +1805,30 @@
     },
     "now_playing": "Speelt nu",
     "artist_topalbums": "Topalbums",
-    "in_library": "In je bibliotheek"
+    "in_library": "In je bibliotheek",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Luister Live",
+            "schedule_programmes": "Agenda en Programma's",
+            "today": "Vandaag",
+            "yesterday": "Gisteren"
+        },
+        "deezer": {
+            "genre_flows": "Deezer Genre Flows",
+            "mood_flows": "Deezer Stemming Flows",
+            "radios": "Deezer Radio's"
+        },
+        "lastfm": {
+            "country_top_artists": "Topartiesten voor {0}",
+            "country_top_tracks": "Topnummers voor {0}",
+            "tag_albums": "Ontdek {0} Albums",
+            "tag_artists": "Ontdek {0} Artiesten",
+            "tag_tracks": "Ontdek {0} Nummers"
+        },
+        "opensubsonic": {
+            "starred_items": "Favoriete Items"
+        }
+    },
+    "artist_no_library_albums": "Je hebt geen albums van deze artiest in je bibliotheek.",
+    "artist_no_library_tracks": "Je hebt geen nummers van deze artiest in je bibliotheek."
 }

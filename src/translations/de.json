@@ -226,7 +226,7 @@
         },
         "default_enqueue_action_artist": {
             "label": "Standard-Warteschlangenoption für Künstlerartikel.",
-            "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
+            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Spiele jetzt die Titel des Künstlers und behalte die verbleibenden Elemente in der Warteschlange.",
                 "replace": "Lösche die Warteschlange und spiele den\/die Titel des Künstlers ab.",
@@ -237,7 +237,7 @@
         },
         "default_enqueue_action_album": {
             "label": "Standard-Warteschlangenoption für Künstlerartikel.",
-            "description": "Definiere die Standard-Warteschlangenaktion für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
+            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
             "options": {
                 "play": "Albumtitel jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
                 "replace": "Lösche die Warteschlange und spiele den\/die Albumtitel ab.",
@@ -293,7 +293,11 @@
             "protocol_settings": "Ausgabeprotokoll(e)",
             "protocol_output_settings": "Unterstützung von {0} aktivieren",
             "dsp": "Digitale Signalverarbeitung (DSP)",
-            "options": "Optionen für Wiedergabegerät"
+            "options": "Optionen für Wiedergabegerät",
+            "audio": "Audio",
+            "preferences": "Präferenzen",
+            "display_settings": "Anzeige",
+            "airplay": "Spezielle AirPlay-Einstellungen"
         },
         "tts_pre_announce": {
             "label": "TTS-Durchsagen vorankündigen",
@@ -1033,7 +1037,16 @@
         "never_played_tracks": "Nie \/ selten gespielt",
         "recent_favorite_albums": "Kürzlich favorisierte Alben",
         "recently_added_tracks": "Kürzlich hinzugefügte Titel",
-        "inspired_by_recently_played": "Inspiriert von kürzlich gespielt"
+        "inspired_by_recently_played": "Inspiriert von kürzlich gespielt",
+        "discover_similar_artists": "Ähnliche Künstler entdecken",
+        "discover_similar_tracks": "Ähnliche Titel entdecken",
+        "global_top_artists": "Globale Top-Künstler",
+        "global_top_tracks": "Globale Top-Titel",
+        "made_for_you": "Für dich gemacht",
+        "most_played_albums": "Meistgespielte Alben",
+        "recently_added_albums": "Neue Alben",
+        "recommended_albums": "Empfohlene Alben",
+        "recommended_artists": "Empfohlene Künstler"
     },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus verlassen",
@@ -1792,5 +1805,30 @@
     },
     "now_playing": "Aktuell läuft",
     "artist_topalbums": "Top-Alben",
-    "in_library": "In deiner Bibliothek"
+    "in_library": "In deiner Bibliothek",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Live hören",
+            "schedule_programmes": "Zeitplan und Programme",
+            "today": "Heute",
+            "yesterday": "Gestern"
+        },
+        "deezer": {
+            "genre_flows": "Deezer Genre Flows",
+            "mood_flows": "Deezer Mood Flows",
+            "radios": "Deezer-Radios"
+        },
+        "lastfm": {
+            "country_top_artists": "Top-Künstler für {0}",
+            "country_top_tracks": "Top-Tracks für {0}",
+            "tag_albums": "Entdecke {0} Alben",
+            "tag_artists": "Entdecke {0} Künstler",
+            "tag_tracks": "Entdecke {0} Tracks"
+        },
+        "opensubsonic": {
+            "starred_items": "Ausgezeichnete Artikel"
+        }
+    },
+    "artist_no_library_albums": "Du hast keine Alben dieses Künstlers in deiner Bibliothek.",
+    "artist_no_library_tracks": "Du hast keine Titel dieses Künstlers in deiner Bibliothek."
 }
