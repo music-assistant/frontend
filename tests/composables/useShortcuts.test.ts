@@ -1,20 +1,27 @@
 import { MediaType } from "@/plugins/api/interfaces";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, h } from "vue";
 
-const { mockUpdateUser, storeMock } = vi.hoisted(() => {
-  return {
-    mockUpdateUser: vi.fn(),
-    storeMock: {
-      currentUser: {
-        user_id: "user-1",
-        preferences: {} as Record<string, unknown>,
+const { mockGetItemByUri, mockSubscribe, mockUpdateUser, storeMock } =
+  vi.hoisted(() => {
+    return {
+      mockGetItemByUri: vi.fn(),
+      mockSubscribe: vi.fn(() => () => {}),
+      mockUpdateUser: vi.fn(),
+      storeMock: {
+        currentUser: {
+          user_id: "user-1",
+          preferences: {} as Record<string, unknown>,
+        },
       },
-    },
-  };
-});
+    };
+  });
 
 vi.mock("@/plugins/api", () => ({
   api: {
+    getItemByUri: mockGetItemByUri,
+    subscribe: mockSubscribe,
     updateUser: mockUpdateUser,
   },
 }));
@@ -31,7 +38,22 @@ import {
   pinShortcutStandalone,
   reorderShortcutStandalone,
   unpinShortcutStandaloneItem,
+  useShortcuts,
 } from "@/composables/useShortcuts";
+import { ApiError } from "@/plugins/api/errors";
+
+function mountShortcuts() {
+  let shortcuts!: ReturnType<typeof useShortcuts>;
+  const wrapper = mount(
+    defineComponent({
+      setup() {
+        shortcuts = useShortcuts();
+        return () => h("div");
+      },
+    }),
+  );
+  return { wrapper, shortcuts };
+}
 
 const PODCAST_FEED = "https://ronzheimer.podigee.io/feed/mp3";
 const ENCODED_PODCAST_URI = `itunes_podcasts://podcast/${encodeURIComponent(PODCAST_FEED)}`;
@@ -224,5 +246,83 @@ describe("useShortcuts standalone helpers", () => {
       ENCODED_PODCAST_URI,
       "builtin://radio/http%3A%2F%2Fexample.com%2Fstream",
     ]);
+  });
+});
+
+describe("useShortcuts stale shortcut pruning", () => {
+  const ALIVE_URI = "library://playlist/99";
+  const DELETED_URI = "library://playlist/123";
+  const alivePlaylist = {
+    provider: "library",
+    media_type: MediaType.PLAYLIST,
+    item_id: "99",
+    uri: ALIVE_URI,
+  };
+
+  beforeEach(() => {
+    mockUpdateUser.mockReset();
+    mockGetItemByUri.mockReset();
+    mockSubscribe.mockClear();
+    storeMock.currentUser = {
+      user_id: "user-1",
+      preferences: {},
+    };
+  });
+
+  it("resolves shortcuts with the global error toast suppressed", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [ALIVE_URI];
+    mockGetItemByUri.mockResolvedValue(alivePlaylist);
+
+    const { wrapper } = mountShortcuts();
+    await flushPromises();
+    wrapper.unmount();
+
+    expect(mockGetItemByUri).toHaveBeenCalledWith(ALIVE_URI, {
+      suppressErrorToast: true,
+    });
+  });
+
+  it("prunes a pinned URI when the item no longer exists on the server", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      DELETED_URI,
+      ALIVE_URI,
+    ];
+    mockGetItemByUri.mockImplementation((uri: string) =>
+      uri === DELETED_URI
+        ? Promise.reject(new ApiError(2, "playlist not found in library: 123"))
+        : Promise.resolve(alivePlaylist),
+    );
+
+    const { wrapper, shortcuts } = mountShortcuts();
+    await flushPromises();
+
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      ALIVE_URI,
+    ]);
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+    expect(shortcuts.pinnedItems.value).toEqual([alivePlaylist]);
+    wrapper.unmount();
+  });
+
+  it("keeps a pinned URI on transient (network/transport) errors", async () => {
+    storeMock.currentUser.preferences["sidebar.shortcuts"] = [
+      DELETED_URI,
+      ALIVE_URI,
+    ];
+    mockGetItemByUri.mockImplementation((uri: string) =>
+      uri === DELETED_URI
+        ? Promise.reject(new Error("connection lost"))
+        : Promise.resolve(alivePlaylist),
+    );
+
+    const { wrapper } = mountShortcuts();
+    await flushPromises();
+
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
+      DELETED_URI,
+      ALIVE_URI,
+    ]);
+    wrapper.unmount();
   });
 });

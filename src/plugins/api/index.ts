@@ -5,6 +5,7 @@ import { toast } from "vue-sonner";
 import { $t } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
+import { ApiError } from "./errors";
 import { getDeviceName } from "./helpers";
 import {
   type Album,
@@ -101,6 +102,7 @@ export class MusicAssistantApi {
     {
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
+      suppressErrorToast?: boolean;
     }
   >;
 
@@ -1266,11 +1268,18 @@ export class MusicAssistantApi {
     });
   }
 
-  public getItemByUri(uri: string): Promise<MediaItemType> {
+  public getItemByUri(
+    uri: string,
+    options?: { suppressErrorToast?: boolean },
+  ): Promise<MediaItemType> {
     // Get single music item providing a mediaitem uri.
-    return this.sendCommand("music/item_by_uri", {
-      uri,
-    });
+    return this.sendCommand(
+      "music/item_by_uri",
+      {
+        uri,
+      },
+      options,
+    );
   }
 
   public refreshItem(
@@ -2345,7 +2354,7 @@ export class MusicAssistantApi {
         errorMsg.includes("Authentication required") ||
         errorMsg.toLowerCase().includes("unauthorized");
 
-      if (!isAuthError) {
+      if (!isAuthError && !resultPromise?.suppressErrorToast) {
         toast.error(msg.details || msg.error_code);
       }
     } else if (DEBUG) {
@@ -2372,7 +2381,7 @@ export class MusicAssistantApi {
 
     this.commands.delete(msg.message_id);
     if ("error_code" in msg) {
-      resultPromise.reject(msg.details || msg.error_code);
+      resultPromise.reject(new ApiError(Number(msg.error_code), msg.details));
     } else {
       msg = msg as SuccessResultMessage;
       resultPromise.resolve(msg.result);
@@ -2809,6 +2818,7 @@ export class MusicAssistantApi {
   public sendCommand<Result>(
     command: string,
     args?: Record<string, unknown>,
+    options?: { suppressErrorToast?: boolean },
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -2816,6 +2826,7 @@ export class MusicAssistantApi {
       this.commands.set(cmdId, {
         resolve: resolve as (result: unknown) => void,
         reject,
+        suppressErrorToast: options?.suppressErrorToast,
       });
       this._sendCommand(command, args, cmdId);
     });

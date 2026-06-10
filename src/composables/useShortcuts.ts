@@ -1,5 +1,6 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { api } from "@/plugins/api";
+import { isMediaNotFoundError } from "@/plugins/api/errors";
 import type {
   Album,
   Artist,
@@ -336,7 +337,7 @@ export function useShortcuts() {
     const prunedUris: string[] = [];
 
     const settled = await Promise.allSettled(
-      uris.map((uri) => api.getItemByUri(uri)),
+      uris.map((uri) => api.getItemByUri(uri, { suppressErrorToast: true })),
     );
     settled.forEach((result, i) => {
       const uri = uris[i];
@@ -348,8 +349,12 @@ export function useShortcuts() {
           // Item explicitly gone (null / unsupported type) — prune.
           prunedUris.push(uri);
         }
+      } else if (isMediaNotFoundError(result.reason)) {
+        // Item deleted server-side while no frontend was listening
+        // (e.g. provider removed) — prune.
+        prunedUris.push(uri);
       }
-      // rejected = network/transport error — keep URI pinned, don't prune.
+      // other rejections = network/transport error — keep URI pinned, don't prune.
     });
 
     resolvedItems.value = results;
@@ -409,9 +414,10 @@ export function useShortcuts() {
     );
     if (toAdd.length > 0) {
       const settled = await Promise.allSettled(
-        toAdd.map((uri) => api.getItemByUri(uri)),
+        toAdd.map((uri) => api.getItemByUri(uri, { suppressErrorToast: true })),
       );
-      settled.forEach((result) => {
+      const prunedUris: string[] = [];
+      settled.forEach((result, i) => {
         if (
           result.status === "fulfilled" &&
           result.value &&
@@ -421,9 +427,21 @@ export function useShortcuts() {
             ...resolvedItems.value,
             result.value as ShortcutItem,
           ];
+        } else if (
+          result.status === "rejected" &&
+          isMediaNotFoundError(result.reason)
+        ) {
+          // Item deleted server-side — prune so it doesn't linger forever.
+          prunedUris.push(toAdd[i]);
         }
-        // rejected = network/backend error — don't mutate pinned URIs here.
+        // other rejections = network/backend error — don't mutate pinned URIs here.
       });
+      if (prunedUris.length > 0) {
+        await setPreference(
+          PREF_KEY,
+          pinnedUris.value.filter((u) => !prunedUris.includes(u)),
+        );
+      }
     }
   });
 
