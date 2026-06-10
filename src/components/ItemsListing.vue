@@ -314,6 +314,10 @@ export interface Props {
   showProviderFilter?: boolean;
   // when set, the provider filter allows only a single selection at a time
   singleProviderFilter?: boolean;
+  // when set, the provider filter is a required single selector: exactly one
+  // provider is always selected (defaulting to the first available option) and
+  // it cannot be cleared to "all".
+  requireProviderSelection?: boolean;
   // explicit list of provider instance_ids to offer in the provider filter.
   // when set, it replaces the itemtype-derived list (and is not limited to
   // music providers).
@@ -361,6 +365,7 @@ const props = withDefaults(defineProps<Props>(), {
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
   singleProviderFilter: false,
+  requireProviderSelection: false,
   providerFilterOptions: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
@@ -744,7 +749,12 @@ const changeAlbumTypeFilter = function (albumType: string) {
 };
 
 const changeProviderFilter = function (providerId: string) {
-  if (props.singleProviderFilter) {
+  if (props.requireProviderSelection) {
+    // required selector: always keep exactly one provider selected — clicking
+    // the active provider is a no-op (it cannot be cleared to "all").
+    if (params.value.provider?.[0] === providerId) return;
+    params.value.provider = [providerId];
+  } else if (props.singleProviderFilter) {
     // single-select: clicking the active provider clears it, otherwise it
     // replaces the current selection.
     params.value.provider = params.value.provider?.includes(providerId)
@@ -770,6 +780,16 @@ const changeProviderFilter = function (providerId: string) {
   );
   loadData(true, undefined, true);
 };
+
+// the provider list shown by both the provider filter and the provider selector
+const providerFilterSubItems = () =>
+  musicProviders.value.map((provider) => ({
+    label: provider.label,
+    selected: params.value.provider?.includes(provider.value),
+    action: () => {
+      changeProviderFilter(provider.value);
+    },
+  }));
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
@@ -843,7 +863,8 @@ const hasActiveFilters = computed(() => {
     p.libraryOnly ||
     p.albumArtistsFilter ||
     p.hideFullyPlayed ||
-    (p.provider && p.provider.length > 0) ||
+    // a required selector always has a provider chosen — that is not a "filter"
+    (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
     (p.albumType && p.albumType.length > 0) ||
     genreActive ||
     // hide-empty genres filter: true (hide empty) and null (defaults only)
@@ -998,6 +1019,22 @@ const musicProviders = computed(() => {
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
+
+// whether the provider filter is offered. An explicit showProviderFilter wins;
+// otherwise (like the search button) it is shown by default whenever the parent
+// supplies a curated provider list and more than one provider can contribute.
+const providerFilterAvailable = computed(() => {
+  if (props.showProviderFilter === false) return false;
+  if (musicProviders.value.length <= 1) return false;
+  if (props.showProviderFilter === true) return true;
+  return props.providerFilterOptions !== undefined;
+});
+
+// only one provider can be active at a time in both single-select and the
+// stricter required-selection mode.
+const singleProviderSelect = computed(
+  () => props.singleProviderFilter || props.requireProviderSelection,
+);
 
 watchEffect(() => {
   if (!showSearchInput.value) {
@@ -1160,24 +1197,18 @@ const menuItems = computed(() => {
     });
   }
 
-  // provider filter
-  if (props.showProviderFilter && musicProviders.value.length > 1) {
+  // provider filter — lives in the overflow menu alongside the other filters and
+  // shows the active dot when it narrows results (multi-select stays open to
+  // toggle several; single-select closes on pick).
+  if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
       icon: "mdi-package-variant",
       disabled: loading.value,
-      active: params.value.provider && params.value.provider.length > 0,
-      closeOnContentClick: false,
+      active: !!params.value.provider && params.value.provider.length > 0,
+      closeOnContentClick: props.singleProviderFilter,
       overflowAllowed: true,
-      subItems: musicProviders.value.map((provider) => {
-        return {
-          label: provider.label,
-          selected: params.value.provider?.includes(provider.value),
-          action: () => {
-            changeProviderFilter(provider.value);
-          },
-        };
-      }),
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -1227,6 +1258,21 @@ const menuItems = computed(() => {
       active: isSearchActive.value,
       disabled: loading.value,
       overflowAllowed: false,
+    });
+  }
+
+  // provider selector — a required single selection shown as a dedicated button
+  // beside search (like the conditional search button). It always has a provider
+  // chosen, so it is not a filter and never shows the active dot.
+  if (providerFilterAvailable.value && props.requireProviderSelection) {
+    items.push({
+      label: "tooltip.select_provider",
+      icon: "mdi-package-variant",
+      disabled: loading.value,
+      // single selection: close on pick so only one stays checked.
+      closeOnContentClick: true,
+      overflowAllowed: false,
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -1425,17 +1471,23 @@ const restoreSettings = async function () {
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
-  if (
-    props.showProviderFilter === true &&
-    prefs.providerFilter &&
-    musicProviders.value.length > 1
-  ) {
+  if (providerFilterAvailable.value && prefs.providerFilter) {
     const validIds = new Set(musicProviders.value.map((p) => p.value));
     const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
     // single-select mode keeps at most one provider, so collapse any stored
     // multi-select value (e.g. left over from a previous multi-select listing).
-    const next = props.singleProviderFilter ? filtered.slice(0, 1) : filtered;
+    const next = singleProviderSelect.value ? filtered.slice(0, 1) : filtered;
     params.value.provider = next.length > 0 ? next : undefined;
+  }
+
+  // required selector: when nothing valid is stored, default to the first
+  // available provider so exactly one is always selected.
+  if (
+    props.requireProviderSelection &&
+    musicProviders.value.length > 0 &&
+    !params.value.provider?.length
+  ) {
+    params.value.provider = [musicProviders.value[0].value];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
