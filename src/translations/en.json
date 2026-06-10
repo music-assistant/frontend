@@ -213,10 +213,10 @@
             "label": "Items to select when you play an (in-library) artist.",
             "description": "If you want to play an artist, what items should be enqueued?",
             "options": {
-                "library_tracks": "Only in-library tracks",
-                "library_album_tracks": "All tracks from all albums in the library",
-                "all_tracks": "All (top) tracks from (all) provider(s)",
-                "all_album_tracks": "All tracks from all albums from (all) provider(s)"
+                "top_tracks": "Artist top tracks only",
+                "library_tracks": "In-library tracks for the artist only",
+                "prefer_library": "Prefer library, fall back to top",
+                "all_tracks": "All tracks from all providers"
             }
         },
         "default_enqueue_select_album": {
