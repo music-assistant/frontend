@@ -50,7 +50,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { DEFAULT_MENU_ITEMS } from "@/constants";
+import { DEFAULT_MENU_ITEMS, DEVICE_SETTING_KEYS } from "@/constants";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -214,22 +214,19 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
       const entry = config.value.find((e) => e.key === key);
       if (!entry) continue;
 
-      if (entry.category === "preferences") {
-        // Save to backend via user preferences
-        await setPreference(key, values[key]);
-        hasPerUserChanges = true;
-      } else {
-        // Save to localStorage (display_settings and web_player settings)
+      if (DEVICE_SETTING_KEYS.has(key)) {
+        // Save to localStorage (per-device settings)
         const storageKey = `frontend.settings.${key}`;
         const value = values[key];
         if (value != null) {
           localStorage.setItem(storageKey, value.toString());
-          if (key === "theme") {
-            mode.value = value.toString() as "light" | "dark" | "auto";
-          }
         } else {
           localStorage.removeItem(storageKey);
         }
+      } else {
+        // Save to backend via user preferences
+        await setPreference(key, values[key]);
+        hasPerUserChanges = true;
       }
     }
 
