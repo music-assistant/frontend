@@ -342,9 +342,13 @@
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
+            "audio": "Audio",
             "advanced": "Advanced",
             "generic": "Generic",
+            "preferences": "Preferences",
+            "display_settings": "Display",
             "announcements": "Announcements",
+            "airplay": "AirPlay specific settings",
             "player_controls": "Player controls",
             "sync_options": "Sync/import options",
             "builtin_playlists": "Builtin Playlists",
