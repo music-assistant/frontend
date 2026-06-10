@@ -79,6 +79,11 @@ const getItemUrl = (item: ShortcutItem) => {
 const getFallbackIcon = (item: ShortcutItem): LucideIcon =>
   MEDIA_TYPE_FALLBACK_ICON[item.media_type] ?? Music;
 
+const getDisplayName = (item: ShortcutItem): string =>
+  item.media_type === MediaType.GENRE && item.name
+    ? item.name.charAt(0).toUpperCase() + item.name.slice(1)
+    : item.name;
+
 const thumbMap = computed(() =>
   Object.fromEntries(
     pinnedItems.value.map((item) => [
@@ -131,7 +136,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
               :as="RouterLinkComponent"
               :to="url"
               :is-active="isActive(url)"
-              :tooltip="item.name"
+              :tooltip="getDisplayName(item)"
               :class="[
                 isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
                 isActive(url)
@@ -148,7 +153,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
                   'shortcut-thumb',
                   isCollapsed ? 'shortcut-thumb--collapsed' : '',
                 ]"
-                :alt="item.name"
+                :alt="getDisplayName(item)"
               />
               <component
                 :is="getFallbackIcon(item)"
@@ -159,7 +164,7 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
                 ]"
               />
               <span v-if="!isCollapsed" class="shortcut-label">
-                <span class="shortcut-name">{{ item.name }}</span>
+                <span class="shortcut-name">{{ getDisplayName(item) }}</span>
                 <span class="shortcut-type">{{ t(item.media_type) }}</span>
               </span>
             </SidebarMenuButton>
@@ -227,6 +232,24 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   width: 1.75rem;
   height: 1.75rem;
   margin-right: 0;
+}
+
+/* The fallback icon renders as a direct-child <svg>, which AppSidebar's global
+   `[data-sidebar="menu-button"] > svg { width: 1.6rem !important }` rule (meant
+   for nav icons) shrinks — making icon-only shortcuts indent their label
+   differently from image ones. Match the image thumb size. `!important` plus
+   the extra .shortcut-thumb class (higher specificity) is required to beat that
+   global rule across its height breakpoints. */
+:deep([data-sidebar="menu-button"] > svg.shortcut-thumb) {
+  width: 2rem !important;
+  height: 2rem !important;
+  margin-left: 0.25rem !important;
+  margin-right: 0.75rem !important;
+}
+:deep([data-sidebar="menu-button"] > svg.shortcut-thumb--collapsed) {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  margin-right: 0 !important;
 }
 
 .shortcut-label {
