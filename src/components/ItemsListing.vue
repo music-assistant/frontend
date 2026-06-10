@@ -1216,7 +1216,7 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search (auto-hidden for small listings; always lives in the menu)
+  // toggle search (auto-hidden for small listings)
   if (searchAvailable.value) {
     items.push({
       label: isSearchActive.value
@@ -1226,6 +1226,7 @@ const menuItems = computed(() => {
       action: toggleSearch,
       active: isSearchActive.value,
       disabled: loading.value,
+      overflowAllowed: false,
     });
   }
 
