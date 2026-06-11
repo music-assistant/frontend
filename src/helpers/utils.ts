@@ -26,6 +26,8 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import type { MediaItemPalette } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
+import { $t } from "@/plugins/i18n";
+import { toast } from "vue-sonner";
 import { webPlayer } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
@@ -746,6 +748,12 @@ export const handlePlayBtnClick = function (
   forceMenu?: boolean,
   sortBy?: string,
 ) {
+  // a failed play action must never be silent: without feedback the play
+  // button appears dead (e.g. while the connection is re-establishing)
+  const onPlayError = (err: Error) => {
+    console.error("Play action failed:", err);
+    toast.error($t("play_failed"));
+  };
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
     if (
@@ -755,15 +763,16 @@ export const handlePlayBtnClick = function (
       store.activePlayerQueue
     ) {
       // special case: playing a track from a playlist/album - play from here
-      api.playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy);
-
+      api
+        .playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy)
+        .catch(onPlayError);
       return;
     }
     // else: play the item directly
-    api.playMedia(item).then(() => {});
+    api.playMedia(item).catch(onPlayError);
     return;
   }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY);
+  showPlayMenuForMediaItem(item, parentItem, posX, posY).catch(onPlayError);
 };
 
 /* Handle media item click */
