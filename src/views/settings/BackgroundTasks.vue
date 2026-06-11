@@ -119,6 +119,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { copyToClipboard } from "@/helpers/utils";
 import { Trash2 } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -426,18 +427,20 @@ const showTaskDetails = async (task: BackgroundTask) => {
 };
 
 const copyLogs = async () => {
-  try {
-    await navigator.clipboard.writeText(taskLogText.value);
+  const copied = await copyToClipboard(taskLogText.value);
+  if (copied) {
     toast.success(t("background_tasks.toast.log_copied"));
-  } catch (error) {
-    toast.error(
-      getErrorMessage(error, t("background_tasks.toast.log_copy_failed")),
-    );
+  } else {
+    toast.error(t("background_tasks.toast.log_copy_failed"));
   }
 };
 
 const downloadLogs = () => {
   if (!selectedTask.value) return;
+  if (!taskLogText.value) {
+    toast.error(t("background_tasks.toast.log_download_failed"));
+    return;
+  }
   const url = window.URL.createObjectURL(
     new Blob([taskLogText.value], { type: "text/plain" }),
   );
@@ -447,7 +450,10 @@ const downloadLogs = () => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  // Revoke after the browser has had a chance to start the download. Revoking
+  // synchronously right after click() can race the download and produce an
+  // empty file in some browsers.
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   toast.success(t("background_tasks.toast.log_download_started"));
 };
 

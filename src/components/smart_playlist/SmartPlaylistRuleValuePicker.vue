@@ -73,7 +73,7 @@ interface Option {
   item?: Artist | Album | Genre;
 }
 
-type Source = "genre" | "artist" | "album";
+type Source = "genre" | "artist" | "album" | "album_type";
 
 const props = defineProps<{
   source: Source;
@@ -91,9 +91,11 @@ const query = ref("");
 const remoteResults = ref<Option[]>([]);
 const isSearching = ref(false);
 
-// Genre options are preloaded and filtered client-side; artist/album are
+// Genre and album_type options are preloaded and filtered client-side; artist/album are
 // fetched remotely as the user types.
-const isRemote = computed(() => props.source !== "genre");
+const isRemote = computed(
+  () => props.source !== "genre" && props.source !== "album_type",
+);
 
 const filteredPreloaded = computed(() => {
   const base = props.preloadedOptions.filter(

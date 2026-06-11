@@ -3,7 +3,11 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
-    :class="{ unavailable: !isAvailable, 'listitem-selecting': showCheckboxes }"
+    :class="{
+      unavailable: !isAvailable,
+      'listitem-selecting': showCheckboxes,
+      'album-track-row': albumTrackView,
+    }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
@@ -242,6 +246,7 @@
           showFavorite &&
           !$vuetify.display.mobile
         "
+        class="favorite-button-wrapper"
       >
         <FavouriteButton :item="item" />
       </div>
@@ -563,6 +568,14 @@ const onPlayClick = function (evt: PointerEvent) {
     opacity: 1;
     pointer-events: auto;
   }
+}
+
+.album-track-row :deep(.v-list-item__content) {
+  margin-bottom: 1px;
+}
+
+.favorite-button-wrapper {
+  margin-inline: 10px;
 }
 
 .track-duration {

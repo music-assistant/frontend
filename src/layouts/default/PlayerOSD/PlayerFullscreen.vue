@@ -7,6 +7,7 @@
     z-index="9000"
     :retain-focus="false"
     persistent
+    no-click-animation
   >
     <v-card
       class="fullscreen-player-card"
@@ -1335,8 +1336,18 @@ const virtualScrollRef = ref<InstanceType<
 > | null>(null);
 const loadingMore = ref(false);
 const allItemsLoaded = ref(false);
+// Number of queue items fetched per page, and the distance we keep loaded past
+// the current index so the "queue" tab (sliced from current_index) never empties.
+const QUEUE_PAGE_SIZE = 50;
+// Bumped on every reset; an in-flight page load compares against it to detect it
+// belongs to an outdated queue state and must discard its result.
+let loadGeneration = 0;
 
 const resetItems = async function () {
+  // invalidate any in-flight load and release the loading guard, so a fetch that
+  // errored (e.g. on a dropped remote connection) cannot wedge later loads.
+  loadGeneration += 1;
+  loadingMore.value = false;
   tempHide.value = true;
   queueItems.value = [];
   allItemsLoaded.value = false;
@@ -1355,23 +1366,44 @@ const loadNextPage = async function () {
     return;
   }
   loadingMore.value = true;
-  const pageSize = 50;
+  const generation = loadGeneration;
   const offset = queueItems.value.length;
   // On first load, ensure we fetch enough items to cover past the current
   // index so that nextItems (which slices from current_index) has data.
-  const minNeeded = (store.activePlayerQueue.current_index || 0) + pageSize;
+  const minNeeded =
+    (store.activePlayerQueue.current_index || 0) + QUEUE_PAGE_SIZE;
   const limit =
-    offset === 0 ? Math.max(pageSize, minNeeded - offset) : pageSize;
-  const result = await api.getPlayerQueueItems(
-    store.activePlayerQueue.queue_id,
-    limit,
-    offset,
-  );
-  queueItems.value.push(...result);
-  if (result.length < limit) {
-    allItemsLoaded.value = true;
+    offset === 0
+      ? Math.max(QUEUE_PAGE_SIZE, minNeeded - offset)
+      : QUEUE_PAGE_SIZE;
+  try {
+    const result = await api.getPlayerQueueItems(
+      store.activePlayerQueue.queue_id,
+      limit,
+      offset,
+    );
+    // a reset happened while awaiting; this page is stale, so drop it
+    if (generation !== loadGeneration) return;
+    queueItems.value.push(...result);
+    if (result.length < limit) {
+      allItemsLoaded.value = true;
+    }
+  } finally {
+    // leave the guard untouched if a reset already started a newer load
+    if (generation === loadGeneration) {
+      loadingMore.value = false;
+    }
   }
-  loadingMore.value = false;
+};
+
+// fetch another page when the loaded window no longer extends a full page past
+// the current index, which it is sliced from to build the "queue" tab
+const ensureWindowAheadOfIndex = function () {
+  if (!store.showFullscreenPlayer || !store.showQueueItems) return;
+  const index = store.activePlayerQueue?.current_index ?? 0;
+  if (queueItems.value.length - index < QUEUE_PAGE_SIZE) {
+    loadNextPage();
+  }
 };
 
 const onQueueScroll = function (e: Event) {
@@ -1404,20 +1436,17 @@ onMounted(async () => {
   }
 });
 
-// load initial page when queue items become visible
+// load the initial page (or top up a window that went stale while hidden) when
+// the queue items become visible
 watch(
   [() => store.showFullscreenPlayer, () => store.showQueueItems],
-  () => {
-    if (
-      store.showFullscreenPlayer &&
-      store.showQueueItems &&
-      queueItems.value.length === 0
-    ) {
-      loadNextPage();
-    }
-  },
+  ensureWindowAheadOfIndex,
   { immediate: true },
 );
+
+// keep extending the window as playback advances so the "queue" tab, which
+// slices nextItems from current_index, keeps showing the upcoming items
+watch(() => store.activePlayerQueue?.current_index, ensureWindowAheadOfIndex);
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
