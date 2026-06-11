@@ -58,6 +58,7 @@
     "play_now": "Play Now",
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
+    "play_failed": "Play action failed",
     "play_radio": "Start Radio",
     "player_type": {
         "group": "Group",
