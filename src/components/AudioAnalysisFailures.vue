@@ -46,6 +46,14 @@
       </div>
 
       <p
+        v-else-if="error !== null && total === 0"
+        class="text-destructive text-sm"
+        data-test="aa-failures-error"
+      >
+        {{ $t("settings.audio_analysis_failures.load_error") }}
+      </p>
+
+      <p
         v-else-if="total === 0"
         class="text-muted-foreground text-sm"
         data-test="aa-failures-empty"
@@ -177,6 +185,7 @@ const {
   pageCount,
   hasNextPage,
   loading,
+  error,
   refresh,
   next,
   prev,
@@ -210,7 +219,8 @@ async function onClearOne(row: FailureRow): Promise<void> {
   try {
     await clearOne(row);
     toast.success($t("settings.audio_analysis_failures.cleared_one"));
-  } catch {
+  } catch (err) {
+    console.error("Failed to clear audio analysis failure:", err);
     toast.error($t("settings.audio_analysis_failures.clear_error"));
   } finally {
     pendingKey.value = null;
@@ -222,7 +232,8 @@ async function onClearAll(): Promise<void> {
   try {
     const count = await clearAll();
     toast.success($t("settings.audio_analysis_failures.cleared_many", [count]));
-  } catch {
+  } catch (err) {
+    console.error("Failed to clear audio analysis failures:", err);
     toast.error($t("settings.audio_analysis_failures.clear_error"));
   } finally {
     clearingAll.value = false;

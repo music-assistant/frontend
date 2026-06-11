@@ -100,10 +100,11 @@ describe("useAudioAnalysisFailures", () => {
     expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/failures");
   });
 
-  it("degrades to an empty list when the failures command is unsupported", async () => {
+  it("degrades to an empty list without an error when the failures command is unsupported", async () => {
     mockSendCommand.mockImplementation((cmd: string) => {
       if (cmd === "audio_analysis/failures")
-        return Promise.reject(new Error("command not found"));
+        // The api client rejects with the server's details string verbatim.
+        return Promise.reject("Invalid command: audio_analysis/failures");
       return Promise.resolve(undefined);
     });
 
@@ -113,6 +114,72 @@ describe("useAudioAnalysisFailures", () => {
     expect(f.loading.value).toBe(false);
     expect(f.total.value).toBe(0);
     expect(f.pageRows.value).toEqual([]);
+    expect(f.error.value).toBeNull();
+  });
+
+  it("surfaces an error when the failures fetch fails for a real reason", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockSendCommand.mockImplementation((cmd: string) =>
+      cmd === "audio_analysis/failures"
+        ? Promise.reject("Connection lost")
+        : Promise.resolve(undefined),
+    );
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+
+    expect(f.error.value).toContain("Connection lost");
+    expect(f.total.value).toBe(0);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("keeps previously loaded rows when a later refresh fails", async () => {
+    mockFailures([
+      serverFailure({ item_id: "1" }),
+      serverFailure({ item_id: "2" }),
+    ]);
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    expect(f.total.value).toBe(2);
+
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockSendCommand.mockImplementation((cmd: string) =>
+      cmd === "audio_analysis/failures"
+        ? Promise.reject("Connection lost")
+        : Promise.resolve(undefined),
+    );
+    await f.refresh();
+
+    expect(f.total.value).toBe(2);
+    expect(f.pageRows.value.map((r) => r.itemId)).toEqual(["1", "2"]);
+    expect(f.error.value).toContain("Connection lost");
+    consoleError.mockRestore();
+  });
+
+  it("clears the error once a refresh succeeds again", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockSendCommand.mockImplementation((cmd: string) =>
+      cmd === "audio_analysis/failures"
+        ? Promise.reject("Connection lost")
+        : Promise.resolve(undefined),
+    );
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    expect(f.error.value).not.toBeNull();
+    consoleError.mockRestore();
+
+    mockFailures([serverFailure()]);
+    await f.refresh();
+
+    expect(f.error.value).toBeNull();
+    expect(f.total.value).toBe(1);
   });
 
   it("maps server snake_case rows into camelCase fields", async () => {
@@ -357,6 +424,9 @@ describe("useAudioAnalysisFailures", () => {
   });
 
   it("clearAll re-syncs from the server and throws when a domain clear fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     const rows = [
       serverFailure({ item_id: "1", aa_provider_domain: "sonic_analysis" }),
       serverFailure({ item_id: "2", aa_provider_domain: "loudness" }),
@@ -386,6 +456,41 @@ describe("useAudioAnalysisFailures", () => {
       (c) => c[0] === "audio_analysis/failures",
     ).length;
     expect(fetchesAfter).toBe(fetchesBefore + 1);
+    consoleError.mockRestore();
+  });
+
+  it("clearAll logs the domain and reason of each rejected clear", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mockSendCommand.mockImplementation(
+      (cmd: string, args?: { aa_domain?: string }) => {
+        if (cmd === "audio_analysis/failures")
+          return Promise.resolve([
+            serverFailure({
+              item_id: "1",
+              aa_provider_domain: "sonic_analysis",
+            }),
+            serverFailure({ item_id: "2", aa_provider_domain: "loudness" }),
+          ]);
+        if (cmd === "audio_analysis/failures/clear") {
+          return args?.aa_domain === "sonic_analysis"
+            ? Promise.reject("boom")
+            : Promise.resolve(1);
+        }
+        return Promise.resolve(undefined);
+      },
+    );
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    await expect(f.clearAll()).rejects.toThrow();
+
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("sonic_analysis"),
+      "boom",
+    );
+    consoleError.mockRestore();
   });
 
   it("clearAll deletes once per distinct AA domain and re-syncs from the server", async () => {

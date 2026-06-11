@@ -796,7 +796,8 @@
             "clear_all_description": "This removes all {0} recorded failures so the tracks will be analyzed again on the next scan.",
             "cleared_one": "Failure cleared — the track will be analyzed again.",
             "cleared_many": "Cleared {0} failures.",
-            "clear_error": "Couldn't clear failures. Please try again."
+            "clear_error": "Couldn't clear failures. Please try again.",
+            "load_error": "Couldn't load failures from the server."
         },
         "audio_analysis_description": "Track audio analysis coverage across your providers"
     },
