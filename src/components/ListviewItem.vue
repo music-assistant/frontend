@@ -216,6 +216,7 @@
           showFavorite &&
           !$vuetify.display.mobile
         "
+        class="favorite-button-wrapper"
       >
         <FavouriteButton :item="item" />
       </div>
@@ -434,6 +435,10 @@ const onPlayClick = function (evt: PointerEvent) {
 
 .album-track-row :deep(.v-list-item__content) {
   margin-bottom: 1px;
+}
+
+.favorite-button-wrapper {
+  margin-inline: 10px;
 }
 
 .track-duration {

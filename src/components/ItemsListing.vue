@@ -1,13 +1,16 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
       :title="title"
+      :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
+      :enforce-overflow-menu="true"
+      :menu-active="hasActiveFilters"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -89,7 +92,9 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+                ['tracks', 'albums', 'albumtracks', 'artists'].includes(
+                  itemtype,
+                )
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
@@ -161,28 +166,28 @@
         </v-virtual-scroll>
       </v-infinite-scroll>
 
-      <!-- show alert if no item found -->
-      <div v-if="!loading && pagedItems.length == 0">
-        <v-alert
-          v-if="
-            !loading &&
-            pagedItems.length == 0 &&
-            (params.search || params.favoritesOnly)
-          "
-          :title="$t('no_content_filter')"
-        >
-          <v-btn
-            v-if="params.search"
-            style="margin-top: 15px"
-            @click="redirectSearch"
-          >
+      <!-- subtle message shown when there are no items to display -->
+      <Empty
+        v-if="!loading && pagedItems.length == 0"
+        class="border-none gap-3 py-8"
+      >
+        <EmptyMedia variant="icon">
+          <FilterX v-if="hasActiveFilters" class="h-5 w-5" />
+          <ListMusic v-else class="h-5 w-5" />
+        </EmptyMedia>
+        <EmptyDescription>
+          {{
+            hasActiveFilters
+              ? $t("no_content_filter")
+              : emptyMessage || $t("no_content")
+          }}
+        </EmptyDescription>
+        <EmptyContent v-if="hasActiveFilters && params.search">
+          <Button variant="outline" size="sm" @click="redirectSearch">
             {{ $t("try_global_search") }}
-          </v-btn>
-        </v-alert>
-        <v-alert v-else-if="!loading && pagedItems.length == 0">
-          {{ $t("no_content") }}
-        </v-alert>
-      </div>
+          </Button>
+        </EmptyContent>
+      </Empty>
 
       <!-- box shown when item(s) selected -->
       <v-snackbar
@@ -221,7 +226,14 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed, Layers } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyMedia,
+} from "@/components/ui/empty";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
@@ -300,9 +312,22 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  // when set, the provider filter allows only a single selection at a time
+  singleProviderFilter?: boolean;
+  // when set, the provider filter is a required single selector: exactly one
+  // provider is always selected (defaulting to the first available option) and
+  // it cannot be cleared to "all".
+  requireProviderSelection?: boolean;
+  // explicit list of provider instance_ids to offer in the provider filter.
+  // when set, it replaces the itemtype-derived list (and is not limited to
+  // music providers).
+  providerFilterOptions?: string[];
   updateAvailable?: boolean;
   title?: string;
+  subtitle?: string;
   hideOnEmpty?: boolean;
+  // custom message shown when the listing has no items and no active filters
+  emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
   showHideEmptyFilter?: boolean;
@@ -333,17 +358,22 @@ const props = withDefaults(defineProps<Props>(), {
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
+  emptyMessage: undefined,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  singleProviderFilter: false,
+  requireProviderSelection: false,
+  providerFilterOptions: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
   total: undefined,
   infiniteScroll: true,
   title: undefined,
+  subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
   showHideEmptyFilter: false,
@@ -389,6 +419,10 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// below this item count, the per-listing search option is hidden to reduce
+// clutter (consumers can force it on/off via the showSearchButton prop).
+const SEARCH_ITEM_THRESHOLD = 25;
 
 interface DiscHeader {
   isDiscHeader: true;
@@ -715,16 +749,27 @@ const changeAlbumTypeFilter = function (albumType: string) {
 };
 
 const changeProviderFilter = function (providerId: string) {
-  if (params.value.provider?.includes(providerId))
+  if (props.requireProviderSelection) {
+    // required selector: always keep exactly one provider selected — clicking
+    // the active provider is a no-op (it cannot be cleared to "all").
+    if (params.value.provider?.[0] === providerId) return;
+    params.value.provider = [providerId];
+  } else if (props.singleProviderFilter) {
+    // single-select: clicking the active provider clears it, otherwise it
+    // replaces the current selection.
+    params.value.provider = params.value.provider?.includes(providerId)
+      ? undefined
+      : [providerId];
+  } else if (params.value.provider?.includes(providerId)) {
     params.value.provider = params.value.provider?.filter(
       (id) => id !== providerId,
     );
-  else {
+  } else {
     params.value.provider = params.value.provider || [];
     params.value.provider.push(providerId);
   }
   // If the array is empty, set to undefined (show all)
-  if (params.value.provider.length === 0) {
+  if (params.value.provider?.length === 0) {
     params.value.provider = undefined;
   }
   setItemsListingPreference(
@@ -735,6 +780,16 @@ const changeProviderFilter = function (providerId: string) {
   );
   loadData(true, undefined, true);
 };
+
+// the provider list shown by both the provider filter and the provider selector
+const providerFilterSubItems = () =>
+  musicProviders.value.map((provider) => ({
+    label: provider.label,
+    selected: params.value.provider?.includes(provider.value),
+    action: () => {
+      changeProviderFilter(provider.value);
+    },
+  }));
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
@@ -793,8 +848,57 @@ const isSearchActive = computed(() => {
   return searchActive;
 });
 
+// true when the listing has been narrowed by any user-controllable filter
+// (search, favorites, provider, genre, album-type, ...). Used to keep an
+// otherwise hidden-on-empty listing visible — and to explain an empty result —
+// whenever the emptiness might be caused by filtering rather than missing data.
+const hasActiveFilters = computed(() => {
+  const p = params.value;
+  const genreActive = Array.isArray(p.genreIds)
+    ? p.genreIds.length > 0
+    : p.genreIds !== undefined;
+  return Boolean(
+    (p.search && p.search.length > 0) ||
+    p.favoritesOnly ||
+    p.libraryOnly ||
+    p.albumArtistsFilter ||
+    p.hideFullyPlayed ||
+    // a required selector always has a provider chosen — that is not a "filter"
+    (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
+    (p.albumType && p.albumType.length > 0) ||
+    genreActive ||
+    // hide-empty genres filter: true (hide empty) and null (defaults only)
+    // both narrow the result; false/undefined means "show all"
+    p.hideEmptyFilter === true ||
+    p.hideEmptyFilter === null,
+  );
+});
+
+// total number of items this listing represents. For flat (loadItems)
+// listings every item is loaded up front, so allItems holds the true total.
+// Server-paged listings only know their total when the parent passes it.
+const totalItemCount = computed(() => {
+  if (props.total !== undefined) return props.total;
+  if (props.loadItems != null) return allItems.value.length;
+  // server-paged without a known total: assume large enough to warrant search
+  return Number.POSITIVE_INFINITY;
+});
+
+// whether the search option is offered. An explicit showSearchButton wins;
+// otherwise search is auto-hidden for small listings to reduce clutter, but
+// kept available while a search is actually in progress.
+const searchAvailable = computed(() => {
+  if (props.showSearchButton === true) return true;
+  if (props.showSearchButton === false) return false;
+  return (
+    isSearchActive.value ||
+    showSearch.value ||
+    totalItemCount.value >= SEARCH_ITEM_THRESHOLD
+  );
+});
+
 const showSearchInput = computed(() => {
-  return showSearch.value && expanded.value;
+  return searchAvailable.value && showSearch.value && expanded.value;
 });
 
 const isLibraryItem = computed(() => {
@@ -820,6 +924,30 @@ const isPlayActionInProgress = computed(() => {
 });
 
 const musicProviders = computed(() => {
+  // explicit provider list supplied by the parent: resolve the given
+  // instance_ids to labels as-is, without any itemtype/type filtering.
+  if (props.providerFilterOptions) {
+    return props.providerFilterOptions
+      .map((instanceId) => api.providers[instanceId])
+      .filter((provider) => provider !== undefined)
+      .filter(
+        // honour an admin's personal provider filter, like the default branch
+        // (but without the music-only type guard: these options are
+        // intentionally allowed to include any provider type).
+        (provider) =>
+          !(
+            store.currentUser &&
+            store.currentUser.provider_filter.length &&
+            !store.currentUser.provider_filter.includes(provider.instance_id)
+          ),
+      )
+      .map((provider) => ({
+        label: provider.name,
+        value: provider.instance_id,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   // Map itemtype to the ProviderFeatures that mark a provider as a possible
   // source of that mediatype. This is intentionally broader than the
   // LIBRARY_* (sync) features: a provider without a syncable library can still
@@ -891,6 +1019,22 @@ const musicProviders = computed(() => {
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
+
+// whether the provider filter is offered. An explicit showProviderFilter wins;
+// otherwise (like the search button) it is shown by default whenever the parent
+// supplies a curated provider list and more than one provider can contribute.
+const providerFilterAvailable = computed(() => {
+  if (props.showProviderFilter === false) return false;
+  if (musicProviders.value.length <= 1) return false;
+  if (props.showProviderFilter === true) return true;
+  return props.providerFilterOptions !== undefined;
+});
+
+// only one provider can be active at a time in both single-select and the
+// stricter required-selection mode.
+const singleProviderSelect = computed(
+  () => props.singleProviderFilter || props.requireProviderSelection,
+);
 
 watchEffect(() => {
   if (!showSearchInput.value) {
@@ -1053,24 +1197,18 @@ const menuItems = computed(() => {
     });
   }
 
-  // provider filter
-  if (props.showProviderFilter && musicProviders.value.length > 1) {
+  // provider filter — lives in the overflow menu alongside the other filters and
+  // shows the active dot when it narrows results (multi-select stays open to
+  // toggle several; single-select closes on pick).
+  if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
       icon: "mdi-package-variant",
       disabled: loading.value,
-      active: params.value.provider && params.value.provider.length > 0,
-      closeOnContentClick: false,
+      active: !!params.value.provider && params.value.provider.length > 0,
+      closeOnContentClick: props.singleProviderFilter,
       overflowAllowed: true,
-      subItems: musicProviders.value.map((provider) => {
-        return {
-          label: provider.label,
-          selected: params.value.provider?.includes(provider.value),
-          action: () => {
-            changeProviderFilter(provider.value);
-          },
-        };
-      }),
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -1109,8 +1247,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search
-  if (props.showSearchButton !== false) {
+  // toggle search (auto-hidden for small listings)
+  if (searchAvailable.value) {
     items.push({
       label: isSearchActive.value
         ? "tooltip.search_filter_active"
@@ -1120,6 +1258,21 @@ const menuItems = computed(() => {
       active: isSearchActive.value,
       disabled: loading.value,
       overflowAllowed: false,
+    });
+  }
+
+  // provider selector — a required single selection shown as a dedicated button
+  // beside search (like the conditional search button). It always has a provider
+  // chosen, so it is not a filter and never shows the active dot.
+  if (providerFilterAvailable.value && props.requireProviderSelection) {
+    items.push({
+      label: "tooltip.select_provider",
+      icon: "mdi-package-variant",
+      disabled: loading.value,
+      // single selection: close on pick so only one stays checked.
+      closeOnContentClick: true,
+      overflowAllowed: false,
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -1161,12 +1314,13 @@ const menuItems = computed(() => {
     items.push(...props.extraMenuItems);
   }
 
-  // toggle expand
+  // toggle collapse/expand — kept as a dedicated button next to the menu
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
       icon: "mdi-chevron-up",
       action: toggleExpand,
+      overflowAllowed: false,
     });
   }
 
@@ -1317,14 +1471,23 @@ const restoreSettings = async function () {
   // get stored/default provider filter for this itemtype
   // only apply stored filter if there are multiple providers available
   // with a single provider, any stored filter is either redundant or stale
-  if (
-    props.showProviderFilter === true &&
-    prefs.providerFilter &&
-    musicProviders.value.length > 1
-  ) {
+  if (providerFilterAvailable.value && prefs.providerFilter) {
     const validIds = new Set(musicProviders.value.map((p) => p.value));
     const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
-    params.value.provider = filtered.length > 0 ? filtered : undefined;
+    // single-select mode keeps at most one provider, so collapse any stored
+    // multi-select value (e.g. left over from a previous multi-select listing).
+    const next = singleProviderSelect.value ? filtered.slice(0, 1) : filtered;
+    params.value.provider = next.length > 0 ? next : undefined;
+  }
+
+  // required selector: when nothing valid is stored, default to the first
+  // available provider so exactly one is always selected.
+  if (
+    props.requireProviderSelection &&
+    musicProviders.value.length > 0 &&
+    !params.value.provider?.length
+  ) {
+    params.value.provider = [musicProviders.value[0].value];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)

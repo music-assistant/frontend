@@ -234,6 +234,10 @@ onMounted(() => {
           clientName: getDeviceName(),
           codecs,
           syncDelay,
+          requiredLeadTimeMs: 250,
+          // Ask for a larger buffer when we are being routed through WebRTC.
+          // This increases latency for live streams, but improves stability
+          minBufferMs: isDirectConnection() ? 2500 : 6000,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;

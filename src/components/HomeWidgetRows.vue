@@ -52,7 +52,20 @@
         :class="{ 'ed-dimmed': editMode && !topPicksEnabled }"
       >
         <div class="ed-hero-row__head">
-          <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
+          <div class="ed-hero-row__title-group">
+            <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :title="$t('refresh')"
+              :disabled="heroRefreshing"
+              @click="refreshTopPicks"
+            >
+              <RefreshCw
+                :class="{ 'ed-hero-refresh--spinning': heroRefreshing }"
+              />
+            </Button>
+          </div>
           <Button
             v-if="editMode"
             variant="ghost"
@@ -115,6 +128,7 @@
         v-for="(row, idx) in displayedRows"
         :key="row.folder.uri"
         :title="folderTitle(row.folder)"
+        :subtitle="row.folder.subtitle"
         :provider="folderProvider(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
         :tiles-per-view="tilesPerView"
@@ -182,15 +196,16 @@ import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
+  MediaType,
+  PlaybackState,
   type EventMessage,
   type Genre,
   type ItemMapping,
   type MediaItemTypeOrItemMapping,
-  MediaType,
-  PlaybackState,
   type Player,
   type RecommendationFolder,
 } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useDebounceFn } from "@vueuse/core";
@@ -201,6 +216,7 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  RefreshCw,
 } from "lucide-vue-next";
 import {
   computed,
@@ -223,10 +239,10 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
 
-// Size the recommendation tiles on the same responsive curve as the rest of
-// the app (panelViewItemResponsive), plus the half-tile peek. Recomputes on
-// resize because panelViewItemResponsive reads the reactive breakpoint width.
-const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
+const tilesPerView = computed(() => {
+  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
+  return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
+});
 
 const players = computed(() =>
   Object.values(api.players)
@@ -331,7 +347,16 @@ const findFolder = (...needles: string[]) =>
     return needles.some((n) => hay.includes(n));
   });
 
-const buildHeroEntries = (): HeroEntry[] => {
+const shuffled = <T,>(arr: readonly T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const buildHeroEntries = (randomize = false): HeroEntry[] => {
   const playlists = findFolder("playlists made for you", "made for you");
   const mood = findFolder("find your mood", "mood");
   const stations = findFolder("stations for you", "radio stations for you");
@@ -341,6 +366,14 @@ const buildHeroEntries = (): HeroEntry[] => {
     (i) => i.media_type === MediaType.ARTIST,
   );
 
+  const order = (items: MediaItemTypeOrItemMapping[]) =>
+    randomize ? shuffled(items) : items;
+  const playlistItems = order(playlists?.items ?? []);
+  const moodItems = order(mood?.items ?? []);
+  const stationItems = order(stations?.items ?? []);
+  const releaseItems = order(releases?.items ?? []);
+  const artistStationItems = order(artistStations);
+
   const entry = (
     item: MediaItemTypeOrItemMapping | undefined,
     folder: RecommendationFolder | undefined,
@@ -348,16 +381,16 @@ const buildHeroEntries = (): HeroEntry[] => {
     item && folder ? { item, tag: folderTitle(folder) } : null;
 
   const recipe = [
-    entry(playlists?.items[0], playlists),
-    entry(mood?.items[0], mood),
-    entry(artistStations[0], stations),
-    entry(releases?.items[0], releases),
-    entry(stations?.items[0], stations),
-    entry(releases?.items[1], releases),
-    entry(artistStations[1], stations),
-    entry(playlists?.items[1], playlists),
-    entry(mood?.items[1], mood),
-    entry(releases?.items[2], releases),
+    entry(playlistItems[0], playlists),
+    entry(moodItems[0], mood),
+    entry(artistStationItems[0], stations),
+    entry(releaseItems[0], releases),
+    entry(stationItems[0], stations),
+    entry(releaseItems[1], releases),
+    entry(artistStationItems[1], stations),
+    entry(playlistItems[1], playlists),
+    entry(moodItems[1], mood),
+    entry(releaseItems[2], releases),
   ];
 
   const seen = new Set<string>();
@@ -381,16 +414,14 @@ const buildHeroEntries = (): HeroEntry[] => {
         tag: $t("recently_played"),
       })),
     ].filter((e) => !seen.has(e.item.uri));
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    for (const e of pool) {
+    for (const e of shuffled(pool)) {
       if (out.length >= HERO_COUNT) break;
       push(e);
     }
   }
-  return out.slice(0, HERO_COUNT);
+  const picks = out.slice(0, HERO_COUNT);
+
+  return randomize ? shuffled(picks) : picks;
 };
 
 const heroEntries = ref<HeroEntry[]>([]);
@@ -488,6 +519,22 @@ const resolveHeroPicks = () => {
   const fresh = buildHeroEntries();
   heroEntries.value = fresh;
   if (fresh.length) writeHeroCache(fresh);
+};
+
+const heroRefreshing = ref(false);
+const refreshTopPicks = async () => {
+  if (heroRefreshing.value) return;
+  heroRefreshing.value = true;
+  try {
+    await loadRecommendations();
+    const fresh = buildHeroEntries(true);
+    if (fresh.length) {
+      heroEntries.value = fresh;
+      writeHeroCache(fresh);
+    }
+  } finally {
+    heroRefreshing.value = false;
+  }
 };
 
 // --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
@@ -669,12 +716,29 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   margin-bottom: 14px;
 }
+.ed-hero-row__title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
 .ed-hero-row__title {
   margin: 0;
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.6px;
   color: rgb(var(--v-theme-on-background));
+}
+.ed-hero-refresh--spinning {
+  animation: ed-hero-refresh-spin 0.8s linear infinite;
+}
+@keyframes ed-hero-refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .ed-hero-row__viewport {
   position: relative;
@@ -805,6 +869,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 600px) {
+  .ed-section {
+    margin-bottom: 16px;
+  }
   .ed-hero-row,
   .ed-genres {
     padding-left: 16px;

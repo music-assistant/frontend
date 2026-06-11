@@ -756,6 +756,38 @@
             "title": "Samtidig bakgrundsanalys",
             "description": "Styr hur många spår som analyseras samtidigt under den nattliga bakgrundsskanningen. Den här inställningen finns i Strömningens kärnkonfiguration.",
             "open_settings": "Öppna strömningsinställningarna"
+        },
+        "all_favorite_tracks": {
+            "label": "Alla favorit spår",
+            "description": "Skapa en spellista som innehåller alla spår som markerats som favoriter i ditt bibliotek."
+        },
+        "random_artist": {
+            "label": "Slumpmässig artist (från biblioteket)",
+            "description": "Välj en slumpmässig artist från ditt bibliotek och köa deras låtar."
+        },
+        "random_album": {
+            "label": "Slumpmässigt album (från biblioteket)",
+            "description": "Välj ett slumpmässigt album från ditt bibliotek och köa dess spår."
+        },
+        "random_tracks": {
+            "label": "500 slumpmässiga spår (från biblioteket)",
+            "description": "Skapa en spellista med 500 slumpmässigt valda spår från ditt bibliotek."
+        },
+        "recently_played": {
+            "label": "Nyligen spelade spår",
+            "description": "Visa de låtar du spelat senast som en spellista."
+        },
+        "recently_added_tracks": {
+            "label": "Nyligen tillagda spår",
+            "description": "Visa de spår som senast lagts till i ditt bibliotek som en spellista."
+        },
+        "infinite_mix": {
+            "label": "Oändlig mix (bibliotek)",
+            "description": "En oändlig, ständigt föränderlig spellista som hämtar 25 slumpmässiga spår från ditt fulla bibliotek varje gång kön är på väg att ta slut. Ingen för inläsning – minnesanvändningen förblir konstant oavsett bibliotekets storlek."
+        },
+        "infinite_mix_favorites": {
+            "label": "Oändlig mix (favoriter)",
+            "description": "Som Oändlig mix, men begränsat till dina favoritlåtar. 25 nya slumpmässiga favoriter läggs till när kön är nästan tom."
         }
     },
     "show_info": "Visa info",
@@ -1747,5 +1779,16 @@
     "top_picks_for_you": "Toppenval för dig",
     "with_artists": "med {artists}",
     "disc": "Skiva {number}",
-    "album_type_label": "Albumtyp"
+    "album_type_label": "Albumtyp",
+    "builtin_playlist": {
+        "all_favorite_tracks": "Alla favorit spår",
+        "random_artist": "Slumpmässig artist (från biblioteket)",
+        "random_album": "Slumpmässigt album (från biblioteket)",
+        "random_tracks": "500 slumpmässiga spår (från biblioteket)",
+        "recently_played": "Nyligen spelade spår",
+        "recently_added_tracks": "Nyligen tillagda spår",
+        "infinite_mix": "Oändlig mix (bibliotek)",
+        "infinite_mix_favorites": "Oändlig mix (favoriter)"
+    },
+    "now_playing": "Spelas nu"
 }

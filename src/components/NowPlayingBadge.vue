@@ -4,9 +4,9 @@
     v-if="showBadge"
     :style="badgeStyle"
     class="now-playing-badge"
-    aria-label="Now playing"
+    :aria-label="$t('now_playing')"
   >
-    Now playing
+    {{ $t("now_playing") }}
   </span>
   <!-- Now playing icon -->
   <div v-if="showIcon" :style="iconStyle" class="now-playing-icon">
