@@ -54,12 +54,18 @@
           </div>
         </template>
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
+        <!-- the click lives on the (always hit-testable) slot, not on the
+             hover-revealed disc: gating clicks on :hover-driven pointer-events
+             drops them whenever the browser invalidates the hover chain (e.g.
+             a row re-render under a stationary mouse), sending the click to
+             the row instead -->
         <template v-else>
           <!-- album view: track number that swaps to the blue play on hover -->
           <div
             v-if="albumTrackView"
             class="track-number-play"
             :class="{ 'is-playable': item.is_playable }"
+            @click="onPlayAreaClick"
           >
             <div
               v-if="
@@ -69,11 +75,7 @@
             >
               {{ item.track_number }}
             </div>
-            <span
-              v-if="item.is_playable"
-              class="listitem-play-blue"
-              @click.stop="onPlayClick"
-            >
+            <span v-if="item.is_playable" class="listitem-play-blue">
               <Play :size="16" fill="currentColor" :stroke-width="0" />
             </span>
           </div>
@@ -82,16 +84,13 @@
             <div
               class="media-thumb listitem-media-thumb"
               :class="{ 'is-playable': item.is_playable }"
+              @click="onPlayAreaClick"
             >
               <MediaItemThumb
                 size="50"
                 :item="isAvailable ? item : undefined"
               />
-              <span
-                v-if="item.is_playable"
-                class="listitem-play-blue"
-                @click.stop="onPlayClick"
-              >
+              <span v-if="item.is_playable" class="listitem-play-blue">
                 <Play :size="16" fill="currentColor" :stroke-width="0" />
               </span>
             </div>
@@ -427,6 +426,13 @@ const onClick = function (evt: Event) {
   );
 };
 
+// non-playable rows fall through to the row click (navigation)
+const onPlayAreaClick = function (evt: PointerEvent) {
+  if (!compProps.item.is_playable) return;
+  evt.stopPropagation();
+  onPlayClick(evt);
+};
+
 const onPlayClick = function (evt: PointerEvent) {
   if (compProps.showCheckboxes) return;
   handlePlayBtnClick(
@@ -515,6 +521,7 @@ const onPlayClick = function (evt: PointerEvent) {
 }
 
 @media (hover: hover) {
+  /* the disc is purely visual; its parent slot handles the click */
   .listitem-play-blue {
     display: inline-flex;
     align-items: center;
@@ -524,10 +531,14 @@ const onPlayClick = function (evt: PointerEvent) {
     border-radius: 999px;
     background: rgb(var(--v-theme-primary));
     color: #fff;
-    cursor: pointer;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.18s ease;
+  }
+
+  .track-number-play.is-playable,
+  .listitem-media-thumb.is-playable {
+    cursor: pointer;
   }
 
   /* album view: overlay the number and the blue play in one centered cell.
@@ -566,7 +577,6 @@ const onPlayClick = function (evt: PointerEvent) {
 
   .list-item-main:hover .listitem-play-blue {
     opacity: 1;
-    pointer-events: auto;
   }
 }
 
