@@ -121,7 +121,6 @@ export interface SendspinWebSocketBridge {
   onmessage: ((event: MessageEvent) => void) | null;
   onerror: ((event: Event) => void) | null;
   onclose: ((event: CloseEvent) => void) | null;
-  _isOpen: boolean; // For late handler registration
   readonly CONNECTING: 0;
   readonly OPEN: 1;
   readonly CLOSING: 2;
@@ -145,7 +144,6 @@ function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
     onmessage: null,
     onerror: null,
     onclose: null,
-    _isOpen: ws.readyState === WebSocket.OPEN,
     CONNECTING: 0,
     OPEN: 1,
     CLOSING: 2,
@@ -153,7 +151,6 @@ function wrapWebSocket(ws: WebSocket): SendspinWebSocketBridge {
   };
 
   ws.onopen = (event) => {
-    bridge._isOpen = true;
     if (bridge.onopen) bridge.onopen(event);
   };
   ws.onmessage = (event) => {
@@ -203,7 +200,6 @@ function wrapDataChannel(channel: RTCDataChannel): SendspinWebSocketBridge {
     onmessage: null,
     onerror: null,
     onclose: null,
-    _isOpen: channel.readyState === "open",
     CONNECTING: 0,
     OPEN: 1,
     CLOSING: 2,
@@ -211,7 +207,6 @@ function wrapDataChannel(channel: RTCDataChannel): SendspinWebSocketBridge {
   };
 
   channel.onopen = () => {
-    bridge._isOpen = true;
     if (bridge.onopen) bridge.onopen(new Event("open"));
   };
   channel.onmessage = (event) => {
@@ -283,43 +278,78 @@ export async function createSendspinConnection(): Promise<SendspinWebSocketBridg
 }
 
 /**
- * WebSocket wrapper for sendspin-js compatibility.
+ * WebSocket-like object that sendspin-js talks to.
+ *
+ * sendspin-js opens its socket with `new WebSocket(baseUrl + "/sendspin")`, which
+ * the interceptor routes here. On the initial connect a bridge is pre-staged by
+ * prepareSendspinSession(); on the library's own auto-reconnect no bridge is
+ * staged, so this wrapper builds a fresh one on demand. Either way the bridge is
+ * attached on a later microtask — after sendspin-js has wired its handlers and
+ * armed its reconnect bookkeeping — and a failed build is surfaced as a close so
+ * the library's exponential-backoff reconnect keeps running instead of stalling.
  */
 class SendspinWebSocketWrapper {
-  private bridge: SendspinWebSocketBridge;
+  binaryType: BinaryType = "arraybuffer";
+
+  private bridge: SendspinWebSocketBridge | null = null;
+  private closed = false;
+  private openFired = false;
+  private closeFired = false;
+  private sendQueue: (string | ArrayBuffer)[] = [];
+
+  private _onopen: ((event: Event) => void) | null = null;
+  private _onmessage: ((event: MessageEvent) => void) | null = null;
+  private _onerror: ((event: Event) => void) | null = null;
+  private _onclose: ((event: CloseEvent) => void) | null = null;
 
   constructor(_url: string | URL, _protocols?: string | string[]) {
-    if (!pendingBridge) {
-      throw new Error(
-        "SendspinWebSocketWrapper: No pending bridge. Call prepareSendspinSession first.",
+    const staged = pendingBridge;
+    pendingBridge = null;
+    if (staged) {
+      console.debug("[Sendspin] Interceptor: using pre-staged connection");
+    } else {
+      console.debug(
+        "[Sendspin] Interceptor: no staged connection, building one for reconnect",
       );
     }
-    this.bridge = pendingBridge;
-    pendingBridge = null;
+    // Defer attach so sendspin-js finishes wiring its on* handlers (and sets
+    // shouldReconnect) before any event fires; otherwise the open/close would be
+    // delivered to handlers that are not registered yet and the library's
+    // reconnect loop would never re-arm.
+    const bridgePromise = staged
+      ? Promise.resolve(staged)
+      : createSendspinConnection();
+    bridgePromise
+      .then((bridge) => this.attachBridge(bridge))
+      .catch((error) => {
+        console.error(
+          "[Sendspin] Interceptor: failed to build connection:",
+          error,
+        );
+        // Surface as a close so sendspin-js reschedules its next reconnect attempt.
+        this.fireClose();
+      });
   }
 
   send(data: string | ArrayBuffer | Blob): void {
     if (data instanceof Blob) {
-      data.arrayBuffer().then((buffer) => this.bridge.send(buffer));
+      data.arrayBuffer().then((buffer) => this.sendRaw(buffer));
     } else {
-      this.bridge.send(data);
+      this.sendRaw(data);
     }
   }
 
   close(code?: number, reason?: string): void {
-    this.bridge.close(code, reason);
+    this.closed = true;
+    if (this.bridge) {
+      this.bridge.close(code, reason);
+    }
+    // If a bridge is still being built, attachBridge() closes it on arrival.
   }
 
   get readyState(): number {
-    return this.bridge.readyState;
-  }
-
-  get binaryType(): BinaryType {
-    return "arraybuffer";
-  }
-
-  set binaryType(_value: BinaryType) {
-    // No-op
+    if (this.bridge) return this.bridge.readyState;
+    return this.closed ? 3 /* CLOSED */ : 0 /* CONNECTING */;
   }
 
   get bufferedAmount(): number {
@@ -338,63 +368,50 @@ class SendspinWebSocketWrapper {
     return "";
   }
 
-  set onopen(handler: ((this: WebSocket, ev: Event) => void) | null) {
-    this.bridge.onopen = handler;
-    if (handler && this.bridge._isOpen) {
-      setTimeout(
-        () => handler.call(this as unknown as WebSocket, new Event("open")),
-        0,
-      );
-    }
+  set onopen(handler: ((event: Event) => void) | null) {
+    this._onopen = handler;
   }
 
-  get onopen(): ((this: WebSocket, ev: Event) => void) | null {
-    return this.bridge.onopen;
+  get onopen(): ((event: Event) => void) | null {
+    return this._onopen;
   }
 
-  set onmessage(handler: ((this: WebSocket, ev: MessageEvent) => void) | null) {
-    this.bridge.onmessage = handler;
+  set onmessage(handler: ((event: MessageEvent) => void) | null) {
+    this._onmessage = handler;
   }
 
-  get onmessage(): ((this: WebSocket, ev: MessageEvent) => void) | null {
-    return this.bridge.onmessage;
+  get onmessage(): ((event: MessageEvent) => void) | null {
+    return this._onmessage;
   }
 
-  set onerror(handler: ((this: WebSocket, ev: Event) => void) | null) {
-    this.bridge.onerror = handler;
+  set onerror(handler: ((event: Event) => void) | null) {
+    this._onerror = handler;
   }
 
-  get onerror(): ((this: WebSocket, ev: Event) => void) | null {
-    return this.bridge.onerror;
+  get onerror(): ((event: Event) => void) | null {
+    return this._onerror;
   }
 
-  set onclose(handler: ((this: WebSocket, ev: CloseEvent) => void) | null) {
-    this.bridge.onclose = handler;
+  set onclose(handler: ((event: CloseEvent) => void) | null) {
+    this._onclose = handler;
   }
 
-  get onclose(): ((this: WebSocket, ev: CloseEvent) => void) | null {
-    return this.bridge.onclose;
+  get onclose(): ((event: CloseEvent) => void) | null {
+    return this._onclose;
   }
 
   addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject,
   ): void {
-    if (type === "open" && typeof listener === "function") {
-      this.bridge.onopen = listener as (event: Event) => void;
-      if (this.bridge._isOpen) {
-        setTimeout(
-          () => (listener as (event: Event) => void)(new Event("open")),
-          0,
-        );
-      }
-    } else if (type === "message" && typeof listener === "function") {
-      this.bridge.onmessage = listener as (event: MessageEvent) => void;
-    } else if (type === "error" && typeof listener === "function") {
-      this.bridge.onerror = listener as (event: Event) => void;
-    } else if (type === "close" && typeof listener === "function") {
-      this.bridge.onclose = listener as (event: CloseEvent) => void;
-    }
+    if (typeof listener !== "function") return;
+    if (type === "open") this._onopen = listener as (event: Event) => void;
+    else if (type === "message")
+      this._onmessage = listener as (event: MessageEvent) => void;
+    else if (type === "error")
+      this._onerror = listener as (event: Event) => void;
+    else if (type === "close")
+      this._onclose = listener as (event: CloseEvent) => void;
   }
 
   removeEventListener(
@@ -412,6 +429,63 @@ class SendspinWebSocketWrapper {
   static readonly OPEN = 1;
   static readonly CLOSING = 2;
   static readonly CLOSED = 3;
+
+  private sendRaw(data: string | ArrayBuffer): void {
+    if (this.closed) return;
+    if (this.bridge) {
+      this.bridge.send(data);
+    } else {
+      this.sendQueue.push(data);
+    }
+  }
+
+  private attachBridge(bridge: SendspinWebSocketBridge): void {
+    if (this.closed) {
+      // close() was called while the bridge was still being built; discard it.
+      console.debug(
+        "[Sendspin] Interceptor: connection ready after close(), discarding",
+      );
+      try {
+        bridge.close();
+      } catch {
+        // Ignore
+      }
+      return;
+    }
+    this.bridge = bridge;
+    bridge.onopen = () => this.fireOpen();
+    bridge.onmessage = (event) => this._onmessage?.(event);
+    bridge.onerror = (event) => this._onerror?.(event);
+    bridge.onclose = (event) => this.fireClose(event);
+
+    // readyState now delegates to the live bridge, so queued sends go through.
+    for (const data of this.sendQueue) {
+      bridge.send(data);
+    }
+    this.sendQueue = [];
+
+    // createSendspinConnection() only resolves once the transport is open; if it
+    // closed in the gap before attach, surface that as a close rather than a
+    // (false) open so the handshake is not attempted on a dead socket.
+    if (bridge.readyState === bridge.OPEN) {
+      this.fireOpen();
+    } else {
+      console.debug("[Sendspin] Interceptor: connection closed before attach");
+      this.fireClose();
+    }
+  }
+
+  private fireOpen(): void {
+    if (this.openFired || this.closeFired || this.closed) return;
+    this.openFired = true;
+    this._onopen?.(new Event("open"));
+  }
+
+  private fireClose(event?: CloseEvent): void {
+    if (this.closeFired) return;
+    this.closeFired = true;
+    this._onclose?.(event ?? new CloseEvent("close"));
+  }
 }
 
 let interceptorInstalled = false;
