@@ -404,6 +404,7 @@
         <!-- eslint-disable vue/no-v-html -->
         <div
           class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+          style="max-height: 60vh; overflow-y: auto"
           v-html="fullDescription"
         ></div>
         <!-- eslint-enable vue/no-v-html -->
