@@ -10,6 +10,8 @@ export default mergeConfig(
       globals: true,
       css: false,
       setupFiles: [],
+      // local git worktrees contain stale copies of the test suite
+      exclude: ["**/node_modules/**", "**/dist/**", "**/.worktrees/**"],
     },
   }),
 );
