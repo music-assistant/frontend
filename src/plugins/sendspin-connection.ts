@@ -349,7 +349,9 @@ class SendspinWebSocketWrapper {
 
   get readyState(): number {
     if (this.bridge) return this.bridge.readyState;
-    return this.closed ? 3 /* CLOSED */ : 0 /* CONNECTING */;
+    // No bridge yet: CLOSED once close() was called or a close was delivered
+    // (e.g. a failed rebuild), otherwise still CONNECTING.
+    return this.closed || this.closeFired ? 3 /* CLOSED */ : 0 /* CONNECTING */;
   }
 
   get bufferedAmount(): number {
