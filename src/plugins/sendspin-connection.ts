@@ -454,37 +454,37 @@ class SendspinWebSocketWrapper {
     }
     this.bridge = bridge;
     bridge.onopen = () => this.fireOpen();
-    bridge.onmessage = (event) => this._onmessage?.(event);
-    bridge.onerror = (event) => this._onerror?.(event);
+    bridge.onmessage = (event) => this._onmessage?.call(this, event);
+    bridge.onerror = (event) => this._onerror?.call(this, event);
     bridge.onclose = (event) => this.fireClose(event);
+
+    // createSendspinConnection() only resolves once the transport is open; if it
+    // closed in the gap before attach, surface that as a close — without flushing
+    // queued sends into a dead socket — so the handshake retries on a fresh attempt.
+    if (bridge.readyState !== bridge.OPEN) {
+      console.debug("[Sendspin] Interceptor: connection closed before attach");
+      this.fireClose();
+      return;
+    }
 
     // readyState now delegates to the live bridge, so queued sends go through.
     for (const data of this.sendQueue) {
       bridge.send(data);
     }
     this.sendQueue = [];
-
-    // createSendspinConnection() only resolves once the transport is open; if it
-    // closed in the gap before attach, surface that as a close rather than a
-    // (false) open so the handshake is not attempted on a dead socket.
-    if (bridge.readyState === bridge.OPEN) {
-      this.fireOpen();
-    } else {
-      console.debug("[Sendspin] Interceptor: connection closed before attach");
-      this.fireClose();
-    }
+    this.fireOpen();
   }
 
   private fireOpen(): void {
     if (this.openFired || this.closeFired || this.closed) return;
     this.openFired = true;
-    this._onopen?.(new Event("open"));
+    this._onopen?.call(this, new Event("open"));
   }
 
   private fireClose(event?: CloseEvent): void {
     if (this.closeFired) return;
     this.closeFired = true;
-    this._onclose?.(event ?? new CloseEvent("close"));
+    this._onclose?.call(this, event ?? new CloseEvent("close"));
   }
 }
 
