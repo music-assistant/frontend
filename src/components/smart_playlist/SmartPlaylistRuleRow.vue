@@ -6,6 +6,10 @@
     ]"
   >
     <div class="flex min-w-0 items-center gap-2">
+      <component
+        :is="fieldIcon(rule.field)"
+        class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+      />
       <Select
         :model-value="rule.field"
         @update:model-value="(v) => emit('change-field', v as RuleField)"
@@ -182,6 +186,7 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { fieldIcon } from "./fieldIcon";
 import { X } from "lucide-vue-next";
 import { computed } from "vue";
 import SmartPlaylistRuleValuePicker from "./SmartPlaylistRuleValuePicker.vue";

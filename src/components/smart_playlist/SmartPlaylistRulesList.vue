@@ -86,9 +86,13 @@
           <DropdownMenuItem
             v-for="field in availableFields"
             :key="field"
-            class="text-xs cursor-pointer"
+            class="text-xs cursor-pointer gap-2"
             @click="emit('add-rule', field)"
           >
+            <component
+              :is="fieldIcon(field)"
+              class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            />
             {{ fieldLabel(field) }}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -119,6 +123,7 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { fieldIcon } from "./fieldIcon";
 import { Info, Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import SmartPlaylistRuleRow from "./SmartPlaylistRuleRow.vue";
