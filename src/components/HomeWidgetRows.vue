@@ -325,10 +325,8 @@ watch(
   },
 );
 
-const folderTitle = (folder: RecommendationFolder) =>
-  folder.translation_key
-    ? $t(`recommendations.${folder.translation_key}`, folder.name)
-    : folder.name;
+// recommendation folder names are resolved server-side for the connection locale
+const folderTitle = (folder: RecommendationFolder) => folder.name;
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 

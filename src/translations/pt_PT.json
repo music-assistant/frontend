@@ -145,140 +145,6 @@
         "add_new_provider_button": "Adicionar provedor {0}",
         "add_group_player": "Adicionar grupo de leitores",
         "group_members": "Membros do grupo",
-        "log_level": {
-            "label": "Nível de registo",
-            "description": "Define a verbosidade do registo para este provedor.",
-            "options": {
-                "global": "Global",
-                "info": "Informações",
-                "warning": "Aviso",
-                "error": "Erro",
-                "debug": "Depurar"
-            }
-        },
-        "flow_mode": {
-            "label": "Ativar o modo de fluxo de espera",
-            "description": "Ative o modo \"fluxo\", no qual todas as faixas da fila são enviadas como um fluxo de áudio contínuo. \nUse para leitores que não oferecem suporte nativo a reprodução sem intervalos e\/ou transições suaves entre faixas, ou se o leitor tiver problemas na transição entre as faixas."
-        },
-        "auto_play": {
-            "label": "Reprodução automática (retomar ao ligar)",
-            "description": "Quando este leitor for ligado, começa automaticamente a reproduzir (se houver itens na fila de espera)."
-        },
-        "output_channels": {
-            "label": "Modo de canal de saída",
-            "description": "Pode configurar este leitor para reproduzir apenas o canal esquerdo ou direito, por exemplo, para criar um par estéreo com 2 leitores.",
-            "options": {
-                "stereo": "Estéreo (ambos os canais)",
-                "left": "Apenas o canal esquerdo",
-                "right": "Apenas o canal direito",
-                "mono": "Mono (ambos os canais)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Ativar a normalização do volume (com base na EBU-R128)",
-            "description": "Ativar a normalização do volume com base na norma EBU-R128 sem afetar a gama dinâmica"
-        },
-        "volume_normalization_target": {
-            "label": "Nível alvo para normalização do volume",
-            "description": "Ajustar o volume médio (percebido) para este nível-alvo, a predefinição é -17 LUFS\n\n**AVISO:** Definir o nível demasiado alto pode resultar em clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizador: graves",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível de graves (tons baixos) do áudio."
-        },
-        "eq_mid": {
-            "label": "Equalizador: médio",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível médio do áudio."
-        },
-        "eq_treble": {
-            "label": "Equalizador: agudos",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível dos agudos (tons altos) do áudio."
-        },
-        "crossfade": {
-            "label": "Ativar o crossfade",
-            "description": "Ativar uma transição de crossfade entre faixas (em fila)."
-        },
-        "crossfade_duration": {
-            "label": "Duração do crossfade",
-            "description": "Duração em segundos do crossfade entre faixas (se ativado)"
-        },
-        "hide_player": {
-            "label": "Ocultar este leitor na interface do utilizador",
-            "description": "Oculta este leitor na interface do utilizador.\n\nNote que ainda pode ser controlado e que também aparecerá em quaisquer grupos de sincronização a que o leitor pertença."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Itens a selecionar quando reproduzir um artista (na biblioteca).",
-            "description": "Se quiser tocar um artista, que itens devem ser colocados na fila?",
-            "options": {
-                "library_tracks": "Apenas faixas da biblioteca",
-                "library_album_tracks": "Todas as faixas de todos os álbuns na biblioteca",
-                "all_tracks": "Todas as faixas (principais) de (todos) os provedores",
-                "all_album_tracks": "Todas as faixas de todos os álbuns de (todos) os provedores"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Itens a selecionar quando reproduzir um álbum (da biblioteca).",
-            "description": "Se quiser reproduzir um álbum, que itens devem ser colocados na fila?",
-            "options": {
-                "library_tracks": "Apenas faixas da biblioteca",
-                "all_tracks": "Todas as faixas do álbum no provedor"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Opção predefinida de colocar na fila para o(s) item(ns) do Artista.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) do artista agora e manter o(s) restante(s) item(s) da fila.",
-                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista",
-                "next": "Reproduz o(s) item(ns) imediatamente a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) do artista logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "add": "Adicionar a(s) faixa(s) do artista no final da fila."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Opção predefinida de colocar na fila para o(s) item(s) do Álbum.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) do álbum agora e manter o(s) restante(s) item(s) da fila.",
-                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do álbum",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) do álbum logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "add": "Adicionar a(s) faixa(s) do álbum no final da fila."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Opção de fila predefinida para o(s) item(ns) da faixa.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) agora e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a(s) faixa(s).",
-                "next": "Reproduzir a(s) faixa(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
-                "add": "Adicionar a(s) faixa(s) no final da fila."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Opção de fila de espera padrão para os itens da lista de reprodução.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir agora a(s) faixa(s) da lista de reprodução e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) da lista de reprodução imediatamente a seguir ao item atualmente reproduzido\/em memória intermédia.",
-                "add": "Adicionar a(s) faixa(s) da lista de reprodução no final da fila."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Opção de fila predefinida para itens de rádio.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a estação de rádio agora e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a estação de rádio",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo a seguir ao item em reprodução\/buffer.",
-                "add": "Adicionar a(s) estação(ões) de rádio no final da fila."
-            }
-        },
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, é necessário ter o fornecedor {1} configurado. Pretende fazê-lo agora?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "Ativar o suporte {0}",
             "dsp": "Processamento Digital de Sinais (DSP)",
             "options": "Opções do leitor"
-        },
-        "tts_pre_announce": {
-            "label": "Pré-anunciar anúncios TTS",
-            "description": "Quando uma mensagem TTS (conversão de texto em voz) é enviada para a função Anunciar, acrescente ao anúncio um breve som de pré-anúncio (apito de campainha)."
-        },
-        "announce_volume_strategy": {
-            "label": "Estratégia de volume para anúncios",
-            "description": "Quando um anúncio está a ser transmitido para este leitor, como deve o volume ser ajustado temporariamente (utilizar em combinação com o valor de volume abaixo)?",
-            "options": {
-                "absolute": "Volume absoluto",
-                "relative": "Aumento relativo do volume",
-                "percentual": "Aumento do volume em percentagem fixa",
-                "none": "Não ajustar o volume"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume para Anúncios",
-            "description": "O nível de volume percentual, relativo ou absoluto, utilizado com a estratégia dos anúncios."
-        },
-        "announce_volume_min": {
-            "label": "Nível mínimo de volume para Anúncios",
-            "description": "O volume (regulação) dos anúncios não deve descer abaixo deste nível."
-        },
-        "announce_volume_max": {
-            "label": "Nível máximo de volume para Anúncios",
-            "description": "O volume (regulação) dos anúncios não deve ultrapassar este nível."
-        },
-        "icon": {
-            "label": "Ícone",
-            "description": "Ícone Material Design para este leitor.\n\nVer https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -374,38 +210,6 @@
         "no_music_providers_detail": "Comece a sua experiência com o Music Assistant adicionando os seus Fornecedores de Música.",
         "no_player_providers": "Nenhum Fornecedor de Leitores configurado",
         "no_player_providers_detail": "Configure os fornecedores de leitores para selecionar dispositivos onde o Music Assistant pode tocar a sua música.",
-        "volume_normalization_radio": {
-            "label": "Método de normalização de volume a utilizar para streams de rádio",
-            "description": "Defina a estratégia de normalização de volume preferida para streams de rádio. \nPor defeito, o Music Assistant recolhe uma medida do volume da estação de rádio (média percebida) de acordo com a especificação EBU-R128 e, em seguida, ajusta o ganho\/volume geral do fluxo de acordo com essa medida para que a gama dinâmica do áudio não seja afetada.\nQuando não existe (ainda) nenhuma medição para uma estação de rádio, o Music Assistant recorre a um filtro de nivelamento de volume dinâmico (mas menos preciso).\n\nDICA: Os streams de rádio têm frequentemente níveis de volume variáveis, especialmente durante anúncios e publicidade. Pode optar por aplicar a normalização dinâmica do volume aos streams de rádio, mesmo que exista uma medição (média) do volume para a estação de rádio. \n \n**Opções:**\n\n  - Desativado — Não aplicar a normalização do volume a todos os fluxos de rádio. \n  - Forçar dinâmico — Aplicar o nivelamento dinâmico do volume em todos os momentos.\n  - Apenas medição (sem regressão) — Aplicar correção (geral) de volume\/ganho com base na medição armazenada. Se não existir uma medição, não aplicar a normalização.\n  - Regredir para a correção de ganho — Aplicar a correção (geral) de volume\/ganho com base na medição armazenada. Se não existir uma medição, recorremos a uma correção de ganho predefinida.\n  - Correção de ganho fixo — Aplicar sempre a correção de volume\/ganho fixo.\n  - Regredir para dinâmico — Escolher automaticamente a melhor opção: Aplicar a correção (global) do volume\/ganho com base na medição armazenada, se existir, permitir o recuo para o modo dinâmico se não existir nenhuma medição.",
-            "options": {
-                "disabled": "Desativado",
-                "dynamic": "Forçar dinâmico",
-                "measurement_only": "Apenas medição (sem regressão)",
-                "fallback_fixed_gain": "Regredir para correção de ganhos",
-                "fixed_gain": "Correção de ganho fixo",
-                "fallback_dynamic": "Regredir para dinâmico"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Método de normalização do volume a utilizar para as faixas",
-            "description": "Define a estratégia de normalização de volume preferida para as faixas\/músicas.\nO Music Assistant utiliza uma medição da intensidade do som das faixas (média percebida) de acordo com a especificação EBU-R128 para ajustar o ganho\/volume geral do fluxo sem afetar a gama dinâmica do áudio.\nEstas medições são fornecidas pelo fornecedor de streaming ou, no caso de ficheiros locais, podem estar contidas nas etiquetas ID3 (ReplayGain 2.0 \/ Opus R128).\nSe a medição não for fornecida, o Music Assistant efetuará automaticamente uma medição quando\/após a faixa ser reproduzida (primeira vez). Quando não existe (ainda) nenhuma medição para uma faixa, o Music Assistant irá, por defeito, recorrer a um filtro de nivelamento de sonoridade dinâmico (mas menos preciso). Isto assegura que não haja grandes picos\/quedas no nível de volume entre as faixas, mesmo que ainda não exista uma medição exata, mas o nivelador dinâmico pode, por vezes, comprimir um pouco a gama dinâmica, embora isso, por regra, não seja audível.\n\n\n**Opções:**\n\n- Desativado - não aplicar a normalização do volume para streams de rádio\n- Forçar dinâmico - Aplicar sempre o nivelamento dinâmico do volume. \n - Apenas medição (sem regressão) — Aplicar a correção (geral) de volume\/ganho com base na medição armazenada. Se não tivermos nenhuma medição, não aplicar a normalização. \n - Regredir para correção de ganho — Aplicar a correção de volume\/ganho (global) com base na medição armazenada. Se não tivermos qualquer medição, recorremos a uma correção de ganho predefinida. \n - Correção de ganho fixo — Aplicar sempre a correção de volume\/ganho fixo. \n - Regredir para dinâmico — Escolher automaticamente a melhor opção: Aplicar a correção (global) do volume\/ganho com base na medição armazenada, se tivermos alguma, permitir a regressão para o modo dinâmico se não estiver disponível nenhuma medição.",
-            "options": {
-                "disabled": "Desativado",
-                "dynamic": "Forçar dinâmico",
-                "measurement_only": "Apenas medição (sem regressão)",
-                "fallback_fixed_gain": "Regredir para correção de ganhos",
-                "fixed_gain": "Correção de ganho fixa",
-                "fallback_dynamic": "Regredir para dinâmico"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Ajuste de ganho fixo\/regressão para faixas",
-            "description": "Correção de ganho fixo\/regressão a aplicar a um stream de áudio de faixa (depende da definição 'Método de normalização do volume'). Utilize um valor positivo para aumentar o volume e um valor negativo para diminuir o volume. Esta definição é utilizada quando o método de normalização do volume está definido para 'Correção de ganho fixo' ou 'Regredir para correção de ganho'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Ajuste de ganho fixo\/regressão para rádio",
-            "description": "Correção de ganho fixo\/recuo a aplicar a um fluxo de rádio (depende da definição 'Método de normalização do volume').\nUtilize um valor positivo para aumentar o volume, um valor negativo para diminuir o volume.\n\nEsta definição é utilizada quando o método de normalização do volume está definido para 'Correção de ganho fixo' ou 'Recuo para correção de ganho'."
-        },
         "dynamic_members": {
             "label": "Membros dinâmicos do grupo",
             "description": "Permitir que os membros entrem\/saiam do grupo (temporariamente) de forma dinâmica, para que o grupo se comporte mais ou menos da mesma forma que a sincronização manual de leitores, sendo a principal diferença que o leitor do grupo irá deter a fila."
@@ -478,22 +282,6 @@
                 "name_placeholder": "A minha nova predefinição",
                 "remove_confirm": "Tem a certeza de que pretende remover esta predefinição DSP?"
             }
-        },
-        "power_control": {
-            "label": "Controlo de potência",
-            "description": "Permite-lhe, por exemplo, redirecionar os comandos de ligar\/desligar para um aparelho diferente ou utilizar um controlo de alimentação falso se o seu leitor não suportar comandos de ligar\/desligar, mas quiser ter um estado dedicado para um leitor que não esteja a ser utilizado."
-        },
-        "volume_control": {
-            "label": "Controlo do volume",
-            "description": "Define\/substitui o comportamento do controlo de volume para este leitor. Permite-lhe, por exemplo, redirecionar os comandos de controlo de volume para um aparelho diferente ou desativá-lo completamente."
-        },
-        "mute_control": {
-            "label": "Controlo de silêncio",
-            "description": "Permite-lhe, por exemplo, redirecionar os comandos de controlo de silenciamento para um aparelho diferente ou desativá-lo completamente. Oferecemos uma opção de controlo de silenciamento \"falso\", que simula o silenciamento definindo o volume para 0 e restaurando o volume quando o silenciamento for desativado."
-        },
-        "output_limiter": {
-            "label": "Ativar a limitação para evitar o recorte",
-            "description": "Ativa um limitador que evita a distorção do áudio, tornando os picos altos mais baixos."
         },
         "dsp_enabled": "O DSP está ativado",
         "dsp_disabled": "O DSP está desativado",
@@ -963,46 +751,6 @@
     "music_assistant_library": "Biblioteca do Music Assistant",
     "select_all_confirmation": "Selecionar todos os itens? Esta operação pode demorar algum tempo a carregar todos os dados.",
     "this_device": "Este dispositivo",
-    "recommendations": {
-        "in_progress_items": "Continuar a ouvir…",
-        "recommended_new_tracks": "Novas faixas recomendadas",
-        "recently_played": "Reproduzido recentemente",
-        "suggested_new_albums_for_you": "Sugestões de novos álbuns para si",
-        "random_artists": "Artistas aleatórios",
-        "random_albums": "Álbuns aleatórios",
-        "custom_mixes": "Misturas personalizadas",
-        "your_listening_history": "O seu histórico",
-        "popular_albums": "Álbuns populares",
-        "staff_picks_tracks": "Escolhas da equipa: faixas",
-        "staff_picks_albums": "Escolhas da equipa: álbuns",
-        "radio_stations_for_you": "Estações de rádio para si",
-        "producers__songwriters": "Produtores e compositores",
-        "new_releases_for_you": "Novos lançamentos para si",
-        "recent_favorite_tracks": "Últimas músicas favoritas",
-        "favorite_playlists": "Listas de reprodução favoritas",
-        "favorite_radio_stations": "Estações de rádio favoritas",
-        "listen_again": "Ouvir novamente",
-        "in_progress_series": "Continuar a série…",
-        "recommended": "Recomendado",
-        "recently_added": "Adicionado recentemente",
-        "episodes_recently_added": "Episódios adicionados recentemente",
-        "recent_series": "Séries recentes",
-        "newest_authors": "Autores mais recentes",
-        "newest_episodes": "Episódios mais recentes",
-        "discover": "Descobrir",
-        "libraries": "Bibliotecas",
-        "library": "Biblioteca",
-        "trending_podcasts": "Podcasts em voga",
-        "trending_stations": "Estações em voga",
-        "forgotten_tracks": "Faixas esquecidas",
-        "forgotten_albums": "Álbuns esquecidos",
-        "forgotten_artists": "Artistas esquecidos",
-        "most_played_tracks": "Faixas mais reproduzidas",
-        "never_played_tracks": "Nunca \/ raramente reproduzido",
-        "recent_favorite_albums": "Álbuns favoritos recentemente",
-        "recently_added_tracks": "Faixas adicionadas recentemente",
-        "inspired_by_recently_played": "Inspirado pelo reproduzido recentemente"
-    },
     "homescreen_edit_enable": "Editar o ecrã inicial",
     "homescreen_edit_disable": "Sair do modo de edição",
     "lyrics_will_appear_soon": "As letras aparecerão quando a música começar…",
@@ -1248,67 +996,6 @@
     "description": "Descrição",
     "genre": "Género",
     "genres": "Géneros",
-    "genre_names": {
-        "afrobeats": "Afrobeats (música urbana\/pop da África Ocidental)",
-        "ambient": "Ambiente",
-        "anime_and_video_game_music": "Música de Anime e de Videojogos",
-        "asian_music": "Música Asiática",
-        "bluegrass": "",
-        "blues": "",
-        "brazilian_music": "Música Brasileira",
-        "chanson": "",
-        "childrens_music": "Música Infantil",
-        "christmas_music": "Música de Natal",
-        "church_music": "Música de Igreja",
-        "classical": "Clássico",
-        "comedy": "Comédia",
-        "country": "Country",
-        "dance": "Dança",
-        "dark_ambient": "",
-        "dark_wave": "",
-        "disco": "Disco",
-        "electronic": "Eletrónico",
-        "experimental": "Experimental",
-        "field_recording": "Registo no terreno",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "",
-        "gospel": "Gospel",
-        "hip_hop": "",
-        "indian_classical": "Clássico Indiano",
-        "industrial": "",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latina",
-        "marching_band": "Banda de Marcha",
-        "metal": "Metal",
-        "middle_eastern_music": "Música do Médio Oriente",
-        "musical": "Musical",
-        "new_age": "",
-        "poetry": "Poesia",
-        "polka": "Polca",
-        "pop": "Pop",
-        "psychedelic": "Psicadélico",
-        "punk": "",
-        "r_b": "",
-        "ragtime": "",
-        "rai": "",
-        "reggae": "",
-        "reggaeton": "",
-        "rock": "",
-        "salsa": "",
-        "singer_songwriter": "Cantor-compositor",
-        "ska": "",
-        "soul": "",
-        "sound_effects": "Efeitos sonoros",
-        "soundtrack": "Banda sonora",
-        "spoken_word": "Palavra falada",
-        "swing": "",
-        "tango": "Tango",
-        "trap": "Armadilha",
-        "waltz": "Valsa",
-        "wellness": "Bem-estar"
-    },
     "link": "Ligação",
     "link_alias": "Ligar pseudónimo",
     "link_alias_failed": "Falha ao ligar o pseudónimo",

@@ -561,6 +561,8 @@ export interface ConfigEntry {
   category_translation_key?: string;
   // category_translation_params: optional parameters for the category translation key
   category_translation_params?: string[];
+  // category_label: localized category display name, resolved server-side
+  category_label?: string | null;
   // advanced: indicates this is an advanced setting (hidden by default)
   advanced?: boolean;
 

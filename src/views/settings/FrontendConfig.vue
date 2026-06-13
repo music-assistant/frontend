@@ -199,6 +199,20 @@ onMounted(() => {
     });
   }
 
+  // These are frontend-only settings, so the frontend owns their translations (server-provided
+  // entries are localized server-side and arrive pre-resolved). ConfigEntryField now renders
+  // label/option titles directly, so resolve them here from the (frontend-specific) settings.* keys.
+  for (const entry of configEntries) {
+    entry.label = $t(`settings.${entry.key}.label`);
+    const desc = $t(`settings.${entry.key}.description`);
+    if (desc !== `settings.${entry.key}.description`) entry.description = desc;
+    if (entry.options) {
+      entry.options = entry.options.map((opt) => ({
+        ...opt,
+        title: $t(`settings.${entry.key}.options.${opt.value}`, opt.title),
+      }));
+    }
+  }
   config.value = configEntries;
 });
 

@@ -2,7 +2,7 @@ import { store } from "../store";
 /* eslint-disable no-constant-condition */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
-import { $t } from "../i18n";
+import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
 import { getDeviceName } from "./helpers";
@@ -2388,11 +2388,30 @@ export class MusicAssistantApi {
     this.serverInfo.value = msg;
     // ServerInfo means transport is connected and server is ready, but not yet authenticated
     this.state.value = ConnectionState.CONNECTED;
+    // declare our UI locale so the server localizes server-provided strings (config labels,
+    // media/folder names, provider descriptions). Handled server-side before the auth gate,
+    // so it also works on the Ingress path where the frontend skips the auth command.
+    void this.setLocale(i18n.global.locale.value);
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
     });
+  }
+
+  /**
+   * Declare the connection's UI locale to the server (translations/set_locale).
+   *
+   * The server resolves server-provided strings for this locale at serialization. Tolerant of
+   * older servers that do not implement the command.
+   */
+  public async setLocale(locale: string): Promise<void> {
+    if (!locale || locale === "auto") return;
+    try {
+      await this.sendCommand("translations/set_locale", { locale });
+    } catch {
+      // server may predate the set_locale command — ignore
+    }
   }
 
   /**

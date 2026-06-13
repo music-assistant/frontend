@@ -303,40 +303,11 @@ const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;
 }>();
 
-// Helper function to get the translated label for a config entry
-const getTranslatedLabel = () => {
-  // prefer translation_key over key (using key for translations is deprecated)
-  const key = props.confEntry.translation_key || props.confEntry.key;
-  const translationKey = `settings.${key}.label`;
-  const fallback = props.confEntry.label;
+// label / action_label are resolved server-side for the connection locale; use them directly.
+const getTranslatedLabel = () => props.confEntry.label || props.confEntry.key;
 
-  // If translation_params are provided, pass them directly
-  if (
-    props.confEntry.translation_params &&
-    props.confEntry.translation_params.length > 0
-  ) {
-    return $t(translationKey, props.confEntry.translation_params) || fallback;
-  }
-
-  return $t(translationKey, fallback);
-};
-
-// Helper function to get the translated action label for a config entry
-const getTranslatedActionLabel = () => {
-  const key = props.confEntry.translation_key || props.confEntry.key;
-  const translationKey = `settings.${key}.label`;
-  const fallback = props.confEntry.action_label || props.confEntry.label;
-
-  // If translation_params are provided, pass them directly
-  if (
-    props.confEntry.translation_params &&
-    props.confEntry.translation_params.length > 0
-  ) {
-    return $t(translationKey, props.confEntry.translation_params) || fallback;
-  }
-
-  return $t(translationKey, fallback);
-};
+const getTranslatedActionLabel = () =>
+  props.confEntry.action_label || props.confEntry.label || props.confEntry.key;
 
 const onUpdateValue = (value: ConfigValueType) => {
   // When value is cleared (null/undefined/empty array), emit the default value instead
@@ -361,22 +332,9 @@ const translatedOptions = computed(() => {
   if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {
-    let cleanVal = orgOption.value?.toString() || "";
-    let cleanTitle = orgOption.title?.toString() || "";
-    for (const specialChar of ["@", "$", "|"]) {
-      if (cleanVal.includes(specialChar)) {
-        cleanVal = cleanVal.replaceAll(specialChar, "");
-      }
-      if (cleanTitle.includes(specialChar)) {
-        cleanTitle = cleanTitle.toString().replaceAll(specialChar, "");
-      }
-    }
-    let title = $t(
-      `settings.${props.confEntry.key}.options.${cleanVal}`,
-      cleanTitle,
-    );
+    // option titles are resolved server-side for the connection locale; use them directly
     const option: ConfigValueOption = {
-      title: title,
+      title: orgOption.title?.toString() || orgOption.value?.toString() || "",
       value: orgOption.value,
     };
     if (option.value == props.confEntry.default_value) {

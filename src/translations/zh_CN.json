@@ -145,140 +145,6 @@
         "add_new_provider_button": "添加 {0} 提供者",
         "add_group_player": "添加群组播放器",
         "group_members": "组成员",
-        "log_level": {
-            "label": "日志等级",
-            "description": "设置此提供者的日志详细信息",
-            "options": {
-                "global": "全局",
-                "info": "信息",
-                "warning": "提醒",
-                "error": "错误",
-                "debug": "调试"
-            }
-        },
-        "flow_mode": {
-            "label": "启用队列流模式",
-            "description": "启用“流”模式，队列中的所有歌曲都作为连续音频流发送。\n用于本机不支持无间隙和\/或淡化的播放器，或者在歌曲之间转换时遇到困难的播放器"
-        },
-        "auto_play": {
-            "label": "自动播放（开机后继续）",
-            "description": "当此播放器打开时，自动开始播放（如果队列中有项目）"
-        },
-        "output_channels": {
-            "label": "输出通道模式",
-            "description": "您可以将此播放器配置为仅播放左声道或右声道，例如，创建一对有两个播放器的立体声",
-            "options": {
-                "stereo": "立体声（两个声道）",
-                "left": "仅左侧通道",
-                "right": "仅右侧通道",
-                "mono": "单声道（两个声道）"
-            }
-        },
-        "volume_normalization": {
-            "label": "启用基于EBU-R128的音量标准",
-            "description": "在不影响动态范围的情况下，启用基于EBU-R128标准的音量"
-        },
-        "volume_normalization_target": {
-            "label": "标准音量等级",
-            "description": "将平均（感知）响度调整到此目标水平，默认值为-17 LUFS\n**警告：**设置过高的级别可能会导致剪切！"
-        },
-        "eq_bass": {
-            "label": "均衡器：低音",
-            "description": "使用内置的基本均衡器调整音频的低音级别"
-        },
-        "eq_mid": {
-            "label": "均衡器：中音",
-            "description": "使用内置的基本均衡器调整音频的中音级别"
-        },
-        "eq_treble": {
-            "label": "均衡器：高音",
-            "description": "使用内置的基本均衡器调整音频的高音级别"
-        },
-        "crossfade": {
-            "label": "启用交叉渐变",
-            "description": "启用(队列里)歌曲之间的交叉过渡(淡入淡出模式)"
-        },
-        "crossfade_duration": {
-            "label": "淡入淡出持续时间",
-            "description": "切换歌曲的淡入淡出持续时间（如果启用）以秒为单位"
-        },
-        "hide_player": {
-            "label": "在用户界面中隐藏此播放器",
-            "description": "在用户界面中隐藏此播放器。\n请注意，它仍然可以被控制，它也会显示在播放器所属的任何群组中。"
-        },
-        "default_enqueue_select_artist": {
-            "label": "当你播放一位（媒体库内的）歌手的作品时可供选择的项目",
-            "description": "如果你想播放一位歌手的作品，那么应该将哪些项目加入到播放队列呢？",
-            "options": {
-                "library_tracks": "仅限媒体库内的歌曲",
-                "library_album_tracks": "媒体库中所有唱片集中的所有歌曲",
-                "all_tracks": "来自（所有）提供者的所有（热门）歌曲",
-                "all_album_tracks": "（所有）提供者的所有唱片集中的所有歌曲"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "播放（媒体库中的）唱片集时要选择的歌曲",
-            "description": "如果你想播放一张唱片集，哪些项目应该加入播放队列?",
-            "options": {
-                "library_tracks": "仅限媒体库内的歌曲",
-                "all_tracks": "提供者的唱片集中的所有歌曲"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "将歌手的歌曲加入播放队列的默认选项",
-            "description": "定义此媒体类型的默认排队操作（如果未指定操作）。",
-            "options": {
-                "play": "立即播放歌手的歌曲，并保留播放队列中剩余的项目",
-                "replace": "清空播放队列并播放歌手的歌曲",
-                "next": "在当前正在播放或已缓冲的项目播放完毕后立即播放项目",
-                "replace_next": "清空播放队列，然后在当前正在播放或已缓冲的项目播放完毕后立即播放歌手的歌曲",
-                "add": "将歌手的歌曲添加到播放队列末尾"
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "将唱片集加入播放队列的默认选项",
-            "description": "定义此媒体类型的默认排队操作（如果未指定操作）。",
-            "options": {
-                "play": "立即播放唱片集的歌曲，并保留播放队列中剩余的项目",
-                "replace": "清除队列并播放唱片集的歌曲",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清空播放队列，然后在当前正在播放或已缓冲的项目播放完毕后立即播放唱片集的歌曲",
-                "add": "将唱片集的歌曲添加到播放队列末尾"
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "歌曲加入播放队列的默认选项",
-            "description": "定义此媒体类型的默认排队操作（如果未指定操作）。",
-            "options": {
-                "play": "立即播放歌曲，并保留播放队列中剩余的项目",
-                "replace": "清空播放队列并播放歌曲",
-                "next": "在当前正在播放或已缓冲的项目之后立即播放这些歌曲",
-                "replace_next": "清空播放队列，然后在当前正在播放或已缓冲的项目播放完毕后立即播放这些歌曲",
-                "add": "将歌曲添加到播放队列末尾"
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "播放列表项目的默认入队选项",
-            "description": "定义此媒体类型的默认排队操作（如果未指定操作）。",
-            "options": {
-                "play": "立即播放列表中的歌曲，并保留播放队列中剩余的项目",
-                "replace": "清除播放队列并播放列表的歌曲",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清空播放队列，然后在当前正在播放或已缓冲的项目播放完毕后立即播放列表的歌曲",
-                "add": "将播放列表中的歌曲添加到播放队列末尾。"
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "收音机项目的默认入队选项",
-            "description": "定义此媒体类型的默认排队操作（如果未指定操作）。",
-            "options": {
-                "play": "立即播放收音机并保留剩余的队列项目",
-                "replace": "清空队列并播放收音机",
-                "next": "在当前播放\/缓冲的项目之后立即播放项目",
-                "replace_next": "清除队列，然后在当前播放\/缓冲的项目之后播放收音机",
-                "add": "将收音机添加到队列的末尾"
-            }
-        },
         "default": "默认",
         "provider_depends_on_confirm": "在您设置{0}之前，您可能需要配置{1}提供者，您想现在这样做吗？",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "启用 {0} 支持",
             "dsp": "数字信号处理（DSP）",
             "options": "播放器选项"
-        },
-        "tts_pre_announce": {
-            "label": "预告TTS宣告",
-            "description": "当TTS（文本转语音）消息发送到宣告功能时，用简短的预宣告声音（铃声）为宣告做准备。"
-        },
-        "announce_volume_strategy": {
-            "label": "宣告的批量策略",
-            "description": "当向该播放器发送宣告时，应如何临时调整音量（与下面的音量值结合使用）",
-            "options": {
-                "absolute": "绝对音量",
-                "relative": "相对音量增加",
-                "percentual": "音量按固定百分比增加",
-                "none": "不要调整音量"
-            }
-        },
-        "announce_volume": {
-            "label": "宣告音量",
-            "description": "与宣告策略一起使用的百分比、相对或绝对音量水平"
-        },
-        "announce_volume_min": {
-            "label": "宣告的最小音量级别",
-            "description": "最小宣告音量不能超过这个等级"
-        },
-        "announce_volume_max": {
-            "label": "宣告的最大音量级别",
-            "description": "最大宣告音量不能超过这个等级"
-        },
-        "icon": {
-            "label": "Icon图标",
-            "description": "此播放器的MDI图标,参见https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "主题",
@@ -373,38 +209,6 @@
         "no_music_providers_detail": "添加音乐提供者，开始您的音乐助手体验!",
         "no_player_providers": "未配置播放器提供者",
         "no_player_providers_detail": "配置播放器提供者,以选择音乐助手可以输出音乐的设备",
-        "volume_normalization_radio": {
-            "label": "用于收音机流的体积归一化方法",
-            "description": "为收音机流设置首选音量正常化策略。 \n默认情况下，音乐助理会根据 EBU-R128 规范收集电台（平均感知）响度的测量值，然后根据测量值调整音流的整体增益\/音量，这样就不会影响音频的动态范围。如果还没有广播电台的测量结果，音乐助理将退回到动态（但不太准确）响度均衡滤波器。\n\n提示：广播流通常会有不同的响度级别，尤其是在广播和广告期间。\n即使存在广播电台的（平均）响度测量值，您也可以选择对广播流执行动态音量归一化。 \n \n**选项：**\n\n - 禁用 - 完全不对收音机数据流应用音量正常化。 \n  - 强制动态 - 始终执行动态音量均衡。 \n  - 仅测量（无回退）- 根据存储的测量结果应用（整体）音量\/增益校正。如果我们没有任何测量值，则不应用归一化。\n  - 回退至增益修正 - 根据存储的测量值应用（整体）音量\/增益修正。如果没有任何测量值，则回退到预定义的增益修正。\n - 固定增益修正 - 始终应用固定音量\/增益修正。\n  - 回退到动态 - 自动选择最佳选项：如果有测量值，则根据存储的测量值应用（整体）音量\/增益修正；如果没有测量值，则允许回退到动态模式。",
-            "options": {
-                "disabled": "关闭",
-                "dynamic": "强制动态",
-                "measurement_only": "仅测量（无回退）",
-                "fallback_fixed_gain": "回退以获得校正",
-                "fixed_gain": "固定增益校正",
-                "fallback_dynamic": "动态回退"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "用于歌曲的体积归一化方法",
-            "description": "为歌曲设置首选的音量正常化策略。\n音乐助理根据 EBU-R128 规范测量歌曲的（平均感知）响度，在不影响音频动态范围的情况下调整流的整体增益\/音量。\n这些测量值要么由流媒体提供者提供，要么在本地文件中包含在 ID3 标签中（ReplayGain 2.0 \/ Opus R128）。\n如果未提供测量值，Music Assistant 将在歌曲（首次）播放时\/后自动执行测量。当某一音轨还没有测量值时，音乐助理将默认使用动态（但不太准确）响度均衡滤波器。这样即使还没有准确的测量，也能确保音轨之间的音量不会出现大的峰值\/下降，但动态均衡器有时会压缩一些动态范围，不过在大多数情况下应该听不到。\n\n\n**选项：**\n\n - 禁用 - 完全不对收音机数据流应用音量正常化。\n - 强制动态 - 始终执行动态音量均衡。 \n - 仅测量（无回退）- 根据存储的测量结果应用（整体）音量\/增益校正。如果我们没有任何测量值，则不应用归一化。 \n - 回退至增益修正 - 根据存储的测量值应用（整体）音量\/增益修正。如果没有任何测量值，则回退到预定义的增益修正。 \n - 固定增益修正 - 始终应用固定音量\/增益修正。 \n - 回退到动态 - 自动选择最佳选项：如果有测量值，则根据存储的测量值应用（整体）音量\/增益修正；如果没有测量值，则允许回退到动态模式。",
-            "options": {
-                "disabled": "关闭",
-                "dynamic": "强制动态",
-                "measurement_only": "仅测量（无回退）",
-                "fallback_fixed_gain": "回退以获得校正",
-                "fixed_gain": "固定增益校正",
-                "fallback_dynamic": "动态回退"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "歌曲的固定\/回退增益调整",
-            "description": "应用于音轨流的固定\/回退增益校正（取决于“音量归一化方法”设置）。\n使用正值可增加音量，使用负值可减小音量。\n当\"音量归一化方法\"设置为“固定增益校正”或“回退到增益校正”时，使用此设置。"
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "收音机的固定\/回退增益调整",
-            "description": "应用于收音机的固定\/回退增益校正（取决于“音量归一化方法”设置）。\n使用正值可增加音量，使用负值可减小音量。\n当\"音量归一化方法\"设置为“固定增益校正”或“回退到增益校正”时，使用此设置。"
-        },
         "dynamic_members": {
             "label": "动态组成员",
             "description": "允许成员（临时）动态加入\/离开群组，因此群组的行为或多或少与手动同步播放器的行为相同，主要区别在于群组播放器将持有队列。"
@@ -477,22 +281,6 @@
                 "name_placeholder": "我的新预设",
                 "remove_confirm": "您确定要移除此 DSP 预设吗？"
             }
-        },
-        "power_control": {
-            "label": "电源控制",
-            "description": "定义\/覆盖该播放器的电源控制行为。 例如，如果播放器不支持电源开关命令，但又想为不使用的播放器设置专用状态，则可以将电源开关命令重定向到其他设备，或使用假电源控制。"
-        },
-        "volume_control": {
-            "label": "音量控制",
-            "description": "定义\/覆盖该播放器的音量控制行为，例如将音量控制命令重定向到其他设备或完全禁用。"
-        },
-        "mute_control": {
-            "label": "静音控制",
-            "description": "定义\/覆盖该播放器的静音控制行为。 例如，它允许您将静音控制命令重定向到不同的设备，或完全禁用。 我们提供一个 \"假 \"静音控制选项，通过将音量设置为 0 并在取消静音时恢复音量来模拟静音。"
-        },
-        "output_limiter": {
-            "label": "启用限制以防止削波",
-            "description": "激活限制器，通过使高峰值变得更安静来防止音频失真。"
         },
         "dsp_enabled": "DSP 已启用",
         "dsp_disabled": "DSP 已禁用",
@@ -945,37 +733,6 @@
     "music_assistant_library": "音乐助理媒体库",
     "select_all_confirmation": "选择所有项目？此操作可能需要一些时间来加载所有数据。",
     "this_device": "此设备",
-    "recommendations": {
-        "in_progress_items": "继续听...",
-        "recommended_new_tracks": "推荐的新歌曲",
-        "recently_played": "最近播放",
-        "suggested_new_albums_for_you": "为您推荐的新唱片集",
-        "random_artists": "随机的歌手",
-        "random_albums": "随机唱片集",
-        "custom_mixes": "定制混音",
-        "your_listening_history": "您的收听历史",
-        "popular_albums": "热门唱片集",
-        "staff_picks_tracks": "精选的歌曲",
-        "staff_picks_albums": "精选：唱片集",
-        "radio_stations_for_you": "适合您的广播电台",
-        "producers__songwriters": "制作人和词曲作者",
-        "new_releases_for_you": "为您提供的新版本",
-        "recent_favorite_tracks": "最近收藏的歌曲",
-        "favorite_playlists": "收藏的播放列表",
-        "favorite_radio_stations": "收藏的电台",
-        "listen_again": "再次收听",
-        "in_progress_series": "继续收听系列…",
-        "recommended": "推荐",
-        "recently_added": "最近添加",
-        "episodes_recently_added": "最近添加的单集",
-        "recent_series": "最近的系列",
-        "newest_authors": "最新作者",
-        "newest_episodes": "最新单集",
-        "discover": "发现",
-        "libraries": "媒体库",
-        "library": "媒体库",
-        "trending_podcasts": "热门播客"
-    },
     "homescreen_edit_enable": "编辑主屏幕",
     "homescreen_edit_disable": "退出主屏幕编辑模式",
     "lyrics_will_appear_soon": "歌词将在歌曲开始时出现...",
@@ -1221,67 +978,6 @@
     "description": "描述",
     "genre": "流派",
     "genres": "流派",
-    "genre_names": {
-        "afrobeats": "Afrobeats（西非城市\/流行音乐）",
-        "ambient": "氛围音乐",
-        "anime_and_video_game_music": "动漫与电子游戏音乐",
-        "asian_music": "亚洲音乐",
-        "bluegrass": "蓝草音乐",
-        "blues": "布鲁斯",
-        "brazilian_music": "巴西音乐",
-        "chanson": "法语香颂",
-        "childrens_music": "儿童音乐",
-        "christmas_music": "圣诞音乐",
-        "church_music": "教堂音乐",
-        "classical": "古典音乐",
-        "comedy": "喜剧音乐",
-        "country": "国家\/地区",
-        "dance": "舞曲",
-        "dark_ambient": "黑暗氛围",
-        "dark_wave": "暗潮",
-        "disco": "迪斯科",
-        "electronic": "电子音乐",
-        "experimental": "实验",
-        "field_recording": "实地录音",
-        "folk": "民谣",
-        "funk": "放克",
-        "gangsta_rap": "匪帮说唱",
-        "gospel": "福音音乐",
-        "hip_hop": "嘻哈",
-        "indian_classical": "印度古典音乐",
-        "industrial": "工业音乐",
-        "jazz": "爵士",
-        "klezmer": "克莱兹梅尔",
-        "latin": "拉丁音乐",
-        "marching_band": "行进乐队",
-        "metal": "金属",
-        "middle_eastern_music": "中东音乐",
-        "musical": "音乐剧",
-        "new_age": "新世纪音乐",
-        "poetry": "诗歌",
-        "polka": "波尔卡",
-        "pop": "流行",
-        "psychedelic": "迷幻音乐",
-        "punk": "朋克",
-        "r_b": "R&B",
-        "ragtime": "拉格泰姆",
-        "rai": "Raï",
-        "reggae": "雷鬼",
-        "reggaeton": "雷鬼顿",
-        "rock": "摇滚",
-        "salsa": "萨尔萨",
-        "singer_songwriter": "唱作人",
-        "ska": "斯卡",
-        "soul": "灵魂乐",
-        "sound_effects": "音效",
-        "soundtrack": "原声带",
-        "spoken_word": "朗诵",
-        "swing": "摇摆乐",
-        "tango": "探戈",
-        "trap": "Trap",
-        "waltz": "华尔兹",
-        "wellness": "身心疗愈"
-    },
     "link": "链接",
     "link_alias": "链接别名",
     "link_alias_failed": "别名链接失败",

@@ -145,140 +145,6 @@
         "add_new_provider_button": "Legg til {0} leverandør",
         "add_group_player": "Legg til gruppespiller",
         "group_members": "Gruppemedlemmer",
-        "log_level": {
-            "label": "Loggnivå",
-            "description": "Angi hvor omfattende loggen skal være for denne leverandøren.",
-            "options": {
-                "global": "Global",
-                "info": "Info",
-                "warning": "Advarsel",
-                "error": "Feil",
-                "debug": "Feilsøking"
-            }
-        },
-        "flow_mode": {
-            "label": "Aktiver køflytmodus",
-            "description": "Aktiver \"flyt\"-modus der alle køsporene sendes som en sammenhengende lydstrøm.\nBrukes for avspillere som ikke støtter gapless og\/eller crossfading, eller hvis avspilleren har problemer med overgangen mellom sporene."
-        },
-        "auto_play": {
-            "label": "Automatisk avspilling (gjenopptas når den slås på)",
-            "description": "Når denne spilleren er slått PÅ, starter avspillingen automatisk (hvis det finnes elementer i køen)."
-        },
-        "output_channels": {
-            "label": "Utgangskanalmodus",
-            "description": "Du kan konfigurere denne spilleren til å spille bare venstre eller høyre kanal, for eksempel for å lage et stereopar med 2 spillere.",
-            "options": {
-                "stereo": "Stereo (begge kanaler)",
-                "left": "Kun venstre kanal",
-                "right": "Kun høyre kanal",
-                "mono": "Mono (begge kanaler)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Aktiver volumnormalisering (EBU-R128-basert)",
-            "description": "Aktiver volumnormalisering basert på EBU-R128-standarden uten å påvirke dynamisk rekkevidde"
-        },
-        "volume_normalization_target": {
-            "label": "Målnivå for volumnormalisering",
-            "description": "Juster gjennomsnittlig (oppfattet) lydstyrke til dette målnivået, standard er -17 LUFS **ADVARSEL:** Hvis du setter nivået for høyt, kan det føre til klipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bass",
-            "description": "Bruk den innebygde standard equalizeren til å justere bassnivået (lave toner) til lyden."
-        },
-        "eq_mid": {
-            "label": "Equalizer: midt",
-            "description": "Bruk den innebygde standard equalizeren for å justere midtnivået på lyden."
-        },
-        "eq_treble": {
-            "label": "Equalizer: diskant",
-            "description": "Bruk den innebygde standard equalizeren til å justere lydnivået for diskant (høye toner)."
-        },
-        "crossfade": {
-            "label": "Aktiver crossfade",
-            "description": "Aktiver en crossfade-overgang mellom (kø)spor."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade-varighet",
-            "description": "Varighet i sekunder for crossfade mellom spor (hvis aktivert)"
-        },
-        "hide_player": {
-            "label": "Skjul denne spilleren i brukergrensesnittet",
-            "description": "Skjul denne spilleren i brukergrensesnittet. Merk at den fortsatt kan kontrolleres, og den vil også vises i alle synkroniseringsgrupper spilleren tilhører."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementer å velge når du spiller en artist  (i biblioteket).",
-            "description": "Hvis du vil spille en artist, hvilke elementer skal settes i kø?",
-            "options": {
-                "library_tracks": "Kun spor i biblioteket",
-                "library_album_tracks": "Alle spor fra alle album i biblioteket",
-                "all_tracks": "Alle (de beste) sporene fra (alle) leverandør(er)",
-                "all_album_tracks": "Alle spor fra alle album fra (alle) leverandør(er)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementer som skal velges når du spiller av et album (i biblioteket).",
-            "description": "Hvis du vil spille av et album, hvilke elementer skal settes i kø?",
-            "options": {
-                "library_tracks": "Kun spor i biblioteket",
-                "all_tracks": "Alle sporene til albumet hos leverandøren"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standard køalternativ for Artist-element(er).",
-            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
-            "options": {
-                "play": "Spill av artistspor nå, og behold de gjenværende køelementene.",
-                "replace": "Tøm køen og spill av artistsporet(ene)",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av artistsporet\/artistsporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til artistsporet\/artistsporene på slutten av køen."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standard køalternativ for albumelement(er).",
-            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
-            "options": {
-                "play": "Spill albumspor nå og behold gjenværende køelement(er).",
-                "replace": "Tøm køen og spill av albumsporet\/sporene",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av albumsporet\/-sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til albumsporet\/sporene på slutten av køen."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standard køalternativ for sporelement(er).",
-            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
-            "options": {
-                "play": "Spill av sporet\/sporene nå, og behold de gjenværende elementene i køen.",
-                "replace": "Tøm køen og spill av sporene.",
-                "next": "Spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av sporet\/sporene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til sporet\/sporene på slutten av køen."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standard køalternativ for spillelisteelement(er).",
-            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
-            "options": {
-                "play": "Spill av spillelistens spor nå, og behold de gjenværende elementene i køen.",
-                "replace": "Tøm køen og spill av spillelistens spor",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av spillelistens spor rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "add": "Legg til spillelistens spor på slutten av køen."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standard køalternativ for radioelement(er).",
-            "description": "Definer standard køhandling for denne medietypen (hvis du ikke spesifiserte en handling).",
-            "options": {
-                "play": "Spill av radiostasjonen nå, og behold de gjenværende elementene i køen.",
-                "replace": "Tøm køen og spill av radiostasjonen",
-                "next": "Spill av elementet\/elementene rett etter det elementet som spilles\/bufferes for øyeblikket.",
-                "replace_next": "Tøm køen og spill av radiostasjonen(e) rett etter elementet som spilles\/bufres.",
-                "add": "Legg til radiostasjonen(e) på slutten av køen."
-            }
-        },
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
         "category": {
@@ -292,36 +158,6 @@
             "protocol_output_settings": "Aktiver {0} støtte",
             "dsp": "Digital signalbehandling (DSP)",
             "options": "Spillerinnstillinger"
-        },
-        "tts_pre_announce": {
-            "label": "Forhåndsannonsere TTS-kunngjøringer",
-            "description": "Når en TTS-melding (tekst-til-tale) sendes til kunngjøringsfunksjonen, legg til en kort lyd før kunngjøringen (bjellefløyte)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volumstrategi for kunngjøringer",
-            "description": "Når en kunngjøring sendes til denne spilleren, hvordan skal volumet justeres midlertidig (bruk i kombinasjon med volumverdien nedenfor)?",
-            "options": {
-                "absolute": "Absolutt volum",
-                "relative": "Relativ volumøkning",
-                "percentual": "Volumøkning med fast prosentandel",
-                "none": "Ikke juster volumet"
-            }
-        },
-        "announce_volume": {
-            "label": "Volum for kunngjøringer",
-            "description": "Det prosentuelle, relative eller absolutte volumnivået som brukes med strategien for kunngjøringer."
-        },
-        "announce_volume_min": {
-            "label": "Minimum volumnivå for kunngjøringer",
-            "description": "Volumet (justeringen) av kunngjøringer bør ikke gå under dette nivået."
-        },
-        "announce_volume_max": {
-            "label": "Maksimalt volumnivå for kunngjøringer",
-            "description": "Volumet (justeringen) av kunngjøringer bør ikke gå over dette nivået."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Ikon i materialdesign for denne spilleren.\n\nSe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -371,26 +207,6 @@
         "no_music_providers_detail": "Start din Music Assistant-opplevelse ved å legge til musikkleverandørene dine.",
         "no_player_providers": "Ingen spillerleverandører er konfigurert",
         "no_player_providers_detail": "Konfigurer spillerleverandører for å velge enheter der Music Assistant kan spille av musikken din.",
-        "volume_normalization_radio": {
-            "label": "Metode for volumnormalisering til bruk for radiostrømmer",
-            "description": "Angi den foretrukne strategien for volumnormalisering for radiostrømmer. \nSom standard gjør Music Assistant en måling av radiostasjonens (gjennomsnittlige) lydstyrke i henhold til EBU-R128-spesifikasjonen, og justerer deretter den totale forsterkningen\/volumet til strømmen i henhold til denne målingen, slik at lydens dynamiske område ikke påvirkes. Når det ikke er gjort en måling (ennå) for en radiostasjon, vil Music Assistant bruke et dynamisk (men mindre nøyaktig) lydstyrkeutjevningsfilter. \n \n TIPS: Radio har ofte varierende lydstyrkenivå, spesielt under kunngjøringer og reklamer. \n Du kan velge å håndheve dynamisk volumnormalisering for radiostrømmer, selv om det finnes en (gjennomsnittlig) lydstyrkemåling for radiostasjonen. \n \n **Alternativer:** \n \n – Avslått – ikke bruk volumnormalisering i det hele tatt for radiostrømmer. \n – Tving dynamisk – Håndhev dynamisk volumutjevning til enhver tid. \n – Kun måling (ingen reserveløsning) – Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling. Hvis det ikke finnes noen måling, ikke bruk normalisering. \n – Reserveløsning til forsterkningskorreksjon – Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling. Hvis det ikke finnes har noen måling, bruk en forhåndsdefinert forsterkningskorreksjon. \n – Fast forsterkningskorreksjon – Bruk alltid den faste volum-\/forsterkningskorreksjonen. \n – Reserveløsning til dynamisk modus – Velg automatisk det beste alternativet: Bruk (total) volum-\/forsterkningskorreksjon basert på lagret måling hvis den finnes, tillat reserveløsning til dynamisk modus hvis ingen måling er tilgjengelig.",
-            "options": {
-                "disabled": "Avslått",
-                "dynamic": "Tving dynamisk",
-                "measurement_only": "Kun måling (ingen reserveløsning)",
-                "fallback_dynamic": "Bruk dynamisk som reserveløsning"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metode for volumnormalisering til bruk for spor",
-            "options": {
-                "disabled": "Avslått",
-                "dynamic": "Tving dynamisk",
-                "measurement_only": "Kun måling (ingen reserveløsning)",
-                "fixed_gain": "Fast forsterkningskorreksjon",
-                "fallback_dynamic": "Bruk dynamisk som reserveløsning"
-            }
-        },
         "dynamic_members": {
             "label": "Dynamiske gruppemedlemmer",
             "description": "Tillat spillere å bli med i eller forlate gruppen dynamisk. Gruppespilleren beholder alltid køen."
@@ -449,22 +265,6 @@
                 "name_placeholder": "Min nye forhåndsinnstilling",
                 "remove_confirm": "Er du sikker på at du vil fjerne denne DSP-forhåndsinnstillingen?"
             }
-        },
-        "power_control": {
-            "label": "Strømstyring",
-            "description": "Definer\/overstyr strømstyringsoppførselen for denne spilleren.\nDette gjør det mulig å omdirigere på\/av-kommandoene til en annen enhet, eller bruke en 'falsk' strømstyring dersom spilleren ikke støtter på\/av-kommandoer, men du ønsker en dedikert tilstand for en spiller som ikke er i bruk."
-        },
-        "volume_control": {
-            "label": "Volumkontroll",
-            "description": "Definer\/overstyr volumkontrollens virkemåte for denne spilleren. \nDen lar deg for eksempel omdirigere volumkontrollkommandoene til en annen enhet, eller slå den av helt."
-        },
-        "mute_control": {
-            "label": "Dempingskontroll",
-            "description": "Velg hvordan demping skal fungere for denne spilleren.\nDu kan sende dempekommandoer til en annen enhet, slå av funksjonen helt, eller bruke 'simulert demping', som setter volumet til null og gjenoppretter volumet igjen når du opphever dempingen."
-        },
-        "output_limiter": {
-            "label": "Aktiver en begrenser for å forhindre forvrengning (klipping)",
-            "description": "Aktiverer en begrenser som gjør de høyeste lydnivåene lavere for å unngå forvrengning."
         },
         "dsp_enabled": "DSP er påslått",
         "dsp_disabled": "DSP er avslått",
@@ -787,36 +587,6 @@
     "music_assistant_library": "Music Assistant Bibliotek",
     "select_all_confirmation": "Vil du velge alle elementene? Det kan ta litt tid før alt lastes inn.",
     "this_device": "Denne enheten",
-    "recommendations": {
-        "in_progress_items": "Fortsett å lytte...",
-        "recommended_new_tracks": "Anbefalte nye spor",
-        "recently_played": "Nylig spilt",
-        "suggested_new_albums_for_you": "Foreslåtte nye album for deg",
-        "random_artists": "Tilfeldige artister",
-        "random_albums": "Tilfeldige album",
-        "custom_mixes": "Tilpassede mikser",
-        "your_listening_history": "Din lyttehistorikk",
-        "popular_albums": "Populære album",
-        "staff_picks_tracks": "Redaksjonens utvalgte: spor",
-        "staff_picks_albums": "Redaksjonens utvalgte: album",
-        "radio_stations_for_you": "Radiostasjoner for deg",
-        "producers__songwriters": "Produsenter og låtskrivere",
-        "new_releases_for_you": "Nye utgivelser for deg",
-        "recent_favorite_tracks": "Nylige favorittspor",
-        "favorite_playlists": "Favorittspillelister",
-        "favorite_radio_stations": "Favorittradiostasjoner",
-        "listen_again": "Lytt igjen",
-        "in_progress_series": "Fortsett serien...",
-        "recommended": "Anbefalt",
-        "recently_added": "Nylig lagt til",
-        "episodes_recently_added": "Nylig lagt til episoder",
-        "recent_series": "Nylige serier",
-        "newest_episodes": "Nyeste episoder",
-        "discover": "Oppdag",
-        "libraries": "Biblioteker",
-        "library": "Bibliotek",
-        "trending_podcasts": "Populære podkaster"
-    },
     "homescreen_edit_enable": "Rediger startskjermen",
     "homescreen_edit_disable": "Gå ut av redigeringsmodus for startskjermen",
     "lyrics_will_appear_soon": "Tekster vises når sangen begynner...",
@@ -860,25 +630,6 @@
     "description": "Beskrivelse",
     "genre": "Sjanger",
     "genres": "Sjangre",
-    "genre_names": {
-        "disco": "Disko",
-        "folk": "Folkemusikk",
-        "funk": "Funk",
-        "gospel": "Gospel",
-        "jazz": "Jazz",
-        "metal": "Metall",
-        "polka": "Polka",
-        "pop": "Pop",
-        "r_b": "R&b",
-        "reggae": "Reggae",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Singer-songwriter",
-        "ska": "Ska",
-        "soul": "Soul",
-        "swing": "Swing",
-        "tango": "Tango"
-    },
     "remove": "Fjern",
     "remove_alias": "Fjern alias",
     "remove_alias_failed": "Kunne ikke fjerne alias",

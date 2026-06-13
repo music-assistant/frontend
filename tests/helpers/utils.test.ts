@@ -257,44 +257,23 @@ describe("formatRelativeTime", () => {
 });
 
 describe("getGenreDisplayName", () => {
-  const mockT = (key: string) => {
-    const translations: Record<string, string> = {
-      "genre_names.rock": "Rock",
-      "genre_names.hip_hop": "Hip Hop",
-      full_key: "Full Key Translation",
-    };
-    return translations[key] || key;
-  };
-
-  const mockTe = (key: string) => {
-    const known = ["genre_names.rock", "genre_names.hip_hop", "full_key"];
-    return known.includes(key);
-  };
-
-  it("uses translation_key directly if it resolves", () => {
-    expect(getGenreDisplayName("rock", "full_key", mockT, mockTe)).toBe(
-      "Full Key Translation",
-    );
+  // Genre names are resolved server-side for the connection locale, so the name passed in is
+  // already the localized display value; getGenreDisplayName returns it verbatim and ignores
+  // the legacy translation_key/t/te parameters (kept only for call-site compatibility).
+  it("returns the name verbatim", () => {
+    expect(getGenreDisplayName("Hip Hop")).toBe("Hip Hop");
   });
 
-  it("uses translation_key with genre_names prefix", () => {
-    expect(getGenreDisplayName("rock", "rock", mockT, mockTe)).toBe("Rock");
+  it("ignores a provided translation_key (resolution happens server-side)", () => {
+    expect(getGenreDisplayName("Rock", "genre_names.rock")).toBe("Rock");
   });
 
-  it("generates key from name as fallback", () => {
-    expect(getGenreDisplayName("hip hop", undefined, mockT, mockTe)).toBe(
-      "Hip Hop",
-    );
-  });
-
-  it("returns original case when no translation found", () => {
-    expect(
-      getGenreDisplayName("my Custom Genre", undefined, mockT, mockTe),
-    ).toBe("my Custom Genre");
+  it("preserves the original casing", () => {
+    expect(getGenreDisplayName("my Custom Genre")).toBe("my Custom Genre");
   });
 
   it("handles empty name", () => {
-    expect(getGenreDisplayName("", undefined, mockT, mockTe)).toBe("");
+    expect(getGenreDisplayName("")).toBe("");
   });
 });
 
