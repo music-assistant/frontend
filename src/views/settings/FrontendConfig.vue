@@ -203,9 +203,17 @@ onMounted(() => {
   // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders the
   // label/option titles directly, so resolve the frontend-owned ones here from the settings.* keys.
   for (const entry of configEntries) {
-    // fall back to the in-code label if a locale is missing the settings.<key>.label string,
-    // so we never surface the raw i18n key in the UI.
+    // fall back to the in-code label/category if a locale is missing the string, so we never
+    // surface a raw i18n key in the UI.
     entry.label = $t(`settings.${entry.key}.label`, entry.label);
+    if (entry.category) {
+      // frontend-only entries carry their translated category heading directly (server entries
+      // get category_label resolved server-side); EditConfig just reads category_label.
+      entry.category_label = $t(
+        `settings.category.${entry.category}`,
+        entry.category,
+      );
+    }
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
     if (entry.options) {
