@@ -59,6 +59,9 @@ import {
 
 const DEBUG = process.env.NODE_ENV === "development";
 
+// Server-side string localization + the translations/set_locale command landed in API schema 32.
+const TRANSLATIONS_SCHEMA_VERSION = 32;
+
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
   CONNECTING = "connecting", // Establishing connection
@@ -2402,16 +2405,16 @@ export class MusicAssistantApi {
   /**
    * Declare the connection's UI locale to the server (translations/set_locale).
    *
-   * The server resolves server-provided strings for this locale at serialization. Tolerant of
-   * older servers that do not implement the command.
+   * The server resolves server-provided strings for this locale at serialization. Older servers
+   * (schema < 32) don't implement the command, so it is skipped there and they keep serving their
+   * default-locale strings.
    */
   public async setLocale(locale: string): Promise<void> {
     if (!locale || locale === "auto") return;
-    try {
-      await this.sendCommand("translations/set_locale", { locale });
-    } catch {
-      // server may predate the set_locale command — ignore
-    }
+    const schema = this.serverInfo.value?.schema_version;
+    if (typeof schema !== "number" || schema < TRANSLATIONS_SCHEMA_VERSION)
+      return;
+    await this.sendCommand("translations/set_locale", { locale });
   }
 
   /**
