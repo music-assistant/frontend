@@ -401,10 +401,13 @@ export function useSmartPlaylistRulesForm(
     const fav = !isSeed && !!favoriteRule();
     const explRule = explicitRule();
     const explicit =
-      explRule === undefined ? undefined
-      : explRule.operator === "allowed" ? null
-      : explRule.operator === "is_not" ? false
-      : true;
+      explRule === undefined
+        ? undefined
+        : explRule.operator === "allowed"
+          ? null
+          : explRule.operator === "is_not"
+            ? false
+            : true;
 
     const final: SmartPlaylistRules = {
       genre_ids: genreInclude.map((v) => v.id),
@@ -472,9 +475,9 @@ export function useSmartPlaylistRulesForm(
 
   const availableFields = computed<RuleField[]>(() => {
     if (mode.value === "seed") {
-      return (["genre", "album_type", "explicit", "year"] as RuleField[]).filter(
-        (f) => !fieldAlreadyUsed(f),
-      );
+      return (
+        ["genre", "album_type", "explicit", "year"] as RuleField[]
+      ).filter((f) => !fieldAlreadyUsed(f));
     }
     return (
       [
