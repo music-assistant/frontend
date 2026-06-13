@@ -402,6 +402,26 @@ onMounted(async () => {
       }
     },
   );
+
+  // Push UI locale changes to the server so server-provided strings (config labels, media/folder
+  // names, provider descriptions) re-localize. Initial/reconnect locale is sent from the api on
+  // ServerInfo; this catches later changes (language preference applied, manual switch).
+  watch(
+    () => i18n.global.locale.value,
+    async (locale) => {
+      // Only relevant for servers that localize server-provided strings; older servers can't
+      // re-localize, so there's nothing to push or re-fetch.
+      if (!api.supportsServerSideTranslations) return;
+      try {
+        await api.setLocale(locale as string);
+        if (api.state.value === ConnectionState.AUTHENTICATED) {
+          await api.fetchState();
+        }
+      } catch {
+        // best-effort: a failed locale push / refresh shouldn't break the UI
+      }
+    },
+  );
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);

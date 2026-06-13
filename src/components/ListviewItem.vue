@@ -242,7 +242,6 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
   getArtistsString,
-  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -257,7 +256,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
@@ -290,20 +288,7 @@ export interface Props {
   sortBy?: string;
 }
 
-// global refs
-const { t, te } = useI18n();
-
-const displayName = computed(() => {
-  if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
-  }
-  return compProps.item.name;
-});
+const displayName = computed(() => compProps.item.name);
 
 const compProps = withDefaults(defineProps<Props>(), {
   albumTrackView: false,

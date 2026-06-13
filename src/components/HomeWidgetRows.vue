@@ -127,7 +127,7 @@
       <EditorialShelf
         v-for="(row, idx) in displayedRows"
         :key="row.folder.uri"
-        :title="folderTitle(row.folder)"
+        :title="row.folder.name"
         :subtitle="row.folder.subtitle"
         :provider="folderProvider(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
@@ -325,11 +325,6 @@ watch(
   },
 );
 
-const folderTitle = (folder: RecommendationFolder) =>
-  folder.translation_key
-    ? $t(`recommendations.${folder.translation_key}`, folder.name)
-    : folder.name;
-
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
 // --- Top Picks: a curated mix from specific recommendation folders ---
@@ -343,7 +338,7 @@ const HERO_COUNT = 9;
 const norm = (s: string) => (s || "").toLowerCase();
 const findFolder = (...needles: string[]) =>
   recommendations.value.find((f) => {
-    const hay = `${norm(f.name)} ${norm(folderTitle(f))}`;
+    const hay = norm(f.name);
     return needles.some((n) => hay.includes(n));
   });
 
@@ -377,8 +372,7 @@ const buildHeroEntries = (randomize = false): HeroEntry[] => {
   const entry = (
     item: MediaItemTypeOrItemMapping | undefined,
     folder: RecommendationFolder | undefined,
-  ): HeroEntry | null =>
-    item && folder ? { item, tag: folderTitle(folder) } : null;
+  ): HeroEntry | null => (item && folder ? { item, tag: folder.name } : null);
 
   const recipe = [
     entry(playlistItems[0], playlists),
@@ -407,7 +401,7 @@ const buildHeroEntries = (randomize = false): HeroEntry[] => {
   if (out.length < HERO_COUNT) {
     const pool: HeroEntry[] = [
       ...recommendations.value.flatMap((f) =>
-        f.items.map((item) => ({ item, tag: folderTitle(f) })),
+        f.items.map((item) => ({ item, tag: f.name })),
       ),
       ...recentlyPlayed.value.map((item) => ({
         item,

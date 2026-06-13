@@ -145,140 +145,6 @@
         "add_new_provider_button": "Přidat {0} poskytovatele",
         "add_group_player": "Přidat skupinový přehrávač",
         "group_members": "Členové skupiny",
-        "log_level": {
-            "label": "Úroveň logu",
-            "description": "Nastabení podrobnosti protokolu pro tohoto poskytovatele.",
-            "options": {
-                "global": "Globální",
-                "info": "Info",
-                "warning": "Varování",
-                "error": "Chyba",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Povolení režimu toku fronty",
-            "description": "Povolte režim „flow“, kde jsou všechny stopy ve frontě odesílány jako nepřetržitý zvukový stream.\n Použijte pro přehrávače, které nativně nepodporují funkci gapless a\/nebo crossfading, nebo pokud má přehrávač potíže s přechodem mezi skladbami."
-        },
-        "auto_play": {
-            "label": "Automatické přehrávání (obnovení po zapnutí)",
-            "description": "Po zapnutí tohoto přehrávače automaticky spustit přehrávání (pokud jsou položky ve frontě)."
-        },
-        "output_channels": {
-            "label": "Režim výstupního kanálu",
-            "description": "Tento přehrávač můžete nakonfigurovat tak, aby přehrával pouze levý nebo pravý kanál, například pro vytvoření stereo páru se 2 přehrvači.",
-            "options": {
-                "stereo": "Stereo (oba kanály)",
-                "left": "Pouze levý kanál",
-                "right": "Pouze pravý kanál",
-                "mono": "Mono (oba kanály)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Povolení normalizace hlasitosti (na základě EBU-R128)",
-            "description": "Povolit normalizaci hlasitosti na základě standardu EBU-R128 bez ovlivnění dynamického rozsahu"
-        },
-        "volume_normalization_target": {
-            "label": "Cílová úroveň pro normalizaci hlasitosti",
-            "description": "Upravit průměrnou (vnímanou) hlasitost na tuto cílovou úroveň, výchozí je -17 LUFS \n\n **UPOZORNĚNÍ:** Nastavení příliš vysoké úrovně může způsobit oříznutí signálu!"
-        },
-        "eq_bass": {
-            "label": "Ekvalizér: basy",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň basů (nízkých tónů) zvuku."
-        },
-        "eq_mid": {
-            "label": "Ekvalizér: středy",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň středů zvuku."
-        },
-        "eq_treble": {
-            "label": "Ekvalizér: výšky",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň vysokých tónů zvuku."
-        },
-        "crossfade": {
-            "label": "Povolit prolínání",
-            "description": "Povolení prolínání mezi skladbami (fronty)."
-        },
-        "crossfade_duration": {
-            "label": "Doba prolínání",
-            "description": "Doba prolínání mezi skladbami v sekundách (pokud je povoleno)"
-        },
-        "hide_player": {
-            "label": "Skrýt tento přehrávač v uživatelském rozhraní",
-            "description": "Skrýt tento přehrávač v uživatelském rozhraní. \n\nPoznamenejte si, že jej lze stále ovládat a že se zobrazí i ve všech synchronizačních skupinách, do kterých přehrávač patří."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Položky k výběru při přehrávání interpreta  (v knihovně).",
-            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
-            "options": {
-                "library_tracks": "Pouze skladby v knihovně",
-                "library_album_tracks": "Všechny skladby ze všech alb v knihovně",
-                "all_tracks": "Všechny (nejlepší) skladby od (všech) poskytovatelů",
-                "all_album_tracks": "Všechny skladby ze všech alb od (všech) poskytovatelů"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Položky k výběru při přehrávání alba  (v knihovně).",
-            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
-            "options": {
-                "library_tracks": "Pouze skladby v knihovně",
-                "all_tracks": "Všechny skladby pro album u poskytovatele"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Výchozí možnost fronty pro položky interpreta.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby interpreta nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby interpreta [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby umělce hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby umělce na konec fronty"
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Výchozí možnost fronty pro položky Alba.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby z alba nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby z alba [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby z alba hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby z alba na konec fronty"
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Výchozí možnost fronty pro položky skladeb.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby [výchozí]",
-                "next": "Přehrát skladby hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby na konec fronty"
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Výchozí možnost fronty pro playlisty.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby z playlistu nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby z playlistu [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby z playlistu hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby z playlistu na konec fronty"
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Výchozí akce zařazení do fronty pro rádia.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát rádiovou stanici nyní, a ponechat zbývajíci položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát rádiovou stanici [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát rádiovou stanici hned po aktuálně přehrávané položce.",
-                "add": "Přidat rádiové stanice na konec fronty"
-            }
-        },
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "Zapnout podporu {0}",
             "dsp": "Digitální zpracování signálu (DSP)",
             "options": "Možnosti přehrávače"
-        },
-        "tts_pre_announce": {
-            "label": "Upozornění na TTS oznámení",
-            "description": "Když je do funkce Oznámení odeslána zpráva TTS (převod textu na řeč), uveď oznámení krátkým zvukem (cinknutí zvonku)."
-        },
-        "announce_volume_strategy": {
-            "label": "Strategie hlasitosti oznámení",
-            "description": "Když je do tohoto přehrávače vysíláno oznámení, jak by se měla dočasně upravit hlasitost (použijte v kombinaci s níže uvedenou hodnotou hlasitosti)?",
-            "options": {
-                "absolute": "Absolutní objem",
-                "relative": "Relativní nárůst objemu",
-                "percentual": "Zvýšení hlasitosti o pevné procento",
-                "none": "Nenastavujte hlasitost"
-            }
-        },
-        "announce_volume": {
-            "label": "Hlasitost oznámení",
-            "description": "Procentuální, relativní nebo absolutní úroveň hlasitosti, která se používá u strategie pro oznámení."
-        },
-        "announce_volume_min": {
-            "label": "Minimální úroveň hlasitosti pro oznámení",
-            "description": "Hlasitost (úprava) oznámení by neměla klesnout pod tuto úroveň."
-        },
-        "announce_volume_max": {
-            "label": "Maximální úroveň hlasitosti pro oznámení",
-            "description": "Hlasitost (úprava) oznámení by neměla přesáhnout tuto úroveň."
-        },
-        "icon": {
-            "label": "Ikona",
-            "description": "Ikona Material Design pro tento přehrávač.\n\nViz https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Téma",
@@ -373,38 +209,6 @@
         "no_music_providers_detail": "Začněte pracovat s Music Assistant přidáním svých poskytovatelů hudby.",
         "no_player_providers": "Nejsou nakonfigurováni žádní poskytovatelé přehrávačů",
         "no_player_providers_detail": "Konfigurace poskytovatelů přehrávače pro výběr zařízení, ze kterých může aplikace Music Assistant přehrávat vaši hudbu.",
-        "volume_normalization_radio": {
-            "label": "Metoda normalizace hlasitosti pro rozhlas\/rádio",
-            "description": "Nastavení upřednostňované strategie normalizace hlasitosti pro přehrávání rádia\/rozhlasu. \nVe výchozím nastavení Music Assistant shromažďuje měření (průměrné vnímané) hlasitosti rozhlasové stanice podle specifikace EBU-R128 a poté upravuje celkové zesílení\/hlasitost streamu podle tohoto měření tak, aby nebyl ovlivněn dynamický rozsah zvuku. Pokud pro rozhlasovou stanici (zatím) neexistuje žádné měření, Music Assistant se vrátí k dynamickému (ale méně přesnému) filtru vyrovnávání hlasitosti.\n\nTIP: Rozhlas ma často různou úroveň hlasitosti, zejména během hlášení a reklam.\nMůžete se rozhodnout, že u přehrávání rádia prosadíte dynamickou normalizaci hlasitosti, i když pro rozhlasovou stanici existuje (průměrné) měření hlasitosti. \n \n**Možnosti:**\n\n - Zakázáno - u přehrávání rádia vůbec nepoužívat normalizaci hlasitosti.\n - Vynutit dynamickou - vynucuje dynamické vyrovnávání hlasitosti za všech okolností. \n - Pouze měření (bez zpětné vazby) - použije (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, normalizaci neaplikujte. \n - Záložní \"korekce zisku\" - Použít (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, vrátí se k předdefinované korekci zesílení. \n - Pevná korekce zisku - Vždy použít fixní korekci hlasitosti\/zisku. \n - Záložní \"dynamicky\" - Automaticky vybere nejlepší možnost: Pokud máme nějaké měření k dispozici, povolí návrat do dynamického režimu, pokud žádné měření není k dispozici, použije se (celková) korekce hlasitosti\/zvýšení na základě uloženého měření.\n",
-            "options": {
-                "disabled": "Zakázáno",
-                "dynamic": "Vynutit \"dynamicky\"",
-                "measurement_only": "Pouze měření (bez záložního řešení)",
-                "fallback_fixed_gain": "Záložní \"korekce zisku\"",
-                "fixed_gain": "Pevná korekce zisku",
-                "fallback_dynamic": "Záložní \"dynamicky\""
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metoda normalizace hlasitosti pro skladby",
-            "description": "Nastavení preferované strategie normalizace hlasitosti pro skladby.\nMusic Assistant používá měření (průměrné vnímané) hlasitosti skladeb podle specifikace EBU-R128 k úpravě celkového zesílení\/hlasitosti přehrávání, aniž by byl ovlivněn dynamický rozsah zvuku.\nTato měření jsou buď poskytována poskytovatelem streamingu, nebo mohou být v případě místních souborů obsažena v tagu ID3 (ReplayGain 2.0 \/ Opus R128).\nPokud měření není poskytnuto, Music Assistant provede měření automaticky při\/po (prvním) přehrání skladby. Pokud pro stopu (zatím) neexistuje žádné měření, Music Assistant ve výchozím nastavení přejde na dynamický (ale méně přesný) filtr vyrovnávání hlasitosti. Ten zajišťuje, že nedochází k velkým skokům\/poklesům úrovně hlasitosti mezi jednotlivými skladbami, i když zatím neexistuje přesné měření, ale dynamický vyrovnávač může někdy trochu stlačit dynamický rozsah, i když by to ve většině případů nemělo být slyšitelné.\n\n\n**Možnosti:**\n\n - Zakázáno - u přehrávání rádia vůbec nepoužívat normalizaci hlasitosti.\n - Vynutit dynamickou - vynucuje dynamické vyrovnávání hlasitosti za všech okolností. \n - Pouze měření (bez zpětné vazby) - použije (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, normalizaci neaplikujte. \n - Záložní \"korekce zisku\" - Použít (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, vrátí se k předdefinované korekci zesílení. \n - Pevná korekce zisku - Vždy použít fixní korekci hlasitosti\/zisku. \n - Záložní \"dynamicky\" - Automaticky vybere nejlepší možnost: Pokud máme nějaké měření k dispozici, povolí návrat do dynamického režimu, pokud žádné měření není k dispozici, použije se (celková) korekce hlasitosti\/zvýšení na základě uloženého měření.\n",
-            "options": {
-                "disabled": "Zakázáno",
-                "dynamic": "Vynutit \"dynamicky\"",
-                "measurement_only": "Pouze měření (bez záložního řešení)",
-                "fallback_fixed_gain": "Záložní \"korekce zisku\"",
-                "fixed_gain": "Pevná korekce zisku",
-                "fallback_dynamic": "Záložní \"dynamicky\""
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Pevné\/záložní korekce zesílení pro audio stopy",
-            "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání audio stop (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Pevné\/záložní korekce zesílení pro rádio",
-            "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání rádia (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
-        },
         "dynamic_members": {
             "label": "Členové dynamické skupiny",
             "description": "Povolit členům (dočasně) se dynamicky připojovat\/opouštět skupinu, takže se skupina chová víceméně stejně jako ruční synchronizace přehrávačů, s hlavním rozdílem v tom, že přehrávač skupiny bude frontu uchovávat."
@@ -477,22 +281,6 @@
                 "name_placeholder": "Moje nová předvolba",
                 "remove_confirm": "Opravdu chcete tuto předvolbu DSP odebrat?"
             }
-        },
-        "power_control": {
-            "label": "Ovládání napájení",
-            "description": "Definujte\/změňte chování ovládání napájení pro tento přehrávač.\nUmožňuje vám například přesměrovat příkazy pro zapnutí\/vypnutí na jiné zařízení nebo použít falešné ovládání napájení, pokud váš přehrávač nepodporuje příkazy pro zapnutí\/vypnutí, ale chcete mít vyhrazený stav pro přehrávač, který se nepoužívá."
-        },
-        "volume_control": {
-            "label": "Ovládání hlasitosti",
-            "description": "Definujte\/změňte chování ovládání hlasitosti pro tento přehrávač. \nUmožňuje například přesměrovat příkazy ovládání hlasitosti na jiné zařízení nebo je úplně deaktivovat."
-        },
-        "mute_control": {
-            "label": "Ovládání ztlumení zvuku",
-            "description": "Definujte\/přepište chování ovládání ztlumení pro tento přehrávač. \n Umožňuje například přesměrovat příkazy pro ovládání ztlumení na jiné zařízení nebo je zcela deaktivovat. \n \n Nabízíme možnost „falešného“ ovládání ztlumení, která simuluje ztlumení nastavením hlasitosti na 0 a obnovením hlasitosti po zapnutí ztlumení."
-        },
-        "output_limiter": {
-            "label": "Povolte omezení, abyste zabránili oříznutí",
-            "description": "Aktivuje omezovač, který zabraňuje zkreslení zvuku tím, že ztiší hlasité špičky."
         },
         "dsp_enabled": "DSP je zapnuto",
         "dsp_disabled": "DSP je vypnuto",
@@ -914,37 +702,6 @@
     "music_assistant_library": "Knihovna Music Assistanta",
     "select_all_confirmation": "Vybrat všechny položky? Načtení všech dat může chvíli trvat.",
     "this_device": "Toto zařízení",
-    "recommendations": {
-        "in_progress_items": "Pokračovat v poslechu...",
-        "recommended_new_tracks": "Doporučené nové skladby",
-        "recently_played": "Nedávno přehrávané",
-        "suggested_new_albums_for_you": "Navrhovaná nová alba pro vás",
-        "random_artists": "Náhodní umělci",
-        "random_albums": "Náhodná alba",
-        "custom_mixes": "Vlastní mixy",
-        "your_listening_history": "Historie poslechu",
-        "popular_albums": "Populární alba",
-        "staff_picks_tracks": "Výběr redakce: skladby",
-        "staff_picks_albums": "Výběr redakce: alba",
-        "radio_stations_for_you": "Rozhlasové stanice pro vás",
-        "producers__songwriters": "Producenti a skladatelé",
-        "new_releases_for_you": "Nová vydání pro Vás",
-        "recent_favorite_tracks": "Nedávno oblíbené skladby",
-        "favorite_playlists": "Oblíbené seznamy skladeb",
-        "favorite_radio_stations": "Oblíbené rozhlasové stanice",
-        "listen_again": "Poslechněte si znovu",
-        "in_progress_series": "Pokračování série...",
-        "recommended": "Doporučeno",
-        "recently_added": "Nedávno přidané",
-        "episodes_recently_added": "Nedávno přidané epizody",
-        "recent_series": "Nedávné série",
-        "newest_authors": "Nejnovější autoři",
-        "newest_episodes": "Nejnovější epizody",
-        "discover": "Objevte",
-        "libraries": "Knihovny",
-        "library": "Knihovna",
-        "trending_podcasts": "Trendy podcasty"
-    },
     "homescreen_edit_enable": "Upravit domovskou obrazovku",
     "homescreen_edit_disable": "Opustit režim úprav domovské obrazovky",
     "lyrics_will_appear_soon": "Text se zobrazí, jakmile píseň začne...",
@@ -1189,67 +946,6 @@
     "description": "Popis",
     "genre": "Žánr",
     "genres": "Žánry",
-    "genre_names": {
-        "afrobeats": "Afrobeats (západoafrická městská\/popová hudba)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Hudba z anime a videoher",
-        "asian_music": "Asijská hudba",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brazilská hudba",
-        "chanson": "Chanson",
-        "childrens_music": "Hudba pro děti",
-        "christmas_music": "Vánoční hudba",
-        "church_music": "Chrámová hudba",
-        "classical": "Klasická hudba",
-        "comedy": "Hudební komedie",
-        "country": "Country",
-        "dance": "Taneční hudba",
-        "dark_ambient": "Dark ambient",
-        "dark_wave": "Dark wave",
-        "disco": "Disko",
-        "electronic": "Elektronická hudba",
-        "experimental": "Experimentální hudba",
-        "field_recording": "Záznam v terénu",
-        "folk": "Lidová hudba",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indická klasická",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latinsko americká hudba",
-        "marching_band": "Pochodová kapela",
-        "metal": "Metal",
-        "middle_eastern_music": "Blízkovýchodní hudba",
-        "musical": "Hudební",
-        "new_age": "New age",
-        "poetry": "Poezie",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelic",
-        "punk": "Punk",
-        "r_b": "R&b",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Zpěvák a skladatel",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Zvukové efekty",
-        "soundtrack": "Soundtrack",
-        "spoken_word": "Mluvené slovo",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Valčík",
-        "wellness": "Wellness"
-    },
     "link": "Propojit",
     "link_alias": "Propojit alias",
     "link_alias_failed": "Nepodařilo se propojit alias",

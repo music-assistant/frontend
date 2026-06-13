@@ -144,78 +144,6 @@
         "add_new_provider_button": "Lisää {0} palveluntarjoaja",
         "add_group_player": "Lisää ryhmäsoitin",
         "group_members": "Ryhmän jäsenet",
-        "log_level": {
-            "label": "Lokitaso",
-            "description": "Aseta lokituksen tarkkuus tälle tarjoajalle.",
-            "options": {
-                "global": "Globaali",
-                "info": "Tiedot",
-                "warning": "Varoitus",
-                "error": "Virhe",
-                "debug": "Vianmääritys"
-            }
-        },
-        "flow_mode": {
-            "description": "Ota käyttöön \"flow\"-tila, jossa kaikki jonossa olevat kappaleet lähetetään jatkuvana äänistreamina.\nKäytä tätä soittimissa, jotka eivät natiivisti tue tauotonta ja\/tai ristihäivytystä, tai jos soittimella on vaikeuksia siirtyä kappaleiden välillä."
-        },
-        "auto_play": {
-            "label": "Automaattinen toisto (jatkuu virran kytkemisen yhteydessä)",
-            "description": "Kun tämä soitin kytketään päälle, aloita toisto automaattisesti (jos jonossa on kohteita)."
-        },
-        "output_channels": {
-            "label": "Lähtökanavan tila",
-            "description": "Voit määrittää tämän soittimen toistamaan vain vasemmassa tai oikeassa kanavassa, esimerkiksi stereoparin luomiseksi kahdella soittimella.",
-            "options": {
-                "stereo": "Stereo (molemmat kanavat)",
-                "left": "Vain vasen kanava",
-                "right": "Vain oikea kanava",
-                "mono": "Mono (molemmat kanavat)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Ota käyttöön äänenvoimakkuuden normalisointi (EBU-R128-pohjainen)"
-        },
-        "eq_bass": {
-            "label": "Taajuuskorjain: basso"
-        },
-        "eq_mid": {
-            "label": "Taajuuskorjain: keskitaso"
-        },
-        "default_enqueue_action_artist": {
-            "options": {
-                "replace": "Tyhjennä jono ja toista artistin kappale\/kappaleet"
-            }
-        },
-        "default_enqueue_action_album": {
-            "options": {
-                "replace": "Tyhjennä jono ja toista albumin kappale(t)"
-            }
-        },
-        "default_enqueue_action_track": {
-            "options": {
-                "replace": "Tyhjennä jono ja toista albumin kappale(t)"
-            }
-        },
-        "announce_volume_strategy": {
-            "options": {
-                "absolute": "Absoluuttinen äänenvoimakkuus",
-                "relative": "Suhteellinen äänenvoimakkuuden nousu",
-                "percentual": "Äänenvoimakkuuden nousu kiinteällä prosenttimäärällä",
-                "none": "Älä säädä äänenvoimakkuutta"
-            }
-        },
-        "announce_volume": {
-            "label": "Äänenvoimakkuus ilmoituksille"
-        },
-        "announce_volume_min": {
-            "label": "Vähimmäisäänenvoimakkuus ilmoituksille"
-        },
-        "announce_volume_max": {
-            "label": "Enimmäisäänenvoimakkuus ilmoituksille"
-        },
-        "icon": {
-            "label": "Ikoni"
-        },
         "theme": {
             "label": "Teema",
             "options": {
@@ -259,21 +187,6 @@
         },
         "no_music_providers": "Ei määritettyjä musiikkipalveluntarjoajia",
         "no_music_providers_detail": "Aloita Music Assistant -kokemuksesi lisäämällä musiikkipalveluntarjoajasi.",
-        "volume_normalization_radio": {
-            "label": "Radion suoratoistolle käytettävä äänenvoimakkuuden normalisointimenetelmä",
-            "options": {
-                "disabled": "Pois käytöstä",
-                "dynamic": "Pakota dynaaminen",
-                "measurement_only": "Vain mittaus (ei varamenetelmää)"
-            }
-        },
-        "volume_normalization_tracks": {
-            "options": {
-                "disabled": "Pois käytöstä",
-                "dynamic": "Pakota dynaaminen",
-                "measurement_only": "Vain mittaus (ei varamenetelmää)"
-            }
-        },
         "dynamic_members": {
             "label": "Dynaamiset ryhmän jäsenet"
         },
@@ -321,18 +234,6 @@
                 "name_placeholder": "Uusi esiasetukseni",
                 "remove_confirm": "Haluatko varmasti poistaa tämän DSP-esiasetuksen?"
             }
-        },
-        "power_control": {
-            "label": "Virransäätö"
-        },
-        "volume_control": {
-            "description": "Määritä\/ohita tämän soittimen äänenvoimakkuuden säädön käyttäytyminen. Sen avulla voit esimerkiksi ohjata äänenvoimakkuuden säätökomennot toiseen laitteeseen tai poistaa ne kokonaan käytöstä."
-        },
-        "mute_control": {
-            "label": "Mykistyksen säätö"
-        },
-        "output_limiter": {
-            "label": "Ota käyttöön rajoitus estääksesi yli leikkautumisen"
         },
         "dsp_enabled": "DSP on käytössä",
         "dsp_disabled": "DSP on poistettu käytöstä",
@@ -652,37 +553,6 @@
     "music_assistant_library": "Music Assistant kirjasto",
     "select_all_confirmation": "Valitse kaikki kohteet? Tällä toiminnolla kaikkien tietojen lataaminen voi kestää hetken.",
     "this_device": "Tämä laite",
-    "recommendations": {
-        "in_progress_items": "Jatka kuuntelemista...",
-        "recommended_new_tracks": "Suositellut uudet kappaleet",
-        "recently_played": "Äskettäin toistettu",
-        "suggested_new_albums_for_you": "Ehdotettuja uusia albumeita sinulle",
-        "random_artists": "Satunnaisia artiteja",
-        "random_albums": "Satunnaisia albumeita",
-        "custom_mixes": "Mukautetut sekoitukset",
-        "your_listening_history": "Kuunteluhistoriasi",
-        "popular_albums": "Suositut albumit",
-        "staff_picks_tracks": "Henkilökunnan valinnat: kappaleet",
-        "staff_picks_albums": "Henkilökunnan valinnat: albumit",
-        "radio_stations_for_you": "Radioasemat sinulle",
-        "producers__songwriters": "Tuottajat & lauluntekijät",
-        "new_releases_for_you": "Uusia julkaisuja sinulle",
-        "recent_favorite_tracks": "Äskettäin suosikkeihin lisätyt kappaleet",
-        "favorite_playlists": "Suosikkisoittolistat",
-        "favorite_radio_stations": "Suosikkiradioasemat",
-        "listen_again": "Kuuntele uudelleen",
-        "in_progress_series": "Jatka sarjaa...",
-        "recommended": "Suositeltu",
-        "recently_added": "Äskettäin lisätyt",
-        "episodes_recently_added": "Äskettäin lisätyt jaksot",
-        "recent_series": "Viimeaikaiset sarjat",
-        "newest_authors": "Uusimmat tekijät",
-        "newest_episodes": "Uusimmat jaksot",
-        "discover": "Tutustu",
-        "libraries": "Kirjastot",
-        "library": "Kirjasto",
-        "trending_podcasts": "Trendaavat podcastit"
-    },
     "homescreen_edit_enable": "Muokkaa aloitusnäyttöä",
     "homescreen_edit_disable": "Poistu aloitusnäytön muokkaustilasta",
     "lyrics_will_appear_soon": "Sanat ilmestyvät, kun kappale alkaa...",

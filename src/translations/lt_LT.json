@@ -145,140 +145,6 @@
         "add_new_provider_button": "Pridėti {0} paslaugų teikėją",
         "add_group_player": "Pridėti grupės grotuvą",
         "group_members": "Grupės nariai",
-        "log_level": {
-            "label": "Žurnalo lygis",
-            "description": "Nustatykite šio teikėjo žurnalo išsamumą.",
-            "options": {
-                "global": "Pasaulinis",
-                "info": "Informacija",
-                "warning": "Įspėjimas",
-                "error": "Klaida",
-                "debug": "Derinimas"
-            }
-        },
-        "flow_mode": {
-            "label": "Įjungti eilės srauto režimą",
-            "description": "Įgalinti \"srauto\" režimą, kai visi eilės takeliai siunčiami kaip nepertraukiamas garso srautas. \n Naudokite grotuvams, kurie iš esmės nepalaiko tarpų ir (arba) perėjimo iš vienos dainos į kitą, arba jei grotuvui sunku pereiti nuo vienos dainos prie kitos."
-        },
-        "auto_play": {
-            "label": "Automatinis paleidimas (tęsti įjungus)",
-            "description": "Įjungus šį grotuvą, automatiškai pradedamas grojimas (jei eilėje yra elementų)."
-        },
-        "output_channels": {
-            "label": "Išvesties kanalo režimas",
-            "description": "Šį grotuvą galite sukonfigūruoti taip, kad jis grotų tik kairįjį arba dešinįjį kanalą, pavyzdžiui, norėdami sukurti stereo porą su 2 grotuvais.",
-            "options": {
-                "stereo": "Stereo (abu kanalai)",
-                "left": "Tik kairysis kanalas",
-                "right": "Tik dešinysis kanalas",
-                "mono": "Mono (abu kanalai)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Įgalinti garsumo normalizavimą (EBU-R128 pagrindu)",
-            "description": "Įgalinti garsumo normalizavimą pagal EBU-R128 standartą nepaveikiant dinaminio diapazono"
-        },
-        "volume_normalization_target": {
-            "label": "Tikslinis tūrio normalizavimo lygis",
-            "description": "Nustatykite vidutinį (suvokiamą) garsumą iki šio tikslinio lygio, numatytoji reikšmė yra -17 LUFS \n \n **ĮSPĖJIMAS:** Nustačius per didelį lygį, gali kilti garsų iškraipymas!"
-        },
-        "eq_bass": {
-            "label": "Ekvalaizeris: bosas",
-            "description": "Norėdami reguliuoti žemų dažnių (žemų tonų) lygį, naudokite integruotą pagrindinį ekvalaizerį."
-        },
-        "eq_mid": {
-            "label": "Ekvalaizeris: vidutinis",
-            "description": "Norėdami reguliuoti vidutinį garso lygį, naudokite įmontuotą pagrindinį ekvalaizerį."
-        },
-        "eq_treble": {
-            "label": "Ekvalaizeris: aukštų dažnių",
-            "description": "Norėdami reguliuoti aukštų dažnių (garso) lygį, naudokite integruotą pagrindinį ekvalaizerį."
-        },
-        "crossfade": {
-            "label": "Įjungti kryžminį perėjimą",
-            "description": "Įjungti kryžminį perėjimą tarp (eilės) takelių."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade trukmė",
-            "description": "Kryžminio perėjimo tarp takelių trukmė sekundėmis (jei įjungta)"
-        },
-        "hide_player": {
-            "label": "Slėpti šį grotuvą vartotojo sąsajoje",
-            "description": "Paslėpti šį grotuvą vartotojo sąsajoje. \n \n Atkreipkite dėmesį, kad jį vis tiek galima valdyti ir jis bus rodomas visose sinchronizavimo grupėse, kurioms grotuvas priklauso."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementai, kuriuos reikia pasirinkti grojant (bibliotekoje esantį) atlikėją.",
-            "description": "Jei norite vaidinti atlikėją, kokius elementus reikėtų įtraukti į eilę?",
-            "options": {
-                "library_tracks": "Tik bibliotekoje esantys takeliai",
-                "library_album_tracks": "Visi kūriniai iš visų bibliotekos albumų",
-                "all_tracks": "Visi (populiariausi) kūriniai iš (visų) tiekėjų",
-                "all_album_tracks": "Visi kūriniai iš visų albumų iš (visų) teikėjų"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementai, kuriuos galite pasirinkti paleisdami (bibliotekoje esantį) albumą.",
-            "description": "Jei norite leisti albumą, kokius elementus reikėtų įtraukti į eilę?",
-            "options": {
-                "library_tracks": "Tik bibliotekoje esantys takeliai",
-                "all_tracks": "Visi albumo kūriniai iš teikėjo"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Numatytoji atlikėjo elemento (-ų) įtraukimo į eilę parinktis.",
-            "description": "Apibrėžkite numatytąjį įtraukimo į eilę veiksmą šiam medijos tipui (jei nenurodėte veiksmo).",
-            "options": {
-                "play": "Dabar leisti atlikėjo takelį(-ius) ir palikti likusį(-ius) eilės elementą(-us).",
-                "replace": "Išvalykite eilę ir paleiskite atlikėjo kūrinį (-ius)",
-                "next": "Leisti elementą (-us) iškart po šiuo metu leidžiamo \/ buferinio elemento.",
-                "replace_next": "Išvalyti eilę ir paleisti atlikėjo takelį(-us) iškart po šiuo metu grojamo\/buferinio elemento.",
-                "add": "Pridėkite atlikėjo takelį(-us) eilės gale."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Numatytoji albumo elemento (-ų) įtraukimo į eilę parinktis.",
-            "description": "Apibrėžkite numatytąjį įtraukimo į eilę veiksmą šiam medijos tipui (jei nenurodėte veiksmo).",
-            "options": {
-                "play": "Leisti albumo takelį(-ius) dabar ir palikti likusį(-ius) eilės elementą(-us).",
-                "replace": "Išvalyti eilę ir paleisti albumo takelį(-ius)",
-                "next": "Leisti elementą (-us) iškart po šiuo metu leidžiamo \/ buferinio elemento.",
-                "replace_next": "Išvalyti eilę ir leisti albumo takelį (-ius) iškart po šiuo metu grojamo \/ buferinio elemento.",
-                "add": "Pridėkite albumo takelį (-ius) eilės gale."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Numatytoji įtraukimo į eilę parinktis sekti elementą(-us).",
-            "description": "Apibrėžkite numatytąjį įtraukimo į eilę veiksmą šiam medijos tipui (jei nenurodėte veiksmo).",
-            "options": {
-                "play": "Leisti takelį(-ius) dabar ir palikti likusį(-ius) eilės elementą(-us).",
-                "replace": "Išvalykite eilę ir paleiskite takelį(-ius).",
-                "next": "Leisti takelį (-ius) iškart po šiuo metu grojamo \/ buferinio elemento.",
-                "replace_next": "Išvalyti eilę ir leisti takelį (-ius) iškart po šiuo metu grojamo \/ buferinio elemento.",
-                "add": "Pridėkite takelį(-ius) eilės gale."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Numatytoji įtraukimo į eilę parinktis grojaraščio elementui (-ams).",
-            "description": "Apibrėžkite numatytąjį įtraukimo į eilę veiksmą šiam medijos tipui (jei nenurodėte veiksmo).",
-            "options": {
-                "play": "Leisti grojaraščio takelį(-ius) dabar ir palikti likusį(-ius) eilės elementą(-us).",
-                "replace": "Išvalyti eilę ir paleisti grojaraščio takelį(-ius)",
-                "next": "Leisti elementą (-us) iškart po šiuo metu leidžiamo \/ buferinio elemento.",
-                "replace_next": "Išvalyti eilę ir leisti grojaraščio takelį(-ius) iškart po šiuo metu grojamo\/buferinio elemento.",
-                "add": "Pridėkite grojaraščio takelį(-ius) eilės gale."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Numatytoji įkėlimo į eilę parinktis radijo elementui (-ams).",
-            "description": "Apibrėžkite numatytąjį įtraukimo į eilę veiksmą šiam medijos tipui (jei nenurodėte veiksmo).",
-            "options": {
-                "play": "Leisti radijo stotį dabar ir palikti likusį(-ius) eilės elementą(-us).",
-                "replace": "Išvalykite eilę ir paleiskite radijo stotį",
-                "next": "Leisti elementą (-us) iškart po šiuo metu leidžiamo \/ buferinio elemento.",
-                "replace_next": "Išvalyti eilę ir paleisti radijo stotį (-is) iškart po šiuo metu grojamo \/ buferinio elemento.",
-                "add": "Pridėkite radijo stotį (-is) eilės gale."
-            }
-        },
         "default": "numatytasis",
         "provider_depends_on_confirm": "Prieš nustatymą {0}, jums reikia turėti {1} Paslaugų teikėjas sukonfigūruotas, ar norite tai padaryti dabar?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "Įjungti {0} parama",
             "dsp": "Skaitmeninis signalų apdorojimas (DSP)",
             "options": "Žaidėjo parinktys"
-        },
-        "tts_pre_announce": {
-            "label": "Iš anksto paskelbti TTS pranešimus",
-            "description": "Kai į pranešimų funkciją siunčiama TTS (teksto įgarsinimo) žinutė, prieš pranešimą įjungiamas trumpas išankstinis pranešimo garsas (švilpukas)."
-        },
-        "announce_volume_strategy": {
-            "label": "Pranešimų apimties strategija",
-            "description": "Kai šiam grotuvui transliuojamas pranešimas, kaip laikinai reguliuoti garsumą (naudoti kartu su toliau nurodyta garsumo verte)?",
-            "options": {
-                "absolute": "Absoliutus tūris",
-                "relative": "Santykinis tūrio padidėjimas",
-                "percentual": "Apimties padidinimas fiksuotu procentiniu dydžiu",
-                "none": "Nereguliuokite garsumo"
-            }
-        },
-        "announce_volume": {
-            "label": "Pranešimų garsumas",
-            "description": "Procentinis, santykinis arba absoliutus garsumo lygis, naudojamas su pranešimų strategija."
-        },
-        "announce_volume_min": {
-            "label": "Minimalus pranešimų garsumo lygis",
-            "description": "Pranešimų garsumas (koregavimas) neturėtų nukristi žemiau šio lygio."
-        },
-        "announce_volume_max": {
-            "label": "Didžiausias pranešimų garsumo lygis",
-            "description": "Pranešimų garsumas (koregavimas) neturėtų viršyti šio lygio."
-        },
-        "icon": {
-            "label": "Piktograma",
-            "description": "Šio grotuvo medžiagų dizaino piktograma. \n \n Žr. https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -374,38 +210,6 @@
         "no_music_providers_detail": "Pradėkite naudotis Music Assistant pridėdami muzikos paslaugų tiekėjus.",
         "no_player_providers": "Nėra sukonfigūruotų grotuvų tiekėjų",
         "no_player_providers_detail": "Konfigūruokite grotuvų teikėjus, kad pasirinktumėte įrenginius, kuriuose Music Assistant gali atkurti jūsų muziką.",
-        "volume_normalization_radio": {
-            "label": "Radijo srautams naudotinas garsumo normalizavimo metodas",
-            "description": "Nustatykite pageidaujamą radijo srautų garsumo normalizavimo strategiją. \n Pagal numatytuosius nustatymus Music Assistant renka radijo stoties (vidutinio suvokiamo) garsumo matavimą pagal EBU-R128 specifikaciją ir tada pagal tą matavimą reguliuoja bendrą srauto stiprinimą \/ garsumą, kad nebūtų paveiktas garso dinaminis diapazonas. Kai radijo stočiai (dar) nėra matavimo, Music Assistant naudos dinaminį (bet mažiau tikslų) garsumo išlyginimo filtrą. \n \n PATARIMAS: Radijo srautų garsumo lygiai dažnai skiriasi, ypač pranešimų ir reklamų metu. \n Galite pasirinkti vykdyti dinaminį garsumo normalizavimą radijo srautams, net jei yra (vidutinis) radijo stoties garsumo matavimas. \n \n **Parinktys:** \n \n – Išjungta – radijo srautams garsumo normalizavimas visai netaikomas. \n – Priverstinai dinaminis – dinaminis garsumo išlyginimas vykdomas visą laiką. \n – Tik matavimas (be atsarginio režimo) – Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą. Jei matavimų nėra, normalizavimas netaikomas. \n – Atsarginis režimas su stiprinimo korekcija – Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą. Jei matavimų nėra, grįžtama prie iš anksto nustatytos stiprinimo korekcijos. \n – Fiksuoto stiprinimo korekcija – Visada taikoma fiksuota garsumo \/ stiprinimo korekcija. \n – Atsarginis režimas su dinaminiu – Automatiškai pasirenkamas geriausias variantas: Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą, jei tokį turime, leidžiama grįžti prie dinaminio režimo, jei matavimų nėra. \n",
-            "options": {
-                "disabled": "Išjungtas",
-                "dynamic": "Jėgos dinamika",
-                "measurement_only": "Tik matavimas (be atsarginio varianto)",
-                "fallback_fixed_gain": "Atsarginis būdas gauti korekciją",
-                "fixed_gain": "Fiksuoto stiprinimo korekcija",
-                "fallback_dynamic": "Grįžimas prie dinaminio"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Garsumo normalizavimo metodas, naudojamas takeliams",
-            "description": "Nustatykite pageidaujamą garsumo normalizavimo strategiją takams \/ dainoms. \n Music Assistant naudoja takelio (vidutinio suvokiamo) garsumo matavimą pagal EBU-R128 specifikaciją, kad sureguliuotų bendrą srauto stiprinimą \/ garsumą nepaveikdamas garso dinaminio diapazono. \n Šiuos matavimus pateikia srautinio perdavimo teikėjas arba, vietinių failų atveju, gali būti ID3 žymėse (ReplayGain 2.0 \/ Opus R128). \n Jei matavimas nepateikiamas, Music Assistant automatiškai atliks matavimą, kai \/ po to, kai takelis (pirmą kartą) paleidžiamas. Kai takelio matavimo (dar) nėra, Music Assistant pagal numatytuosius nustatymus naudos dinaminį (bet mažiau tikslų) garsumo išlyginimo filtrą. Tai užtikrina, kad tarp takelių garsumo lygis nebūtų didelis, net jei dar nėra tikslaus matavimo, tačiau dinaminis lygintuvas kartais gali šiek tiek suspausti dinaminį diapazoną, nors daugeliu atvejų to neturėtų būti girdima. \n \n \n **Parinktys:** \n \n – Išjungta – radijo srautams visiškai netaikomas garsumo normalizavimas. \n – Priverstinis dinaminis – Visada priverstinai taikomas dinaminis garsumo išlyginimas. \n – Tik matavimas (be atsarginio režimo) – Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą. Jei matavimų nėra, normalizavimas netaikomas. \n – Atsarginis režimas – Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą. Jei matavimų nėra, normalizavimas netaikomas. L__NEWLINE__R – Atsarginis režimas – Taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą. Jei matavimų nėra, grįžtama prie iš anksto nustatytos stiprinimo korekcijos. \n – Fiksuoto stiprinimo korekcija – Visada taikoma fiksuota garsumo \/ stiprinimo korekcija. \n – Atsarginis režimas – Automatiškai pasirenkamas geriausias variantas: taikoma (bendra) garsumo \/ stiprinimo korekcija pagal išsaugotą matavimą, jei tokių yra, leidžiama grįžti prie dinaminio režimo, jei matavimų nėra. \n",
-            "options": {
-                "disabled": "Išjungtas",
-                "dynamic": "Jėgos dinamika",
-                "measurement_only": "Tik matavimas (be atsarginio varianto)",
-                "fallback_fixed_gain": "Atsarginis būdas gauti korekciją",
-                "fixed_gain": "Fiksuoto stiprinimo korekcija",
-                "fallback_dynamic": "Grįžimas prie dinaminio"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fiksuotas\/atsarginis takelių stiprinimo reguliavimas",
-            "description": "Fiksuota\/atsarginė stiprinimo korekcija, taikoma takelio garso srautui (priklauso nuo nustatymo „Garsumo normalizavimo metodas“). \n Naudokite teigiamą reikšmę garsumui padidinti, neigiamą reikšmę – garsumui sumažinti. \n \n Šis nustatymas naudojamas, kai garsumo normalizavimo metodas nustatytas kaip 'Fiksuota stiprinimo korekcija' arba 'Atsarginė stiprinimo korekcija'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fiksuotas\/atsarginis radijo stiprinimo reguliavimas",
-            "description": "Fiksuotas\/atsarginis stiprinimo korekcijos metodas, taikomas radijo srautui (priklauso nuo nustatymo 'Garsumo normalizavimo metodas'). \n Naudokite teigiamą reikšmę, norėdami padidinti garsumą, neigiamą reikšmę, norėdami jį sumažinti. \n \n Šis nustatymas naudojamas, kai garsumo normalizavimo metodas nustatytas kaip 'Fiksuotas stiprinimo korekcijos metodas' arba 'Atsarginis stiprinimo korekcijos metodas'."
-        },
         "dynamic_members": {
             "label": "Dinaminės grupės nariai",
             "description": "Leisti nariams (laikinai) dinamiškai prisijungti prie grupės \/ iš jos išeiti, kad grupė veiktų daugmaž taip pat, kaip rankiniu būdu sinchronizuojant grotuvus, o pagrindinis skirtumas yra tas, kad grupės grotuvai laikys eilę."
@@ -478,22 +282,6 @@
                 "name_placeholder": "Mano naujas išankstinis nustatymas",
                 "remove_confirm": "Ar tikrai norite pašalinti šį DSP išankstinį nustatymą?"
             }
-        },
-        "power_control": {
-            "label": "Galios valdymas",
-            "description": "Apibrėžkite \/ nepaisykite šio grotuvo maitinimo valdymo elgsenos. \n Tai leidžia, pavyzdžiui, nukreipti įjungimo \/ išjungimo komandas į kitą įrenginį arba naudoti netikrą maitinimo valdiklį, jei jūsų grotuvas nepalaiko įjungimo \/ išjungimo komandų, bet norite turėti atskirą būseną nenaudojamam grotuvui."
-        },
-        "volume_control": {
-            "label": "Garsumo valdymas",
-            "description": "Apibrėžkite \/ nepaisykite šio grotuvo garsumo valdymo elgsenos. \n Tai leidžia, pavyzdžiui, nukreipti garsumo valdymo komandas į kitą įrenginį arba visiškai jį išjungti."
-        },
-        "mute_control": {
-            "label": "Nutildymo valdymas",
-            "description": "Apibrėžkite \/ nepaisykite šio grotuvo nutildymo valdymo elgsenos. \n Tai leidžia, pavyzdžiui, nukreipti nutildymo valdymo komandas į kitą įrenginį arba visiškai jį išjungti. \n \n Siūlome „netikrą“ nutildymo valdymo parinktį, kuri imituos nutildymą, nustatydama garsumą į 0 ir atkurdama garsumą įjungus nutildymą."
-        },
-        "output_limiter": {
-            "label": "Įjunkite apribojimą, kad išvengtumėte apkarpymo",
-            "description": "Įjungia ribotuvą, kuris apsaugo nuo garso iškraipymo, nutildydamas garsius pikus."
         },
         "dsp_enabled": "DSP įjungtas",
         "dsp_disabled": "DSP yra išjungtas",
@@ -958,46 +746,6 @@
     "music_assistant_library": "Music Assistant Biblioteka",
     "select_all_confirmation": "Pasirinkti visus elementus? Ši operacija gali užtrukti, kol bus įkelti visi duomenys.",
     "this_device": "Šis įrenginys",
-    "recommendations": {
-        "in_progress_items": "Klausykitės toliau...",
-        "recommended_new_tracks": "Rekomenduojami nauji kūriniai",
-        "recently_played": "Neseniai leista",
-        "suggested_new_albums_for_you": "Jums siūlomi nauji albumai",
-        "random_artists": "Atsitiktiniai atlikėjai",
-        "random_albums": "Atsitiktiniai albumai",
-        "custom_mixes": "Individualūs mišiniai",
-        "your_listening_history": "Jūsų klausymosi istorija",
-        "popular_albums": "Populiarūs albumai",
-        "staff_picks_tracks": "Personalo pasirinkimai: trasos",
-        "staff_picks_albums": "Darbuotojų rekomendacijos: albumai",
-        "radio_stations_for_you": "Radijo stotys jums",
-        "producers__songwriters": "Prodiuseriai & dainų autoriai",
-        "new_releases_for_you": "Nauji leidimai jums",
-        "recent_favorite_tracks": "Neseniai į mėgstamiausius įrašyti takeliai",
-        "favorite_playlists": "Mėgstamiausi grojaraščiai",
-        "favorite_radio_stations": "Mėgstamiausios radijo stotys",
-        "listen_again": "Klausyk dar kartą",
-        "in_progress_series": "Tęskite seriją...",
-        "recommended": "Rekomenduojama",
-        "recently_added": "Neseniai pridėta",
-        "episodes_recently_added": "Neseniai pridėtos serijos",
-        "recent_series": "Naujausios serijos",
-        "newest_authors": "Naujausi autoriai",
-        "newest_episodes": "Naujausi epizodai",
-        "discover": "Atraskite",
-        "libraries": "Bibliotekos",
-        "library": "Biblioteka",
-        "trending_podcasts": "Populiariausi podcast'ai",
-        "trending_stations": "Populiariausios stotys",
-        "forgotten_tracks": "Pamirštos trasos",
-        "forgotten_albums": "Pamiršti albumai",
-        "forgotten_artists": "Pamirštų menininkų",
-        "most_played_tracks": "Dažniausiai grojami kūriniai",
-        "never_played_tracks": "Niekada \/ retai leistas",
-        "recent_favorite_albums": "Neseniai mėgstamiausi albumai",
-        "recently_added_tracks": "Neseniai pridėti takeliai",
-        "inspired_by_recently_played": "Įkvėptas neseniai žaistų"
-    },
     "homescreen_edit_enable": "Redaguoti pagrindinį ekraną",
     "homescreen_edit_disable": "Išeiti iš redagavimo režimo",
     "lyrics_will_appear_soon": "Dainos žodžiai pasirodys, kai prasidės daina...",
@@ -1243,67 +991,6 @@
     "description": "Aprašymas",
     "genre": "Žanras",
     "genres": "Žanrai",
-    "genre_names": {
-        "afrobeats": "Afrobitai (Vakarų Afrikos miesto \/ popmuzika)",
-        "ambient": "Aplinka",
-        "anime_and_video_game_music": "Anime ir vaizdo žaidimų muzika",
-        "asian_music": "Azijos muzika",
-        "bluegrass": "Bluegrass",
-        "blues": "Bliuzas",
-        "brazilian_music": "Brazilijos muzika",
-        "chanson": "Šansonas",
-        "childrens_music": "Vaikų muzika",
-        "christmas_music": "Kalėdų muzika",
-        "church_music": "Bažnyčios muzika",
-        "classical": "Klasikinė",
-        "comedy": "Komedija",
-        "country": "Country",
-        "dance": "Dance",
-        "dark_ambient": "Tamsus aplinkos",
-        "dark_wave": "Tamsi banga",
-        "disco": "Disko",
-        "electronic": "Elektroninis",
-        "experimental": "Eksperimentinis",
-        "field_recording": "Lauko įrašymas",
-        "folk": "Liaudies",
-        "funk": "Funkas",
-        "gangsta_rap": "Gangsterių repas",
-        "gospel": "Evangelija",
-        "hip_hop": "Hiphopas",
-        "indian_classical": "Indijos klasika",
-        "industrial": "Pramoninis",
-        "jazz": "Džiazas",
-        "klezmer": "Klezmer",
-        "latin": "Lotynų kalba",
-        "marching_band": "Žygiuojantis orkestras",
-        "metal": "Metalas",
-        "middle_eastern_music": "Artimųjų Rytų muzika",
-        "musical": "Muzikinis",
-        "new_age": "Naujasis amžius",
-        "poetry": "Poezija",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psichodelinis",
-        "punk": "Punk",
-        "r_b": "R&b",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Regis",
-        "reggaeton": "Reggaetonas",
-        "rock": "Rokas",
-        "salsa": "Salsa",
-        "singer_songwriter": "Dainininkas-dainų autorius",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Garso efektai",
-        "soundtrack": "Garso takelis",
-        "spoken_word": "Ištartas žodis",
-        "swing": "Svingas",
-        "tango": "Tango",
-        "trap": "Spąstai",
-        "waltz": "Valsas",
-        "wellness": "Gerovė"
-    },
     "link": "Nuoroda",
     "link_alias": "Nuorodos slapyvardis",
     "link_alias_failed": "Nepavyko susieti slapyvardžio",

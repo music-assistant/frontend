@@ -145,140 +145,6 @@
         "add_new_provider_button": "{0} provider toevoegen",
         "add_group_player": "Groepspeler toevoegen",
         "group_members": "Groepsleden",
-        "log_level": {
-            "label": "Logniveau",
-            "description": "Stel het logniveau in van deze provider.",
-            "options": {
-                "global": "Globaal",
-                "info": "Info",
-                "warning": "Waarschuwing",
-                "error": "Fout",
-                "debug": "Foutopsporing"
-            }
-        },
-        "flow_mode": {
-            "label": "\"flow mode\" inschakelen",
-            "description": "Schakel de \"flow\" modus in waarbij alle nummers in de wachtrij als een continue audiostream worden verzonden. \nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen nummers."
-        },
-        "auto_play": {
-            "label": "Automatisch afspelen (hervatten bij inschakelen)",
-            "description": "Wanneer deze speler is ingeschakeld, wordt het afspelen automatisch gestart (als er items in de wachtrij staan)."
-        },
-        "output_channels": {
-            "label": "Modus uitgangskanaal",
-            "description": "U kunt deze speler configureren om alleen het linker- of rechterkanaal af te spelen, bijvoorbeeld om een stereopaar met 2 spelers te maken.",
-            "options": {
-                "stereo": "Stereo (beide kanalen)",
-                "left": "Alleen linkerkanaal",
-                "right": "Alleen rechterkanaal",
-                "mono": "Mono (beide kanalen)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Volumenormalisatie inschakelen (gebaseerd op EBU-R128)",
-            "description": "Volumenormalisatie inschakelen op basis van de EBU-R128-standaard zonder het dynamisch bereik te beïnvloeden"
-        },
-        "volume_normalization_target": {
-            "label": "Doelniveau voor volumenormalisatie",
-            "description": "Pas de gemiddelde (waargenomen) luidheid aan naar dit doelniveau, standaard is -17 LUFS \n\n **WAARSCHUWING:** Als u het niveau te hoog instelt, kan dit leiden tot clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bas",
-            "description": "Gebruik de ingebouwde basis equalizer om de lage tonen van het geluid aan te passen."
-        },
-        "eq_mid": {
-            "label": "Equalizer: midden",
-            "description": "Gebruik de ingebouwde basis-equalizer om het middenniveau van audio aan te passen."
-        },
-        "eq_treble": {
-            "label": "Equalizer: hoge tonen",
-            "description": "Gebruik de ingebouwde basis equalizer om de hoge tonen van audio aan te passen."
-        },
-        "crossfade": {
-            "label": "Crossfade inschakelen",
-            "description": "Schakel een crossfade-overgang tussen (wachtrij)nummers in."
-        },
-        "crossfade_duration": {
-            "label": "Duur van crossfade",
-            "description": "Duur in seconden van de crossfade tussen nummers (indien ingeschakeld)"
-        },
-        "hide_player": {
-            "label": "Verberg deze speler in de gebruikersinterface",
-            "description": "Verberg deze speler in de gebruikersinterface. \n\nBesef dat je de speler nog wel gewoon kunt bedienen. Ook blijft hij zichtbaar in de synchronisatiegroepen waar hij in zit."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Te selecteren items wanneer je een artiest (uit de bibliotheek) afspeelt.",
-            "description": "Wanneer je een artiest wilt afspelen, welke items zouden dan in de wachtrij moeten?",
-            "options": {
-                "library_tracks": "Uitsluitend nummers uit de bibliotheek",
-                "library_album_tracks": "Alle nummers van alle albums in de bibliotheek.",
-                "all_tracks": "Alle (top) nummers van (alle) aanbieders.",
-                "all_album_tracks": "Alle nummers van alle albums van (alle) aanbieders."
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Te selecteren items wanneer je een album uit de bibliotheek wilt afspelen.",
-            "description": "Wanneer je een artiest wilt afspelen, welke items moet dan op de wachtrij worden geplaatst?",
-            "options": {
-                "library_tracks": "Alleen nummers in de bibliotheek.",
-                "all_tracks": "Alle nummers voor het album op aanbieder."
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standaard wachtrij-optie voor de items van de artiest.",
-            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
-            "options": {
-                "play": "Speel nu het nummer(s) van de artiest en bewaar de resterende items van de wachtrij.",
-                "replace": "Wis de wachtrij en speel het nummer(s) van de artiest.",
-                "next": "Speel het item(s) direct na het huidig spelende of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het nummer(s) van de artiest direct na het huidig spelende of gebufferde nummer.",
-                "add": "Voeg de nummers van de artiest toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standaard wachtrij-optie voor album item(s).",
-            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
-            "options": {
-                "play": "Speel het album nummer nu en behoudt de resterende wachtlijst items.",
-                "replace": "Wis de wachtrij en speel het album nummer.",
-                "next": "Speel het item direct na het huidig afspelende of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het album nummer(s) direct na het huidig spelende of gebufferde item.",
-                "add": "Voeg het album nummer(s) toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standaard wachrij-optie voor afspeel items.",
-            "description": "Definieer de standaard wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
-            "options": {
-                "play": "Speel het nummer(s) nu en hou de overblijvende wachtrij items.",
-                "replace": "Wis de wachtrij en speel het nummer(s).",
-                "next": "Speel het nummer(s) meteen na het huidige afgespeelde of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het nummer(s) direct na het huidig afgespeelde of gebufferde item.",
-                "add": "Voeg het nummer(s) toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standaard wachtrij-actie voor items op de afspeellijst.",
-            "description": "Definieer de standaard wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
-            "options": {
-                "play": "Speel nu de afspeellijst en hou de overige nummers in de wachtrij.",
-                "replace": "Wis de wachtrij en speel de nummers van de afspeellijst",
-                "next": "Speel het item(s) direct na het nu afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel de afspeellijstnummer(s) af direct na het huidige afgespeelde\/gebufferde item.",
-                "add": "Voeg de nummer(s) van de afspeellijst toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standaard wachtrij-optie voor Radio item(s).",
-            "description": "Definieer de standaardactie voor het in de wachtrij plaatsen voor dit mediatype (als je geen actie hebt opgegeven).",
-            "options": {
-                "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
-                "replace": "Wis de wachtrij en speel het radiostation af",
-                "next": "Speel het item of de items direct na het huidig afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel het radiostation(s) af direct na het huidige afgespeelde\/gebufferde item.",
-                "add": "Voeg het radiostation(s) toe aan het einde van de wachtrij."
-            }
-        },
         "default": "standaard",
         "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?",
         "category": {
@@ -298,36 +164,6 @@
             "preferences": "Voorkeuren",
             "display_settings": "Weergave",
             "airplay": "AirPlay-specifieke instellingen"
-        },
-        "tts_pre_announce": {
-            "label": "Kondig TTS-aankondigingen vooraf aan",
-            "description": "Wanneer een TTS-bericht (tekst-naar-spraak) naar de aankondigingsfunctie wordt verzonden, laat u de aankondiging voorafgaan door een kort vooraankondigingsgeluid (belsignaal)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volumestrategie voor aankondigingen",
-            "description": "Wanneer er een aankondiging naar deze speler wordt uitgezonden, hoe moet het volume dan tijdelijk worden aangepast (gebruik in combinatie met de volumewaarde hieronder).",
-            "options": {
-                "absolute": "Absoluut volume",
-                "relative": "Relatieve volumetoename",
-                "percentual": "Volumeverhoging met vast percentage",
-                "none": "Pas het volume niet aan"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume voor aankondigingen",
-            "description": "Het procentuele, relatieve of absolute volumeniveau, gebruikt bij de strategie voor aankondigingen."
-        },
-        "announce_volume_min": {
-            "label": "Minimaal volumeniveau voor aankondigingen",
-            "description": "Het volume (aanpassing) van aankondigingen mag niet onder dit niveau komen."
-        },
-        "announce_volume_max": {
-            "label": "Maximaal volumeniveau voor aankondigingen",
-            "description": "Het volume (aanpassing) van aankondigingen mag niet boven dit niveau komen."
-        },
-        "icon": {
-            "label": "Pictogram",
-            "description": "Material design-pictogram voor deze speler. \n\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Thema",
@@ -378,38 +214,6 @@
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
         "no_player_providers": "Geen spelerproviders geconfigureerd",
         "no_player_providers_detail": "Configureer spelerproviders om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
-        "volume_normalization_radio": {
-            "label": "Volumenormalisatiemethode om te gebruiken voor radiostreams",
-            "description": "Stel de voorkeursstrategie voor volumenormalisatie voor radiostreams in. \nStandaard verzamelt Music Assistant een meting van de (gemiddeld waargenomen) luidheid van het radiostation volgens de EBU-R128-specificatie en past vervolgens de totale versterking\/het volume van de stream aan op basis van die meting, zodat het dynamisch bereik van de audio niet wordt beïnvloed. Wanneer er (nog) geen meting bestaat voor een radiostation, zal Music Assistant terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter.\n\nTIP: Radiostreams hebben vaak verschillende luidheidsniveaus, vooral tijdens aankondigingen en commercials.\nU kunt ervoor kiezen om dynamische volumenormalisatie altijd af te dwingen voor radiostreams, zelfs als er een (gemiddelde) luidheidsmeting voor het radiostation bestaat. \n \n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams. \n  - Forceer Dynamische modus - Dwing te allen tijde dynamische volumenivellering af. \n  - Alleen meting (geen fallback) - Pas volumenormalisatie toe op basis van een opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe.\n  - Terugval naar versterkingscorrectie - Pas volumenormalisatie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie.\n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe.\n  - Terugval naar dynamisch - Kies automatisch de beste optie: Pas volumenormalisatie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
-            "options": {
-                "disabled": "Uitgeschakeld",
-                "dynamic": "Forceer dynamische modus",
-                "measurement_only": "Alleen meting (geen fallback)",
-                "fallback_fixed_gain": "Val terug op vaste versterkingscorrectie",
-                "fixed_gain": "Vaste versterkingscorrectie",
-                "fallback_dynamic": "Terugvallen op dynamisch"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Volumenormalisatiemethode om te gebruiken voor nummers",
-            "description": "Stel de voorkeursstrategie voor volumenormalisatie in voor nummers\/liedjes.\n\nMusic Assistant gebruikt een meting van de (gemiddeld waargenomen) luidheid van de nummers volgens de EBU-R128-specificatie om de totale versterking\/volume van de stream aan te passen zonder het dynamische bereik van de audio te beïnvloeden.\nDeze metingen worden ofwel verstrekt door de streamingprovider of, in het geval van lokale bestanden, kunnen worden opgenomen in de ID3-tags (ReplayGain 2.0 \/ Opus R128).\n\nAls de meting niet wordt opgegeven, voert Music Assistant automatisch een meting uit wanneer\/nadat het nummer (voor het eerst) is afgespeeld. Wanneer er (nog) geen meting bestaat voor een nummer, zal Music Assistant standaard terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter. Dit zorgt ervoor dat er geen verschillen in het volumeniveau tussen nummers zijn, zelfs als er nog geen nauwkeurige meting is, maar de dynamische leveler kan het dynamisch bereik soms een beetje comprimeren, hoewel dat in de meeste gevallen niet hoorbaar zou moeten zijn.\n\n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams.\n - Dynamische kracht - Dwing te allen tijde dynamische volumenormalisatie af. \n - Alleen meting (geen terugval) - Pas (algemene) volume-\/versterkingscorrectie toe op basis van de opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe. \n - Terugval naar versterkingscorrectie - Pas volume-\/versterkingscorrectie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie. \n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe. \n - Terugval naar dynamisch - Kies automatisch de beste optie: Pas (algemene) volume-\/versterkingscorrectie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
-            "options": {
-                "disabled": "Uitgeschakeld",
-                "dynamic": "Forceer dynamische modus",
-                "measurement_only": "Alleen meten (geen fallback)",
-                "fallback_fixed_gain": "Terugvallen op vaste versterkingscorrectie",
-                "fixed_gain": "Vaste versterkingscorrectie",
-                "fallback_dynamic": "Terugvallen op dynamisch"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Vaste\/fallback gain aanpassing voor nummers",
-            "description": "Vaste\/fallback-versterkingscorrectie om toe te passen op een audiostream van een nummer (hangt af van de instelling 'Volumenormaliseringsmethode').\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt als de volumenormaliseringsmethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Vaste\/fallback versterkingsaanpassing voor radio",
-            "description": "Vaste\/fallback versterkingscorrectie om toe te passen op een radiostream (afhankelijk van de instelling 'Volumenormalisatiemethode').\n\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt wanneer de volumenormalisatiemethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
-        },
         "dynamic_members": {
             "label": "Dynamische groepsleden",
             "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
@@ -482,22 +286,6 @@
                 "name_placeholder": "Mijn nieuwe preset",
                 "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
             }
-        },
-        "power_control": {
-            "label": "Aan\/uit-regeling",
-            "description": "Definieer\/overschrijf het gedrag van de aan\/uit-regeling voor deze speler.\nHiermee kunt u bijvoorbeeld de aan\/uit-commando's omleiden naar een ander apparaat, of een nep aan\/uit gebruiken als uw speler geen aan\/uit-commando's ondersteunt, maar u een speciale status wilt voor een speler die niet in gebruik is."
-        },
-        "volume_control": {
-            "label": "Volumeregeling",
-            "description": "Definieer\/overschrijf het gedrag van de volumeregeling voor deze speler.\nHiermee kun je bijvoorbeeld de volumeregelingscommando's omleiden naar een ander apparaat of het volledig uitschakelen."
-        },
-        "mute_control": {
-            "label": "Mute-bediening",
-            "description": "Definieer het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
-        },
-        "output_limiter": {
-            "label": "Begrenzing activeren om clippen te voorkomen",
-            "description": "Activeert een begrenzer die geluidsvervorming voorkomt door luide pieken zachter te maken."
         },
         "dsp_enabled": "DSP is ingeschakeld",
         "dsp_disabled": "DSP is uitgeschakeld",
@@ -760,38 +548,6 @@
             "title": "Gelijktijdige achtergrondanalyse",
             "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams",
             "open_settings": "Open Streams-instellingen"
-        },
-        "all_favorite_tracks": {
-            "label": "Alle favoriete nummers",
-            "description": "Genereer een afspeellijst met elk nummer dat als favoriet is gemarkeerd in je bibliotheek."
-        },
-        "random_artist": {
-            "label": "Willekeurige Artiest (uit de bibliotheek)",
-            "description": "Kies een willekeurige artiest uit je bibliotheek en zet hun nummers in de wachtrij."
-        },
-        "random_album": {
-            "label": "Willekeurig Album (uit de bibliotheek)",
-            "description": "Kies een willekeurig album uit je bibliotheek en zet de nummers in de wachtrij."
-        },
-        "random_tracks": {
-            "label": "500 willekeurige nummers (uit de bibliotheek)",
-            "description": "Genereer een afspeellijst met 500 willekeurige nummers uit je bibliotheek."
-        },
-        "recently_played": {
-            "label": "Onlangs afgespeelde nummers",
-            "description": "Toon de nummers die je het laatst hebt afgespeeld als een afspeellijst."
-        },
-        "recently_added_tracks": {
-            "label": "Onlangs toegevoegde nummers",
-            "description": "Toon de nummers die je het laatst aan je bibliotheek hebt toegevoegd als een afspeellijst."
-        },
-        "infinite_mix": {
-            "label": "Oneindige Mix (bibliotheek)",
-            "description": "Een eindeloze, steeds veranderende afspeellijst die telkens 25 willekeurige nummers uit je bibliotheek selecteert wanneer de wachtrij bijna afloopt. Vooraf laden is niet nodig — het geheugengebruik blijft constant, ongeacht de grootte van je bibliotheek."
-        },
-        "infinite_mix_favorites": {
-            "label": "Oneindige Mix (favorieten)",
-            "description": "Zoals de Oneindige Mix, maar beperkt tot je favoriete nummers. Er worden 25 nieuwe willekeurige favorieten toegevoegd wanneer de wachtrij bijna afloopt."
         }
     },
     "show_info": "Bekijk informatie",
@@ -999,55 +755,6 @@
     "music_assistant_library": "Music Assistant-bibliotheek",
     "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is.",
     "this_device": "Dit apparaat",
-    "recommendations": {
-        "in_progress_items": "Verder luisteren...",
-        "recommended_new_tracks": "Aanbevolen nieuwe nummers",
-        "recently_played": "Onlangs afgespeeld",
-        "suggested_new_albums_for_you": "Voorgestelde nieuwe albums voor jou",
-        "random_artists": "Willekeurige artiesten",
-        "random_albums": "Willekeurige albums",
-        "custom_mixes": "Aangepaste mixen",
-        "your_listening_history": "Jouw luistergeschiedenis",
-        "popular_albums": "Populaire albums",
-        "staff_picks_tracks": "Redactiekeuze: nummers",
-        "staff_picks_albums": "Redactiekeuze: albums",
-        "radio_stations_for_you": "Radiostations voor jou",
-        "producers__songwriters": "Producenten en songwriters",
-        "new_releases_for_you": "Nieuwe releases voor jou",
-        "recent_favorite_tracks": "Nieuwe favoriete nummers",
-        "favorite_playlists": "Favoriete afspeellijsten",
-        "favorite_radio_stations": "Favoriete radiostations",
-        "listen_again": "Opnieuw luisteren",
-        "in_progress_series": "Vervolg serie...",
-        "recommended": "Aanbevolen",
-        "recently_added": "Onlangs toegevoegd",
-        "episodes_recently_added": "Onlangs toegevoegde afleveringen",
-        "recent_series": "Nieuwe series",
-        "newest_authors": "Nieuwste auteurs",
-        "newest_episodes": "Nieuwste afleveringen",
-        "discover": "Ontdek",
-        "libraries": "Bibliotheken",
-        "library": "Bibliotheek",
-        "trending_podcasts": "Populaire podcasts",
-        "trending_stations": "Populaire stations",
-        "forgotten_tracks": "Vergeten nummers",
-        "forgotten_albums": "Vergeten albums",
-        "forgotten_artists": "Vergeten artiesten",
-        "most_played_tracks": "Meest afgespeelde nummers",
-        "never_played_tracks": "Zelden of nooit afgespeeld",
-        "recent_favorite_albums": "Nieuwe favoriete albums",
-        "recently_added_tracks": "Onlangs toegevoegde nummers",
-        "inspired_by_recently_played": "Geïnspireerd door onlangs afgespeeld",
-        "discover_similar_artists": "Ontdek vergelijkbare artiesten",
-        "discover_similar_tracks": "Ontdek vergelijkbare nummers",
-        "global_top_artists": "Wereldwijde topartiesten",
-        "global_top_tracks": "Wereldwijde topnummers",
-        "made_for_you": "Voor jou gemaakt",
-        "most_played_albums": "Meest gespeelde albums",
-        "recently_added_albums": "Nieuwe albums",
-        "recommended_albums": "Aanbevolen albums",
-        "recommended_artists": "Aanbevolen artiesten"
-    },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
     "lyrics_will_appear_soon": "De songtekst verschijnt zodra het nummer begint...",
@@ -1293,67 +1000,6 @@
     "description": "Beschrijving",
     "genre": "Genre",
     "genres": "Genres",
-    "genre_names": {
-        "afrobeats": "Afrobeats (West-Afrikaanse Urban\/Popmuziek)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Computerspelmuziek",
-        "asian_music": "Aziatisch",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Braziliaans",
-        "chanson": "Chanson",
-        "childrens_music": "Kindermuziek",
-        "christmas_music": "Kerstmuziek",
-        "church_music": "Kerkmuziek",
-        "classical": "Klassiek",
-        "comedy": "Komisch",
-        "country": "Country",
-        "dance": "Dans",
-        "dark_ambient": "Dark Ambient",
-        "dark_wave": "Darkwave",
-        "disco": "Disco",
-        "electronic": "Elektronisch",
-        "experimental": "Experimenteel",
-        "field_recording": "Fonografisch",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangstarap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip Hop",
-        "indian_classical": "Indiaas klassiek",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Korpsmuziek",
-        "metal": "Metal",
-        "middle_eastern_music": "Midden-Oosterse muziek",
-        "musical": "Musical",
-        "new_age": "New Age",
-        "poetry": "Poëzie",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelisch",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Singer-Songwriter",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Geluidseffecten",
-        "soundtrack": "Filmmuziek",
-        "spoken_word": "Gesproken Woord",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Wals",
-        "wellness": "Meditatie"
-    },
     "link": "Koppelen",
     "link_alias": "Alias koppelen",
     "link_alias_failed": "Alias koppelen mislukt",

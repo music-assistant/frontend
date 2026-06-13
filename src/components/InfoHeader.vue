@@ -388,9 +388,7 @@
                 (e: MouseEvent) => showGenreChipContextMenu(e, genre)
               "
             >
-              {{
-                getGenreDisplayName(genre.name, genre.translation_key, t, te)
-              }}
+              {{ genre.name }}
             </v-chip>
           </div>
         </div>
@@ -427,7 +425,6 @@ import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getGenreDescription,
-  getGenreDisplayName,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -494,14 +491,6 @@ const { getPreference } = useUserPreferences();
 
 const headerTitle = computed(() => {
   if (!compProps.item) return "";
-  if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
-  }
   return compProps.item.name;
 });
 

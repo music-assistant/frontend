@@ -145,140 +145,6 @@
         "add_new_provider_button": "Lägg till {0} leverantör",
         "add_group_player": "Lägg till gruppspelare",
         "group_members": "Gruppmedlemmar",
-        "log_level": {
-            "label": "Loggnivå",
-            "description": "Ställ in loggnivån för den här leverantören.",
-            "options": {
-                "global": "Global",
-                "info": "Information",
-                "warning": "Varning",
-                "error": "Fel",
-                "debug": "Felsökning"
-            }
-        },
-        "flow_mode": {
-            "label": "Aktivera köflödesläge",
-            "description": "Aktivera \"flödes\"-läget där alla låtar i kön skickas som en kontinuerlig ljudström. \nAnvänds för spelare som inte har inbyggt stöd för oavbruten och\/eller övertoning, eller om spelaren har problem med övergången mellan spåren."
-        },
-        "auto_play": {
-            "label": "Automatisk uppspelning (återupptas när strömmen slås på)",
-            "description": "När spelaren är påslagen startar uppspelningen automatiskt (om det finns objekt i kön)."
-        },
-        "output_channels": {
-            "label": "Läge för utgångskanal",
-            "description": "Du kan konfigurera spelaren så att den bara spelar vänster eller höger kanal, t.ex. för att skapa ett stereopar med 2 spelare.",
-            "options": {
-                "stereo": "Stereo (båda kanalerna)",
-                "left": "Endast vänster kanal",
-                "right": "Endast höger kanal",
-                "mono": "Mono (båda kanalerna)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Aktivera volymnormalisering (EBU-R128-baserad)",
-            "description": "Möjliggör volymnormalisering baserat på EBU-R128-standarden utan att påverka dynamikomfånget"
-        },
-        "volume_normalization_target": {
-            "label": "Målnivå för normalisering av volym",
-            "description": "Justera genomsnittlig (upplevd) ljudnivå till denna målnivå, standard är -17 LUFS \n\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet hackar!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bas",
-            "description": "Använd den inbyggda equalizern för att justera basnivån (låga toner) i ljudet."
-        },
-        "eq_mid": {
-            "label": "Equalizer: mellanregister",
-            "description": "Använd den inbyggda equalizern för att justera ljudets mellanregister."
-        },
-        "eq_treble": {
-            "label": "Equalizer: diskant",
-            "description": "Använd den inbyggda equalizern för att justera diskantnivån (höga toner) i ljudet."
-        },
-        "crossfade": {
-            "label": "Aktivera övertoning",
-            "description": "Aktivera en övertoning-övergång mellan spår (kö)."
-        },
-        "crossfade_duration": {
-            "label": "Varaktighet för övertoning",
-            "description": "Varaktighet i sekunder för övertoning mellan spår (om aktiverad)"
-        },
-        "hide_player": {
-            "label": "Dölj denna spelare i användargränssnittet",
-            "description": "Dölj denna spelare i användargränssnittet. \n\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Objekt att välja när du spelar en (i biblioteket) artist.",
-            "description": "Om du vill spela upp en artist, vilka objekt ska då läggas i kö?",
-            "options": {
-                "library_tracks": "Endast spår i biblioteket",
-                "library_album_tracks": "Alla spår från alla album i biblioteket",
-                "all_tracks": "Alla (bästa låtar) spår från (alla) leverantör(er)",
-                "all_album_tracks": "Alla spår från alla album från (alla) leverantör(er)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Objekt att välja när du spelar upp ett album (i biblioteket) album.",
-            "description": "Om du vill spela upp ett album, vilka objekt ska placeras i kö?",
-            "options": {
-                "library_tracks": "Endast spår i biblioteket",
-                "all_tracks": "Alla låtar för album på leverantör"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standardalternativ för kö för artistobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
-            "options": {
-                "play": "Spela artistspår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela artistens spår.",
-                "next": "Spela objektet\/objekten direkt efter det objekt som för närvarande spelas\/buffras.",
-                "replace_next": "Rensa kön och spela artistspåret\/spåren direkt efter det aktuella spelade\/buffrade objektet.",
-                "add": "Lägg till artistens spår i slutet av kön."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standard kö-alternativ för albumobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
-            "options": {
-                "play": "Spela albumspår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela albumets spår.",
-                "next": "Spela upp objektet\/objekten direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp albumspåret\/albumspåren direkt efter det objekt som spelas upp\/buffras.",
-                "add": "Lägg till albumspåren i slutet av kön."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standardalternativ för kö för Spår objekt.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela spår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp spåret\/spåren.",
-                "next": "Spela upp spåret\/spåren direkt efter det objekt som spelas\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp spåret\/spåren direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "add": "Lägg till låt i slutet av kön."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standardalternativ för kö för objekt i spellistan.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela upp spellistespår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp spellistans spår",
-                "next": "Spela upp objektet\/objekten direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp spellistans spår direkt efter det spelade\/buffrade objektet.",
-                "add": "Lägg till spellistans spår i slutet av kön."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standardalternativ för kö för radioobjekt.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela radiostation nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp radiostationen.",
-                "next": "Spela objektet\/objekten direkt efter det objekt som för närvarande spelas\/buffras.",
-                "replace_next": "Rensa kön och spela upp radiostationen\/radiostationerna direkt efter den aktuella spelade\/buffrade artikeln.",
-                "add": "Lägg till radiostation(er) i slutet av kön."
-            }
-        },
         "default": "standard",
         "provider_depends_on_confirm": "Innan du kan konfigurera {0}, måste du ha {1} -leverantören konfigurerad, vill du göra det nu?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "Aktivera {0} support",
             "dsp": "Digital signalbehandling (DSP)",
             "options": "Spelaralternativ"
-        },
-        "tts_pre_announce": {
-            "label": "Förannonsera TTS-meddelanden",
-            "description": "När ett TTS-meddelande (text-till-tal) skickas till meddelandefunktionen, ska du lägga till en kort ljudsignal (klockvisselpipa)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volymstrategi för meddelanden",
-            "description": "När ett meddelande sänds till den här spelaren, hur ska volymen justeras tillfälligt (använd i kombination med volymvärdet nedan).",
-            "options": {
-                "absolute": "Absolut volym",
-                "relative": "Relativ volymökning",
-                "percentual": "Volymökning med fast procentsats",
-                "none": "Justera inte volymen"
-            }
-        },
-        "announce_volume": {
-            "label": "Volym för meddelanden",
-            "description": "Den procentuella, relativa eller absoluta volymnivån som används med strategin för meddelanden."
-        },
-        "announce_volume_min": {
-            "label": "Lägsta volymnivå för meddelanden",
-            "description": "Volymen (justeringen) för meddelanden bör inte gå under denna nivå."
-        },
-        "announce_volume_max": {
-            "label": "Maximal volymnivå för meddelanden",
-            "description": "Volymen (justeringen) för meddelanden bör inte överstiga denna nivå."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Material design ikon för den här spelaren. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -374,38 +210,6 @@
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
         "no_player_providers": "Inga spelarleverantörer konfigurerade",
         "no_player_providers_detail": "Konfigurera spelarleverantörer för att välja enheter där Music Assistent kan spela upp din musik.",
-        "volume_normalization_radio": {
-            "label": "Metod för volymnormalisering som ska användas för radioströmmar",
-            "description": "Ställ in önskad strategi för volymnormalisering för radioströmmar.\n\nSom standard samlar Music Assistant in en mätning av radiostationens (genomsnittliga upplevda) ljudstyrka enligt EBU-R128 specifikationen och justerar sedan strömmens totala förstärkning\/volym enligt den mätningen så att ljudets dynamiska omfång inte påverkas. När ingen mätning (ännu) finns för en radiostation, använder Music Assistant ett dynamiskt (men mindre exakt) ljudnivåutjämningsfilter.\n\nTIPS: Radioströmmar har ofta varierande ljudstyrkenivåer, särskilt under meddelanden och reklam.\n\nDu kan välja att tillämpa dynamisk volymnormalisering på radioströmmar, även om en (genomsnittlig) ljudstyrkemätning för radiostationen finns.\n\n**Alternativ:**\n\n- Inaktiverad - tillämpa inte volymnormalisering alls för radioströmmar.\n- Tvinga fram dynamisk - Tvinga fram dynamisk volymutjämning hela tiden.\n- Endast mätning (ingen reserv) - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserat på lagrad mätning. Om vi inte har någon mätning, tillämpa inte normalisering. - Återgång till förstärkningskorrigering - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, återgå till en fördefinierad förstärkningskorrigering.\n- Fast förstärkningskorrigering - Tillämpa alltid den fasta volym\/förstärkningskorrigeringen.\n- Återgång till dynamisk - Välj automatiskt det bästa alternativet: Tillämpa (övergripande) volym\/förstärkningskorrigering baserad på lagrad mätning om vi har någon, tillåta återgång till dynamiskt läge om ingen mätning är tillgänglig.",
-            "options": {
-                "disabled": "Inaktiverad",
-                "dynamic": "Tvinga dynamisk",
-                "measurement_only": "Endast mätning (ingen reserv)",
-                "fallback_fixed_gain": "Reserv för att få korrigering",
-                "fixed_gain": "Korrigering av fast förstärkning",
-                "fallback_dynamic": "Återgång till dynamisk"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metod för volymnormalisering som ska användas för spår",
-            "description": "Ställ in önskad strategi för volymnormalisering för spår\/låtar.\nMusic Assistant använder en mätning av spårens (genomsnittliga upplevda) ljudstyrka enligt EBU-R128 specifikationen för att justera den totala förstärkningen\/volymen för strömmen utan att påverka ljudets dynamiska omfång.\n\nDessa mätningar tillhandahålls antingen av streamingleverantören eller, när det gäller lokala filer, kan de finnas i ID3 taggarna (ReplayGain 2.0 \/ Opus R128).\nOm mätningen inte tillhandahålls kommer Music Assistant automatiskt att utföra en mätning när\/efter att spåret (första) spelas. När ingen mätning (ännu) finns för ett spår kommer Music Assistant som standard att återgå till ett dynamiskt (men mindre exakt) ljudnivåutjämningsfilter. Detta säkerställer att inga stora toppar\/fall i volymnivån mellan spår finns, även om det inte finns någon exakt mätning ännu, men den dynamiska utjämnaren kan ibland komprimera det dynamiska omfånget lite, även om det inte borde vara hörbart i de flesta fall.\n\n\n**Alternativ:**\n\n\n- Inaktiverad - tillämpa inte volymnormalisering alls för radioströmmar.\n\n** - Tvinga fram dynamisk - Tvinga fram dynamisk volymutjämning hela tiden.\n- Endast mätning (ingen reserv) - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, tillämpa inte normalisering.\n- Reservera till förstärkningskorrigering - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, reservera till en fördefinierad förstärkningskorrigering.\n- Fast förstärkningskorrigering - Tillämpa alltid den fasta volym-\/förstärkningskorrigeringen.\n- Reservera till dynamisk - Välj automatiskt det bästa alternativet: Tillämpa (övergripande) volym\/förstärkningskorrigering baserad på lagrad mätning om vi har någon, tillåt reservera till dynamiskt läge om ingen mätning är tillgänglig.",
-            "options": {
-                "disabled": "Inaktiverad",
-                "dynamic": "Tvinga dynamisk",
-                "measurement_only": "Endast mätning (ingen reservfunktion)",
-                "fallback_fixed_gain": "Reserv för att få korrigering",
-                "fixed_gain": "Korrigering av fast förstärkning",
-                "fallback_dynamic": "Återgång till dynamisk"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fast\/reservförstärkningsjustering för spår",
-            "description": "Fast\/reservförstärkningskorrigering som ska tillämpas på en ljudström i ett spår (beror på inställningen \"Volymnormaliseringsmetod\").\nAnvänd ett positivt värde för att öka volymen, ett negativt värde för att minska volymen.\n\nDenna inställning används när volymnormaliseringsmetoden är inställd på \"Fastförstärkningskorrigering\" eller \"Reservförstärkningskorrigering\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fast\/reservförstärkningsjustering för radio",
-            "description": "Fast\/reservförstärkningskorrigering som ska tillämpas på en radioström (beror på inställningen 'Volymnormaliseringsmetod').\nAnvänd ett positivt värde för att öka volymen, ett negativt värde för att minska volymen.\n\nDenna inställning används när volymnormaliseringsmetoden är inställd på 'Fastförstärkningskorrigering' eller 'Reservförstärkningskorrigering'."
-        },
         "dynamic_members": {
             "label": "Dynamiska gruppmedlemmar",
             "description": "Tillåt medlemmar att (tillfälligt) gå med i\/lämna gruppen dynamiskt, så att gruppen mer eller mindre beter sig på samma sätt som att manuellt synkronisera spelare tillsammans, med den största skillnaden att gruppspelaren kommer att hålla kön."
@@ -478,22 +282,6 @@
                 "name_placeholder": "Min nya förinställning",
                 "remove_confirm": "Är du säker på att du vill ta bort den här DSP förinställningen?"
             }
-        },
-        "power_control": {
-            "label": "Effektkontroll",
-            "description": "Definiera\/åsidosätt strömkontrollens beteende för den här spelaren.\nDet låter dig till exempel omdirigera strömpåslagnings\/avstängningskommandon till en annan apparat, eller använda en falsk strömkontroll om din spelare inte stöder strömpåslagnings\/avstängningskommandon men du vill ha ett dedikerat tillstånd för en spelare som inte används."
-        },
-        "volume_control": {
-            "label": "Volymkontroll",
-            "description": "Definiera\/åsidosätt volymkontrollens beteende för den här spelaren.\nDet låter dig till exempel omdirigera volymkontrollkommandona till en annan apparat, eller inaktivera den helt."
-        },
-        "mute_control": {
-            "label": "Ljud av-kontroll",
-            "description": "Definiera\/åsidosätt ljudavstängningsbeteendet för den här spelaren.\nDet låter dig till exempel omdirigera ljudavstängningskommandona till en annan apparat, eller inaktivera det helt.\n\nVi erbjuder ett \"falskt\" ljudavstängningsalternativ som simulerar ljudavstängning genom att ställa in volymen till 0 och återställa volymen när ljudet slås på."
-        },
-        "output_limiter": {
-            "label": "Aktivera begränsning för att förhindra klippning",
-            "description": "Aktiverar en begränsare som förhindrar ljudförvrängning genom att göra höga toppar tystare."
         },
         "dsp_enabled": "DSP är aktiverat",
         "dsp_disabled": "DSP är inaktiverat",
@@ -756,38 +544,6 @@
             "title": "Samtidig bakgrundsanalys",
             "description": "Styr hur många spår som analyseras samtidigt under den nattliga bakgrundsskanningen. Den här inställningen finns i Strömningens kärnkonfiguration.",
             "open_settings": "Öppna strömningsinställningarna"
-        },
-        "all_favorite_tracks": {
-            "label": "Alla favorit spår",
-            "description": "Skapa en spellista som innehåller alla spår som markerats som favoriter i ditt bibliotek."
-        },
-        "random_artist": {
-            "label": "Slumpmässig artist (från biblioteket)",
-            "description": "Välj en slumpmässig artist från ditt bibliotek och köa deras låtar."
-        },
-        "random_album": {
-            "label": "Slumpmässigt album (från biblioteket)",
-            "description": "Välj ett slumpmässigt album från ditt bibliotek och köa dess spår."
-        },
-        "random_tracks": {
-            "label": "500 slumpmässiga spår (från biblioteket)",
-            "description": "Skapa en spellista med 500 slumpmässigt valda spår från ditt bibliotek."
-        },
-        "recently_played": {
-            "label": "Nyligen spelade spår",
-            "description": "Visa de låtar du spelat senast som en spellista."
-        },
-        "recently_added_tracks": {
-            "label": "Nyligen tillagda spår",
-            "description": "Visa de spår som senast lagts till i ditt bibliotek som en spellista."
-        },
-        "infinite_mix": {
-            "label": "Oändlig mix (bibliotek)",
-            "description": "En oändlig, ständigt föränderlig spellista som hämtar 25 slumpmässiga spår från ditt fulla bibliotek varje gång kön är på väg att ta slut. Ingen för inläsning – minnesanvändningen förblir konstant oavsett bibliotekets storlek."
-        },
-        "infinite_mix_favorites": {
-            "label": "Oändlig mix (favoriter)",
-            "description": "Som Oändlig mix, men begränsat till dina favoritlåtar. 25 nya slumpmässiga favoriter läggs till när kön är nästan tom."
         }
     },
     "show_info": "Visa info",
@@ -995,46 +751,6 @@
     "music_assistant_library": "Music Assistant Bibliotek",
     "select_all_confirmation": "Välj alla objekt? Denna operation kan ta en stund att ladda all data.",
     "this_device": "Den här enheten",
-    "recommendations": {
-        "in_progress_items": "Fortsätt lyssna...",
-        "recommended_new_tracks": "Rekommenderade nya låtar",
-        "recently_played": "Nyligen spelade",
-        "suggested_new_albums_for_you": "Föreslagna nya album för dig",
-        "random_artists": "Slumpmässiga artister",
-        "random_albums": "Slumpmässiga album",
-        "custom_mixes": "Anpassade mixning",
-        "your_listening_history": "Din lyssningshistorik",
-        "popular_albums": "Populära album",
-        "staff_picks_tracks": "Personalens val: låtar",
-        "staff_picks_albums": "Personalens val: album",
-        "radio_stations_for_you": "Radiostationer för dig",
-        "producers__songwriters": "Producenter & låtskrivare",
-        "new_releases_for_you": "Nya releaser för dig",
-        "recent_favorite_tracks": "Nyligen favoritmarkerade låtar",
-        "favorite_playlists": "Favoritspellistor",
-        "favorite_radio_stations": "Favoritradiostationer",
-        "listen_again": "Lyssna igen",
-        "in_progress_series": "Fortsatta serier...",
-        "recommended": "Rekommenderad",
-        "recently_added": "Nyligen tillagd",
-        "episodes_recently_added": "Nyligen tillagda avsnitt",
-        "recent_series": "Senaste serierna",
-        "newest_authors": "Nyaste författare",
-        "newest_episodes": "Nyaste avsnitten",
-        "discover": "Upptäck",
-        "libraries": "Bibliotek",
-        "library": "Bibliotek",
-        "trending_podcasts": "Trendiga poddar",
-        "trending_stations": "Trendiga stationer",
-        "forgotten_tracks": "Glömda spår",
-        "forgotten_albums": "Glömda album",
-        "forgotten_artists": "Glömda artister",
-        "most_played_tracks": "Mest spelade låtar",
-        "never_played_tracks": "Aldrig\/sällan spelad",
-        "recent_favorite_albums": "Nyligen favoritmarkerade album",
-        "recently_added_tracks": "Nyligen tillagda spår",
-        "inspired_by_recently_played": "Inspirerad av nyligen spelade"
-    },
     "homescreen_edit_enable": "Redigera startskärm",
     "homescreen_edit_disable": "Lämna redigeringsläget",
     "lyrics_will_appear_soon": "Texten kommer att visas när låten börjar...",
@@ -1280,67 +996,6 @@
     "description": "Beskrivning",
     "genre": "Genre",
     "genres": "Genrer",
-    "genre_names": {
-        "afrobeats": "Afrobeats (Västafrikansk Urban\/Pop Musik)",
-        "ambient": "Omgivande",
-        "anime_and_video_game_music": "Anime & Videospel Musik",
-        "asian_music": "Asiatisk Musik",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brasiliansk Musik",
-        "chanson": "Fransk sång",
-        "childrens_music": "Barn Musik",
-        "christmas_music": "Jul Musik",
-        "church_music": "Kyrka Musik",
-        "classical": "Klassiskt",
-        "comedy": "Komedi",
-        "country": "Country",
-        "dance": "Dansa",
-        "dark_ambient": "Mörk Omgivning",
-        "dark_wave": "Mörk Våg",
-        "disco": "Disko",
-        "electronic": "Elektronisk",
-        "experimental": "Experimentell",
-        "field_recording": "Fältinspelning",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangster Rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hiphop",
-        "indian_classical": "Indisk klassisk",
-        "industrial": "Industriell",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Marschorkester",
-        "metal": "Metall",
-        "middle_eastern_music": "Mellanösternmusik",
-        "musical": "Musikal",
-        "new_age": "Ny Tidsålder",
-        "poetry": "Poesi",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psykedelisk",
-        "punk": "Punk",
-        "r_b": "R&b",
-        "ragtime": "Ragtime",
-        "rai": "Rai",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Sångare och låtskrivare",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Ljud Effekter",
-        "soundtrack": "Ljudspår",
-        "spoken_word": "Talat Ord",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Fälla",
-        "waltz": "Vals",
-        "wellness": "Välbefinnande"
-    },
     "link": "Länka",
     "link_alias": "Länka alias",
     "link_alias_failed": "Misslyckades med att länka alias",

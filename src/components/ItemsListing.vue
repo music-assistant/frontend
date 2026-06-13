@@ -239,7 +239,6 @@ import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -1643,7 +1642,7 @@ const loadGenreOptions = async () => {
       });
       for (const genre of page) {
         all.push({
-          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          label: genre.name,
           value: Number(genre.item_id),
         });
       }
@@ -1758,10 +1757,9 @@ const getSortName = function (
   preferSortName = false,
 ) {
   if (!item) return "";
-  if ("translation_key" in item && item.translation_key && item.name)
-    return t(item.translation_key, [item.name]);
-  if ("translation_key" in item && item.translation_key)
-    return t(item.translation_key);
+  // names (incl. translated folder/media names) are resolved server-side; sort by item.name,
+  // falling back to sort_name when explicitly preferred for regular items.
+  if ("translation_key" in item && item.translation_key) return item.name;
   if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;

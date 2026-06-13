@@ -156,29 +156,6 @@ const genreKeyFromName = function (name: string): string {
     .replace(/^_+|_+$/g, "");
 };
 
-export const getGenreDisplayName = function (
-  name: string,
-  translationKey: string | undefined,
-  t: (key: string) => string,
-  te: (key: string) => boolean,
-): string {
-  // First try the translation key as-is (in case backend sends full key like 'genre_names.afrobeats')
-  if (translationKey && te(translationKey)) return t(translationKey);
-
-  // Then try with genre_names prefix (in case backend sends just the key name like 'afrobeats')
-  if (translationKey) {
-    const keyWithPrefix = `genre_names.${translationKey}`;
-    if (te(keyWithPrefix)) return t(keyWithPrefix);
-  }
-
-  // Fallback: generate key from name
-  const key = `genre_names.${genreKeyFromName(name)}`;
-  if (te(key)) return t(key);
-
-  // No translation found - apply sentence case for user-created/promoted genres
-  return name;
-};
-
 export const getGenreDescription = function (
   name: string,
   translationKey: string | undefined,

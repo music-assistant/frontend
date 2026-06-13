@@ -145,140 +145,6 @@
         "add_new_provider_button": "{0} szolgáltató hozzáadása",
         "add_group_player": "Lejátszó-csoport hozzáadása",
         "group_members": "Csoporttagok",
-        "log_level": {
-            "label": "Naplózási szint",
-            "description": "Állítsa be a naplózás részletességét ehhez a szolgáltatóhoz.",
-            "options": {
-                "global": "Globális",
-                "info": "Infó",
-                "warning": "Figyelmeztetés",
-                "error": "Hiba",
-                "debug": "Hibakeresés"
-            }
-        },
-        "flow_mode": {
-            "label": "Folyamatos lejátszási mód engedélyezése",
-            "description": "Engedélyezi a „folyamatos” módot, ahol a lejátszási sor összes zeneszáma egyetlen folyamatos hangfolyamként kerül elküldésre.\nHasználja olyan lejátszókhoz, amelyek natívan nem támogatják a szünetmentes és\/vagy az átmenetes lejátszást vagy ha a lejátszónak problémái vannak a zeneszámok közötti váltásban."
-        },
-        "auto_play": {
-            "label": "Automatikus lejátszás (folytatás bekapcsoláskor)",
-            "description": "Ha ez a lejátszó bekapcsol, automatikusan elindul a lejátszás (amennyiben vannak elemek a lejátszási sorban)."
-        },
-        "output_channels": {
-            "label": "Kimeneti csatorna mód",
-            "description": "Beállíthatja ezt a lejátszót úgy, hogy csak a bal vagy a jobb csatornát játssza le, például sztereó pár létrehozásához 2 lejátszóval.",
-            "options": {
-                "stereo": "Sztereó (mindkét csatorna)",
-                "left": "Csak a bal csatorna",
-                "right": "Csak a jobb csatorna",
-                "mono": "Monó (mindkét csatorna)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Hangerő-normalizálás engedélyezése (EBU-R128 alapú)",
-            "description": "Engedélyezi a hangerő-normalizálást az EBU-R128 szabvány alapján a dinamikatartomány befolyásolása nélkül"
-        },
-        "volume_normalization_target": {
-            "label": "Célszint a hangerő-normalizáláshoz",
-            "description": "Az átlagos (észlelt) hangerő beállítása erre a célszintre, az alapértelmezett érték -17 LUFS\n\n**FIGYELMEZTETÉS:** A szint túl magas beállítása torzítást okozhat!"
-        },
-        "eq_bass": {
-            "label": "Hangszínszabályzó: mély",
-            "description": "Használja a beépített alapvető hangszínszabályzót a mély hangok (alacsony tónusok) szintjének beállításához."
-        },
-        "eq_mid": {
-            "label": "Hangszínszabályzó: közép",
-            "description": "Használja a beépített alapvető hangszínszabályzót a közepes hangok szintjének beállításához."
-        },
-        "eq_treble": {
-            "label": "Hangszínszabályzó: magas",
-            "description": "Használja a beépített alapvető hangszínszabályzót a magas hangok (magas tónusok) szintjének beállításához."
-        },
-        "crossfade": {
-            "label": "Átfedés engedélyezése",
-            "description": "Átfedéses átmenet engedélyezése a (lejátszási sorban lévő) zeneszámok között."
-        },
-        "crossfade_duration": {
-            "label": "Átfedés időtartama",
-            "description": "A zeneszámok közötti átfedés időtartama másodpercben (ha engedélyezve van)"
-        },
-        "hide_player": {
-            "label": "Lejátszó elrejtése a felhasználói felületen",
-            "description": "A lejátszó elrejtése a felhasználói felületen.\n\nMegjegyzés: továbbra is vezérelhető marad, és megjelenik minden szinkronizálási csoportban, amelynek tagja."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Kiválasztandó elemek (könyvtárban lévő) előadó lejátszásakor.",
-            "description": "Ha egy előadót szeretne lejátszani, milyen elemeket helyezzünk a lejátszási sorba?",
-            "options": {
-                "library_tracks": "Csak könyvtárban lévő zeneszámok",
-                "library_album_tracks": "A könyvtárban található összes album összes zeneszáma",
-                "all_tracks": "Az összes (legjobb) zeneszám az (összes) szolgáltatótól",
-                "all_album_tracks": "Minden zeneszám az összes albumról, az (összes) szolgáltatótól"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "A (könyvtárbeli) album lejátszásakor kiválasztandó elemek.",
-            "description": "Ha egy albumot szeretne lejátszani, milyen elemeket helyezzünk a lejátszási sorba?",
-            "options": {
-                "library_tracks": "Csak a könyvtárbeli zeneszámok",
-                "all_tracks": "Az album összes zeneszáma a szolgáltatónál"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Az előadó elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "Az előadó zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és az előadó zeneszámainak lejátszása",
-                "next": "Az elem(ek) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és az előadó zeneszámainak lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "Az előadó zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Az album elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "Az album zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és az album zeneszámainak lejátszása",
-                "next": "Az elem(ek) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és az album zeneszámainak lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "Az album zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "A zeneszámok alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A zeneszám(ok) lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és a zeneszám(ok) lejátszása.",
-                "next": "A zeneszám(ok) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és a zeneszám(ok) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "A zeneszám(ok) hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "A lejátszási lista elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A lejátszási lista zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "Lejátszási sor törlése és a lejátszási lista zeneszámainak lejátszása",
-                "next": "Az elemek lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "replace_next": "Lejátszási sor törlése és a lejátszási lista zeneszámainak lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "add": "A lejátszási lista zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "A rádiós elemek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez az adathordozó-típushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A rádióállomás lejátszása most és a lejátszási sor többi elemének megtartása.",
-                "replace": "Lejátszási sor törlése és a rádióállomás lejátszása",
-                "next": "Az elemek lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "replace_next": "Lejátszási sor törlése és a rádióállomások lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "add": "A rádióállomások hozzáadása a lejátszási sor végéhez."
-            }
-        },
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnia kell a(z) {1} szolgáltatót. Szeretné ezt most megtenni?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "{0} támogatás engedélyezése",
             "dsp": "Digitális jelfeldolgozás (DSP)",
             "options": "Lejátszó beállítások"
-        },
-        "tts_pre_announce": {
-            "label": "TTS bejelentések előzetes jelzése",
-            "description": "Amikor egy TTS (szövegfelolvasó) üzenetet küld a Bejelentés funkcióra, a bejelentés elé egy rövid előzetes jelzőhang (csengő) kerül."
-        },
-        "announce_volume_strategy": {
-            "label": "Hangerőstratégia a bejelentésekhez",
-            "description": "Hogyan állítsa be ideiglenesen a hangerőt (az alábbi hangerőértékkel együtt használva), amikor bejelentés érkezik erre a lejátszóra?",
-            "options": {
-                "absolute": "Abszolút hangerő",
-                "relative": "Relatív hangerőnövekedés",
-                "percentual": "Hangerőnövekedés megadott százalékkal",
-                "none": "Ne állítsa a hangerőt"
-            }
-        },
-        "announce_volume": {
-            "label": "Bejelentések hangereje",
-            "description": "A bejelentési stratégiához használt százalékos, relatív vagy abszolút hangerőszint."
-        },
-        "announce_volume_min": {
-            "label": "Bejelentések minimális hangereje",
-            "description": "A bejelentések hangereje (beállítása) nem mehet ezen szint alá."
-        },
-        "announce_volume_max": {
-            "label": "Bejelentések maximális hangereje",
-            "description": "A bejelentések hangereje (beállítása) nem mehet ezen szint fölé."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Material Design ikon ehhez a lejátszóhoz.\n\nTovábbi információ: https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Téma",
@@ -374,38 +210,6 @@
         "no_music_providers_detail": "Kezdje a Music Assistant élményét zeneszolgáltatók hozzáadásával.",
         "no_player_providers": "Nincs lejátszószolgáltató konfigurálva",
         "no_player_providers_detail": "Konfigurálja a lejátszószolgáltatókat olyan eszközök kiválasztásához, amelyeken a Music Assistant le tudja játszani a zenét.",
-        "volume_normalization_radio": {
-            "label": "A rádióadásokhoz használandó hangerő-normalizálási módszer",
-            "description": "Állítsa be a rádióadások preferált hangerő-normalizálási stratégiáját.\nAlapértelmezés szerint a Music Assistant az EBU-R128 specifikációnak megfelelően összegyűjti a rádióállomás (átlagos érzékelt) hangerejének mérését, majd ennek a mérésnek megfelelően állítja be az adatfolyam teljes erősítését\/hangerejét, hogy a hang dinamikai tartományát ne befolyásolja. Ha egy rádióállomáshoz (még) nem létezik mérés, a Music Assistant egy dinamikus (de kevésbé pontos) hangossági kiegyenlítő-szűrőhöz tér vissza.\n\nTIPP: A rádióadások gyakran változó hangerőszintűek, különösen a bemondások és reklámok alatt.\nKiválaszthatja, hogy a rádióadásokra dinamikus hangerő-normalizálást kényszerítsen ki, még akkor is, ha létezik (átlagos) hangossági mérés a rádióállomáshoz.\n\n**Lehetőségek:**\n\n- Letiltva - egyáltalán nem alkalmazza a hangerő-normalizálást a rádióadásokra.\n- Dinamikus kényszerítése - a dinamikus hangerő-kiegyenlítés folyamatos kényszerítése.\n- Csak mérés (nincs tartalék) - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n- Tartalék erősítés-korrekció - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre meghatározott erősítés-korrekció alkalmazása.\n- Fix erősítés-korrekció - mindig a rögzített hangerő\/erősítés korrekciót alkalmazza.\n- Tartalék dinamikus - a legjobb lehetőség automatikus kiválasztása: tárolt mérésen alapuló (összesített) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
-            "options": {
-                "disabled": "Letiltva",
-                "dynamic": "Dinamikus kényszerítése",
-                "measurement_only": "Csak mérés (nincs tartalék)",
-                "fallback_fixed_gain": "Tartalék erősítés-korrekció",
-                "fixed_gain": "Fix erősítés-korrekció",
-                "fallback_dynamic": "Tartalék dinamikus"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "A zeneszámokhoz használandó hangerő-normalizálási módszer",
-            "description": "Állítsa be a zeneszámok\/dalok preferált hangerő-normalizálási stratégiáját.\nA Music Assistant a zeneszámok (átlagosan érzékelt) hangerejének mérését használja az EBU-R128 specifikáció szerint, hogy beállítsa az adatfolyam összesített erősítését\/hangerejét anélkül, hogy befolyásolná a hang dinamikus tartományát.\nEzeket a méréseket vagy a streaming szolgáltató biztosítja, vagy helyi fájlok esetén az ID3 címkék (ReplayGain 2.0 \/ Opus R128) tartalmazhatják.\nHa a mérés nincs megadva, a Music Assistant automatikusan elvégzi a mérést a zeneszám (első) lejátszásakor\/után. Ha egy zeneszámhoz (még) nem tartozik mérés, a Music Assistant alapértelmezés szerint visszavált egy dinamikus (de kevésbé pontos) hangerő-kiegyenlítő szűrőre. Ez biztosítja, hogy a zeneszámok közötti hangerőben ne legyenek nagy kiugrások\/esések, még akkor sem, ha még nincs pontos mérés. A dinamikus kiegyenlítő néha kissé összenyomhatja a dinamikatartományt, bár ennek a legtöbb esetben nem szabad hallhatónak lennie.\n\n**Lehetőségek:**\n\n- Letiltva - egyáltalán nem alkalmazza a hangerő-normalizálást a zeneszámokra.\n- Dinamikus kényszerítése - a dinamikus hangerő-kiegyenlítés folyamatos kényszerítése.\n- Csak mérés (nincs tartalék) - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n- Tartalék erősítés-korrekció - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre meghatározott erősítés-korrekció alkalmazása.\n- Fix erősítés-korrekció - mindig a rögzített hangerő\/erősítés korrekciót alkalmazza.\n- Tartalék dinamikus - a legjobb lehetőség automatikus kiválasztása: tárolt mérésen alapuló (összesített) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
-            "options": {
-                "disabled": "Letiltva",
-                "dynamic": "Dinamikus kényszerítése",
-                "measurement_only": "Csak mérés (nincs tartalék)",
-                "fallback_fixed_gain": "Tartalék erősítés-korrekció",
-                "fixed_gain": "Fix erősítés-korrekció",
-                "fallback_dynamic": "Tartalék dinamikus"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fix\/tartalék erősítés-beállítás a zeneszámokhoz",
-            "description": "Rögzített\/tartalék erősítés-korrekció a zeneszám hangfolyamára (a \"Hangerő-normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheti a hangerőt, negatív értékkel csökkentheti azt.\n\nEz a beállítás akkor használható, ha a hangerő-normalizálási módszer a 'Fix erősítés-korrekció' vagy a 'Tartalék erősítés-korrekció' beállításra van állítva."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fix\/tartalék erősítés-beállítás a rádióhoz",
-            "description": "Rögzített\/tartalék erősítés-korrekció a rádióadásra (a \"Hangerő-normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheti a hangerőt, negatív értékkel csökkentheti azt.\n\nEz a beállítás akkor használható, ha a hangerő-normalizálási módszer a 'Fix erősítés-korrekció' vagy a 'Tartalék erősítés-korrekció' beállításra van állítva."
-        },
         "dynamic_members": {
             "label": "Dinamikus csoporttagok",
             "description": "Lehetővé teszi a tagok számára, hogy (ideiglenesen) dinamikusan csatlakozzanak a csoporthoz vagy kilépjenek belőle, így a csoport nagyjából ugyanúgy viselkedik, mint a lejátszók kézi szinkronizálása. A fő különbség az, hogy a csoportos lejátszó megtartja a lejátszási sort."
@@ -478,22 +282,6 @@
                 "name_placeholder": "Új előbeállításom",
                 "remove_confirm": "Biztosan el szeretné távolítani ezt a DSP előbeállítást?"
             }
-        },
-        "power_control": {
-            "label": "Bekapcsolás vezérlés",
-            "description": "Meghatározza vagy felülbírálja a bekapcsolás vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a be\/ki kapcsolási parancsok átirányítását egy másik eszközre, vagy hamis bekapcsolás vezérlés használatát, ha a lejátszó nem támogatja a be\/ki kapcsolási parancsokat, de szeretne külön állapotot a nem használt lejátszóhoz."
-        },
-        "volume_control": {
-            "label": "Hangerő vezérlés",
-            "description": "Meghatározza vagy felülbírálja a hangerő vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a hangerő vezérlési parancsok átirányítását egy másik eszközre, vagy teljes letiltását."
-        },
-        "mute_control": {
-            "label": "Némítás vezérlés",
-            "description": "Meghatározza vagy felülbírálja a némítás vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a némítási vezérlési parancsok átirányítását egy másik eszközre, vagy teljes letiltását.\n\nKínálunk egy „hamis\" némítás vezérlési lehetőséget, amely a hangerő 0-ra állításával szimulálja a némítást, és visszaállítja a hangerőt a némítás megszüntetésekor."
-        },
-        "output_limiter": {
-            "label": "Korlátozás engedélyezése a torzítás megelőzésére",
-            "description": "Aktivál egy korlátozót, amely megelőzi a hangtorzítást a hangos csúcsok halkításával."
         },
         "dsp_enabled": "DSP engedélyezve",
         "dsp_disabled": "DSP letiltva",
@@ -946,37 +734,6 @@
     "music_assistant_library": "Music Assistant könyvtár",
     "select_all_confirmation": "Kijelöli az összes elemet? Ez a művelet eltarthat egy ideig, amíg az összes adat betöltődik.",
     "this_device": "Ez az eszköz",
-    "recommendations": {
-        "in_progress_items": "Hallgatás folytatása...",
-        "recommended_new_tracks": "Ajánlott új számok",
-        "recently_played": "Nemrég hallgatott",
-        "suggested_new_albums_for_you": "Javasolt új albumok",
-        "random_artists": "Véletlenszerű előadók",
-        "random_albums": "Véletlenszerű albumok",
-        "custom_mixes": "Egyéni mixek",
-        "your_listening_history": "A hallgatási előzményei",
-        "popular_albums": "Népszerű albumok",
-        "staff_picks_tracks": "Szerkesztői válogatás: számok",
-        "staff_picks_albums": "Szerkesztői válogatás: albumok",
-        "radio_stations_for_you": "Rádióállomás ajánlatok",
-        "producers__songwriters": "Producerek és dalszerzők",
-        "new_releases_for_you": "Új megjelenés ajánlatok",
-        "recent_favorite_tracks": "Nemrég kedvencnek jelölt számok",
-        "favorite_playlists": "Kedvenc lejátszási listák",
-        "favorite_radio_stations": "Kedvenc rádióállomások",
-        "listen_again": "Újrahallgatás",
-        "in_progress_series": "Sorozat folytatása...",
-        "recommended": "Ajánlott",
-        "recently_added": "Nemrég hozzáadott",
-        "episodes_recently_added": "Nemrég hozzáadott epizódok",
-        "recent_series": "Legutóbbi sorozatok",
-        "newest_authors": "Legújabb szerzők",
-        "newest_episodes": "Legújabb epizódok",
-        "discover": "Felfedezés",
-        "libraries": "Könyvtárak",
-        "library": "Könyvtár",
-        "trending_podcasts": "Népszerű podcastok"
-    },
     "homescreen_edit_enable": "Kezdőképernyő szerkesztése",
     "homescreen_edit_disable": "Kezdőképernyő szerkesztő mód elhagyása",
     "lyrics_will_appear_soon": "A dalszöveg megjelenik, amikor a szám elindul...",
@@ -1222,67 +979,6 @@
     "description": "Leírás",
     "genre": "Műfaj",
     "genres": "Műfajok",
-    "genre_names": {
-        "afrobeats": "Afrobeats (nyugat-afrikai urban\/pop zene)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Anime és videojáték zene",
-        "asian_music": "Ázsiai zene",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brazil zene",
-        "chanson": "Chanson",
-        "childrens_music": "Gyerekzene",
-        "christmas_music": "Karácsonyi zene",
-        "church_music": "Egyházi zene",
-        "classical": "Klasszikus",
-        "comedy": "Komédia",
-        "country": "Country",
-        "dance": "Dance",
-        "dark_ambient": "Dark ambient",
-        "dark_wave": "Dark wave",
-        "disco": "Disco",
-        "electronic": "Elektronikus",
-        "experimental": "Kísérleti",
-        "field_recording": "Terepi felvétel",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indiai klasszikus",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Fúvószenekar",
-        "metal": "Metal",
-        "middle_eastern_music": "Közel-keleti zene",
-        "musical": "Musical",
-        "new_age": "New age",
-        "poetry": "Költészet",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Pszichedelikus",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Előadó-dalszerző",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Hangeffektusok",
-        "soundtrack": "Filmzene",
-        "spoken_word": "Beszélt szó",
-        "swing": "Swing",
-        "tango": "Tangó",
-        "trap": "Trap",
-        "waltz": "Keringő",
-        "wellness": "Wellness"
-    },
     "link": "Összekapcsolás",
     "link_alias": "Álnév összekapcsolása",
     "link_alias_failed": "Az álnév összekapcsolása sikertelen",

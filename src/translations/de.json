@@ -145,140 +145,6 @@
         "add_new_provider_button": "{0}-Anbieter hinzufügen",
         "add_group_player": "Wiedergabegeräte-Gruppen hinzufügen",
         "group_members": "Gruppenmitglieder",
-        "log_level": {
-            "label": "Log-Level",
-            "description": "Lege die Ausführlichkeit der Protokollierung für diesen Anbieter fest.",
-            "options": {
-                "global": "Global",
-                "info": "Info",
-                "warning": "Warnung",
-                "error": "Fehler",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Warteschlangen-„Flow“-Modus aktivieren",
-            "description": "Aktiviere den „Flow“-Modus, in dem alle Titel der Warteschlange als kontinuierlicher Audiostream gesendet werden. \nVerwende diese Funktion für Wiedergabegeräte, die lückenloses Abspielen und\/oder Überblenden nicht nativ unterstützen oder wenn das Wiedergabegerät Probleme beim Übergang zwischen Titeln hat."
-        },
-        "auto_play": {
-            "label": "Automatische Wiedergabe (Fortsetzen beim Einschalten)",
-            "description": "Wenn dieses Wiedergabegerät eingeschaltet wird, wird die Wiedergabe automatisch gestartet (wenn sich Elemente in der Warteschlange befinden)."
-        },
-        "output_channels": {
-            "label": "Ausgangskanal-Modus",
-            "description": "Das Wiedergabegerät kann so konfiguriert werden, dass nur der linke oder der rechte Kanal wiedergegeben wird, um z. B. ein Stereo-Paar mit zwei Wiedergabegeräten zu bilden.",
-            "options": {
-                "stereo": "Stereo (beide Kanäle)",
-                "left": "Nur linker Kanal",
-                "right": "Nur rechter Kanal",
-                "mono": "Mono (beide Kanäle)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Lautstärkenormalisierung aktivieren (EBU-R128-basiert)",
-            "description": "Aktiviere die Lautstärkenormalisierung basierend auf dem EBU-R128-Standard, ohne den Dynamikbereich zu beeinträchtigen"
-        },
-        "volume_normalization_target": {
-            "label": "Zielpegel für die Lautstärkenormalisierung",
-            "description": "Passe die durchschnittliche (wahrgenommene) Lautstärke an diesen Zielpegel an. Der Standardwert ist -17 LUFS \n\n **WARNUNG:** Wenn der Pegel zu hoch eingestellt wird, kann es zu Übersteuerung kommen!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: Bass",
-            "description": "Verwende den integrierten Basis-Equalizer, um die tiefen Audiofrequenzen (Bass) anzupassen."
-        },
-        "eq_mid": {
-            "label": "Equalizer: Mitten",
-            "description": "Verwende den integrierten Basis-Equalizer, um die mittleren Audiofrequenzen anzupassen."
-        },
-        "eq_treble": {
-            "label": "Equalizer: Höhen",
-            "description": "Verwenden Sie den integrierten Basis-Equalizer, um den Höhenpegel (hohe Töne) des Audiosignals anzupassen."
-        },
-        "crossfade": {
-            "label": "Crossfade aktivieren",
-            "description": "Aktiviere einen Crossfade-Übergang zwischen (Warteschlangen-)Titeln."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade-Dauer",
-            "description": "Crossfade-Dauer in Sekunden zwischen Titeln (falls aktiviert)"
-        },
-        "hide_player": {
-            "label": "Wiedergabegerät in der Benutzeroberfläche ausblenden",
-            "description": "Dieses Wiedergabegerät in der Benutzeroberfläche ausblenden. \n\nBeachte, dass dieses Wiedergabegerät weiterhin gesteuert werden kann und auch in allen Synchronisierungsgruppen angezeigt wird, zu denen das Wiedergabegerät gehört."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elemente, die bei der Wiedergabe eines Interpreten (aus der Bibliothek) ausgewählt werden sollen.",
-            "description": "Wenn ein Künstler gespielt werden soll, welche Elemente sollten in die Warteschlange aufgenommen werden?",
-            "options": {
-                "library_tracks": "Nur Titel in der Bibliothek",
-                "library_album_tracks": "Alle Titel aus allen Alben in der Bibliothek",
-                "all_tracks": "Alle (Top) Titel von allen Anbietern",
-                "all_album_tracks": "Alle Titel aller Alben von allen Anbietern"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elemente, die bei der Wiedergabe eines Albums (aus der Bibliothek) ausgewählt werden sollen.",
-            "description": "Wenn du ein Album abspielen möchtest, welche Elemente sollten in die Warteschlange aufgenommen werden?",
-            "options": {
-                "library_tracks": "Nur Titel in der Bibliothek",
-                "all_tracks": "Alle Titel des Albums beim Anbieter"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standard-Warteschlangenoption für Künstlerartikel.",
-            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
-            "options": {
-                "play": "Spiele jetzt die Titel des Künstlers und behalte die verbleibenden Elemente in der Warteschlange.",
-                "replace": "Lösche die Warteschlange und spiele den\/die Titel des Künstlers ab.",
-                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element abspielen.",
-                "add": "Füge den\/die Titel des Künstlers am Ende der Warteschlange hinzu."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standard-Warteschlangenoption für Künstlerartikel.",
-            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine bestimmte Aktion gewählt wurde).",
-            "options": {
-                "play": "Albumtitel jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
-                "replace": "Lösche die Warteschlange und spiele den\/die Albumtitel ab.",
-                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
-                "replace_next": "Warteschlange leeren und Albumtitel direkt nach dem aktuell abgespielten\/gepufferten Titel abspielen.",
-                "add": "Füge den\/die Albumtitel am Ende der Warteschlange hinzu."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standardmäßige Warteschlangenoption für Titel.",
-            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
-            "options": {
-                "play": "Spiele jetzt den\/die Titel ab und behalte die verbleibenden Warteschlangenelemente.",
-                "replace": "Lösche die Warteschlange und spiele den\/die Titel ab.",
-                "next": "Spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element ab.",
-                "add": "Füge den\/die Titel am Ende der Warteschlange hinzu."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standardmäßige Warteschlangenoption für Wiedergabeliste-Elemente.",
-            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
-            "options": {
-                "play": "Titel der Wiedergabeliste jetzt abspielen und die verbleibenden Warteschlangenelemente beibehalten.",
-                "replace": "Lösche die Warteschlange und spiele die Wiedergabeliste-Titel ab.",
-                "next": "Spiele den\/die Titel direkt nach dem derzeit abgespielten\/gepufferten Titel ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den\/die Titel direkt nach dem aktuell gespielten\/gepufferten Element der Wiedergabeliste ab.",
-                "add": "Füge den\/die Wiedergabelisten-Titel am Ende der Warteschlange hinzu."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standardmäßige Warteschlangenoption für Radio-Elemente.",
-            "description": "Definiere die Standardaktion zum Einreihen in die Warteschlange für diesen Medientyp (falls keine Aktion definiert wurde).",
-            "options": {
-                "play": "Spiele jetzt den Radiosender ab und behalte die verbleibenden Warteschlangenelemente.",
-                "replace": "Lösche die Warteschlange und spiele den Radiosender ab",
-                "next": "Spiele das\/die Element(e) direkt nach dem aktuell gespielten\/gepufferten Element ab.",
-                "replace_next": "Lösche die Warteschlange und spiele den\/die Radiosender direkt nach dem aktuell wiedergegebenen\/gepufferten Element ab.",
-                "add": "Füge den\/die Radiosender am Ende der Warteschlange hinzu."
-            }
-        },
         "default": "Standard",
         "provider_depends_on_confirm": "Bevor du {0} einrichten kannst, musst du den Anbieter {1} konfigurieren. Möchtest du das jetzt tun?",
         "category": {
@@ -298,36 +164,6 @@
             "preferences": "Präferenzen",
             "display_settings": "Anzeige",
             "airplay": "Spezielle AirPlay-Einstellungen"
-        },
-        "tts_pre_announce": {
-            "label": "TTS-Durchsagen vorankündigen",
-            "description": "Wenn eine TTS (Text-zu-Sprache) Nachricht an die Ankündigungsfunktion gesendet wird, füge der Durchsage einen kurzen Ankündigungston (Trillerpfeife) hinzu."
-        },
-        "announce_volume_strategy": {
-            "label": "Lautstärkestrategie für Ankündigungen",
-            "description": "Wie soll die Lautstärke vorübergehend angepasst werden, wenn eine Ankündigung an dieses Wiedergabegerät gesendet wird (in Kombination mit dem unten stehenden Lautstärkewert verwenden).",
-            "options": {
-                "absolute": "Absolute Lautstärke",
-                "relative": "Relative Lautstärkezunahme",
-                "percentual": "Lautstärke erhöhen um festen Prozentsatz",
-                "none": "Lautstärke nicht anpassen"
-            }
-        },
-        "announce_volume": {
-            "label": "Lautstärke für Ankündigungen",
-            "description": "Der prozentuale, relative oder absolute Lautstärkepegel, der mit der Strategie für Ankündigungen verwendet wird."
-        },
-        "announce_volume_min": {
-            "label": "Mindestlautstärke für Ankündigungen",
-            "description": "Die Lautstärkeanpassung der Ankündigungen sollte nicht unter dieses Niveau fallen."
-        },
-        "announce_volume_max": {
-            "label": "Maximale Lautstärke für Ankündigungen",
-            "description": "Die Lautstärke (Anpassung) der Durchsagen sollte nicht über dieses Niveau hinausgehen."
-        },
-        "icon": {
-            "label": "Icon",
-            "description": "Material Design Icon für dieses Wiedergabegerät. \n\nSiehe https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Theme",
@@ -378,38 +214,6 @@
         "no_music_providers_detail": "Starte mit Music Assistant, indem du deine Musikanbieter hinzufügst.",
         "no_player_providers": "Keine Wiedergabegeräte-Anbieter konfiguriert",
         "no_player_providers_detail": "Konfiguriere die Wiedergabegeräte-Anbieter, um Geräte auszuwählen, auf denen Music Assistant deine Musik ausgeben kann.",
-        "volume_normalization_radio": {
-            "label": "Methode zur Normalisierung der Lautstärke für Radiostreams",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Radiostreams ein.\nStandardmäßig erfasst Music Assistant eine Messung der (durchschnittlich wahrgenommenen) Lautstärke des Radiosenders gemäß der EBU-R128-Spezifikation und passt dann den Gesamtpegel\/die Lautstärke des Streams entsprechend dieser Messung an, sodass der Dynamikumfang des Audios nicht beeinträchtigt wird. Falls keine Messung für einen Radiosender vorliegt, greift Music Assistant auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück.\n\nTipp: Radiostreams haben oft unterschiedliche Lautstärkepegel, besonders bei Durchsagen und Werbespots. Du kannst die dynamische Lautstärkenormalisierung für Radiostreams erzwingen, selbst wenn eine (durchschnittliche) Lautstärkemessung für den Radiosender vorliegt.\n\n**Optionen:**\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung.\n- Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück. \n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
-            "options": {
-                "disabled": "Ausgeschaltet",
-                "dynamic": "Erzwinge dynamisch",
-                "measurement_only": "Nur Messung (kein Fallback)",
-                "fallback_fixed_gain": "Fallback auf Gain-Anpassung",
-                "fixed_gain": "Feste Gain-Anpassung",
-                "fallback_dynamic": "Fallback auf dynamisch"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Lautstärkenormalisierungsmethode für Titel",
-            "description": "Stelle die bevorzugte Lautstärkenormalisierungsstrategie für Titel\/Songs ein.\nMusic Assistant verwendet eine Messung der (durchschnittlich wahrgenommenen) Lautstärke von Titeln gemäß der EBU-R128-Spezifikation, um den Gesamtpegel\/die Lautstärke des Streams anzupassen, ohne den Dynamikumfang der Audiodatei zu beeinträchtigen.\nDiese Messungen werden entweder vom Streaming-Anbieter bereitgestellt oder können im Fall von lokalen Dateien in den ID3-Tags enthalten sein (ReplayGain 2.0 \/ Opus R128).\nFalls keine Messung vorliegt, führt Music Assistant automatisch eine Messung durch, wenn der Titel (erstmals) abgespielt wird. Wenn für einen Titel noch keine Messung existiert, greift Music Assistant standardmäßig auf einen dynamischen (aber weniger genauen) Lautstärkeausgleichsfilter zurück. Dies stellt sicher, dass es keine großen Lautstärkeschwankungen zwischen den Titeln gibt, auch wenn noch keine genaue Messung vorliegt. Der dynamische Ausgleich kann manchmal den Dynamikumfang leicht komprimieren, was jedoch in den meisten Fällen nicht hörbar sein sollte.\n\n**Optionen:**\n- Deaktiviert – keine Lautstärkenormalisierung für Radiostreams anwenden.\n- Erzwungene Dynamik – erzwinge zu jeder Zeit dynamische Lautstärkenormalisierung. - Nur Messung (kein Fallback) – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Wenn keine Messung vorliegt, wird keine Normalisierung angewendet. - Fallback auf Pegelkorrektur – Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an. Falls keine Messung vorliegt, greife auf eine vordefinierte Pegelkorrektur zurück.\n- Feste Pegelkorrektur – Wende immer die feste Lautstärken-\/Pegelkorrektur an.\n- Fallback auf Dynamik – wähle automatisch die beste Option: Wende die (gesamte) Lautstärken-\/Pegelkorrektur basierend auf gespeicherten Messungen an, falls vorhanden, und ermögliche einen Fallback auf den dynamischen Modus, wenn keine Messung verfügbar ist.",
-            "options": {
-                "disabled": "Deaktiviert",
-                "dynamic": "Erzwinge dynamisch",
-                "measurement_only": "Nur Messung (kein Fallback)",
-                "fallback_fixed_gain": "Fallback auf Gain-Anpassung",
-                "fixed_gain": "Statische Gain-Anpassung",
-                "fallback_dynamic": "Fallback auf dynamisch"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Feste\/Fallback Gain-Anpassung für Titel",
-            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Titel-Audiostream angewendet wird (abhängig von der gewählten Einstellung „Lautstärkenormalisierungsmethode“).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist"
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Feste\/Fallback Gain-Anpassung für Radio",
-            "description": "Feste\/Fallback Gain-Korrektur, die auf einen Radiostream angewendet werden soll (hängt von der gewählten Einstellung „Lautstärkenormalisierungsmethode“ ab).\nVerwende einen positiven Wert, um die Lautstärke zu erhöhen, einen negativen Wert, um die Lautstärke zu verringern.\n\nDiese Einstellung wird verwendet, wenn die Lautstärkenormalisierungsmethode auf „Feste Gain-Korrektur“ oder „Fallback auf Gain-Korrektur“ eingestellt ist."
-        },
         "dynamic_members": {
             "label": "Dynamische Gruppenmitglieder",
             "description": "Erlaube Mitgliedern (vorübergehend) der Gruppe beizutreten\/die Gruppe zu verlassen, sodass die Gruppe sich mehr oder weniger verhält wie beim manuellen Synchronisieren der Wiedergabegeräte mit dem Hauptunterschied, dass das Gruppenwiedergabegerät die Warteschlange hält."
@@ -482,22 +286,6 @@
                 "name_placeholder": "Mein neues Preset",
                 "remove_confirm": "Möchtest du diese DSP-Voreinstellung wirklich entfernen?"
             }
-        },
-        "power_control": {
-            "label": "Steuerung Ein-\/Ausschaltverhalten",
-            "description": "Bestimme\/Übersteuere das Verhalten der Energiesteuerung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Energiesteuerung an ein anderes Gerät oder die Verwendung einer „Fake“ Energiesteuerung, falls das Wiedergabegerät die Befehle für das Ein-\/Ausschalten nicht unterstützt, man aber einen dedizierten Status für ein nicht verwendetes Wiedergabegerät haben möchte."
-        },
-        "volume_control": {
-            "label": "Lautstärkeregelung",
-            "description": "Bestimme\/Übersteuere das Verhalten der Lautstärkeregelung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Lautstärkeregelung an ein anderes Gerät oder die vollständige Abschaltung."
-        },
-        "mute_control": {
-            "label": "Stummschaltung",
-            "description": "Bestimme\/Übersteuere das Verhalten der Stummschaltung für dieses Wiedergabegerät. Ermöglicht zum Beispiel die Weiterleitung der Befehle für die Stummschaltung an ein anderes Gerät oder die vollständige Abschaltung.\n\nWir bieten eine „Fake“ Stummschaltung an, welche die Stummschaltung simuliert, indem die Lautstärke auf 0 gesetzt wird und die Lautstärke wiederherstellt, wenn die Stummschaltung aufgehoben wird."
-        },
-        "output_limiter": {
-            "label": "Begrenzer aktivieren, um Clipping zu verhindern",
-            "description": "Aktiviert einen Begrenzer, der Audioverzerrungen verhindert, indem laute Spitzen leiser gemacht werden."
         },
         "dsp_enabled": "DSP ist aktiviert.",
         "dsp_disabled": "DSP ist deaktiviert.",
@@ -760,38 +548,6 @@
             "title": "Hintergrundanalyse der Gleichzeitigkeit",
             "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
             "open_settings": "Streams-Einstellungen öffnen"
-        },
-        "all_favorite_tracks": {
-            "label": "Alle favorisierten Titel",
-            "description": "Erstelle eine Playlist, die alle in deiner Bibliothek als Favoriten markierten Titel enthält."
-        },
-        "random_artist": {
-            "label": "Zufälliger Künstler (aus der Bibliothek)",
-            "description": "Wähle einen zufälligen Künstler aus deiner Bibliothek aus und füge seine Titel der Warteschlange hinzu."
-        },
-        "random_album": {
-            "label": "Zufälliges Album (aus der Bibliothek)",
-            "description": "Wähle ein zufälliges Album aus deiner Bibliothek aus und füge dessen Titel zur Warteschlange hinzu."
-        },
-        "random_tracks": {
-            "label": "500 zufällige Titel (aus der Bibliothek)",
-            "description": "Erstelle eine Playlist mit 500 zufällig ausgewählten Titeln aus deiner Bibliothek."
-        },
-        "recently_played": {
-            "label": "Zuletzt gespielte Titel",
-            "description": "Zeige die zuletzt abgespielten Titel als Playlist an."
-        },
-        "recently_added_tracks": {
-            "label": "Kürzlich hinzugefügte Titel",
-            "description": "Zeige die zuletzt zu deiner Bibliothek hinzugefügten Titel als Wiedergabeliste an."
-        },
-        "infinite_mix": {
-            "label": "Unendlicher Mix (Bibliothek)",
-            "description": "Eine endlose, sich ständig verändernde Playlist, die jedes Mal, wenn die Warteschlange fast leer ist, 25 zufällige Titel aus deiner gesamten Bibliothek auswählt. Kein Vorladen – der Speicherverbrauch bleibt unabhängig von der Größe deiner Bibliothek konstant."
-        },
-        "infinite_mix_favorites": {
-            "label": "Unendlicher Mix (Favoriten)",
-            "description": "Wie unendlicher Mix, aber beschränkt auf deine Lieblingstitel. Sobald die Warteschlange fast leer ist, werden 25 neue, zufällig ausgewählte Favoriten hinzugefügt."
         }
     },
     "show_info": "Zeige Informationen",
@@ -999,55 +755,6 @@
     "music_assistant_library": "Music Assistant-Bibliothek",
     "select_all_confirmation": "Alle Einträge auswählen? Dieser Vorgang kann für das Laden der Daten einen Moment dauern.",
     "this_device": "Dieses Gerät",
-    "recommendations": {
-        "in_progress_items": "Wiedergabe fortsetzen…",
-        "recommended_new_tracks": "Empfohlene Titel-Neuerscheinungen für dich",
-        "recently_played": "Zuletzt gespielt",
-        "suggested_new_albums_for_you": "Empfohlene Album-Neuerscheinungen für dich",
-        "random_artists": "Zufällige Interpreten",
-        "random_albums": "Zufällige Alben",
-        "custom_mixes": "Benutzerdefinierte Mixe",
-        "your_listening_history": "Dein Wiedergabe-Verlauf",
-        "popular_albums": "Beliebte Alben",
-        "staff_picks_tracks": "Mitarbeiterempfehlungen: Titel",
-        "staff_picks_albums": "Mitarbeiterempfehlungen: Alben",
-        "radio_stations_for_you": "Radiosender für dich",
-        "producers__songwriters": "Produzenten & Songwriter",
-        "new_releases_for_you": "Neuerscheinungen für dich",
-        "recent_favorite_tracks": "Zuletzt favorisierte Titel",
-        "favorite_playlists": "Wiedergabeliste-Favoriten",
-        "favorite_radio_stations": "Radiosender-Favoriten",
-        "listen_again": "Nochmal hören",
-        "in_progress_series": "Fortsetzung der Serie…",
-        "recommended": "Empfohlen",
-        "recently_added": "Zuletzt hinzugefügt",
-        "episodes_recently_added": "Kürzlich hinzugefügte Episoden",
-        "recent_series": "Aktuelle Serien",
-        "newest_authors": "Neueste Autoren",
-        "newest_episodes": "Neueste Episoden",
-        "discover": "Entdecken",
-        "libraries": "Bibliotheken",
-        "library": "Bibliothek",
-        "trending_podcasts": "Beliebte Podcasts",
-        "trending_stations": "Trend-Radiosender",
-        "forgotten_tracks": "Vergessene Titel",
-        "forgotten_albums": "Vergessene Alben",
-        "forgotten_artists": "Vergessene Künstler",
-        "most_played_tracks": "Meistgespielte Titel",
-        "never_played_tracks": "Nie \/ selten gespielt",
-        "recent_favorite_albums": "Kürzlich favorisierte Alben",
-        "recently_added_tracks": "Kürzlich hinzugefügte Titel",
-        "inspired_by_recently_played": "Inspiriert von kürzlich gespielt",
-        "discover_similar_artists": "Ähnliche Künstler entdecken",
-        "discover_similar_tracks": "Ähnliche Titel entdecken",
-        "global_top_artists": "Globale Top-Künstler",
-        "global_top_tracks": "Globale Top-Titel",
-        "made_for_you": "Für dich gemacht",
-        "most_played_albums": "Meistgespielte Alben",
-        "recently_added_albums": "Neue Alben",
-        "recommended_albums": "Empfohlene Alben",
-        "recommended_artists": "Empfohlene Künstler"
-    },
     "homescreen_edit_enable": "Startbildschirm bearbeiten",
     "homescreen_edit_disable": "Bearbeitungsmodus verlassen",
     "lyrics_will_appear_soon": "Songtext wird angezeigt, wenn das Lied beginnt",
@@ -1293,67 +1000,6 @@
     "description": "Beschreibung",
     "genre": "Genre",
     "genres": "Genres",
-    "genre_names": {
-        "afrobeats": "Afrobeats (westafrikanische Urban-\/Popmusik)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Anime- und Videospielmusik",
-        "asian_music": "Asiatische Musik",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brasilianische Musik",
-        "chanson": "Chanson",
-        "childrens_music": "Kindermusik",
-        "christmas_music": "Weihnachtsmusik",
-        "church_music": "Kirchenmusik",
-        "classical": "Klassisch",
-        "comedy": "Komödie",
-        "country": "Country",
-        "dance": "Dance",
-        "dark_ambient": "Dark-Ambient",
-        "dark_wave": "Dark-Wave",
-        "disco": "Disko",
-        "electronic": "Elektronisch",
-        "experimental": "Experimentell",
-        "field_recording": "Feldaufnahme",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta-Rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip-Hop",
-        "indian_classical": "Indische Klassik",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Lateinisch",
-        "marching_band": "Marschkapelle",
-        "metal": "Metal",
-        "middle_eastern_music": "Nahöstliche Musik",
-        "musical": "Musical",
-        "new_age": "New Age",
-        "poetry": "Poesie",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelisch",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Sänger-Songwriter",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Soundeffekte",
-        "soundtrack": "Soundtrack",
-        "spoken_word": "Gesprochenes Wort",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Walzer",
-        "wellness": "Wellness"
-    },
     "link": "Verknüpfen",
     "link_alias": "Alias verknüpfen",
     "link_alias_failed": "Alias konnte nicht verknüpft werden",

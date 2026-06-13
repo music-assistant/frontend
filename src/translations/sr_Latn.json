@@ -145,140 +145,6 @@
         "add_new_provider_button": "Dodajte: {0}",
         "add_group_player": "Dodajte grupni plejer",
         "group_members": "Članovi grupe",
-        "log_level": {
-            "label": "Nivo dnevnika rada",
-            "description": "Podesite nivo detaljnosti dnevnika rada za ovaj servis.",
-            "options": {
-                "global": "Globalno",
-                "info": "Informacije",
-                "warning": "Upozorenja",
-                "error": "Greške",
-                "debug": "Otklanjanje grešaka"
-            }
-        },
-        "flow_mode": {
-            "label": "Omogućite protočni režim reda čekanja",
-            "description": "Omogućite protočni režim u kojem se sve numere iz reda čekanja šalju kao neprekidan audio-strim. Koristite ovu opciju za plejere koji nemaju ugrađenu podršku za reprodukciju bez pauza ili postepeni prelaz, kao i ako plejer ima poteškoća sa prelazima između numera."
-        },
-        "auto_play": {
-            "label": "Automatski reprodukujte (nastavite nakon uključivanja)",
-            "description": "Kada se ovaj plejer uključi, automatski pokrenite reprodukciju (ako ima stavki u redu čekanja)."
-        },
-        "output_channels": {
-            "label": "Režim izlaznih kanala",
-            "description": "Možete konfigurisati ovaj plejer da reprodukuje samo levi ili desni kanal, na primer da napravite stereo par sa dva plejera.",
-            "options": {
-                "stereo": "Stereo (oba kanala)",
-                "left": "Samo levi kanal",
-                "right": "Samo desni kanal",
-                "mono": "Mono (oba kanala)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Omogućite normalizaciju glasnoće (zasnovano na EBU-R128)",
-            "description": "Omogućite normalizaciju jačine zvuka na osnovu standarda EBU-R128 bez uticaja na dinamički opseg"
-        },
-        "volume_normalization_target": {
-            "label": "Ciljni nivo za normalizaciju glasnoć",
-            "description": "Podesite prosečnu (opaženu) glasnoću na ovaj ciljni nivo (podrazumevano je -17 LUFS)\n\n**UPOZORENJE:** Previsok nivo može dovesti do distorzije zvuka!"
-        },
-        "eq_bass": {
-            "label": "Ekvilajzer: niski tonovi",
-            "description": "Koristite ugrađeni osnovni ekvilajzer za podešavanje nivoa niskih tonova zvuka."
-        },
-        "eq_mid": {
-            "label": "Ekvilajzer: srednji tonovi",
-            "description": "Koristite ugrađeni osnovni ekvilajzer za podešavanje nivoa srednjih tonova zvuka."
-        },
-        "eq_treble": {
-            "label": "Ekvilajzer: visoki tonovi",
-            "description": "Koristite ugrađeni osnovni ekvilajzer za podešavanje nivoa visokih tonova zvuka."
-        },
-        "crossfade": {
-            "label": "Omogućite postepeni prelaz",
-            "description": "Omogućite postepeni prelaz između numera u redu čekanja."
-        },
-        "crossfade_duration": {
-            "label": "Trajanje postepenog prelaza",
-            "description": "Trajanje postepenog prelaza između numera u sekundama (ako je omogućeno)"
-        },
-        "hide_player": {
-            "label": "Sakrijte ovaj plejer u korisničkom interfejsu.",
-            "description": "Sakrijte ovaj plejer u korisničkom interfejsu.\n\nImajte na umu da se njime i dalje može upravljati i da će se takođe prikazati u svim grupama za sinhronizaciju kojima ovaj plejer pripada."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Stavke koje se biraju kada reprodukujete izvođača iz biblioteke.",
-            "description": "Ako želite da reprodukujete izvođača, koje stavke treba dodati u red čekanja?",
-            "options": {
-                "library_tracks": "Samo numere iz biblioteke",
-                "library_album_tracks": "Sve numere sa svih albuma iz biblioteke",
-                "all_tracks": "Sve najpopularnije numere sa svih servisa",
-                "all_album_tracks": "Sve numere sa svih albuma sa svih servisa"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Stavke koje se biraju kada reprodukujete album iz biblioteke",
-            "description": "Ako želite da reprodukujete album, koje stavke treba dodati u red čekanja?",
-            "options": {
-                "library_tracks": "Samo numere iz biblioteke",
-                "all_tracks": "Sve numere sa albuma na ovom servisu"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Podrazumevana opcija dodavanja izvođača u red čekanja.",
-            "description": "Definišite podrazumevanu radnju dodavanja u red čekanja za ovaj tip medija (ako akcija nije izričito navedena).",
-            "options": {
-                "play": "Reprodukujte numere izvođača odmah i zadržite preostale stavke u redu čekanja.",
-                "replace": "Ispraznite red čekanja i odmah reprodukujte numere izvođača",
-                "next": "Reprodukujte stavke odmah nakon trenutno puštene ili baferovane stavke.",
-                "replace_next": "Ispraznite red čekanja i reprodukujte numere izvođača odmah nakon trenutno puštene ili baferovane stavke.",
-                "add": "Dodajte numere izvođača na kraj reda čekanja."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Podrazumevana opcija dodavanja albuma u red čekanja.",
-            "description": "Definišite podrazumevanu radnju dodavanja u red čekanja za ovaj tip medija (ako akcija nije izričito navedena).",
-            "options": {
-                "play": "Reprodukujte numere sa albuma odmah i zadržite preostale stavke u redu čekanja.",
-                "replace": "Ispraznite red čekanja i odmah reprodukujte numere sa albuma",
-                "next": "Reprodukujte stavke odmah nakon trenutno puštene ili baferovane stavke.",
-                "replace_next": "Ispraznite ostatak reda čekanja i reprodukujte numere sa albuma odmah nakon trenutne.",
-                "add": "Dodajte numere sa albuma na kraj reda čekanja."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Podrazumevana opcija dodavanja numera u red čekanja.",
-            "description": "Definišite podrazumevanu radnju dodavanja u red čekanja za ovaj tip sadržaja (ako radnja nije izričito navedena).",
-            "options": {
-                "play": "Reprodukujte numere odmah i zadržite preostale stavke u redu čekanja.",
-                "replace": "Ispraznite red čekanja i reprodukujte numere.",
-                "next": "Reprodukujte numere odmah nakon trenutno puštene ili baferovane numere.",
-                "replace_next": "Ispraznite ostatak reda čekanja i reprodukujte ove numere odmah nakon trenutne.",
-                "add": "Dodajte numere na kraj reda čekanja."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Podrazumevana opcija dodavanja plejlisti u red čekanja.",
-            "description": "Definišite podrazumevanu radnju dodavanja u red čekanja za ovaj tip sadržaja (ako radnja nije izričito navedena).",
-            "options": {
-                "play": "Reprodukujte numere sa plejliste odmah i zadržite preostale stavke u redu čekanja.",
-                "replace": "Ispraznite red čekanja i reprodukujte numere sa plejliste",
-                "next": "Reprodukujte stavke odmah nakon trenutno puštene ili baferovane stavke.",
-                "replace_next": "Ispraznite red čekanja i reprodukujte numere sa plejliste odmah nakon trenutno puštene ili baferovane stavke.",
-                "add": "Dodajte numere sa plejliste na kraj reda čekanja."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Podrazumevana opcija dodavanja radio-stanica u red čekanja.",
-            "description": "Definišite podrazumevanu radnju dodavanja u red čekanja za ovaj tip medija (ako akcija nije izričito navedena).",
-            "options": {
-                "play": "Reprodukujte radio-stanicu odmah i zadržite preostale stavke u redu čekanja.",
-                "replace": "Ispraznite red čekanja i odmah reprodukujte radio-stanicu",
-                "next": "Reprodukujte stavke odmah nakon trenutno puštene ili baferovane stavke.",
-                "replace_next": "Ispraznite red čekanja i reprodukujte radio-stanicu odmah nakon trenutno puštene ili baferovane stavke.",
-                "add": "Dodajte radio-stanice na kraj reda čekanja."
-            }
-        },
         "default": "Podrazumevano",
         "provider_depends_on_confirm": "Pre nego što podesite {0}, potrebno je da konfigurišete servis {1}. Da li želite to da uradite sada?",
         "category": {
@@ -294,36 +160,6 @@
             "protocol_output_settings": "Omogućite podršku za {0}",
             "dsp": "Digitalna obrada signala (DSP)",
             "options": "Opcije plejera"
-        },
-        "tts_pre_announce": {
-            "label": "Zvuk pre TTS objave",
-            "description": "Kada se TTS (tekst u govor) poruka pošalje funkciji za objave, dodajte kratak zvučni signal (zvono) pre same objave."
-        },
-        "announce_volume_strategy": {
-            "label": "Strategija glasnoće za objave",
-            "description": "Kada se na ovom plejeru emituje objava, na koji način treba privremeno prilagoditi glasnoću (koristite u kombinaciji sa donjom vrednošću glasnoće).",
-            "options": {
-                "absolute": "Apsolutna glasnoća",
-                "relative": "Relativno povećanje glasnoće",
-                "percentual": "Povećanje glasnoće za fiksni procenat",
-                "none": "Bez prilagođavanja glasnoće"
-            }
-        },
-        "announce_volume": {
-            "label": "Glasnoća za objave",
-            "description": "Procentualni, relativni ili apsolutni nivo glasnoće koji se koristi sa strategijom za objave."
-        },
-        "announce_volume_min": {
-            "label": "Minimalni  nivo jačine za objave",
-            "description": "Glasnoća (prilagođavanje) objava ne bi trebalo da ide ispod ovog nivoa."
-        },
-        "announce_volume_max": {
-            "label": "Maksimalni nivo glasnoće za objave",
-            "description": "Glasnoća (prilagođavanje) objava ne bi trebalo da prelazi ovaj nivo."
-        },
-        "icon": {
-            "label": "Ikona",
-            "description": "Material Design ikona za ovaj plejer.\n\nPogledajte pictogrammers.com."
         },
         "theme": {
             "label": "Tema interfejsa",
@@ -374,38 +210,6 @@
         "no_music_providers_detail": "Započnite iskustvo uz Music Assistant dodavanjem muzičkih servisa.",
         "no_player_providers": "Nije konfigurisana nijedna integracija plejera",
         "no_player_providers_detail": "Konfigurišite integracije plejera da biste izabrali uređaje na kojima Music Assistant može da pušta muziku.",
-        "volume_normalization_radio": {
-            "label": "Metod normalizacije jačine zvuka koji se koristi za radio strimove",
-            "description": "Podesite željenu strategiju normalizacije jačine zvuka za radio strimove. \n Podrazumevano, Music Assistant prikuplja merenje (prosečne percipirane) glasnoće radio stanice u skladu sa EBU-R128 specifikacijom, a zatim podešava ukupno pojačanje\/jačinu zvuka strima u skladu sa tim merenjem tako da dinamički opseg zvuka ne bude pogođen. Kada (još) ne postoji merenje za radio stanicu, Music Assistant će se vratiti na dinamički (ali manje precizan) filter za izravnavanje jačine zvuka. \n \n SAVET: Radio strimovi često imaju različite nivoe jačine zvuka, posebno tokom najava i reklama. \n Možete izabrati da primenite dinamičku normalizaciju jačine zvuka na radio strimove, čak i ako postoji (prosečno) merenje jačine zvuka za radio stanicu. \n \n **Opcije:** \n \n - Onemogućeno - uopšte se ne primenjuje normalizacija jačine zvuka na radio strimove. \n - Prisilno dinamičko - Uvek primenjujte dinamičko izravnavanje jačine zvuka. \n - Samo merenje (bez rezervnog načina) - Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, ne primenjivati normalizaciju. \n - Vraćanje na korekciju pojačanja - Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, vratiti se na unapred definisanu korekciju pojačanja. \n - Fiksna korekcija pojačanja - Uvek primeniti fiksnu korekciju jačine zvuka\/pojačanja. \n - Vraćanje na dinamički režim - Automatski izabrati najbolju opciju: Primeniti (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja ako ga imamo, dozvoliti vraćanje na dinamički režim ako nije dostupno merenje.",
-            "options": {
-                "disabled": "Onemogućeno",
-                "dynamic": "Podesi dinamično",
-                "measurement_only": "Samo merenje (bez rezervnog načina)",
-                "fallback_fixed_gain": "Vrati se na korekciju pojačanja",
-                "fixed_gain": "Korekcija fiksnog pojačanja",
-                "fallback_dynamic": "Vrati se na dinamično"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metod normalizacije glasnoće za numere",
-            "description": "Podesite željenu strategiju normalizacije jačine zvuka za numere\/pesme. \n Music Assistant koristi merenje (prosečne percipirane) jačine zvuka numera u skladu sa EBU-R128 specifikacijom da bi podesio ukupno pojačanje\/jačinu zvuka strima bez uticaja na dinamički opseg zvuka. \n Ova merenja ili obezbeđuje servis strimovanja ili, u slučaju lokalnih datoteka, mogu biti sadržana u ID3 oznakama (Replay Gain 2.0 \/ Opus R128). \n Ako merenje nije dato, Music Assistant će automatski izvršiti merenje kada\/nakon što se numera (prvi put) reprodukuje. Kada (još) ne postoji merenje za numeru, Music Assistant će podrazumevano koristiti dinamički (ali manje precizan) filter za izravnavanje jačine zvuka. Ovo osigurava da nema velikih skokova\/padova u nivou jačine zvuka između numera, čak i ako još nema tačnog merenja, ali dinamički izravnavač ponekad može malo kompresovati dinamički opseg, iako to ne bi trebalo da se čuje u većini slučajeva. \n \n \n **Opcije:** \n \n - Onemogućeno - uopšte ne primenjujte normalizaciju jačine zvuka za radio strimove. \n - Prisilno dinamičko - Uvek primenite dinamičko izravnavanje jačine zvuka. \n - Samo merenje (bez rezervnog) - Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, ne primenjujte normalizaciju. \n - Vraćanje na korekciju pojačanja - Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja. Ako nemamo nikakvo merenje, vratite se na unapred definisanu korekciju pojačanja. \n - Fiksna korekcija pojačanja - Uvek primenite fiksnu korekciju jačine zvuka\/pojačanja. \n - Vraćanje na dinamički - Automatski izaberite najbolju opciju: Primenite (ukupnu) korekciju jačine zvuka\/pojačanja na osnovu sačuvanog merenja ako ga imamo, dozvolite vraćanje na dinamički režim ako nije dostupno merenje.",
-            "options": {
-                "disabled": "Onemogućeno",
-                "dynamic": "Dinamika sile",
-                "measurement_only": "Samo merenje (bez rezervnog načina)",
-                "fallback_fixed_gain": "Rezervni korak za korekciju pojačanja",
-                "fixed_gain": "Korekcija fiksnog pojačanja",
-                "fallback_dynamic": "Vrati se na dinamično"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fiksno\/rezervno prilagođavanje pojačanja numera",
-            "description": "Fiksna ili rezervna korekcija pojačanja koja se primenjuje na audio strim numere (zavisi od podešavanja za „Metod normalizacije glasnoće”).\nKoristite pozitivnu vrednost za pojačavanje, a negativnu za smanjivanje glasnoće.\n\nOvo podešavanje se koristi kada je metod normalizacije postavljen na „Korekcija fiksnog pojačanja” ili „Prebaci na korekciju pojačanja”."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fiksno\/rezervno podešavanje pojačanja za radio",
-            "description": "Fiksna\/rezervna korekcija pojačanja koja se primenjuje na radio strim (zavisi od podešavanja „Metod normalizacije jačine zvuka“). Koristite pozitivnu vrednost da povećate jačinu, negativnu da je smanjite. \n\nOvo podešavanje se koristi kada je metod normalizacije jačine zvuka postavljen na „Fiksna korekcija pojačanja“ ili „Rezervna korekcija pojačanja“."
-        },
         "dynamic_members": {
             "label": "Članovi dinamičke grupe",
             "description": "Dozvolite članovima da se privremeno pridružuju ili napuštaju grupu, pa se grupa manje-više ponaša kao kod ručnog sinhronizovanja plejera, uz glavnu razliku što grupni plejer zadržava red čekanja."
@@ -478,22 +282,6 @@
                 "name_placeholder": "Moj novi preset",
                 "remove_confirm": "Da li ste sigurni da želite da uklonite ovaj DSP preset?"
             }
-        },
-        "power_control": {
-            "label": "Kontrola uključivanja",
-            "description": "Definišite ili promenite način kontrole napajanja za ovaj plejer.\nOvo vam omogućava, na primer, da preusmerite komande za uključivanje i isključivanje na drugi uređaj, ili da koristite simuliranu kontrolu napajanja ako vaš plejer ne podržava ove komande, a želite da imate poseban status za plejer koji nije u upotrebi."
-        },
-        "volume_control": {
-            "label": "Kontrola jačine zvuka",
-            "description": "Definišite ili promenite način kontrole jačine zvuka za ovaj plejer.\nTo vam omogućava, na primer, da preusmerite komande za kontrolu jačine zvuka na drugi uređaj ili da ih potpuno onemogućite."
-        },
-        "mute_control": {
-            "label": "Kontrola isključivanja zvuka",
-            "description": "Definišite\/prevaziđite ponašanje kontrole isključivanja zvuka za ovaj plejer. Ovo vam omogućava, na primer, da preusmerite komande za isključivanje zvuka na drugi uređaj ili da ih potpuno onemogućite. \n\nNudimo opciju „lažne“ kontrole isključivanja zvuka, koja simulira isključivanje tako što postavlja jačinu zvuka na 0 i vraća je kada se zvuk ponovo uključi."
-        },
-        "output_limiter": {
-            "label": "Omogućite ograničavanje da biste sprečili isecanje",
-            "description": "Aktivira limiter koji sprečava izobličenje zvuka tako što utišava glasne vrhove."
         },
         "dsp_enabled": "DSP je omogućen",
         "dsp_disabled": "DSP je onemogućen",
@@ -756,38 +544,6 @@
             "title": "Istovremenost analize u pozadini",
             "description": "Kontrolišite koliko pesama se analizira istovremeno tokom noćnog skeniranja u pozadini. Ovo podešavanje se nalazi u glavnoj konfiguraciji strimova.",
             "open_settings": "Otvorite podešavanja strimova"
-        },
-        "all_favorite_tracks": {
-            "label": "Sve omiljene numere",
-            "description": "Napravite plejlistu koja sadrži svaku numeru označenu kao omiljenu u vašoj biblioteci."
-        },
-        "random_artist": {
-            "label": "Nasumični izvođač (iz biblioteke)",
-            "description": "Izaberite nasumičnog izvođača iz biblioteke i dodajte njegove numere u red za reprodukciju."
-        },
-        "random_album": {
-            "label": "Nasumični album (iz biblioteke)",
-            "description": "Izaberite nasumičan album iz biblioteke i dodajte njegove numere u red za reprodukciju."
-        },
-        "random_tracks": {
-            "label": "500 nasumičnih numera (iz biblioteke)",
-            "description": "Napravite plejlistu od 500 nasumičnih numera iz vaše biblioteke."
-        },
-        "recently_played": {
-            "label": "Nedavno puštane numere",
-            "description": "Prikažite nedavno puštane numere u vidu plejliste."
-        },
-        "recently_added_tracks": {
-            "label": "Nedavno dodate numere",
-            "description": "Prikažite poslednje dodate numere u vašu biblioteku u vidu plejliste."
-        },
-        "infinite_mix": {
-            "label": "Infinite Mix (library)",
-            "description": "Beskrajna plejlista koja se stalno menja i povlači 25 nasumičnih numera iz vaše cele biblioteke svaki put kada je red za reprodukciju pri kraju. Bez unapred učitavanja — potrošnja memorije ostaje ista bez obzira na veličinu biblioteke."
-        },
-        "infinite_mix_favorites": {
-            "label": "Beskonačni miks (omiljeno)",
-            "description": "Kao Beskonačni miks, ali ograničeno na vaše omiljene numere. 25 novih nasumičnih omiljenih numera dodaje se kada je red za reprodukciju skoro prazan."
         }
     },
     "show_info": "Prikažite informacije",
@@ -995,46 +751,6 @@
     "music_assistant_library": "Biblioteka Music Assistant-a",
     "select_all_confirmation": "Izabrati sve stavke? Ova operacija može potrajati dok se svi podaci učitaju.",
     "this_device": "Ovaj uređaj",
-    "recommendations": {
-        "in_progress_items": "Nastavite sa slušanjem...",
-        "recommended_new_tracks": "Preporučene nove numere",
-        "recently_played": "Nedavno reprodukovano",
-        "suggested_new_albums_for_you": "Predloženi novi albumi za vas",
-        "random_artists": "Nasumični izvođači",
-        "random_albums": "Nasumični albumi",
-        "custom_mixes": "Prilagođeni miksevi",
-        "your_listening_history": "Vaša istorija slušanja",
-        "popular_albums": "Popularni albumi",
-        "staff_picks_tracks": "Izbor urednika: numere",
-        "staff_picks_albums": "Izbor osoblja: albumi",
-        "radio_stations_for_you": "Radio stanice za vas",
-        "producers__songwriters": "Producenti i tekstopisci",
-        "new_releases_for_you": "Nova izdanja za vas",
-        "recent_favorite_tracks": "Nedavno dodate omiljene numere",
-        "favorite_playlists": "Omiljene plejliste",
-        "favorite_radio_stations": "Omiljene radio stanice",
-        "listen_again": "Slušaj ponovo",
-        "in_progress_series": "Nastavi seriju...",
-        "recommended": "Preporučeno",
-        "recently_added": "Nedavno dodato",
-        "episodes_recently_added": "Nedavno dodate epizode",
-        "recent_series": "Nedavne serije",
-        "newest_authors": "Najnoviji autori",
-        "newest_episodes": "Najnovije epizode",
-        "discover": "Istražite",
-        "libraries": "Biblioteke",
-        "library": "Biblioteka",
-        "trending_podcasts": "Popularni podkasti",
-        "trending_stations": "Popularne stanice",
-        "forgotten_tracks": "Zaboravljene numere",
-        "forgotten_albums": "Zaboravljeni albumi",
-        "forgotten_artists": "Zaboravljeni izvođači",
-        "most_played_tracks": "Najčešće reprodukovane numere",
-        "never_played_tracks": "Nikada \/ retko reprodukovano",
-        "recent_favorite_albums": "Nedavno označeni albumi kao omiljeni",
-        "recently_added_tracks": "Nedavno dodate numere",
-        "inspired_by_recently_played": "Inspirisano nedavno reprodukovanim"
-    },
     "homescreen_edit_enable": "Uredite početni ekran",
     "homescreen_edit_disable": "Napustite režim uređivanja",
     "lyrics_will_appear_soon": "Tekst pesme će se pojaviti kada numera počne...",
@@ -1280,67 +996,6 @@
     "description": "Opis",
     "genre": "Žanr",
     "genres": "Žanrovi",
-    "genre_names": {
-        "afrobeats": "Afrobits (zapadnoafrička urbana\/pop muzika)",
-        "ambient": "Ambijentalna",
-        "anime_and_video_game_music": "Muzika iz anime i video igara",
-        "asian_music": "Azijska muzika",
-        "bluegrass": "Blugras",
-        "blues": "Bluz",
-        "brazilian_music": "Brazilska muzika",
-        "chanson": "Šansona",
-        "childrens_music": "Dečija muzika",
-        "christmas_music": "Božićna muzika",
-        "church_music": "Crkvena muzika",
-        "classical": "Klasična",
-        "comedy": "Komedija",
-        "country": "Kantri",
-        "dance": "Ples",
-        "dark_ambient": "Mračni ambijentalni žanr",
-        "dark_wave": "Tamni talas",
-        "disco": "Disko",
-        "electronic": "Elektronska",
-        "experimental": "Eksperimentalna",
-        "field_recording": "Snimci iz prirode",
-        "folk": "Narodna muzika",
-        "funk": "Fank",
-        "gangsta_rap": "Gengsta rep",
-        "gospel": "Gospel",
-        "hip_hop": "Hip-hop",
-        "indian_classical": "Indijska klasična",
-        "industrial": "Industrijski",
-        "jazz": "Džez",
-        "klezmer": "Klezmer",
-        "latin": "Latinski",
-        "marching_band": "Duvački orkestar",
-        "metal": "Metal",
-        "middle_eastern_music": "Bliskoistočna muzika",
-        "musical": "Mjuzikl",
-        "new_age": "Nju ejdž muzika",
-        "poetry": "Poezija",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psihodelija",
-        "punk": "Pank",
-        "r_b": "R&B",
-        "ragtime": "Regtajm",
-        "rai": "Rai",
-        "reggae": "Rege",
-        "reggaeton": "Regeton",
-        "rock": "Rok",
-        "salsa": "Salsa",
-        "singer_songwriter": "Kantautor",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Zvučni efekti",
-        "soundtrack": "Filmska muzika",
-        "spoken_word": "Govorna reč (recitovanje\/govoreni tekst)",
-        "swing": "Sving",
-        "tango": "Tango",
-        "trap": "Trep",
-        "waltz": "Valcer",
-        "wellness": "Muzika za opuštanje"
-    },
     "link": "Povežite",
     "link_alias": "Povežite pseudonim",
     "link_alias_failed": "Povezivanje pseudonima nije uspelo",
