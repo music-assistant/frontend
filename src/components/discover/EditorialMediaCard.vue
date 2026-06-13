@@ -82,7 +82,6 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
-  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -157,10 +156,7 @@ const displayName = computed(() => {
   if (it.media_type === MediaType.FOLDER) {
     return getBrowseFolderName(it as BrowseFolder, t);
   }
-  let name =
-    it.media_type === MediaType.GENRE
-      ? getGenreDisplayName(it.name, it.translation_key, t, te)
-      : it.name;
+  let name = it.name;
   if ("version" in it && it.version) name += ` - ${it.version}`;
   return name;
 });

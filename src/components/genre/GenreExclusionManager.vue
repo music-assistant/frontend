@@ -27,9 +27,7 @@
               <GenreIcon class="size-[30px]" />
             </div>
           </template>
-          <template #title>{{
-            getGenreDisplayName(genre.name, genre.translation_key, t, te)
-          }}</template>
+          <template #title>{{ genre.name }}</template>
         </ListItem>
       </v-list>
     </Container>
@@ -40,7 +38,6 @@
 import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
-import { getGenreDisplayName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Genre, MediaType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";

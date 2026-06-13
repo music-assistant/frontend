@@ -239,7 +239,6 @@ import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -1643,7 +1642,7 @@ const loadGenreOptions = async () => {
       });
       for (const genre of page) {
         all.push({
-          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          label: genre.name,
           value: Number(genre.item_id),
         });
       }

@@ -2,7 +2,6 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
-  getGenreDisplayName,
   hexToRgb,
   kebabize,
   numberRange,
@@ -253,27 +252,6 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(3660)).toBe("1h 1m");
     expect(formatRelativeTime(7200)).toBe("2h");
     expect(formatRelativeTime(7380)).toBe("2h 3m");
-  });
-});
-
-describe("getGenreDisplayName", () => {
-  // Genre names are resolved server-side for the connection locale, so the name passed in is
-  // already the localized display value; getGenreDisplayName returns it verbatim and ignores
-  // the legacy translation_key/t/te parameters (kept only for call-site compatibility).
-  it("returns the name verbatim", () => {
-    expect(getGenreDisplayName("Hip Hop")).toBe("Hip Hop");
-  });
-
-  it("ignores a provided translation_key (resolution happens server-side)", () => {
-    expect(getGenreDisplayName("Rock", "genre_names.rock")).toBe("Rock");
-  });
-
-  it("preserves the original casing", () => {
-    expect(getGenreDisplayName("my Custom Genre")).toBe("my Custom Genre");
-  });
-
-  it("handles empty name", () => {
-    expect(getGenreDisplayName("")).toBe("");
   });
 });
 

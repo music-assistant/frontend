@@ -553,14 +553,6 @@ export interface ConfigEntry {
   // requires_reload: indicates that a reload of the provider (or player playback)
   // is required when this setting is changed
   requires_reload?: boolean;
-  // translation_key: optional custom translation key for this entry
-  translation_key?: string;
-  // translation_params: optional parameters for the translation key
-  translation_params?: string[];
-  // category_translation_key: optional custom translation key for the category
-  category_translation_key?: string;
-  // category_translation_params: optional parameters for the category translation key
-  category_translation_params?: string[];
   // category_label: localized category display name, resolved server-side
   category_label?: string | null;
   // advanced: indicates this is an advanced setting (hidden by default)

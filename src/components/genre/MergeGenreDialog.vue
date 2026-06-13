@@ -35,14 +35,7 @@
                     :value="genre.item_id"
                     @select="selectGenre(genre)"
                   >
-                    {{
-                      getGenreDisplayName(
-                        genre.name,
-                        genre.translation_key,
-                        t,
-                        te,
-                      )
-                    }}
+                    {{ genre.name }}
                     <Check
                       v-if="selectedTargetId === genre.item_id"
                       class="ml-auto h-4 w-4"
@@ -92,7 +85,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getGenreDisplayName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { Genre } from "@/plugins/api/interfaces";
 import { eventbus, type MergeGenreDialogEvent } from "@/plugins/eventbus";
@@ -124,7 +116,7 @@ const selectedGenreName = computed(() => {
     (g) => g.item_id === selectedTargetId.value,
   );
   if (!genre) return "";
-  return getGenreDisplayName(genre.name, genre.translation_key, t, te);
+  return genre.name;
 });
 
 const selectGenre = (genre: Genre) => {

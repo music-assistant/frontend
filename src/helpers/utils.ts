@@ -156,18 +156,6 @@ const genreKeyFromName = function (name: string): string {
     .replace(/^_+|_+$/g, "");
 };
 
-export const getGenreDisplayName = function (
-  name: string,
-  // translationKey/t/te are no longer used: genre names are resolved server-side for the
-  // connection locale, so the `name` passed in is already the localized display value. The
-  // parameters are kept so the (many) call sites don't all need to change.
-  _translationKey?: string | undefined,
-  _t?: (key: string) => string,
-  _te?: (key: string) => boolean,
-): string {
-  return name;
-};
-
 export const getGenreDescription = function (
   name: string,
   translationKey: string | undefined,
