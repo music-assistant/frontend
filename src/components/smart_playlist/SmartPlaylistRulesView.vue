@@ -153,7 +153,7 @@ const hasAnyInclude = computed(() => {
     !!r.album_ids?.length ||
     !!r.album_types?.length ||
     !!r.favorites_only ||
-    (r.explicit !== undefined && r.explicit !== null)
+    r.explicit !== undefined
   );
 });
 
@@ -262,13 +262,21 @@ const ruleRows = computed<RuleViewRow[]>(() => {
     });
   }
 
-  if (r.explicit === true) {
+  if (r.explicit === null) {
+    rows.push({
+      key: "explicit-allowed",
+      icon: fieldIcon("explicit"),
+      label: $t("smart_playlist.field_explicit"),
+      exclude: false,
+      value: $t("smart_playlist.explicit_allowed"),
+    });
+  } else if (r.explicit === true) {
     rows.push({
       key: "explicit-is",
       icon: fieldIcon("explicit"),
       label: $t("smart_playlist.field_explicit"),
       exclude: false,
-      value: $t("smart_playlist.explicit_yes"),
+      value: $t("smart_playlist.explicit_only"),
     });
   } else if (r.explicit === false) {
     rows.push({
@@ -276,7 +284,7 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       icon: fieldIcon("explicit"),
       label: $t("smart_playlist.field_explicit"),
       exclude: true,
-      value: $t("smart_playlist.explicit_no"),
+      value: $t("smart_playlist.explicit_not_allowed"),
     });
   }
 

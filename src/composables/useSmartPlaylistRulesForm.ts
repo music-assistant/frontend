@@ -35,7 +35,7 @@ const ALBUM_TYPE_VALUE_TO_ID: Record<string, number> = Object.fromEntries(
   Object.entries(ALBUM_TYPE_ID_TO_VALUE).map(([k, v]) => [v, Number(k)]),
 );
 
-export type RuleOperator = "is" | "is_not";
+export type RuleOperator = "is" | "is_not" | "allowed";
 
 export interface RuleValue {
   id: number;
@@ -117,7 +117,7 @@ export function useSmartPlaylistRulesForm(
     } else if (field === "favorite") {
       list.push(newRule("favorite", "is"));
     } else if (field === "explicit") {
-      list.push(newRule("explicit", "is"));
+      list.push(newRule("explicit", "is_not"));
     } else {
       list.push(newRule(field));
     }
@@ -283,6 +283,8 @@ export function useSmartPlaylistRulesForm(
         fresh.push(newRule("explicit", "is"));
       } else if (initial.explicit === false) {
         fresh.push(newRule("explicit", "is_not"));
+      } else if (initial.explicit === null) {
+        fresh.push(newRule("explicit", "allowed"));
       }
 
       const yearFrom =
@@ -400,6 +402,7 @@ export function useSmartPlaylistRulesForm(
     const explRule = explicitRule();
     const explicit =
       explRule === undefined ? undefined
+      : explRule.operator === "allowed" ? null
       : explRule.operator === "is_not" ? false
       : true;
 

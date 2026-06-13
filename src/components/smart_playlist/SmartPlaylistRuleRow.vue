@@ -90,16 +90,19 @@
         @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
         <SelectTrigger
-          class="h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+          class="h-7 w-[130px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="allowed" class="text-xs">
+            {{ $t("smart_playlist.explicit_allowed") }}
+          </SelectItem>
           <SelectItem value="is" class="text-xs">
-            {{ $t("smart_playlist.explicit_yes") }}
+            {{ $t("smart_playlist.explicit_only") }}
           </SelectItem>
           <SelectItem value="is_not" class="text-xs">
-            {{ $t("smart_playlist.explicit_no") }}
+            {{ $t("smart_playlist.explicit_not_allowed") }}
           </SelectItem>
         </SelectContent>
       </Select>
