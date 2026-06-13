@@ -850,14 +850,18 @@ const entriesForCategory = function (category: string) {
 };
 
 const getCategoryTranslation = function (category: string) {
-  // The category display name is resolved server-side into `category_label`; read it from any
-  // entry in this category (fall back to the raw category id if none is available).
+  // Prefer the server-resolved category_label; for frontend-only entries and older servers that
+  // don't send it, fall back to the frontend's own settings.category.<id> translation, then the
+  // raw id.
   const entriesInCategory = entriesForCategory(category);
   let entryWithTranslation: ConfigEntryUI | undefined = entriesInCategory[0];
   if (!entryWithTranslation && isProtocolCategory(category) && entries.value) {
     entryWithTranslation = entries.value.find((e) => e.category === category);
   }
-  return entryWithTranslation?.category_label || category;
+  return (
+    entryWithTranslation?.category_label ||
+    $t(`settings.category.${category}`, category)
+  );
 };
 
 const getCurrentValues = function () {

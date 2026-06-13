@@ -203,7 +203,9 @@ onMounted(() => {
   // entries are localized server-side and arrive pre-resolved). ConfigEntryField renders the
   // label/option titles directly, so resolve the frontend-owned ones here from the settings.* keys.
   for (const entry of configEntries) {
-    entry.label = $t(`settings.${entry.key}.label`);
+    // fall back to the in-code label if a locale is missing the settings.<key>.label string,
+    // so we never surface the raw i18n key in the UI.
+    entry.label = $t(`settings.${entry.key}.label`, entry.label);
     const desc = $t(`settings.${entry.key}.description`);
     if (desc !== `settings.${entry.key}.description`) entry.description = desc;
     if (entry.options) {

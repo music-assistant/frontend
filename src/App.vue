@@ -409,9 +409,16 @@ onMounted(async () => {
   watch(
     () => i18n.global.locale.value,
     async (locale) => {
-      await api.setLocale(locale as string);
-      if (api.state.value === ConnectionState.AUTHENTICATED) {
-        await api.fetchState();
+      // Only relevant for servers that localize server-provided strings; older servers can't
+      // re-localize, so there's nothing to push or re-fetch.
+      if (!api.supportsServerSideTranslations) return;
+      try {
+        await api.setLocale(locale as string);
+        if (api.state.value === ConnectionState.AUTHENTICATED) {
+          await api.fetchState();
+        }
+      } catch {
+        // best-effort: a failed locale push / refresh shouldn't break the UI
       }
     },
   );

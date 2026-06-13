@@ -2394,12 +2394,21 @@ export class MusicAssistantApi {
     // declare our UI locale so the server localizes server-provided strings (config labels,
     // media/folder names, provider descriptions). Handled server-side before the auth gate,
     // so it also works on the Ingress path where the frontend skips the auth command.
-    void this.setLocale(i18n.global.locale.value);
+    // best-effort, fire-and-forget: a transport failure here shouldn't break the connect flow
+    void this.setLocale(i18n.global.locale.value).catch(() => undefined);
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
     });
+  }
+
+  /** Whether the connected server localizes server-provided strings (schema >= 32). */
+  public get supportsServerSideTranslations(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      TRANSLATIONS_SCHEMA_VERSION
+    );
   }
 
   /**
@@ -2410,10 +2419,9 @@ export class MusicAssistantApi {
    * default-locale strings.
    */
   public async setLocale(locale: string): Promise<void> {
-    if (!locale || locale === "auto") return;
-    const schema = this.serverInfo.value?.schema_version;
-    if (typeof schema !== "number" || schema < TRANSLATIONS_SCHEMA_VERSION)
+    if (!locale || locale === "auto" || !this.supportsServerSideTranslations) {
       return;
+    }
     await this.sendCommand("translations/set_locale", { locale });
   }
 
