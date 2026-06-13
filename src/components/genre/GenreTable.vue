@@ -39,7 +39,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{ "data-changed": [] }>();
 
 const router = useRouter();
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const filter = ref("all");
 

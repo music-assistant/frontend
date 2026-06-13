@@ -256,7 +256,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
@@ -288,9 +287,6 @@ export interface Props {
   parentItem?: MediaItemType;
   sortBy?: string;
 }
-
-// global refs
-const { t, te } = useI18n();
 
 const displayName = computed(() => compProps.item.name);
 

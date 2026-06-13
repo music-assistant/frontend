@@ -129,7 +129,7 @@ const emit = defineEmits<{
   (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
 }>();
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
