@@ -27,13 +27,11 @@ import { itemArtwork } from "@/components/discover/editorialArtwork";
 import { handleMediaItemClick } from "@/helpers/utils";
 import type { Genre } from "@/plugins/api/interfaces";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 
 interface Props {
   item: Genre;
 }
 const props = defineProps<Props>();
-const { t, te } = useI18n();
 
 const genreBanner = new URL("@/assets/logo/banner-no-logo.png", import.meta.url)
   .href;

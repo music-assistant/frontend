@@ -87,7 +87,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const open = ref(false);
 const popoverOpen = ref(false);

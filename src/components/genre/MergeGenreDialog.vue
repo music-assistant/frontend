@@ -95,7 +95,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 
 const open = ref(false);

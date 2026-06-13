@@ -19,7 +19,7 @@
       density="comfortable"
       class="config-alert"
     >
-      {{ getTranslatedLabel() }}
+      {{ displayLabel() }}
     </v-alert>
 
     <!-- alert value -->
@@ -30,7 +30,7 @@
       variant="tonal"
       class="config-alert"
     >
-      {{ getTranslatedLabel() }}
+      {{ displayLabel() }}
     </v-alert>
 
     <!-- action type -->
@@ -44,7 +44,7 @@
       :disabled="isFieldDisabled"
       @click="$emit('action')"
     >
-      {{ getTranslatedActionLabel() }}
+      {{ displayActionLabel() }}
     </v-btn>
 
     <!-- DSP Config Button -->
@@ -79,7 +79,7 @@
     <v-checkbox
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
       :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       color="primary"
       :disabled="isFieldDisabled"
       hide-details
@@ -98,7 +98,7 @@
       class="config-slider-wrapper"
     >
       <v-label class="config-slider-label">
-        {{ getTranslatedLabel() }}
+        {{ displayLabel() }}
       </v-label>
       <div class="config-slider-block">
         <v-slider
@@ -141,7 +141,7 @@
     <v-text-field
       v-else-if="confEntry.type == ConfigEntryType.SECURE_STRING"
       :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :disabled="isFieldDisabled"
       :rules="[
@@ -172,9 +172,9 @@
       :chips="confEntry.multi_value"
       :clearable="true"
       :multiple="confEntry.multi_value"
-      :items="translatedOptions"
+      :items="displayOptions"
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) =>
@@ -196,7 +196,7 @@
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -216,7 +216,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :prepend-inner-icon="confEntry.value as string"
       variant="outlined"
       density="comfortable"
@@ -234,7 +234,7 @@
       chips
       :clearable="true"
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -252,7 +252,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -303,10 +303,12 @@ const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;
 }>();
 
-// label / action_label are resolved server-side for the connection locale; use them directly.
-const getTranslatedLabel = () => props.confEntry.label || props.confEntry.key;
+// Labels arrive display-ready: server-provided entries are resolved server-side for the
+// connection locale, and frontend-only entries are translated where they are constructed.
+// This field just surfaces them, so there is no translation lookup here.
+const displayLabel = () => props.confEntry.label || props.confEntry.key;
 
-const getTranslatedActionLabel = () =>
+const displayActionLabel = () =>
   props.confEntry.action_label || props.confEntry.label || props.confEntry.key;
 
 const onUpdateValue = (value: ConfigValueType) => {
@@ -328,7 +330,7 @@ const onClear = () => {
   emit("update:value", null);
 };
 
-const translatedOptions = computed(() => {
+const displayOptions = computed(() => {
   if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {

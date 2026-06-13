@@ -219,7 +219,7 @@ const overviewRows = ref<
 >([]);
 const existingGenreNames = ref<Set<string>>(new Set());
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 
 const isAdmin = computed(() => authManager.isAdmin());

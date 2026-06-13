@@ -1,11 +1,9 @@
 import { computed, onMounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
 import api from "@/plugins/api";
 import type { Genre } from "@/plugins/api/interfaces";
 
 export function useSmartPlaylistGenres() {
   const genres = ref<Genre[]>([]);
-  const { t, te } = useI18n();
 
   onMounted(async () => {
     genres.value = await api.getLibraryGenres({ hide_empty: false });

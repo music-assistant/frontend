@@ -54,7 +54,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const isAdmin = computed(() => authManager.isAdmin());
 const sectionExpanded = ref(false);
