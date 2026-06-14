@@ -148,17 +148,8 @@
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, é necessário ter o fornecedor {1} configurado. Pretende fazê-lo agora?",
         "category": {
-            "advanced": "Avançado",
-            "generic": "Genéricos",
-            "announcements": "Anúncios",
-            "player_controls": "Controlos do leitor",
-            "sync_options": "Opções de sincronização\/importação",
-            "builtin_playlists": "Listas de reprodução incorporadas",
             "web_player": "Leitor Web",
-            "playback": "Reprodução da Fila",
             "protocol_settings": "Protocolo(s) de saída",
-            "protocol_output_settings": "Ativar o suporte {0}",
-            "dsp": "Processamento Digital de Sinais (DSP)",
             "options": "Opções do leitor"
         },
         "theme": {

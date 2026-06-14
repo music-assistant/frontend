@@ -123,10 +123,7 @@
         "add_group_player": "Afegeix reproductor de grup",
         "default": "per defecte",
         "provider_depends_on_confirm": "Abans de poder configurar {0}, cal que tingueu configurat el proveïdor {1}. Voleu fer-ho ara?",
-        "category": {
-            "generic": "Configuració general",
-            "player_controls": "Controls del reproductor"
-        },
+        "category": {},
         "theme": {
             "label": "Tema",
             "options": {

@@ -148,17 +148,8 @@
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
         "category": {
-            "advanced": "Rozšířená nastavení",
-            "generic": "Obecná nastavení",
-            "announcements": "Nastavení oznámení",
-            "player_controls": "Ovládání přehrávače",
-            "sync_options": "Možnosti synchronizace\/importu",
-            "builtin_playlists": "Vestavěné playlisty",
             "web_player": "Webový přehrávač",
-            "playback": "Přehrávání fronty",
             "protocol_settings": "Výstupní protokol(y)",
-            "protocol_output_settings": "Zapnout podporu {0}",
-            "dsp": "Digitální zpracování signálu (DSP)",
             "options": "Možnosti přehrávače"
         },
         "theme": {

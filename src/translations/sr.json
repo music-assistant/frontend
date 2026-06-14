@@ -148,17 +148,8 @@
         "default": "Подразумевано",
         "provider_depends_on_confirm": "Пре него што можете да подесите {0}, морате да конфигуришете провајдера {1}, да ли желите да то урадите сада?",
         "category": {
-            "advanced": "Напредно",
-            "generic": "Општа",
-            "announcements": "Обавештења",
-            "player_controls": "Контроле плејера",
-            "sync_options": "Опције синхронизације\/увоза",
-            "builtin_playlists": "Уграђене листе песама",
             "web_player": "Веб плејер",
-            "playback": "Репродукција реда чекања",
             "protocol_settings": "Излазни протокол(и)",
-            "protocol_output_settings": "Омогући {0} подршку",
-            "dsp": "Дигитална обрада сигнала (DSP)",
             "options": "Опције плејера"
         },
         "theme": {

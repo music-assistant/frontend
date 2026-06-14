@@ -148,17 +148,8 @@
         "default": "noklusējuma",
         "provider_depends_on_confirm": "Pirms vari uzstādīt {0}, ir jākonfigurē {1} sniedzējs, vai vēlies to izdarīt tagad?",
         "category": {
-            "advanced": "Papildus iestatījumi",
-            "generic": "Vispārīgie iestatījumi",
-            "announcements": "Paziņojumu iestatījumi",
-            "player_controls": "Atskaņotāju vadība",
-            "sync_options": "Sinhronizācijas\/importēšanas opcijas",
-            "builtin_playlists": "Iebūvēto mūzikas sarakstu iestatījumi",
             "web_player": "Web Atskaņotājs",
-            "playback": "Atskaņošanas iestatījumi",
             "protocol_settings": "Protokola iestatījumi",
-            "protocol_output_settings": "Iespējot {0} atbalstu",
-            "dsp": "Digitālā Signāla Apstrāde (DSP)",
             "options": "Atskaņotāja opcijas"
         },
         "theme": {

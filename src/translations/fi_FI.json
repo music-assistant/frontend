@@ -340,10 +340,7 @@
         "provider_credits": "Mahdollistanut",
         "category": {
             "web_player": "Selainsoitin",
-            "playback": "Toistoasetukset",
-            "protocol_settings": "Protokolla-asetukset",
-            "protocol_output_settings": "Ota käyttöön {0} tukea",
-            "dsp": "Digitaalinen signaalinkäsittely (DSP)"
+            "protocol_settings": "Protokolla-asetukset"
         },
         "onboarding_subtitle": "Aloitetaan yhdistämällä musiikkilähteesi ja toistolaitteesi.",
         "onboarding_music_title": "Musiikki",

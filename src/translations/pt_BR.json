@@ -147,14 +147,7 @@
         "group_members": "Membros do grupo",
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar o {0}, você precisa ter o provedor {1} configurado. Deseja fazer isso agora?",
-        "category": {
-            "advanced": "Configurações avançadas",
-            "generic": "Configurações genéricas",
-            "announcements": "Configuração de anúncios",
-            "player_controls": "Controles do reprodutor",
-            "sync_options": "Opções de sincronização\/importação",
-            "builtin_playlists": "Configurações da lista de reprodução integrada"
-        },
+        "category": {},
         "theme": {
             "label": "Tema",
             "options": {

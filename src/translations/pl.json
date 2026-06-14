@@ -148,12 +148,6 @@
         "default": "domyślnie",
         "provider_depends_on_confirm": "Zanim będziesz mógł skonfigurować {0}, musisz skonfigurować dostawcę {1}. Czy chcesz to zrobić teraz?",
         "category": {
-            "advanced": "Zaawansowane ustawienia",
-            "generic": "Ustawienia ogólne",
-            "announcements": "Konfiguracja powiadomień",
-            "player_controls": "Sterowanie odtwarzaczem",
-            "sync_options": "Opcje synchronizacji\/importu",
-            "builtin_playlists": "Ustawienia wbudowanej listy odtwarzania",
             "web_player": "Odtwarzacz internetowy"
         },
         "theme": {

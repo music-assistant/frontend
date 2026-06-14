@@ -148,22 +148,11 @@
         "default": "Standard",
         "provider_depends_on_confirm": "Bevor du {0} einrichten kannst, musst du den Anbieter {1} konfigurieren. Möchtest du das jetzt tun?",
         "category": {
-            "advanced": "Erweitert",
-            "generic": "Allgemein",
-            "announcements": "Ankündigungen",
-            "player_controls": "Wiedergabegeräte-Steuerung",
-            "sync_options": "Synchronisiere\/importiere Optionen",
-            "builtin_playlists": "Integrierte Wiedergabelisten",
             "web_player": "Web-Player",
-            "playback": "Wiedergabe von Warteschlangen",
             "protocol_settings": "Ausgabeprotokoll(e)",
-            "protocol_output_settings": "Unterstützung von {0} aktivieren",
-            "dsp": "Digitale Signalverarbeitung (DSP)",
             "options": "Optionen für Wiedergabegerät",
-            "audio": "Audio",
             "preferences": "Präferenzen",
-            "display_settings": "Anzeige",
-            "airplay": "Spezielle AirPlay-Einstellungen"
+            "display_settings": "Anzeige"
         },
         "theme": {
             "label": "Theme",
@@ -1439,16 +1428,6 @@
     "with_artists": "mit {artists}",
     "disc": "Disk {number}",
     "album_type_label": "Albumtyp",
-    "builtin_playlist": {
-        "all_favorite_tracks": "Alle favorisierten Titel",
-        "random_artist": "Zufälliger Künstler (aus der Bibliothek)",
-        "random_album": "Zufälliges Album (aus der Bibliothek)",
-        "random_tracks": "500 zufällige Titel (aus der Bibliothek)",
-        "recently_played": "Zuletzt gespielte Titel",
-        "recently_added_tracks": "Kürzlich hinzugefügte Titel",
-        "infinite_mix": "Unendlicher Mix (Bibliothek)",
-        "infinite_mix_favorites": "Unendlicher Mix (Favoriten)"
-    },
     "now_playing": "Aktuell läuft",
     "artist_topalbums": "Top-Alben",
     "in_library": "In deiner Bibliothek",

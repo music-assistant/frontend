@@ -148,17 +148,8 @@
         "default": "Podrazumevano",
         "provider_depends_on_confirm": "Pre nego što podesite {0}, potrebno je da konfigurišete servis {1}. Da li želite to da uradite sada?",
         "category": {
-            "advanced": "Napredna podešavanja",
-            "generic": "Opšta podešavanja",
-            "announcements": "Objave",
-            "player_controls": "Kontrole plejera",
-            "sync_options": "Opcije sinhronizacije\/uvoza",
-            "builtin_playlists": "Ugrađene plejliste",
             "web_player": "Veb-plejer",
-            "playback": "Reprodukcija reda čekanja",
             "protocol_settings": "Izlazni protokoli",
-            "protocol_output_settings": "Omogućite podršku za {0}",
-            "dsp": "Digitalna obrada signala (DSP)",
             "options": "Opcije plejera"
         },
         "theme": {
@@ -1435,15 +1426,5 @@
     "with_artists": "sa {artists}",
     "disc": "Disk {number}",
     "album_type_label": "Tip albuma",
-    "builtin_playlist": {
-        "all_favorite_tracks": "Sve omiljene numere",
-        "random_artist": "Nasumični izvođač (iz biblioteke)",
-        "random_album": "Nasumični album (iz biblioteke)",
-        "random_tracks": "500 nasumičnih numera (iz biblioteke)",
-        "recently_played": "Nedavno reprodukovane numere",
-        "recently_added_tracks": "Nedavno dodate numere",
-        "infinite_mix": "Beskonačni miks (biblioteka)",
-        "infinite_mix_favorites": "Beskonačni miks (omiljeno)"
-    },
     "now_playing": "Trenutna reprodukcija"
 }

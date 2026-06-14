@@ -148,17 +148,8 @@
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnia kell a(z) {1} szolgáltatót. Szeretné ezt most megtenni?",
         "category": {
-            "advanced": "Speciális",
-            "generic": "Általános",
-            "announcements": "Bejelentések",
-            "player_controls": "Lejátszó vezérlők",
-            "sync_options": "Szinkronizálási\/importálási beállítások",
-            "builtin_playlists": "Beépített lejátszási listák",
             "web_player": "Webes lejátszó",
-            "playback": "Lejátszási sor lejátszása",
             "protocol_settings": "Kimeneti protokoll(ok)",
-            "protocol_output_settings": "{0} támogatás engedélyezése",
-            "dsp": "Digitális jelfeldolgozás (DSP)",
             "options": "Lejátszó beállítások"
         },
         "theme": {

@@ -148,17 +148,8 @@
         "default": "默认",
         "provider_depends_on_confirm": "在您设置{0}之前，您可能需要配置{1}提供者，您想现在这样做吗？",
         "category": {
-            "advanced": "高级",
-            "generic": "常规",
-            "announcements": "通知播报",
-            "player_controls": "播放器控制",
-            "sync_options": "同步\/导入选项",
-            "builtin_playlists": "内置播放列表",
             "web_player": "网页播放器",
-            "playback": "队列播放",
             "protocol_settings": "输出协议",
-            "protocol_output_settings": "启用 {0} 支持",
-            "dsp": "数字信号处理（DSP）",
             "options": "播放器选项"
         },
         "theme": {

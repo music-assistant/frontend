@@ -148,17 +148,8 @@
         "default": "numatytasis",
         "provider_depends_on_confirm": "Prieš nustatymą {0}, jums reikia turėti {1} Paslaugų teikėjas sukonfigūruotas, ar norite tai padaryti dabar?",
         "category": {
-            "advanced": "Išplėstinis",
-            "generic": "Bendrinis",
-            "announcements": "Pranešimai",
-            "player_controls": "Grotuvo valdikliai",
-            "sync_options": "Sinchronizavimo \/ importavimo parinktys",
-            "builtin_playlists": "Integruoti grojaraščiai",
             "web_player": "Žiniatinklio grotuvas",
-            "playback": "Eilės atkūrimas",
             "protocol_settings": "Išvesties protokolas(-ai)",
-            "protocol_output_settings": "Įjungti {0} parama",
-            "dsp": "Skaitmeninis signalų apdorojimas (DSP)",
             "options": "Žaidėjo parinktys"
         },
         "theme": {

@@ -40,11 +40,7 @@
         "add_group_player": "Pridať skupinový prehrávač",
         "group_members": "Členovia skupiny",
         "default": "predvolené",
-        "category": {
-            "advanced": "Rozšírené nastavenia",
-            "generic": "Všeobecné nastavenia",
-            "player_controls": "Ovládacie prvky prehrávača"
-        },
+        "category": {},
         "language": {
             "label": "Jazyk",
             "options": {
