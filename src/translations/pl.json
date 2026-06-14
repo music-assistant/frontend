@@ -148,12 +148,6 @@
         "default": "domyślnie",
         "provider_depends_on_confirm": "Zanim będziesz mógł skonfigurować {0}, musisz skonfigurować dostawcę {1}. Czy chcesz to zrobić teraz?",
         "category": {
-            "advanced": "Zaawansowane ustawienia",
-            "generic": "Ustawienia ogólne",
-            "announcements": "Konfiguracja powiadomień",
-            "player_controls": "Sterowanie odtwarzaczem",
-            "sync_options": "Opcje synchronizacji\/importu",
-            "builtin_playlists": "Ustawienia wbudowanej listy odtwarzania",
             "web_player": "Odtwarzacz internetowy"
         },
         "theme": {
@@ -629,7 +623,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Wybierz źródło",
-    "in_progress_items": "Kontynuuj słuchanie...",
     "play_replace_next": "Odtwórz następny (wyczyść kolejkę)",
     "all_enqueue_options": "Wszystkie opcje kolejkowania",
     "music_assistant_source": "Kolejka Music Assistant",
@@ -853,7 +846,5 @@
     "authors": "Autorzy",
     "collection": "Kolekcja",
     "collections": "Kolekcje",
-    "narrators": "Narratorzy",
-    "series_plural": "Serie",
-    "series_singular": "Serie"
+    "narrators": "Narratorzy"
 }

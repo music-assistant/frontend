@@ -148,17 +148,8 @@
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
         "category": {
-            "advanced": "Avancés",
-            "generic": "Génériques",
-            "announcements": "Annonces",
-            "player_controls": "Contrôles du lecteur",
-            "sync_options": "Options de synchronisation\/importation",
-            "builtin_playlists": "Listes de lecture intégrées",
             "web_player": "Lecteur Web",
-            "playback": "Lecture en file d'attente",
-            "protocol_settings": "Protocole(s) de sortie",
-            "protocol_output_settings": "Activer la prise en charge de {0}",
-            "dsp": "Traitement numérique du signal (DSP)"
+            "protocol_settings": "Protocole(s) de sortie"
         },
         "theme": {
             "label": "Thème",
@@ -680,7 +671,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Sélectionner la source",
-    "in_progress_items": "Continuer à écouter...",
     "play_replace_next": "Jouer ensuite (vider la file d'attente)",
     "all_enqueue_options": "Toutes les options de mise en file d'attente",
     "music_assistant_source": "File d'attente de Music Assistant",
@@ -905,8 +895,6 @@
     "collection": "Collection",
     "collections": "Collections",
     "narrators": "Narrateurs",
-    "series_plural": "Séries",
-    "series_singular": "Série",
     "queue_move_end": "Déplacer à la fin",
     "discover": "Découvrir",
     "save_queue_as_playlist": "Sauvegarder la file d'attente en tant que liste de lecture",

@@ -148,15 +148,7 @@
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
         "category": {
-            "advanced": "Avanserte innstillinger",
-            "generic": "Generiske innstillinger",
-            "announcements": "Konfigurasjon av kunngjøringer",
-            "player_controls": "Spillerkontroller",
-            "sync_options": "Instillinger for synkronisering og importering",
-            "builtin_playlists": "Innstillinger for innebygde spillelister",
             "web_player": "Nettspiller",
-            "protocol_output_settings": "Aktiver {0} støtte",
-            "dsp": "Digital signalbehandling (DSP)",
             "options": "Spillerinnstillinger"
         },
         "theme": {
@@ -580,7 +572,6 @@
     },
     "volume_normalization_gain_correction": "{0} Db",
     "select_source": "Velg kilde",
-    "in_progress_items": "Fortsett å lytte...",
     "play_replace_next": "Spill av neste (tøm køen)",
     "all_enqueue_options": "Alle køinstillinger",
     "music_assistant_source": "Music Assistant Kø",
@@ -613,8 +604,6 @@
         "update_password": "Oppdater passord"
     },
     "edit": "Rediger",
-    "series_plural": "Serier",
-    "series_singular": "Serie",
     "queue_move_end": "Flytt til slutten",
     "discover": "Oppdag",
     "save_queue_as_playlist": "Lagre kø som spilleliste",

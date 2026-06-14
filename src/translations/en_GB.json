@@ -148,12 +148,6 @@
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "advanced": "Advanced settings",
-            "generic": "Generic settings",
-            "announcements": "Announcements configuration",
-            "player_controls": "Player controls",
-            "sync_options": "Sync\/import options",
-            "builtin_playlists": "Builtin Playlist Settings",
             "web_player": "Web Player"
         },
         "theme": {
@@ -631,7 +625,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
-    "in_progress_items": "Continue listening...",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
     "music_assistant_source": "Music Assistant Queue",

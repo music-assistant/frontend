@@ -154,7 +154,7 @@ const providerDomain = computed<string | undefined>(() => {
 const displayName = computed(() => {
   const it = props.item;
   if (it.media_type === MediaType.FOLDER) {
-    return getBrowseFolderName(it as BrowseFolder, t);
+    return getBrowseFolderName(it as BrowseFolder);
   }
   let name = it.name;
   if ("version" in it && it.version) name += ` - ${it.version}`;

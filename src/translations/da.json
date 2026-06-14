@@ -146,10 +146,6 @@
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
         "category": {
-            "advanced": "Avancerede indstillinger",
-            "generic": "Generelle indstillinger",
-            "announcements": "Konfiguration af meddelelser",
-            "player_controls": "Afspillerstyring",
             "options": "Afspillerindstillinger"
         },
         "theme": {
@@ -525,7 +521,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vælg kilde",
-    "in_progress_items": "Fortsæt med at lytte...",
     "play_replace_next": "Afspil næste (ryd køen)",
     "all_enqueue_options": "Alle muligheder for at sætte i kø",
     "music_assistant_source": "Music Assistant kø ",

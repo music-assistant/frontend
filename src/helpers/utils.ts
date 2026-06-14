@@ -194,21 +194,11 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
-export const getBrowseFolderName = function (
-  browseItem: BrowseFolder,
-  t: (key: string) => string,
-) {
-  let browseTitle = "";
-  if (browseItem?.name && browseItem?.translation_key) {
-    browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
-  } else if (browseItem?.name) {
-    browseTitle = browseItem.name;
-  } else if (browseItem?.translation_key) {
-    browseTitle = t(browseItem?.translation_key);
-  } else {
-    browseTitle = browseItem.path || "";
-  }
-  return browseTitle;
+export const getBrowseFolderName = function (browseItem: BrowseFolder) {
+  // The server now provides the display name and (when a resolver is active) strips
+  // translation_key from the wire, so the client can no longer localize it itself: use the
+  // server-provided name directly, falling back to the path for unnamed folders.
+  return browseItem?.name || browseItem?.path || "";
 };
 
 export const getPlayerName = function (player: Player, truncate = 26) {

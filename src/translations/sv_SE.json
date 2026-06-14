@@ -148,17 +148,8 @@
         "default": "standard",
         "provider_depends_on_confirm": "Innan du kan konfigurera {0}, måste du ha {1} -leverantören konfigurerad, vill du göra det nu?",
         "category": {
-            "advanced": "Avancerat",
-            "generic": "Allmänt",
-            "announcements": "Meddelanden",
-            "player_controls": "Spelarens kontroller",
-            "sync_options": "Synkroniseringar\/importalternativ",
-            "builtin_playlists": "Inbyggda spellistor",
             "web_player": "Webbspelare",
-            "playback": "Kö för uppspelning",
             "protocol_settings": "Utgångsprotokoll",
-            "protocol_output_settings": "Aktivera {0} support",
-            "dsp": "Digital signalbehandling (DSP)",
             "options": "Spelaralternativ"
         },
         "theme": {
@@ -744,7 +735,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Välj källa",
-    "in_progress_items": "Fortsätt lyssna...",
     "play_replace_next": "Spela härnäst (rensa kön)",
     "all_enqueue_options": "Alla alternativ för att lägga till i kö",
     "music_assistant_source": "Music Assistant Kö",
@@ -970,8 +960,6 @@
     "collection": "Samling",
     "collections": "Samlingar",
     "narrators": "Berättare",
-    "series_plural": "Serier",
-    "series_singular": "Serier",
     "queue_move_end": "Flytta till slutet",
     "discover": "Upptäck",
     "save_queue_as_playlist": "Spara kö som spellista",
@@ -1435,15 +1423,5 @@
     "with_artists": "med {artists}",
     "disc": "Skiva {number}",
     "album_type_label": "Albumtyp",
-    "builtin_playlist": {
-        "all_favorite_tracks": "Alla favorit spår",
-        "random_artist": "Slumpmässig artist (från biblioteket)",
-        "random_album": "Slumpmässigt album (från biblioteket)",
-        "random_tracks": "500 slumpmässiga spår (från biblioteket)",
-        "recently_played": "Nyligen spelade spår",
-        "recently_added_tracks": "Nyligen tillagda spår",
-        "infinite_mix": "Oändlig mix (bibliotek)",
-        "infinite_mix_favorites": "Oändlig mix (favoriter)"
-    },
     "now_playing": "Spelas nu"
 }
