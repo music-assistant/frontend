@@ -18,6 +18,7 @@ export type RuleField =
   | "album"
   | "album_type"
   | "favorite"
+  | "explicit"
   | "year";
 
 // Stable numeric id ↔ string value mapping for album types.
@@ -33,7 +34,8 @@ const ALBUM_TYPE_ID_TO_VALUE: Record<number, string> = {
 const ALBUM_TYPE_VALUE_TO_ID: Record<string, number> = Object.fromEntries(
   Object.entries(ALBUM_TYPE_ID_TO_VALUE).map(([k, v]) => [v, Number(k)]),
 );
-export type RuleOperator = "is" | "is_not";
+
+export type RuleOperator = "is" | "is_not" | "allowed";
 
 export interface RuleValue {
   id: number;
@@ -114,6 +116,8 @@ export function useSmartPlaylistRulesForm(
       list.push(row);
     } else if (field === "favorite") {
       list.push(newRule("favorite", "is"));
+    } else if (field === "explicit") {
+      list.push(newRule("explicit", "is_not"));
     } else {
       list.push(newRule(field));
     }
@@ -124,7 +128,7 @@ export function useSmartPlaylistRulesForm(
   }
 
   function fieldAlreadyUsed(field: RuleField): boolean {
-    if (field === "favorite" || field === "year") {
+    if (field === "favorite" || field === "explicit" || field === "year") {
       return rules.value.some((r) => r.field === field);
     }
     return false;
@@ -275,6 +279,14 @@ export function useSmartPlaylistRulesForm(
         }
       }
 
+      if (initial.explicit === true) {
+        fresh.push(newRule("explicit", "is"));
+      } else if (initial.explicit === false) {
+        fresh.push(newRule("explicit", "is_not"));
+      } else if (initial.explicit === null) {
+        fresh.push(newRule("explicit", "allowed"));
+      }
+
       const yearFrom =
         typeof initial.year_from === "number" && initial.year_from > 0
           ? initial.year_from
@@ -370,6 +382,10 @@ export function useSmartPlaylistRulesForm(
     return rules.value.find((r) => r.field === "favorite");
   }
 
+  function explicitRule(): RuleRow | undefined {
+    return rules.value.find((r) => r.field === "explicit");
+  }
+
   function buildFinalRules(): SmartPlaylistRules {
     const isSeed = mode.value === "seed";
 
@@ -383,6 +399,15 @@ export function useSmartPlaylistRulesForm(
     const albumTypeExclude = pickRuleValues("album_type", "is_not");
     const yr = yearRule();
     const fav = !isSeed && !!favoriteRule();
+    const explRule = explicitRule();
+    const explicit =
+      explRule === undefined
+        ? undefined
+        : explRule.operator === "allowed"
+          ? null
+          : explRule.operator === "is_not"
+            ? false
+            : true;
 
     const final: SmartPlaylistRules = {
       genre_ids: genreInclude.map((v) => v.id),
@@ -418,6 +443,7 @@ export function useSmartPlaylistRulesForm(
       excluded_album_types: albumTypeExclude
         .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
         .filter((x): x is string => !!x),
+      explicit,
     };
 
     if (isSeed) {
@@ -449,9 +475,9 @@ export function useSmartPlaylistRulesForm(
 
   const availableFields = computed<RuleField[]>(() => {
     if (mode.value === "seed") {
-      return (["genre", "album_type", "year"] as RuleField[]).filter(
-        (f) => !fieldAlreadyUsed(f),
-      );
+      return (
+        ["genre", "album_type", "explicit", "year"] as RuleField[]
+      ).filter((f) => !fieldAlreadyUsed(f));
     }
     return (
       [
@@ -460,6 +486,7 @@ export function useSmartPlaylistRulesForm(
         "artist",
         "album",
         "favorite",
+        "explicit",
         "year",
       ] as RuleField[]
     ).filter((f) => !fieldAlreadyUsed(f));
@@ -484,7 +511,7 @@ export function useSmartPlaylistRulesForm(
   function ruleIsEmpty(r: RuleRow): boolean {
     if (r.field === "year")
       return r.yearFrom === undefined && r.yearTo === undefined;
-    if (r.field === "favorite") return false;
+    if (r.field === "favorite" || r.field === "explicit") return false;
     return r.values.length === 0;
   }
 

@@ -152,7 +152,8 @@ const hasAnyInclude = computed(() => {
     !!r.artist_ids?.length ||
     !!r.album_ids?.length ||
     !!r.album_types?.length ||
-    !!r.favorites_only
+    !!r.favorites_only ||
+    r.explicit !== undefined
   );
 });
 
@@ -258,6 +259,32 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       label: $t("smart_playlist.field_album_type_is_not"),
       exclude: true,
       tags: exAlbumTypeNames,
+    });
+  }
+
+  if (r.explicit === null) {
+    rows.push({
+      key: "explicit-allowed",
+      icon: fieldIcon("explicit"),
+      label: $t("smart_playlist.field_explicit"),
+      exclude: false,
+      value: $t("smart_playlist.explicit_allowed"),
+    });
+  } else if (r.explicit === true) {
+    rows.push({
+      key: "explicit-is",
+      icon: fieldIcon("explicit"),
+      label: $t("smart_playlist.field_explicit"),
+      exclude: false,
+      value: $t("smart_playlist.explicit_only"),
+    });
+  } else if (r.explicit === false) {
+    rows.push({
+      key: "explicit-not",
+      icon: fieldIcon("explicit"),
+      label: $t("smart_playlist.field_explicit"),
+      exclude: true,
+      value: $t("smart_playlist.explicit_not_allowed"),
     });
   }
 
