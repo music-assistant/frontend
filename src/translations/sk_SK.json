@@ -281,7 +281,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vyberte zdroj",
-    "in_progress_items": "Pokračovať v počúvaní...",
     "play_replace_next": "Prehrať ďalšie (vymazať frontu)",
     "all_enqueue_options": "Všetky možnosti zaradenia do frontu",
     "music_assistant_source": "Fronta Music Asistenta",

@@ -516,7 +516,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecione a fonte",
-    "in_progress_items": "Continue ouvindo...",
     "play_replace_next": "Reproduzir a seguir (limpar fila)",
     "all_enqueue_options": "Todas as opções de enfileiramento",
     "music_assistant_source": "Fila de espera do Music Assistant",

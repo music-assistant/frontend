@@ -521,7 +521,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vælg kilde",
-    "in_progress_items": "Fortsæt med at lytte...",
     "play_replace_next": "Afspil næste (ryd køen)",
     "all_enqueue_options": "Alle muligheder for at sætte i kø",
     "music_assistant_source": "Music Assistant kø ",

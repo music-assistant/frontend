@@ -357,7 +357,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecciona la font",
-    "in_progress_items": "Continua escoltant...",
     "play_replace_next": "Reprodueix a continuació (neteja la cua)",
     "all_enqueue_options": "Totes les opcions d'afegir a la cua",
     "music_assistant_source": "Cua de Music Assistant",

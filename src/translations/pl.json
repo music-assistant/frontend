@@ -623,7 +623,6 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Wybierz źródło",
-    "in_progress_items": "Kontynuuj słuchanie...",
     "play_replace_next": "Odtwórz następny (wyczyść kolejkę)",
     "all_enqueue_options": "Wszystkie opcje kolejkowania",
     "music_assistant_source": "Kolejka Music Assistant",
@@ -847,7 +846,5 @@
     "authors": "Autorzy",
     "collection": "Kolekcja",
     "collections": "Kolekcje",
-    "narrators": "Narratorzy",
-    "series_plural": "Serie",
-    "series_singular": "Serie"
+    "narrators": "Narratorzy"
 }

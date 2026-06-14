@@ -4,7 +4,7 @@
     class="v-list-item-title"
     :class="{ 'checkbox-label': showCheckboxes }"
   >
-    <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
+    <span>{{ getBrowseFolderName(item as BrowseFolder) }}</span>
   </span>
   <span
     v-else
