@@ -195,8 +195,9 @@ export const getArtistsString = function (
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
-  // Browse-folder names are resolved server-side for the connection locale, so use the name
-  // directly (falling back to the path for unnamed folders).
+  // The server now provides the display name and (when a resolver is active) strips
+  // translation_key from the wire, so the client can no longer localize it itself: use the
+  // server-provided name directly, falling back to the path for unnamed folders.
   return browseItem?.name || browseItem?.path || "";
 };
 
