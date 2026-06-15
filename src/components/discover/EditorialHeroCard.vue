@@ -66,7 +66,9 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useI18n();
 
-const art = computed(() => itemArtwork(props.item, props.large ? 640 : 320));
+const art = computed(() =>
+  itemArtwork(props.item, props.large ? 640 : 320, true),
+);
 const kind = computed(() => t(props.item.media_type));
 const tag = computed(() => props.tag || t("recently_played"));
 

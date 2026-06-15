@@ -1,0 +1,30 @@
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="1em"
+    height="1em"
+    aria-hidden="true"
+  >
+    <rect
+      x="2"
+      y="2"
+      width="20"
+      height="20"
+      rx="3"
+      ry="3"
+      fill="currentColor"
+    />
+    <text
+      x="12"
+      y="17"
+      text-anchor="middle"
+      font-family="sans-serif"
+      font-size="13"
+      font-weight="bold"
+      fill="white"
+    >
+      E
+    </text>
+  </svg>
+</template>

@@ -145,185 +145,12 @@
         "add_new_provider_button": "Přidat {0} poskytovatele",
         "add_group_player": "Přidat skupinový přehrávač",
         "group_members": "Členové skupiny",
-        "log_level": {
-            "label": "Úroveň logu",
-            "description": "Nastabení podrobnosti protokolu pro tohoto poskytovatele.",
-            "options": {
-                "global": "Globální",
-                "info": "Info",
-                "warning": "Varování",
-                "error": "Chyba",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Povolení režimu toku fronty",
-            "description": "Povolte režim „flow“, kde jsou všechny stopy ve frontě odesílány jako nepřetržitý zvukový stream.\n Použijte pro přehrávače, které nativně nepodporují funkci gapless a\/nebo crossfading, nebo pokud má přehrávač potíže s přechodem mezi skladbami."
-        },
-        "auto_play": {
-            "label": "Automatické přehrávání (obnovení po zapnutí)",
-            "description": "Po zapnutí tohoto přehrávače automaticky spustit přehrávání (pokud jsou položky ve frontě)."
-        },
-        "output_channels": {
-            "label": "Režim výstupního kanálu",
-            "description": "Tento přehrávač můžete nakonfigurovat tak, aby přehrával pouze levý nebo pravý kanál, například pro vytvoření stereo páru se 2 přehrvači.",
-            "options": {
-                "stereo": "Stereo (oba kanály)",
-                "left": "Pouze levý kanál",
-                "right": "Pouze pravý kanál",
-                "mono": "Mono (oba kanály)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Povolení normalizace hlasitosti (na základě EBU-R128)",
-            "description": "Povolit normalizaci hlasitosti na základě standardu EBU-R128 bez ovlivnění dynamického rozsahu"
-        },
-        "volume_normalization_target": {
-            "label": "Cílová úroveň pro normalizaci hlasitosti",
-            "description": "Upravit průměrnou (vnímanou) hlasitost na tuto cílovou úroveň, výchozí je -17 LUFS \n\n **UPOZORNĚNÍ:** Nastavení příliš vysoké úrovně může způsobit oříznutí signálu!"
-        },
-        "eq_bass": {
-            "label": "Ekvalizér: basy",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň basů (nízkých tónů) zvuku."
-        },
-        "eq_mid": {
-            "label": "Ekvalizér: středy",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň středů zvuku."
-        },
-        "eq_treble": {
-            "label": "Ekvalizér: výšky",
-            "description": "Pomocí vestavěného základního ekvalizéru můžete upravit úroveň vysokých tónů zvuku."
-        },
-        "crossfade": {
-            "label": "Povolit prolínání",
-            "description": "Povolení prolínání mezi skladbami (fronty)."
-        },
-        "crossfade_duration": {
-            "label": "Doba prolínání",
-            "description": "Doba prolínání mezi skladbami v sekundách (pokud je povoleno)"
-        },
-        "hide_player": {
-            "label": "Skrýt tento přehrávač v uživatelském rozhraní",
-            "description": "Skrýt tento přehrávač v uživatelském rozhraní. \n\nPoznamenejte si, že jej lze stále ovládat a že se zobrazí i ve všech synchronizačních skupinách, do kterých přehrávač patří."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Položky k výběru při přehrávání interpreta  (v knihovně).",
-            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
-            "options": {
-                "library_tracks": "Pouze skladby v knihovně",
-                "library_album_tracks": "Všechny skladby ze všech alb v knihovně",
-                "all_tracks": "Všechny (nejlepší) skladby od (všech) poskytovatelů",
-                "all_album_tracks": "Všechny skladby ze všech alb od (všech) poskytovatelů"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Položky k výběru při přehrávání alba  (v knihovně).",
-            "description": "Pokud chcete přehrát interpreta, jaké položky by měly být zařazeny?",
-            "options": {
-                "library_tracks": "Pouze skladby v knihovně",
-                "all_tracks": "Všechny skladby pro album u poskytovatele"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Výchozí možnost fronty pro položky interpreta.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby interpreta nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby interpreta [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby umělce hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby umělce na konec fronty"
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Výchozí možnost fronty pro položky Alba.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby z alba nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby z alba [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby z alba hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby z alba na konec fronty"
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Výchozí možnost fronty pro položky skladeb.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby [výchozí]",
-                "next": "Přehrát skladby hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby na konec fronty"
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Výchozí možnost fronty pro playlisty.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát skladby z playlistu nyní  a ponechat zbývající položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát skladby z playlistu [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát skladby z playlistu hned po aktuálně přehrávané položce.",
-                "add": "Přidat skladby z playlistu na konec fronty"
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Výchozí akce zařazení do fronty pro rádia.",
-            "description": "Definujte výchozí akci zařazení do fronty pro tento typ média (pokud jste akci neurčili).",
-            "options": {
-                "play": "Přehrát rádiovou stanici nyní, a ponechat zbývajíci položky ve frontě.",
-                "replace": "Vymazat frontu a přehrát rádiovou stanici [výchozí]",
-                "next": "Přehrát položky hned po aktuálně přehrávané položce.",
-                "replace_next": "Vymazat frontu a přehrát rádiovou stanici hned po aktuálně přehrávané položce.",
-                "add": "Přidat rádiové stanice na konec fronty"
-            }
-        },
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
         "category": {
-            "advanced": "Rozšířená nastavení",
-            "generic": "Obecná nastavení",
-            "announcements": "Nastavení oznámení",
-            "player_controls": "Ovládání přehrávače",
-            "sync_options": "Možnosti synchronizace\/importu",
-            "builtin_playlists": "Vestavěné playlisty",
             "web_player": "Webový přehrávač",
-            "playback": "Přehrávání fronty",
             "protocol_settings": "Výstupní protokol(y)",
-            "protocol_output_settings": "Zapnout podporu {0}",
-            "dsp": "Digitální zpracování signálu (DSP)",
             "options": "Možnosti přehrávače"
-        },
-        "tts_pre_announce": {
-            "label": "Upozornění na TTS oznámení",
-            "description": "Když je do funkce Oznámení odeslána zpráva TTS (převod textu na řeč), uveď oznámení krátkým zvukem (cinknutí zvonku)."
-        },
-        "announce_volume_strategy": {
-            "label": "Strategie hlasitosti oznámení",
-            "description": "Když je do tohoto přehrávače vysíláno oznámení, jak by se měla dočasně upravit hlasitost (použijte v kombinaci s níže uvedenou hodnotou hlasitosti)?",
-            "options": {
-                "absolute": "Absolutní objem",
-                "relative": "Relativní nárůst objemu",
-                "percentual": "Zvýšení hlasitosti o pevné procento",
-                "none": "Nenastavujte hlasitost"
-            }
-        },
-        "announce_volume": {
-            "label": "Hlasitost oznámení",
-            "description": "Procentuální, relativní nebo absolutní úroveň hlasitosti, která se používá u strategie pro oznámení."
-        },
-        "announce_volume_min": {
-            "label": "Minimální úroveň hlasitosti pro oznámení",
-            "description": "Hlasitost (úprava) oznámení by neměla klesnout pod tuto úroveň."
-        },
-        "announce_volume_max": {
-            "label": "Maximální úroveň hlasitosti pro oznámení",
-            "description": "Hlasitost (úprava) oznámení by neměla přesáhnout tuto úroveň."
-        },
-        "icon": {
-            "label": "Ikona",
-            "description": "Ikona Material Design pro tento přehrávač.\n\nViz https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Téma",
@@ -373,38 +200,6 @@
         "no_music_providers_detail": "Začněte pracovat s Music Assistant přidáním svých poskytovatelů hudby.",
         "no_player_providers": "Nejsou nakonfigurováni žádní poskytovatelé přehrávačů",
         "no_player_providers_detail": "Konfigurace poskytovatelů přehrávače pro výběr zařízení, ze kterých může aplikace Music Assistant přehrávat vaši hudbu.",
-        "volume_normalization_radio": {
-            "label": "Metoda normalizace hlasitosti pro rozhlas\/rádio",
-            "description": "Nastavení upřednostňované strategie normalizace hlasitosti pro přehrávání rádia\/rozhlasu. \nVe výchozím nastavení Music Assistant shromažďuje měření (průměrné vnímané) hlasitosti rozhlasové stanice podle specifikace EBU-R128 a poté upravuje celkové zesílení\/hlasitost streamu podle tohoto měření tak, aby nebyl ovlivněn dynamický rozsah zvuku. Pokud pro rozhlasovou stanici (zatím) neexistuje žádné měření, Music Assistant se vrátí k dynamickému (ale méně přesnému) filtru vyrovnávání hlasitosti.\n\nTIP: Rozhlas ma často různou úroveň hlasitosti, zejména během hlášení a reklam.\nMůžete se rozhodnout, že u přehrávání rádia prosadíte dynamickou normalizaci hlasitosti, i když pro rozhlasovou stanici existuje (průměrné) měření hlasitosti. \n \n**Možnosti:**\n\n - Zakázáno - u přehrávání rádia vůbec nepoužívat normalizaci hlasitosti.\n - Vynutit dynamickou - vynucuje dynamické vyrovnávání hlasitosti za všech okolností. \n - Pouze měření (bez zpětné vazby) - použije (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, normalizaci neaplikujte. \n - Záložní \"korekce zisku\" - Použít (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, vrátí se k předdefinované korekci zesílení. \n - Pevná korekce zisku - Vždy použít fixní korekci hlasitosti\/zisku. \n - Záložní \"dynamicky\" - Automaticky vybere nejlepší možnost: Pokud máme nějaké měření k dispozici, povolí návrat do dynamického režimu, pokud žádné měření není k dispozici, použije se (celková) korekce hlasitosti\/zvýšení na základě uloženého měření.\n",
-            "options": {
-                "disabled": "Zakázáno",
-                "dynamic": "Vynutit \"dynamicky\"",
-                "measurement_only": "Pouze měření (bez záložního řešení)",
-                "fallback_fixed_gain": "Záložní \"korekce zisku\"",
-                "fixed_gain": "Pevná korekce zisku",
-                "fallback_dynamic": "Záložní \"dynamicky\""
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metoda normalizace hlasitosti pro skladby",
-            "description": "Nastavení preferované strategie normalizace hlasitosti pro skladby.\nMusic Assistant používá měření (průměrné vnímané) hlasitosti skladeb podle specifikace EBU-R128 k úpravě celkového zesílení\/hlasitosti přehrávání, aniž by byl ovlivněn dynamický rozsah zvuku.\nTato měření jsou buď poskytována poskytovatelem streamingu, nebo mohou být v případě místních souborů obsažena v tagu ID3 (ReplayGain 2.0 \/ Opus R128).\nPokud měření není poskytnuto, Music Assistant provede měření automaticky při\/po (prvním) přehrání skladby. Pokud pro stopu (zatím) neexistuje žádné měření, Music Assistant ve výchozím nastavení přejde na dynamický (ale méně přesný) filtr vyrovnávání hlasitosti. Ten zajišťuje, že nedochází k velkým skokům\/poklesům úrovně hlasitosti mezi jednotlivými skladbami, i když zatím neexistuje přesné měření, ale dynamický vyrovnávač může někdy trochu stlačit dynamický rozsah, i když by to ve většině případů nemělo být slyšitelné.\n\n\n**Možnosti:**\n\n - Zakázáno - u přehrávání rádia vůbec nepoužívat normalizaci hlasitosti.\n - Vynutit dynamickou - vynucuje dynamické vyrovnávání hlasitosti za všech okolností. \n - Pouze měření (bez zpětné vazby) - použije (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, normalizaci neaplikujte. \n - Záložní \"korekce zisku\" - Použít (celkovou) korekci hlasitosti\/zesílení na základě uloženého měření. Pokud nemáme k dispozici žádné měření, vrátí se k předdefinované korekci zesílení. \n - Pevná korekce zisku - Vždy použít fixní korekci hlasitosti\/zisku. \n - Záložní \"dynamicky\" - Automaticky vybere nejlepší možnost: Pokud máme nějaké měření k dispozici, povolí návrat do dynamického režimu, pokud žádné měření není k dispozici, použije se (celková) korekce hlasitosti\/zvýšení na základě uloženého měření.\n",
-            "options": {
-                "disabled": "Zakázáno",
-                "dynamic": "Vynutit \"dynamicky\"",
-                "measurement_only": "Pouze měření (bez záložního řešení)",
-                "fallback_fixed_gain": "Záložní \"korekce zisku\"",
-                "fixed_gain": "Pevná korekce zisku",
-                "fallback_dynamic": "Záložní \"dynamicky\""
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Pevné\/záložní korekce zesílení pro audio stopy",
-            "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání audio stop (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Pevné\/záložní korekce zesílení pro rádio",
-            "description": "Pevná\/záložní korekce zesílení, která se použije na přehrávání rádia (závisí na nastavení \"Metoda normalizace hlasitosti\").\nKladnou hodnotu použijte pro zvýšení hlasitosti, zápornou hodnotu pro snížení hlasitosti.\n\nToto nastavení se používá, když je metoda normalizace hlasitosti nastavena na \"Fixní korekce zisku\" nebo \"Korekce záložního zisku\"."
-        },
         "dynamic_members": {
             "label": "Členové dynamické skupiny",
             "description": "Povolit členům (dočasně) se dynamicky připojovat\/opouštět skupinu, takže se skupina chová víceméně stejně jako ruční synchronizace přehrávačů, s hlavním rozdílem v tom, že přehrávač skupiny bude frontu uchovávat."
@@ -477,22 +272,6 @@
                 "name_placeholder": "Moje nová předvolba",
                 "remove_confirm": "Opravdu chcete tuto předvolbu DSP odebrat?"
             }
-        },
-        "power_control": {
-            "label": "Ovládání napájení",
-            "description": "Definujte\/změňte chování ovládání napájení pro tento přehrávač.\nUmožňuje vám například přesměrovat příkazy pro zapnutí\/vypnutí na jiné zařízení nebo použít falešné ovládání napájení, pokud váš přehrávač nepodporuje příkazy pro zapnutí\/vypnutí, ale chcete mít vyhrazený stav pro přehrávač, který se nepoužívá."
-        },
-        "volume_control": {
-            "label": "Ovládání hlasitosti",
-            "description": "Definujte\/změňte chování ovládání hlasitosti pro tento přehrávač. \nUmožňuje například přesměrovat příkazy ovládání hlasitosti na jiné zařízení nebo je úplně deaktivovat."
-        },
-        "mute_control": {
-            "label": "Ovládání ztlumení zvuku",
-            "description": "Definujte\/přepište chování ovládání ztlumení pro tento přehrávač. \n Umožňuje například přesměrovat příkazy pro ovládání ztlumení na jiné zařízení nebo je zcela deaktivovat. \n \n Nabízíme možnost „falešného“ ovládání ztlumení, která simuluje ztlumení nastavením hlasitosti na 0 a obnovením hlasitosti po zapnutí ztlumení."
-        },
-        "output_limiter": {
-            "label": "Povolte omezení, abyste zabránili oříznutí",
-            "description": "Aktivuje omezovač, který zabraňuje zkreslení zvuku tím, že ztiší hlasité špičky."
         },
         "dsp_enabled": "DSP je zapnuto",
         "dsp_disabled": "DSP je vypnuto",
@@ -907,44 +686,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vyberte zdroj",
-    "in_progress_items": "Pokračovat v poslechu...",
     "play_replace_next": "Přehrát další (vymazat frontu)",
     "all_enqueue_options": "Všechny možnosti fronty",
     "music_assistant_source": "Fronta Music Assistanta",
     "music_assistant_library": "Knihovna Music Assistanta",
     "select_all_confirmation": "Vybrat všechny položky? Načtení všech dat může chvíli trvat.",
     "this_device": "Toto zařízení",
-    "recommendations": {
-        "in_progress_items": "Pokračovat v poslechu...",
-        "recommended_new_tracks": "Doporučené nové skladby",
-        "recently_played": "Nedávno přehrávané",
-        "suggested_new_albums_for_you": "Navrhovaná nová alba pro vás",
-        "random_artists": "Náhodní umělci",
-        "random_albums": "Náhodná alba",
-        "custom_mixes": "Vlastní mixy",
-        "your_listening_history": "Historie poslechu",
-        "popular_albums": "Populární alba",
-        "staff_picks_tracks": "Výběr redakce: skladby",
-        "staff_picks_albums": "Výběr redakce: alba",
-        "radio_stations_for_you": "Rozhlasové stanice pro vás",
-        "producers__songwriters": "Producenti a skladatelé",
-        "new_releases_for_you": "Nová vydání pro Vás",
-        "recent_favorite_tracks": "Nedávno oblíbené skladby",
-        "favorite_playlists": "Oblíbené seznamy skladeb",
-        "favorite_radio_stations": "Oblíbené rozhlasové stanice",
-        "listen_again": "Poslechněte si znovu",
-        "in_progress_series": "Pokračování série...",
-        "recommended": "Doporučeno",
-        "recently_added": "Nedávno přidané",
-        "episodes_recently_added": "Nedávno přidané epizody",
-        "recent_series": "Nedávné série",
-        "newest_authors": "Nejnovější autoři",
-        "newest_episodes": "Nejnovější epizody",
-        "discover": "Objevte",
-        "libraries": "Knihovny",
-        "library": "Knihovna",
-        "trending_podcasts": "Trendy podcasty"
-    },
     "homescreen_edit_enable": "Upravit domovskou obrazovku",
     "homescreen_edit_disable": "Opustit režim úprav domovské obrazovky",
     "lyrics_will_appear_soon": "Text se zobrazí, jakmile píseň začne...",
@@ -1163,8 +910,6 @@
     "collection": "Kolekce",
     "collections": "Kolekce",
     "narrators": "Vypravěči",
-    "series_plural": "Série",
-    "series_singular": "Série",
     "queue_move_end": "Přesunout na konec",
     "discover": "Objevit",
     "save_queue_as_playlist": "Uložit frontu jako playlist",
@@ -1189,67 +934,6 @@
     "description": "Popis",
     "genre": "Žánr",
     "genres": "Žánry",
-    "genre_names": {
-        "afrobeats": "Afrobeats (západoafrická městská\/popová hudba)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Hudba z anime a videoher",
-        "asian_music": "Asijská hudba",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brazilská hudba",
-        "chanson": "Chanson",
-        "childrens_music": "Hudba pro děti",
-        "christmas_music": "Vánoční hudba",
-        "church_music": "Chrámová hudba",
-        "classical": "Klasická hudba",
-        "comedy": "Hudební komedie",
-        "country": "Country",
-        "dance": "Taneční hudba",
-        "dark_ambient": "Dark ambient",
-        "dark_wave": "Dark wave",
-        "disco": "Disko",
-        "electronic": "Elektronická hudba",
-        "experimental": "Experimentální hudba",
-        "field_recording": "Záznam v terénu",
-        "folk": "Lidová hudba",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indická klasická",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latinsko americká hudba",
-        "marching_band": "Pochodová kapela",
-        "metal": "Metal",
-        "middle_eastern_music": "Blízkovýchodní hudba",
-        "musical": "Hudební",
-        "new_age": "New age",
-        "poetry": "Poezie",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelic",
-        "punk": "Punk",
-        "r_b": "R&b",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Zpěvák a skladatel",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Zvukové efekty",
-        "soundtrack": "Soundtrack",
-        "spoken_word": "Mluvené slovo",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Valčík",
-        "wellness": "Wellness"
-    },
     "link": "Propojit",
     "link_alias": "Propojit alias",
     "link_alias_failed": "Nepodařilo se propojit alias",
@@ -1277,67 +961,6 @@
         "starting": "Server se spouští, někteří poskytovatelé, přehrávače nebo funkce nemusí být k dispozici, dokud nebude spuštění dokončeno.",
         "stopping": "Server se vypíná...",
         "stopped": "Server byl zastaven"
-    },
-    "genre_descriptions": {
-        "afrobeats": "Afrobeats, nezaměňovat s afrobeatem nebo afroswingem, je zastřešující termín pro popis populární hudby ze západní Afriky a diaspory, která se původně vyvinula v Nigérii, Ghaně a Velké Británii v roce 2000 a 2010. Afrobeats není ani tak stylem jako takovým, jako spíše popisem fúze zvuků plynoucích z Nigérie a Ghany. Žánry jako hiplife, jùjú music, highlife, azonto music a naija beats byly sloučeny pod pojmem „afrobeats“.",
-        "ambient": "Ambientní hudba je hudební žánr, který klade důraz na tón a atmosféru namísto tradiční hudební struktury nebo rytmu. Ambientní hudba, která často zní \"klidně\" a postrádá kompozici, rytmus a\/nebo strukturovanou melodii, využívá texturální vrstvy zvuku, které mohou být odměnou za pasivní i aktivní poslech a povzbuzovat pocit klidu nebo rozjímání. Tento žánr evokuje \"atmosférickou\", \"vizuální\" nebo \"nenápadnou\" kvalitu. Mohou se v něm objevovat přírodní zvukové scenérie a některá díla používají trvalé nebo opakované tóny, jako je tomu v dronové hudbě. Nese prvky spojené s hudbou new-age, nástroje jako klavír, smyčce a flétna mohou být napodobovány prostřednictvím syntezátoru.",
-        "anime_and_video_game_music": "Herní hudba (VGM) je soundtrack, který doprovází videohry. Raná herní hudba se kdysi omezovala na zvuky raných zvukových čipů, jako jsou programovatelné generátory zvuku (PSG) nebo FM syntézní čipy. Tato omezení vedla ke stylu hudby známému jako chiptune, který se stal zvukem raných videoher.",
-        "asian_music": "Asijská hudba zahrnuje mnoho hudebních stylů, rozmanité kulturní a náboženské tradice a formy pocházející z asijského kontinentu.",
-        "bluegrass": "Bluegrassová hudba je žánr americké roots music, který se rozvinul ve 40. letech 20. století v Apalačském pohoří ve Spojených státech. Název žánru je odvozen od skupiny Bill Monroe and the Blue Grass Boys. Bluegrass má kořeny v afroamerických žánrech, jako je blues a jazz, a severoevropských žánrech, jako jsou irské balady a taneční melodie. Na rozdíl od country se tradičně hraje výhradně na akustické nástroje, jako jsou housle, mandolína, banjo, kytara a kontrabas. Dále jej rozvíjeli hudebníci, kteří hráli s Monroem, včetně hráče na pětistrunné banjo Earla Scruggse a kytaristy Lestera Flatta. Bill Monroe jednou popsal bluegrassovou hudbu jako: „Je součástí metodistické, baptistické a církevní tradice. Je to blues a jazz a má vysoký, osamělý zvuk.“",
-        "blues": "Blues je hudební žánr a hudební forma, která vznikla mezi Afroameričany na hlubokém jihu Spojených států kolem 60. let 19. století. Blues v sobě zahrnuje spirituály, pracovní písně, polní pokřiky, pokřiky, chorály a rýmované jednoduché narativní balady z afroamerické kultury. Bluesová forma je všudypřítomná v jazzu, rhythm and blues a rock and rollu a vyznačuje se vzorem volání a odezvy, bluesovou stupnicí a specifickými akordovými postupy, z nichž nejběžnější je dvanáctitaktový blues. Nezbytnou součástí zvuku jsou také modré tóny, obvykle tercie, kvinty nebo septimy zploštělé ve výšce. Bluesové shuffle neboli walking bass posilují rytmus podobný transu a vytvářejí opakující se efekt známý jako groove.",
-        "brazilian_music": "Brazilská hudba zahrnuje různé regionální hudební styly ovlivněné evropskými, americkými, africkými a indiánskými formami. V brazilské hudbě se vyvinuly některé jedinečné a originální styly, jako jsou forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, gaucho music, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha a brazilské verze zahraničních hudebních stylů, jako je rock, pop music, soul, hip-hop, disco music, country music, ambient, industriální a psychedelická hudba, rap, klasická hudba, fado a gospel.",
-        "chanson": "Šanson je obecně jakákoli francouzská píseň s textem. V angličtině se tento termín nejčastěji používá buď pro světské vícehlasé francouzské písně pozdního středověku a renesance, nebo pro specifický styl francouzské populární hudby, který vznikl v 50. a 60. letech 20. století. Tento žánr má původ v jednohlasých písních trubadúrů a trouverů, ačkoli jedinými polyfonními precedenty bylo 16 skladeb Adama de la Halle a jedna skladba Jehana de Lescurel. Teprve skladatel ars nova Guillaume de Machaut napsal významný počet polyfonních šansonů.",
-        "childrens_music": "Dětská hudba neboli dětská hudba je hudba složená a hraná pro děti. V kontextech ovlivněných Evropou se tím rozumí hudba, obvykle písně, psané speciálně pro mladistvé publikum. Skladateli jsou obvykle dospělí.",
-        "christmas_music": "Vánoční hudba zahrnuje řadu hudebních žánrů pravidelně hraných nebo slyšených během vánočního období. Hudba spojená s Vánocemi může být čistě instrumentální, nebo v případě koled může používat texty o narození Ježíše Krista, tradicích, jako je dávání dárků a veselí, kulturních osobnostech, jako je Santa Claus, nebo jiných tématech. Mnoho písní má jednoduše zimní nebo sezónní téma, nebo byly do kánonu přijaty z jiných důvodů.",
-        "church_music": "Chrámová hudba je žánr křesťanské hudby psaný pro provedení v kostele nebo v jakémkoli hudebním prostředí církevní liturgie, nebo hudba zasazená do slov vyjadřujících tvrzení posvátné povahy, jako je například hymnus.",
-        "classical": "Umělecká hudba je hudba považovaná za hudbu s vysokou fonoestetickou hodnotou. Obvykle předpokládá pokročilé strukturální a teoretické úvahy nebo písemnou hudební tradici. V této souvislosti se často používají termíny \"vážná\" nebo \"kultivovaná\", které představují kontrast k běžné, každodenní hudbě. Mnoho kultur má tradici umělecké hudby; v západním světě se tento termín obvykle vztahuje na západní klasickou hudbu.",
-        "comedy": "Komediální hudba nebo hudební komedie je hudební žánr, který má komediální charakter. Její historie sahá až do prvního století ve starověkém Řecku a Římě, postupuje v čase do období středověku, klasicismu a romantismu a do 20. století. Různé formy komediálního hudebního divadla, včetně \"hudební hry\", \"hudební komedie\", \"operety\" a \"lehké opery\", se vyvinuly z komických oper, které poprvé vznikly na konci 17. století v Itálii. Mezi populární hudební umělce 20. století, kteří se zajímali o komedii, patří Allan Sherman, Frank Zappa, Tiny Tim, Barenaked Ladies, Randy Newman a \"Weird Al\" Yankovic. Mezi umělce 21. století patří Tenacious D, Flight of the Conchords, The Lonely Island, Ninja Sex Party a The Axis of Awesome.",
-        "country": "Country hudba, známá také jako country a western nebo jednoduše country, je hudební žánr známý svými baladami a tanečními melodiemi, které se vyznačují tradičními texty a harmoniemi za doprovodu banja, mandolíny, houslí, harmoniky a mnoha typů kytar - akustických, elektrických, steelových nebo rezonančních. Kdysi se jí říkalo hillbilly music, ve 40. letech 20. století se pro ni vžil správný termín country music.",
-        "dance": "Taneční hudba je hudba složená speciálně pro usnadnění nebo doprovod tance. Může se jednat o celou skladbu nebo o část většího hudebního aranžmá. Z hlediska provedení jsou hlavními kategoriemi živá taneční hudba a nahraná taneční hudba. Ačkoli existují doklady o spojení tance a hudby v dávné historii, nejstarší západní taneční hudba, kterou můžeme s určitou mírou jistoty reprodukovat, jsou staromódní tance. V období baroka byly hlavními tanečními styly šlechtické dvorské tance. V období klasické hudby se menuet často používal jako třetí věta, i když v tomto kontextu by žádný tanec nedoprovázel. V pozdějším období klasicismu vznikl také valčík. Oba zůstaly součástí období romantické hudby, v němž vznikly také různé další nacionalistické taneční formy, jako je barkarola, mazurka, ekossaisa, balada a polonéza.",
-        "dark_ambient": "Dark ambient je subžánr postindustriální hudby, který vznikl v polovině 80. let 20. století. Vychází především z ambientu a vyznačuje se zlověstnými, temnými drony, disharmonickými podtóny a ponurou, monumentální nebo katakombami inspirovanou atmosférou. Ačkoli se jedná převážně o elektronický žánr, umělci často samplují tradiční nástroje a využívají poloakustické nahrávací postupy.",
-        "dark_wave": "Dark wave je hudební žánr, který vznikl z hnutí new wave a post-punku na konci 70. let. Skladby dark wave jsou z velké části založeny na mollových tóninách a introspektivních textech a byly vnímány jako temné, romantické a ponuré, s podtónem smutku. Mezi společné rysy patří používání akordů, jako je elektrická a akustická kytara, housle a klavír, a také elektronických nástrojů, jako je syntezátor, sampler a bicí automat. Stejně jako new wave není dark wave \"jednotným žánrem, ale spíše zastřešujícím pojmem\", který zahrnuje různé hudební styly, včetně cold wave, ethereal wave, gothic rock, neoclassical dark wave a neofolk.",
-        "disco": "Disco je žánr taneční hudby a subkultura, která vznikla koncem 60. let 20. století na městské noční scéně ve Spojených státech, zejména v afroamerických, italsko-amerických, latinskoamerických a queer komunitách. Jeho zvuk je typický rytmy \"four-on-the-floor\", synkopovanými basovými linkami, smyčcovými sekcemi, dechovými nástroji a lesními rohy, elektrickými klavíry, syntezátory a elektrickými rytmickými kytarami.",
-        "electronic": "Elektronická hudba obecně je skupina hudebních žánrů, které při své tvorbě využívají elektronické hudební nástroje, hudební technologie založené na obvodech a softwaru nebo univerzální elektroniku. Zahrnuje jak hudbu vytvářenou elektronickými, tak elektromechanickými prostředky. Čistě elektronické nástroje jsou zcela závislé na generování zvuku na základě obvodů, například pomocí zařízení, jako je elektronický oscilátor, theremin nebo syntezátor: není třeba, aby akustické vlny byly předtím generovány mechanickými prostředky a poté převedeny na elektrické signály. Naproti tomu elektromechanické nástroje mají mechanické části, jako jsou struny nebo kladívka, které generují zvukové vlny, spolu s elektrickými prvky, včetně magnetických snímačů, výkonových zesilovačů a reproduktorů, které převádějí akustické vlny na elektrické signály, zpracovávají je a převádějí zpět na zvukové vlny. Mezi taková elektromechanická zařízení patří telharmonium, Hammondovy varhany, elektrické piano a elektrická kytara.",
-        "experimental": "Experimentální hudba je obecné označení pro jakoukoli hudbu nebo hudební žánr, který posouvá stávající hranice a definice žánrů. Experimentální kompoziční praxe je široce definována průzkumným cítěním, které radikálně odporuje institucionalizovaným kompozičním, interpretačním a estetickým konvencím v hudbě a zpochybňuje je. Mezi prvky experimentální hudby patří neurčitost, kdy skladatel zavádí prvky náhody nebo nepředvídatelnosti, ať už s ohledem na skladbu nebo její provedení. Umělci mohou přistupovat k hybridu různorodých stylů nebo začleňovat neortodoxní a jedinečné prvky.",
-        "field_recording": "Terénní nahrávání je produkce zvukových nahrávek mimo nahrávací studia a tento termín se vztahuje na nahrávky přírodních i lidmi produkovaných zvuků. Může také zahrnovat nahrávání elektromagnetických polí nebo vibrací pomocí různých mikrofonů, jako je pasivní magnetická anténa pro elektromagnetické nahrávky nebo kontaktní mikrofony, nebo podvodní terénní nahrávky pořízené hydrofony k zachycení zvuků a\/nebo pohybů velryb či jiných mořských živočichů. Tyto nahrávky jsou často považovány za velmi užitečné pro zvukové designéry a foley artisty.",
-        "folk": "Lidová hudba je hudební žánr, který zahrnuje tradiční lidovou hudbu a současný žánr, jenž se z prvního vyvinul během folkového obrození 20. století. Některé druhy lidové hudby lze nazvat world music. Tradiční lidová hudba byla definována několika způsoby: jako hudba předávaná ústně, hudba s neznámými skladateli, hudba hraná na tradiční nástroje, hudba o kulturní nebo národní identitě, hudba, která se mění mezi generacemi, hudba spojená s folklórem daného lidu nebo hudba hraná na základě zvyku po dlouhou dobu. Byla stavěna do kontrastu s komerčními a klasickými styly. Termín vznikl v 19. století, ale lidová hudba sahá i za tyto hranice.",
-        "funk": "Funk je hudební žánr, který vznikl v afroamerických komunitách v polovině 60. let 20. století, kdy hudebníci vytvořili novou rytmickou a taneční formu hudby směsí různých hudebních žánrů, které byly mezi Afroameričany populární v polovině 20. století. Ubírá na důrazu na melodii a akordové postupy a soustředí se na silný rytmický groove basové linky hrané elektrickým baskytaristou a bicí party hrané perkusionistou, často v pomalejších tempech než ostatní populární hudba. Funk se obvykle skládá z komplexního perkusivního groovu, kdy rytmické nástroje hrají vzájemně propojené groovy, které vytvářejí \"hypnotický\" a \"taneční\" pocit. Raný funk, konkrétně James Brown, spojil jazz a blues a přidal synkopický bubenický groove.",
-        "gangsta_rap": "Gangsta nebo gangsterský rap, původně nazývaný reality rap, je subžánr hip-hopu, který zprostředkovává kulturu, hodnoty a zkušenosti městských gangů a pouličních podvodníků a často pojednává o nepříjemné realitě světa obecně z pohledu města. Mezi průkopníky gangsta rapu, který vznikl koncem 80. let 20. století, patří Schoolly D a Ice-T, později se rozšířil o umělce, jako jsou N.W.A. V roce 1992 se prostřednictvím hudebního producenta a rappera Dr. Dre, rappera Snoop Dogga a jejich G-funkového zvuku rozšířila popularita gangster rapu do hlavního proudu.",
-        "gospel": "Gospelová hudba je tradiční žánr křesťanské hudby a základní kámen křesťanských médií, charakterizovaný dominantním vokálem a texty, které odrážejí křesťanské učení a hodnoty. Tvorba, provedení, význam a dokonce i definice gospelové hudby se liší v závislosti na kultuře a sociálním kontextu. Gospelová hudba se skládá a hraje z mnoha důvodů, včetně estetického potěšení, náboženských nebo ceremoniálních účelů a jako zábavní produkt pro trh. Gospelovou hudbu lze vysledovat až do počátku 17. století.",
-        "hip_hop": "Hip-hop je žánr populární hudby, který se objevil na počátku 70. let 20. století spolu s doprovodnou subkulturou v komunitách afroamerických a karibských imigrantů v New Yorku. Hudební styl se vyznačuje syntézou široké škály technik, ale rapování je natolik časté, že se stalo jeho určujícím rysem. Dalšími klíčovými znaky žánru jsou diskžokej (DJ), turntablism, scratching, beatbox a instrumentální skladby. Kulturní výměna byla pro žánr hip-hopu vždy ústředním bodem; hip-hop si zároveň vypůjčuje ze svého sociálního prostředí a zároveň ho komentuje.",
-        "indian_classical": "Indická klasická hudba je klasická hudba indického subkontinentu. Obecně se pro ni používají termíny jako šastrija sangeet a marg sangeet. Má dvě hlavní tradice: severoindickou klasickou hudbu známou jako hindustánská a jihoindický projev známý jako karnátská. Hindustánská hudba klade důraz na improvizaci a zkoumání všech aspektů dané rágy, zatímco karnátská vystoupení bývají založena na krátké kompozici. Oba systémy však mají i nadále více společných rysů než rozdílů. Další jedinečnou tradicí klasické hudby z východní části Indie je hudba odissi, která se vyvíjela v průběhu posledních dvou tisíc let.",
-        "industrial": "Industriální hudba je subžánr experimentální hudby inspirovaný postindustriální společností, který původně čerpal vlivy z avantgardy a raných žánrů elektronické hudby, jako je musique concrète, tape music, noise a zvuková koláž. Termín vymyslel v roce 1976 Monte Cazazza a převzala ho skupina Throbbing Gristle se založením vydavatelství Industrial Records. Mezi další rané industriální hudebníky patří NON a Cabaret Voltaire. Koncem 70. let se objevili další umělci, jako Clock DVA, Nocturnal Emissions, Einstürzende Neubauten, SPK, Nurse with Wound a Z'EV, spolu s Whitehousem, který vymyslel subžánr \"power electronics\".",
-        "jazz": "Jazz je hudební žánr, který vznikl v afroamerických komunitách v New Orleans v Louisianě na přelomu 19. a 20. století. Jeho kořeny jsou v blues, ragtimu, evropské harmonii, afrických rytmických rituálech, spirituálech, hymnách, pochodech, vaudevillových písních a taneční hudbě. Od 20. let 20. století je uznáván jako hlavní forma hudebního vyjádření v tradiční a populární hudbě. Pro jazz jsou charakteristické swingové a modré tóny, složité akordy, vokály call and response, polyrytmy a improvizace.",
-        "klezmer": "Klezmer je instrumentální hudební tradice aškenázských Židů ve střední a východní Evropě. Mezi základní prvky této tradice patří taneční melodie, rituální melodie a virtuózní improvizace hrané k poslechu; ty se hrály na svatbách a jiných společenských akcích. Tento hudební žánr v sobě snoubil prvky mnoha dalších hudebních žánrů, včetně osmanské hudby, barokní hudby, německých a slovanských lidových tanců a náboženské židovské hudby. Když se hudba dostala do Spojených států, ztratila některé ze svých tradičních rituálních prvků a přijala prvky amerického big bandu a populární hudby. Mezi klezmery evropského původu, kteří tento žánr ve Spojených státech popularizovali v 10. a 20. letech 20. století, patřili Dave Tarras a Naftule Brandwein; následovali je hudebníci amerického původu jako Max Epstein, Sid Beckerman a Ray Musiker.",
-        "latin": "Latinská hudba je termín používaný v hudebním průmyslu jako souhrnná kategorie pro různé hudební styly z Iberoameriky, která zahrnuje Latinskou Ameriku, Španělsko, Portugalsko a latinskoamerickou populaci v Kanadě a Spojených státech, stejně jako hudbu zpívanou ve španělštině nebo portugalštině. Může sem patřit také hudba z jiných území, kde se tvoří hudba ve španělštině a portugalštině.",
-        "marching_band": "Pochodová kapela je vizuálně-hudební žánr, v němž hudebníci hrají na žesťové, dechové a bicí nástroje a pohybují se v synchronizovaných choreografických formacích, obvykle rychlostí 120-160 úderů za minutu. Kombinuje hudební výkony s atletickým, rychlým pochodováním a často zahrnuje popovou, rockovou a klasickou hudbu spolu s tradičními pochody ve vojenském stylu.",
-        "metal": "zastřešující kategorie hudebních žánrů metalové větve, odvozená od heavy metalové hudby, přičemž nemusí být nutně jejím subžánrem",
-        "middle_eastern_music": "Různé národy tohoto regionu zahrnují arabsky mluvící země Blízkého východu, tradiční perskou rituální hudbu, židovskou hudbu Izraele a diaspory, kurdskou hudbu, arménskou hudbu, ázerbájdžánskou hudbu, rozmanité tradice kyperské hudby, tureckou hudbu Turecka, tradiční asyrskou hudbu, koptskou rituální hudbu v Egyptě a také další žánry egyptské hudby obecně. Je všeobecně uznáváno, že některé blízkovýchodní hudební styly ovlivnily Střední Asii, stejně jako Balkán, jižní Itálii a Španělsko.",
-        "musical": "Hudební divadlo je forma divadelního představení, která kombinuje písně, mluvené dialogy, herectví a tanec. Příběh a emocionální obsah muzikálu - humor, patos, láska, hněv - jsou sdělovány prostřednictvím slov, hudby, pohybu a technických aspektů zábavy jako integrovaného celku. Ačkoli se hudební divadlo překrývá s jinými divadelními formami, jako je opera a tanec, lze jej odlišit stejným významem, který je přikládán hudbě ve srovnání s dialogy, pohybem a dalšími prvky. Od počátku 20. století se jevištní díla hudebního divadla obecně nazývají jednoduše muzikály.",
-        "new_age": "New age je hudební žánr, jehož cílem je umělecká inspirace, relaxace a optimismus. Posluchači ji využívají při józe, masážích, meditaci a četbě jako metodu zvládání stresu, která má navodit spíše stav extáze než transu nebo vytvořit klidnou atmosféru v domácnostech či jiných prostředích. Někdy bývá spojována s environmentalismem a spiritualitou New Age; většina jejích interpretů však nemá se \"spiritualitou New Age\" nic společného a někteří tento termín dokonce odmítají.",
-        "poetry": "Poezie jako hudební žánr spojuje mluvené slovo nebo recitované verše s hudebním doprovodem a vytváří tak hybridní formu zaměřenou na emocionální vyjádření, vyprávění příběhů a rytmus. Tento žánr, často s využitím akustických nástrojů (klavír, kytara) nebo experimentálních zvukových krajin, stírá hranici mezi literaturou a písní a zdůrazňuje inherentní melodii a kadenci mluveného slova.",
-        "polka": "Polka je taneční styl a žánr taneční hudby, který vznikl v devatenáctém století v Čechách. Ačkoli je polka obecně spojována s českou a středoevropskou kulturou, je populární v celé Evropě a Americe.",
-        "pop": "Pop music, nebo jednoduše pop, je žánr populární hudby, který ve své moderní podobě vznikl v polovině 50. let 20. století ve Spojených státech a Velké Británii. Během 50. a 60. let 20. století zahrnoval pop rock and roll a styly zaměřené na mládež, které ovlivňoval. Rock a pop zůstaly zhruba synonymní až do konce 60. let, poté se pop začal spojovat s hudbou, která byla komerčnější, pomíjivější a přístupnější.",
-        "psychedelic": "Psychedelická hudba je široká škála populárních hudebních stylů a žánrů ovlivněných psychedelií 60. let 20. století, subkulturou lidí, kteří užívali psychedelické drogy, jako je DMT, LSD, meskalin a psilocybin, k prožívání synestézie a změněných stavů vědomí. Psychedelická hudba může také umocnit zážitek z užívání těchto drog a bylo zjištěno, že má významný vliv na psychedelickou terapii.",
-        "punk": "zastřešující kategorie hudebních žánrů souvisejících s punkovou subkulturou, odvozená od punkrockové hudební scény, přičemž nemusí být nutně jejím subžánrem",
-        "r_b": "Rhythm and blues, často zkráceně R&B nebo R'n'B, je žánr populární hudby, který vznikl v afroamerických komunitách ve 40. letech 20. století. Termín původně používaly nahrávací společnosti k popisu nahrávek prodávaných převážně Afroameričanům v době, kdy se „rocková, jazzová hudba... [s] těžkým, neodbytným rytmem“ začala stávat populárnější. \n V komerčním rytmu a blues, typickém pro 50. až 70. léta 20. století, se kapely obvykle skládaly z piana, jedné nebo dvou kytar, basy, bicích, jednoho nebo více saxofonů a někdy i doprovodných zpěváků. Lyrická témata v R&B často ztělesňují afroamerickou historii a zkušenost bolesti a hledání svobody a radosti, stejně jako triumfy a neúspěchy v oblasti společenského rasismu, útlaku, vztahů, ekonomiky a aspirací.",
-        "ragtime": "Ragtime, také psáno rag-time nebo rag time, je hudební styl známý svým synkopovaným neboli „raggovaným“ rytmem. Vznikl v afroamerických komunitách na konci 19. století a k popularitě se dostal v 90. až 19. století díky skladatelům, jako byli James Scott, Joseph Lamb a zejména Scott Joplin. Joplin, známý jako „král ragtimu“, se proslavil skladbami jako „Maple Leaf Rag“ a „The Entertainer“.",
-        "rai": "Raï, někdy psáno rai, je alžírská lidová hudba, která vznikla ve 20. letech 20. století. Zpěváci raí se nazývají cheb (شاب) nebo cheba (شابة), tj. \"mladý\", na rozdíl od šejka, tj. \"starého\", což je označení pro zpěváky chaabi. Tato tradice vznikla ve městě Oran, především mezi chudými. Tradičně ji zpívali muži, koncem 20. století se však rozšířily i zpěvačky. Texty písní se týkaly sociálních otázek, jako jsou nemoci a policejní dohled nad evropskými koloniemi, které postihovaly původní obyvatelstvo.",
-        "reggae": "Reggae je hudební žánr, který vznikl na Jamajce koncem 60. let 20. století. Termín se také vztahuje na moderní populární hudbu Jamajky a její diaspory. Singl „Do the Reggay“ od skupiny Toots and the Maytals z roku 1968 byl první populární písní, která použila slovo reggae, čímž žánr efektivně pojmenovala a představila ho globálnímu publiku.",
-        "reggaeton": "Reggaeton je styl populární a elektronické hudby, který vznikl v Panamě koncem 80. let 20. století. Od začátku 90. let ho popularizují a dominují mu umělci z Portorika.",
-        "rock": "Rocková hudba je žánr populární hudby, který vznikl ve Spojených státech jako „rock and roll“ na konci 40. a začátku 50. let 20. století a od poloviny 60. let se vyvinul do řady stylů, zejména ve Spojených státech a Velké Británii. Jeho kořeny sahají do rock and rollu, stylu, který čerpal z afroamerických hudebních žánrů blues a rhythm and blues, stejně jako z country hudby. Rock také silně čerpal ze žánrů, jako je elektrické blues a folk, a začlenil vlivy jazzu a dalších stylů. Rock se obvykle soustředí na elektrickou kytaru, obvykle jako součást rockové skupiny s elektrickou basovou kytarou, bicími a jedním nebo více zpěváky.",
-        "salsa": "Salsa je styl latinskoamerické hudby, který v sobě spojuje prvky kubánských a portorikánských vlivů. Vzhledem k tomu, že většina základních hudebních složek vznikla ještě před označením salsa, existuje mnoho sporů ohledně jejího původu. Většina skladeb považovaných za salsu vychází především ze son montuno a son cubano s prvky cha-cha-chá, bolero, rumba, mambo, jazz, R&B, bomba a plena. Všechny tyto prvky jsou upraveny tak, aby odpovídaly základní šabloně son montuno, když jsou prováděny v kontextu salsy.",
-        "singer_songwriter": "skupina hudebních žánrů, které se objevily v polovině 20. století a odkazují na hudbu písničkářů, často charakterizovanou politickými nebo osobními texty a minimálním akustickým doprovodem",
-        "ska": "Ska je hudební žánr, který vznikl na Jamajce koncem 50. let 20. století a byl předchůdcem rocksteady a reggae. Kombinoval prvky karibského menta a calypsa s americkým jazzem a rhythm and blues. Ska se vyznačuje kráčející basovou linkou akcentovanou rytmy v off beatu. Vznikl na Jamajce v 60. letech 20. století, kdy Stranger Cole, Prince Buster, Clement „Coxsone“ Dodd a Duke Reid založili zvukové systémy pro hraní amerického rhythm and blues a poté začali nahrávat vlastní písně. Na začátku 60. let bylo ska dominantním hudebním žánrem na Jamajce a bylo oblíbené u britských modů a mnoha skinheadů.",
-        "soul": "Soulová hudba je populární hudební žánr, který vznikl v afroamerických komunitách po celých Spojených státech na konci 50. a začátku 60. let 20. století. Chytlavé rytmy, zdůrazněné tleskáním a spontánními pohyby těla, jsou důležitým charakteristickým znakem soulu. Dalšími charakteristikami jsou volání a odezva mezi hlavním a doprovodným zpěvákem, obzvláště napjatý vokální zvuk a občasné improvizační doplňky, zákruty a pomocné zvuky. Soulová hudba je známá tím, že odráží afroamerickou identitu a zdůrazňuje důležitost afroamerické kultury.",
-        "sound_effects": "Zvukové efekty jako hudební žánr - často zahrnující kompozici zvukové krajiny, hudbu konkrétního charakteru a hlukovou hudbu - využívají jako primární hudební prvky zvuky prostředí, mechanické zvuky a nahrávky Foley, nikoli tradiční melodie nebo harmonie. Tento avantgardní přístup vytváří pohlcující, narativní a texturované zvukové zážitky.",
-        "soundtrack": "Filmová hudba je originální hudba napsaná speciálně pro doprovod filmu nebo televizního programu. Hudba se skládá z řady orchestrálních, instrumentálních nebo sborových skladeb zvaných cues (narážky), které jsou načasovány tak, aby začínaly a končily v určitých bodech filmu, aby se zdůraznil dramatický příběh a emocionální dopad scén. Hudbu píše jeden nebo více skladatelů pod vedením režiséra nebo producenta filmu nebo ve spolupráci s ním a poté ji nejčastěji hraje soubor hudebníků – obvykle zahrnující orchestr nebo kapelu, instrumentální sólisty a sbor nebo zpěváky – známé jako playback singers – a nahrává ji zvukař. Tento termín se méně často používá pro hudbu psanou pro média, jako je živé divadlo, televizní a rozhlasové programy a videohry, a tato hudba se obvykle označuje buď jako soundtrack, nebo jako scénická hudba.",
-        "spoken_word": "Mluvené slovo je performativní žánr, který kombinuje mluvenou poezii, vyprávění příběhů nebo monolog s hudebním doprovodem nebo rytmickým přednesem a zaměřuje se na hlas jako hlavní nástroj. Vychází z ústní tradice a z Beat Generation a spojuje literární umění s hudbou, přičemž se běžně zabývá tématy sociální spravedlnosti, politiky a osobního vyprávění, často za doprovodu jazzových, rockových nebo folkových prvků.",
-        "swing": "Swingová hudba je jazzový styl, který se rozvinul ve Spojených státech na konci 20. a začátku 30. let 20. století. Celostátní popularitu získal od poloviny 30. let. Swing představuje nejslavnější éru jazzu jako zábavního žánru, před vznikem moderního jazzu. Swingové kapely obvykle vystupovaly se sólisty, kteří improvizovali na melodii přes aranžmá. Taneční swingový styl big bandů a kapelníků, jako byli Fletcher Henderson a Benny Goodman, byl dominantní formou americké populární hudby od roku 1935 do roku 1946, známou jako swingová éra, kdy lidé tančili Lindy Hop. Sloveso „swingovat“ se také používá jako chvála pro hru se silným groove nebo drive. Mezi vedoucí big bandů swingové éry patří Benny Goodman, Duke Ellington, Count Basie, Jimmie Lunceford, Cab Calloway, Benny Carter, Jimmy Dorsey, Tommy Dorsey, Earl Hines, Bunny Berigan, Harry James, Lionel Hampton, Glenn Miller a Artie Shaw.",
-        "tango": "Tango je hudební styl v 2\/4 nebo 4\/4 taktu, který vznikl v Uruguayi a Argentině mezi evropskými imigranty na konci 19. a začátku 20. století. Má převážně španělské, italské, gaučské, africké a francouzské kulturní kořeny. Tradičně se hraje na sólovou kytaru, kytarové duo nebo v souboru, známém jako orquesta típica, který zahrnuje alespoň dvě housle, flétnu, klavír, kontrabas a alespoň dva bandoneóny. Někdy se k souboru připojují kytary a klarinet. Tango může být čistě instrumentální nebo může zahrnovat zpěváka. Tango hudba a tanec se staly populárními po celém světě.",
-        "trap": "Trapová hudba, známá také jednoduše jako trap, je podžánr hip-hopu, který vznikl v jižních Spojených státech. Textové odkazy na trap se začaly objevovat v roce 1991, ale moderní zvuk trapu se objevil až v roce 1999. Žánr dostal svůj název od atlantského termínu „trap house“, což znamená drogový dům. Trapová hudba se vyznačuje jednoduchými, rytmickými a minimalistickými produkcemi, které používají syntetizované bicí a vyznačují se komplexními hi-hat rytmy, malými bubny a basovými bubny, některé laděné s dlouhým dozníváním pro vydávání basové frekvence. Texty písní se často zaměřují na užívání drog a násilí ve městech.",
-        "waltz": "Valčík, pravděpodobně odvozený od německého Ländler, je taneční hudba v třídobém taktu, často psaná v 3\/4. době. Ve valčíku obvykle zní jeden akord na takt a doprovodný styl spojený zejména s valčíkem spočívá v hraní kořene akordu na prvním taktu, vyšších tónů na druhém a třetím taktu.",
-        "wellness": "Meditační hudba je hudba, která má napomáhat meditační praxi. Může mít specifický náboženský obsah, ale v poslední době je také spojována s moderními skladateli, kteří při komponování využívají meditační techniky, nebo kteří takovou hudbu skládají bez zaměření na konkrétní náboženskou skupinu. Pojem zahrnuje také hudbu prováděnou jako akt meditace."
     },
     "link_to_genre": "Propojit s žánrem",
     "link_to_genre_title": "Propojit s žánrem",

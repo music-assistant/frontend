@@ -8,13 +8,23 @@
     <div class="ed-shelf__head">
       <slot name="header">
         <div class="ed-shelf__titles">
-          <h2 class="ed-shelf__title">{{ title }}</h2>
-          <slot name="title-append"></slot>
+          <div class="ed-shelf__title-row">
+            <h2 class="ed-shelf__title">{{ title }}</h2>
+            <slot name="title-append"></slot>
+          </div>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
-      <div v-if="$slots.actions" class="ed-shelf__actions">
-        <slot name="actions"></slot>
+      <div v-if="provider || $slots.actions" class="ed-shelf__aside">
+        <ProviderIcon
+          v-if="provider"
+          class="ed-shelf__provider"
+          :domain="provider"
+          :size="20"
+        />
+        <div v-if="$slots.actions" class="ed-shelf__actions">
+          <slot name="actions"></slot>
+        </div>
       </div>
     </div>
 
@@ -66,12 +76,15 @@ export interface EditorialShelfExpose {
 </script>
 
 <script setup lang="ts">
+import ProviderIcon from "@/components/ProviderIcon.vue";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
   title?: string;
   subtitle?: string;
+  provider?: string;
   gap?: number;
   navCenter?: number;
   dimmed?: boolean;
@@ -80,6 +93,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: "",
   subtitle: "",
+  provider: "",
   gap: 14,
   navCenter: 92,
   dimmed: false,
@@ -87,6 +101,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const CARD_PAD = 16;
+const PHONE_GAP = 4;
+const PHONE_CARD_PAD = 8;
 const MIN_ART = 120;
 const MAX_ART = 280;
 const ART_TOP_OFFSET = 12;
@@ -136,7 +152,10 @@ const updateTileArt = () => {
     tileArt.value = null;
     return;
   }
-  const size = el.clientWidth / props.tilesPerView - props.gap - CARD_PAD;
+  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
+  const gap = isPhone ? Math.min(props.gap, PHONE_GAP) : props.gap;
+  const cardPad = isPhone ? PHONE_CARD_PAD : CARD_PAD;
+  const size = el.clientWidth / props.tilesPerView - gap - cardPad;
   tileArt.value = Math.round(Math.max(MIN_ART, Math.min(MAX_ART, size)));
 };
 
@@ -212,6 +231,11 @@ onBeforeUnmount(() => {
 }
 .ed-shelf__titles {
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ed-shelf__title-row {
+  display: flex;
   align-items: baseline;
   gap: 12px;
   min-width: 0;
@@ -230,6 +254,20 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   white-space: nowrap;
+  margin-left: 1px;
+}
+.ed-shelf__aside {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ed-shelf__provider {
+  flex-shrink: 0;
+  /* ProviderIcon ships with its own horizontal margins; cancel them so it
+     lines up with the shelf gutter and the aside gap is consistent. */
+  margin-left: -10px;
+  margin-right: -10px;
 }
 .ed-shelf__actions {
   display: flex;
@@ -307,12 +345,25 @@ onBeforeUnmount(() => {
 @media (max-width: 600px) {
   .ed-shelf {
     --ed-gutter: 16px;
+    margin-bottom: 16px;
+  }
+  .ed-shelf__head {
+    margin-bottom: 0;
   }
   .ed-shelf__title {
     font-size: 19px;
   }
   .ed-shelf__nav {
     display: none;
+  }
+}
+
+@media (max-width: 500px) {
+  .ed-shelf {
+    --ed-card-pad: 4px;
+  }
+  .ed-shelf__track {
+    gap: 4px;
   }
 }
 </style>

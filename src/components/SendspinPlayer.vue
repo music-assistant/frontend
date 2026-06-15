@@ -234,6 +234,10 @@ onMounted(() => {
           clientName: getDeviceName(),
           codecs,
           syncDelay,
+          requiredLeadTimeMs: 250,
+          // Ask for a larger buffer when we are being routed through WebRTC.
+          // This increases latency for live streams, but improves stability
+          minBufferMs: isDirectConnection() ? 2500 : 6000,
           onStateChange: (state) => {
             // Update reactive state when player state changes
             isPlaying.value = state.isPlaying;
@@ -247,6 +251,22 @@ onMounted(() => {
               "frontend.settings.sendspin_static_delay",
               String(delayMs),
             );
+          },
+          // Recover a sendspin transport that drops on its own (e.g. its socket is
+          // idle-timed-out while the main API connection stays up). Drops that also
+          // take the main connection down are handled by the web player, which
+          // tears this component down and remounts it on reconnect. The interceptor
+          // rebuilds a fresh connection per attempt; retries are unbounded so
+          // playback recovers whenever connectivity returns, and the loop is torn
+          // down with the component on unmount.
+          reconnect: {
+            baseDelayMs: 1000,
+            maxDelayMs: 30000,
+            onReconnecting: (attempt: number) =>
+              console.debug(`Sendspin: reconnecting (attempt ${attempt})`),
+            onReconnected: () => console.debug("Sendspin: reconnected"),
+            onExhausted: () =>
+              console.warn("Sendspin: reconnect attempts exhausted"),
           },
         });
 

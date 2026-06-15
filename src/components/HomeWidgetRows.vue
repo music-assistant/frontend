@@ -24,12 +24,10 @@
           </div>
         </template>
         <template v-if="editMode" #actions>
-          <v-btn
-            :icon="playersEnabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
-            size="small"
-            variant="text"
-            @click="togglePlayers"
-          />
+          <Button variant="ghost" size="icon-sm" @click="togglePlayers">
+            <Eye v-if="playersEnabled" />
+            <EyeOff v-else />
+          </Button>
         </template>
         <div
           v-for="player in players"
@@ -48,9 +46,35 @@
         </div>
       </EditorialShelf>
 
-      <section v-if="heroEntries.length" class="ed-section ed-hero-row">
+      <section
+        v-if="showTopPicks"
+        class="ed-section ed-hero-row"
+        :class="{ 'ed-dimmed': editMode && !topPicksEnabled }"
+      >
         <div class="ed-hero-row__head">
-          <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
+          <div class="ed-hero-row__title-group">
+            <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :title="$t('refresh')"
+              :disabled="heroRefreshing"
+              @click="refreshTopPicks"
+            >
+              <RefreshCw
+                :class="{ 'ed-hero-refresh--spinning': heroRefreshing }"
+              />
+            </Button>
+          </div>
+          <Button
+            v-if="editMode"
+            variant="ghost"
+            size="icon-sm"
+            @click="toggleTopPicks"
+          >
+            <Eye v-if="topPicksEnabled" />
+            <EyeOff v-else />
+          </Button>
         </div>
         <div
           class="ed-hero-row__viewport"
@@ -103,33 +127,37 @@
       <EditorialShelf
         v-for="(row, idx) in displayedRows"
         :key="row.folder.uri"
-        :title="folderTitle(row.folder)"
+        :title="row.folder.name"
+        :subtitle="row.folder.subtitle"
+        :provider="folderProvider(row.folder)"
         :dimmed="editMode && !row.setting.enabled"
         :tiles-per-view="tilesPerView"
       >
         <template v-if="editMode" #actions>
-          <v-btn
-            :icon="
-              row.setting.enabled ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
-            "
-            size="small"
-            variant="text"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             @click="toggleRow(row.folder.uri)"
-          />
-          <v-btn
-            icon="mdi-chevron-up"
-            size="small"
-            variant="text"
+          >
+            <Eye v-if="row.setting.enabled" />
+            <EyeOff v-else />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             :disabled="idx === 0"
             @click="moveRow(row.folder.uri, -1)"
-          />
-          <v-btn
-            icon="mdi-chevron-down"
-            size="small"
-            variant="text"
+          >
+            <ChevronUp />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             :disabled="idx === displayedRows.length - 1"
             @click="moveRow(row.folder.uri, 1)"
-          />
+          >
+            <ChevronDown />
+          </Button>
         </template>
         <EditorialMediaCard
           v-for="item in row.folder.items"
@@ -162,23 +190,34 @@ import EditorialShelf, {
   type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
+import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  type EventMessage,
   EventType,
+  MediaType,
+  PlaybackState,
+  type EventMessage,
   type Genre,
   type ItemMapping,
   type MediaItemTypeOrItemMapping,
-  MediaType,
-  PlaybackState,
   type Player,
   type RecommendationFolder,
 } from "@/plugins/api/interfaces";
+import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { useDebounceFn } from "@vueuse/core";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  RefreshCw,
+} from "lucide-vue-next";
 import {
   computed,
   nextTick,
@@ -200,10 +239,10 @@ const recommendations = ref<RecommendationFolder[]>([]);
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
 
-// Size the recommendation tiles on the same responsive curve as the rest of
-// the app (panelViewItemResponsive), plus the half-tile peek. Recomputes on
-// resize because panelViewItemResponsive reads the reactive breakpoint width.
-const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
+const tilesPerView = computed(() => {
+  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
+  return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
+});
 
 const players = computed(() =>
   Object.values(api.players)
@@ -229,6 +268,18 @@ const showPlayers = computed(
 );
 const togglePlayers = () =>
   setPreference("discoverPlayersEnabled", !playersEnabled.value);
+
+const topPicksEnabledPref = getPreference<boolean>(
+  "discoverTopPicksEnabled",
+  true,
+);
+const topPicksEnabled = computed(() => topPicksEnabledPref.value !== false);
+const showTopPicks = computed(
+  () =>
+    heroEntries.value.length > 0 && (props.editMode || topPicksEnabled.value),
+);
+const toggleTopPicks = () =>
+  setPreference("discoverTopPicksEnabled", !topPicksEnabled.value);
 
 function playerSortScore(player: Player) {
   if (player.playback_state == PlaybackState.PLAYING) return 0;
@@ -274,10 +325,7 @@ watch(
   },
 );
 
-const folderTitle = (folder: RecommendationFolder) =>
-  folder.translation_key
-    ? $t(`recommendations.${folder.translation_key}`, folder.name)
-    : folder.name;
+const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
 // --- Top Picks: a curated mix from specific recommendation folders ---
 interface HeroEntry {
@@ -290,11 +338,20 @@ const HERO_COUNT = 9;
 const norm = (s: string) => (s || "").toLowerCase();
 const findFolder = (...needles: string[]) =>
   recommendations.value.find((f) => {
-    const hay = `${norm(f.name)} ${norm(folderTitle(f))}`;
+    const hay = norm(f.name);
     return needles.some((n) => hay.includes(n));
   });
 
-const buildHeroEntries = (): HeroEntry[] => {
+const shuffled = <T,>(arr: readonly T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const buildHeroEntries = (randomize = false): HeroEntry[] => {
   const playlists = findFolder("playlists made for you", "made for you");
   const mood = findFolder("find your mood", "mood");
   const stations = findFolder("stations for you", "radio stations for you");
@@ -304,23 +361,30 @@ const buildHeroEntries = (): HeroEntry[] => {
     (i) => i.media_type === MediaType.ARTIST,
   );
 
+  const order = (items: MediaItemTypeOrItemMapping[]) =>
+    randomize ? shuffled(items) : items;
+  const playlistItems = order(playlists?.items ?? []);
+  const moodItems = order(mood?.items ?? []);
+  const stationItems = order(stations?.items ?? []);
+  const releaseItems = order(releases?.items ?? []);
+  const artistStationItems = order(artistStations);
+
   const entry = (
     item: MediaItemTypeOrItemMapping | undefined,
     folder: RecommendationFolder | undefined,
-  ): HeroEntry | null =>
-    item && folder ? { item, tag: folderTitle(folder) } : null;
+  ): HeroEntry | null => (item && folder ? { item, tag: folder.name } : null);
 
   const recipe = [
-    entry(playlists?.items[0], playlists),
-    entry(mood?.items[0], mood),
-    entry(artistStations[0], stations),
-    entry(releases?.items[0], releases),
-    entry(stations?.items[0], stations),
-    entry(releases?.items[1], releases),
-    entry(artistStations[1], stations),
-    entry(playlists?.items[1], playlists),
-    entry(mood?.items[1], mood),
-    entry(releases?.items[2], releases),
+    entry(playlistItems[0], playlists),
+    entry(moodItems[0], mood),
+    entry(artistStationItems[0], stations),
+    entry(releaseItems[0], releases),
+    entry(stationItems[0], stations),
+    entry(releaseItems[1], releases),
+    entry(artistStationItems[1], stations),
+    entry(playlistItems[1], playlists),
+    entry(moodItems[1], mood),
+    entry(releaseItems[2], releases),
   ];
 
   const seen = new Set<string>();
@@ -337,23 +401,21 @@ const buildHeroEntries = (): HeroEntry[] => {
   if (out.length < HERO_COUNT) {
     const pool: HeroEntry[] = [
       ...recommendations.value.flatMap((f) =>
-        f.items.map((item) => ({ item, tag: folderTitle(f) })),
+        f.items.map((item) => ({ item, tag: f.name })),
       ),
       ...recentlyPlayed.value.map((item) => ({
         item,
         tag: $t("recently_played"),
       })),
     ].filter((e) => !seen.has(e.item.uri));
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    for (const e of pool) {
+    for (const e of shuffled(pool)) {
       if (out.length >= HERO_COUNT) break;
       push(e);
     }
   }
-  return out.slice(0, HERO_COUNT);
+  const picks = out.slice(0, HERO_COUNT);
+
+  return randomize ? shuffled(picks) : picks;
 };
 
 const heroEntries = ref<HeroEntry[]>([]);
@@ -453,6 +515,22 @@ const resolveHeroPicks = () => {
   if (fresh.length) writeHeroCache(fresh);
 };
 
+const heroRefreshing = ref(false);
+const refreshTopPicks = async () => {
+  if (heroRefreshing.value) return;
+  heroRefreshing.value = true;
+  try {
+    await loadRecommendations();
+    const fresh = buildHeroEntries(true);
+    if (fresh.length) {
+      heroEntries.value = fresh;
+      writeHeroCache(fresh);
+    }
+  } finally {
+    heroRefreshing.value = false;
+  }
+};
+
 // --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
 interface RowSetting {
   position: number;
@@ -550,13 +628,19 @@ onMounted(async () => {
   nextTick(observeHero);
   window.addEventListener("resize", updateHeroNav);
 
+  const refreshRecommendations = useDebounceFn(async () => {
+    await loadRecommendations();
+    // Keeps the same picks while the cache is fresh; rebuilds once expired.
+    resolveHeroPicks();
+  }, 1500);
+
   const unsub = api.subscribe(
     EventType.MEDIA_ITEM_PLAYED,
-    async (evt: EventMessage) => {
+    (evt: EventMessage) => {
+      // Only refetch when a track actually finished (is_playing = false),
+      // not on the periodic ~30s progress reports that also emit this event.
       if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        await loadRecommendations();
-        // Keeps the same picks while the cache is fresh; rebuilds once expired.
-        resolveHeroPicks();
+        refreshRecommendations();
       }
     },
   );
@@ -616,11 +700,21 @@ onBeforeUnmount(() => {
 .ed-hero-row {
   padding: 0 28px;
 }
+
+.ed-dimmed {
+  opacity: 0.4;
+}
 .ed-hero-row__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 14px;
+}
+.ed-hero-row__title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .ed-hero-row__title {
   margin: 0;
@@ -628,6 +722,17 @@ onBeforeUnmount(() => {
   font-weight: 700;
   letter-spacing: -0.6px;
   color: rgb(var(--v-theme-on-background));
+}
+.ed-hero-refresh--spinning {
+  animation: ed-hero-refresh-spin 0.8s linear infinite;
+}
+@keyframes ed-hero-refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .ed-hero-row__viewport {
   position: relative;
@@ -758,6 +863,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 600px) {
+  .ed-section {
+    margin-bottom: 16px;
+  }
   .ed-hero-row,
   .ed-genres {
     padding-left: 16px;

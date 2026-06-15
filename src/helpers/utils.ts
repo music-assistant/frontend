@@ -149,55 +149,6 @@ export const toSentenceCase = function (str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-const genreKeyFromName = function (name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-};
-
-export const getGenreDisplayName = function (
-  name: string,
-  translationKey: string | undefined,
-  t: (key: string) => string,
-  te: (key: string) => boolean,
-): string {
-  // First try the translation key as-is (in case backend sends full key like 'genre_names.afrobeats')
-  if (translationKey && te(translationKey)) return t(translationKey);
-
-  // Then try with genre_names prefix (in case backend sends just the key name like 'afrobeats')
-  if (translationKey) {
-    const keyWithPrefix = `genre_names.${translationKey}`;
-    if (te(keyWithPrefix)) return t(keyWithPrefix);
-  }
-
-  // Fallback: generate key from name
-  const key = `genre_names.${genreKeyFromName(name)}`;
-  if (te(key)) return t(key);
-
-  // No translation found - apply sentence case for user-created/promoted genres
-  return name;
-};
-
-export const getGenreDescription = function (
-  name: string,
-  translationKey: string | undefined,
-  t: (key: string) => string,
-  te: (key: string) => boolean,
-): string {
-  // First try the translation key with genre_descriptions prefix
-  if (translationKey) {
-    const keyWithPrefix = `genre_descriptions.${translationKey}`;
-    if (te(keyWithPrefix)) return t(keyWithPrefix);
-  }
-
-  // Fallback: generate key from name
-  const key = `genre_descriptions.${genreKeyFromName(name)}`;
-  if (te(key)) return t(key);
-
-  return "";
-};
-
 export const getArtistsString = function (
   artists: Array<Artist | ItemMapping>,
   size?: number,
@@ -217,21 +168,11 @@ export const getArtistsString = function (
     .join(" | ");
 };
 
-export const getBrowseFolderName = function (
-  browseItem: BrowseFolder,
-  t: (key: string) => string,
-) {
-  let browseTitle = "";
-  if (browseItem?.name && browseItem?.translation_key) {
-    browseTitle = `${browseItem.name}: ${t(browseItem?.translation_key)}`;
-  } else if (browseItem?.name) {
-    browseTitle = browseItem.name;
-  } else if (browseItem?.translation_key) {
-    browseTitle = t(browseItem?.translation_key);
-  } else {
-    browseTitle = browseItem.path || "";
-  }
-  return browseTitle;
+export const getBrowseFolderName = function (browseItem: BrowseFolder) {
+  // The server now provides the display name and (when a resolver is active) strips
+  // translation_key from the wire, so the client can no longer localize it itself: use the
+  // server-provided name directly, falling back to the path for unnamed folders.
+  return browseItem?.name || browseItem?.path || "";
 };
 
 export const getPlayerName = function (player: Player, truncate = 26) {
@@ -780,6 +721,17 @@ export const playerVisible = function (
     return false;
   }
   return true;
+};
+
+// Whether a player can be offered in the group/sync member picker. Honours
+// hide_in_ui, except for light/visualizer players which are hidden from the
+// normal player view but exist to be grouped (e.g. Hue lights synced to audio).
+export const groupMemberPickerVisible = function (player: Player): boolean {
+  return (
+    !player.hide_in_ui ||
+    player.type === PlayerType.LIGHT ||
+    player.type === PlayerType.VISUALIZER
+  );
 };
 
 /* Handle play button click */

@@ -2,7 +2,6 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
-  getGenreDisplayName,
   hexToRgb,
   kebabize,
   numberRange,
@@ -253,48 +252,6 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(3660)).toBe("1h 1m");
     expect(formatRelativeTime(7200)).toBe("2h");
     expect(formatRelativeTime(7380)).toBe("2h 3m");
-  });
-});
-
-describe("getGenreDisplayName", () => {
-  const mockT = (key: string) => {
-    const translations: Record<string, string> = {
-      "genre_names.rock": "Rock",
-      "genre_names.hip_hop": "Hip Hop",
-      full_key: "Full Key Translation",
-    };
-    return translations[key] || key;
-  };
-
-  const mockTe = (key: string) => {
-    const known = ["genre_names.rock", "genre_names.hip_hop", "full_key"];
-    return known.includes(key);
-  };
-
-  it("uses translation_key directly if it resolves", () => {
-    expect(getGenreDisplayName("rock", "full_key", mockT, mockTe)).toBe(
-      "Full Key Translation",
-    );
-  });
-
-  it("uses translation_key with genre_names prefix", () => {
-    expect(getGenreDisplayName("rock", "rock", mockT, mockTe)).toBe("Rock");
-  });
-
-  it("generates key from name as fallback", () => {
-    expect(getGenreDisplayName("hip hop", undefined, mockT, mockTe)).toBe(
-      "Hip Hop",
-    );
-  });
-
-  it("returns original case when no translation found", () => {
-    expect(
-      getGenreDisplayName("my Custom Genre", undefined, mockT, mockTe),
-    ).toBe("my Custom Genre");
-  });
-
-  it("handles empty name", () => {
-    expect(getGenreDisplayName("", undefined, mockT, mockTe)).toBe("");
   });
 });
 

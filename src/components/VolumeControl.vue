@@ -138,7 +138,11 @@
 
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
-import { getPlayerName, truncateString } from "@/helpers/utils";
+import {
+  getPlayerName,
+  groupMemberPickerVisible,
+  truncateString,
+} from "@/helpers/utils";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {
@@ -201,10 +205,9 @@ const getChildPlayers = function (player: Player) {
       // skip unavailable players
       if (!syncPlayer.available) continue;
 
-      // skip players hidden from the UI (only filters the add-candidate
-      // path; current group members above are always shown so they don't
-      // become invisible participants).
-      if (syncPlayer.hide_in_ui) continue;
+      // skip players hidden from the picker; current group members above
+      // are always shown so they don't become invisible participants
+      if (!groupMemberPickerVisible(syncPlayer)) continue;
 
       // skip for group players
       if (syncPlayer.type == PlayerType.GROUP) continue;

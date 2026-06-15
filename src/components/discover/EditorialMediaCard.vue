@@ -82,7 +82,6 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   getArtistsString,
   getBrowseFolderName,
-  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -130,7 +129,7 @@ const emit = defineEmits<{
   (e: "select", item: MediaItemType | ItemMapping, selected: boolean): void;
 }>();
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const art = computed(() => itemArtwork(props.item, 320));
 
@@ -155,12 +154,9 @@ const providerDomain = computed<string | undefined>(() => {
 const displayName = computed(() => {
   const it = props.item;
   if (it.media_type === MediaType.FOLDER) {
-    return getBrowseFolderName(it as BrowseFolder, t);
+    return getBrowseFolderName(it as BrowseFolder);
   }
-  let name =
-    it.media_type === MediaType.GENRE
-      ? getGenreDisplayName(it.name, it.translation_key, t, te)
-      : it.name;
+  let name = it.name;
   if ("version" in it && it.version) name += ` - ${it.version}`;
   return name;
 });
@@ -397,5 +393,17 @@ const onMenu = (e: MouseEvent) => {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+@media (max-width: 500px) {
+  .ed-card {
+    --ed-card-pad: 4px;
+  }
+  .ed-card__meta {
+    margin-top: 4px;
+  }
+  .ed-card__sub {
+    margin-top: 0;
+  }
 }
 </style>

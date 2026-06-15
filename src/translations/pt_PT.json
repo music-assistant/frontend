@@ -145,185 +145,12 @@
         "add_new_provider_button": "Adicionar provedor {0}",
         "add_group_player": "Adicionar grupo de leitores",
         "group_members": "Membros do grupo",
-        "log_level": {
-            "label": "Nível de registo",
-            "description": "Define a verbosidade do registo para este provedor.",
-            "options": {
-                "global": "Global",
-                "info": "Informações",
-                "warning": "Aviso",
-                "error": "Erro",
-                "debug": "Depurar"
-            }
-        },
-        "flow_mode": {
-            "label": "Ativar o modo de fluxo de espera",
-            "description": "Ative o modo \"fluxo\", no qual todas as faixas da fila são enviadas como um fluxo de áudio contínuo. \nUse para leitores que não oferecem suporte nativo a reprodução sem intervalos e\/ou transições suaves entre faixas, ou se o leitor tiver problemas na transição entre as faixas."
-        },
-        "auto_play": {
-            "label": "Reprodução automática (retomar ao ligar)",
-            "description": "Quando este leitor for ligado, começa automaticamente a reproduzir (se houver itens na fila de espera)."
-        },
-        "output_channels": {
-            "label": "Modo de canal de saída",
-            "description": "Pode configurar este leitor para reproduzir apenas o canal esquerdo ou direito, por exemplo, para criar um par estéreo com 2 leitores.",
-            "options": {
-                "stereo": "Estéreo (ambos os canais)",
-                "left": "Apenas o canal esquerdo",
-                "right": "Apenas o canal direito",
-                "mono": "Mono (ambos os canais)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Ativar a normalização do volume (com base na EBU-R128)",
-            "description": "Ativar a normalização do volume com base na norma EBU-R128 sem afetar a gama dinâmica"
-        },
-        "volume_normalization_target": {
-            "label": "Nível alvo para normalização do volume",
-            "description": "Ajustar o volume médio (percebido) para este nível-alvo, a predefinição é -17 LUFS\n\n**AVISO:** Definir o nível demasiado alto pode resultar em clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizador: graves",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível de graves (tons baixos) do áudio."
-        },
-        "eq_mid": {
-            "label": "Equalizador: médio",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível médio do áudio."
-        },
-        "eq_treble": {
-            "label": "Equalizador: agudos",
-            "description": "Utiliza o equalizador básico incorporado para ajustar o nível dos agudos (tons altos) do áudio."
-        },
-        "crossfade": {
-            "label": "Ativar o crossfade",
-            "description": "Ativar uma transição de crossfade entre faixas (em fila)."
-        },
-        "crossfade_duration": {
-            "label": "Duração do crossfade",
-            "description": "Duração em segundos do crossfade entre faixas (se ativado)"
-        },
-        "hide_player": {
-            "label": "Ocultar este leitor na interface do utilizador",
-            "description": "Oculta este leitor na interface do utilizador.\n\nNote que ainda pode ser controlado e que também aparecerá em quaisquer grupos de sincronização a que o leitor pertença."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Itens a selecionar quando reproduzir um artista (na biblioteca).",
-            "description": "Se quiser tocar um artista, que itens devem ser colocados na fila?",
-            "options": {
-                "library_tracks": "Apenas faixas da biblioteca",
-                "library_album_tracks": "Todas as faixas de todos os álbuns na biblioteca",
-                "all_tracks": "Todas as faixas (principais) de (todos) os provedores",
-                "all_album_tracks": "Todas as faixas de todos os álbuns de (todos) os provedores"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Itens a selecionar quando reproduzir um álbum (da biblioteca).",
-            "description": "Se quiser reproduzir um álbum, que itens devem ser colocados na fila?",
-            "options": {
-                "library_tracks": "Apenas faixas da biblioteca",
-                "all_tracks": "Todas as faixas do álbum no provedor"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Opção predefinida de colocar na fila para o(s) item(ns) do Artista.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) do artista agora e manter o(s) restante(s) item(s) da fila.",
-                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do artista",
-                "next": "Reproduz o(s) item(ns) imediatamente a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) do artista logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "add": "Adicionar a(s) faixa(s) do artista no final da fila."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Opção predefinida de colocar na fila para o(s) item(s) do Álbum.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) do álbum agora e manter o(s) restante(s) item(s) da fila.",
-                "replace": "Limpar a fila de espera e reproduzir a(s) faixa(s) do álbum",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) do álbum logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "add": "Adicionar a(s) faixa(s) do álbum no final da fila."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Opção de fila predefinida para o(s) item(ns) da faixa.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a(s) faixa(s) agora e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a(s) faixa(s).",
-                "next": "Reproduzir a(s) faixa(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) faixa(s) logo a seguir ao item atualmente reproduzido\/em buffer.",
-                "add": "Adicionar a(s) faixa(s) no final da fila."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Opção de fila de espera padrão para os itens da lista de reprodução.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir agora a(s) faixa(s) da lista de reprodução e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a(s) faixa(s) da lista de reprodução",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpa a fila de espera e reproduz a(s) faixa(s) da lista de reprodução imediatamente a seguir ao item atualmente reproduzido\/em memória intermédia.",
-                "add": "Adicionar a(s) faixa(s) da lista de reprodução no final da fila."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Opção de fila predefinida para itens de rádio.",
-            "description": "Define a ação predefinida de colocar na fila para este tipo de suporte de dados (se não tiver especificado uma ação).",
-            "options": {
-                "play": "Reproduzir a estação de rádio agora e manter o(s) restante(s) item(ns) da fila.",
-                "replace": "Limpar a fila e reproduzir a estação de rádio",
-                "next": "Reproduz o(s) item(ns) logo a seguir ao item atualmente reproduzido\/no buffer.",
-                "replace_next": "Limpar a fila e reproduzir a(s) estação(ões) de rádio logo a seguir ao item em reprodução\/buffer.",
-                "add": "Adicionar a(s) estação(ões) de rádio no final da fila."
-            }
-        },
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, é necessário ter o fornecedor {1} configurado. Pretende fazê-lo agora?",
         "category": {
-            "advanced": "Avançado",
-            "generic": "Genéricos",
-            "announcements": "Anúncios",
-            "player_controls": "Controlos do leitor",
-            "sync_options": "Opções de sincronização\/importação",
-            "builtin_playlists": "Listas de reprodução incorporadas",
             "web_player": "Leitor Web",
-            "playback": "Reprodução da Fila",
             "protocol_settings": "Protocolo(s) de saída",
-            "protocol_output_settings": "Ativar o suporte {0}",
-            "dsp": "Processamento Digital de Sinais (DSP)",
             "options": "Opções do leitor"
-        },
-        "tts_pre_announce": {
-            "label": "Pré-anunciar anúncios TTS",
-            "description": "Quando uma mensagem TTS (conversão de texto em voz) é enviada para a função Anunciar, acrescente ao anúncio um breve som de pré-anúncio (apito de campainha)."
-        },
-        "announce_volume_strategy": {
-            "label": "Estratégia de volume para anúncios",
-            "description": "Quando um anúncio está a ser transmitido para este leitor, como deve o volume ser ajustado temporariamente (utilizar em combinação com o valor de volume abaixo)?",
-            "options": {
-                "absolute": "Volume absoluto",
-                "relative": "Aumento relativo do volume",
-                "percentual": "Aumento do volume em percentagem fixa",
-                "none": "Não ajustar o volume"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume para Anúncios",
-            "description": "O nível de volume percentual, relativo ou absoluto, utilizado com a estratégia dos anúncios."
-        },
-        "announce_volume_min": {
-            "label": "Nível mínimo de volume para Anúncios",
-            "description": "O volume (regulação) dos anúncios não deve descer abaixo deste nível."
-        },
-        "announce_volume_max": {
-            "label": "Nível máximo de volume para Anúncios",
-            "description": "O volume (regulação) dos anúncios não deve ultrapassar este nível."
-        },
-        "icon": {
-            "label": "Ícone",
-            "description": "Ícone Material Design para este leitor.\n\nVer https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -374,38 +201,6 @@
         "no_music_providers_detail": "Comece a sua experiência com o Music Assistant adicionando os seus Fornecedores de Música.",
         "no_player_providers": "Nenhum Fornecedor de Leitores configurado",
         "no_player_providers_detail": "Configure os fornecedores de leitores para selecionar dispositivos onde o Music Assistant pode tocar a sua música.",
-        "volume_normalization_radio": {
-            "label": "Método de normalização de volume a utilizar para streams de rádio",
-            "description": "Defina a estratégia de normalização de volume preferida para streams de rádio. \nPor defeito, o Music Assistant recolhe uma medida do volume da estação de rádio (média percebida) de acordo com a especificação EBU-R128 e, em seguida, ajusta o ganho\/volume geral do fluxo de acordo com essa medida para que a gama dinâmica do áudio não seja afetada.\nQuando não existe (ainda) nenhuma medição para uma estação de rádio, o Music Assistant recorre a um filtro de nivelamento de volume dinâmico (mas menos preciso).\n\nDICA: Os streams de rádio têm frequentemente níveis de volume variáveis, especialmente durante anúncios e publicidade. Pode optar por aplicar a normalização dinâmica do volume aos streams de rádio, mesmo que exista uma medição (média) do volume para a estação de rádio. \n \n**Opções:**\n\n  - Desativado — Não aplicar a normalização do volume a todos os fluxos de rádio. \n  - Forçar dinâmico — Aplicar o nivelamento dinâmico do volume em todos os momentos.\n  - Apenas medição (sem regressão) — Aplicar correção (geral) de volume\/ganho com base na medição armazenada. Se não existir uma medição, não aplicar a normalização.\n  - Regredir para a correção de ganho — Aplicar a correção (geral) de volume\/ganho com base na medição armazenada. Se não existir uma medição, recorremos a uma correção de ganho predefinida.\n  - Correção de ganho fixo — Aplicar sempre a correção de volume\/ganho fixo.\n  - Regredir para dinâmico — Escolher automaticamente a melhor opção: Aplicar a correção (global) do volume\/ganho com base na medição armazenada, se existir, permitir o recuo para o modo dinâmico se não existir nenhuma medição.",
-            "options": {
-                "disabled": "Desativado",
-                "dynamic": "Forçar dinâmico",
-                "measurement_only": "Apenas medição (sem regressão)",
-                "fallback_fixed_gain": "Regredir para correção de ganhos",
-                "fixed_gain": "Correção de ganho fixo",
-                "fallback_dynamic": "Regredir para dinâmico"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Método de normalização do volume a utilizar para as faixas",
-            "description": "Define a estratégia de normalização de volume preferida para as faixas\/músicas.\nO Music Assistant utiliza uma medição da intensidade do som das faixas (média percebida) de acordo com a especificação EBU-R128 para ajustar o ganho\/volume geral do fluxo sem afetar a gama dinâmica do áudio.\nEstas medições são fornecidas pelo fornecedor de streaming ou, no caso de ficheiros locais, podem estar contidas nas etiquetas ID3 (ReplayGain 2.0 \/ Opus R128).\nSe a medição não for fornecida, o Music Assistant efetuará automaticamente uma medição quando\/após a faixa ser reproduzida (primeira vez). Quando não existe (ainda) nenhuma medição para uma faixa, o Music Assistant irá, por defeito, recorrer a um filtro de nivelamento de sonoridade dinâmico (mas menos preciso). Isto assegura que não haja grandes picos\/quedas no nível de volume entre as faixas, mesmo que ainda não exista uma medição exata, mas o nivelador dinâmico pode, por vezes, comprimir um pouco a gama dinâmica, embora isso, por regra, não seja audível.\n\n\n**Opções:**\n\n- Desativado - não aplicar a normalização do volume para streams de rádio\n- Forçar dinâmico - Aplicar sempre o nivelamento dinâmico do volume. \n - Apenas medição (sem regressão) — Aplicar a correção (geral) de volume\/ganho com base na medição armazenada. Se não tivermos nenhuma medição, não aplicar a normalização. \n - Regredir para correção de ganho — Aplicar a correção de volume\/ganho (global) com base na medição armazenada. Se não tivermos qualquer medição, recorremos a uma correção de ganho predefinida. \n - Correção de ganho fixo — Aplicar sempre a correção de volume\/ganho fixo. \n - Regredir para dinâmico — Escolher automaticamente a melhor opção: Aplicar a correção (global) do volume\/ganho com base na medição armazenada, se tivermos alguma, permitir a regressão para o modo dinâmico se não estiver disponível nenhuma medição.",
-            "options": {
-                "disabled": "Desativado",
-                "dynamic": "Forçar dinâmico",
-                "measurement_only": "Apenas medição (sem regressão)",
-                "fallback_fixed_gain": "Regredir para correção de ganhos",
-                "fixed_gain": "Correção de ganho fixa",
-                "fallback_dynamic": "Regredir para dinâmico"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Ajuste de ganho fixo\/regressão para faixas",
-            "description": "Correção de ganho fixo\/regressão a aplicar a um stream de áudio de faixa (depende da definição 'Método de normalização do volume'). Utilize um valor positivo para aumentar o volume e um valor negativo para diminuir o volume. Esta definição é utilizada quando o método de normalização do volume está definido para 'Correção de ganho fixo' ou 'Regredir para correção de ganho'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Ajuste de ganho fixo\/regressão para rádio",
-            "description": "Correção de ganho fixo\/recuo a aplicar a um fluxo de rádio (depende da definição 'Método de normalização do volume').\nUtilize um valor positivo para aumentar o volume, um valor negativo para diminuir o volume.\n\nEsta definição é utilizada quando o método de normalização do volume está definido para 'Correção de ganho fixo' ou 'Recuo para correção de ganho'."
-        },
         "dynamic_members": {
             "label": "Membros dinâmicos do grupo",
             "description": "Permitir que os membros entrem\/saiam do grupo (temporariamente) de forma dinâmica, para que o grupo se comporte mais ou menos da mesma forma que a sincronização manual de leitores, sendo a principal diferença que o leitor do grupo irá deter a fila."
@@ -478,22 +273,6 @@
                 "name_placeholder": "A minha nova predefinição",
                 "remove_confirm": "Tem a certeza de que pretende remover esta predefinição DSP?"
             }
-        },
-        "power_control": {
-            "label": "Controlo de potência",
-            "description": "Permite-lhe, por exemplo, redirecionar os comandos de ligar\/desligar para um aparelho diferente ou utilizar um controlo de alimentação falso se o seu leitor não suportar comandos de ligar\/desligar, mas quiser ter um estado dedicado para um leitor que não esteja a ser utilizado."
-        },
-        "volume_control": {
-            "label": "Controlo do volume",
-            "description": "Define\/substitui o comportamento do controlo de volume para este leitor. Permite-lhe, por exemplo, redirecionar os comandos de controlo de volume para um aparelho diferente ou desativá-lo completamente."
-        },
-        "mute_control": {
-            "label": "Controlo de silêncio",
-            "description": "Permite-lhe, por exemplo, redirecionar os comandos de controlo de silenciamento para um aparelho diferente ou desativá-lo completamente. Oferecemos uma opção de controlo de silenciamento \"falso\", que simula o silenciamento definindo o volume para 0 e restaurando o volume quando o silenciamento for desativado."
-        },
-        "output_limiter": {
-            "label": "Ativar a limitação para evitar o recorte",
-            "description": "Ativa um limitador que evita a distorção do áudio, tornando os picos altos mais baixos."
         },
         "dsp_enabled": "O DSP está ativado",
         "dsp_disabled": "O DSP está desativado",
@@ -751,7 +530,12 @@
             "unavailable": "indisponível",
             "none": ""
         },
-        "audio_analysis_description": "Acompanhar a cobertura da análise de áudio nos seus provedores"
+        "audio_analysis_description": "Acompanhar a cobertura da análise de áudio nos seus provedores",
+        "audio_analysis_concurrency": {
+            "title": "Concorrência da análise de fundo",
+            "description": "Controla quantas faixas são analisadas em simultâneo durante a pesquisa noturna em segundo plano. Esta definição está presente na configuração principal do Streams.",
+            "open_settings": "Definições Open Streams"
+        }
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -951,55 +735,14 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Selecionar fonte",
-    "in_progress_items": "Continuar a ouvir…",
     "play_replace_next": "Reproduzir Seguinte (limpar a fila)",
     "all_enqueue_options": "Todas as opções de fila",
     "music_assistant_source": "Fila do Music Assistant",
     "music_assistant_library": "Biblioteca do Music Assistant",
     "select_all_confirmation": "Selecionar todos os itens? Esta operação pode demorar algum tempo a carregar todos os dados.",
     "this_device": "Este dispositivo",
-    "recommendations": {
-        "in_progress_items": "Continuar a ouvir…",
-        "recommended_new_tracks": "Novas faixas recomendadas",
-        "recently_played": "Reproduzido recentemente",
-        "suggested_new_albums_for_you": "Sugestões de novos álbuns para si",
-        "random_artists": "Artistas aleatórios",
-        "random_albums": "Álbuns aleatórios",
-        "custom_mixes": "Misturas personalizadas",
-        "your_listening_history": "O seu histórico",
-        "popular_albums": "Álbuns populares",
-        "staff_picks_tracks": "Escolhas da equipa: faixas",
-        "staff_picks_albums": "Escolhas da equipa: álbuns",
-        "radio_stations_for_you": "Estações de rádio para si",
-        "producers__songwriters": "Produtores e compositores",
-        "new_releases_for_you": "Novos lançamentos para si",
-        "recent_favorite_tracks": "Últimas músicas favoritas",
-        "favorite_playlists": "Listas de reprodução favoritas",
-        "favorite_radio_stations": "Estações de rádio favoritas",
-        "listen_again": "Ouvir novamente",
-        "in_progress_series": "Continuar a série…",
-        "recommended": "Recomendado",
-        "recently_added": "Adicionado recentemente",
-        "episodes_recently_added": "Episódios adicionados recentemente",
-        "recent_series": "Séries recentes",
-        "newest_authors": "Autores mais recentes",
-        "newest_episodes": "Episódios mais recentes",
-        "discover": "Descobrir",
-        "libraries": "Bibliotecas",
-        "library": "Biblioteca",
-        "trending_podcasts": "Podcasts em voga",
-        "trending_stations": "Estações em voga",
-        "forgotten_tracks": "Faixas esquecidas",
-        "forgotten_albums": "Álbuns esquecidos",
-        "forgotten_artists": "Artistas esquecidos",
-        "most_played_tracks": "Faixas mais reproduzidas",
-        "never_played_tracks": "Nunca \/ raramente reproduzido",
-        "recent_favorite_albums": "Álbuns favoritos recentemente",
-        "recently_added_tracks": "Faixas adicionadas recentemente",
-        "inspired_by_recently_played": "Inspirado pelo reproduzido recentemente"
-    },
     "homescreen_edit_enable": "Editar o ecrã inicial",
-    "homescreen_edit_disable": "Sair do modo de edição do ecrã inicial",
+    "homescreen_edit_disable": "Sair do modo de edição",
     "lyrics_will_appear_soon": "As letras aparecerão quando a música começar…",
     "radiobrowser_by_votes": "Por votos",
     "radiobrowser_by_clicks": "Por cliques",
@@ -1217,8 +960,6 @@
     "collection": "Coleção",
     "collections": "Coleções",
     "narrators": "Narradores",
-    "series_plural": "Séries",
-    "series_singular": "Série",
     "queue_move_end": "Mover para o fim",
     "discover": "Descobrir",
     "save_queue_as_playlist": "Guardar a fila como lista de reprodução",
@@ -1243,67 +984,6 @@
     "description": "Descrição",
     "genre": "Género",
     "genres": "Géneros",
-    "genre_names": {
-        "afrobeats": "Afrobeats (música urbana\/pop da África Ocidental)",
-        "ambient": "Ambiente",
-        "anime_and_video_game_music": "Música de Anime e de Videojogos",
-        "asian_music": "Música Asiática",
-        "bluegrass": "",
-        "blues": "",
-        "brazilian_music": "Música Brasileira",
-        "chanson": "",
-        "childrens_music": "Música Infantil",
-        "christmas_music": "Música de Natal",
-        "church_music": "Música de Igreja",
-        "classical": "Clássico",
-        "comedy": "Comédia",
-        "country": "Country",
-        "dance": "Dança",
-        "dark_ambient": "",
-        "dark_wave": "",
-        "disco": "Disco",
-        "electronic": "Eletrónico",
-        "experimental": "Experimental",
-        "field_recording": "Registo no terreno",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "",
-        "gospel": "Gospel",
-        "hip_hop": "",
-        "indian_classical": "Clássico Indiano",
-        "industrial": "",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latina",
-        "marching_band": "Banda de Marcha",
-        "metal": "Metal",
-        "middle_eastern_music": "Música do Médio Oriente",
-        "musical": "Musical",
-        "new_age": "",
-        "poetry": "Poesia",
-        "polka": "Polca",
-        "pop": "Pop",
-        "psychedelic": "Psicadélico",
-        "punk": "",
-        "r_b": "",
-        "ragtime": "",
-        "rai": "",
-        "reggae": "",
-        "reggaeton": "",
-        "rock": "",
-        "salsa": "",
-        "singer_songwriter": "Cantor-compositor",
-        "ska": "",
-        "soul": "",
-        "sound_effects": "Efeitos sonoros",
-        "soundtrack": "Banda sonora",
-        "spoken_word": "Palavra falada",
-        "swing": "",
-        "tango": "Tango",
-        "trap": "Armadilha",
-        "waltz": "Valsa",
-        "wellness": "Bem-estar"
-    },
     "link": "Ligação",
     "link_alias": "Ligar pseudónimo",
     "link_alias_failed": "Falha ao ligar o pseudónimo",
@@ -1331,67 +1011,6 @@
         "starting": "O servidor está a arrancar, alguns fornecedores, jogadores ou funcionalidades podem ainda não estar disponíveis até o arranque estar concluído.",
         "stopping": "O servidor está a desligar-se...",
         "stopped": "O servidor parou"
-    },
-    "genre_descriptions": {
-        "afrobeats": "Afrobeats, que não deve ser confundido com Afrobeat ou Afroswing, é um termo genérico para descrever a música popular da África Ocidental e da diáspora que se desenvolveu inicialmente na Nigéria, no Gana e no Reino Unido nas décadas de 2000 e 2010. Afrobeats é menos um estilo em si, e mais um descritor para a fusão de sons que fluem da Nigéria e do Gana. Géneros como o hiplife, a música jùjú, o highlife, a música azonto e as batidas naija, entre outros, foram reunidos sob a égide do \"Afrobeats\".",
-        "ambient": "Música Ambiente é um género de música que enfatiza o tom e a atmosfera em detrimento da estrutura ou do ritmo musical tradicional. Muitas vezes com um som \"pacífico\" e sem composição, batida e\/ou melodia estruturada, a música ambiente utiliza camadas texturais de som que podem recompensar a audição passiva e ativa e encorajar uma sensação de calma ou contemplação. O género evoca uma qualidade \"atmosférica\", \"visual\" ou \"discreta\". Podem ser incluídas paisagens sonoras da natureza e algumas obras utilizam notas sustentadas ou repetidas, como na música drone. Com elementos associados à música da nova era, instrumentos como o piano, as cordas e a flauta podem ser emulados através de um sintetizador.",
-        "anime_and_video_game_music": "Música de Jogos de Vídeo (VGM) é a banda sonora que acompanha os jogos de vídeo. A música dos primeiros jogos de vídeo estava limitada aos sons dos primeiros chips de som, como os geradores de som programáveis (PSG) ou os chips de síntese FM. Estas limitações conduziram ao estilo de música conhecido como chiptune, que se tornou o som dos primeiros jogos de vídeo.",
-        "asian_music": "Música Asiática engloba numerosos estilos musicais, diversas tradições culturais e religiosas e formas originárias do continente asiático.",
-        "bluegrass": "Bluegrass é um género de música americana de raiz que se desenvolveu na década de 1940 na região dos Apalaches, nos Estados Unidos. O género deriva o seu nome da banda Bill Monroe and the Blue Grass Boys. O bluegrass tem raízes nos géneros afro-americanos, como o blues e o jazz, e nos géneros do Norte da Europa, como as baladas irlandesas e as melodias de dança. Ao contrário do country, é tradicionalmente tocado exclusivamente com instrumentos acústicos, como o violino, o bandolim, o banjo, a guitarra e o baixo vertical. Foi desenvolvido por músicos que tocaram com Monroe, incluindo o tocador de banjo de 5 cordas Earl Scruggs e o guitarrista Lester Flatt. Bill Monroe descreveu uma vez a música bluegrass como: \"É uma parte das tradições metodista, de santidade e batista. É blues e jazz, e tem um som alto e solitário\".",
-        "blues": "Blues é um género musical e uma forma musical que teve origem entre os afro-americanos no Sul profundo dos Estados Unidos por volta da década de 1860. O blues incorporou spirituals, canções de trabalho, hollers do campo, gritos, cantos e baladas narrativas simples rimadas da cultura afro-americana. A forma do blues é omnipresente no jazz, no rhythm and blues e no rock and roll, e caracteriza-se pelo padrão de chamada e resposta, pela escala do blues e por progressões de acordes específicas, das quais o blues de doze compassos é a mais comum. As notas azuis, geralmente terças, quintas ou sétimas com altura achatada, são também uma parte essencial do som. Os blues shuffles ou walking bass reforçam o ritmo de transe e formam um efeito repetitivo conhecido como groove.",
-        "brazilian_music": "Música do Brasil engloba vários estilos musicais regionais influenciados por formas europeias, americanas, africanas e ameríndias. A música brasileira desenvolveu alguns estilos únicos e originais, como forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, música gaúcha, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha e versões brasileiras de estilos musicais estrangeiros, como rock, música pop, soul, hip-hop, música disco, música country, música ambiente, industrial e psicodélica, rap, música clássica, fado e gospel.",
-        "chanson": "Chanson é geralmente uma canção francesa com letra. O termo é mais frequentemente utilizado em inglês para designar quer as canções polifónicas seculares francesas da música medieval e renascentista tardia, quer um estilo específico de música pop francesa que surgiu nas décadas de 1950 e 1960. O género teve origem nas canções monofónicas dos trovadores e trouvères, embora os únicos precedentes polifónicos fossem 16 obras de Adam de la Halle e uma de Jehan de Lescurel. Só depois do compositor de ars nova Guillaume de Machaut é que algum compositor escreveu um número significativo de chansons polifónicas.",
-        "childrens_music": "Música Infantil ou música para crianças é música composta e interpretada para crianças. Em contextos de influência europeia, isto significa música, geralmente canções, escrita especificamente para um público juvenil. Os compositores são geralmente adultos.",
-        "christmas_music": "Música de Natal inclui uma variedade de géneros de música regularmente executados ou ouvidos na época natalícia. A música associada ao Natal pode ser puramente instrumental ou, no caso das canções de Natal, pode conter letras sobre a natividade de Jesus Cristo, tradições como a oferta de presentes e a celebração de festas, figuras culturais como o Pai Natal ou outros temas. Muitas canções têm simplesmente um tema de inverno ou sazonal, ou foram adotadas no cânone por outras razões.",
-        "church_music": "Música de Igreja é um género de música cristã escrita para ser executada na igreja, ou qualquer ambiente musical de liturgia eclesiástica, ou música com palavras que expressam propostas de natureza sagrada, como um hino.",
-        "classical": "A música artística é a música considerada de elevado valor fonoestético. Implica normalmente considerações estruturais e teóricas avançadas ou uma tradição musical escrita. Neste contexto, os termos \"séria\" ou \"cultivada\" são frequentemente utilizados para apresentar um contraste com a música comum e quotidiana. Muitas culturas têm tradições de música artística; no mundo ocidental, o termo refere-se normalmente à música clássica ocidental.",
-        "comedy": "A música de comédia ou comédia musical é um género de música de natureza cómica. A sua história remonta ao primeiro século da Grécia e Roma antigas, avançando no tempo até ao período medieval, às eras clássica e romântica e ao século XX. Várias formas de teatro musical cómico, incluindo a \"peça musical\", a \"comédia musical\", a \"opereta\" e a \"ópera ligeira\", evoluíram a partir das óperas cómicas desenvolvidas pela primeira vez em Itália no final do século XVII. Entre os artistas de música popular do século XX interessados na comédia contam-se Allan Sherman, Frank Zappa, Tiny Tim, Barenaked Ladies, Randy Newman e \"Weird Al\" Yankovic. Os artistas do século XXI incluem Tenacious D, Flight of the Conchords, The Lonely Island, Ninja Sex Party e The Axis of Awesome.",
-        "country": "A música Country, também conhecida como country e western ou simplesmente country, é um género musical conhecido pelas suas baladas e melodias de dança, identificáveis tanto pelas letras tradicionais como pelas harmonias acompanhadas por banjos, bandolins, violinos, harmónicas e muitos tipos de guitarra; guitarras acústicas, elétricas, de aço ou de ressonância. Outrora designada por música hillbilly, o termo música country foi popularizado na década de 1940 para lhe dar um termo correto.",
-        "dance": "A música de dança é música composta especificamente para facilitar ou acompanhar a dança. Pode ser uma peça completa ou parte de um arranjo musical maior. Em termos de execução, as principais categorias são a música de dança ao vivo e a música de dança gravada. Embora existam atestados da combinação de dança e música na história antiga, a música de dança ocidental mais antiga que ainda podemos reproduzir com um certo grau de certeza são as danças à moda antiga. No período barroco, os principais estilos de dança eram as danças nobres da corte. Na época da música clássica, o minueto era frequentemente utilizado como terceiro andamento, embora, neste contexto, não acompanhasse qualquer dança. A valsa também surgiu mais tarde na era clássica. Ambas permaneceram no período da música romântica, que também assistiu ao aparecimento de várias outras formas de dança nacionalistas, como a barcarola, a mazurca, a ecossaise, a balada e a polonaise.",
-        "dark_ambient": "O ambiente escuro é um subgénero da música pós-industrial, que surgiu originalmente em meados da década de 1980. Tem como principal influência a música ambiente e caracteriza-se por drones sinistros e sombrios, tons discordantes e uma atmosfera sombria, monumental ou inspirada em catacumbas. Apesar de ser um género maioritariamente eletrónico, os artistas utilizam frequentemente amostras de instrumentos tradicionais e recorrem a processos de gravação semiacústicos.",
-        "dark_wave": "Dark wave é um género musical que surgiu a partir do movimento new wave e pós-punk do final da década de 1970. As composições do Dark Wave baseiam-se em grande parte na tonalidade de tons menores e em letras introspetivas e foram consideradas sombrias, românticas e desoladoras, com um tom de tristeza. As caraterísticas comuns incluem a utilização de cordofones como a guitarra elétrica e acústica, o violino e o piano, bem como de instrumentos eletrónicos como o sintetizador, o sampler e a máquina de ritmos. Tal como a new wave, a dark wave não é um \"género unificado, mas sim um termo abrangente\" que engloba uma variedade de estilos musicais, incluindo a cold wave, a ethereal wave, o gothic rock, a dark wave neoclássica e o neofolk.",
-        "disco": "Disco é um género de música de dança e uma subcultura que surgiu no final da década de 1960 na vida noturna urbana dos Estados Unidos, particularmente nas comunidades afro-americana, ítalo-americana, latina e queer. O seu som é caraterizado por batidas de quatro no chão, linhas de baixo sincopadas, secções de cordas, metais e trompas, pianos elétricos, sintetizadores e guitarras rítmicas elétricas.",
-        "electronic": "A música eletrónica é, em termos gerais, um grupo de géneros musicais que utiliza instrumentos musicais eletrónicos, tecnologia musical baseada em circuitos e software, ou eletrónica de uso geral na sua criação. Inclui tanto a música feita com meios eletrónicos como eletromecânicos. Os instrumentos eletrónicos puros dependem inteiramente da geração de som com base em circuitos, por exemplo, utilizando dispositivos como um oscilador eletrónico, theremin ou sintetizador: não é necessário gerar previamente ondas acústicas por meios mecânicos e convertê-las em sinais elétricos. Por outro lado, os instrumentos eletromecânicos têm partes mecânicas, como cordas ou martelos, que geram as ondas sonoras, juntamente com elementos elétricos, incluindo captadores magnéticos, amplificadores de potência e altifalantes, que convertem as ondas acústicas em sinais elétricos, processam-nos e voltam a convertê-los em ondas sonoras. Estes dispositivos eletromecânicos incluem o telharmonium, o órgão Hammond, o piano elétrico e a guitarra elétrica.",
-        "experimental": "A música experimental é um rótulo geral para qualquer música ou género musical que ultrapasse as fronteiras existentes e as definições de género. A prática composicional experimental é definida em termos gerais por sensibilidades exploratórias radicalmente opostas a, e questionando, convenções composicionais, performativas e estéticas institucionalizadas na música. Os elementos da música experimental incluem a indeterminação, em que o compositor introduz os elementos do acaso ou da imprevisibilidade no que diz respeito quer à composição, quer à sua execução. Os artistas podem abordar um híbrido de estilos díspares ou incorporar elementos não ortodoxos e únicos.",
-        "field_recording": "A gravação de campo é a produção de gravações de áudio fora dos estúdios de gravação e o termo aplica-se a gravações de sons naturais e produzidos pelo homem. Pode também incluir a gravação de campos eletromagnéticos ou vibrações utilizando diferentes microfones, como uma antena magnética passiva para gravações eletromagnéticas ou microfones de contacto, ou gravações de campo subaquáticas, feitas com hidrofones, para captar os sons e\/ou movimentos de baleias ou outros animais marinhos. Estas gravações são frequentemente consideradas muito úteis para designers de som e artistas de foley.",
-        "folk": "A música folk é um género musical que inclui a música folk tradicional e o género contemporâneo que evoluiu a partir da primeira durante o renascimento do folk no século XX. Alguns tipos de música folclórica podem ser designados por world music. A música folclórica tradicional tem sido definida de várias formas: como música transmitida oralmente, música com compositores desconhecidos, música tocada em instrumentos tradicionais, música sobre identidade cultural ou nacional, música que muda entre gerações, música associada ao folclore de um povo ou música executada por costume durante um longo período de tempo. Tem sido contrastado com os estilos comercial e clássico. O termo teve origem no século XIX, mas a música folclórica estende-se para além desse período.",
-        "funk": "O funk é um género musical que teve origem nas comunidades afro-americanas em meados da década de 1960, quando os músicos criaram uma nova forma de música rítmica e dançável através de uma mistura de vários géneros musicais que eram populares entre os afro-americanos em meados do século XX. O funk não enfatiza a melodia e as progressões de acordes e centra-se num groove rítmico forte de uma linha de baixo tocada por um baixista elétrico e uma parte de bateria tocada por um percussionista, muitas vezes a ritmos mais lentos do que outros tipos de música popular. O funk consiste normalmente num groove percussivo complexo com instrumentos rítmicos que tocam grooves interligados que criam uma sensação \"hipnótica\" e \"dançável\". Os primeiros funks, especificamente de James Brown, fundiam jazz e blues e acrescentavam um ritmo de bateria sincopado.",
-        "gangsta_rap": "O gangsta rap ou gangster rap, inicialmente designado por reality rap, é um subgénero do hip-hop que transmite a cultura, os valores e as experiências dos gangs urbanos e dos street hustlers, discutindo frequentemente realidades desagradáveis do mundo em geral através de uma perspetiva urbana. Surgido no final da década de 1980, os pioneiros do gangsta rap incluem Schoolly D e Ice-T, expandindo-se mais tarde com artistas como N.W.A. Em 1992, através do produtor discográfico e rapper Dr. Dre, do rapper Snoop Dogg e do seu som G-funk, o gangster rap alargou a sua popularidade ao mainstream.",
-        "gospel": "A música Gospel é um género tradicional de música cristã e uma pedra angular dos meios de comunicação social cristãos, caracterizada por vozes dominantes e letras que refletem ensinamentos e valores cristãos. A criação, execução, significado e mesmo a definição de música Gospel variam consoante a cultura e o contexto social. É composta e executada para muitos fins, incluindo o prazer estético, mas também para fins religiosos ou cerimoniais, e como produto de entretenimento para o mercado. Pode ser rastreada até ao início do século XVII.",
-        "hip_hop": "Hip-hop é um género de música popular que surgiu no início dos anos 70, com uma subcultura associada nas comunidades de imigrantes afro-americanos e caribenhos da cidade de Nova Iorque. O estilo musical é caraterizado pela síntese de uma vasta gama de técnicas, mas o rap é suficientemente frequente para se tornar uma caraterística definidora. Outros elementos-chave do género são o disc jockey (DJ), o turntablism, o scratching, o beatboxing e as faixas instrumentais. O intercâmbio cultural foi sempre um elemento central do género hip-hop; este toma simultaneamente emprestado do seu ambiente social e comenta-o.",
-        "indian_classical": "A música clássica indiana é a música clássica do subcontinente indiano. É geralmente descrita com termos como Shastriya Sangeet e Marg Sangeet. Tem duas tradições principais: a música clássica do Norte da Índia, conhecida como Hindustânica, e a expressão do Sul da Índia, conhecida como Carnatic. A música Hindustânica dá ênfase à improvisação e à exploração de todos os aspectos de um raga, enquanto as atuações Carnatic tendem a basear-se em composições curtas. No entanto, os dois sistemas continuam a ter mais caraterísticas comuns do que diferenças. Outra tradição musical clássica única da parte oriental da Índia é a música Odissi, que evoluiu ao longo dos últimos dois mil anos.",
-        "industrial": "A música Industrial é um subgénero de música experimental inspirado na sociedade pós-industrial, inicialmente com influências da vanguarda e dos primeiros géneros de música eletrónica, como a música concreta, a música de fita, o ruído e a colagem de sons. O termo foi cunhado em 1976 por Monte Cazazza e adotado por Throbbing Gristle com a fundação da Industrial Records. Outros músicos industriais antigos incluem NON e Cabaret Voltaire. No final da década de 1970, surgiram outros artistas, como Clock DVA, Noturnal Emissions, Einstürzende Neubauten, SPK, Nurse with Wound e Z'EV, juntamente com Whitehouse, que cunhou o subgénero \"power electronics\".",
-        "jazz": "Jazz é um género musical que teve origem nas comunidades afro-americanas de Nova Orleães, Louisiana, no final do século XIX e início do século XX. As suas raízes estão nos blues, ragtime, harmonia europeia, rituais rítmicos africanos, espirituais, hinos, marchas, canções de vaudeville e música de dança. Desde a Era do Jazz dos anos 20, tem sido reconhecido como uma das principais formas de expressão musical na música tradicional e popular. O jazz é caracterizado por swing e blue notes, acordes complexos, vocais de chamada e resposta, polirritmos e improvisação.",
-        "klezmer": "O Klezmer é uma tradição musical instrumental dos judeus Ashkenazi da Europa Central e Oriental. Os elementos essenciais da tradição incluem melodias de dança, melodias rituais e improvisações virtuosísticas tocadas para audição; estas teriam sido tocadas em casamentos e outras funções sociais. O género musical incorporou elementos de muitos outros géneros musicais, incluindo a música otomana, a música barroca, as danças folclóricas alemãs e eslavas e a música religiosa judaica. Quando a música chegou aos Estados Unidos, perdeu alguns dos seus elementos rituais tradicionais e adotou elementos da big band americana e da música popular. Entre os klezmers nascidos na Europa que popularizaram o género nos Estados Unidos nas décadas de 1910 e 1920 estavam Dave Tarras e Naftule Brandwein; foram seguidos por músicos nascidos nos Estados Unidos, como Max Epstein, Sid Beckerman e Ray Musiker.",
-        "latin": "A música latina é um termo utilizado pela indústria musical como uma categoria abrangente para vários estilos de música da Ibero-América, que engloba a América Latina, Espanha, Portugal e a população latina no Canadá e nos Estados Unidos, bem como música cantada em espanhol ou português. Pode também incluir música de outros territórios onde se produz música em espanhol e português.",
-        "marching_band": "A banda de marcha é um género visual-musical baseado em atuações, em que músicos tocam instrumentos de latão, sopro e percussão enquanto se movem em formações sincronizadas e coreografadas, normalmente a 120-160+ batidas por minuto. Combina o desempenho musical com a marcha atlética e de alta velocidade, incorporando frequentemente música pop, rock e clássica com marchas tradicionais de estilo militar.",
-        "metal": "categoria genérica de géneros musicais do ramo do metal, derivada da música heavy metal, embora não sendo necessariamente o seu subgénero",
-        "middle_eastern_music": "As várias nações da região incluem os países de língua árabe do Médio Oriente, a música ritual tradicional persa, a música judaica de Israel e da diáspora, a música curda, a música arménia. A música azeri, as variadas tradições da música cipriota, a música turca da Turquia, a música tradicional assíria, a música ritual copta no Egito, bem como outros géneros de música egípcia em geral. É amplamente considerado que alguns estilos musicais do Médio Oriente influenciaram a Ásia Central, bem como os Balcãs, o Sul de Itália e Espanha.",
-        "musical": "O teatro musical é uma forma de representação teatral que combina canções, diálogo falado, representação e dança. A história e o conteúdo emocional de um musical — humor, pathos, amor, raiva — são comunicados através de palavras, música, movimento e aspetos técnicos do espetáculo, como um todo integrado. Embora o teatro musical se sobreponha a outras formas teatrais como a ópera e a dança, pode distinguir-se pela importância igual dada à música em comparação com o diálogo, o movimento e outros elementos. Desde o início do século XX, as obras de teatro musical são geralmente designadas simplesmente por musicais.",
-        "new_age": "New Age é um género de música destinado a criar inspiração artística, relaxamento e otimismo. É utilizada pelos ouvintes para ioga, massagem, meditação e leitura como método de gestão do stress, para provocar um estado de êxtase em vez de transe, ou para criar uma atmosfera pacífica em casas, ou outros ambientes. É por vezes associada ao ambientalismo e à espiritualidade New Age; no entanto, a maioria dos seus artistas nada tem a ver com a \"espiritualidade da New Age\", e alguns até rejeitam o termo.",
-        "poetry": "A poesia como género musical funde a palavra falada ou o verso recitado com o acompanhamento musical, criando uma forma híbrida centrada na expressão emocional, na narração de histórias e no ritmo. Muitas vezes com instrumentos acústicos (piano, guitarra) ou paisagens sonoras experimentais, este género esbate a linha entre literatura e canção, realçando a melodia e a cadência inerentes às palavras faladas.",
-        "polka": "A polca é um estilo de dança e um género de música de dança originário da Boémia do século XIX, atualmente parte da República Checa. Embora geralmente associada à cultura checa e da Europa Central, a polca é popular em toda a Europa e nas Américas.",
-        "pop": "A música Pop, ou simplesmente pop, é um género de música popular que teve origem na sua forma moderna em meados da década de 1950 nos Estados Unidos e no Reino Unido. Durante as décadas de 1950 e 1960, a música pop englobou o rock and roll e os estilos orientados para a juventude que influenciou. O rock e a música pop permaneceram praticamente sinónimos até ao final da década de 1960, após o que a pop passou a ser associada a música mais comercial, efémera e acessível.",
-        "psychedelic": "A música psicadélica é uma vasta gama de estilos e géneros de música popular influenciada pela psicadelia dos anos 60, uma subcultura de pessoas que utilizavam drogas psicadélicas como o DMT, o LSD, a mescalina e os cogumelos psilocibina, para experimentar sinestesia e estados alterados de consciência. A música psicadélica pode também ter como objetivo melhorar a experiência de utilização destas drogas e tem tido uma influência significativa na terapia psicadélica.",
-        "punk": "categoria genérica de géneros musicais relacionados com a subcultura punk, derivada da cena musical punk rock, embora não sendo necessariamente o seu subgénero",
-        "r_b": "Rhythm and Blues, frequentemente abreviado como R&B ou R'n'B, é um género de música popular que teve origem nas comunidades afro-americanas na década de 1940. O termo foi originalmente utilizado pelas empresas discográficas para descrever gravações comercializadas predominantemente para afro-americanos, numa altura em que \"a música de rock, baseada no jazz… [Na música comercial de rhythm and blues típica das décadas de 1950 a 1970, as bandas eram geralmente compostas por um piano, uma ou duas guitarras, baixo, bateria, um ou mais saxofones e, por vezes, vocalistas de fundo. Os temas líricos do R&B envolvem frequentemente a história afro-americana e a experiência da dor e a procura da liberdade e da alegria, bem como os triunfos e fracassos em termos de racismo social, opressão, relações, economia e aspirações.",
-        "ragtime": "Ragtime, também conhecido como rag-time ou rag time, é um estilo musical conhecido pelo seu ritmo sincopado ou \"esfarrapado\". Teve origem nas comunidades afro-americanas no final do século XIX e foi impulsionado para a popularidade nas décadas de 1890 a 1910 por compositores como James Scott, Joseph Lamb e, em particular, Scott Joplin. Conhecido como o \"Rei do Ragtime\", Joplin ganhou fama através de composições como \"Maple Leaf Rag\" e \"The Entertainer\".",
-        "rai": "Raï, por vezes escrito rai, é uma forma de música popular argelina que remonta à década de 1920. Os cantores de Raï são designados por cheb (شاب) ou cheba (شابة), ou seja, \"jovens\", por oposição a sheikh, ou seja, \"velhos\", nome dado aos cantores chaabi. A tradição surgiu na cidade de Oran, principalmente entre os pobres. Tradicionalmente cantada por homens, as cantoras tornaram-se comuns no final do século XX. As letras versam sobre questões sociais como as doenças e o policiamento das colónias europeias que afetam as populações nativas.",
-        "reggae": "Reggae é um género musical que teve origem na Jamaica no final da década de 1960. O termo também se refere à música popular moderna da Jamaica e da sua diáspora. O single de 1968 de Toots and the Maytals, intitulado \"Do the Reggay\", foi a primeira canção popular a utilizar a palavra reggae, nomeando efetivamente o género e apresentando-o a um público global.",
-        "reggaeton": "Reggaeton é um estilo de música popular e eletrónica que teve origem no Panamá no final da década de 1980. Tem sido popularizado e dominado por artistas de Porto Rico desde o início da década de 1990.",
-        "rock": "Rock é um género de música popular que teve origem nos Estados Unidos como \"rock and roll\" no final da década de 1940 e início da década de 1950, desenvolvendo-se numa série de estilos a partir de meados da década de 1960, principalmente nos Estados Unidos e no Reino Unido. Tem as suas raízes no rock and roll, um estilo que se inspirou nos géneros musicais afro-americanos de blues e rhythm and blues, bem como na música country. O rock também se inspirou fortemente em géneros como o blues elétrico e o folk, e incorporou influências do jazz e de outros estilos. O rock é tipicamente centrado na guitarra elétrica, normalmente como parte de um grupo de rock com baixo elétrico, bateria e um ou mais cantores.",
-        "salsa": "Salsa é um estilo de música latino-americana, que combina elementos de influências cubanas e porto-riquenhas. Como a maioria dos componentes musicais básicos é anterior à rotulagem da salsa, tem havido muitas controvérsias quanto à sua origem. A maioria das canções consideradas como salsa baseia-se principalmente no son montuno e no son cubano, com elementos de cha-cha-chá, bolero, rumba, mambo, jazz, R&B, bomba e plena. Todos estes elementos são adaptados para se enquadrarem no modelo básico do son montuno quando executados no contexto da salsa.",
-        "singer_songwriter": "grupo de géneros musicais surgido em meados do século XX, que se refere à música dos cantores-compositores, frequentemente caracterizada por letras políticas ou pessoais e por um acompanhamento acústico mínimo",
-        "ska": "Ska é um género musical que teve origem na Jamaica no final da década de 1950 e foi o precursor do rocksteady e do reggae. Combinava elementos do mento e do calipso das Caraíbas com o jazz americano e o rhythm and blues. O ska é caracterizado por uma linha de baixo que caminha, acentuada por ritmos fora do ritmo. Foi desenvolvido na Jamaica na década de 1960, quando Stranger Cole, Prince Buster, Clement \"Coxsone\" Dodd e Duke Reid formaram sistemas de som para tocar o rhythm and blues americano e depois começaram a gravar as suas próprias canções. No início da década de 1960, o ska era o género musical dominante na Jamaica e era popular entre os mods britânicos e muitos skinheads.",
-        "soul": "Soul é um género de música popular que teve origem nas comunidades afro-americanas dos Estados Unidos no final da década de 1950 e início da década de 1960. Os ritmos cativantes, realçados por palmas e movimentos corporais extemporâneos, são uma marca importante do soul. Outras caraterísticas são o apelo e a resposta entre o vocalista principal e o vocalista de apoio, um som vocal especialmente tenso e ocasionais adições de improvisação, rodopios e sons auxiliares. A música soul é conhecida por refletir a identidade afro-americana e realçar a importância da cultura afro-americana.",
-        "sound_effects": "Os efeitos sonoros como género musical — muitas vezes englobando composição de paisagens sonoras, musique concrète e música sonora — utilizam ruídos ambientais, sons mecânicos e gravações Foley como elementos musicais primários em vez de melodias ou harmonias tradicionais. Esta abordagem de vanguarda cria experiências auditivas imersivas, narrativas e texturadas.",
-        "soundtrack": "A banda sonora de um filme é uma música original escrita especificamente para acompanhar um filme ou um programa de televisão. A partitura consiste num conjunto de peças orquestrais, instrumentais ou corais, designadas por cues, que são programadas para começar e acabar em pontos específicos do filme, a fim de reforçar a narrativa dramática e o impacto emocional das cenas. As partituras são escritas por um ou mais compositores, sob a orientação, ou em colaboração, com o realizador ou produtor do filme e são depois, na maior parte das vezes, executadas por um conjunto de músicos — incluindo normalmente uma orquestra ou banda, solistas instrumentais e coros ou vocalistas — conhecidos como cantores de playback - e gravadas por um engenheiro de som. O termo é aplicado com menos frequência à música escrita para meios de comunicação como o teatro ao vivo, programas de televisão e rádio e jogos de vídeo, sendo essa música normalmente referida como banda sonora ou música incidental.",
-        "spoken_word": "A palavra falada é um género performativo que combina poesia falada, narração de histórias ou monólogos com acompanhamento musical, ou entrega rítmica, centrando-se na voz como instrumento principal. Com raízes nas tradições orais e na Geração Beat, funde a arte literária com a música, apresentando normalmente temas de justiça social, política e narrativa pessoal, muitas vezes acompanhados por elementos de jazz, rock ou folk.",
-        "swing": "A música Swing é um estilo de jazz que se desenvolveu nos Estados Unidos durante o final da década de 1920 e início da década de 1930. Tornou-se nacionalmente popular a partir de meados da década de 1930. O swing representa a era mais famosa do jazz como género de entretenimento, antes do aparecimento do jazz moderno. As bandas de swing apresentavam normalmente solistas que improvisavam a melodia sobre o arranjo. O estilo de swing dançável das big bands e de bandleaders como Fletcher Henderson e Benny Goodman foi a forma dominante da música popular americana de 1935 a 1946, conhecida como a era do swing, quando as pessoas dançavam o Lindy Hop. O verbo \"to swing\" é também utilizado como termo de louvor para designar uma música que tem um forte groove ou drive. Os líderes das big bands da era do swing incluem Benny Goodman, Duke Ellington, Count Basie, Jimmie Lunceford, Cab Calloway, Benny Carter, Jimmy Dorsey, Tommy Dorsey, Earl Hines, Bunny Berigan, Harry James, Lionel Hampton, Glenn Miller e Artie Shaw.",
-        "tango": "O Tango é um estilo de música em compasso 24 ou 44 que teve origem no Uruguai e na Argentina entre os imigrantes europeus no final do século XIX e início do século XX. Tem raízes culturais principalmente espanholas, italianas, gaúchas, africanas e francesas. É tradicionalmente tocada numa guitarra solo, num duo de guitarras ou num conjunto, conhecido como orquestra típica, que inclui pelo menos dois violinos, flauta, piano, contrabaixo e pelo menos dois bandoneóns. Por vezes, guitarras e um clarinete juntam-se ao conjunto. O tango pode ser puramente instrumental ou pode incluir um vocalista. A música e a dança do tango tornaram-se populares em todo o mundo.",
-        "trap": "A música trap, também conhecida simplesmente como trap, é um subgénero da música hip-hop que teve origem no Sul dos Estados Unidos. As referências líricas ao trap começaram em 1991, mas o som moderno do trap surgiu em 1999. O género recebeu o seu nome do termo de Atlanta \"trap house\", uma casa de droga. A música trap apresenta produções simples, rítmicas e minimalistas que utilizam baterias sintetizadas e é caracterizada por batidas complexas de hi-hat, tarola, bumbo, alguns afinados com um longo decay para emitir uma frequência de graves. As letras das músicas geralmente se concentram no uso de drogas e na violência urbana.",
-        "waltz": "A Valsa, provavelmente derivada do alemão Ländler, é uma música de dança em metro triplo, frequentemente escrita em 34 tempos. Uma valsa soa tipicamente um acorde por compasso, e o estilo de acompanhamento particularmente associado à valsa consiste em tocar a raiz do acorde no primeiro tempo, as notas superiores no segundo e terceiro tempos.",
-        "wellness": "A música de meditação é música executada para ajudar na prática da meditação. Pode ter um conteúdo religioso específico, mas também, mais recentemente, tem sido associada a compositores modernos que utilizam técnicas de meditação no seu processo de composição, ou que compõem esse tipo de música sem um grupo religioso específico como foco. O conceito inclui também a música executada como um ato de meditação."
     },
     "link_to_genre": "Ligação ao género",
     "link_to_genre_title": "Ligação ao género",
@@ -1616,7 +1235,8 @@
             "log_load_failed": "Falha ao carregar o registo para {0}.",
             "log_copied": "Registo de tarefas copiado para a área de transferência.",
             "log_copy_failed": "Falha ao copiar o registo de tarefas.",
-            "log_download_started": "Iniciada a transferência do registo de tarefas."
+            "log_download_started": "Iniciada a transferência do registo de tarefas.",
+            "log_download_failed": "Não há registo de tarefas disponível para descarregar."
         }
     },
     "background_task": {
@@ -1666,8 +1286,8 @@
         "create": "Criar lista de reprodução inteligente",
         "created": "Lista de reprodução inteligente criada!",
         "creating": "A criar…",
-        "dedup_hours": "Sem repetição dentro de",
-        "dedup_hours_tooltip": "Saltar faixas que foram reproduzidas recentemente. Defina uma janela em horas (1–168) durante a qual uma faixa não será repetida. Deixe em 0 para desativar.",
+        "dedup_hours": "Não repetir a mesma canção durante",
+        "dedup_hours_tooltip": "Saltar faixas que foram reproduzidas recentemente. Definir o número de horas durante as quais uma faixa não será repetida. 0 desativa o limite.",
         "desc": "Gerar uma lista de reprodução a partir da sua biblioteca com base em regras.",
         "edit_rules": "Editar regras",
         "off": "Desligado",
@@ -1675,10 +1295,71 @@
         "seed_artist_pick": "Escolher um artista",
         "seed_track_pick": "Escolher uma faixa",
         "track_count_hint": "Sem filtros, todas as faixas da biblioteca são incluídas. A adição de filtros reduz a seleção.",
-        "year_from": "A partir do ano",
-        "year_to": "Até ao ano"
+        "year_from": "De",
+        "year_to": "Até",
+        "dynamic_sample_heading": "Lista de reprodução dinâmica",
+        "dynamic_sample_note": "As músicas mudam a cada reprodução. Estes são exemplos do que se pode esperar.",
+        "add_filter": "Adicionar filtro",
+        "add_first_filter": "Adicionar um filtro",
+        "add_first_rule": "Adicionar uma regra",
+        "add_rule": "Adicionar regra",
+        "filter_inactive": "Inativo",
+        "hours_unit": "horas",
+        "edited": "“{name}” atualizado",
+        "empty_desc": "Nenhuma faixa corresponde às suas regras atuais. Desaperte um filtro ou escolha uma semente diferente para começar.",
+        "empty_title": "Ainda não há nada para reproduzir",
+        "favorites_yes": "Sim",
+        "field_album_is": "O álbum é",
+        "field_album_is_not": "O álbum não é",
+        "field_artist_is": "O artista é",
+        "field_artist_is_not": "O artista não é",
+        "field_favorite": "Favorito",
+        "field_genre_is": "O género é",
+        "field_genre_is_not": "O género não é",
+        "field_year": "Ano",
+        "rules_dialog_title": "Regras de listas de reprodução inteligentes",
+        "match": "Corresponder",
+        "match_all": "todos",
+        "match_any": "qualquer",
+        "match_following": "das seguintes regras",
+        "no_filters": "Ainda não existem filtros. Adicione um para limitar o resultado.",
+        "no_rules": "Ainda não há regras. Adicione uma para começar a combinar faixas.",
+        "no_rules_desc": "As faixas são selecionadas aleatoriamente de toda a sua biblioteca. Adicione uma regra para restringir a seleção.",
+        "no_rules_title": "Todas as faixas da biblioteca",
+        "op_between": "entre",
+        "picker_empty_no_match": "Nenhum {label} corresponde à sua pesquisa.",
+        "picker_empty_remote": "Digite para procurar um {label}.",
+        "picker_empty_search": "Escreva pelo menos 2 caracteres para encontrar um {label}.",
+        "op_is": "é",
+        "op_is_not": "não é",
+        "seed_count_hint": "Até 50 faixas do seu fornecedor de streaming, atualizadas a cada reprodução.",
+        "seed_filters_hint": "Os filtros são apenas os melhores esforços. Alguns fornecedores de música não fornecem os metadados necessários para aplicar filtros.",
+        "seed_heading": "Descubra músicas semelhantes às seguintes faixas, artistas, álbuns ou listas de reprodução",
+        "seed_no_provider": "Nenhum fornecedor de streaming suporta faixas semelhantes",
+        "type_library": "Da minha biblioteca",
+        "type_library_desc": "Crie-o a partir da música que já tem na sua biblioteca.",
+        "type_seed": "Descobrir",
+        "type_seed_desc": "Descubra música através dos seus fornecedores de streaming.",
+        "add_seed": "Adicionar sementes",
+        "seed_label": "Semente",
+        "seed_album_pick": "Escolher um álbum",
+        "seed_full": "Limite de sementes atingido",
+        "seed_playlist_pick": "Escolha uma playlist",
+        "name_label": "Nome",
+        "name_required": "Por favor, introduza um nome.",
+        "results_library": "Resultados da biblioteca",
+        "results_other": "Outros resultados",
+        "field_album_type_is": "O tipo de álbum é",
+        "field_album_type_is_not": "O tipo de álbum não é"
     },
     "explore": "Explorar",
     "shortcuts": "Atalhos",
-    "system": "Sistema"
+    "system": "Sistema",
+    "add_url_item_failed": "Falha ao adicionar um item",
+    "added_to_library": "“{0}” adicionado à biblioteca",
+    "browse_by_genre": "Procurar por género",
+    "top_picks_for_you": "As melhores escolhas para si",
+    "with_artists": "com {artists}",
+    "disc": "Disco {number}",
+    "album_type_label": "Tipo de álbum"
 }

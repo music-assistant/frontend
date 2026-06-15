@@ -388,9 +388,7 @@
                 (e: MouseEvent) => showGenreChipContextMenu(e, genre)
               "
             >
-              {{
-                getGenreDisplayName(genre.name, genre.translation_key, t, te)
-              }}
+              {{ genre.name }}
             </v-chip>
           </div>
         </div>
@@ -404,6 +402,7 @@
         <!-- eslint-disable vue/no-v-html -->
         <div
           class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+          style="max-height: 60vh; overflow-y: auto"
           v-html="fullDescription"
         ></div>
         <!-- eslint-enable vue/no-v-html -->
@@ -425,8 +424,6 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
-  getGenreDescription,
-  getGenreDisplayName,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -454,9 +451,9 @@ import { store } from "@/plugins/store";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
 import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
+import { useUserPreferences } from "@/composables/userPreferences";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
@@ -487,18 +484,10 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
-const { t, te } = useI18n();
+const { getPreference } = useUserPreferences();
 
 const headerTitle = computed(() => {
   if (!compProps.item) return "";
-  if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
-  }
   return compProps.item.name;
 });
 
@@ -533,6 +522,17 @@ watch(
   },
   { immediate: true },
 );
+
+// Watch shortcuts preference to update overflow menu when shortcuts change
+const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
+watch(shortcutsPreference, async () => {
+  if (compProps.item) {
+    menuItems.value = await getContextMenuItems(
+      [compProps.item],
+      compProps.item,
+    );
+  }
+});
 
 const showGenreChipContextMenu = (evt: MouseEvent, genre: Genre) => {
   if (
@@ -624,13 +624,6 @@ const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
-  } else if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDescription(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
   } else if ("artists" in compProps.item) {

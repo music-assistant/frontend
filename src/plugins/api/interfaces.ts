@@ -265,8 +265,13 @@ export enum PlaybackState {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  GROUP = "group", // A (dedicated) group player or playergroup.
   STEREO_PAIR = "stereo_pair",
+  GROUP = "group", // A (dedicated) group player or playergroup.
+  PROTOCOL = "protocol",
+  DISPLAY = "display",
+  VISUALIZER = "visualizer",
+  LIGHT = "light",
+  UNKNOWN = "unknown",
 }
 
 export enum PlayerOptionType {
@@ -548,14 +553,8 @@ export interface ConfigEntry {
   // requires_reload: indicates that a reload of the provider (or player playback)
   // is required when this setting is changed
   requires_reload?: boolean;
-  // translation_key: optional custom translation key for this entry
-  translation_key?: string;
-  // translation_params: optional parameters for the translation key
-  translation_params?: string[];
-  // category_translation_key: optional custom translation key for the category
-  category_translation_key?: string;
-  // category_translation_params: optional parameters for the category translation key
-  category_translation_params?: string[];
+  // category_label: localized category display name, resolved server-side
+  category_label?: string | null;
   // advanced: indicates this is an advanced setting (hidden by default)
   advanced?: boolean;
 
@@ -757,6 +756,7 @@ export interface BrowseFolder extends MediaItem {
 }
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
+  subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
 }
 
@@ -1290,6 +1290,7 @@ export interface SmartPlaylistRules {
   artist_ids: number[];
   album_ids: number[];
   favorites_only: boolean;
+  explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];
   seed_album_uris?: string[];
@@ -1311,6 +1312,8 @@ export interface SmartPlaylistRules {
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
   dedup_hours?: number;
+  album_types?: string[];
+  excluded_album_types?: string[];
 }
 
 export interface SmartPlaylistTrackStats {

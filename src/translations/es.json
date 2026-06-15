@@ -143,177 +143,9 @@
         "add_new_provider_button": "Añadir proveedor {0}",
         "add_group_player": "Añadir reproductor grupal",
         "group_members": "Miembros del grupo",
-        "log_level": {
-            "label": "Nivel de registro",
-            "description": "Establezca el nivel de detalle del registro para este proveedor",
-            "options": {
-                "global": "Global",
-                "info": "Información",
-                "warning": "Advertencia",
-                "error": "Error",
-                "debug": "Depurar"
-            }
-        },
-        "flow_mode": {
-            "label": "Habilitar el modo de cola continua",
-            "description": "Habilite el modo \"flujo\" donde todas las pistas de la cola se envían como una transmisión de audio continua.\nUtilice para reproductores que no admiten de forma nativa la reproducción sin interrupciones y\/o la transición gradual entre pistas o si el reproductor tiene problemas para hacer la transición entre pistas."
-        },
-        "auto_play": {
-            "label": "Reproducción automática (reanudación al encender)",
-            "description": "Cuando se enciende este reproductor, empieza a reproducir automáticamente (si hay elementos en la cola)."
-        },
-        "output_channels": {
-            "label": "Modo de canal de salida",
-            "description": "Puede configurar este reproductor para que reproduzca solo el canal izquierdo o derecho, por ejemplo para crear un par estéreo con 2 reproductores.",
-            "options": {
-                "stereo": "Estéreo (ambos canales)",
-                "left": "Solo canal izquierdo",
-                "right": "Solo canal derecho",
-                "mono": "Mono (ambos canales)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Activar la normalización del volumen (basado en EBU-R128)",
-            "description": "Habilite la normalización de volumen basada en el estándar EBU-R128 sin afectar el rango dinámico"
-        },
-        "volume_normalization_target": {
-            "label": "Nivel objetivo para la normalización del volumen",
-            "description": "Ajuste el volumen promedio (percibido) a este nivel objetivo, el valor predeterminado es -17 LUFS \n\n **ADVERTENCIA:** ¡Ajustar el nivel demasiado alto puede provocar recortes!"
-        },
-        "eq_bass": {
-            "label": "Ecualizador: graves",
-            "description": "Utiliza el ecualizador básico incorporado para ajustar el nivel de graves (tonos bajos) del audio."
-        },
-        "eq_mid": {
-            "label": "Ecualizador: medio",
-            "description": "Utiliza el ecualizador básico incorporado para ajustar el nivel medio del audio."
-        },
-        "eq_treble": {
-            "label": "Ecualizador: agudos",
-            "description": "Utilice el ecualizador básico incorporado para ajustar el nivel de agudos (tonos altos) del audio."
-        },
-        "crossfade": {
-            "label": "Habilitar fundido cruzado",
-            "description": "Habilite una transición de fundido cruzado entre pistas (cola)"
-        },
-        "crossfade_duration": {
-            "label": "Duración del fundido cruzado",
-            "description": "Duración en segundos del fundido cruzado entre pistas (si está habilitado)"
-        },
-        "hide_player": {
-            "label": "Ocultar este reproductor en la interfaz de usuario",
-            "description": "Oculte este reproductor en la interfaz de usuario. \n\nTenga en cuenta que aún se puede controlar y también aparecerá en cualquier grupo de sincronización al que pertenezca el reproductor."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementos que se seleccionan al reproducir un artista (de la biblioteca).",
-            "description": "Si quieres reproducir a un artista, ¿qué elementos deberían ponerse en cola?",
-            "options": {
-                "library_tracks": "Sólo pistas dentro de la biblioteca",
-                "library_album_tracks": "Todas las pistas de todos los álbumes en la biblioteca",
-                "all_tracks": "Todos los (mejores) pistas de (todos) los (proveedores)",
-                "all_album_tracks": "Todas las pistas de todos los álbumes de (todos) los (proveedores)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementos que se seleccionan al reproducir un álbum (de la biblioteca).",
-            "description": "Si quieres reproducir un álbum, ¿qué elementos hay que poner en cola?",
-            "options": {
-                "library_tracks": "Sólo pistas dentro de la biblioteca",
-                "all_tracks": "Todas las pistas del álbum en el proveedor"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Opción de puesta en cola por defecto para el\/los ítem(s) del Artista(s).",
-            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
-            "options": {
-                "play": "Reproducir ahora la(s) pista(s) del artista y mantener el\/los elemento(s) restante(s) en la cola.",
-                "replace": "Borrar la cola y reproducir la(s) pista(s) del artista",
-                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
-                "replace_next": "Vacía la cola y pon la(s) canción(es) del artista inmediatamente después del elemento que se está reproduciendo o en búfer.",
-                "add": "Agregue las pistas del artista al final de la cola de reproducción."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Opción por defecto, encolar elemento(s) del álbum",
-            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
-            "options": {
-                "play": "Reproduce la(s) pista(s) del álbum ahora y mantén el\/los elemento(s) restante(s) en la cola.",
-                "replace": "Borrar la cola y reproducir la(s) pista(s)",
-                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
-                "replace_next": "Borra la cola y pon la(s) canción(es) del álbum inmediatamente después del elemento que se está reproduciendo o en búfer.",
-                "add": "Añade la(s) pista(s) del álbum al final de la cola."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Opción de encolamiento predeterminada para elementos de pista.",
-            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
-            "options": {
-                "play": "Reproduce la(s) pista(s) ahora y conserva el\/los elemento(s) restante(s) en la cola.",
-                "replace": "Borrar la cola y reproducir la(s) pista(s)",
-                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
-                "replace_next": "Vacía la cola y reproduce la\/las pista(s) justo después del ítem actualmente reproducido\/bufferizado",
-                "add": "Añade la(s) pista(s) al final de la cola."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Opción de puesta en cola predeterminada para los elementos de la lista de reproducción.",
-            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
-            "options": {
-                "play": "Reproducir ahora la(s) pista(s) de la lista de reproducción y mantener el\/los elemento(s) restante(s) en la cola.",
-                "replace": "Borrar la cola y reproducir la(s) pista(s) de la lista de reproducción",
-                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
-                "replace_next": "Vacía la cola y pon la(s) canción(es) de la lista inmediatamente después del elemento que se está reproduciendo o en búfer.",
-                "add": "Agregue las pistas de la lista de reproducción al final de la cola"
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Opción de puesta en cola predeterminada para los elementos de radio.",
-            "description": "Defina la acción de puesta en cola predeterminada para este tipo de medio (si no ha especificado una acción).",
-            "options": {
-                "play": "Reproduzca la estación de radio ahora y conserve los elementos restantes de la cola.",
-                "replace": "Limpia la cola y reproduce la estación de radio",
-                "next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado.",
-                "replace_next": "Reproduce el\/los ítem(s) justo después del ítem actualmente reproducido\/bufferizado",
-                "add": "Agregue la(s) estación(es) de radio al final de la cola."
-            }
-        },
         "default": "predeterminado",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, necesita tener configurado el proveedor {1}, ¿quiere hacerlo ahora?",
-        "category": {
-            "advanced": "Ajustes avanzados",
-            "generic": "Ajustes",
-            "announcements": "Configuración de anuncios"
-        },
-        "tts_pre_announce": {
-            "label": "Preanunciar anuncio TTS",
-            "description": "Cuando se envíe un mensaje TTS (texto a voz) a la función Anunciar, anteponga al anuncio un breve sonido de preanuncio (pitido de campana)."
-        },
-        "announce_volume_strategy": {
-            "label": "Estrategia de volumen para anuncios",
-            "description": "Cuando se emite un anuncio a este reproductor, ¿cómo debe ajustarse temporalmente el volumen (utilizar en combinación con el valor de volumen indicado a continuación)?",
-            "options": {
-                "absolute": "Volumen absoluto",
-                "relative": "Aumento relativo del volumen",
-                "percentual": "Aumento del volumen en un porcentaje fijo",
-                "none": "No ajustar el Volumen"
-            }
-        },
-        "announce_volume": {
-            "label": "Volumen para Anuncios",
-            "description": "El nivel de volumen porcentual, relativo o absoluto, utilizado con la estrategia para los anuncios."
-        },
-        "announce_volume_min": {
-            "label": "Nivel Mínimo de Volumen para Anuncios",
-            "description": "El volumen (ajuste) de los anuncios no debe bajar de este nivel"
-        },
-        "announce_volume_max": {
-            "label": "Nivel Máximo de Volumen para Anuncios",
-            "description": "El volumen (ajuste) de los anuncios no debe superar este nivel."
-        },
-        "icon": {
-            "label": "Icono",
-            "description": "Icono Material Design para este reproductor. \n\nConsulte https:\/\/pictogrammers.com\/library\/mdi\/."
-        },
+        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -359,29 +191,6 @@
         "no_music_providers_detail": "Comienza tu experiencia con Music Assistant añadiendo tus proveedores de música.",
         "no_player_providers": "No hay Proveedores de Música configurados",
         "no_player_providers_detail": "Configure los proveedores de reproductores para seleccionar los dispositivos en los que Music Assistant puede emitir su música.",
-        "volume_normalization_radio": {
-            "label": "Método de normalización de volumen a utilizar para transmisiones de radio",
-            "description": "Establezca la estrategia de normalización de volumen preferida para los transmisiones de radio. \nDe forma predeterminada, Music Assistant recopila una medición de la sonoridad (media percibida) de la emisora de radio según la especificación EBU-R128 y, a continuación, ajusta la ganancia\/volumen general de la transmisión de acuerdo con dicha medición para que el rango dinámico del audio no se vea afectado. Si no existe (todavía) ninguna medición para una emisora de radio, Music Assistant utilizará un filtro de nivelación de sonoridad dinámico (pero menos preciso).\n\nSUGERENCIA: Las emisiones de radio suelen tener niveles de volumen variables, especialmente durante los anuncios y las cuñas publicitarias.\nPuede optar por aplicar una normalización dinámica del volumen a las transmisiones de radio, incluso si existe una medición (media) de la sonoridad de la emisora de radio. \n \n**Opciones\n\n - Desactivado - No aplicar la normalización de volumen en absoluto para los flujos de radio. \n  - Forzar dinámico - Aplicar la normalización de volumen dinámica en todo momento. \n  - Solo Medición (sin retroceso) - Aplicar corrección (global) de volumen\/ganancia basada en la medición almacenada. Si no tenemos ninguna medición, no aplicar normalización.\n  - Aplicar corrección de ganancia\/volumen (global) basada en la medición almacenada. Si no tenemos ninguna medición, se aplica una corrección de ganancia predefinida.\n - Corrección de ganancia fija - Aplicar siempre la corrección de volumen\/ganancia fija.\n  - Volver a dinámico - Elegir automáticamente la mejor opción: Aplicar la corrección (global) de volumen\/ganancia basada en la medición almacenada si tenemos alguna, permitir volver al modo dinámico si no hay ninguna medición disponible.",
-            "options": {
-                "disabled": "Deshabilitado",
-                "dynamic": "Forzar Dinamico",
-                "measurement_only": "Sólo medición (sin retroceso)",
-                "fallback_fixed_gain": "Volver a corrección de ganancia",
-                "fixed_gain": "Corrección de ganancia fija",
-                "fallback_dynamic": "Volver a dinámico"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Método de normalización de volumen para utilizar en pistas",
-            "options": {
-                "disabled": "Deshabilitado",
-                "dynamic": "Forzar dinamico",
-                "measurement_only": "Solo medición (sin retroceso)",
-                "fallback_fixed_gain": "Retroceder a ganancia fija",
-                "fixed_gain": "Corrección de ganancia fija",
-                "fallback_dynamic": "Retroceder a dinamico"
-            }
-        },
         "dsp": {
             "channels": {
                 "FL": "Izquierda"
@@ -519,16 +328,6 @@
     "shuffle_enable": "Activar reproducción aleatoria",
     "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
     "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'",
-    "recommendations": {
-        "recently_played": "Escuchado recientemente",
-        "recent_favorite_tracks": "Pistas favoritas recientes",
-        "recommended": "Recomendado",
-        "recently_added": "Añadido recientemente",
-        "episodes_recently_added": "Episodios añadidos recientemente",
-        "discover": "Descubrir",
-        "libraries": "Librerías",
-        "library": "Librería"
-    },
     "uri_copied": "URI copiado en el portapapeles",
     "uri_copy_failed": "Error al copiar URI al portapapeles",
     "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",

@@ -145,180 +145,10 @@
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
         "group_members": "Group members",
-        "log_level": {
-            "label": "Log level",
-            "description": "Set the log verbosity for this provider.",
-            "options": {
-                "global": "Global",
-                "info": "Info",
-                "warning": "Warning",
-                "error": "Error",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Enable queue flow mode",
-            "description": "Enable \"flow\" mode where all queue tracks are sent as a continuous audio stream. \nUse for players that do not natively support gapless and\/or crossfading or if the player has trouble transitioning between tracks."
-        },
-        "auto_play": {
-            "label": "Automatically play (resume on power on)",
-            "description": "When this player is turned ON, automatically start playing (if there are items in the queue)."
-        },
-        "output_channels": {
-            "label": "Output Channel Mode",
-            "description": "You can configure this player to play only the left or right channel, for example to create a stereo pair with 2 players.",
-            "options": {
-                "stereo": "Stereo (both channels)",
-                "left": "Left channel only",
-                "right": "Right channel only",
-                "mono": "Mono (both channels)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Enable volume normalisation (EBU-R128 based)",
-            "description": "Enable volume normalisation based on the EBU-R128 standard without affecting dynamic range"
-        },
-        "volume_normalization_target": {
-            "label": "Target level for volume normalization",
-            "description": "Adjust average (perceived) loudness to this target level, default is -17 LUFS \n\n **WARNING:** Setting the level too high may result in clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bass",
-            "description": "Use the built-in basic equalizer to adjust the bass (low tones) level of the audio."
-        },
-        "eq_mid": {
-            "label": "Equalizer: mid",
-            "description": "Use the built-in basic equalizer to adjust the mid level of audio."
-        },
-        "eq_treble": {
-            "label": "Equalizer: treble",
-            "description": "Use the built-in basic equalizer to adjust the treble (high tones) level of audio."
-        },
-        "crossfade": {
-            "label": "Enable crossfade",
-            "description": "Enable a crossfade transition between (queue) tracks."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade duration",
-            "description": "Duration in seconds of the crossfade between tracks (if enabled)"
-        },
-        "hide_player": {
-            "label": "Hide this player in the user interface",
-            "description": "Hide this player in the user interface. \n\nNote that it can still be controlled and it will also show up in any sync groups the player belongs to."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Items to select when you play an (in-library) artist.",
-            "description": "If you want to play an artist, what items should be enqueued?",
-            "options": {
-                "library_tracks": "Only in-library tracks",
-                "library_album_tracks": "All tracks from all albums in the library",
-                "all_tracks": "All (top) tracks from (all) provider(s)",
-                "all_album_tracks": "All tracks from all albums from (all) provider(s)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Items to select when you play an (in-library) album.",
-            "description": "If you want to play an album, what items should be enqueued?",
-            "options": {
-                "library_tracks": "Only in-library tracks",
-                "all_tracks": "All tracks for album on provider"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Default enqueue option for Artist item(s).",
-            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
-            "options": {
-                "play": "Play artist track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the artist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the artist track(s) right after the currently played\/buffered item.",
-                "add": "Add the artist track(s) at the end of the queue."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Default enqueue option for Album item(s).",
-            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
-            "options": {
-                "play": "Play album track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the album track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the album track(s) right after the currently played\/buffered item.",
-                "add": "Add the album track(s) at the end of the queue."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Default enqueue option for Track item(s).",
-            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
-            "options": {
-                "play": "Play track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the track(s).",
-                "next": "Play the track(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the track(s) right after the currently played\/buffered item.",
-                "add": "Add the track(s) at the end of the queue."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Default enqueue option for Playlist item(s).",
-            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
-            "options": {
-                "play": "Play playlist track(s) now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the playlist track(s)",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the playlist track(s) right after the currently played\/buffered item.",
-                "add": "Add the playlist track(s) at the end of the queue."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Default enqueue option for Radio item(s).",
-            "description": "Define the default enqueue action for this media type (if you did not specify an action).",
-            "options": {
-                "play": "Play radio station now and keep the remaining queue item(s).",
-                "replace": "Clear the queue and play the radio station",
-                "next": "Play the item(s) right after the currently played\/buffered item.",
-                "replace_next": "Clear the queue and play the radio station(s) right after the currently played\/buffered item.",
-                "add": "Add the radio station(s) at the end of the queue."
-            }
-        },
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
         "category": {
-            "advanced": "Advanced settings",
-            "generic": "Generic settings",
-            "announcements": "Announcements configuration",
-            "player_controls": "Player controls",
-            "sync_options": "Sync\/import options",
-            "builtin_playlists": "Builtin Playlist Settings",
             "web_player": "Web Player"
-        },
-        "tts_pre_announce": {
-            "label": "Pre-announce TTS announcements",
-            "description": "When a TTS (text-to-speech) message is sent to the Announce feature, prepend the announcement with a short pre-announcement sound (bell whistle)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volume strategy for Announcements",
-            "description": "When an announcement is being broadcast to this player, how should the volume be adjusted temporarily (use in combination with the volume value below)?",
-            "options": {
-                "absolute": "Absolute volume",
-                "relative": "Relative volume increase",
-                "percentual": "Volume increase by fixed percentage",
-                "none": "Do not adjust volume"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume for Announcements",
-            "description": "The perceptual, relative or absolute volume level, used with the strategy for announcements."
-        },
-        "announce_volume_min": {
-            "label": "Minimum Volume level for Announcements",
-            "description": "The volume (adjustment) of announcements should not go below this level."
-        },
-        "announce_volume_max": {
-            "label": "Maximum Volume level for Announcements",
-            "description": "The volume (adjustment) of announcements should not go above this level."
-        },
-        "icon": {
-            "label": "Icon",
-            "description": "Material design icon for this player. \n\nSee https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Theme",
@@ -367,38 +197,6 @@
         "no_music_providers_detail": "Start your Music Assistant experience by adding your Music providers.",
         "no_player_providers": "No Player Providers configured",
         "no_player_providers_detail": "Configure player providers to select devices where Music Assistant can output your music.",
-        "volume_normalization_radio": {
-            "label": "Volume normalisation method to use for radio streams",
-            "description": "Set the preferred volume normalisation strategy for radio streams. \nBy default, Music Assistant collects a measurement of the radio station's (average perceived) loudness according to the EBU-R128 specification and then adjusts the overall gain\/volume of the stream according to that measurement so the dynamic range of the audio is not affected. When no measurement (yet) exists for a radio station, Music Assistant will fallback to a dynamic (but less accurate) loudness levelling filter.\n\nTIP: Radio streams often have varying loudness levels, especially during announcements and commercials.\nYou can choose to enforce dynamic volume normalisation to radio streams, even if a (average) loudness measurement for the radio station exists. \n \n**Options:**\n\n - Disabled - do not apply volume normalisation at all for radio streams. \n  - Force dynamic - Enforce dynamic volume levelling at all times. \n  - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalisation.\n  - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction.\n - Fixed gain correction - Always apply the fixed volume\/gain correction.\n  - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
-            "options": {
-                "disabled": "Disabled",
-                "dynamic": "Force dynamic",
-                "measurement_only": "Measurement only (no fallback)",
-                "fallback_fixed_gain": "Fallback to gain correction",
-                "fixed_gain": "Fixed gain correction",
-                "fallback_dynamic": "Fallback to dynamic"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Volume normalisation method to use for tracks",
-            "description": "Set the preferred volume normalisation strategy for tracks\/songs.\nMusic Assistant uses a measurement of the tracks's (average perceived) loudness according to the EBU-R128 specification to adjust the overall gain\/volume of the stream without affecting the dynamic range of the audio.\nThese measurements are either provided by the streaming provider or in case of local files, can be contained in the ID3 tags (ReplayGain 2.0 \/ Opus R128).\nIf the measurement is not provided, Music Assistant will automatically perform a measurement when\/after the track is (first) played. When no measurement (yet) exists for a track, Music Assistant will by default fallback to a dynamic (but less accurate) loudness levelling filter. This ensures no big spikes\/falls in the volume level between tracks, even if there is no accurate measurement yet but the dynamic leveller can sometimes compress the dynamic range a bit, although that should not be audible in most cases.\n\n\n**Options:**\n\n - Disabled - do not apply volume normalisation at all for radio streams.\n - Force dynamic - Enforce dynamic volume levelling at all times. \n - Measurement only (no fallback) - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, do not apply normalisation. \n - Fallback to gain correction - Apply (overall) volume\/gain correction based on stored measurement. If we do not have any measurement, fallback to a predefined gain correction. \n - Fixed gain correction - Always apply the fixed volume\/gain correction. \n - Fallback to dynamic - Automatically pick the best option: Apply (overall) volume\/gain correction based on stored measurement if we have any, allow fallback to dynamic mode if no measurement is available.\n",
-            "options": {
-                "disabled": "Disabled",
-                "dynamic": "Force dynamic",
-                "measurement_only": "Measurement only (no fallback)",
-                "fallback_fixed_gain": "Fallback to gain correction",
-                "fixed_gain": "Fixed gain correction",
-                "fallback_dynamic": "Fallback to dynamic"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fixed\/fallback gain adjustment for tracks",
-            "description": "Fixed\/fallback gain correction to apply to a track audio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fixed\/fallback gain adjustment for radio",
-            "description": "Fixed\/fallback gain correction to apply to a radio stream (depends on the 'Volume normalisation method' setting).\nUse a positive value to increase the volume, a negative value to decrease the volume.\n\nThis setting is used when the volume normalisation method is set to 'Fixed gain correction' or 'Fallback to gain correction'."
-        },
         "dynamic_members": {
             "label": "Dynamic group members",
             "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
@@ -471,22 +269,6 @@
                 "name_placeholder": "My new preset",
                 "remove_confirm": "Are you sure you want to remove this DSP preset?"
             }
-        },
-        "power_control": {
-            "label": "Power control",
-            "description": "Define\/override the power control behaviour for this player. It allows you for example to redirect the power on\/off commands to a different appliance, or use a fake power control if your player does not support power on\/off commands but you like to have a dedicated state for a player not in use."
-        },
-        "volume_control": {
-            "label": "Volume control",
-            "description": "Define\/override the volume control behaviour for this player. It allows you for example to redirect the volume control commands to a different appliance, or disable it completely."
-        },
-        "mute_control": {
-            "label": "Mute control",
-            "description": "Define\/override the mute control behaviour for this player. It allows you for example to redirect the muting control commands to a different appliance, or disable it completely.\n\nWe offer a 'fake' mute control option, which will simulate muting by setting the volume to 0 and restoring the volume when unmuting."
-        },
-        "output_limiter": {
-            "label": "Enable limiting to prevent clipping",
-            "description": "Activates a limiter that prevents audio distortion by making loud peaks quieter."
         },
         "dsp_enabled": "DSP is enabled",
         "dsp_disabled": "DSP is disabled",
@@ -843,34 +625,14 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
-    "in_progress_items": "Continue listening...",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
     "music_assistant_source": "Music Assistant Queue",
     "music_assistant_library": "Music Assistant Library",
     "select_all_confirmation": "Select all items? This operation may take a moment to load all data.",
     "this_device": "This device",
-    "recommendations": {
-        "in_progress_items": "Continue listening...",
-        "recommended_new_tracks": "Recommended new tracks",
-        "recently_played": "Recently played",
-        "suggested_new_albums_for_you": "Suggested new albums for you",
-        "random_artists": "Random artists",
-        "random_albums": "Random albums",
-        "custom_mixes": "Custom mixes",
-        "your_listening_history": "Your listening history",
-        "popular_albums": "Popular albums",
-        "staff_picks_tracks": "Staff picks: tracks",
-        "staff_picks_albums": "Staff picks: albums",
-        "radio_stations_for_you": "Radio stations for you",
-        "producers__songwriters": "Producers & songwriters",
-        "new_releases_for_you": "New releases for you",
-        "recent_favorite_tracks": "Recently favourited tracks",
-        "favorite_playlists": "Favourite playlists",
-        "favorite_radio_stations": "Favourite radio stations"
-    },
     "homescreen_edit_enable": "Edit Home screen",
-    "homescreen_edit_disable": "Leave edit mode",
+    "homescreen_edit_disable": "Leave Home screen edit mode",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "radiobrowser_by_votes": "By votes",
     "radiobrowser_by_clicks": "By clicks",

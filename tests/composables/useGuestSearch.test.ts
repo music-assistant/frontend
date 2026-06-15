@@ -74,7 +74,7 @@ describe("useGuestSearch", () => {
   });
 
   it("performs search with track-only filter", async () => {
-    mockSearch.mockResolvedValueOnce({
+    mockSearch.mockResolvedValue({
       tracks: [{ type: "track", id: "t1" }],
       artists: [{ type: "artist", id: "a1" }],
     });

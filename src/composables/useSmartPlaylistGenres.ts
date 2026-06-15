@@ -18,11 +18,9 @@ export function useSmartPlaylistGenres() {
   );
 
   function genreName(id: number, fallback?: string): string {
-    return (
-      genres.value.find((g) => parseInt(g.item_id) === id)?.name ??
-      fallback ??
-      String(id)
-    );
+    const genre = genres.value.find((g) => parseInt(g.item_id) === id);
+    if (!genre) return fallback ?? String(id);
+    return genre.name;
   }
 
   return { genres, genreOptions, genreName };

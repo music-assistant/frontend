@@ -145,185 +145,12 @@
         "add_new_provider_button": "{0} szolgáltató hozzáadása",
         "add_group_player": "Lejátszó-csoport hozzáadása",
         "group_members": "Csoporttagok",
-        "log_level": {
-            "label": "Naplózási szint",
-            "description": "Állítsa be a naplózás részletességét ehhez a szolgáltatóhoz.",
-            "options": {
-                "global": "Globális",
-                "info": "Infó",
-                "warning": "Figyelmeztetés",
-                "error": "Hiba",
-                "debug": "Hibakeresés"
-            }
-        },
-        "flow_mode": {
-            "label": "Folyamatos lejátszási mód engedélyezése",
-            "description": "Engedélyezi a „folyamatos” módot, ahol a lejátszási sor összes zeneszáma egyetlen folyamatos hangfolyamként kerül elküldésre.\nHasználja olyan lejátszókhoz, amelyek natívan nem támogatják a szünetmentes és\/vagy az átmenetes lejátszást vagy ha a lejátszónak problémái vannak a zeneszámok közötti váltásban."
-        },
-        "auto_play": {
-            "label": "Automatikus lejátszás (folytatás bekapcsoláskor)",
-            "description": "Ha ez a lejátszó bekapcsol, automatikusan elindul a lejátszás (amennyiben vannak elemek a lejátszási sorban)."
-        },
-        "output_channels": {
-            "label": "Kimeneti csatorna mód",
-            "description": "Beállíthatja ezt a lejátszót úgy, hogy csak a bal vagy a jobb csatornát játssza le, például sztereó pár létrehozásához 2 lejátszóval.",
-            "options": {
-                "stereo": "Sztereó (mindkét csatorna)",
-                "left": "Csak a bal csatorna",
-                "right": "Csak a jobb csatorna",
-                "mono": "Monó (mindkét csatorna)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Hangerő-normalizálás engedélyezése (EBU-R128 alapú)",
-            "description": "Engedélyezi a hangerő-normalizálást az EBU-R128 szabvány alapján a dinamikatartomány befolyásolása nélkül"
-        },
-        "volume_normalization_target": {
-            "label": "Célszint a hangerő-normalizáláshoz",
-            "description": "Az átlagos (észlelt) hangerő beállítása erre a célszintre, az alapértelmezett érték -17 LUFS\n\n**FIGYELMEZTETÉS:** A szint túl magas beállítása torzítást okozhat!"
-        },
-        "eq_bass": {
-            "label": "Hangszínszabályzó: mély",
-            "description": "Használja a beépített alapvető hangszínszabályzót a mély hangok (alacsony tónusok) szintjének beállításához."
-        },
-        "eq_mid": {
-            "label": "Hangszínszabályzó: közép",
-            "description": "Használja a beépített alapvető hangszínszabályzót a közepes hangok szintjének beállításához."
-        },
-        "eq_treble": {
-            "label": "Hangszínszabályzó: magas",
-            "description": "Használja a beépített alapvető hangszínszabályzót a magas hangok (magas tónusok) szintjének beállításához."
-        },
-        "crossfade": {
-            "label": "Átfedés engedélyezése",
-            "description": "Átfedéses átmenet engedélyezése a (lejátszási sorban lévő) zeneszámok között."
-        },
-        "crossfade_duration": {
-            "label": "Átfedés időtartama",
-            "description": "A zeneszámok közötti átfedés időtartama másodpercben (ha engedélyezve van)"
-        },
-        "hide_player": {
-            "label": "Lejátszó elrejtése a felhasználói felületen",
-            "description": "A lejátszó elrejtése a felhasználói felületen.\n\nMegjegyzés: továbbra is vezérelhető marad, és megjelenik minden szinkronizálási csoportban, amelynek tagja."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Kiválasztandó elemek (könyvtárban lévő) előadó lejátszásakor.",
-            "description": "Ha egy előadót szeretne lejátszani, milyen elemeket helyezzünk a lejátszási sorba?",
-            "options": {
-                "library_tracks": "Csak könyvtárban lévő zeneszámok",
-                "library_album_tracks": "A könyvtárban található összes album összes zeneszáma",
-                "all_tracks": "Az összes (legjobb) zeneszám az (összes) szolgáltatótól",
-                "all_album_tracks": "Minden zeneszám az összes albumról, az (összes) szolgáltatótól"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "A (könyvtárbeli) album lejátszásakor kiválasztandó elemek.",
-            "description": "Ha egy albumot szeretne lejátszani, milyen elemeket helyezzünk a lejátszási sorba?",
-            "options": {
-                "library_tracks": "Csak a könyvtárbeli zeneszámok",
-                "all_tracks": "Az album összes zeneszáma a szolgáltatónál"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Az előadó elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "Az előadó zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és az előadó zeneszámainak lejátszása",
-                "next": "Az elem(ek) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és az előadó zeneszámainak lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "Az előadó zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Az album elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "Az album zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és az album zeneszámainak lejátszása",
-                "next": "Az elem(ek) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és az album zeneszámainak lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "Az album zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "A zeneszámok alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A zeneszám(ok) lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "A lejátszási sor törlése, és a zeneszám(ok) lejátszása.",
-                "next": "A zeneszám(ok) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "replace_next": "A lejátszási sor törlése, és a zeneszám(ok) lejátszása közvetlenül a jelenleg lejátszott\/pufferelt elem után.",
-                "add": "A zeneszám(ok) hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "A lejátszási lista elemeinek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez a médiatípushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A lejátszási lista zeneszámainak lejátszása most, és a lejátszási sor többi elemének megtartása.",
-                "replace": "Lejátszási sor törlése és a lejátszási lista zeneszámainak lejátszása",
-                "next": "Az elemek lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "replace_next": "Lejátszási sor törlése és a lejátszási lista zeneszámainak lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "add": "A lejátszási lista zeneszámainak hozzáadása a lejátszási sor végéhez."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "A rádiós elemek alapértelmezett sorbaállítási beállítása.",
-            "description": "Adja meg az alapértelmezett sorbaállítási műveletet ehhez az adathordozó-típushoz (ha nem adott meg műveletet).",
-            "options": {
-                "play": "A rádióállomás lejátszása most és a lejátszási sor többi elemének megtartása.",
-                "replace": "Lejátszási sor törlése és a rádióállomás lejátszása",
-                "next": "Az elemek lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "replace_next": "Lejátszási sor törlése és a rádióállomások lejátszása közvetlenül az aktuálisan lejátszott\/pufferelt elem után.",
-                "add": "A rádióállomások hozzáadása a lejátszási sor végéhez."
-            }
-        },
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnia kell a(z) {1} szolgáltatót. Szeretné ezt most megtenni?",
         "category": {
-            "advanced": "Speciális",
-            "generic": "Általános",
-            "announcements": "Bejelentések",
-            "player_controls": "Lejátszó vezérlők",
-            "sync_options": "Szinkronizálási\/importálási beállítások",
-            "builtin_playlists": "Beépített lejátszási listák",
             "web_player": "Webes lejátszó",
-            "playback": "Lejátszási sor lejátszása",
             "protocol_settings": "Kimeneti protokoll(ok)",
-            "protocol_output_settings": "{0} támogatás engedélyezése",
-            "dsp": "Digitális jelfeldolgozás (DSP)",
             "options": "Lejátszó beállítások"
-        },
-        "tts_pre_announce": {
-            "label": "TTS bejelentések előzetes jelzése",
-            "description": "Amikor egy TTS (szövegfelolvasó) üzenetet küld a Bejelentés funkcióra, a bejelentés elé egy rövid előzetes jelzőhang (csengő) kerül."
-        },
-        "announce_volume_strategy": {
-            "label": "Hangerőstratégia a bejelentésekhez",
-            "description": "Hogyan állítsa be ideiglenesen a hangerőt (az alábbi hangerőértékkel együtt használva), amikor bejelentés érkezik erre a lejátszóra?",
-            "options": {
-                "absolute": "Abszolút hangerő",
-                "relative": "Relatív hangerőnövekedés",
-                "percentual": "Hangerőnövekedés megadott százalékkal",
-                "none": "Ne állítsa a hangerőt"
-            }
-        },
-        "announce_volume": {
-            "label": "Bejelentések hangereje",
-            "description": "A bejelentési stratégiához használt százalékos, relatív vagy abszolút hangerőszint."
-        },
-        "announce_volume_min": {
-            "label": "Bejelentések minimális hangereje",
-            "description": "A bejelentések hangereje (beállítása) nem mehet ezen szint alá."
-        },
-        "announce_volume_max": {
-            "label": "Bejelentések maximális hangereje",
-            "description": "A bejelentések hangereje (beállítása) nem mehet ezen szint fölé."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Material Design ikon ehhez a lejátszóhoz.\n\nTovábbi információ: https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Téma",
@@ -374,38 +201,6 @@
         "no_music_providers_detail": "Kezdje a Music Assistant élményét zeneszolgáltatók hozzáadásával.",
         "no_player_providers": "Nincs lejátszószolgáltató konfigurálva",
         "no_player_providers_detail": "Konfigurálja a lejátszószolgáltatókat olyan eszközök kiválasztásához, amelyeken a Music Assistant le tudja játszani a zenét.",
-        "volume_normalization_radio": {
-            "label": "A rádióadásokhoz használandó hangerő-normalizálási módszer",
-            "description": "Állítsa be a rádióadások preferált hangerő-normalizálási stratégiáját.\nAlapértelmezés szerint a Music Assistant az EBU-R128 specifikációnak megfelelően összegyűjti a rádióállomás (átlagos érzékelt) hangerejének mérését, majd ennek a mérésnek megfelelően állítja be az adatfolyam teljes erősítését\/hangerejét, hogy a hang dinamikai tartományát ne befolyásolja. Ha egy rádióállomáshoz (még) nem létezik mérés, a Music Assistant egy dinamikus (de kevésbé pontos) hangossági kiegyenlítő-szűrőhöz tér vissza.\n\nTIPP: A rádióadások gyakran változó hangerőszintűek, különösen a bemondások és reklámok alatt.\nKiválaszthatja, hogy a rádióadásokra dinamikus hangerő-normalizálást kényszerítsen ki, még akkor is, ha létezik (átlagos) hangossági mérés a rádióállomáshoz.\n\n**Lehetőségek:**\n\n- Letiltva - egyáltalán nem alkalmazza a hangerő-normalizálást a rádióadásokra.\n- Dinamikus kényszerítése - a dinamikus hangerő-kiegyenlítés folyamatos kényszerítése.\n- Csak mérés (nincs tartalék) - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n- Tartalék erősítés-korrekció - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre meghatározott erősítés-korrekció alkalmazása.\n- Fix erősítés-korrekció - mindig a rögzített hangerő\/erősítés korrekciót alkalmazza.\n- Tartalék dinamikus - a legjobb lehetőség automatikus kiválasztása: tárolt mérésen alapuló (összesített) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
-            "options": {
-                "disabled": "Letiltva",
-                "dynamic": "Dinamikus kényszerítése",
-                "measurement_only": "Csak mérés (nincs tartalék)",
-                "fallback_fixed_gain": "Tartalék erősítés-korrekció",
-                "fixed_gain": "Fix erősítés-korrekció",
-                "fallback_dynamic": "Tartalék dinamikus"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "A zeneszámokhoz használandó hangerő-normalizálási módszer",
-            "description": "Állítsa be a zeneszámok\/dalok preferált hangerő-normalizálási stratégiáját.\nA Music Assistant a zeneszámok (átlagosan érzékelt) hangerejének mérését használja az EBU-R128 specifikáció szerint, hogy beállítsa az adatfolyam összesített erősítését\/hangerejét anélkül, hogy befolyásolná a hang dinamikus tartományát.\nEzeket a méréseket vagy a streaming szolgáltató biztosítja, vagy helyi fájlok esetén az ID3 címkék (ReplayGain 2.0 \/ Opus R128) tartalmazhatják.\nHa a mérés nincs megadva, a Music Assistant automatikusan elvégzi a mérést a zeneszám (első) lejátszásakor\/után. Ha egy zeneszámhoz (még) nem tartozik mérés, a Music Assistant alapértelmezés szerint visszavált egy dinamikus (de kevésbé pontos) hangerő-kiegyenlítő szűrőre. Ez biztosítja, hogy a zeneszámok közötti hangerőben ne legyenek nagy kiugrások\/esések, még akkor sem, ha még nincs pontos mérés. A dinamikus kiegyenlítő néha kissé összenyomhatja a dinamikatartományt, bár ennek a legtöbb esetben nem szabad hallhatónak lennie.\n\n**Lehetőségek:**\n\n- Letiltva - egyáltalán nem alkalmazza a hangerő-normalizálást a zeneszámokra.\n- Dinamikus kényszerítése - a dinamikus hangerő-kiegyenlítés folyamatos kényszerítése.\n- Csak mérés (nincs tartalék) - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérésünk, nem alkalmazzuk a normalizálást.\n- Tartalék erősítés-korrekció - (összesített) hangerő\/erősítés korrekció alkalmazása a tárolt mérés alapján. Ha nincs mérés, egy előre meghatározott erősítés-korrekció alkalmazása.\n- Fix erősítés-korrekció - mindig a rögzített hangerő\/erősítés korrekciót alkalmazza.\n- Tartalék dinamikus - a legjobb lehetőség automatikus kiválasztása: tárolt mérésen alapuló (összesített) hangerő\/erősítés korrekció alkalmazása, ha van ilyen, tartalék dinamikus üzemmód engedélyezése, ha nincs mérés.",
-            "options": {
-                "disabled": "Letiltva",
-                "dynamic": "Dinamikus kényszerítése",
-                "measurement_only": "Csak mérés (nincs tartalék)",
-                "fallback_fixed_gain": "Tartalék erősítés-korrekció",
-                "fixed_gain": "Fix erősítés-korrekció",
-                "fallback_dynamic": "Tartalék dinamikus"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fix\/tartalék erősítés-beállítás a zeneszámokhoz",
-            "description": "Rögzített\/tartalék erősítés-korrekció a zeneszám hangfolyamára (a \"Hangerő-normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheti a hangerőt, negatív értékkel csökkentheti azt.\n\nEz a beállítás akkor használható, ha a hangerő-normalizálási módszer a 'Fix erősítés-korrekció' vagy a 'Tartalék erősítés-korrekció' beállításra van állítva."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fix\/tartalék erősítés-beállítás a rádióhoz",
-            "description": "Rögzített\/tartalék erősítés-korrekció a rádióadásra (a \"Hangerő-normalizálási módszer\" beállításától függ).\nPozitív értékkel növelheti a hangerőt, negatív értékkel csökkentheti azt.\n\nEz a beállítás akkor használható, ha a hangerő-normalizálási módszer a 'Fix erősítés-korrekció' vagy a 'Tartalék erősítés-korrekció' beállításra van állítva."
-        },
         "dynamic_members": {
             "label": "Dinamikus csoporttagok",
             "description": "Lehetővé teszi a tagok számára, hogy (ideiglenesen) dinamikusan csatlakozzanak a csoporthoz vagy kilépjenek belőle, így a csoport nagyjából ugyanúgy viselkedik, mint a lejátszók kézi szinkronizálása. A fő különbség az, hogy a csoportos lejátszó megtartja a lejátszási sort."
@@ -478,22 +273,6 @@
                 "name_placeholder": "Új előbeállításom",
                 "remove_confirm": "Biztosan el szeretné távolítani ezt a DSP előbeállítást?"
             }
-        },
-        "power_control": {
-            "label": "Bekapcsolás vezérlés",
-            "description": "Meghatározza vagy felülbírálja a bekapcsolás vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a be\/ki kapcsolási parancsok átirányítását egy másik eszközre, vagy hamis bekapcsolás vezérlés használatát, ha a lejátszó nem támogatja a be\/ki kapcsolási parancsokat, de szeretne külön állapotot a nem használt lejátszóhoz."
-        },
-        "volume_control": {
-            "label": "Hangerő vezérlés",
-            "description": "Meghatározza vagy felülbírálja a hangerő vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a hangerő vezérlési parancsok átirányítását egy másik eszközre, vagy teljes letiltását."
-        },
-        "mute_control": {
-            "label": "Némítás vezérlés",
-            "description": "Meghatározza vagy felülbírálja a némítás vezérlés viselkedését ennél a lejátszónál.\nLehetővé teszi például a némítási vezérlési parancsok átirányítását egy másik eszközre, vagy teljes letiltását.\n\nKínálunk egy „hamis\" némítás vezérlési lehetőséget, amely a hangerő 0-ra állításával szimulálja a némítást, és visszaállítja a hangerőt a némítás megszüntetésekor."
-        },
-        "output_limiter": {
-            "label": "Korlátozás engedélyezése a torzítás megelőzésére",
-            "description": "Aktivál egy korlátozót, amely megelőzi a hangtorzítást a hangos csúcsok halkításával."
         },
         "dsp_enabled": "DSP engedélyezve",
         "dsp_disabled": "DSP letiltva",
@@ -939,44 +718,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Forrás kiválasztása",
-    "in_progress_items": "Hallgatás folytatása...",
     "play_replace_next": "Következő lejátszása (sor törlése)",
     "all_enqueue_options": "Összes sorba állítási lehetőség",
     "music_assistant_source": "Music Assistant lejátszási sor",
     "music_assistant_library": "Music Assistant könyvtár",
     "select_all_confirmation": "Kijelöli az összes elemet? Ez a művelet eltarthat egy ideig, amíg az összes adat betöltődik.",
     "this_device": "Ez az eszköz",
-    "recommendations": {
-        "in_progress_items": "Hallgatás folytatása...",
-        "recommended_new_tracks": "Ajánlott új számok",
-        "recently_played": "Nemrég hallgatott",
-        "suggested_new_albums_for_you": "Javasolt új albumok",
-        "random_artists": "Véletlenszerű előadók",
-        "random_albums": "Véletlenszerű albumok",
-        "custom_mixes": "Egyéni mixek",
-        "your_listening_history": "A hallgatási előzményei",
-        "popular_albums": "Népszerű albumok",
-        "staff_picks_tracks": "Szerkesztői válogatás: számok",
-        "staff_picks_albums": "Szerkesztői válogatás: albumok",
-        "radio_stations_for_you": "Rádióállomás ajánlatok",
-        "producers__songwriters": "Producerek és dalszerzők",
-        "new_releases_for_you": "Új megjelenés ajánlatok",
-        "recent_favorite_tracks": "Nemrég kedvencnek jelölt számok",
-        "favorite_playlists": "Kedvenc lejátszási listák",
-        "favorite_radio_stations": "Kedvenc rádióállomások",
-        "listen_again": "Újrahallgatás",
-        "in_progress_series": "Sorozat folytatása...",
-        "recommended": "Ajánlott",
-        "recently_added": "Nemrég hozzáadott",
-        "episodes_recently_added": "Nemrég hozzáadott epizódok",
-        "recent_series": "Legutóbbi sorozatok",
-        "newest_authors": "Legújabb szerzők",
-        "newest_episodes": "Legújabb epizódok",
-        "discover": "Felfedezés",
-        "libraries": "Könyvtárak",
-        "library": "Könyvtár",
-        "trending_podcasts": "Népszerű podcastok"
-    },
     "homescreen_edit_enable": "Kezdőképernyő szerkesztése",
     "homescreen_edit_disable": "Kezdőképernyő szerkesztő mód elhagyása",
     "lyrics_will_appear_soon": "A dalszöveg megjelenik, amikor a szám elindul...",
@@ -1196,8 +943,6 @@
     "collection": "Gyűjtemény",
     "collections": "Gyűjtemények",
     "narrators": "Narrrátorok",
-    "series_plural": "Sorozatok",
-    "series_singular": "Sorozat",
     "queue_move_end": "Áthelyezés a végére",
     "discover": "Felfedezés",
     "save_queue_as_playlist": "Lejátszási sor mentése lejátszólistaként",
@@ -1222,67 +967,6 @@
     "description": "Leírás",
     "genre": "Műfaj",
     "genres": "Műfajok",
-    "genre_names": {
-        "afrobeats": "Afrobeats (nyugat-afrikai urban\/pop zene)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Anime és videojáték zene",
-        "asian_music": "Ázsiai zene",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brazil zene",
-        "chanson": "Chanson",
-        "childrens_music": "Gyerekzene",
-        "christmas_music": "Karácsonyi zene",
-        "church_music": "Egyházi zene",
-        "classical": "Klasszikus",
-        "comedy": "Komédia",
-        "country": "Country",
-        "dance": "Dance",
-        "dark_ambient": "Dark ambient",
-        "dark_wave": "Dark wave",
-        "disco": "Disco",
-        "electronic": "Elektronikus",
-        "experimental": "Kísérleti",
-        "field_recording": "Terepi felvétel",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indiai klasszikus",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Fúvószenekar",
-        "metal": "Metal",
-        "middle_eastern_music": "Közel-keleti zene",
-        "musical": "Musical",
-        "new_age": "New age",
-        "poetry": "Költészet",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Pszichedelikus",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Előadó-dalszerző",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Hangeffektusok",
-        "soundtrack": "Filmzene",
-        "spoken_word": "Beszélt szó",
-        "swing": "Swing",
-        "tango": "Tangó",
-        "trap": "Trap",
-        "waltz": "Keringő",
-        "wellness": "Wellness"
-    },
     "link": "Összekapcsolás",
     "link_alias": "Álnév összekapcsolása",
     "link_alias_failed": "Az álnév összekapcsolása sikertelen",
@@ -1310,67 +994,6 @@
         "starting": "A szerver indul, néhány szolgáltató, lejátszó vagy funkció még nem lesz elérhető az indítás befejezéséig.",
         "stopping": "A szerver leáll...",
         "stopped": "A szerver leállt"
-    },
-    "genre_descriptions": {
-        "afrobeats": "Az Afrobeats, amelyet nem szabad összetéveszteni az Afrobeat vagy Afroswing műfajokkal, egy gyűjtőfogalom, amely a nyugat-afrikai népszerű zenét és a diaszpóra zenéjét írja le, amely kezdetben Nigériában, Ghánában és az Egyesült Királyságban fejlődött ki a 2000-es és 2010-es években. Az Afrobeats kevésbé egy konkrét stílus, inkább egy leíró kifejezés a Nigériából és Ghánából kiáramló hangok fúziójára. Olyan műfajok, mint a hiplife, jùjú zene, highlife, azonto zene és naija beats, többek között, mind az \"Afrobeats\" gyűjtőfogalom alá tartoznak.",
-        "ambient": "Az ambient zene egy olyan zenei műfaj, amely a hagyományos zenei struktúra vagy ritmus helyett a hangszínre és a hangulatvilágra helyezi a hangsúlyt. Az ambient zene gyakran \"békés\" hangzású és kompozíció, ütem és\/vagy strukturált dallam nélküli, hangzásbeli rétegeket használ, amelyek mind a passzív, mind az aktív hallgatást kielégíthetik, és a nyugalom vagy elmélkedés érzését ösztönzik. A műfaj \"atmoszférikus\", \"vizuális\" vagy \"diszkrét\" minőséget idéz fel. Természeti hangképek is előfordulhatnak, és egyes művek tartós vagy ismétlődő hangokat használnak, mint a drone zenében. A new-age zenével kapcsolatos elemekkel rendelkezve, olyan hangszerek, mint a zongora, a vonósok és a fuvola szintetizátor segítségével utánozhatók.",
-        "anime_and_video_game_music": "A videojáték-zene (VGM) a videojátékokat kísérő filmzene. A korai videojáték-zene egykor a korai hangchipek hangjaihoz volt kötve, mint például a programozható hanggenerátorok (PSG) vagy az FM szintézis chipek. Ezek a korlátozások vezettek a chiptune néven ismert zenei stílushoz, amely a korai videojátékok hangjává vált.",
-        "asian_music": "Az ázsiai zene számos zenei stílust, sokszínű kulturális és vallási hagyományt, valamint az ázsiai kontinensen keletkezett formákat foglal magában.",
-        "bluegrass": "A bluegrass zene az amerikai gyökérzenék egyik műfaja, amely az 1940-es években fejlődött ki az Egyesült Államok Appalache-hegységi régiójában. A műfaj nevét Bill Monroe és a Blue Grass Boys zenekarról kapta. A bluegrass gyökerei az afroamerikai műfajokban, mint a blues és a jazz, valamint észak-európai műfajokban, például az ír balladákban és táncdallamokban találhatók. Az országos zenétől eltérően hagyományosan kizárólag akusztikus hangszereken játsszák, mint a hegedű, mandolin, bendzsó, gitár és nagybőgő. További fejlesztését olyan zenészek végezték, akik Monroe-val játszottak, köztük Earl Scruggs öthúros bendzsóművész és Lester Flatt gitáros. Bill Monroe egyszer így jellemezte a bluegrass zenét: \"Ez a metodista, szentség és baptista hagyományok része. Ez blues és jazz, és magányos, magas hangzása van.\"",
-        "blues": "A blues egy zenei műfaj és zenei forma, amely az 1860-as évek környékén az afroamerikai közösségben alakult ki az Egyesült Államok déli államaiban. A blues magába olvasztotta az afroamerikai kultúra spirituáléit, munkadalait, mezei kiáltásokat, lelkesítő énekeket, kántálásokat és rímes egyszerű narratív balladákat. A blues forma mindenhol jelen van a jazzben, a rhythm and bluesban és a rock and rollban, és jellemzi a hívás-válasz mintázat, a blues skála és a specifikus akkordmenetek, amelyek közül a tizenkét taktus blues a leggyakoribb. A blues hangok, általában a tercek, kvintek vagy szeptimek mélyebb hangzása, szintén a hangzás lényegi részét képezik. A blues shuffle vagy a sétáló basszus megerősíti a transz-szerű ritmust és egy ismétlődő hatást hoz létre, amelyet groove-nak neveznek.",
-        "brazilian_music": "Brazília zenéje különböző regionális zenei stílusokat ölel fel, amelyeket európai, amerikai, afrikai és indián formák befolyásoltak. A brazil zene egyedi és eredeti stílusokat fejlesztett ki, mint a forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, gaucho zene, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha, valamint külföldi zenei stílusok brazil változatai, mint a rock, popzene, soul, hip-hop, disco, country zene, ambient, industrial és pszichedelikus zene, rap, klasszikus zene, fado és gospel.",
-        "chanson": "A chanson általában bármilyen szövegközpontú francia dal. A kifejezést az angolban leggyakrabban vagy a késő középkori és reneszánsz zene világi polifón francia dalaira, vagy a francia popzene egy sajátos stílusára használják, amely az 1950-es és 1960-as években jelent meg. A műfaj gyökerei a trubadúrok és trouvère-k monofón dalaiban találhatók, bár az egyetlen polifón előzmények Adam de la Halle 16 műve és Jehan de Lescurel egy darabja voltak. Csak az ars nova zeneszerző Guillaume de Machaut-nál kezdett el bármely zeneszerző jelentős számú polifón chansont írni.",
-        "childrens_music": "A gyerekzene olyan zene, amelyet gyerekek számára komponálnak és adnak elő. Európai hatású környezetben ez általában dalokat jelent, amelyeket kifejezetten fiatalkorú közönség számára írnak. A zeneszerzők általában felnőttek.",
-        "christmas_music": "A karácsonyi zene különböző zenei műfajokat foglal magában, amelyeket rendszeresen játszanak vagy hallgatnak a karácsonyi időszakban. A karácsonyhoz kapcsolódó zene lehet tisztán hangszeres, vagy kolendák esetében dalszöveget is tartalmazhat Jézus Krisztus születéséről, olyan hagyományokról, mint az ajándékozás és a mulatozás, kulturális alakokról, mint a Mikulás, vagy más témákról. Sok dal egyszerűen téli vagy évszakos témájú, vagy más okokból került be a repertoárba.",
-        "church_music": "Az egyházi zene a keresztény zene egy műfaja, amelyet templomban való előadásra írtak, vagy bármilyen egyházi liturgia zenei megformálása, illetve szent természetű gondolatokat kifejező szövegekre írt zene, mint például a himnuszok.",
-        "classical": "A művészeti zene olyan zene, amelyet magas esztétikai értékűnek tartanak. Jellemzően fejlett szerkezeti és elméleti megfontolásokat vagy írásos zenei hagyományt feltételez. Ebben az összefüggésben gyakran használják a \"komoly\" vagy \"műzene\" kifejezéseket, hogy ellentétet képezzenek a hétköznapi, mindennapi zenével. Számos kultúrának van művészeti zenei hagyománya; a nyugati világban ez a kifejezés általában a nyugati klasszikus zenére utal.",
-        "comedy": "A komikus zene vagy zenei komédia egy olyan zenei műfaj, amely természeténél fogva komikus. Története az első századig vezethető vissza az ókori Görögországban és Rómában, majd a középkoron, a klasszikus és romantikus korszakokon át a 20. századig követhető. A zenei színház különböző komikus formái, beleértve a \"zenés játékot\", \"zenei komédiát\", \"operettet\" és \"könnyű operát\", a 17. század végén Olaszországban kifejlesztett komikus operákból fejlődtek ki. A 20. században a komédia iránt érdeklődő népszerű zenei előadók közé tartozik Allan Sherman, Frank Zappa, Tiny Tim, Barenaked Ladies, Randy Newman és \"Weird Al\" Yankovic. A 21. századi előadók közé tartozik a Tenacious D, Flight of the Conchords, The Lonely Island, Ninja Sex Party és The Axis of Awesome.",
-        "country": "A country zene, más néven country and western vagy egyszerűen country, egy zenei műfaj, amely balladáiról és tánc dallamairól ismert, hagyományos szövegek és harmóniák jellemzik, amelyeket bendzsók, mandolinok, hegedűk, szájharmonikák és különféle gitártípusok kísérnek; akár akusztikus, elektromos, acél vagy rezonátor gitárok. Egykor hillbilly zenének nevezték, a country zene kifejezést az 1940-es években népszerűsítették, hogy megfelelő elnevezést adjon neki.",
-        "dance": "A tánczenének nevezzük azt a zenét, amelyet kifejezetten táncolás megkönnyítésére vagy kísérésére komponáltak. Lehet egy teljes zenemű vagy egy nagyobb zenei kompozíció része. Előadás szempontjából a főbb kategóriák az élő tánczene és a felvett tánczene. Bár már az ókorban is léteznek bizonyítékok a tánc és a zene kombinációjára, a legkorábbi nyugati tánczene, amelyet még bizonyos mértékű pontossággal reprodukálni tudunk, a hagyományos táncok. A barokk korszakban a főbb táncstílusok a nemesi udvari táncok voltak. A klasszikus zenei korszakban a menüettet gyakran használták harmadik tételként, bár ebben az összefüggésben már nem kísért táncot. A keringő szintén később jelent meg a klasszikus korszakban. Mindkettő a romantikus zenei korszak része maradt, amely különféle más nemzetiségi táncformák felemelkedését is látta, mint a barcarolle, mazurka, ecossaise, ballada és polonéz.",
-        "dark_ambient": "A dark ambient a posztindusztriális zene egyik alműfaja, amely eredetileg az 1980-as évek közepén alakult ki. Elsődlegesen az ambient zenéből merít ihletést, és baljóslatú, sötét zúgásokkal, disszonáns felhangokkal, valamint komor, monumentális vagy katakomba-szerű hangulattal jellemezhető. Bár főként elektronikus műfaj, az előadók gyakran használnak hagyományos hangszerek mintáit és alkalmaznak félakusztikus felvételi eljárásokat.",
-        "dark_wave": "A dark wave egy zenei műfaj, amely az 1970-es évek végének new wave és post-punk mozgalmából nőtt ki. A dark wave kompozíciók nagyrészt moll hangnemű tonalitáson és introspektív szövegeken alapulnak, és sötétnek, romantikusnak és sivárnak érzékelik őket, szomorúság árnyalatával. Jellemző vonásai közé tartozik a húros hangszerek, mint az elektromos és akusztikus gitár, hegedű és zongora használata, valamint az elektronikus hangszerek, mint a szintetizátor, sampler és dobgép. A new wave-hez hasonlóan a dark wave nem \"egységes műfaj, hanem inkább gyűjtőfogalom\", amely számos zenei stílust ölel fel, beleértve a cold wave-et, ethereal wave-et, gothic rockot, neoklasszikus dark wave-et és neofolkot.",
-        "disco": "A disco egy tánczene műfaj és szubkultúra, amely az 1960-as évek végén alakult ki az Egyesült Államok városi éjszakai életéből, különösen az afroamerikai, olaszamerikai, latino és queer közösségekben. Hangzásvilágát a négynegyedes ritmus, szinkópás basszusgitár vonalak, vonós szekciók, rézfúvósok és kürtök, elektromos zongorák, szintetizátorok és elektromos ritmusgitárok jellemzik.",
-        "electronic": "Az elektronikus zene általánosságban olyan zenei műfajok összessége, amelyek elektronikus hangszereket, áramköri alapú zenei technológiát és szoftvereket, vagy általános célú elektronikai eszközöket használnak a létrehozás során. Magába foglalja mind az elektronikus, mind az elektromechanikus eszközökkel készített zenét. A tisztán elektronikus hangszerek teljes mértékben áramköri alapú hangképzésre támaszkodnak, például olyan eszközök használatával, mint az elektronikus oszcillátor, theremin vagy szintetizátor: ebben az esetben nem szükséges előzetesen mechanikus úton akusztikus hullámokat generálni, majd azokat elektromos jelekké alakítani. Másrészt az elektromechanikus hangszerek olyan mechanikus alkatrészekkel rendelkeznek, mint húrok vagy kalapácsok, amelyek hangot generálnak, valamint olyan elektromos elemekkel, mint mágneses hangszedők, teljesítményerősítők és hangszórók, amelyek az akusztikus hullámokat elektromos jelekké alakítják, feldolgozzák, majd vissza hangfokká konvertálják. Ilyen elektromechanikus eszközök a telharmonium, Hammond orgona, elektromos zongora és elektromos gitár.",
-        "experimental": "Az experimentális zene általános megnevezése minden olyan zenének vagy zenei műfajnak, amely feszegeti a meglévő határokat és műfaji definíciókat. Az experimentális zeneszerzői gyakorlatot általánosan olyan felfedező érzékenység határozza meg, amely radikálisan szembeszáll és megkérdőjelezi a zenében megszokott zeneszerzői, előadói és esztétikai konvenciókat. Az experimentális zene elemei közé tartozik a határozatlanság, amelyben a zeneszerző a véletlenszerűség vagy kiszámíthatatlanság elemeit vezeti be a kompozíció vagy annak előadása tekintetében. A művészek eltérő stílusok hibridjét alkalmazhatják, vagy szokatlan és egyedi elemeket építhetnek be.",
-        "field_recording": "A terephangfelvétel stúdión kívül készített hangfelvételek előállítása, és a kifejezés mind a természetes, mind az ember által létrehozott hangok rögzítésére vonatkozik. Magában foglalhatja elektromágneses mezők vagy rezgések rögzítését is különböző mikrofonokkal, mint például passzív mágneses antenna elektromágneses felvételekhez vagy kontakt mikrofonok, vagy víz alatti terephangfelvételek hidrofonokkal, hogy rögzítsék a bálnák vagy más tengeri élőlények hangjait és\/vagy mozgásait. Ezeket a felvételeket gyakran nagyon hasznosnak tartják a hangmérnökök és foley művészek számára.",
-        "folk": "A folk zene egy zenei műfaj, amely magában foglalja a hagyományos népzenét és azt a kortárs műfajt, amely az előbbiből fejlődött ki a 20. századi népzene-újjászületés során. A folk zene egyes típusai világzenének is nevezhetők. A hagyományos népzenét többféleképpen határozták meg: szájról szájra hagyományozott zeneként, ismeretlen szerzőjű zeneként, hagyományos hangszereken játszott zeneként, kulturális vagy nemzeti identitást tükröző zeneként, generációról generációra változó zeneként, egy nép folklórjához kapcsolódó zeneként, vagy hosszú időn keresztül szokás szerint előadott zeneként. Szembeállították a kereskedelmi és klasszikus stílusokkal. A kifejezés a 19. században keletkezett, de a folk zene ezen túlmutat.",
-        "funk": "A funk egy zenei műfaj, amely az afroamerikai közösségekben alakult ki az 1960-as évek közepén, amikor a zenészek ritmikus, táncolható új zenei formát hoztak létre különböző, a 20. század közepén az afroamerikaiak körében népszerű zenei műfajok keverékéből. A dallam és az akkordmenetek helyett egy erős ritmikus groove-ra összpontosít, amelyet egy elektromos basszusgitáros által játszott basszusvonal és egy ütőhangszeres által játszott dobszólam alkot, gyakran lassabb tempóban, mint más népszerű zene. A funk jellemzően összetett ütőhangszeres groove-ból áll, ahol a ritmus hangszerek egymásba fonódó groove-okat játszanak, amelyek \"hipnotikus\" és \"táncolható\" érzést keltenek. A korai funk, különösen James Brown, ötvözte a jazzt és a bluest, és hozzáadott egy szinkópált dobgroove-ot.",
-        "gangsta_rap": "A gangsta vagy gangster rap, amelyet kezdetben reality rapnek hívtak, a hip-hop egy alműfaja, amely a városi bandák és utcai üzletemberek kultúráját, értékeit és tapasztalatait közvetíti, gyakran tárgyalva a világ kellemetlen valóságait városi szemszögből. Az 1980-as évek végén megjelenő gangsta rap úttörői közé tartozik Schoolly D és Ice-T, később olyan előadókkal bővült, mint az N.W.A. 1992-ben Dr. Dre producer és rapper, Snoop Dogg rapper és G-funk hangjuk révén a gangster rap mainstream népszerűségre tett szert.",
-        "gospel": "A gospel zene a keresztény zene hagyományos műfaja és a keresztény média sarokköve, amelyet meghatározó ének és a keresztény tanításokat és értékeket tükröző szövegek jellemeznek. A gospel zene létrehozása, előadása, jelentősége, sőt még a definíciója is kultúra és társadalmi kontextus szerint változik. A gospel zenét számos célból komponálják és adják elő, beleértve az esztétikai élvezetet, valamint vallási vagy szertartási célokat, és mint szórakoztatóipari terméket a piacon. A gospel zene eredete a 17. század elejéig vezethető vissza.",
-        "hip_hop": "A hip-hop egy olyan népszerű zenei műfaj, amely az 1970-es évek elején alakult ki a New York-i afroamerikai és karibi bevándorló közösségek kapcsolódó szubkultúrájával együtt. A zenei stílust számos technika szintézise jellemzi, de a rap olyan gyakori, hogy a műfaj meghatározó jellemzőjévé vált. A műfaj további kulcsfontosságú jellemzői a lemezlovas (DJ), a turntablizmus, a scratching, a beatbox és az instrumentális számok. A kulturális csere mindig központi szerepet játszott a hip-hop műfajban; egyidejűleg kölcsönöz a társadalmi környezetéből, miközben kommentálja azt.",
-        "indian_classical": "Az indiai klasszikus zene az indiai szubkontinens klasszikus zenéje. Általában olyan kifejezésekkel írják le, mint a Shastriya Sangeet és a Marg Sangeet. Két fő hagyománya van: az észak-indiai klasszikus zene, amelyet hindustáninak neveznek, és a dél-indiai kifejezés, amelyet karnatikusnak hívnak. A hindustáni zene az improvizációt és a raga minden aspektusának felfedezését hangsúlyozza, míg a karnatikus előadások általában rövid kompozíciókon alapulnak. A két rendszer azonban továbbra is több közös vonást mutat, mint eltérést. Egy másik egyedülálló klasszikus zenei hagyomány India keleti részéből az odissi zene, amely az elmúlt kétezer évben fejlődött ki.",
-        "industrial": "Az industrial zene az kísérleti zene egy alműfaja, amelyet a posztindusztriális társadalom inspirált, kezdetben az avantgárd és a korai elektronikus zenei műfajok, mint a musique concrète, a szalagzene, a zajzene és a hangkollázs hatása alatt állt. A kifejezést 1976-ban Monte Cazazza alkotta meg, és a Throbbing Gristle vette át az Industrial Records megalapításával. Más korai industrial zenészek közé tartozik a NON és a Cabaret Voltaire. Az 1970-es évek végére további előadók jelentek meg, mint a Clock DVA, Nocturnal Emissions, Einstürzende Neubauten, SPK, Nurse with Wound és Z'EV, valamint a Whitehouse, akik megalkották a \"power electronics\" alműfajt.",
-        "jazz": "A jazz egy zenei műfaj, amely a 19. század végén és a 20. század elején alakult ki az afroamerikai közösségekben New Orleans-ban, Louisiana államban. Gyökerei a blues-ban, a ragtime-ban, az európai harmóniatan-ban, az afrikai ritmikus rituálékban, a spirituálékban, himnuszokban, indulókban, vaudeville dalokban és tánczenében keresendők. Az 1920-as évek Jazz Age korszaka óta a hagyományos és populáris zene egyik jelentős kifejezési formajaként ismerik el. A jazzt a swing és blue note-ok, összetett akkordok, kérdés-felelet éneklés, poliritmika és improvizáció jellemzi.",
-        "klezmer": "A klezmer a kelet-közép-európai askenázi zsidók hangszeres zenei hagyománya. A hagyomány lényeges elemei közé tartoznak a táncdallamok, rituális melódiák és a hallgatásra szánt virtuóz improvizációk; ezeket esküvőkön és más társadalmi eseményeken játszották. A zenei műfaj számos más zenei műfaj elemeit ötvözte, beleértve az oszmán zenét, a barokk zenét, a német és szláv néptáncokat, valamint a vallásos zsidó zenét. Ahogy a zene megérkezett az Egyesült Államokba, elvesztette hagyományos rituális elemeinek egy részét, és átvette az amerikai big band és populáris zene elemeit. Az európai születésű klezmerek közül, akik az 1910-es és 1920-as években népszerűsítették a műfajt az Egyesült Államokban, Dave Tarras és Naftule Brandwein voltak; őket amerikai születésű zenészek követték, mint Max Epstein, Sid Beckerman és Ray Musiker.",
-        "latin": "A latin zene egy gyűjtőkifejezés, amelyet a zeneipar használ az Ibero-Amerikából származó különböző zenei stílusokra, amely magában foglalja Latin-Amerikát, Spanyolországot, Portugáliát, valamint Kanadában és az Egyesült Államokban élő latino lakosságot, továbbá a spanyol vagy portugál nyelven énekelt zenéket. Emellett magában foglalhatja más olyan területek zenéjét is, ahol spanyol vagy portugál nyelvű zenét készítenek.",
-        "marching_band": "A felvonuló zenekar egy előadás-alapú, vizuális-zenei műfaj, amelyben zenészek réz-, fa- és ütőhangszereken játszanak, miközben szinkronizált, koreografált formációkban mozognak, általában percenként 120-160+ ütemben. A zenei előadást atletikus, nagy sebességű menetelést ötvözi, gyakran pop, rock és klasszikus zenét építve be a hagyományos katonai stílusú indulók mellé.",
-        "metal": "a metal zeneágak gyűjtőkategóriája, amely a heavy metal zenéből eredeztethető, anélkül, hogy szükségszerűen annak alműfaja lenne",
-        "middle_eastern_music": "A régió különböző nemzeteinek zenéje magában foglalja a Közel-Kelet arab nyelvű országainak zenéjét, a hagyományos perzsa rituális zenét, Izrael és a diaszpóra zsidó zenéjét, a kurd zenét és az örmény zenét. Az azeri zene, a ciprusi zene változatos hagyományai, Törökország török zenéje, a hagyományos asszír zene, az egyiptomi kopt rituális zene, valamint az egyiptomi zene egyéb műfajai általánosságban. Széles körben elfogadott, hogy egyes közel-keleti zenei stílusok hatással voltak Közép-Ázsiára, valamint a Balkánra, Dél-Olaszországra és Spanyolországra.",
-        "musical": "A musical színház olyan színházi előadási forma, amely dalokat, beszélt párbeszédet, színészetet és táncot ötvöz. A musical történetét és érzelmi tartalmát – a humort, a szomorúságot, a szerelmet, a haragot – szavak, zene, mozgás és a szórakoztatás technikai elemei közvetítik egy egységes egészként. Bár a musical színház átfedésben van más színházi formákkal, mint az opera és a tánc, megkülönböztethető azzal, hogy egyenlő fontosságot tulajdonít a zenének a párbeszédhez, mozgáshoz és egyéb elemekhez képest. A 20. század eleje óta a musical színházi színpadi műveket általában egyszerűen musicalnek nevezik.",
-        "new_age": "A new age egy zenei műfaj, amely művészi inspirációt, relaxációt és optimizmust kíván teremteni. A hallgatók jógához, masszázshoz, meditációhoz és olvasáshoz használják stresszkezelési módszerként, hogy extázis állapotot érjenek el transz helyett, vagy békés légkört teremtsenek otthonaikban vagy más környezetben. Néha a környezetvédelemmel és a New Age spiritualitással társítják; azonban a legtöbb előadója semmi köze nincs a \"New Age spiritualitáshoz\", sőt néhányan még el is utasítják ezt a kifejezést.",
-        "poetry": "A költészet mint zenei műfaj az elmondott vagy elszavalt verseket zenei kísérettel ötvözi, hibrid formát hozva létre, amely az érzelmi kifejezésre, történetmesélésre és ritmusra összpontosít. Gyakran akusztikus hangszerekkel (zongora, gitár) vagy kísérleti hangképekkel dolgozik, ez a műfaj elmossa a határt az irodalom és a dal között, kiemelve a kimondott szavakban rejlő természetes dallamot és ritmust.",
-        "polka": "A polka egy táncstílus és tánczenei műfaj 2\/4-es ütemben, amely a 19. századi Csehországban, a mai Cseh Köztársaság területén keletkezett. Bár általában a cseh és közép-európai kultúrához kapcsolják, a polka népszerű Európa-szerte és Amerikában is.",
-        "pop": "A pop zene, vagy egyszerűen pop, a populáris zene egyik műfaja, amely modern formájában az 1950-es évek közepén alakult ki az Egyesült Államokban és az Egyesült Királyságban. Az 1950-es és 1960-as években a pop zene magában foglalta a rock and rollt és az általa befolyásolt fiataloknak szóló stílusokat. A rock és pop zene nagyjából szinonim maradt az 1960-as évek végéig, majd a pop olyan zenével kezdett azonosulni, amely kereskedelmibb, múlandóbb és hozzáférhetőbb volt.",
-        "psychedelic": "A pszichedelikus zene a népszerű zenei stílusok és műfajok széles köre, amelyet az 1960-as évek pszichedéliája befolyásolt. Ez egy olyan szubkultúra volt, amelynek tagjai pszichedelikus szereket használtak, mint a DMT, LSD, meszkalin és pszilocibin gombák, hogy szinesztéziát és megváltozott tudatállapotokat éljenek át. A pszichedelikus zene célja lehet ezen szerek használatának élményének fokozása is, és jelentős hatással van a pszichedelikus terápiára is.",
-        "punk": "zenei műfajok gyűjtőkategóriája, amely a punk szubkultúrához kapcsolódik, a punk rock zenei színtérből származik, anélkül hogy feltétlenül annak alműfaja lenne",
-        "r_b": "A rhythm and blues, gyakran R&B vagy R'n'B rövidítéssel, egy népszerű zenei műfaj, amely az afroamerikai közösségekben alakult ki az 1940-es években. A kifejezést eredetileg a lemezkiadók használták az elsősorban afroamerikaiaknak szánt felvételek leírására, abban az időben, amikor a \"ringató, jazz alapú zene... [nehéz, makacs ütemmel]\" kezdett népszerűbbé válni.\nAz 1950-es és 1970-es évek kereskedelmi rhythm and blues zenéjében a zenekarok általában zongorából, egy vagy két gitárból, basszusgitárból, dobból, egy vagy több szaxofonból, és néha háttérénekesekből álltak. Az R&B szövegeinek témái gyakran az afroamerikai történelmet és a fájdalom tapasztalatát, valamint a szabadság és öröm keresését foglalják magukban, továbbá a társadalmi rasszizmus, elnyomás, kapcsolatok, gazdasági helyzet és törekvések terén elért sikereket és kudarcokat.",
-        "ragtime": "A ragtime, más néven rag-time vagy rag time, egy zenei stílus, amely szinkopált vagy \"szakgatott\" ritmusáról ismert. Az afroamerikai közösségekben alakult ki a 19. század végén, és az 1890-es évektől az 1910-es évekig vált népszerűvé olyan zeneszerzők révén, mint James Scott, Joseph Lamb, és különösen Scott Joplin. Joplint a \"Ragtime királyaként\" ismerték, és olyan kompozícióival szerzett hírnevet, mint a \"Maple Leaf Rag\" és \"The Entertainer\".",
-        "rai": "A raï, néha rai írással, egy algériai népzenei műfaj, amely az 1920-as évekre nyúlik vissza. A raï énekeseit cheb (شاب) vagy cheba (شابة) néven nevezik, ami 'fiatal'-t jelent, ellentétben a sheikh, azaz 'öreg' elnevezéssel, amelyet a Chaabi énekesekre használnak. A hagyomány Oran városában alakult ki, elsősorban a szegények körében. Hagyományosan férfiak énekelték, de a 20. század végére gyakoribbá váltak a női énekesek is. A szövegek társadalmi kérdésekkel foglalkoznak, mint például betegségek és az európai gyarmatok rendőri tevékenysége, amelyek hatással voltak a bennszülött népességre.",
-        "reggae": "A reggae egy zenei műfaj, amely Jamaicában alakult ki az 1960-as évek végén. A kifejezés Jamaica és diaszpórája modern populáris zenéjére is utal. Toots and the Maytals 1968-as \"Do the Reggay\" című dala volt az első népszerű szám, amely használta a reggae szót, ezzel gyakorlatilag elnevezte a műfajt és bemutatta a világnak.",
-        "reggaeton": "A reggaeton egy népszerű és elektronikus zenei stílus, amely Panama területén alakult ki az 1980-as évek végén. Az 1990-es évek eleje óta Puerto Rico-i előadók népszerűsítették és uralják ezt a műfajt.",
-        "rock": "A rock zene egy népszerű zenei műfaj, amely az Egyesült Államokban \"rock and roll\" néven alakult ki az 1940-es évek végén és az 1950-es évek elején, majd az 1960-as évek közepétől számos stílusra fejlődött, elsősorban az Egyesült Államokban és az Egyesült Királyságban. Gyökerei a rock and rollban találhatók, amely stílus az afroamerikai zenei műfajokból, a bluesból és a rhythm and bluesból merített, valamint a country zenéből. A rock erősen támaszkodott olyan műfajokra is, mint az elektromos blues és a folk, és beépítette a jazz és más stílusok hatásait. A rock jellemzően az elektromos gitár köré épül, általában egy rockzenekar részeként, elektromos basszusgitárral, dobokkal és egy vagy több énekessel.",
-        "salsa": "A salsa egy latin-amerikai zenei stílus, amely kubai és puerto ricói hatásokat ötvöz. Mivel a legtöbb alapvető zenei összetevő megelőzte a salsa kifejezés használatát, sok vita alakult ki a származásával kapcsolatban. A salsának tekintett dalok többsége elsősorban a son montuno és son cubano stílusokon alapul, cha-cha-chá, bolero, rumba, mambo, jazz, R&B, bomba és plena elemekkel kiegészítve. Mindezen elemeket úgy adaptálják, hogy illeszkedjenek az alapvető Son montuno sablonhoz, amikor salsa kontextusban előadják őket.",
-        "singer_songwriter": "a 20. század közepén megjelent zenei műfajok csoportja, amely az énekes-dalszerzők zenéjére utal, gyakran politikai vagy személyes szövegekkel és minimális akusztikus kísérettel jellemezve",
-        "ska": "A ska egy zenei műfaj, amely Jamaicában alakult ki az 1950-es évek végén, és a rocksteady és reggae előfutára volt. A karibi mento és calypso elemeit ötvözte az amerikai jazz-zel és rhythm and blues-szal. A ska-t a sétáló basszusvonal jellemzi, amelyet a háttérütemre helyezett ritmusok hangsúlyoznak. Jamaicában fejlesztették ki az 1960-as években, amikor Stranger Cole, Prince Buster, Clement \"Coxsone\" Dodd és Duke Reid hangrendszereket hoztak létre amerikai rhythm and blues játszására, majd elkezdték saját dalaik felvételét. Az 1960-as évek elején a ska volt Jamaica domináns zenei műfaja, és népszerű volt a brit modok és sok skinhead körében.",
-        "soul": "A soul zene egy népszerű zenei műfaj, amely az afrikai-amerikai közösségekben alakult ki az Egyesült Államokban az 1950-es évek végén és az 1960-as évek elején. A ragadós ritmusok, amelyeket tapssal és spontán testmozgással hangsúlyoznak, a soul fontos jellemzője. További sajátosságok a vezető és háttérénekes közötti kérdés-felelet, a különösen feszült vokális hangzás, valamint az alkalmi improvizációs kiegészítések, fordulatók és kísérő hangok. A soul zene arról ismert, hogy tükrözi az afrikai-amerikai identitást és hangsúlyozza az afrikai-amerikai kultúra fontosságát.",
-        "sound_effects": "A hangeffektusok mint zenei műfaj – amely gyakran magában foglalja a hangkép kompozíciót, a musique concrète-t és a zajzenét – környezeti zajokat, mechanikus hangokat és Foley felvételeket használ elsődleges zenei elemként, a hagyományos dallamok vagy harmóniák helyett. Ez az avantgárd megközelítés magával ragadó, narratív és textúrás hallási élményeket teremt.",
-        "soundtrack": "A filmzene olyan eredeti zene, amelyet kifejezetten egy film vagy televíziós műsor kíséretére írnak. A filmzene számos zenekari, hangszeres vagy kórusmű összeállítása, amelyeket jeleneteknek neveznek, és amelyek időzítése úgy van beállítva, hogy a film során meghatározott pontokon kezdődjenek és érjenek véget, ezzel fokozva a jelenetek drámai narratíváját és érzelmi hatását. A filmzenéket egy vagy több zeneszerző írja a film rendezőjének vagy producerének irányításával vagy vele együttműködve, majd leggyakrabban egy zenészegyüttes adja elő – amely általában zenekart vagy bandát, hangszeres szólistákat, valamint kórust vagy énekeseket – úgynevezett playback énekeseket – foglal magában –, és egy hangtechnikus rögzíti. A kifejezést ritkábban alkalmazzák az élő színház, televíziós és rádiós műsorok, valamint videojátékok számára írt zenére, és ezt a zenét általában filmzenének vagy kísérőzenének nevezik.",
-        "spoken_word": "A beszédművészet egy előadásalapú műfaj, amely egyesíti a beszélt költészetet, mesélést vagy monológot zenei kísérettel vagy ritmikus előadásmóddal, a hangot mint elsődleges hangszert helyezve a középpontba. A szóbeli hagyományokból és a Beat Generációból eredően ötvözi az irodalmi művészetet a zenével, gyakran társadalmi igazságosság, politika és személyes narratíva témáival, általában jazz, rock vagy folk elemekkel kísérve.",
-        "swing": "A swing zene a jazz egy stílusa, amely az Egyesült Államokban fejlődött ki az 1920-as évek vége és az 1930-as évek eleje között. Az 1930-as évek közepétől vált országosan népszerűvé. A swing a jazz legismertebb korszakát képviseli mint szórakoztató műfaj, a modern jazz megjelenése előtt. A swing zenekarok általában szólistákat vonultattak fel, akik a dallamot improvizálták a hangszerelés felett. A nagy zenekarok és zenekarvezetők, mint Fletcher Henderson és Benny Goodman táncra alkalmas swing stílusa volt az amerikai populáris zene uralkodó formája 1935-től 1946-ig, ez volt az úgynevezett swing-korszak, amikor az emberek Lindy Hopot táncoltak. A \"swingel\" ige dicséretként is használatos olyan játékra, amely erős ritmussal vagy lendülettel rendelkezik. A swing-korszak nagy zenekarvezetői között szerepel Benny Goodman, Duke Ellington, Count Basie, Jimmie Lunceford, Cab Calloway, Benny Carter, Jimmy Dorsey, Tommy Dorsey, Earl Hines, Bunny Berigan, Harry James, Lionel Hampton, Glenn Miller és Artie Shaw.",
-        "tango": "A tangó egy 2\/4-es vagy 4\/4-es ütemű zenei stílus, amely Uruguayban és Argentínában alakult ki az európai bevándorlók körében a 19. század végén és a 20. század elején. Főként spanyol, olasz, gauchó, afrikai és francia kulturális gyökerekkel rendelkezik. Hagyományosan szólógitáron, gitárduón vagy orquesta típica néven ismert együttesben játsszák, amely legalább két hegedűt, fuvolát, zongorát, nagybőgőt és legalább két bandoneónt tartalmaz. Néha gitárok és klarinét is csatlakozik az együtteshez. A tangó lehet tisztán hangszeres vagy tartalmazhat énekest is. A tangó zenéje és tánca világszerte népszerűvé vált.",
-        "trap": "A trap zene, más néven egyszerűen trap, a hip-hop zene egyik alműfaja, amely az Egyesült Államok déli részén alakult ki. A trap zenére való szöveges utalások 1991-ben kezdődtek, de a trap modern hangzása 1999-ben jelent meg. A műfaj nevét az atlantai \"trap house\" kifejezésből kapta, ami drogházat jelent. A trap zenére jellemzőek az egyszerű, ritmikus, minimalista produkciók, amelyek szintetizált dobokat használnak, valamint a komplex hi-hat dobütések, pergődob, basszusdob, amelyek közül néhányat hosszú lecsengéssel hangolnak, hogy basszusfrekvenciát bocsásson ki. A szövegek gyakran a kábítószer-használatra és a városi erőszakra összpontosítnak.",
-        "waltz": "A keringő, amely valószínűleg a német ländlerből származik, hármas ütemű tánczenei műfaj, gyakran 3\/4-es ütemmutatóval írják. A keringő jellemzően egy akkordot szólaltat meg ütemről ütemre, és a keringőhöz különösen kapcsolódó kíséreti stílus az, hogy az akkord alaphangjat az első ütemre, a felső hangokat pedig a második és harmadik ütemre játsszák.",
-        "wellness": "A meditációs zene olyan zene, amelyet a meditáció gyakorlásának segítésére játszanak. Lehet konkrét vallási tartalma, de újabban modern zeneszerzőkkel is összefüggésbe hozható, akik meditációs technikákat használnak kompozíciós folyamatukban, vagy olyan zenét komponálnak, amely nem egy konkrét vallási csoportot céloz meg. A fogalom magában foglalja a meditációs aktusként előadott zenét is."
     },
     "link_to_genre": "Csatolás műfajhoz",
     "link_to_genre_title": "Csatolás műfajhoz",
