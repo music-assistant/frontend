@@ -565,11 +565,6 @@
         "stopping": "Serveren lukker ned...",
         "stopped": "Serveren er stoppet"
     },
-    "genre_descriptions": {
-        "trap": "Trap-musik, eller blot trap, er en undergenre af hiphop-musik, der opstod i det sydlige USA. Lyriske referencer til trap startede i 1991, men den moderne lyd af trap dukkede op i 1999. Genren har fået sit navn fra Atlanta-udtrykket \"trap house\", et narkohus. Trap-musik har enkle, rytmiske, minimalistiske produktioner, der bruger syntetiske trommer og er kendetegnet ved komplekse hi-hat trommerytmer, lilletrommer, stortrommer, hvoraf nogle er afstemt med et langt decay for at udsende en basfrekvens. Teksterne fokuserer ofte på stofbrug og vold i byen.",
-        "waltz": "En vals, der sandsynligvis stammer fra tysk Ländler, er dansemusik i tredobbelt takt, ofte skrevet i 3\/4-takt. I en vals lyder der typisk én akkord pr. takt, og den akkompagnementsform, der især forbindes med vals, er at spille grundtonen i akkorden på første taktslag og de øverste toner på andet og tredje taktslag.",
-        "wellness": "Meditationsmusik er musik, der fremføres som hjælp til meditation. Den kan have et specifikt religiøst indhold, men er også på det seneste blevet forbundet med moderne komponister, der bruger meditationsteknikker i deres kompositionsproces, eller som komponerer sådan musik uden at fokusere på en bestemt religiøs gruppe. Begrebet omfatter også musik, der udføres som en meditativ handling."
-    },
     "link_to_genre": "Link til genre",
     "link_to_genre_title": "Link til genre",
     "link_to_genre_description": "Vælg en genre, som de valgte elementer skal linkes til.",

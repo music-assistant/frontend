@@ -149,32 +149,6 @@ export const toSentenceCase = function (str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-const genreKeyFromName = function (name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-};
-
-export const getGenreDescription = function (
-  name: string,
-  translationKey: string | undefined,
-  t: (key: string) => string,
-  te: (key: string) => boolean,
-): string {
-  // First try the translation key with genre_descriptions prefix
-  if (translationKey) {
-    const keyWithPrefix = `genre_descriptions.${translationKey}`;
-    if (te(keyWithPrefix)) return t(keyWithPrefix);
-  }
-
-  // Fallback: generate key from name
-  const key = `genre_descriptions.${genreKeyFromName(name)}`;
-  if (te(key)) return t(key);
-
-  return "";
-};
-
 export const getArtistsString = function (
   artists: Array<Artist | ItemMapping>,
   size?: number,
