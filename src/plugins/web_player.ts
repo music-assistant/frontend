@@ -339,40 +339,22 @@ export const webPlayer = reactive({
     this.tabMode = mode;
 
     if (this.player_id) {
+      // The sendspin session follows the main API connection: tear the web player
+      // down when the server connection is lost, and let App.vue re-apply the mode
+      // (which remounts the player) once it is restored. A sendspin transport drop
+      // that leaves the main connection intact is recovered by sendspin-js's own
+      // reconnect, so it does not need to be handled here.
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
-          // Reset sendspin connection state so a fresh connection is created on reconnect
           resetSendspinConnection();
-          // Reconnect is handled in App.vue
           this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         }),
       );
-      if (isPlaybackMode(this.mode)) {
-        unsubSubscriptions.push(
-          api.subscribe(
-            EventType.PLAYER_UPDATED,
-            () => {
-              if (
-                this.player_id &&
-                api.players[this.player_id] &&
-                !api.players[this.player_id].available
-              ) {
-                // The player timed out, now that the browser gave us some time again, try to restart it
-                if (isPlaybackMode(this.tabMode)) {
-                  this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
-                }
-                this.setTabMode(this.mode);
-              }
-            },
-            this.player_id,
-          ),
-        );
-      }
       unsubSubscriptions.push(
         api.subscribe(
           EventType.PLAYER_REMOVED,
           () => {
-            // Silently switch back
+            // Player removed server-side: silently fall back to controls only.
             this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
           },
           this.player_id,
