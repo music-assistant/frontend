@@ -1239,24 +1239,6 @@
             "log_download_failed": "Não há registo de tarefas disponível para descarregar."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Sincronizar artistas para {0}",
-        "sync_provider_albums": "Sincronizar álbuns para {0}",
-        "sync_provider_tracks": "Sincronizar faixas para {0}",
-        "sync_provider_playlists": "Sincronizar listas de reprodução para {0}",
-        "sync_provider_radios": "Sincronizar rádios para {0}",
-        "sync_provider_audiobooks": "Sincronizar Audiobooks para {0}",
-        "sync_provider_podcasts": "Sincronizar Podcasts para {0}",
-        "add_playlist_tracks": "Adicionar itens à lista de reprodução {0}",
-        "remove_playlist_tracks": "Remover itens da lista de reprodução {0}",
-        "database_cleanup": "Limpeza da base de dados",
-        "correct_provider_mappings": "Mapeamentos corretos de fornecedores",
-        "scan_genre_mappings": "Mapeamentos de géneros",
-        "cache_database_cleanup": "Limpeza da base de dados de cache",
-        "scan_missing_artist_artwork": "Digitalizar obras de arte de artistas em falta",
-        "refresh_playlist_metadata": "Atualizar metadados da lista de reprodução",
-        "update_metadata": "Atualizar metadados para {0}"
-    },
     "not_found_headline": "Ups, esta página está fora da setlist.",
     "not_found_subtext": "A faixa que procura perdeu-se entre os fornecedores. Volte atrás ou encontre algo novo.",
     "radiobrowser_by_popularity": "Por popularidade",

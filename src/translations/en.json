@@ -1245,24 +1245,6 @@
             "log_download_failed": "No task log available to download."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Sync Artists for {0}",
-        "sync_provider_albums": "Sync Albums for {0}",
-        "sync_provider_tracks": "Sync Tracks for {0}",
-        "sync_provider_playlists": "Sync Playlists for {0}",
-        "sync_provider_radios": "Sync Radios for {0}",
-        "sync_provider_audiobooks": "Sync Audiobooks for {0}",
-        "sync_provider_podcasts": "Sync Podcasts for {0}",
-        "add_playlist_tracks": "Add items to playlist {0}",
-        "remove_playlist_tracks": "Remove items from playlist {0}",
-        "database_cleanup": "Database cleanup",
-        "correct_provider_mappings": "Correct provider mappings",
-        "scan_genre_mappings": "Scan genre mappings",
-        "cache_database_cleanup": "Cache database cleanup",
-        "scan_missing_artist_artwork": "Scan missing artist artwork",
-        "refresh_playlist_metadata": "Refresh playlist metadata",
-        "update_metadata": "Update metadata for {0}"
-    },
     "not_found_headline": "Oops, this page is off the setlist.",
     "not_found_subtext": "The track you're looking for got lost between providers. Head back or find something new.",
     "radiobrowser_by_popularity": "By popularity",

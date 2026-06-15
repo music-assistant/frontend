@@ -1233,24 +1233,6 @@
             "log_download_started": "Започето преузимање записа о раду."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Синхронизуј извођаче за {0}",
-        "sync_provider_albums": "Синхронизуј албуме за {0}",
-        "sync_provider_tracks": "Синхронизуј нумере за {0}",
-        "sync_provider_playlists": "Синхронизуј плејлисте за {0}",
-        "sync_provider_radios": "Синхронизуј радио станице за {0}",
-        "sync_provider_audiobooks": "Синхронизуј аудио-књиге за {0}",
-        "sync_provider_podcasts": "Синхронизуј подкасте за {0}",
-        "add_playlist_tracks": "Додај ставке у плејлисту {0}",
-        "remove_playlist_tracks": "Уклони ставке из плејлисте {0}",
-        "database_cleanup": "Чишћење базе података",
-        "correct_provider_mappings": "Исправи мапирања провајдера",
-        "scan_genre_mappings": "Скенирај мапирања жанрова",
-        "cache_database_cleanup": "Чишћење кеширане базе података",
-        "scan_missing_artist_artwork": "Скенирај недостајуће слике извођача",
-        "refresh_playlist_metadata": "Освежи метаподатке плејлисте",
-        "update_metadata": "Ажурирај метаподатке {0}"
-    },
     "not_found_headline": "Упс, ове странице нема на репертоару.",
     "not_found_subtext": "Нумера коју тражиш се загубила између провајдера. Врати се назад или пронађи нешто ново.",
     "radiobrowser_by_popularity": "По популарности",

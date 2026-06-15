@@ -931,22 +931,6 @@
             "log_download_started": "Téléchargement du journal des tâches démarré."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Synchroniser les artistes pour {0}",
-        "sync_provider_albums": "Synchroniser les albums pour {0}",
-        "sync_provider_tracks": "Synchroniser les chansons pour {0}",
-        "sync_provider_playlists": "Synchroniser les listes de lecture pour {0}",
-        "sync_provider_radios": "Synchroniser les radios pour {0}",
-        "sync_provider_audiobooks": "Synchroniser les livres audio pour {0}",
-        "sync_provider_podcasts": "Synchroniser les podcasts pour {0}",
-        "add_playlist_tracks": "Ajouter des éléments de la liste de lecture {0}",
-        "remove_playlist_tracks": "Supprimer des éléments de la liste de lecture {0}",
-        "database_cleanup": "Nettoyage de la base de données",
-        "correct_provider_mappings": "Corriger le mapping des fournisseurs de musique",
-        "cache_database_cleanup": "Nettoyage de la base de données des caches",
-        "refresh_playlist_metadata": "Mettre à jour les métadonnées de la liste de lecture",
-        "update_metadata": "Mettre à jour les métadonnées"
-    },
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",
     "genre_name": "Nom du genre",

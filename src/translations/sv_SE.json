@@ -1239,24 +1239,6 @@
             "log_download_failed": "Ingen uppgiftslogg tillgänglig för nerladdning."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Synkronisera Artister för {0}",
-        "sync_provider_albums": "Synkronisera Album för 1 {0}",
-        "sync_provider_tracks": "Synkronisera Spår för {0}",
-        "sync_provider_playlists": "Synkronisera Spellistor för {0}",
-        "sync_provider_radios": "Synkronisera Radio för {0}",
-        "sync_provider_audiobooks": "Synkronisera Ljudböcker för {0}",
-        "sync_provider_podcasts": "Synkronisera Poddsändningar för {0}",
-        "add_playlist_tracks": "Lägg till objekt i spellistan {0}",
-        "remove_playlist_tracks": "Ta bort objekt från spellistan {0}",
-        "database_cleanup": "Databasrensning",
-        "correct_provider_mappings": "Rätta till leverantörsmappningar",
-        "scan_genre_mappings": "Skanna genremappningar",
-        "cache_database_cleanup": "Rensning av cachedatabasen",
-        "scan_missing_artist_artwork": "Skanna saknade artisters konstverk",
-        "refresh_playlist_metadata": "Uppdatera spellistans metadata",
-        "update_metadata": "Uppdatera metadata för {0}"
-    },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
     "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt.",
     "radiobrowser_by_popularity": "Efter popularitet",

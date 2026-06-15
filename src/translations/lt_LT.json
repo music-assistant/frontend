@@ -1233,24 +1233,6 @@
             "log_download_started": "Užduočių žurnalo atsisiuntimas pradėtas."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Sinchronizuoti atlikėjus {0}",
-        "sync_provider_albums": "Sinchronizuoti albumus {0}",
-        "sync_provider_tracks": "Sinchronizuoti takelius {0}",
-        "sync_provider_playlists": "Sinchronizuoti grojaraščius {0}",
-        "sync_provider_radios": "Sinchronizuoti radijo imtuvus {0}",
-        "sync_provider_audiobooks": "Sinchronizuoti garso knygas {0}",
-        "sync_provider_podcasts": "Sinchronizuoti podcast'us {0}",
-        "add_playlist_tracks": "Pridėti elementus į grojaraštį {0}",
-        "remove_playlist_tracks": "Pašalinti elementus iš grojaraščio {0}",
-        "database_cleanup": "Duomenų bazės valymas",
-        "correct_provider_mappings": "Teisingi tiekėjų susiejimai",
-        "scan_genre_mappings": "Nuskaitymo žanro atvaizdavimas",
-        "cache_database_cleanup": "Talpyklos duomenų bazės valymas",
-        "scan_missing_artist_artwork": "Nuskaitykite trūkstamą menininko kūrinį",
-        "refresh_playlist_metadata": "Atnaujinti grojaraščio metaduomenis",
-        "update_metadata": "Atnaujinti metaduomenis {0}"
-    },
     "not_found_headline": "Oi, šio puslapio nebėra dainų sąraše.",
     "not_found_subtext": "Daina, kurios ieškote, pasimetė tarp tiekėjų. Grįžkite atgal arba raskite ką nors naujo.",
     "radiobrowser_by_popularity": "Pagal populiarumą",

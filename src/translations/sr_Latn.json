@@ -1239,24 +1239,6 @@
             "log_download_failed": "Nije dostupan dnevnik zadatka  za preuzimanje."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Sinhronizacija izvođača za {0}",
-        "sync_provider_albums": "Sinhronizacija albuma za {0}",
-        "sync_provider_tracks": "Sinhronizacija pesama za {0}",
-        "sync_provider_playlists": "Sinhronizuj plejliste za {0}",
-        "sync_provider_radios": "Sinhronizacija radio-stanica za {0}",
-        "sync_provider_audiobooks": "Sinhronizuj audio-knjige za {0}",
-        "sync_provider_podcasts": "Sinhronizacija podkasta za {0}",
-        "add_playlist_tracks": "Dodajte stavke u plejlistu {0}",
-        "remove_playlist_tracks": "Uklonite stavke iz plejliste {0}",
-        "database_cleanup": "Čišćenje baze podataka",
-        "correct_provider_mappings": "Ispravi veze sa servisima",
-        "scan_genre_mappings": "Skeniranje mapiranja žanrova",
-        "cache_database_cleanup": "Čišćenje privremene memorije baze podataka",
-        "scan_missing_artist_artwork": "Skenirajte nedostajuće omote izvođača",
-        "refresh_playlist_metadata": "Osvežite metapodatke plejliste",
-        "update_metadata": "Osvežite metapodatke {0}"
-    },
     "not_found_headline": "Ups, ova stranica nije na repertoaru.",
     "not_found_subtext": "Numera koju tražište se izgubila između servisa. Vrati se nazad ili pronađi nešto novo.",
     "radiobrowser_by_popularity": "Po popularnosti",

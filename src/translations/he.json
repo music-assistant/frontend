@@ -445,24 +445,6 @@
             "log_download_started": "הורדת יומן המשימה החלה"
         }
     },
-    "background_task": {
-        "sync_provider_artists": "סנכרן אמנים עבור",
-        "sync_provider_albums": "סנכרן אלבומים עבור",
-        "sync_provider_tracks": "סנכרן שירים עבור",
-        "sync_provider_playlists": "עדכן רשימות השמעה עבור",
-        "sync_provider_radios": "עדכן ערוצי רדיו עבור",
-        "sync_provider_audiobooks": "סנכרן ספרי שמע עבור",
-        "sync_provider_podcasts": "סנכרן פודקאסטים עבור",
-        "add_playlist_tracks": "הוסף פריטים לרשימת השמעה",
-        "remove_playlist_tracks": "הסר פריטים מרשימת השמעה",
-        "database_cleanup": "ניקוי בסיס נתונים",
-        "correct_provider_mappings": "תקן מיפויי ספקים",
-        "scan_genre_mappings": "סרוק מיפויי ז’אנרים",
-        "cache_database_cleanup": "ניקוי מטמון מסד הנתונים",
-        "scan_missing_artist_artwork": "סרוק עטיפות אמן חסרות",
-        "refresh_playlist_metadata": "רענן מטא־נתוני רשימת השמעה",
-        "update_metadata": "עדכן מטא־נתונים"
-    },
     "not_found_headline": "אופס, הדף הזה ירד מרשימת ההשמעה.",
     "not_found_subtext": "הרצועה שחיפשת לא נמצאה בין הספקים. חזור אחורה או מצא משהו חדש.",
     "radiobrowser_by_popularity": "לפי פופולריות",
