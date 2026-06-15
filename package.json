@@ -21,7 +21,7 @@
         "@scure/base": "^2.2.0",
         "@sendspin/sendspin-js": "3.2.0",
         "@tabler/icons-vue": "^3.44.0",
-        "@tailwindcss/vite": "^4.3.0",
+        "@tailwindcss/vite": "^4.3.1",
         "@tanstack/vue-form": "^1.33.0",
         "@tanstack/vue-table": "^8.21.3",
         "@types/qrcode": "^1.5.6",
