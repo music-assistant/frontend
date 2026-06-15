@@ -637,9 +637,6 @@
         "stopping": "Serveren stenger ned...",
         "stopped": "Serveren har stoppet"
     },
-    "genre_descriptions": {
-        "asian_music": "Asiatisk musikk omfatter en rekke musikalske stiler, ulike kulturelle og religiøse tradisjoner og former med opprinnelse på det asiatiske kontinentet."
-    },
     "link_to_genre": "Koble til sjanger",
     "link_to_genre_title": "Koble til Sjanger",
     "link_to_genre_description": "Velg en sjanger som de valgte elementene skal knyttes til.",
