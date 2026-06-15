@@ -1220,24 +1220,6 @@
             "log_download_started": "任务日志下载开始。"
         }
     },
-    "background_task": {
-        "sync_provider_artists": "同步艺术家 {0}",
-        "sync_provider_albums": "同步专辑 {0}",
-        "sync_provider_tracks": "同步歌曲 {0}",
-        "sync_provider_playlists": "同步播放列表 {0}",
-        "sync_provider_radios": "同步收音机 {0}",
-        "sync_provider_audiobooks": "同步有声读物 {0}",
-        "sync_provider_podcasts": "同步播客 {0}",
-        "add_playlist_tracks": "将项目添加到播放列表 {0}",
-        "remove_playlist_tracks": "从播放列表中移除项目 {0}",
-        "database_cleanup": "数据库清理",
-        "correct_provider_mappings": "修正提供者映射",
-        "scan_genre_mappings": "扫描流派映射",
-        "cache_database_cleanup": "缓存数据库清理",
-        "scan_missing_artist_artwork": "扫描缺失的艺术家作品",
-        "refresh_playlist_metadata": "刷新播放列表元数据",
-        "update_metadata": "更新 {0} 的元数据"
-    },
     "not_found_headline": "哎呀，这个页面不在曲目单里。",
     "not_found_subtext": "你要找的曲目在提供者之间迷路了。返回上一页，或找点新的内容吧。",
     "radiobrowser_by_popularity": "按受欢迎程度",

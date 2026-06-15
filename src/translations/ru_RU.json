@@ -1233,24 +1233,6 @@
             "log_download_started": "Началось скачивание журнала задач."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Синхронизация исполнителей для {0}",
-        "sync_provider_albums": "Синхронизация альбомов для {0}",
-        "sync_provider_tracks": "Синхронизация треков для {0}",
-        "sync_provider_playlists": "Синхронизация плейлистов для {0}",
-        "sync_provider_radios": "Синхронизация радиостанций для {0}",
-        "sync_provider_audiobooks": "Синхронизация аудиокниг для {0}",
-        "sync_provider_podcasts": "Синхронизация подкастов для {0}",
-        "add_playlist_tracks": "Добавление элементов в плейлист {0}",
-        "remove_playlist_tracks": "Удаление элементов из плейлиста {0}",
-        "database_cleanup": "Очистка базы данных",
-        "correct_provider_mappings": "Исправление сопоставлений провайдеров",
-        "scan_genre_mappings": "Сканирование сопоставлений жанров",
-        "cache_database_cleanup": "Очистка кэша базы данных",
-        "scan_missing_artist_artwork": "Поиск недостающих обложек исполнителя",
-        "refresh_playlist_metadata": "Обновление метаданных плейлиста",
-        "update_metadata": "Обновление метаданных для {0}"
-    },
     "not_found_headline": "Упс, этой страницы нет в сетлисте.",
     "not_found_subtext": "Трек, который вы ищете, затерялся среди других провайдеров. Вернитесь назад или найдите что-нибудь новое.",
     "radiobrowser_by_popularity": "По популярности",

@@ -982,20 +982,6 @@
             "log_download_started": "Изтеглянето на дневника на задачите започна."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Синхронизиране на изпълнители за {0}",
-        "sync_provider_albums": "Синхронизиране на албуми за {0}",
-        "sync_provider_tracks": "Синхронизиране на песни за {0}",
-        "sync_provider_playlists": "Синхронизиране на плейлисти за {0}",
-        "sync_provider_radios": "Синхронизиране на аудиокниги за {0}",
-        "sync_provider_audiobooks": "Синхронизиране на аудиокниги за {0}",
-        "sync_provider_podcasts": "Синхронизиране на подкасти за {0}",
-        "add_playlist_tracks": "Добавяне на елементи към плейлиста {0}",
-        "remove_playlist_tracks": "Премахване на елементи от плейлиста {0}",
-        "database_cleanup": "Почистване на базата данни",
-        "refresh_playlist_metadata": "Обновяване на метаданните на плейлиста",
-        "update_metadata": "Актуализиране на метаданните за {0}"
-    },
     "not_found_headline": "Опа, тази страница е извън сетлиста.",
     "not_found_subtext": "Търсената от вас песен се е загубила между доставчиците. Върнете се обратно или намерете нещо ново.",
     "radiobrowser_by_popularity": "По популярност",

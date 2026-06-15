@@ -1241,24 +1241,6 @@
             "log_download_failed": "Geen taaklogboek beschikbaar om te downloaden."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Synchroniseer artiesten voor {0}",
-        "sync_provider_albums": "Synchroniseer albums voor {0}",
-        "sync_provider_tracks": "Synchroniseer nummers voor {0}",
-        "sync_provider_playlists": "Synchroniseer afspeellijsten voor {0}",
-        "sync_provider_radios": "Synchroniseer radiostations voor {0}",
-        "sync_provider_audiobooks": "Luisterboeken synchroniseren voor {0}",
-        "sync_provider_podcasts": "Podcasts synchroniseren voor {0}",
-        "add_playlist_tracks": "Voeg items toe aan afspeellijst {0}",
-        "remove_playlist_tracks": "Verwijder items uit afspeellijst {0}",
-        "database_cleanup": "Database opschonen",
-        "correct_provider_mappings": "Corrigeer provider-toewijzingen",
-        "scan_genre_mappings": "Scan genre-toewijzingen",
-        "cache_database_cleanup": "Cache-database opschonen",
-        "scan_missing_artist_artwork": "Ontbrekende albumhoezen van artiest scannen",
-        "refresh_playlist_metadata": "Metadata van afspeellijst vernieuwen",
-        "update_metadata": "Metadata bijwerken"
-    },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
     "radiobrowser_by_popularity": "Op populariteit",

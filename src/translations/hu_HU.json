@@ -1221,24 +1221,6 @@
             "log_download_started": "Feladatnapló letöltése megkezdődött."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Előadók szinkronizálása: {0}",
-        "sync_provider_albums": "Albumok szinkronizálása: {0}",
-        "sync_provider_tracks": "Számok szinkronizálása: {0}",
-        "sync_provider_playlists": "Lejátszási listák szinkronizálása: {0}",
-        "sync_provider_radios": "Rádióadók szinkronizálása: {0}",
-        "sync_provider_audiobooks": "Hangoskönyvek szinkronizálása: {0}",
-        "sync_provider_podcasts": "Podcastok szinkronizálása: {0}",
-        "add_playlist_tracks": "Elemek hozzáadása a(z) {0} lejátszási listához",
-        "remove_playlist_tracks": "Elemek eltávolítása a(z) {0} lejátszási listából",
-        "database_cleanup": "Adatbázis karbantartása",
-        "correct_provider_mappings": "Szolgáltató leképezések javítása",
-        "scan_genre_mappings": "Műfaj leképezések vizsgálata",
-        "cache_database_cleanup": "Gyorsítótár adatbázis karbantartása",
-        "scan_missing_artist_artwork": "Hiányzó előadói grafikák keresése",
-        "refresh_playlist_metadata": "Lejátszási lista metaadatok frissítése",
-        "update_metadata": "Metaadatok frissítése ehhez: {0}"
-    },
     "not_found_headline": "Hoppá, ez az oldal nincs a műsorban.",
     "not_found_subtext": "A keresett szám elveszett a szolgáltatók között. Menjen vissza, vagy keressen valami újat.",
     "radiobrowser_by_popularity": "Népszerűség szerint",
