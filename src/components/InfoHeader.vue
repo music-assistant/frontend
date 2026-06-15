@@ -623,8 +623,6 @@ const playButtonClick = function (forceMenu = false) {
 const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
-    // genre descriptions are now provided (and localized) by the server in
-    // metadata.description, the same as every other media item.
     return compProps.item.metadata.description;
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
