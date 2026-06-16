@@ -209,6 +209,7 @@ import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 const config = ref<ProviderConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
@@ -276,7 +277,6 @@ const backToProviders = function () {
 
 const onReload = function () {
   if (!config.value) return;
-  const { t } = useI18n();
   api
     .reloadProvider(config.value.instance_id)
     .then(() => toast.success(t("settings.provider_reloading")))
@@ -286,7 +286,6 @@ const onReload = function () {
 
 const onRemove = function () {
   if (!config.value) return;
-  const { t } = useI18n();
   const instanceId = config.value.instance_id;
   eventbus.emit("deleteConfirmationDialog", {
     title: t("settings.remove_provider"),
@@ -311,7 +310,6 @@ const retrySave = function () {
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // save provider config
-  const { t } = useI18n();
   loading.value = true;
   lastSubmitValues.value = values;
   values["enabled"] = config.value!.enabled;
@@ -406,7 +404,6 @@ const onAction = async function (
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
-  const { t } = useI18n();
   for (const author of authors) {
     if (author.includes("@")) {
       let authorName = author.replace("@", "");
@@ -424,7 +421,6 @@ const getAuthorsMarkdown = function (authors: string[]) {
 };
 
 const getCreditsMarkdown = function (credits: string[]) {
-  const { t } = useI18n();
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
