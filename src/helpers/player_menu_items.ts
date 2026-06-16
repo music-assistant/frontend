@@ -16,7 +16,6 @@ import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { $t } from "@/plugins/i18n";
 
 export const getPlayerMenuItems = (
   player: Player,
@@ -230,7 +229,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSoundModes
         .map((s) => {
           return {
-            label: $t(s.translation_key || s.name, s.name),
+            label: s.name,
             labelArgs: [],
             disabled: s.id === player.active_sound_mode,
             selected: s.id === player.active_sound_mode,
