@@ -147,10 +147,6 @@
         "group_members": "Gruppemedlemmer",
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
-        "category": {
-            "web_player": "Nettspiller",
-            "options": "Spillerinnstillinger"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -327,6 +323,10 @@
         "view_players": "Se spillere",
         "api_docs": "API-dokumentasjon",
         "provider_credits": "Gjort mulig av",
+        "category": {
+            "web_player": "Nettspiller",
+            "options": "Spillerinnstillinger"
+        },
         "onboarding_music_title": "Musikk",
         "onboarding_add_music": "Legg til musikk",
         "onboarding_player_title": "Spillere",

@@ -147,11 +147,6 @@
         "group_members": "Grupės nariai",
         "default": "numatytasis",
         "provider_depends_on_confirm": "Prieš nustatymą {0}, jums reikia turėti {1} Paslaugų teikėjas sukonfigūruotas, ar norite tai padaryti dabar?",
-        "category": {
-            "web_player": "Žiniatinklio grotuvas",
-            "protocol_settings": "Išvesties protokolas(-ai)",
-            "options": "Žaidėjo parinktys"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -418,6 +413,11 @@
         "no_group_providers": "Šiuo metu neturite jokių tiekėjų, kurie palaikytų grupių kūrimą",
         "provider_codeowners": "Šį teikėją teikia \/ prižiūri",
         "provider_credits": "Įgalino",
+        "category": {
+            "web_player": "Žiniatinklio grotuvas",
+            "protocol_settings": "Išvesties protokolas(-ai)",
+            "options": "Žaidėjo parinktys"
+        },
         "onboarding_subtitle": "Pradėkime prijungdami muzikos šaltinius ir garso įrenginius.",
         "onboarding_music_title": "Muzika",
         "onboarding_music_desc": "Prijunkite savo transliacijos paslaugas, tokias kaip Spotify, Tidal arba vietinę muzikos biblioteką.",

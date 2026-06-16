@@ -34,8 +34,8 @@
     "details": "Detalji",
     "enter_url": "Unesite URL koji želite ručno da dodate u bazu podataka",
     "external_source_active": "Eksterna integracija je aktivna: {0}",
-    "goto_album": "Prikaži album {0}",
-    "goto_artist": "Prikaži izvođača {0}",
+    "goto_album": "Idite na album {0}",
+    "goto_artist": "Idite na izvođača {0}",
     "items_selected": "Izabranih stavki: {0}",
     "items_total": "Ukupno stavki: {0}",
     "library": "Biblioteka",
@@ -50,7 +50,7 @@
     "other_versions": "Ostale verzije",
     "perform_action": "Izvršite radnju na izabranim stavkama {0}",
     "play": "Reprodukujte",
-    "play_album_from": "Reprodukuj album odavde",
+    "play_album_from": "Reprodukujte album odavde",
     "play_next": "Reprodukujte sledeće",
     "play_now": "Reprodukujte odmah",
     "play_on": "Reprodukujte na: {0}",
@@ -80,7 +80,7 @@
     "queue_radio_enabled": "Radio-režim je omogućen",
     "radios": "Radio-stanice",
     "read_more": "pročitajte više",
-    "refresh_item": "Ponovo učitaj",
+    "refresh_item": "Ponovo učitajte",
     "remove_library": "Uklonite iz biblioteke",
     "remove_playlist": "Uklonite iz plejliste",
     "search": "Pretraga",
@@ -147,11 +147,6 @@
         "group_members": "Članovi grupe",
         "default": "Podrazumevano",
         "provider_depends_on_confirm": "Pre nego što podesite {0}, potrebno je da konfigurišete servis {1}. Da li želite to da uradite sada?",
-        "category": {
-            "web_player": "Veb-plejer",
-            "protocol_settings": "Izlazni protokoli",
-            "options": "Opcije plejera"
-        },
         "theme": {
             "label": "Tema interfejsa",
             "options": {
@@ -237,7 +232,7 @@
                 "preamp": "Pretpojačalo",
                 "add_band_channel": "Dodajte opseg (samo {channel} )",
                 "band_channel": "Opseg {index} (samo {channel})",
-                "show_multichannel_controls": "Prikaži kontrole za više kanala",
+                "show_multichannel_controls": "Prikažite kontrole za više kanala",
                 "edited_channel": "Nacrtajte odziv ekvilajzera za ove kanale",
                 "channel": "Ovaj opseg će biti primenjen na",
                 "per_channel_preamp": "Dodatno pojačanje pretpojačala za {channel}"
@@ -266,12 +261,12 @@
                 "FR": "R"
             },
             "presets": {
-                "load": "Učitajte DSP preset",
-                "empty_warning": "Nema dostupnih DSP preseta",
-                "save": "Sačuvajte DSP preset",
-                "name": "Ime preseta",
-                "name_placeholder": "Moj novi preset",
-                "remove_confirm": "Da li ste sigurni da želite da uklonite ovaj DSP preset?"
+                "load": "Učitajte DSP podešavanje",
+                "empty_warning": "Nema dostupnih DSP podešavanja",
+                "save": "Sačuvajte",
+                "name": "Naziv podešavanja",
+                "name_placeholder": "Moje novo podešavanje",
+                "remove_confirm": "Da li ste sigurni da želite da uklonite ovo DSP podešavanje?"
             }
         },
         "dsp_enabled": "DSP je omogućen",
@@ -337,8 +332,8 @@
         "proud_part_of": "Ponosni deo",
         "core_module": {
             "cache": {
-                "name": "Privremena memorija",
-                "description": "Konfiguracija sistemskog modula za privremenu memoriju aplikacije"
+                "name": "Keš memorija",
+                "description": "Konfiguracija glavnog modula koji upravlja keširanjem podataka u celoj aplikaciji"
             },
             "metadata": {
                 "name": "Informacije o muzici (metapodaci)",
@@ -418,6 +413,13 @@
         "no_group_providers": "Trenutno nemate dostupne integracije koje podržavaju kreiranje grupa",
         "provider_codeowners": "Ovaj servis je razvijen i održavan od strane",
         "provider_credits": "Omogućili",
+        "category": {
+            "web_player": "Veb-plejer",
+            "protocol_settings": "Izlazni protokoli",
+            "options": "Opcije plejera",
+            "preferences": "Postavke",
+            "display_settings": "Prikaz"
+        },
         "onboarding_subtitle": "Započnite podešavanje povezivanjem muzičkih servisa i audio-uređaja",
         "onboarding_music_title": "Muzika",
         "onboarding_music_desc": "Povežite striming servise kao što su Spotify i Tidal ili lokalnu muzičku biblioteku.",
@@ -469,7 +471,7 @@
         "full_restore_genres_description": "Briše sve žanrove i pseudonime, ponovo kreira podrazumevane vrednosti i ponovo mapira sve postojeće medije. Koristite oprezno!",
         "confirm_restore_defaults": "Želite da vratite nedostajuće podrazumevane žanrove? Ovo će dodati sve nedostajuće podrazumevane žanrove bez brisanja ili izmene postojećih žanrova.",
         "confirm_full_restore": "Ovim ćete IZBRISATI SVE postojeće žanrove i pseudonime, ponovo kreirati samo podrazumevane vrednosti i ponovo mapirati sve postojeće medije na nove žanrove. Svi prilagođeni žanrovi, mapirani pseudonimi i muzičke veze biće izgubljeni.",
-        "confirm_full_restore_2": "Da li ste apsolutno sigurni? Ova radnja se ne može poništiti.",
+        "confirm_full_restore_2": "Da li ste apsolutno sigurni? Ova akcija se ne može opozvati.",
         "restore_success": "Uspešno vraćeno žanrova koji su nedostajali: {0}",
         "restore_all_present": "Svi podrazumevani žanrovi su već prisutni.",
         "full_restore_success": "Potpuno vraćanje završeno. Broj vraćenih podrazumevanih žanrova: {0}.",
@@ -605,11 +607,12 @@
         "filter_provider": "Filtrirajte po muzičkom servisu",
         "in_provider_library": "Ova stavka se nalazi u biblioteci servisa",
         "hide_empty_genres": "Sakrij prazne žanrove",
-        "show_empty_genres": "Prikaži prazne žanrove",
+        "show_empty_genres": "Prikažite prazne žanrove",
         "filter_genre": "Filtrirajte po žanru",
         "show_only_default_genres": "Prikažite samo podrazumevane žanrove",
         "show_all_genres": "Prikažite sve žanrove",
-        "filter_hide_fully_played": "Sakrij potpuno reprodukovane epizode"
+        "filter_hide_fully_played": "Sakrij potpuno reprodukovane epizode",
+        "select_provider": "Izaberite servis"
     },
     "topresult": "Najbolji rezultat",
     "track": "Numera",
@@ -629,11 +632,11 @@
     "mapped_providers": "Detalji o servisima",
     "item_in_library": "Ova stavka se nalazi u biblioteci",
     "back": "Nazad",
-    "recently_played": "Nedavno puštano",
+    "recently_played": "Nedavno reprodukovano",
     "radiobrowser_by_country": "Po zemljama",
     "radiobrowser_by_tag": "Po oznakama",
     "load_more_items": "Učitajte još stavki...",
-    "radio": "Radio-stanice",
+    "radio": "Radio-stanica",
     "muted": "utišano",
     "enter_name": "Unesite novi (prilagođeni) naziv",
     "image_url": "Unesite URL adresu slike ili ikonu (opciono)",
@@ -659,7 +662,7 @@
     "power_off_player": "Isključivanje",
     "powered_off_players": "Isključeni plejeri",
     "sync_player_with": "Sinhronizujte se sa drugim plejerom",
-    "open_player_settings": "Otvori podešavanja",
+    "open_player_settings": "Otvorite podešavanja",
     "select_repeat_mode": "Izaberite režim ponavljanja",
     "repeat_mode": {
         "all": "Ponavljajte ceo red čekanja",
@@ -667,10 +670,10 @@
         "one": "Ponavljajte trenutnu numeru"
     },
     "shuffle_disable": "Onemogući nasumično reprodukovanje",
-    "shuffle_enable": "Omogući nasumično reprodukovanje",
+    "shuffle_enable": "Omogućite nasumično reprodukovanje",
     "dont_stop_the_music_enable": "Omogućite „Ne zaustavljajte muziku!“",
     "dont_stop_the_music_disable": "Onemogućite „Ne zaustavljajte muziku!“",
-    "open_dsp_settings": "Otvori podešavanja DSP-a",
+    "open_dsp_settings": "Otvorite podešavanja DSP-a",
     "audiobook": "Audio knjiga",
     "audiobooks": "Audio knjige",
     "chapter": "Poglavlje",
@@ -696,7 +699,7 @@
     "all_players": "Svi plejeri",
     "all_groups": "Sve grupe",
     "no_player_playing": "Nijedan plejer trenutno ne reprodukuje",
-    "stop_playback": "Zaustavi reprodukciju",
+    "stop_playback": "Zaustavite reprodukciju",
     "streamdetails": {
         "input_header": "Ulaz",
         "output_header": "Izlaz",
@@ -712,11 +715,11 @@
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",
-            "bit_rate": "Brzina prenosa: {0} kbps",
-            "sample_rate": "Frekvencija uzorka {0} kHz",
+            "bit_rate": "Protok podataka: {0} kbps",
+            "sample_rate": "Frekvencija odabiranja {0} kHz",
             "channels": "Kanali: {0}",
             "bit_depth": "Dubina bita: {0}",
-            "processing_notice": "Audio se obrađuje interno kao 32-bitni „float PCM“"
+            "processing_notice": "Zvuk se interno obrađuje u 32-bitnom float PCM formatu"
         },
         "volume_normalization": {
             "target_level": "Ciljni nivo: {0} LUFS",
@@ -800,15 +803,15 @@
         "token_name_hint": "npr. „Home Assistant“, „Mobile App“",
         "create_token": "Kreirajte novi token",
         "revoke_token": "Opozovite token",
-        "revoke_token_confirm": "Da li ste sigurni da želite da opozovete ovaj token? Ova radnja se ne može poništiti.",
+        "revoke_token_confirm": "Da li ste sigurni da želite da opozovete ovaj token? Ova akcija se ne može opozvati.",
         "revoke_session": "Opozovite sesiju",
-        "revoke_session_confirm": "Da li ste sigurni da želite da opozovete ovu sesiju? Ova radnja se ne može poništiti.",
+        "revoke_session_confirm": "Da li ste sigurni da želite da opozovete ovu sesiju? Ova akcija se ne može opozvati.",
         "revoke": "Opozovite",
         "token_revoked": "Token je uspešno opozvan",
         "token_revoke_failed": "Nije uspelo opozivanje tokena",
         "session_revoked": "Sesija je uspešno opozvana",
         "session_revoke_failed": "Nije uspelo opozivanje sesije",
-        "manage_tokens": "Upravljaj pristupnim tokenima",
+        "manage_tokens": "Upravljajte pristupnim tokenima",
         "token_created": "Token je uspešno kreiran",
         "token_create_failed": "Nije uspelo kreiranje tokena. Pokušajte ponovo.",
         "user_management": "Upravljanje korisnicima",
@@ -834,7 +837,7 @@
         "user_enable_failed": "Nije uspelo omogućavanje korisnika",
         "password_optional_hint": "Ostavite prazno da zadržite trenutnu lozinku",
         "confirm_disable_user": "Da li ste sigurni da želite da onemogućite ovog korisnika?",
-        "confirm_delete_user": "Da li ste sigurni da želite da obrišete ovog korisnika? Ova radnja se ne može poništiti.",
+        "confirm_delete_user": "Da li ste sigurni da želite da obrišete ovog korisnika? Ova akcija se ne može opozvati.",
         "delete_user": "Obrišite korisnika",
         "admin_required": "Potreban administratorski pristup",
         "change_role": "Promenite ulogu",
@@ -976,7 +979,7 @@
     "alias": "Pseudonim",
     "aliases": "Pseudonimi",
     "confirm_delete_genre": "Da li ste sigurni da želite da obrišete ovaj žanr? Sam žanr će biti uklonjen, zajedno sa njegovim mapiranim pseudonimima.",
-    "confirm_delete_genre_2": "Da li ste apsolutno sigurni? Ova radnja se ne može poništiti.",
+    "confirm_delete_genre_2": "Da li ste apsolutno sigurni? Ova akcija se ne može opozvati.",
     "confirm_promote_alias": "Da li ste sigurni da želite da unapredite pseudonim „{0}“ u samostalni žanr? Ovo će kreirati novi žanr i ukloniti pseudonim iz trenutnog žanra.",
     "confirm_remove_alias": "Da li ste sigurni da želite da uklonite pseudonim „{0}“ iz ovog žanra?",
     "delete": "Obrišite",
@@ -1018,7 +1021,7 @@
     "link_to_genre_success": "Uspešno povezano sa žanrom",
     "link_to_genre_failed": "Povezivanje sa žanrom nije uspelo",
     "player_options": {
-        "open": "Otvori opcije plejera",
+        "open": "Otvorite opcije plejera",
         "settable": "Opcije plejera koje se mogu menjati za {0}",
         "read_only": "Zaključane opcije plejera za {0}",
         "adaptive_drc": "Adaptivna kontrola dinamičkog opsega",
@@ -1332,7 +1335,11 @@
         "results_library": "Rezultati iz biblioteke",
         "results_other": "Ostali rezultati",
         "field_album_type_is": "Tip albuma je",
-        "field_album_type_is_not": "Tip albuma nije"
+        "field_album_type_is_not": "Tip albuma nije",
+        "field_explicit": "Eksplicitan sadržaj",
+        "explicit_allowed": "Dozvoljeno",
+        "explicit_only": "Samo eksplicitan sadržaj",
+        "explicit_not_allowed": "Nije dozvoljeno"
     },
     "explore": "Istraživanje",
     "shortcuts": "Prečice",
@@ -1344,5 +1351,35 @@
     "with_artists": "sa {artists}",
     "disc": "Disk {number}",
     "album_type_label": "Tip albuma",
-    "now_playing": "Trenutna reprodukcija"
+    "now_playing": "Trenutna reprodukcija",
+    "artist_topalbums": "Najbolji albumi",
+    "in_library": "U vašoj biblioteci",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Slušaj uživo",
+            "schedule_programmes": "Raspored i emisije",
+            "today": "Danas",
+            "yesterday": "Juče"
+        },
+        "deezer": {
+            "genre_flows": "Deezer muzika po žanrovima",
+            "mood_flows": "Deezer muzika za raspoloženje",
+            "radios": "Deezer radio-stanice"
+        },
+        "lastfm": {
+            "country_top_artists": "Najbolji izvođači za: {0}",
+            "country_top_tracks": "Najbolje numere za: {0}",
+            "tag_albums": "Pronađite albume sa oznakom {0}",
+            "tag_artists": "Pronađite izvođače sa oznakom {0}",
+            "tag_tracks": "Pronađite numere sa oznakom {0}"
+        },
+        "opensubsonic": {
+            "starred_items": "Stavke sa zvezdicom"
+        }
+    },
+    "artist_no_library_albums": "Nemate nijedan album ovog izvođača u vašoj biblioteci.",
+    "artist_no_library_tracks": "Nemate nijednu numeru ovog izvođača u vašoj biblioteci.",
+    "artist_all_albums": "Svi albumi",
+    "artist_all_tracks": "Sve numere",
+    "on_provider": "Na {0}"
 }

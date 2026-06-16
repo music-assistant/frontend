@@ -147,9 +147,6 @@
         "group_members": "Group members",
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
-        "category": {
-            "web_player": "Web Player"
-        },
         "theme": {
             "label": "Theme",
             "options": {
@@ -414,6 +411,9 @@
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
+        "category": {
+            "web_player": "Web Player"
+        },
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
         "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",

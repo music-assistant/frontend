@@ -147,13 +147,6 @@
         "group_members": "Gruppenmitglieder",
         "default": "Standard",
         "provider_depends_on_confirm": "Bevor du {0} einrichten kannst, musst du den Anbieter {1} konfigurieren. Möchtest du das jetzt tun?",
-        "category": {
-            "web_player": "Web-Player",
-            "protocol_settings": "Ausgabeprotokoll(e)",
-            "options": "Optionen für Wiedergabegerät",
-            "preferences": "Präferenzen",
-            "display_settings": "Anzeige"
-        },
         "theme": {
             "label": "Theme",
             "options": {
@@ -420,6 +413,13 @@
         "no_group_providers": "Du hast derzeit keine Anbieter, die die Erstellung von Gruppen unterstützen.",
         "provider_codeowners": "Dieser Anbieter wird unterstützt\/gewartet von",
         "provider_credits": "Ermöglicht durch",
+        "category": {
+            "web_player": "Web-Player",
+            "protocol_settings": "Ausgabeprotokoll(e)",
+            "options": "Optionen für Wiedergabegerät",
+            "preferences": "Präferenzen",
+            "display_settings": "Anzeige"
+        },
         "onboarding_subtitle": "Verbinde zunächst deine Musikquellen und Audiogeräte.",
         "onboarding_music_title": "Musik",
         "onboarding_music_desc": "Verbinde deine Streaming-Dienste wie Spotify, Tidal oder deine lokale Musikbibliothek.",
@@ -611,7 +611,8 @@
         "filter_genre": "Nach Genre filtern",
         "show_only_default_genres": "Nur Standardgenres anzeigen",
         "show_all_genres": "Alle Genres anzeigen",
-        "filter_hide_fully_played": "Ausblenden vollständig abgespielter Folgen"
+        "filter_hide_fully_played": "Ausblenden vollständig abgespielter Folgen",
+        "select_provider": "Anbieter auswählen"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -1334,7 +1335,11 @@
         "results_library": "Ergebnisse der Bibliothek",
         "results_other": "Weitere Ergebnisse",
         "field_album_type_is": "Albumtyp ist",
-        "field_album_type_is_not": "Albumtyp ist nicht"
+        "field_album_type_is_not": "Albumtyp ist nicht",
+        "field_explicit": "Explizit",
+        "explicit_allowed": "Erlaubt",
+        "explicit_only": "Nur explizit",
+        "explicit_not_allowed": "Nicht erlaubt"
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
@@ -1373,5 +1378,8 @@
         }
     },
     "artist_no_library_albums": "Du hast keine Alben dieses Künstlers in deiner Bibliothek.",
-    "artist_no_library_tracks": "Du hast keine Titel dieses Künstlers in deiner Bibliothek."
+    "artist_no_library_tracks": "Du hast keine Titel dieses Künstlers in deiner Bibliothek.",
+    "artist_all_albums": "Alle Alben",
+    "artist_all_tracks": "Alle Titel",
+    "on_provider": "An {0}"
 }

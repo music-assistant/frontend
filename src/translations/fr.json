@@ -147,10 +147,6 @@
         "group_members": "Membres du groupe",
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
-        "category": {
-            "web_player": "Lecteur Web",
-            "protocol_settings": "Protocole(s) de sortie"
-        },
         "theme": {
             "label": "Thème",
             "options": {
@@ -417,6 +413,10 @@
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
         "provider_codeowners": "Ce fournisseur est fourni\/maintenu par",
         "provider_credits": "Rendu possible par",
+        "category": {
+            "web_player": "Lecteur Web",
+            "protocol_settings": "Protocole(s) de sortie"
+        },
         "onboarding_subtitle": "Pour commencer, connectez vos sources musicales et vos appareils audio.",
         "onboarding_music_title": "Musique",
         "onboarding_music_desc": "Connectez vos services de streaming comme Spotify, Tidal ou votre bibliothèque musicale locale.",

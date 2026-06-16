@@ -147,11 +147,6 @@
         "group_members": "Gruppmedlemmar",
         "default": "standard",
         "provider_depends_on_confirm": "Innan du kan konfigurera {0}, måste du ha {1} -leverantören konfigurerad, vill du göra det nu?",
-        "category": {
-            "web_player": "Webbspelare",
-            "protocol_settings": "Utgångsprotokoll",
-            "options": "Spelaralternativ"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -409,7 +404,7 @@
         "remote_access_protocol_basic": "WebRTC med publika STUN servrar (kanske inte fungerar i komplexa nätverkskonfigurationer).",
         "remote_access_protocol_optimized": "WebRTC med optimerade STUN\/TURN servrar från Home Assistant Cloud (fungerar i alla nätverkskonfigurationer).",
         "remote_access_encryption_description": "End-to-end-kryptering med DTLS-SRTP säkerställer att dina data förblir privata och säkra.",
-        "frontend": "Gräns Snitt",
+        "frontend": "Gränssnitt",
         "players_count": "{0} spelare{1}",
         "one_player": "1 spelare",
         "view_players": "Visa spelare",
@@ -418,6 +413,13 @@
         "no_group_providers": "Du har för närvarande inga leverantörer som stöder att skapa grupper",
         "provider_codeowners": "Denna leverantör tillhandahålls\/underhålls av",
         "provider_credits": "Möjliggjort av",
+        "category": {
+            "web_player": "Webbspelare",
+            "protocol_settings": "Utgångsprotokoll",
+            "options": "Spelaralternativ",
+            "preferences": "Inställningar",
+            "display_settings": "Visa"
+        },
         "onboarding_subtitle": "Nu kommer vi igång genom att ansluta dina musikkällor och ljudenheter.",
         "onboarding_music_title": "Musik",
         "onboarding_music_desc": "Anslut dina streamingtjänster som Spotify, Tidal eller ditt lokala musikbibliotek.",
@@ -609,7 +611,8 @@
         "filter_genre": "Filtrera efter genre",
         "show_only_default_genres": "Visa endast standardgenrer",
         "show_all_genres": "Visa alla genrer",
-        "filter_hide_fully_played": "Dölj helt spelade avsnitt"
+        "filter_hide_fully_played": "Dölj helt spelade avsnitt",
+        "select_provider": "Välj leverantör"
     },
     "topresult": "Toppresultat",
     "track": "Spår",
@@ -1332,7 +1335,11 @@
         "results_library": "Biblioteksresultat",
         "results_other": "Andra resultat",
         "field_album_type_is": "Albumtypen är",
-        "field_album_type_is_not": "Albumtypen är inte"
+        "field_album_type_is_not": "Albumtypen är inte",
+        "field_explicit": "Tydlig",
+        "explicit_allowed": "Tillåten",
+        "explicit_only": "Endast tydlig",
+        "explicit_not_allowed": "Inte tillåtet"
     },
     "explore": "Utforska",
     "shortcuts": "Genvägar",
@@ -1344,5 +1351,35 @@
     "with_artists": "med {artists}",
     "disc": "Skiva {number}",
     "album_type_label": "Albumtyp",
-    "now_playing": "Spelas nu"
+    "now_playing": "Spelas nu",
+    "artist_topalbums": "Toppalbum",
+    "in_library": "I ditt bibliotek",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Lyssna live",
+            "schedule_programmes": "Schema och program",
+            "today": "I dag",
+            "yesterday": "I går"
+        },
+        "deezer": {
+            "genre_flows": "Deezer Genreflöden",
+            "mood_flows": "Deezer Humörflöden",
+            "radios": "Deezer Radioapparater"
+        },
+        "lastfm": {
+            "country_top_artists": "Toppartister för {0}",
+            "country_top_tracks": "Topplåtar för {0}",
+            "tag_albums": "Upptäck {0} Album",
+            "tag_artists": "Upptäck {0} Artist",
+            "tag_tracks": "Upptäck {0} Spår"
+        },
+        "opensubsonic": {
+            "starred_items": "Stjärnmärkta objekt"
+        }
+    },
+    "artist_no_library_albums": "Du har inga album i ditt bibliotek för den här artisten.",
+    "artist_no_library_tracks": "Du har inga spår i ditt bibliotek för den här artisten.",
+    "artist_all_albums": "Alla album",
+    "artist_all_tracks": "Alla spår",
+    "on_provider": "På {0}"
 }

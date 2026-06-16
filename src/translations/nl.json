@@ -5,13 +5,13 @@
     "add_queue": "Voeg toe aan wachtrij",
     "add_url_item": "Voeg item toe via URL",
     "album": "Album",
-    "album_tracks": "Album nummers",
+    "album_tracks": "Albumnummers",
     "album_type": {
         "album": "Album",
         "compilation": "Compilatie",
         "ep": "EP",
         "single": "Single",
-        "unknown": "Onbekend album type",
+        "unknown": "Onbekend albumtype",
         "audiobook": "Luisterboek",
         "podcast": "Podcast",
         "live": "Live",
@@ -51,13 +51,13 @@
     "perform_action": "Actie uitvoeren op {0} item(s)",
     "play": "Afspelen",
     "play_album_from": "Album vanaf hier afspelen",
-    "play_next": "Speel als volgende af",
+    "play_next": "Als volgende afspelen",
     "play_now": "Nu afspelen",
     "play_on": "Afspelen op: {0}",
     "play_playlist_from": "Afspeellijst vanaf hier afspelen",
     "play_radio": "Start radio",
     "player_type": {
-        "group": "Groeptype",
+        "group": "Groep",
         "player": "Speler",
         "stereo_pair": "Stereopaar",
         "sync_group": "Synchronisatiegroep"
@@ -133,7 +133,7 @@
         "server_id": "Server-ID",
         "server_version": "Serverversie",
         "server_base_url": "Basis-URL",
-        "server_as_addon": "Home Assistant-add-on",
+        "server_as_addon": "Home Assistant App",
         "artists_in_library": "Artiesten in de bibliotheek",
         "albums_in_library": "Albums in de bibliotheek",
         "tracks_in_library": "Nummers in de bibliotheek",
@@ -142,18 +142,11 @@
         "server_logging": "Server logging",
         "download_log": "Download logbestand",
         "edit_group_members": "Bewerk groepsleden",
-        "add_new_provider_button": "{0} provider toevoegen",
+        "add_new_provider_button": "Voeg {0} provider toe",
         "add_group_player": "Groepspeler toevoegen",
         "group_members": "Groepsleden",
         "default": "standaard",
         "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?",
-        "category": {
-            "web_player": "Webspeler",
-            "protocol_settings": "Uitvoerprotocol(len)",
-            "options": "Speleropties",
-            "preferences": "Voorkeuren",
-            "display_settings": "Weergave"
-        },
         "theme": {
             "label": "Thema",
             "options": {
@@ -164,7 +157,7 @@
         },
         "menu_items": {
             "label": "Ingeschakelde menu-items",
-            "description": "Configureer welke items in het menu moeten worden weergegeven.\n\n Merk op dat je jezelf kunt uitsluiten als je instellingen uitschakelt. \n\nIn dat geval moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen om weer toegang te krijgen tot de instellingen, gebruik op eigen risico."
+            "description": "Configureer welke items in het menu moeten worden weergegeven.\n\nLet op: als je de instellingen uitschakelt, kunt je jezelf buitensluiten.\n\nOm opnieuw toegang te krijgen, moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen. Gebruik op eigen risico!"
         },
         "language": {
             "label": "Taal",
@@ -209,7 +202,7 @@
         },
         "dsp": {
             "configure_on": "DSP configureren op: {name}",
-            "disabled_message": "DSP is nu uitgeschakeld. Schakel het in met de bovenstaande schakelaar",
+            "disabled_message": "DSP is momenteel uitgeschakeld. Schakel het in met de bovenstaande schakelaar",
             "input": "Invoer",
             "output": "Uitvoer",
             "filter": {
@@ -223,7 +216,7 @@
             "parametric_eq": {
                 "add_band": "Band toevoegen",
                 "delete_band": "Band verwijderen",
-                "filter_type": "Filter Type",
+                "filter_type": "Filtertype",
                 "band": "Band {index}",
                 "enable_band": "Band inschakelen",
                 "filter_types": {
@@ -271,7 +264,7 @@
                 "load": "DSP Preset laden",
                 "empty_warning": "Geen DSP preset beschikbaar",
                 "save": "DSP Preset opslaan",
-                "name": "Preset naam",
+                "name": "Presetnaam",
                 "name_placeholder": "Mijn nieuwe preset",
                 "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
             }
@@ -284,7 +277,7 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "Dit type groep ondersteunt geen DSP wanneer er naar meerdere apparaten afgespeeld wordt."
         },
-        "add_group_player_desc_universal": "Door een universele spelergroep te maken, kun je spelers van verschillende providers\/ecosystemen groeperen. Zo wordt dezelfde audio naar alle leden van de groep verzonden (maar niet synchroon).",
+        "add_group_player_desc_universal": "Door een Universele Spelergroep te maken, kun je spelers van verschillende providers\/ecosystemen groeperen. Zo wordt dezelfde audio naar alle leden van de groep verzonden (maar niet synchroon).",
         "edit_provider": "Bewerk provider: {0}",
         "metadata": "Metadata",
         "metadataprovider": "Metadataprovider",
@@ -420,6 +413,13 @@
         "no_group_providers": "Er zijn nu geen providers die het aanmaken van groepen ondersteunen",
         "provider_codeowners": "Deze provider wordt bijgedragen\/onderhouden door",
         "provider_credits": "Mogelijk gemaakt door",
+        "category": {
+            "web_player": "Webspeler",
+            "protocol_settings": "Uitvoerprotocol(len)",
+            "options": "Speleropties",
+            "preferences": "Voorkeuren",
+            "display_settings": "Weergave"
+        },
         "onboarding_subtitle": "Laten we beginnen met het aansluiten van je muziekbronnen en audioapparaten.",
         "onboarding_music_title": "Muziek",
         "onboarding_music_desc": "Verbind jouw streamingdiensten zoals Spotify, Tidal of je lokale muziekbibliotheek.",
@@ -481,7 +481,7 @@
         "background_scanner": "Achtergrondscanner",
         "background_scanner_description": "Koppelt automatisch nummers, albums en artiesten aan genres.",
         "scanner_status": "Scannerstatus",
-        "scanner_running": "Draait...",
+        "scanner_running": "Aan het uitvoeren...",
         "scanner_idle": "Inactief",
         "last_scan": "Laatste scan",
         "last_scan_mapped": "Gekoppelde items (laatste scan)",
@@ -535,7 +535,7 @@
         "audio_analysis_description": "Volg audio-analysedekking bij je providers",
         "audio_analysis_concurrency": {
             "title": "Gelijktijdige achtergrondanalyse",
-            "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams",
+            "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams.",
             "open_settings": "Open Streams-instellingen"
         }
     },
@@ -550,11 +550,11 @@
         "track_number": "Tracknummer",
         "year": "Verschijningsdatum\/jaar",
         "position_desc": "Positie (aflopend)",
-        "album": "Album",
+        "album": "Album (alfabetisch)",
         "artist": "Artiest",
         "name": "Alfabetisch",
         "name_desc": "Alfabetisch (aflopend)",
-        "recent": "Meest recent",
+        "recent": "Onlangs toegevoegd",
         "year_desc": "Jaar van uitgave (aflopend)",
         "duration_desc": "Duur (aflopend)",
         "original": "Origineel",
@@ -580,19 +580,19 @@
     "sync_now": "Nu synchroniseren",
     "sync_running": "Een of meer muziekproviders worden gesynchroniseerd.",
     "tooltip": {
-        "album_artist_filter": "Schakel album-artiestfilter",
+        "album_artist_filter": "Album-artiestfilter in-\/uitschakelen",
         "explicit": "Expliciet",
         "filter_library": "Wissel in bibliotheek-\/favorietenfilter",
         "library": "Schakel in bibliotheek\/favoriet",
         "linked": "Dit provideritem is gekoppeld aan de itemdetails",
         "refresh": "De lijst vernieuwen",
         "refresh_new_content": "Er is nieuwe inhoud beschikbaar, klik om te vernieuwen",
-        "search": "Toon\/verberg zoekinvoer",
+        "search": "Zoekveld weergeven\/verbergen",
         "select_items": "Meerdere items selecteren",
-        "sort_options": "Sorteer opties",
-        "toggle_view_mode": "Schakel voorbeeld\/lijst weergave",
+        "sort_options": "Sorteeropties",
+        "toggle_view_mode": "Weergavemodus wijzigen: lijst\/miniaturen",
         "filter_favorites": "Alleen favorieten tonen",
-        "favorite": "Favoriet",
+        "favorite": "Markeer\/verwijder als favoriet",
         "open_provider_link": "Open dit item op de website van de provider",
         "collapse_expand": "Lijst in\/uitklappen",
         "back": "Terug",
@@ -611,7 +611,8 @@
         "filter_genre": "Filteren op genre",
         "show_only_default_genres": "Alleen standaardgenres weergeven",
         "show_all_genres": "Toon alle genres",
-        "filter_hide_fully_played": "Verberg volledig afgespeelde afleveringen"
+        "filter_hide_fully_played": "Verberg volledig afgespeelde afleveringen",
+        "select_provider": "Selecteer provider"
     },
     "topresult": "Topresultaat",
     "track": "Nummer",
@@ -619,7 +620,7 @@
     "tracks": "Nummers",
     "try_global_search": "Probeer een globale zoekopdracht",
     "type_to_search": "Typ hier om te zoeken...",
-    "volume_normalization": "Volume normalisatie",
+    "volume_normalization": "Volumenormalisatie",
     "play_now_replace": "Nu afspelen (wachtrij wissen)",
     "currently_playing": "Speelt nu af",
     "favorites_add": "Voeg toe aan favorieten",
@@ -633,13 +634,13 @@
     "back": "Terug",
     "recently_played": "Onlangs afgespeeld",
     "radiobrowser_by_country": "Per land",
-    "radiobrowser_by_tag": "Op onderwerp",
+    "radiobrowser_by_tag": "Op tag",
     "load_more_items": "Meer items laden...",
     "radio": "Radio",
     "muted": "gedempt",
     "enter_name": "Voer een nieuwe (aangepaste) naam in",
     "image_url": "Voer de URL in voor een afbeelding of pictogram (optioneel)",
-    "invalid_input": "De invoer was ongeldig",
+    "invalid_input": "Ongeldige invoer",
     "new_playlist": "Nieuwe afspeellijst",
     "create_playlist_on": "Maak een nieuwe afspeellijst aan op {0}",
     "view": {
@@ -670,8 +671,8 @@
     },
     "shuffle_disable": "Shuffle uitschakelen",
     "shuffle_enable": "Shuffle inschakelen",
-    "dont_stop_the_music_enable": "'Don't Stop The Music!' inschakelen",
-    "dont_stop_the_music_disable": "'Don't Stop The Music!' uitschakelen",
+    "dont_stop_the_music_enable": "Schakel 'Don't Stop The Music!' in",
+    "dont_stop_the_music_disable": "Schakel 'Don't Stop The Music!' uit",
     "open_dsp_settings": "Open DSP-instellingen",
     "audiobook": "Luisterboek",
     "audiobooks": "Luisterboeken",
@@ -714,8 +715,8 @@
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
-            "bit_rate": "Bitsnelheid: {0} kbps",
-            "sample_rate": "Samplefrequentie: {0} kHz",
+            "bit_rate": "Bitrate: {0} kbps",
+            "sample_rate": "Sample rate: {0} kHz",
             "channels": "Kanalen: {0}",
             "bit_depth": "Bitdiepte: {0}",
             "processing_notice": "Audio wordt intern verwerkt als 32-bits float PCM"
@@ -727,12 +728,12 @@
             "applied_gain_correction": "Toegepaste versterkingscorrectie: {0} Db.",
             "mode": {
                 "dynamic": "Volumenormalisatie is actief in de dynamische modus.",
-                "measurement_only": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) luidheid van de audio.",
-                "measurement_album": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) luidheid van het album.",
+                "measurement_only": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van de audio.",
+                "measurement_album": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van het album.",
                 "fixed_gain": "Volumenormalisatie is actief op basis van vaste versterkingscorrectie."
             }
         },
-        "click_to_expand": "Klik om alle spelers te tonen",
+        "click_to_expand": "Klik om alle spelers te laten zien",
         "output_format_pcm_info": "Audio wordt als PCM doorgegeven aan de spelerprovider. De speleraanbieder kan dan de audio converteren naar een ander formaat voordat het naar de speler wordt gestuurd."
     },
     "volume_normalization_gain_correction": "{0} dB",
@@ -740,8 +741,8 @@
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
     "all_enqueue_options": "Alle afspeelopties",
     "music_assistant_source": "Music Assistant-wachtrij",
-    "music_assistant_library": "Music Assistant-bibliotheek",
-    "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is.",
+    "music_assistant_library": "Music Assistant bibliotheek",
+    "select_all_confirmation": "Wil je alle items selecteren? Het kan even duren voordat alle data geladen is.",
     "this_device": "Dit apparaat",
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
@@ -883,7 +884,7 @@
         "sign_in_with_ha": "Inloggen met Home Assistant",
         "back": "Terug",
         "cancel": "Annuleren",
-        "different_server": "Een andere server gebruiken",
+        "different_server": "Gebruik een andere server",
         "connecting": "Verbinden...",
         "connecting_to_server": "Verbinden met de server...",
         "connecting_to_signaling": "Verbinden met de signaleringsserver...",
@@ -901,7 +902,7 @@
         "try_again": "Probeer het opnieuw",
         "error_unknown": "Er is een onbekende fout opgetreden",
         "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
-        "error_oauth_failed": "Authenticatie met Home Assistant is mislukt.",
+        "error_oauth_failed": "Authenticeren met Home Assistant is mislukt.",
         "scan_qr": "Scan QR",
         "scan_qr_code": "Scan QR-code",
         "scan_qr_hint": "Richt je camera op de QR-code die wordt weergegeven in de serverinstellingen van Music Assistant.",
@@ -940,7 +941,7 @@
         "oauth_waiting_title": "Voltooi het inlogproces",
         "oauth_waiting_message": "Er is een browservenster geopend. Meld je eerst aan bij Home Assistant en keer vervolgens terug naar deze pagina.",
         "oauth_waiting_hint": "Wachten op authenticatie...",
-        "error_oauth_failed": "Authenticatie met Home Assistant is mislukt."
+        "error_oauth_failed": "Authenticeren met Home Assistant is mislukt."
     },
     "yes": "Ja",
     "no": "Nee",
@@ -948,9 +949,9 @@
     "uri_copy_failed": "Het kopiëren van de URI naar het klembord is mislukt",
     "search_all_providers": "Zoek bij alle providers naar overeenkomsten",
     "search_all_providers_confirm": "Weet je zeker dat je bij alle providers naar overeenkomsten wilt zoeken? Dit kan even duren en wordt op de achtergrond uitgevoerd.",
-    "remove_provider_mapping": "Verwijder providerkoppeling",
-    "remove_provider_mapping_confirm": "Weet je zeker dat je deze providerkoppeling wilt verwijderen? Hierdoor wordt het item losgekoppeld van de huidige itemdetails. Het kan zijn dat de koppeling opnieuw wordt gemaakt als je een nieuwe scan uitvoert voor alle overeenkomende providers.",
-    "map_provider_mapping": "Koppel deze providerinvoer aan het huidige item",
+    "remove_provider_mapping": "Verwijder provider-toewijzing",
+    "remove_provider_mapping_confirm": "Weet je zeker dat je deze provider-toewijzing wilt verwijderen? Hierdoor wordt het item losgekoppeld van de huidige itemdetails. Het kan zijn dat de koppeling opnieuw wordt gemaakt als je een nieuwe scan uitvoert voor alle overeenkomende providers.",
+    "map_provider_mapping": "Koppel deze provider-toewijzing aan het huidige item",
     "player_tip": {
         "selected_player": "Geselecteerde speler",
         "currently_playing": "Speelt nu af op",
@@ -963,7 +964,7 @@
     "collections": "Collecties",
     "narrators": "Vertellers",
     "queue_move_end": "Verplaats naar einde",
-    "discover": "Ontdek",
+    "discover": "Ontdekken",
     "save_queue_as_playlist": "Sla wachtrij op als afspeellijst",
     "playlist_created": "Afspeellijst gemaakt",
     "open_playlist": "Afspeellijst openen",
@@ -1153,9 +1154,9 @@
         "result": "Resultaat",
         "last_result": "Laatste resultaat",
         "schedule_label": "Schema",
-        "last_run": "Laatste uitvoering",
-        "next_run": "Volgende uitvoering",
-        "last_run_by": "Laatst uitgevoerd door",
+        "last_run": "Laatste uitvoer",
+        "next_run": "Volgende uitvoer",
+        "last_run_by": "Voor het laatst uitgevoerd door",
         "created_by": "Gemaakt door",
         "created": "Gemaakt",
         "started": "Gestart",
@@ -1173,23 +1174,23 @@
         "status": {
             "idle": "Inactief",
             "pending": "In afwachting",
-            "running": "Draait",
-            "success": "Succesvol",
-            "partial_success": "Gedeeltelijk succesvol",
+            "running": "Aan het uitvoeren",
+            "success": "Gelukt",
+            "partial_success": "Gedeeltelijk gelukt",
             "failed": "Mislukt",
             "cancelled": "Geannuleerd",
             "unknown": "Onbekend"
         },
         "schedule": {
             "never": "nooit",
-            "every_hours": "Elke {0}H",
+            "every_hours": "Elke {0}U",
             "every_days": "Elke {0}D",
             "daily_at": "Dagelijks om {0}",
             "every_days_at": "Elke {0}D om {1}",
             "weekly_at": "Wekelijks {0} om {1}",
             "disabled_suffix": " (uitgeschakeld)",
-            "last_run": "Laatste uitvoering {0}",
-            "next_run": "Volgende uitvoering {0}"
+            "last_run": "Voor het laatst uitgevoerd: {0}",
+            "next_run": "Volgende uitvoer: {0}"
         },
         "schedule_dialog": {
             "title": "Taakschema bewerken",
@@ -1245,7 +1246,7 @@
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
     "radiobrowser_by_popularity": "Op populariteit",
     "radiobrowser_by_category": "Op categorie",
-    "restore_genre": "Herstel",
+    "restore_genre": "Herstellen",
     "genre_name": "Genrenaam",
     "export_playlist": "Exporteer afspeellijst",
     "import_playlist": "Importeer afspeellijst",
@@ -1267,10 +1268,10 @@
         "remove_from": "Verwijderen uit snelkoppelingen"
     },
     "smart_playlist": {
-        "create": "Maak Slimme Afspeellijst",
+        "create": "Maak Slimme afspeellijst",
         "created": "Slimme afspeellijst gemaakt!",
         "creating": "Aanmaken...",
-        "dedup_hours": "Geen herhaling binnen",
+        "dedup_hours": "Herhaal hetzelfde nummer niet voor",
         "dedup_hours_tooltip": "Sla nummers over die onlangs zijn afgespeeld. Stel een tijdsvenster in (1-168 uur) waarin een nummer niet wordt herhaald. Laat de waarde op 0 staan om dit uit te schakelen.",
         "desc": "Genereer een afspeellijst uit je bibliotheek op basis van regels.",
         "edit_rules": "Regels bewerken",
@@ -1290,7 +1291,7 @@
         "filter_inactive": "Inactief",
         "hours_unit": "uren",
         "edited": "“{name}\" bijgewerkt",
-        "empty_desc": "Er zijn geen nummers die aan je huidige regels voldoen. Versoepel een filter of kies een andere bron om te beginnen.",
+        "empty_desc": "Er zijn geen nummers die aan je huidige regels voldoen. Versoepel een filter of kies een ander uitgangspunt om te beginnen.",
         "empty_title": "Nog niets om af te spelen",
         "favorites_yes": "Ja",
         "field_album_is": "Album is",
@@ -1322,19 +1323,23 @@
         "seed_no_provider": "Geen enkele streamingprovider ondersteunt vergelijkbare nummers",
         "type_library": "Uit mijn bibliotheek",
         "type_library_desc": "Bouw het op uit nummers die je al in je bibliotheek hebt.",
-        "type_seed": "Ontdek",
+        "type_seed": "Ontdekken",
         "type_seed_desc": "Ontdek nieuwe nummers via je streamingproviders.",
-        "add_seed": "Voeg bron toe",
-        "seed_label": "Bron",
+        "add_seed": "Voeg uitgangspunt toe",
+        "seed_label": "Uitgangspunt",
         "seed_album_pick": "Kies een album",
-        "seed_full": "Bronlimiet bereikt",
+        "seed_full": "Uitgangspunt-limiet bereikt",
         "seed_playlist_pick": "Kies een afspeellijst",
         "name_label": "Naam",
         "name_required": "Voer een naam in.",
         "results_library": "Bibliotheekresultaten",
         "results_other": "Andere resultaten",
         "field_album_type_is": "Albumtype is",
-        "field_album_type_is_not": "Albumtype is niet"
+        "field_album_type_is_not": "Albumtype is niet",
+        "field_explicit": "Expliciet",
+        "explicit_allowed": "Toegestaan",
+        "explicit_only": "Alleen expliciet",
+        "explicit_not_allowed": "Niet toegestaan"
     },
     "explore": "Verkennen",
     "shortcuts": "Snelkoppelingen",
@@ -1373,5 +1378,8 @@
         }
     },
     "artist_no_library_albums": "Je hebt geen albums van deze artiest in je bibliotheek.",
-    "artist_no_library_tracks": "Je hebt geen nummers van deze artiest in je bibliotheek."
+    "artist_no_library_tracks": "Je hebt geen nummers van deze artiest in je bibliotheek.",
+    "artist_all_albums": "Alle albums",
+    "artist_all_tracks": "Alle nummers",
+    "on_provider": "Op {0}"
 }

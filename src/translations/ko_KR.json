@@ -145,7 +145,6 @@
         "group_members": "그룹 구성원",
         "default": "기본값",
         "provider_depends_on_confirm": "{0} 설정하기 전에 {1} 공급자를 구성해야 합니다. 지금 구성하시겠습니까?",
-        "category": {},
         "theme": {
             "label": "테마",
             "options": {

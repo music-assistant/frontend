@@ -145,7 +145,6 @@
         "group_members": "Člani skupine",
         "default": "Privzeto",
         "provider_depends_on_confirm": "Preden lahko nastavite {0}, morate konfigurirati ponudnika {1}. Ali želite to storiti zdaj?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {

@@ -147,11 +147,6 @@
         "group_members": "Чланови групе",
         "default": "Подразумевано",
         "provider_depends_on_confirm": "Пре него што можете да подесите {0}, морате да конфигуришете провајдера {1}, да ли желите да то урадите сада?",
-        "category": {
-            "web_player": "Веб плејер",
-            "protocol_settings": "Излазни протокол(и)",
-            "options": "Опције плејера"
-        },
         "theme": {
             "label": "Тема",
             "options": {
@@ -418,6 +413,12 @@
         "no_group_providers": "Тренутно нема доступних провајдера који подржавају креирање група.",
         "provider_codeowners": "Овај провајдер је допринос заједнице и одржава га…",
         "provider_credits": "Омогућено од стране",
+        "category": {
+            "web_player": "Веб плејер",
+            "protocol_settings": "Излазни протокол(и)",
+            "options": "Опције плејера",
+            "display_settings": "Приказ"
+        },
         "onboarding_subtitle": "Хајде да почнемо тако што ћемо повезати ваше музичке изворе и аудио уређаје.",
         "onboarding_music_title": "Музика",
         "onboarding_music_desc": "Повежите своје стриминг сервисе као што су „Spotify“, „Tidal“ или вашу локалну музичку библиотеку.",
@@ -1324,11 +1325,25 @@
         "name_label": "Име",
         "name_required": "Унесите име.",
         "results_library": "Резултати из библиотеке",
-        "results_other": "Остали резултати"
+        "results_other": "Остали резултати",
+        "field_album_type_is": "Тип албума је"
     },
     "explore": "Истражи",
     "shortcuts": "Пречице",
     "system": "Систем",
     "add_url_item_failed": "Додавање ставке није успело",
-    "added_to_library": "Ставка „{0}” је додата у библиотеку"
+    "added_to_library": "Ставка „{0}” је додата у библиотеку",
+    "disc": "Диск {number}",
+    "album_type_label": "Тип албума",
+    "artist_topalbums": "Најбољи албуми",
+    "in_library": "У вашој библиотеци",
+    "provider": {
+        "bbc_sounds": {
+            "listen_live": "Слушај уживо",
+            "today": "Данас",
+            "yesterday": "Јуче"
+        }
+    },
+    "artist_all_albums": "Сви албуми",
+    "artist_all_tracks": "Све нумере"
 }

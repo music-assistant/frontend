@@ -147,9 +147,6 @@
         "group_members": "Członkowie grupy",
         "default": "domyślnie",
         "provider_depends_on_confirm": "Zanim będziesz mógł skonfigurować {0}, musisz skonfigurować dostawcę {1}. Czy chcesz to zrobić teraz?",
-        "category": {
-            "web_player": "Odtwarzacz internetowy"
-        },
         "theme": {
             "label": "Motyw",
             "options": {
@@ -412,6 +409,9 @@
         "no_group_providers": "Obecnie nie masz żadnych dostawców obsługujących tworzenie grup",
         "provider_codeowners": "Ten dostawca jest współtworzony\/obsługiwany przez",
         "provider_credits": "Możliwe dzięki",
+        "category": {
+            "web_player": "Odtwarzacz internetowy"
+        },
         "onboarding_subtitle": "Zacznijmy od podłączenia źródeł muzyki i urządzeń audio.",
         "onboarding_music_title": "Muzyka",
         "onboarding_music_desc": "Podłącz swoje usługi streamingowe, takie jak Spotify, Tidal lub lokalną bibliotekę muzyczną.",

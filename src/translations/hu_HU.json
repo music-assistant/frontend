@@ -147,11 +147,6 @@
         "group_members": "Csoporttagok",
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnia kell a(z) {1} szolgáltatót. Szeretné ezt most megtenni?",
-        "category": {
-            "web_player": "Webes lejátszó",
-            "protocol_settings": "Kimeneti protokoll(ok)",
-            "options": "Lejátszó beállítások"
-        },
         "theme": {
             "label": "Téma",
             "options": {
@@ -418,6 +413,11 @@
         "no_group_providers": "Jelenleg nincs olyan szolgáltató, amely támogatná csoportok létrehozását",
         "provider_codeowners": "Ezt a szolgáltatót közreműködő\/karbantartó:",
         "provider_credits": "Lehetővé tette:",
+        "category": {
+            "web_player": "Webes lejátszó",
+            "protocol_settings": "Kimeneti protokoll(ok)",
+            "options": "Lejátszó beállítások"
+        },
         "onboarding_subtitle": "Kezdjük azzal, hogy csatlakoztatjuk zenei forrásait és audioeszközeit.",
         "onboarding_music_title": "Zene",
         "onboarding_music_desc": "Csatlakoztassa streaming szolgáltatásait, mint a Spotify, Tidal, vagy helyi zenekönyvtárát.",
