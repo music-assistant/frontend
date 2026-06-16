@@ -230,6 +230,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -469,8 +470,7 @@ const onAction = async function (
       }
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(String(err));
     })
     .finally(() => {
       loading.value = false;

@@ -393,8 +393,7 @@ const onAction = async function (
       }
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(String(err));
     })
     .finally(() => {
       loading.value = false;
