@@ -9,7 +9,7 @@ import messages from "@intlify/unplugin-vue-i18n/messages";
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: navigator.language.split("-")[0],
+  locale: navigator.language..replace("-", "_"),
   fallbackLocale: "en",
   missingWarn: false,
   fallbackWarn: false,
