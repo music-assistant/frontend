@@ -674,7 +674,6 @@ interface _MediaItemBase {
   uri: string;
   external_ids?: Array<[ExternalID, string]>;
   is_playable: boolean; // if the item is playable (can be used in play_media command)
-  translation_key?: string; // an optional translation key identifier
   media_type: MediaType;
 }
 
@@ -1096,11 +1095,11 @@ export enum ProviderStatus {
 }
 
 export interface ProviderError {
-  // Structured, localizable error describing why a provider failed to load.
+  // Structured error describing why a provider failed to load. The server
+  // localizes `message` (translation key/args are stripped server-side), so the
+  // client renders it directly.
   error_code: number;
   message: string;
-  translation_key?: string;
-  translation_args: (string | number)[];
 }
 
 export interface ProviderInstance {
@@ -1157,8 +1156,6 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
-  translation_key?: string;
-  translation_args: unknown[];
   logs: string[];
   schedule?: TaskSchedule;
   last_run?: string;

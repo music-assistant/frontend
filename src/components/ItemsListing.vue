@@ -1757,9 +1757,8 @@ const getSortName = function (
   preferSortName = false,
 ) {
   if (!item) return "";
-  // names (incl. translated folder/media names) are resolved server-side; sort by item.name,
-  // falling back to sort_name when explicitly preferred for regular items.
-  if ("translation_key" in item && item.translation_key) return item.name;
+  // names (incl. translated folder/media names) are resolved server-side, so we sort
+  // by item.name, falling back to sort_name when explicitly preferred.
   if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;
