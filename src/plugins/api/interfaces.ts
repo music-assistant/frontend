@@ -578,7 +578,10 @@ export interface ProviderConfig extends Config {
   name?: string;
   // default_name: default name to use when there is name available
   default_name?: string;
-  last_error?: string;
+  // last_error: structured error if the provider could not be setup with this config
+  last_error?: ProviderError;
+  // status: load/lifecycle status, derived server-side
+  status?: ProviderStatus;
 }
 
 export interface PlayerConfig extends Config {
@@ -1081,6 +1084,23 @@ export enum ProviderStage {
   EXPERIMENTAL = "experimental",
   UNMAINTAINED = "unmaintained",
   DEPRECATED = "deprecated",
+}
+
+export enum ProviderStatus {
+  LOADED = "loaded",
+  LOADING = "loading",
+  DISABLED = "disabled",
+  AUTH_REQUIRED = "auth_required",
+  INCOMPATIBLE = "incompatible",
+  ERROR = "error",
+}
+
+export interface ProviderError {
+  // Structured, localizable error describing why a provider failed to load.
+  error_code: number;
+  message: string;
+  translation_key?: string;
+  translation_args: (string | number)[];
 }
 
 export interface ProviderInstance {

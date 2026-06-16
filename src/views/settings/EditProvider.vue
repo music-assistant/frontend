@@ -22,6 +22,47 @@
         </div>
       </v-alert>
 
+      <!-- Error banner: shows why the provider failed to load -->
+      <div
+        v-if="config.enabled && config.last_error"
+        class="mb-4 flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive"
+      >
+        <TriangleAlert class="size-5 shrink-0" />
+        <div class="min-w-0 flex-1">
+          <div class="font-semibold">
+            {{ $t("settings.provider_requires_attention") }}
+          </div>
+          <div
+            class="mt-0.5 text-sm whitespace-pre-wrap break-words opacity-90"
+          >
+            {{ config.last_error?.message }}
+          </div>
+          <div
+            v-if="
+              config.status === ProviderStatus.INCOMPATIBLE ||
+              config.status === ProviderStatus.ERROR
+            "
+            class="mt-3 flex gap-2"
+          >
+            <!-- incompatible: nothing to fix, offer to remove the provider -->
+            <Button
+              v-if="config.status === ProviderStatus.INCOMPATIBLE"
+              size="sm"
+              variant="destructive"
+              @click="onRemove"
+            >
+              <Trash2 class="size-4" />
+              {{ $t("settings.remove_provider") }}
+            </Button>
+            <!-- other errors: offer to retry loading -->
+            <Button v-else size="sm" variant="destructive" @click="onReload">
+              <RefreshCw class="size-4" />
+              {{ $t("settings.reload") }}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <!-- Header card -->
       <v-card class="header-card mb-4" elevation="0">
         <div class="header-content">
@@ -134,11 +175,20 @@
       </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
+
+    <provider-save-error-dialog
+      v-model:open="saveErrorOpen"
+      :message="saveErrorMessage"
+      mode="edit"
+      @retry="retrySave"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import { Button } from "@/components/ui/button";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -146,21 +196,29 @@ import {
   EventMessage,
   EventType,
   ProviderConfig,
+  ProviderStatus,
 } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
+import { RefreshCw, Trash2, TriangleAlert } from "lucide-vue-next";
 import { nanoid } from "nanoid";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
 
 // global refs
 const router = useRouter();
+const { t } = useI18n();
 const config = ref<ProviderConfig>();
 const sessionId = nanoid(11);
 const loading = ref(false);
 const showAuthLink = ref(false);
 const showRenameDialog = ref(false);
 const editName = ref<string | null>(null);
+const saveErrorOpen = ref(false);
+const saveErrorMessage = ref("");
+const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 
 // props
 const props = defineProps<{
@@ -210,21 +268,63 @@ watch(showRenameDialog, (val) => {
 });
 
 // methods
+const backToProviders = function () {
+  router.push({
+    name: "providersettings",
+    query: { types: config.value?.type },
+  });
+};
+
+const onReload = function () {
+  if (!config.value) return;
+  api
+    .reloadProvider(config.value.instance_id)
+    .then(() => toast.success(t("settings.provider_reloading")))
+    .catch((err) => toast.error(String(err)));
+  backToProviders();
+};
+
+const onRemove = function () {
+  if (!config.value) return;
+  const instanceId = config.value.instance_id;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("settings.remove_provider"),
+    message: t("settings.remove_provider_confirm"),
+    confirmLabel: t("settings.remove_provider"),
+    onConfirm: async () => {
+      try {
+        await api.removeProviderConfig(instanceId);
+        toast.success(t("settings.provider_removed"));
+        backToProviders();
+      } catch (err) {
+        toast.error(String(err));
+      }
+    },
+  });
+};
+
+const retrySave = function () {
+  saveErrorOpen.value = false;
+  if (lastSubmitValues.value) onSubmit(lastSubmitValues.value);
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  // save new provider config
+  // save provider config
   loading.value = true;
+  lastSubmitValues.value = values;
   values["enabled"] = config.value!.enabled;
   api
     .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
     .then(() => {
+      toast.success(t("settings.provider_saved"));
       router.push({
         name: "providersettings",
         query: { types: config.value!.type },
       });
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      saveErrorMessage.value = String(err);
+      saveErrorOpen.value = true;
     })
     .finally(() => {
       loading.value = false;
@@ -304,7 +404,6 @@ const onAction = async function (
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
-  const { t } = useI18n();
   for (const author of authors) {
     if (author.includes("@")) {
       let authorName = author.replace("@", "");
@@ -322,7 +421,6 @@ const getAuthorsMarkdown = function (authors: string[]) {
 };
 
 const getCreditsMarkdown = function (credits: string[]) {
-  const { t } = useI18n();
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 

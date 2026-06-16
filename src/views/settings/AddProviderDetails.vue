@@ -67,6 +67,14 @@
       </v-card>
       <v-progress-circular v-else indeterminate size="64" color="primary" />
     </v-overlay>
+
+    <provider-save-error-dialog
+      v-model:open="saveErrorOpen"
+      :message="saveErrorMessage"
+      mode="new"
+      @retry="retrySave"
+      @abort="backToProviders"
+    />
   </section>
 </template>
 
@@ -83,6 +91,7 @@ import {
 } from "@/plugins/api/interfaces";
 import EditConfig from "./EditConfig.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { watch } from "vue";
 import { markdownToHtml } from "@/helpers/utils";
 import { useI18n } from "vue-i18n";
@@ -93,6 +102,9 @@ const config_entries = ref<ConfigEntry[]>([]);
 const sessionId = nanoid(11);
 const loading = ref(false);
 const showAuthLink = ref(false);
+const saveErrorOpen = ref(false);
+const saveErrorMessage = ref("");
+const lastSubmitValues = ref<Record<string, ConfigValueType>>();
 
 // props
 const props = defineProps<{
@@ -139,26 +151,32 @@ watch(
 );
 
 // methods
+const backToProviders = function () {
+  const providerType = api.providerManifests[props.domain]?.type;
+  router.push({
+    name: "providersettings",
+    // navigate without a type filter if the manifest or type is unavailable
+    query: providerType ? { types: providerType } : {},
+  });
+};
+
+const retrySave = function () {
+  saveErrorOpen.value = false;
+  if (lastSubmitValues.value) onSubmit(lastSubmitValues.value);
+};
+
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // save new provider config
   loading.value = true;
+  lastSubmitValues.value = values;
   api
     .saveProviderConfig(props.domain, values)
     .then(() => {
-      const providerType = api.providerManifests[props.domain]?.type;
-      if (providerType) {
-        router.push({
-          name: "providersettings",
-          query: { types: providerType },
-        });
-      } else {
-        // Fallback: navigate without a type filter if the manifest or type is unavailable
-        router.push({ name: "providersettings" });
-      }
+      backToProviders();
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      saveErrorMessage.value = String(err);
+      saveErrorOpen.value = true;
     })
     .finally(() => {
       loading.value = false;
