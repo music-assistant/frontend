@@ -286,6 +286,7 @@ import { Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import AddProviderDialog from "./AddProviderDialog.vue";
 
 // global refs
@@ -387,7 +388,7 @@ const reloadProvider = function (providerInstanceId: string) {
     .sendCommand("config/providers/reload", {
       instance_id: providerInstanceId,
     })
-    .catch((err) => alert(err));
+    .catch((err) => toast.error(String(err)));
 };
 
 const onMenu = function (evt: Event, item: ProviderConfig) {

@@ -94,6 +94,7 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import { watch } from "vue";
 import { markdownToHtml } from "@/helpers/utils";
+import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 
 // global refs
@@ -205,8 +206,7 @@ const onAction = async function (
       config_entries.value = entries;
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(String(err));
     })
     .finally(() => {
       loading.value = false;
