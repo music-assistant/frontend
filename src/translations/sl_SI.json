@@ -143,177 +143,9 @@
         "add_new_provider_button": "Dodajanje {0} ponudnika",
         "add_group_player": "Dodajanje skupinskega predvajalnika",
         "group_members": "Člani skupine",
-        "log_level": {
-            "label": "Raven dnevnika",
-            "description": "Nastavite podrobnost dnevnika za tega ponudnika.",
-            "options": {
-                "global": "Globalno",
-                "info": "Informacije",
-                "warning": "Opozorilo",
-                "error": "Napaka",
-                "debug": "Odpravljanje napak"
-            }
-        },
-        "flow_mode": {
-            "label": "Omogoči način pretoka čakalne vrste",
-            "description": "Omogočite način \"flow\", pri katerem se vse skladbe v čakalni vrsti pošiljajo kot neprekinjen zvočni tok.\nUporabite za predvajalnike, ki ne podpirajo prečnega preklapljanja in\/ali predvajanja brez presledkov, oz. če ima predvajalnik težave pri prehodu med skladbami."
-        },
-        "auto_play": {
-            "label": "Samodejno predvajanje (nadaljevanje ob vklopu)",
-            "description": "Ko je ta predvajalnik vklopljen, se predvajanje začne samodejno (če so elementi v čakalni vrsti)."
-        },
-        "output_channels": {
-            "label": "Način izhodnega kanala",
-            "description": "Predvajalnik lahko nastavite tako, da predvaja le levi ali desni kanal, na primer za ustvarjanje stereo para z dvema predvajalnikoma.",
-            "options": {
-                "stereo": "Stereo (oba kanala)",
-                "left": "Samo levi kanal",
-                "right": "Samo desni kanal",
-                "mono": "Mono (oba kanala)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Omogočite normalizacijo glasnosti (na podlagi standarda EBU-R128)",
-            "description": "Omogočite normalizacijo glasnosti na podlagi standarda EBU-R128 brez vpliva na dinamični razpon"
-        },
-        "volume_normalization_target": {
-            "label": "Ciljna raven za normalizacijo glasnosti",
-            "description": "Prilagodite povprečno (zaznano) glasnost na to ciljno raven. Privzeta vrednost je -17 LUFS\n\n**OPOZORILO:** Če nastavite previsoko raven, lahko pride do izrezovanja!"
-        },
-        "eq_bass": {
-            "label": "Ojačevalnik: bas",
-            "description": "Prilagodite raven nizkih tonov zvoka z vgrajenim osnovnim ojačevalnikom."
-        },
-        "eq_mid": {
-            "label": "Ojačevalnik: sredina",
-            "description": "Prilagodite srednjo raven zvoka z vgrajenim osnovnim ojačevalnikom."
-        },
-        "eq_treble": {
-            "label": "Ojačevalnik: visoki toni",
-            "description": "Prilagodite raven visokih tonov zvoka z vgrajenim osnovnim ojačevalnikom."
-        },
-        "crossfade": {
-            "label": "Omogočanje prečnega prehoda",
-            "description": "Omogočite prehod med skladbami (čakalne vrste)."
-        },
-        "crossfade_duration": {
-            "label": "Trajanje prehoda",
-            "description": "Trajanje prehoda med skladbami v sekundah (če je omogočeno)"
-        },
-        "hide_player": {
-            "label": "Skrij ta predvajalnik v uporabniškem vmesniku",
-            "description": "Skrijte ta predvajalnik v uporabniškem vmesniku.\n\nUpoštevajte, da ga je še vedno mogoče upravljati in da bo prikazan tudi v vseh skupinah za sinhronizacijo, ki jim predvajalnik pripada."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementi, ki jih lahko izberete, ko predvajate izvajalca (v knjižnici).",
-            "description": "Če želite predvajati izvajalca, katere elemente naj se uvrsti v čakalno vrsto?",
-            "options": {
-                "library_tracks": "Samo skladbe v knjižnici",
-                "library_album_tracks": "Vse skladbe iz vseh albumov v knjižnici",
-                "all_tracks": "Vse (najbolj priljubljene) skladbe (vseh) ponudnikov",
-                "all_album_tracks": "Vse skladbe iz vseh albumov (vseh) ponudnikov"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementi, ki jih lahko izberete, ko predvajate album (v knjižnici).",
-            "description": "Če želite predvajati album, katere elemente naj se uvrsti v čakalno vrsto?",
-            "options": {
-                "library_tracks": "Samo skladbe v knjižnici",
-                "all_tracks": "Vse skladbe za album pri ponudniku"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Privzeta možnost dodajanja včakalno vrsto za elemente izvajalca.",
-            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste podali dejanja).",
-            "options": {
-                "play": "Predvajajte skladbo(-e) izvajalca zdaj in obdržite preostale elemente čakalne vrste.",
-                "replace": "Počistite čakalno vrsto in predvajajte skladbo(-e) izvajalca",
-                "next": "Predvajajte element(-e) takoj za trenutno predvajanim elementom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte skladbo izvajalca takoj za trenutno predvajanim elementom.",
-                "add": "Dodajte skladbo(-e) izvajalca na konec čakalne vrste."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Privzeta možnost dodajanja v čakalno vrsto za elemente albuma.",
-            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste podali dejanja).",
-            "options": {
-                "play": "Predvajajte skladbo(-e) albuma zdaj in obdržite preostale elemente čakalne vrste.",
-                "replace": "Počistite čakalno vrsto in predvajajte skladbo(-e) iz albuma",
-                "next": "Predvajajte element(-e) takoj za trenutno predvajanimpredmetom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte skladbo(-e) albuma takoj za trenutno predvajanim elementom.",
-                "add": "Dodajte skladbo(-e) albuma na konec čakalne vrste."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Privzeta možnost čakalne vrste za element(-e) Sledi.",
-            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste določili dejanja).",
-            "options": {
-                "play": "Predvajajte skladbo(-e) zdaj in obdržite preostale elemente čakalne vrste.",
-                "replace": "Počistite čakalno vrsto in predvajajte skladbo(-e).",
-                "next": "Predvajajte skladbo(-e) takoj za trenutno predvajanim elementom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte skladbo(-e) takoj za trenutno predvajanim elementom.",
-                "add": "Dodajte skladbo(-e) na konec čakalne vrste."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Privzeta možnost dodajanja v čakalno vrsto za elemente s seznama predvajanja.",
-            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste določili dejanja).",
-            "options": {
-                "play": "Predvajajte skladbo(-e) s seznama predvajanja zdaj in ohranite preostale elemente čakalne vrste.",
-                "replace": "Počistite čakalno vrsto in predvajajte skladbe s seznama predvajanja",
-                "next": "Predvajajte element(-e) takoj za trenutno predvajanim elementom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte skladbo(-e) takoj za trenutno predvajanim elementom.",
-                "add": "Dodajte skladbo(-e) na konec čakalne vrste seznama predvajanja."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Privzeta možnost dodajanja v čakalno vrsto za element(-e) Radia.",
-            "description": "Določite privzeto dejanje dodajanja v čakalno vrsto za to vrsto medija (če niste določili dejanja).",
-            "options": {
-                "play": "Predvajajte radijsko postajo zdaj in obdržite preostale elemente čakalne vrste.",
-                "replace": "Počistite čakalno vrsto in predvajajte radijsko postajo",
-                "next": "Predvajajte element(-e) takoj za trenutno predvajanim elementom.",
-                "replace_next": "Počistite čakalno vrsto in predvajajte radijsko(-e) postajo(-e) takoj za trenutno predvajanim\/shranjenim elementom.",
-                "add": "Dodajte radijsko(-e) postajo(-e) na konec čakalne vrste."
-            }
-        },
         "default": "Privzeto",
         "provider_depends_on_confirm": "Preden lahko nastavite {0}, morate konfigurirati ponudnika {1}. Ali želite to storiti zdaj?",
-        "category": {
-            "advanced": "Napredne nastavitve",
-            "generic": "Splošne nastavitve",
-            "announcements": "Konfiguracija obvestil"
-        },
-        "tts_pre_announce": {
-            "label": "Predhodna najava TTS",
-            "description": "Ko je sporočilo TTS (pretvorba besedila v govor) poslano funkciji Obvestilo, pred obvestilom dodajte kratek zvok (piščalka)."
-        },
-        "announce_volume_strategy": {
-            "label": "Strategija glasnosti za obvestila",
-            "description": "Kako naj se začasno prilagodi glasnost, ko se na tem predvajalniku predvaja sporočilo (uporabi v kombinaciji s spodnjo vrednostjo glasnosti)?",
-            "options": {
-                "absolute": "Absolutna glasnost",
-                "relative": "Relativno povišanje glasnosti",
-                "percentual": "Povišanje glasnosti za določen odstotek",
-                "none": "Ne prilagajaj glasnosti"
-            }
-        },
-        "announce_volume": {
-            "label": "Raven glasnosti za obvestila",
-            "description": "Odstotna, relativna ali absolutna raven glasnosti, ki se uporablja s strategijo za objave."
-        },
-        "announce_volume_min": {
-            "label": "Najnižja raven glasnosti za obvestila",
-            "description": "Glasnost (prilagoditev) obvestil ne sme biti nižja od te ravni."
-        },
-        "announce_volume_max": {
-            "label": "Najvišja raven glasnosti za obvestila",
-            "description": "Glasnost (prilagoditev) obvestil ne sme preseči te ravni."
-        },
-        "icon": {
-            "label": "Ikona",
-            "description": "Ikona oblikovanja materiala za ta predvajalnik.\n\nGlej https:\/\/pictogrammers.com\/library\/mdi\/."
-        },
+        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -359,38 +191,6 @@
         "no_music_providers_detail": "Začnite izkušnjo Music Assistant z dodajanjem ponudnikov glasbe.",
         "no_player_providers": "Noben ponudnik predvajalnika ni konfiguriran",
         "no_player_providers_detail": "Konfiguriraj ponudnike predvajalnika tako, da izberejo naprave, v katerih lahko Music Assistant predvaja vašo glasbo.",
-        "volume_normalization_radio": {
-            "label": "Metoda normalizacije glasnosti, ki se uporablja za skladbe",
-            "description": "Nastavitev želene strategije normalizacije glasnosti za radijske tokove. \nPrivzeto Music Assistant izbere meritev (povprečne zaznane) glasnosti radijske postaje v skladu s specifikacijo EBU-R128 in nato prilagodi celotno ojačenje\/glasnost toka v skladu s to meritvijo, tako da to ne vpliva na dinamični obseg zvoka. Če za radijsko postajo (še) ni meritve, bo Music Assistant uporabil dinamični (vendar manj natančen) filter za izravnavo glasnosti.\n\nNASVET: Radijski tokovi imajo pogosto različne ravni glasnosti, zlasti med napovedmi in reklamami.\nOdločite se lahko, da za radijske tokove uveljavite dinamično izenačevanje glasnosti, tudi če za radijsko postajo obstaja (povprečna) meritev glasnosti. \n \n**Možnosti:**\n\n - Onemogočeno - za radijske tokove sploh ne uporabite normalizacije glasnosti. \n  - Vsili dinamično - vedno uveljavlja dinamično izenačevanje glasnosti. \n  - Samo meritev (brez povratka) - uporabite (splošno) korekcijo glasnosti\/izboljšanja na podlagi shranjene meritve. Če nimamo na voljo nobene meritve, ne uporabi normalizacije.\n  - Povratek popravka ojačitve - Uporabimo (splošno) korekcijo glasnosti\/zvišanja na podlagi shranjene meritve. Če nimamo na voljo nobene meritve, vrni k vnaprej določenemu popravku ojačitve.\n - Fiksni popravek ojačitve - Vedno uporabite fiksni popravek glasnosti\/ojačitve.\n  - Vrnitev na dinamično - Samodejno izberemo najboljšo možnost: Uporabi (splošno) korekcijo glasnosti\/zvišanja na podlagi shranjene meritve, če jo imamo, če meritev ni na voljo, omogoči povratek v dinamični način, če meritev ni na voljo.\n",
-            "options": {
-                "disabled": "Onemogočeno",
-                "dynamic": "Vsili dinamično",
-                "measurement_only": "Samo merjenje (brez povratka)",
-                "fallback_fixed_gain": "Povratek popravka ojačitve",
-                "fixed_gain": "Fiksni popravek ojačitve",
-                "fallback_dynamic": "Vrnitev na dinamično"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metoda normalizacije glasnosti, ki se uporablja za skladbe",
-            "description": "Nastavite želeno strategijo normalizacije glasnosti za skladbe.\nMusic Assistant uporablja merjenje (povprečne zaznane) glasnosti skladb v skladu s specifikacijo EBU-R128, da prilagodi splošno povečanje\/glasnost toka, ne da bi vplival na dinamični obseg zvoka.\nTe meritve zagotovi ponudnik pretakanja, v primeru lokalnih datotek pa so lahko vsebovane v oznakah ID3 (ReplayGain 2.0 \/ Opus R128).\nČe meritev ni zagotovljena, bo Pomočnik za glasbo samodejno izvedel meritev ob\/po (prvem) predvajanju skladbe. Če za skladbo (še) ni meritev, bo program Music Assistant privzeto uporabil dinamični (vendar manj natančen) filter za izravnavo glasnosti. To zagotavlja, da med skladbami ni velikih skokov\/padcev v ravni glasnosti, tudi če še ni natančne meritve, vendar lahko dinamični izenačevalnik včasih nekoliko stisne dinamični razpon, čeprav to v večini primerov ne bi smelo biti slišno.\n\n\n**Možnosti:**\n\n - Onemogočeno - za radijske tokove sploh ne uporabite normalizacije glasnosti.\n - Vsili dinamično - sprotno izvajanje dinamičnega izenačevanje glasnosti. \n - Samo meritev (brez povratka) - uporabite (splošno) korekcijo glasnosti\/izboljšanja na podlagi shranjene meritve. Če nimamo na voljo nobene meritve, ne uporabi normalizacije. \n - Povratek popravka ojačitve - Uporabimo (splošno) korekcijo glasnosti\/zvišanja na podlagi shranjene meritve. Če nimamo nobene meritve, vrni k vnaprej določenemu popravku ojačitve. \n - Fiksni popravek ojačitve - Vedno uporabite fiksen popravek glasnosti\/ojačenja. \n - Vrnitev na dinamično - Samodejno izberemo najboljšo možnost: Uporabi (splošno) korekcijo glasnosti\/zvišanja na podlagi shranjene meritve, če jo imamo, če meritev ni na voljo, omogoči povratek v dinamični način, če meritev ni na voljo.\n",
-            "options": {
-                "disabled": "Onemogočeno",
-                "dynamic": "Vsili dinamično",
-                "measurement_only": "Samo merjenje (brez povratka)",
-                "fallback_fixed_gain": "Povratek popravka ojačitve",
-                "fixed_gain": "Fiksni popravek ojačitve",
-                "fallback_dynamic": "Vrnitev na dinamično"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fiksno\/povratno prilagajanje ojačitve za skladbe",
-            "description": "Popravek ojačitve s fiksnim\/povratnim ojačanjem, ki se uporabi za zvočni tok  (odvisno od nastavitve \"Metoda normalizacije glasnosti\").\n\nPozitivno vrednost uporabite za povečanje glasnosti, negativno vrednost pa za zmanjšanje glasnosti.\n\nTa nastavitev se uporabi, ko je metoda normalizacije glasnosti nastavljena na »Fiksni popravek ojačitve« ali »Povratni popravek ojačitve«."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fiksna\/nadomestna nastavitev ojačitve za radio",
-            "description": "Fiksni\/nadomestni popravek ojačitve za radijski tok (odvisno od nastavitve »Metoda normalizacije glasnosti«).\nUporabite pozitivno vrednost za povečanje glasnosti, negativno vrednost, da zmanjšate glasnost.\n\nTa nastavitev se uporabi, ko je metoda normalizacije glasnosti nastavljena na »Fiksni popravek ojačitve« ali »Povratni popravek ojačitve«."
-        },
         "dynamic_members": {
             "label": "Dinamični člani skupine",
             "description": "Omogočite članom, da se (začasno) dinamično pridružijo\/zapustijo skupino, tako da se skupina bolj ali manj obnaša enako kot ročna sinhronizacija predvajalnikov skupaj, z glavno razliko, da bo skupinski predvajalnik držal čakalno vrsto."
@@ -523,9 +323,5 @@
     "shuffle_enable": "Omogoči naključno predvajanje",
     "dont_stop_the_music_enable": "Omogoči »Ne ustavljaj glasbe!«",
     "dont_stop_the_music_disable": "Onemogoči »Ne ustavljaj glasbe!«",
-    "searchtype_all": "Vse",
-    "recommendations": {
-        "random_artists": "Naključni umetniki",
-        "random_albums": "Naključni albumi"
-    }
+    "searchtype_all": "Vse"
 }

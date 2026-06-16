@@ -6,6 +6,10 @@
     ]"
   >
     <div class="flex min-w-0 items-center gap-2">
+      <component
+        :is="fieldIcon(rule.field)"
+        class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+      />
       <Select
         :model-value="rule.field"
         @update:model-value="(v) => emit('change-field', v as RuleField)"
@@ -28,7 +32,7 @@
       </Select>
 
       <Select
-        v-if="rule.field !== 'favorite'"
+        v-if="rule.field !== 'favorite' && rule.field !== 'explicit'"
         :key="`operator-${rule.field}`"
         :model-value="rule.operator"
         :disabled="rule.field === 'year'"
@@ -79,6 +83,29 @@
       >
         {{ $t("smart_playlist.favorites_yes") }}
       </span>
+
+      <Select
+        v-else-if="rule.field === 'explicit'"
+        :model-value="rule.operator"
+        @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
+      >
+        <SelectTrigger
+          class="h-7 w-[130px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="allowed" class="text-xs">
+            {{ $t("smart_playlist.explicit_allowed") }}
+          </SelectItem>
+          <SelectItem value="is" class="text-xs">
+            {{ $t("smart_playlist.explicit_only") }}
+          </SelectItem>
+          <SelectItem value="is_not" class="text-xs">
+            {{ $t("smart_playlist.explicit_not_allowed") }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <template v-else-if="rule.field === 'year'">
         <NumberField
@@ -182,6 +209,7 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { fieldIcon } from "./fieldIcon";
 import { X } from "lucide-vue-next";
 import { computed } from "vue";
 import SmartPlaylistRuleValuePicker from "./SmartPlaylistRuleValuePicker.vue";
@@ -210,6 +238,7 @@ const fieldOptions = computed(() => {
     { value: "artist", label: $t("artist") },
     { value: "album", label: $t("album") },
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
+    { value: "explicit", label: $t("smart_playlist.field_explicit") },
     { value: "year", label: $t("smart_playlist.field_year") },
   ];
   return all.filter(

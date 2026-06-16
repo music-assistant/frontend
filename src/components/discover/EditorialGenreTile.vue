@@ -24,24 +24,20 @@
 
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
-import { getGenreDisplayName, handleMediaItemClick } from "@/helpers/utils";
+import { handleMediaItemClick } from "@/helpers/utils";
 import type { Genre } from "@/plugins/api/interfaces";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 
 interface Props {
   item: Genre;
 }
 const props = defineProps<Props>();
-const { t, te } = useI18n();
 
 const genreBanner = new URL("@/assets/logo/banner-no-logo.png", import.meta.url)
   .href;
 
 const iconImage = computed(() => itemArtwork(props.item, 320).image);
-const displayName = computed(() =>
-  getGenreDisplayName(props.item.name, props.item.translation_key, t, te),
-);
+const displayName = computed(() => props.item.name);
 
 const onClick = (e: MouseEvent) =>
   handleMediaItemClick(props.item, e.clientX, e.clientY);

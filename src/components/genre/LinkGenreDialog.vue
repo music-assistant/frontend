@@ -32,14 +32,7 @@
                     :value="genre.item_id"
                     @select="selectGenre(genre)"
                   >
-                    {{
-                      getGenreDisplayName(
-                        genre.name,
-                        genre.translation_key,
-                        t,
-                        te,
-                      )
-                    }}
+                    {{ genre.name }}
                     <Check
                       v-if="selectedTargetId === genre.item_id"
                       class="ml-auto h-4 w-4"
@@ -85,7 +78,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getGenreDisplayName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { Genre, MediaItemType } from "@/plugins/api/interfaces";
 import { eventbus, type LinkGenreDialogEvent } from "@/plugins/eventbus";
@@ -95,7 +87,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const open = ref(false);
 const popoverOpen = ref(false);
@@ -110,7 +102,7 @@ const selectedGenreName = computed(() => {
     (g) => g.item_id === selectedTargetId.value,
   );
   if (!genre) return "";
-  return getGenreDisplayName(genre.name, genre.translation_key, t, te);
+  return genre.name;
 });
 
 const selectGenre = (genre: Genre) => {

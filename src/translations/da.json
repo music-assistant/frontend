@@ -143,178 +143,10 @@
         "add_new_provider_button": "Tilføj {0} udbyder",
         "add_group_player": "Tilføj gruppe-afspiller",
         "group_members": "Enheder i gruppen",
-        "log_level": {
-            "label": "Log-niveau",
-            "description": "Indstil log-niveauet for denne udbyder.",
-            "options": {
-                "global": "Global",
-                "info": "Info",
-                "warning": "Advarsel",
-                "error": "Fejl",
-                "debug": "Fejlsøgning"
-            }
-        },
-        "flow_mode": {
-            "label": "Aktivér flow-tilstand",
-            "description": "Aktiver \"flow\"-tilstand, hvor alle numre i køen sendes som en kontinuerlig lydstrøm. \nBruges til afspillere, der ikke understøtter gapless og\/eller crossfading, eller hvis afspilleren har problemer med at skifte mellem numre."
-        },
-        "auto_play": {
-            "label": "Start automatisk afspilning",
-            "description": "Når denne afspiller tændes, starter afspilningen automatisk (hvis der er elementer i køen)."
-        },
-        "output_channels": {
-            "label": "Tilstand for udgangskanal",
-            "description": "Du kan konfigurere denne afspiller til kun at afspille venstre eller højre kanal, f.eks. for at skabe et stereopar med 2 afspillere.",
-            "options": {
-                "stereo": "Stereo (begge kanaler)",
-                "left": "Kun venstre kanal",
-                "right": "Kun højre kanal",
-                "mono": "Mono (begge kanaler)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Aktiver normalisering af lydstyrke (EBU-R128-baseret)",
-            "description": "Aktiver lydstyrkenormalisering baseret på EBU-R128-standarden uden at påvirke dynamikområdet"
-        },
-        "volume_normalization_target": {
-            "label": "Målniveau for volumenormalisering",
-            "description": "Juster gennemsnitlig (opfattet) lydniveau til dette målniveau, standard er -17 LUFS \n\n **ADVARSEL:** Hvis niveauet indstilles for højt, kan det resultere i klipning!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bas",
-            "description": "Brug den indbyggede grundlæggende equalizer til at justere lydniveauet for bas (lave toner)."
-        },
-        "eq_mid": {
-            "label": "Equalizer: mellemtone",
-            "description": "Brug den indbyggede grundlæggende equalizer til at justere mellemniveauet i lyden."
-        },
-        "eq_treble": {
-            "label": "Equalizer: diskant",
-            "description": "Brug den indbyggede grundlæggende equalizer til at justere lydniveauet for diskant (høje toner)."
-        },
-        "crossfade": {
-            "label": "Aktivér crossfade",
-            "description": "Aktiver crossfade-overgang mellem (kø-)numre."
-        },
-        "crossfade_duration": {
-            "label": "Crossfade-varighed",
-            "description": "Varighed i sekunder af crossfade mellem sange (hvis aktiveret)"
-        },
-        "hide_player": {
-            "label": "Skjul denne afspiller i brugergrænsefladen",
-            "description": "Skjul denne afspiller i brugergrænsefladen. \n\nBemærk, at den stadig kan styres, og at den også vil blive vist i alle synkroniseringsgrupper, som afspilleren tilhører."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementer, der skal vælges, når du afspiller en kunstner (i biblioteket).",
-            "description": "Hvis du vil afspille en kunstner, hvilke elementer skal så sættes i kø?",
-            "options": {
-                "library_tracks": "Kun numre fra biblioteket",
-                "library_album_tracks": "Alle numre fra alle albums i biblioteket",
-                "all_tracks": "Alle (top) numre fra (alle) udbyder(e)",
-                "all_album_tracks": "Alle numre fra alle albums fra (alle) udbyder(e)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementer, der skal vælges, når du afspiller et album (i biblioteket).",
-            "description": "Hvis du vil afspille en kunstner, hvilke elementer skal så sættes i kø?",
-            "options": {
-                "library_tracks": "Kun numre i biblioteket",
-                "all_tracks": "Alle numre på albummet på udbyder"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standard kø-indstilling for artist-element.",
-            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
-            "options": {
-                "play": "Afspil kunstnerens nummer\/numre nu, og behold resten af køen.",
-                "replace": "Ryd køen, og afspil kunstnerens nummer\/numre [default].",
-                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil kunstnerens nummer\/numre efter det aktuelle element.",
-                "add": "Tilføj kunstnerens sang(e) til slutningen af køen."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standard kø-indstilling for albums.",
-            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
-            "options": {
-                "play": "Afspil albumnummeret\/-numrene nu, og behold de(t) resterende køelement(er).",
-                "replace": "Ryd køen, og afspil albumnummeret\/-numrene [standard].",
-                "next": "Afspil elementet\/elementerne efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil albumnummeret\/-numrene lige efter det aktuelle nummer.",
-                "add": "Tilføj albumnummeret\/-numrene i bunden af køen."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standard kø-indstilling for numre.",
-            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
-            "options": {
-                "play": "Afspil nummeret\/numrene, og behold de(t) resterende køelement(er). [standard]",
-                "replace": "Ryd køen, og afspil nummeret\/numrene.",
-                "next": "Afspil nummeret\/numrene efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil nummeret\/numrene efter det aktuelle element.",
-                "add": "Tilføj nummeret\/numrene i bunden af køen."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standard kø-indstilling for afspilningslisteelement(er).",
-            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
-            "options": {
-                "play": "Afspil afspilningslistens numre, og behold de resterende elementer i køen.",
-                "replace": "Ryd køen, og afspil afspilningslistens numre [standard].",
-                "next": "Afspil elementet(erne) efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil sangen(e) fra playlisten lige efter den aktuelle sang.",
-                "add": "Tilføj sangen(e) fra playliste til slutningen af køen."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standard kø-indstilling for radio-element(er).",
-            "description": "Definer standard kø-handling for denne medietype (hvis du ikke har angivet en handling).",
-            "options": {
-                "play": "Afspil radiostationen nu, og behold de(t) resterende element(er) i køen.",
-                "replace": "Ryd køen, og afspil radiostationen [standard].",
-                "next": "Afspil elementet(erne) efter det aktuelle element.",
-                "replace_next": "Ryd køen, og afspil radiostationen(erne) efter det aktuelle element.",
-                "add": "Tilføj radiostation(er) i bunden af køen."
-            }
-        },
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
         "category": {
-            "advanced": "Avancerede indstillinger",
-            "generic": "Generelle indstillinger",
-            "announcements": "Konfiguration af meddelelser",
-            "player_controls": "Afspillerstyring",
             "options": "Afspillerindstillinger"
-        },
-        "tts_pre_announce": {
-            "label": "Forhåndsannoncering af TTS-meddelelser",
-            "description": "Når en TTS-besked (tekst-til-tale) sendes til meddelelsesfunktionen, tilføjes en kort lyd (klokke) før meddelelsen."
-        },
-        "announce_volume_strategy": {
-            "label": "Lydstyrkestrategi for meddelelser",
-            "description": "Når der sendes en meddelelse til denne afspiller, hvordan skal lydstyrken så justeres midlertidigt (brug i kombination med lydstyrken nedenfor).",
-            "options": {
-                "absolute": "Bestemt lydstyrke",
-                "relative": "Relativ lydstyrkeforøgelse",
-                "percentual": "Lydstyrkeforøgelse med fast procentsats",
-                "none": "Juster ikke lydstyrken"
-            }
-        },
-        "announce_volume": {
-            "label": "Lydstyrke for meddelelser",
-            "description": "Det procentuelle, relative eller absolutte, lydstyrkeniveau, der bruges med strategien til meddelelser."
-        },
-        "announce_volume_min": {
-            "label": "Minimum lydstyrke for meddelelser",
-            "description": "Lydstyrken af meddelelser bør ikke gå under dette niveau."
-        },
-        "announce_volume_max": {
-            "label": "Maksimal lydstyrke for meddelelser",
-            "description": "Lydstyrken af meddelelser bør ikke overstige dette niveau."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Material design ikon for denne afspiller. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -362,38 +194,6 @@
         "no_music_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere.",
         "no_player_providers": "Ingen afspillerudbydere konfigureret",
         "no_player_providers_detail": "Konfigurer afspillerudbydere for at vælge enheder, hvor Music Assistant kan afspille din musik.",
-        "volume_normalization_radio": {
-            "label": "Volumen-normaliseringsmetode til brug for radiostreams",
-            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for radiostreams. \nSom standard indsamler Music Assistant en måling af radiostationens (gennemsnitlige opfattede) loudness i henhold til EBU-R128-specifikationen og justerer derefter den samlede forstærkning\/lydstyrke af streamen i henhold til denne måling, så lydens dynamiske område ikke påvirkes. Når der (endnu) ikke findes nogen måling for en radiostation, vil Music Assistant falde tilbage på et dynamisk (men mindre præcist) loudness-udjævningsfilter.\n\nTIP: Radiostreams har ofte varierende lydstyrke, især under meddelelser og reklamer.\nDu kan vælge at gennemtvinge dynamisk lydstyrkenormalisering for radiostreams, selv om der findes en (gennemsnitlig) lydstyrkemåling for radiostationen. \n \n**Indstillinger:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme. \n  - Gennemtving dynamisk: Gennemtving altid dynamisk lydstyrkejustering. \n  - Kun måling (ingen justering): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes ikke normalisering.\n  - Fald tilbage forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, benyttes på en foruddefineret forstærkningskorrektion.\n  - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion.\n  - Fald tilbage til dynamisk - Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
-            "options": {
-                "disabled": "Deaktiveret",
-                "dynamic": "Gennemtving dynamisk",
-                "measurement_only": "Kun måling (ingen justering)",
-                "fallback_fixed_gain": "Fald tilbage til forstærkningskorrektion",
-                "fixed_gain": "Fast forstærkningskorrektion",
-                "fallback_dynamic": "Fald tilbage til dynamisk"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metode til normalisering af lydstyrken for musiknumre",
-            "description": "Indstil den foretrukne strategi for normalisering af lydstyrken for sange.\nMusic Assistant bruger en måling af sangens gennemsnitligt oplevede lydstyrke i henhold til EBU-R128-specifikationen til at justere streamens samlede gain\/lydstyrke uden at påvirke lydens dynamiske område.\nDisse målinger leveres enten af streamingudbyderen eller kan, ved lokale filer, være gemt i ID3-tags (ReplayGain 2.0 \/ Opus R128).\nHvis målingen ikke er tilgængelig, udfører Music Assistant automatisk en måling, når eller efter sangen afspilles første gang.\nNår der endnu ikke findes en måling for en sang, bruger Music Assistant som standard et dynamisk, men mindre præcist, filter til udjævning af lydstyrken. Det sikrer, at der ikke opstår store spring eller fald i lydstyrken mellem sange, selvom der endnu ikke findes en nøjagtig måling.\nDet dynamiske udjævningsfilter kan dog i nogle tilfælde komprimere det dynamiske område en smule, selvom det i de fleste tilfælde ikke bør kunne høres.\n\n\n**Valgmuligheder:**\n\n - Deaktiveret: Anvend slet ikke lydstyrkenormalisering for radiostrømme.\n - Gennemtving dynamisk: Gennemtving altid dynamisk volumenudjævning. \n - Kun måling (ingen tilbagefald): Anvend (overordnet) volumen-\/forstærkningskorrektion baseret på gemte målinger. Hvis vi ikke har nogen måling, anvendes der ikke normalisering. \n - Fallback til forstærkningskorrektion: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på den gemte måling. Hvis vi ikke har nogen måling, faldes tilbage til en foruddefineret forstærkningskorrektion. \n - Fast forstærkningskorrektion: Anvend altid den faste volumen-\/forstærkningskorrektion. \n - Fallback til dynamisk: Vælg automatisk den bedste løsning: Anvend (samlet) volumen-\/forstærkningskorrektion baseret på gemte målinger, hvis vi har nogen, og tillad tilbagefald til dynamisk tilstand, hvis der ikke er nogen måling tilgængelig.\n",
-            "options": {
-                "disabled": "Deaktiveret",
-                "dynamic": "Gennemtving dynamisk",
-                "measurement_only": "Kun måling (ingen fallback)",
-                "fallback_fixed_gain": "Fald tilbage til forstærkningskorrektion",
-                "fixed_gain": "Fast forstærkningskorrektion",
-                "fallback_dynamic": "Fald tilbage til dynamisk"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fast\/standard gain-justering for musiknumre",
-            "description": "Fast\/standard gain-korrektion, der skal anvendes på et spors lydstrøm (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fast\/standard gain-justering for radio",
-            "description": "Fast\/standard forstærkningskorrektion, der skal anvendes på en radiostream (afhænger af indstillingen \"Volume normalization method\").\nBrug en positiv værdi for at øge lydstyrken, en negativ værdi for at mindske lydstyrken.\n\nDenne indstilling bruges, når lydstyrkenormaliseringsmetoden er indstillet til \"Fast forstærkningskorrektion\" eller \"Fallback til forstærkningskorrektion\"."
-        },
         "dynamic_members": {
             "label": "Dynamiske gruppemedlemmer",
             "description": "Tillad medlemmer (midlertidigt) at tilslutte sig\/forlade gruppen dynamisk, så gruppen mere eller mindre opfører sig på samme måde som manuel synkronisering af afspillere, med den største forskel, at gruppeafspilleren holder køen."
@@ -466,22 +266,6 @@
                 "name_placeholder": "Min nye forudindstilling",
                 "remove_confirm": "Er du sikker på, at du vil fjerne denne DSP-forudindstilling?"
             }
-        },
-        "power_control": {
-            "label": "Tænd\/sluk-kontrol",
-            "description": "Definer\/tilsidesæt tænd\/sluk-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere tænd\/sluk-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
-        },
-        "volume_control": {
-            "label": "Lydstyrkekontrol",
-            "description": "Definer\/tilsidesæt lydstyrkekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere lydstyrkekontrol-kommandoerne til en anden enhed eller deaktivere det fuldstændigt."
-        },
-        "mute_control": {
-            "label": "Mutekontrol",
-            "description": "Definer\/tilsidesæt mutekontrol-adfærden for denne afspiller. \nDet giver dig f.eks. mulighed for at omdirigere mutekontrol-kommandoerne til en anden enhed eller deaktivere det helt. \n \nVi tilbyder en \"falsk\" mutekontrol-mulighed, som vil simulere muting ved at indstille lydstyrken til 0 og genoprette lydstyrken, når lyden slås til."
-        },
-        "output_limiter": {
-            "label": "Aktivér begrænsning for at forhindre klipning",
-            "description": "Aktiverer en begrænser, der forhindrer lydforvrængning ved at gøre høje toppe mere stille."
         },
         "dsp_enabled": "DSP er aktiveret",
         "dsp_disabled": "DSP er deaktiveret",
@@ -737,33 +521,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Vælg kilde",
-    "in_progress_items": "Fortsæt med at lytte...",
     "play_replace_next": "Afspil næste (ryd køen)",
     "all_enqueue_options": "Alle muligheder for at sætte i kø",
     "music_assistant_source": "Music Assistant kø ",
     "music_assistant_library": "Music Assistent bibliotek",
     "select_all_confirmation": "Vælg alle elementer? Denne handling kan bruge et øjeblik på at indlæse alle data.",
     "this_device": "Denne enhed",
-    "recommendations": {
-        "in_progress_items": "Fortsæt med at lytte...",
-        "recommended_new_tracks": "Anbefalede nye numre",
-        "recently_played": "Spillet for nylig",
-        "suggested_new_albums_for_you": "Foreslåede nye albums til dig",
-        "random_artists": "Tilfældige kunstnere",
-        "random_albums": "Tilfældige albums",
-        "custom_mixes": "Tilpassede mix",
-        "your_listening_history": "Din lyttehistorik",
-        "popular_albums": "Populære albums",
-        "staff_picks_tracks": "Medarbejdernes valg: numre",
-        "staff_picks_albums": "Medarbejdernes valg: albums",
-        "radio_stations_for_you": "Radiostationer til dig",
-        "producers__songwriters": "Producere og sangskrivere",
-        "new_releases_for_you": "Nye udgivelser til dig",
-        "recent_favorite_tracks": "Nyligt foretrukne numre",
-        "favorite_playlists": "Favorit-playlister",
-        "favorite_radio_stations": "Favorit-radiostationer",
-        "discover": "Udforsk"
-    },
     "homescreen_edit_enable": "Rediger startskærmen",
     "homescreen_edit_disable": "Forlad redigeringstilstand for startskærmen",
     "lyrics_will_appear_soon": "Sangteksten vises, når sangen begynder...",
@@ -774,54 +537,6 @@
     "description": "Beskrivelse",
     "genre": "Genre",
     "genres": "Genrer",
-    "genre_names": {
-        "blues": "Blues",
-        "childrens_music": "Børnemusik",
-        "christmas_music": "Julemusik",
-        "church_music": "Kirkemusik",
-        "classical": "Klassisk",
-        "dark_wave": "Dark wave",
-        "disco": "Disco",
-        "electronic": "Elektronisk",
-        "experimental": "Eksperimentel",
-        "field_recording": "Field recording",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangsta rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip hop",
-        "indian_classical": "Indisk klassisk",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "latin": "Latin",
-        "marching_band": "Marching band",
-        "metal": "Metal",
-        "musical": "Musical",
-        "new_age": "New age",
-        "poetry": "Poetry",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelic",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Singer-songwriter",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Lydeffekter",
-        "soundtrack": "Soundtrack",
-        "spoken_word": "Spoken word",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Vals",
-        "wellness": "Wellness"
-    },
     "link": "Link",
     "link_alias": "Link-alias",
     "link_alias_failed": "Kunne ikke linke alias",
@@ -849,11 +564,6 @@
         "starting": "Serveren starter op. Nogle udbydere, afspillere eller funktioner er muligvis ikke tilgængelige, før opstarten er afsluttet.",
         "stopping": "Serveren lukker ned...",
         "stopped": "Serveren er stoppet"
-    },
-    "genre_descriptions": {
-        "trap": "Trap-musik, eller blot trap, er en undergenre af hiphop-musik, der opstod i det sydlige USA. Lyriske referencer til trap startede i 1991, men den moderne lyd af trap dukkede op i 1999. Genren har fået sit navn fra Atlanta-udtrykket \"trap house\", et narkohus. Trap-musik har enkle, rytmiske, minimalistiske produktioner, der bruger syntetiske trommer og er kendetegnet ved komplekse hi-hat trommerytmer, lilletrommer, stortrommer, hvoraf nogle er afstemt med et langt decay for at udsende en basfrekvens. Teksterne fokuserer ofte på stofbrug og vold i byen.",
-        "waltz": "En vals, der sandsynligvis stammer fra tysk Ländler, er dansemusik i tredobbelt takt, ofte skrevet i 3\/4-takt. I en vals lyder der typisk én akkord pr. takt, og den akkompagnementsform, der især forbindes med vals, er at spille grundtonen i akkorden på første taktslag og de øverste toner på andet og tredje taktslag.",
-        "wellness": "Meditationsmusik er musik, der fremføres som hjælp til meditation. Den kan have et specifikt religiøst indhold, men er også på det seneste blevet forbundet med moderne komponister, der bruger meditationsteknikker i deres kompositionsproces, eller som komponerer sådan musik uden at fokusere på en bestemt religiøs gruppe. Begrebet omfatter også musik, der udføres som en meditativ handling."
     },
     "link_to_genre": "Link til genre",
     "link_to_genre_title": "Link til genre",

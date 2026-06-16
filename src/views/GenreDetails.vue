@@ -176,7 +176,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { Button } from "@/components/ui/button";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
-import { getGenreDisplayName, panelViewItemResponsive } from "@/helpers/utils";
+import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -219,7 +219,7 @@ const overviewRows = ref<
 >([]);
 const existingGenreNames = ref<Set<string>>(new Set());
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 
 const isAdmin = computed(() => authManager.isAdmin());
@@ -328,12 +328,7 @@ const loadOverviewRows = async () => {
     if (recommendationFolders && recommendationFolders.length > 0) {
       overviewRows.value = recommendationFolders.map((folder) => {
         return {
-          title: getGenreDisplayName(
-            folder.name || "",
-            folder.translation_key,
-            t,
-            te,
-          ),
+          title: folder.name || "",
           items: folder.items || [],
           icon: genreMediaTypeIconMap[folder.media_type],
           action: () => {

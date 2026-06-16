@@ -553,14 +553,8 @@ export interface ConfigEntry {
   // requires_reload: indicates that a reload of the provider (or player playback)
   // is required when this setting is changed
   requires_reload?: boolean;
-  // translation_key: optional custom translation key for this entry
-  translation_key?: string;
-  // translation_params: optional parameters for the translation key
-  translation_params?: string[];
-  // category_translation_key: optional custom translation key for the category
-  category_translation_key?: string;
-  // category_translation_params: optional parameters for the category translation key
-  category_translation_params?: string[];
+  // category_label: localized category display name, resolved server-side
+  category_label?: string | null;
   // advanced: indicates this is an advanced setting (hidden by default)
   advanced?: boolean;
 
@@ -584,7 +578,10 @@ export interface ProviderConfig extends Config {
   name?: string;
   // default_name: default name to use when there is name available
   default_name?: string;
-  last_error?: string;
+  // last_error: structured error if the provider could not be setup with this config
+  last_error?: ProviderError;
+  // status: load/lifecycle status, derived server-side
+  status?: ProviderStatus;
 }
 
 export interface PlayerConfig extends Config {
@@ -677,7 +674,6 @@ interface _MediaItemBase {
   uri: string;
   external_ids?: Array<[ExternalID, string]>;
   is_playable: boolean; // if the item is playable (can be used in play_media command)
-  translation_key?: string; // an optional translation key identifier
   media_type: MediaType;
 }
 
@@ -1089,6 +1085,23 @@ export enum ProviderStage {
   DEPRECATED = "deprecated",
 }
 
+export enum ProviderStatus {
+  LOADED = "loaded",
+  LOADING = "loading",
+  DISABLED = "disabled",
+  AUTH_REQUIRED = "auth_required",
+  INCOMPATIBLE = "incompatible",
+  ERROR = "error",
+}
+
+export interface ProviderError {
+  // Structured error describing why a provider failed to load. The server
+  // localizes `message` (translation key/args are stripped server-side), so the
+  // client renders it directly.
+  error_code: number;
+  message: string;
+}
+
 export interface ProviderInstance {
   // Provider instance details when a provider is serialized over the api.
   type: ProviderType;
@@ -1143,8 +1156,6 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
-  translation_key?: string;
-  translation_args: unknown[];
   logs: string[];
   schedule?: TaskSchedule;
   last_run?: string;
@@ -1296,6 +1307,7 @@ export interface SmartPlaylistRules {
   artist_ids: number[];
   album_ids: number[];
   favorites_only: boolean;
+  explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];
   seed_album_uris?: string[];

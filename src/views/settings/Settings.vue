@@ -683,15 +683,16 @@ const activeTab = computed(() => {
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
-    const provider = api.getProvider(instanceId);
-    if (provider) {
-      if (provider.type === ProviderType.MUSIC) return "music_providers";
-      if (provider.type === ProviderType.PLAYER) return "player_providers";
-      if (provider.type === ProviderType.METADATA) return "metadata_providers";
-      if (provider.type === ProviderType.PLUGIN) return "plugin_providers";
-      if (provider.type === ProviderType.AUDIO_ANALYSIS)
-        return "audio_analysis_providers";
-    }
+    // disabled instances are not loaded, so fall back to the manifest type
+    const providerType =
+      api.getProvider(instanceId)?.type ||
+      api.providerManifests[instanceId.split("--")[0]]?.type;
+    if (providerType === ProviderType.MUSIC) return "music_providers";
+    if (providerType === ProviderType.PLAYER) return "player_providers";
+    if (providerType === ProviderType.METADATA) return "metadata_providers";
+    if (providerType === ProviderType.PLUGIN) return "plugin_providers";
+    if (providerType === ProviderType.AUDIO_ANALYSIS)
+      return "audio_analysis_providers";
   }
 
   if (name === "addproviderdetails") {

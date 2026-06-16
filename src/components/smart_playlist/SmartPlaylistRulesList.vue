@@ -24,7 +24,6 @@
       <span>{{ $t("smart_playlist.match_following") }}</span>
     </div>
     <div
-      v-else
       class="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
     >
       <Info class="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
@@ -86,9 +85,13 @@
           <DropdownMenuItem
             v-for="field in availableFields"
             :key="field"
-            class="text-xs cursor-pointer"
+            class="text-xs cursor-pointer gap-2"
             @click="emit('add-rule', field)"
           >
+            <component
+              :is="fieldIcon(field)"
+              class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            />
             {{ fieldLabel(field) }}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -119,6 +122,7 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { fieldIcon } from "./fieldIcon";
 import { Info, Plus } from "lucide-vue-next";
 import { match } from "ts-pattern";
 import SmartPlaylistRuleRow from "./SmartPlaylistRuleRow.vue";
@@ -147,6 +151,7 @@ function fieldLabel(field: RuleField): string {
     .with("artist", () => $t("artist"))
     .with("album", () => $t("album"))
     .with("favorite", () => $t("smart_playlist.field_favorite"))
+    .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
     .exhaustive();
 }

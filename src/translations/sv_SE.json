@@ -145,185 +145,12 @@
         "add_new_provider_button": "Lägg till {0} leverantör",
         "add_group_player": "Lägg till gruppspelare",
         "group_members": "Gruppmedlemmar",
-        "log_level": {
-            "label": "Loggnivå",
-            "description": "Ställ in loggnivån för den här leverantören.",
-            "options": {
-                "global": "Global",
-                "info": "Information",
-                "warning": "Varning",
-                "error": "Fel",
-                "debug": "Felsökning"
-            }
-        },
-        "flow_mode": {
-            "label": "Aktivera köflödesläge",
-            "description": "Aktivera \"flödes\"-läget där alla låtar i kön skickas som en kontinuerlig ljudström. \nAnvänds för spelare som inte har inbyggt stöd för oavbruten och\/eller övertoning, eller om spelaren har problem med övergången mellan spåren."
-        },
-        "auto_play": {
-            "label": "Automatisk uppspelning (återupptas när strömmen slås på)",
-            "description": "När spelaren är påslagen startar uppspelningen automatiskt (om det finns objekt i kön)."
-        },
-        "output_channels": {
-            "label": "Läge för utgångskanal",
-            "description": "Du kan konfigurera spelaren så att den bara spelar vänster eller höger kanal, t.ex. för att skapa ett stereopar med 2 spelare.",
-            "options": {
-                "stereo": "Stereo (båda kanalerna)",
-                "left": "Endast vänster kanal",
-                "right": "Endast höger kanal",
-                "mono": "Mono (båda kanalerna)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Aktivera volymnormalisering (EBU-R128-baserad)",
-            "description": "Möjliggör volymnormalisering baserat på EBU-R128-standarden utan att påverka dynamikomfånget"
-        },
-        "volume_normalization_target": {
-            "label": "Målnivå för normalisering av volym",
-            "description": "Justera genomsnittlig (upplevd) ljudnivå till denna målnivå, standard är -17 LUFS \n\n **VARNING:** Om nivån ställs in för högt kan det leda till att ljudet hackar!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bas",
-            "description": "Använd den inbyggda equalizern för att justera basnivån (låga toner) i ljudet."
-        },
-        "eq_mid": {
-            "label": "Equalizer: mellanregister",
-            "description": "Använd den inbyggda equalizern för att justera ljudets mellanregister."
-        },
-        "eq_treble": {
-            "label": "Equalizer: diskant",
-            "description": "Använd den inbyggda equalizern för att justera diskantnivån (höga toner) i ljudet."
-        },
-        "crossfade": {
-            "label": "Aktivera övertoning",
-            "description": "Aktivera en övertoning-övergång mellan spår (kö)."
-        },
-        "crossfade_duration": {
-            "label": "Varaktighet för övertoning",
-            "description": "Varaktighet i sekunder för övertoning mellan spår (om aktiverad)"
-        },
-        "hide_player": {
-            "label": "Dölj denna spelare i användargränssnittet",
-            "description": "Dölj denna spelare i användargränssnittet. \n\nObservera att den fortfarande kan styras och att den också kommer att visas i alla synkroniseringsgrupper som spelaren tillhör."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Objekt att välja när du spelar en (i biblioteket) artist.",
-            "description": "Om du vill spela upp en artist, vilka objekt ska då läggas i kö?",
-            "options": {
-                "library_tracks": "Endast spår i biblioteket",
-                "library_album_tracks": "Alla spår från alla album i biblioteket",
-                "all_tracks": "Alla (bästa låtar) spår från (alla) leverantör(er)",
-                "all_album_tracks": "Alla spår från alla album från (alla) leverantör(er)"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Objekt att välja när du spelar upp ett album (i biblioteket) album.",
-            "description": "Om du vill spela upp ett album, vilka objekt ska placeras i kö?",
-            "options": {
-                "library_tracks": "Endast spår i biblioteket",
-                "all_tracks": "Alla låtar för album på leverantör"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standardalternativ för kö för artistobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
-            "options": {
-                "play": "Spela artistspår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela artistens spår.",
-                "next": "Spela objektet\/objekten direkt efter det objekt som för närvarande spelas\/buffras.",
-                "replace_next": "Rensa kön och spela artistspåret\/spåren direkt efter det aktuella spelade\/buffrade objektet.",
-                "add": "Lägg till artistens spår i slutet av kön."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standard kö-alternativ för albumobjekt.",
-            "description": "Definiera standardåtgärden för kö för denna medietyp (om du inte angav något alternativ).",
-            "options": {
-                "play": "Spela albumspår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela albumets spår.",
-                "next": "Spela upp objektet\/objekten direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp albumspåret\/albumspåren direkt efter det objekt som spelas upp\/buffras.",
-                "add": "Lägg till albumspåren i slutet av kön."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standardalternativ för kö för Spår objekt.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela spår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp spåret\/spåren.",
-                "next": "Spela upp spåret\/spåren direkt efter det objekt som spelas\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp spåret\/spåren direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "add": "Lägg till låt i slutet av kön."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standardalternativ för kö för objekt i spellistan.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela upp spellistespår nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp spellistans spår",
-                "next": "Spela upp objektet\/objekten direkt efter det objekt som spelas upp\/buffras för tillfället.",
-                "replace_next": "Rensa kön och spela upp spellistans spår direkt efter det spelade\/buffrade objektet.",
-                "add": "Lägg till spellistans spår i slutet av kön."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standardalternativ för kö för radioobjekt.",
-            "description": "Definiera standardåtgärden för att köa för den här medietypen (om du inte har angett någon åtgärd).",
-            "options": {
-                "play": "Spela radiostation nu och behåll de återstående objekten i kön.",
-                "replace": "Rensa kön och spela upp radiostationen.",
-                "next": "Spela objektet\/objekten direkt efter det objekt som för närvarande spelas\/buffras.",
-                "replace_next": "Rensa kön och spela upp radiostationen\/radiostationerna direkt efter den aktuella spelade\/buffrade artikeln.",
-                "add": "Lägg till radiostation(er) i slutet av kön."
-            }
-        },
         "default": "standard",
         "provider_depends_on_confirm": "Innan du kan konfigurera {0}, måste du ha {1} -leverantören konfigurerad, vill du göra det nu?",
         "category": {
-            "advanced": "Avancerat",
-            "generic": "Allmänt",
-            "announcements": "Meddelanden",
-            "player_controls": "Spelarens kontroller",
-            "sync_options": "Synkroniseringar\/importalternativ",
-            "builtin_playlists": "Inbyggda spellistor",
             "web_player": "Webbspelare",
-            "playback": "Kö för uppspelning",
             "protocol_settings": "Utgångsprotokoll",
-            "protocol_output_settings": "Aktivera {0} support",
-            "dsp": "Digital signalbehandling (DSP)",
             "options": "Spelaralternativ"
-        },
-        "tts_pre_announce": {
-            "label": "Förannonsera TTS-meddelanden",
-            "description": "När ett TTS-meddelande (text-till-tal) skickas till meddelandefunktionen, ska du lägga till en kort ljudsignal (klockvisselpipa)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volymstrategi för meddelanden",
-            "description": "När ett meddelande sänds till den här spelaren, hur ska volymen justeras tillfälligt (använd i kombination med volymvärdet nedan).",
-            "options": {
-                "absolute": "Absolut volym",
-                "relative": "Relativ volymökning",
-                "percentual": "Volymökning med fast procentsats",
-                "none": "Justera inte volymen"
-            }
-        },
-        "announce_volume": {
-            "label": "Volym för meddelanden",
-            "description": "Den procentuella, relativa eller absoluta volymnivån som används med strategin för meddelanden."
-        },
-        "announce_volume_min": {
-            "label": "Lägsta volymnivå för meddelanden",
-            "description": "Volymen (justeringen) för meddelanden bör inte gå under denna nivå."
-        },
-        "announce_volume_max": {
-            "label": "Maximal volymnivå för meddelanden",
-            "description": "Volymen (justeringen) för meddelanden bör inte överstiga denna nivå."
-        },
-        "icon": {
-            "label": "Ikon",
-            "description": "Material design ikon för den här spelaren. \n\n Se https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tema",
@@ -374,38 +201,6 @@
         "no_music_providers_detail": "Börja din upplevelse av Music Assistant genom att lägga till dina musikleverantörer.",
         "no_player_providers": "Inga spelarleverantörer konfigurerade",
         "no_player_providers_detail": "Konfigurera spelarleverantörer för att välja enheter där Music Assistent kan spela upp din musik.",
-        "volume_normalization_radio": {
-            "label": "Metod för volymnormalisering som ska användas för radioströmmar",
-            "description": "Ställ in önskad strategi för volymnormalisering för radioströmmar.\n\nSom standard samlar Music Assistant in en mätning av radiostationens (genomsnittliga upplevda) ljudstyrka enligt EBU-R128 specifikationen och justerar sedan strömmens totala förstärkning\/volym enligt den mätningen så att ljudets dynamiska omfång inte påverkas. När ingen mätning (ännu) finns för en radiostation, använder Music Assistant ett dynamiskt (men mindre exakt) ljudnivåutjämningsfilter.\n\nTIPS: Radioströmmar har ofta varierande ljudstyrkenivåer, särskilt under meddelanden och reklam.\n\nDu kan välja att tillämpa dynamisk volymnormalisering på radioströmmar, även om en (genomsnittlig) ljudstyrkemätning för radiostationen finns.\n\n**Alternativ:**\n\n- Inaktiverad - tillämpa inte volymnormalisering alls för radioströmmar.\n- Tvinga fram dynamisk - Tvinga fram dynamisk volymutjämning hela tiden.\n- Endast mätning (ingen reserv) - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserat på lagrad mätning. Om vi inte har någon mätning, tillämpa inte normalisering. - Återgång till förstärkningskorrigering - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, återgå till en fördefinierad förstärkningskorrigering.\n- Fast förstärkningskorrigering - Tillämpa alltid den fasta volym\/förstärkningskorrigeringen.\n- Återgång till dynamisk - Välj automatiskt det bästa alternativet: Tillämpa (övergripande) volym\/förstärkningskorrigering baserad på lagrad mätning om vi har någon, tillåta återgång till dynamiskt läge om ingen mätning är tillgänglig.",
-            "options": {
-                "disabled": "Inaktiverad",
-                "dynamic": "Tvinga dynamisk",
-                "measurement_only": "Endast mätning (ingen reserv)",
-                "fallback_fixed_gain": "Reserv för att få korrigering",
-                "fixed_gain": "Korrigering av fast förstärkning",
-                "fallback_dynamic": "Återgång till dynamisk"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metod för volymnormalisering som ska användas för spår",
-            "description": "Ställ in önskad strategi för volymnormalisering för spår\/låtar.\nMusic Assistant använder en mätning av spårens (genomsnittliga upplevda) ljudstyrka enligt EBU-R128 specifikationen för att justera den totala förstärkningen\/volymen för strömmen utan att påverka ljudets dynamiska omfång.\n\nDessa mätningar tillhandahålls antingen av streamingleverantören eller, när det gäller lokala filer, kan de finnas i ID3 taggarna (ReplayGain 2.0 \/ Opus R128).\nOm mätningen inte tillhandahålls kommer Music Assistant automatiskt att utföra en mätning när\/efter att spåret (första) spelas. När ingen mätning (ännu) finns för ett spår kommer Music Assistant som standard att återgå till ett dynamiskt (men mindre exakt) ljudnivåutjämningsfilter. Detta säkerställer att inga stora toppar\/fall i volymnivån mellan spår finns, även om det inte finns någon exakt mätning ännu, men den dynamiska utjämnaren kan ibland komprimera det dynamiska omfånget lite, även om det inte borde vara hörbart i de flesta fall.\n\n\n**Alternativ:**\n\n\n- Inaktiverad - tillämpa inte volymnormalisering alls för radioströmmar.\n\n** - Tvinga fram dynamisk - Tvinga fram dynamisk volymutjämning hela tiden.\n- Endast mätning (ingen reserv) - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, tillämpa inte normalisering.\n- Reservera till förstärkningskorrigering - Tillämpa (övergripande) volym-\/förstärkningskorrigering baserad på lagrad mätning. Om vi inte har någon mätning, reservera till en fördefinierad förstärkningskorrigering.\n- Fast förstärkningskorrigering - Tillämpa alltid den fasta volym-\/förstärkningskorrigeringen.\n- Reservera till dynamisk - Välj automatiskt det bästa alternativet: Tillämpa (övergripande) volym\/förstärkningskorrigering baserad på lagrad mätning om vi har någon, tillåt reservera till dynamiskt läge om ingen mätning är tillgänglig.",
-            "options": {
-                "disabled": "Inaktiverad",
-                "dynamic": "Tvinga dynamisk",
-                "measurement_only": "Endast mätning (ingen reservfunktion)",
-                "fallback_fixed_gain": "Reserv för att få korrigering",
-                "fixed_gain": "Korrigering av fast förstärkning",
-                "fallback_dynamic": "Återgång till dynamisk"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fast\/reservförstärkningsjustering för spår",
-            "description": "Fast\/reservförstärkningskorrigering som ska tillämpas på en ljudström i ett spår (beror på inställningen \"Volymnormaliseringsmetod\").\nAnvänd ett positivt värde för att öka volymen, ett negativt värde för att minska volymen.\n\nDenna inställning används när volymnormaliseringsmetoden är inställd på \"Fastförstärkningskorrigering\" eller \"Reservförstärkningskorrigering\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fast\/reservförstärkningsjustering för radio",
-            "description": "Fast\/reservförstärkningskorrigering som ska tillämpas på en radioström (beror på inställningen 'Volymnormaliseringsmetod').\nAnvänd ett positivt värde för att öka volymen, ett negativt värde för att minska volymen.\n\nDenna inställning används när volymnormaliseringsmetoden är inställd på 'Fastförstärkningskorrigering' eller 'Reservförstärkningskorrigering'."
-        },
         "dynamic_members": {
             "label": "Dynamiska gruppmedlemmar",
             "description": "Tillåt medlemmar att (tillfälligt) gå med i\/lämna gruppen dynamiskt, så att gruppen mer eller mindre beter sig på samma sätt som att manuellt synkronisera spelare tillsammans, med den största skillnaden att gruppspelaren kommer att hålla kön."
@@ -478,22 +273,6 @@
                 "name_placeholder": "Min nya förinställning",
                 "remove_confirm": "Är du säker på att du vill ta bort den här DSP förinställningen?"
             }
-        },
-        "power_control": {
-            "label": "Effektkontroll",
-            "description": "Definiera\/åsidosätt strömkontrollens beteende för den här spelaren.\nDet låter dig till exempel omdirigera strömpåslagnings\/avstängningskommandon till en annan apparat, eller använda en falsk strömkontroll om din spelare inte stöder strömpåslagnings\/avstängningskommandon men du vill ha ett dedikerat tillstånd för en spelare som inte används."
-        },
-        "volume_control": {
-            "label": "Volymkontroll",
-            "description": "Definiera\/åsidosätt volymkontrollens beteende för den här spelaren.\nDet låter dig till exempel omdirigera volymkontrollkommandona till en annan apparat, eller inaktivera den helt."
-        },
-        "mute_control": {
-            "label": "Ljud av-kontroll",
-            "description": "Definiera\/åsidosätt ljudavstängningsbeteendet för den här spelaren.\nDet låter dig till exempel omdirigera ljudavstängningskommandona till en annan apparat, eller inaktivera det helt.\n\nVi erbjuder ett \"falskt\" ljudavstängningsalternativ som simulerar ljudavstängning genom att ställa in volymen till 0 och återställa volymen när ljudet slås på."
-        },
-        "output_limiter": {
-            "label": "Aktivera begränsning för att förhindra klippning",
-            "description": "Aktiverar en begränsare som förhindrar ljudförvrängning genom att göra höga toppar tystare."
         },
         "dsp_enabled": "DSP är aktiverat",
         "dsp_disabled": "DSP är inaktiverat",
@@ -756,38 +535,6 @@
             "title": "Samtidig bakgrundsanalys",
             "description": "Styr hur många spår som analyseras samtidigt under den nattliga bakgrundsskanningen. Den här inställningen finns i Strömningens kärnkonfiguration.",
             "open_settings": "Öppna strömningsinställningarna"
-        },
-        "all_favorite_tracks": {
-            "label": "Alla favorit spår",
-            "description": "Skapa en spellista som innehåller alla spår som markerats som favoriter i ditt bibliotek."
-        },
-        "random_artist": {
-            "label": "Slumpmässig artist (från biblioteket)",
-            "description": "Välj en slumpmässig artist från ditt bibliotek och köa deras låtar."
-        },
-        "random_album": {
-            "label": "Slumpmässigt album (från biblioteket)",
-            "description": "Välj ett slumpmässigt album från ditt bibliotek och köa dess spår."
-        },
-        "random_tracks": {
-            "label": "500 slumpmässiga spår (från biblioteket)",
-            "description": "Skapa en spellista med 500 slumpmässigt valda spår från ditt bibliotek."
-        },
-        "recently_played": {
-            "label": "Nyligen spelade spår",
-            "description": "Visa de låtar du spelat senast som en spellista."
-        },
-        "recently_added_tracks": {
-            "label": "Nyligen tillagda spår",
-            "description": "Visa de spår som senast lagts till i ditt bibliotek som en spellista."
-        },
-        "infinite_mix": {
-            "label": "Oändlig mix (bibliotek)",
-            "description": "En oändlig, ständigt föränderlig spellista som hämtar 25 slumpmässiga spår från ditt fulla bibliotek varje gång kön är på väg att ta slut. Ingen för inläsning – minnesanvändningen förblir konstant oavsett bibliotekets storlek."
-        },
-        "infinite_mix_favorites": {
-            "label": "Oändlig mix (favoriter)",
-            "description": "Som Oändlig mix, men begränsat till dina favoritlåtar. 25 nya slumpmässiga favoriter läggs till när kön är nästan tom."
         }
     },
     "show_info": "Visa info",
@@ -988,53 +735,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Välj källa",
-    "in_progress_items": "Fortsätt lyssna...",
     "play_replace_next": "Spela härnäst (rensa kön)",
     "all_enqueue_options": "Alla alternativ för att lägga till i kö",
     "music_assistant_source": "Music Assistant Kö",
     "music_assistant_library": "Music Assistant Bibliotek",
     "select_all_confirmation": "Välj alla objekt? Denna operation kan ta en stund att ladda all data.",
     "this_device": "Den här enheten",
-    "recommendations": {
-        "in_progress_items": "Fortsätt lyssna...",
-        "recommended_new_tracks": "Rekommenderade nya låtar",
-        "recently_played": "Nyligen spelade",
-        "suggested_new_albums_for_you": "Föreslagna nya album för dig",
-        "random_artists": "Slumpmässiga artister",
-        "random_albums": "Slumpmässiga album",
-        "custom_mixes": "Anpassade mixning",
-        "your_listening_history": "Din lyssningshistorik",
-        "popular_albums": "Populära album",
-        "staff_picks_tracks": "Personalens val: låtar",
-        "staff_picks_albums": "Personalens val: album",
-        "radio_stations_for_you": "Radiostationer för dig",
-        "producers__songwriters": "Producenter & låtskrivare",
-        "new_releases_for_you": "Nya releaser för dig",
-        "recent_favorite_tracks": "Nyligen favoritmarkerade låtar",
-        "favorite_playlists": "Favoritspellistor",
-        "favorite_radio_stations": "Favoritradiostationer",
-        "listen_again": "Lyssna igen",
-        "in_progress_series": "Fortsatta serier...",
-        "recommended": "Rekommenderad",
-        "recently_added": "Nyligen tillagd",
-        "episodes_recently_added": "Nyligen tillagda avsnitt",
-        "recent_series": "Senaste serierna",
-        "newest_authors": "Nyaste författare",
-        "newest_episodes": "Nyaste avsnitten",
-        "discover": "Upptäck",
-        "libraries": "Bibliotek",
-        "library": "Bibliotek",
-        "trending_podcasts": "Trendiga poddar",
-        "trending_stations": "Trendiga stationer",
-        "forgotten_tracks": "Glömda spår",
-        "forgotten_albums": "Glömda album",
-        "forgotten_artists": "Glömda artister",
-        "most_played_tracks": "Mest spelade låtar",
-        "never_played_tracks": "Aldrig\/sällan spelad",
-        "recent_favorite_albums": "Nyligen favoritmarkerade album",
-        "recently_added_tracks": "Nyligen tillagda spår",
-        "inspired_by_recently_played": "Inspirerad av nyligen spelade"
-    },
     "homescreen_edit_enable": "Redigera startskärm",
     "homescreen_edit_disable": "Lämna redigeringsläget",
     "lyrics_will_appear_soon": "Texten kommer att visas när låten börjar...",
@@ -1254,8 +960,6 @@
     "collection": "Samling",
     "collections": "Samlingar",
     "narrators": "Berättare",
-    "series_plural": "Serier",
-    "series_singular": "Serier",
     "queue_move_end": "Flytta till slutet",
     "discover": "Upptäck",
     "save_queue_as_playlist": "Spara kö som spellista",
@@ -1280,67 +984,6 @@
     "description": "Beskrivning",
     "genre": "Genre",
     "genres": "Genrer",
-    "genre_names": {
-        "afrobeats": "Afrobeats (Västafrikansk Urban\/Pop Musik)",
-        "ambient": "Omgivande",
-        "anime_and_video_game_music": "Anime & Videospel Musik",
-        "asian_music": "Asiatisk Musik",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Brasiliansk Musik",
-        "chanson": "Fransk sång",
-        "childrens_music": "Barn Musik",
-        "christmas_music": "Jul Musik",
-        "church_music": "Kyrka Musik",
-        "classical": "Klassiskt",
-        "comedy": "Komedi",
-        "country": "Country",
-        "dance": "Dansa",
-        "dark_ambient": "Mörk Omgivning",
-        "dark_wave": "Mörk Våg",
-        "disco": "Disko",
-        "electronic": "Elektronisk",
-        "experimental": "Experimentell",
-        "field_recording": "Fältinspelning",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangster Rap",
-        "gospel": "Gospel",
-        "hip_hop": "Hiphop",
-        "indian_classical": "Indisk klassisk",
-        "industrial": "Industriell",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Marschorkester",
-        "metal": "Metall",
-        "middle_eastern_music": "Mellanösternmusik",
-        "musical": "Musikal",
-        "new_age": "Ny Tidsålder",
-        "poetry": "Poesi",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psykedelisk",
-        "punk": "Punk",
-        "r_b": "R&b",
-        "ragtime": "Ragtime",
-        "rai": "Rai",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Sångare och låtskrivare",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Ljud Effekter",
-        "soundtrack": "Ljudspår",
-        "spoken_word": "Talat Ord",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Fälla",
-        "waltz": "Vals",
-        "wellness": "Välbefinnande"
-    },
     "link": "Länka",
     "link_alias": "Länka alias",
     "link_alias_failed": "Misslyckades med att länka alias",
@@ -1368,67 +1011,6 @@
         "starting": "Servern startar, vissa leverantörer, spelare eller funktioner kanske inte är tillgängliga förrän starten är klar.",
         "stopping": "Servern stängs ner...",
         "stopped": "Servern har stoppats"
-    },
-    "genre_descriptions": {
-        "afrobeats": "Afrobeats, inte att förväxla med Afrobeat eller Afroswing, är ett paraplybegrepp för att beskriva populärmusik från Västafrika och diasporan som ursprungligen utvecklades i Nigeria, Ghana och Storbritannien under 2000 och 2010 talen. Afrobeats är mindre av en stil i sig, och mer av en beskrivning av sammansmältningen av ljud som flödar ut från Nigeria och Ghana. Genrer som hiplife, jùjú-musik, highlife, azonto-musik och naija-beats, bland annat, sammanslogs under paraplyet \"Afrobeats\".",
-        "ambient": "Ambientmusik är en musikgenre som betonar ton och atmosfär framför traditionell musikalisk struktur eller rytm. Ambientmusik, som ofta låter \"fridfullt\" och saknar komposition, takt och\/eller strukturerad melodi, använder texturella ljudlager som kan belöna både passivt och aktivt lyssnande och uppmuntra en känsla av lugn eller kontemplation. Genren framkallar en \"atmosfärisk\", \"visuell\" eller \"diskret\" kvalitet. Naturliga ljudlandskap kan inkluderas, och vissa verk använder ihållande eller upprepade toner, som i drönarmusik. Med element som förknippas med new age-musik kan instrument som piano, stråkar och flöjt emuleras genom en synthesizer.",
-        "anime_and_video_game_music": "Videospelsmusik (VGM) är det soundtrack som ackompanjerar videospel. Tidig videospelsmusik var en gång begränsad till ljud från tidiga ljudchips, såsom programmerbara ljudgeneratorer (PSG) eller FM synteschips. Dessa begränsningar har lett till den musikstil som kallas chiptune, vilket blev ljudet i de tidiga videospelen.",
-        "asian_music": "Asiatisk musik omfattar många musikstilar, olika kulturella och religiösa traditioner och former med ursprung i den asiatiska kontinenten.",
-        "bluegrass": "Bluegrassmusik är en genre inom amerikansk rootsmusik som utvecklades på 1940 talet i Appalacherna i USA. Genren har fått sitt namn från bandet Bill Monroe and the Blue Grass Boys. Bluegrass har rötter i afroamerikanska genrer som blues och jazz och nordeuropeiska genrer, såsom irländska ballader och dansmelodier. Till skillnad från country spelas den traditionellt uteslutande på akustiska instrument som fiol, mandolin, banjo, gitarr och kontrabas. Den utvecklades vidare av musiker som spelade med Monroe, inklusive 5-strängad banjospelaren Earl Scruggs och gitarristen Lester Flatt. Bill Monroe beskrev en gång bluegrassmusik som: \"Det är en del av metodistiska, holistiska och baptistiska traditioner. Det är blues och jazz, och det har ett högt, ensamt ljud.\"",
-        "blues": "Blues är en musikgenre och musikform som uppstod bland afroamerikaner i den amerikanska södern runt 1860 talet. Blues har införlivat spirituals, arbetssånger, fältrop, rop, ramsor och rimmade enkla berättande ballader från den afroamerikanska kulturen. Bluesformen är allestädes närvarande inom jazz, rhythm and blues och rock and roll, och kännetecknas av call-and-response-mönstret, bluesskalan och specifika ackordföljder, av vilka tolvtaktsbluesen är den vanligaste. Bluesnoter, vanligtvis terser, kvinter eller septimer med utjämnad tonhöjd, är också en viktig del av ljudet. Blues shuffles eller walking bass förstärker den tranceliknande rytmen och bildar en repetitiv effekt som kallas groove.",
-        "brazilian_music": "Brasiliens musik omfattar olika regionala musikstilar influerade av europeiska, amerikanska, afrikanska och amerikanska indianska former. Brasiliansk musik utvecklade några unika och originella stilar som forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, gauchomusik, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha och brasilianska versioner av utländska musikstilar, såsom rock, popmusik, soul, hiphop, discomusik, countrymusik, ambient, industrial och psykedelisk musik, rap, klassisk musik, fado och gospel.",
-        "chanson": "En chanson är i allmänhet vilken lyriskt driven fransk sång som helst. Termen används oftast på engelska för att hänvisa antingen till de sekulära polyfoniska franska sångerna från senmedeltiden och renässansmusiken eller till en specifik stil av fransk popmusik som uppstod på 1950 och 1960 talen. Genren hade sitt ursprung i trubadurernas och trouvèrernas monofoniska sånger, även om de enda polyfoniska exemplen var 16 verk av Adam de la Halle och ett av Jehan de Lescurel. Det var inte förrän ars nova-kompositören Guillaume de Machaut som någon kompositör skrev ett betydande antal polyfoniska chansoner.",
-        "childrens_music": "Barnmusik eller barnmusik är musik som komponerats och framförts för barn. I europeiskt influerade sammanhang betyder detta musik, vanligtvis sånger, skriven specifikt för en ung publik. Kompositörerna är vanligtvis vuxna.",
-        "christmas_music": "Julmusik omfattar en mängd olika musikgenrer som regelbundet framförs eller hörs runt julsäsongen. Musik som förknippas med julen kan vara rent instrumental, eller, när det gäller julsånger, använda texter om Jesu Kristi födelse, traditioner som att ge gåvor och fira glädje, kulturella personer som jultomten eller andra ämnen. Många sånger har helt enkelt ett vinter- eller säsongstema, eller har antagits till kanon av andra skäl.",
-        "church_music": "Kyrkomusik är en genre av kristen musik skriven för framförande i kyrkan, eller någon musikalisk sammanhang med kyrklig liturgi, eller musik tonsatt till ord som uttrycker förslag av helig natur, såsom en psalm.",
-        "classical": "Konstmusik är musik som anses ha högt fonoestetiskt värde. Den antyder vanligtvis avancerade strukturella och teoretiska överväganden eller en skriftlig musikalisk tradition. I detta sammanhang används termerna \"seriös\" eller \"kultiverad\" ofta för att presentera en kontrast till vanlig, vardaglig musik. Många kulturer har konstmusiktraditioner; i västvärlden hänvisar termen vanligtvis till västerländsk klassisk musik.",
-        "comedy": "Komedimusik eller musikalisk komedi är en musikgenre som är komisk till sin natur. Dess historia kan spåras tillbaka till det första århundradet i antikens Grekland och Rom, och går framåt i tiden till medeltiden, klassisk och romantisk tid och 1900 talet. Olika former av komisk musikteater, inklusive \"musikalspel\", \"musikalisk komedi\", \"operett\" och \"lätt opera\", utvecklades från de komiska operor som först utvecklades i slutet av 1600 talets Italien. Populära musikartister under 1900- alet som var intresserade av komedi inkluderar Allan Sherman, Frank Zappa, Tiny Tim, Barenaked Ladies, Randy Newman och \"Weird Al\" Yankovic. Artister under 2000 talet inkluderar Tenacious D, Flight of the Conchords, The Lonely Island, Ninja Sex Party och The Axis of Awesome.",
-        "country": "Countrymusik, även känd som country och western eller helt enkelt country, är en musikgenre känd för sina ballader och dansmelodier, identifierade genom både traditionella texter och harmonier ackompanjerade av banjos, mandoliner, fioler, munspel och många typer av gitarrer; antingen akustiska, elektriska, steel- eller resonatorgitarrer. Termen, som en gång kallades hillbillymusik, populariserades på 1940 talet för att ge den en korrekt term.",
-        "dance": "Dansmusik är musik komponerad specifikt för att underlätta eller ackompanjera dans. Det kan vara antingen ett helt stycke eller en del av ett större musikaliskt arrangemang. När det gäller framföranden är de viktigaste kategorierna live dansmusik och inspelad dansmusik. Även om det finns bevis på kombinationen av dans och musik i antikens historia, är den tidigaste västerländska dansmusiken som vi fortfarande kan återge med en viss grad av säkerhet gammaldags danser. Under barockperioden var de viktigaste dansstilarna adelsdanser. Under den klassiska musikeran användes menuetten ofta som en tredje sats, även om den i detta sammanhang inte ackompanjerade någon dans. Valsen uppstod också senare under den klassiska eran. Båda förblev en del av den romantiska musikperioden, som också såg uppkomsten av olika andra nationalistiska dansformer som barcarolle, mazurka, écossaise, ballad och polonäs.",
-        "dark_ambient": "Mörk ambient är en undergenre inom postindustriell musik som ursprungligen uppstod i mitten av 1980 talet. Den hämtar främst influenser från ambientmusik och kännetecknas av olycksbådande, mörka drönare, disharmoniska övertoner och en dyster, monumental eller katakombinspirerad atmosfär. Även om det mestadels är en elektronisk genre, samplar artister ofta traditionella instrument och använder sig av semi-akustiska inspelningsmetoder",
-        "dark_wave": "Dark wave är en musikgenre som uppstod ur new wave och postpunkrörelsen i slutet av 1970 talet. Dark wave kompositioner är till stor del baserade på molltonalitet och introspektiva texter och har uppfattats som mörka, romantiska och dystra, med en underton av sorg. Vanliga drag inkluderar användningen av kordofoner som el  och akustisk gitarr, fiol och piano, samt elektroniska instrument som synthesizer, sampler och trummaskin. Liksom new wave är dark wave inte en \"enhetlig genre utan snarare ett paraplybegrepp\" som omfattar en mängd olika musikstilar, inklusive cold wave, ethereal wave, gothic rock, neoklassisk dark wave och neofolk.",
-        "disco": "Disco är en genre inom dansmusik och en subkultur som uppstod i slutet av 1960 talet ur USA:s urbana nattliv, särskilt i Afro-Amerikanska, Italien-Amerikanska, latin-Amerikanska och queera samhällen. Dess ljud kännetecknas av fyra-på-golvet-beats, synkoperade basgångar, stråksektioner, bleckblås och horn, elpianon, syntar och elektriska rytmgitarrer.",
-        "electronic": "Elektronisk musik är i allmänhet en grupp musikgenrer som använder elektroniska musikinstrument, kretsbaserad musikteknik och programvara, eller allmän elektronik i sitt skapande. Den inkluderar både musik skapad med elektroniska och elektromekaniska metoder. Rena elektroniska instrument är helt beroende av kretsbaserad ljudgenerering, till exempel med hjälp av enheter som en elektronisk oscillator, theremin eller synthesizer: inga akustiska vågor behöver först genereras med mekaniska medel och sedan omvandlas till elektriska signaler. Å andra sidan har elektromekaniska instrument mekaniska delar som strängar eller hammare som genererar ljudvågorna, tillsammans med elektriska element inklusive magnetiska pickuper, effektförstärkare och högtalare som omvandlar de akustiska vågorna till elektriska signaler, bearbetar dem och omvandlar dem tillbaka till ljudvågor. Sådana elektromekaniska enheter inkluderar telharmonium, Hammondorgel, elpiano och elgitarr.",
-        "experimental": "Experimentell musik är en generell etikett för all musik eller musikgenre som tänjer på befintliga gränser och genredefinitioner. Experimentell kompositionspraktik definieras i stort sett av utforskande känsligheter som radikalt motsätter sig, och ifrågasätter, institutionaliserade kompositions-, framförande och estetiska konventioner inom musik. Element i experimentell musik inkluderar obestämdhet, där kompositören introducerar element av slump eller oförutsägbarhet med avseende på antingen kompositionen eller dess framförande. Konstnärer kan närma sig en hybrid av olika stilar eller införliva oortodoxa och unika element.",
-        "field_recording": "Fältinspelning är produktion av ljudinspelningar utanför inspelningsstudior, och termen gäller inspelningar av både naturliga och människoproducerade ljud. Det kan också inkludera inspelning av elektromagnetiska fält eller vibrationer med hjälp av olika mikrofoner som en passiv magnetisk antenn för elektromagnetiska inspelningar eller kontaktmikrofoner, eller undervatten fältinspelningar gjorda med hydrofoner för att fånga ljud och\/eller rörelser hos valar eller andra marina djur. Dessa inspelningar anses ofta vara mycket användbara för ljuddesigners och foley artister.",
-        "folk": "Folkmusik är en musikgenre som omfattar traditionell folkmusik och den samtida genren som utvecklades från den förra under 1900 talets folkmusikväckelse. Vissa typer av folkmusik kan kallas världsmusik. Traditionell folkmusik har definierats på flera sätt: som musik som överförts muntligt, musik med okända kompositörer, musik som spelas på traditionella instrument, musik om kulturell eller nationell identitet, musik som förändras mellan generationer, musik som förknippas med ett folks folklore eller musik som framförs enligt sedvänja under en lång tidsperiod. Den har kontrasterats med kommersiella och klassiska stilar. Termen har sitt ursprung på 1800 talet, men folkmusik sträcker sig bortom det.",
-        "funk": "Funk är en musikgenre som har sitt ursprung i afroamerikanska samhällen i mitten av 1960 talet när musiker skapade en rytmisk, dansvänlig ny form av musik genom en blandning av olika musikgenrer som var populära bland afroamerikaner i mitten av 1900 talet. Den betonar melodi och ackordföljder och fokuserar på ett starkt rytmiskt groove med en basgång spelad av en elbasist och en trumstämma spelad av en slagverkare, ofta i långsammare tempo än annan populärmusik. Funk består vanligtvis av ett komplext perkussivt groove med rytminstrument som spelar sammankopplade groove som skapar en \"hypnotisk\" och \"dansvänlig\" känsla. Tidig funk, särskilt James Brown, blandade jazz och blues och lade till ett synkoperat trumgroove.",
-        "gangsta_rap": "Gangsta eller gangsterrap, ursprungligen kallat realityrap, är en undergenre av hiphop som förmedlar kulturen, värderingarna och erfarenheterna hos urbana gäng och gatuhustlers, och diskuterar ofta obehagliga verkligheter i världen i allmänhet ur ett urbant perspektiv. Gangstarap dök upp i slutet av 1980 talet och inkluderar pionjärer som Schoolly D och Ice-T, och expanderade senare med artister som N.W.A. År 1992, via skivproducenten och rapparen Dr. Dre, rapparen Snoop Dogg och deras G-funk-sound, breddades gangsterrap till mainstream popularitet.",
-        "gospel": "Gospelmusik är en traditionell genre inom kristen musik och en hörnsten i kristna medier, kännetecknad av dominerande sång och texter som återspeglar kristna läror och värderingar. Skapandet, framförandet, betydelsen och till och med definitionen av gospelmusik varierar beroende på kultur och socialt sammanhang. Gospelmusik komponeras och framförs för många ändamål, inklusive estetiskt nöje, och även religiösa eller ceremoniella ändamål, och som en underhållningsprodukt för marknaden. Gospelmusik kan spåras till början av 1600 talet.",
-        "hip_hop": "Hiphop är en genre inom populärmusik som uppstod i början av 1970 talet tillsammans med en tillhörande subkultur i de afroamerikanska och karibiska immigrantgrupperna i New York City. Den musikaliska stilen kännetecknas av en syntes av ett brett spektrum av tekniker, men rappning är tillräckligt frekvent för att det har blivit ett utmärkande kännetecken. Andra viktiga kännetecken för genren är discjockey (DJ), turntablism, scratching, beatboxing och instrumentala spår. Kulturellt utbyte har alltid varit centralt för hiphopgenren; den lånar samtidigt från sin sociala miljö och kommenterar den.",
-        "indian_classical": "Indisk klassisk musik är den klassiska musiken från den indiska subkontinenten. Den beskrivs generellt med termer som Shastriya Sangeet och Marg Sangeet. Den har två huvudtraditioner: den nordindiska klassiska musiken som kallas Hindustani och det sydindiska uttrycket som kallas Carnatic. Hindustani musik betonar improvisation och utforskning av alla aspekter av en raga, medan Carnatic framträdanden tenderar att vara korta kompositionsbaserade. De två systemen fortsätter dock att ha fler gemensamma drag än skillnader. En annan unik klassisk musiktradition från den östra delen av Indien är Odissi musik, som har utvecklats under de senaste två tusen åren.",
-        "industrial": "Industrimusik är en undergenre inom experimentell musik inspirerad av det postindustriella samhället, med inledningsvis influenser från avantgardistiska och tidiga elektroniska musikgenrer som musique concrète, bandmusik, noise och ljudcollage. Termen myntades 1976 av Monte Cazazza och antogs av Throbbing Gristle i samband med grundandet av Industrial Records. Andra tidiga industrimusiker inkluderar NON och Cabaret Voltaire. I slutet av 1970 talet dök ytterligare artister upp som Clock DVA, Nocturnal Emissions, Einstürzende Neubauten, SPK, Nurse with Wound och Z’EV, tillsammans med Whitehouse som myntade undergenren \"kraftelektronik\".",
-        "jazz": "Jazz är en musikgenre som har sitt ursprung i de afroamerikanska samhällena i New Orleans, Louisiana, i slutet av 1800 talet och början av 1900 talet. Dess rötter finns i blues, ragtime, europeisk harmoni, afrikanska rytmiska ritualer, spirituals, hymner, marscher, vaudevillesång och dansmusik. Sedan 1920 talets jazzålder har den erkänts som en viktig form av musikaliskt uttryck inom traditionell och populärmusik. Jazz kännetecknas av swing och bluesnoter, komplexa ackord, call and response sång, polyrytmer och improvisation.",
-        "klezmer": "Klezmer är en instrumental musiktradition som utspelade sig bland de ashkenaziska judarna i Central och Östeuropa. De väsentliga elementen i traditionen inkluderar dansmelodier, rituella melodier och virtuosa improvisationer som spelades för att lyssna på; dessa spelades vid bröllop och andra sociala sammankomster. Musikgenren införlivade element från många andra musikgenrer, inklusive ottomansk musik, barockmusik, Tyska och Slaviska folkdanser samt religiös Judisk musik. När musiken anlände till USA förlorade den några av sina traditionella rituella element och antog element från Amerikansk storbands och populärmusik. Bland de europeiskfödda klezmerna som populariserade genren i USA på 1910 och 1920 talen fanns Dave Tarras och Naftule Brandwein; de följdes av Amerikanskfödda musiker som Max Epstein, Sid Beckerman och Ray Musiker.",
-        "latin": "Latinamerikansk musik är en term som används av musikindustrin som en samlingskategori för olika musikstilar från Ibero-Amerika, vilket omfattar Latin Amerika, Spanien, Portugal och den Latin Amerikanska befolkningen i Kanada och USA, samt musik som sjungs på antingen Spanska eller Portugisiska. Det kan också inkludera musik från andra territorier där Spansk och Portugisiska musik skapas.",
-        "marching_band": "Marschorkester är en performancebaserad, visuell musikalisk genre där musiker spelar bleckblåsinstrument, träblåsinstrument och slagverksinstrument medan de rör sig i synkroniserade, koreograferade formationer, vanligtvis med 120-160+ slag per minut. Den blandar musikalisk framträdande med atletisk, snabb marsch, ofta med pop, rock och klassisk musik tillsammans med traditionella militära marscher.",
-        "metal": "paraplykategori av musikgenrer inom metalgrenen, härledd från heavy metal musik men inte nödvändigtvis dess undergenre",
-        "middle_eastern_music": "De olika nationerna i regionen inkluderar de arabisktalande länderna i Mellanöstern, den traditionella persiska ritualmusiken, den judiska musiken från Israel och diasporan, kurdisk musik, armenisk musik, azerbajdzjansk musik, de varierade traditionerna inom cypriotisk musik, den turkiska musiken från Turkiet, traditionell assyrisk musik, koptisk ritualmusik i Egypten samt andra genrer av egyptisk musik i allmänhet. Det är allmänt ansett att vissa musikstilar från Mellanöstern har påverkat Centralasien, såväl som Balkan, södra Italien och Spanien.",
-        "musical": "Musikalteater är en form av teaterföreställning som kombinerar sånger, talad dialog, skådespeleri och dans. Berättelsen och det emotionella innehållet i en musikal – humor, patos, kärlek, ilska – kommuniceras genom ord, musik, rörelse och tekniska aspekter av underhållningen som en integrerad helhet. Även om musikalteater överlappar andra teaterformer som opera och dans, kan den utmärkas av den lika stora vikt som musiken ges jämfört med dialog, rörelse och andra element. Sedan början av 1900 talet har musikaliska teaterverk i allmänhet helt enkelt kallats musikaler.",
-        "new_age": "New age är en musikgenre avsedd att skapa konstnärlig inspiration, avslappning och optimism. Den används av lyssnare för yoga, massage, meditation och läsning som en metod för stresshantering för att skapa ett tillstånd av extas snarare än trans, eller för att skapa en fridfull atmosfär i hem eller andra miljöer. Den förknippas ibland med miljörörelser och New Age andlighet; dock har de flesta av dess artister ingenting att göra med \"New Age andlighet\", och vissa förkastar till och med termen.",
-        "poetry": "Poesi som musikgenre blandar talad vers eller reciterad vers med musikalisk ackompanjemang, vilket skapar en hybridform fokuserad på känslomässigt uttryck, berättande och rytm. Genren, som ofta använder akustiska instrument (piano, gitarr) eller experimentella ljudlandskap, suddar ut gränsen mellan litteratur och sång och framhäver den inneboende melodin och kadensen i talade ord.",
-        "polka": "Polka är en dansstil och genre inom dansmusik med ursprung i 1800 talets Böhmen, numera en del av Tjeckien. Även om polka generellt förknippas med tjeckisk och centraleuropeisk kultur, är den populär i hela Europa och Amerika.",
-        "pop": "Popmusik, eller helt enkelt pop, är en genre inom populärmusik som uppstod i sin moderna form under mitten av 1950 talet i USA och Storbritannien. Under 1950 och 1960 talen omfattade popmusik rock and roll och de ungdomsinriktade stilar den influerade. Rock och popmusik förblev i stort sett synonyma fram till slutet av 1960 talet, varefter pop förknippades med musik som var mer kommersiell, kortlivad och lättillgänglig.",
-        "psychedelic": "Psykedelisk musik är ett brett spektrum av populära musikstilar och genrer influerade av 1960 talets psykedelia, en subkultur av människor som använde psykedeliska droger som DMT, LSD, meskalin och psilocybinsvampar för att uppleva synestesi och förändrade medvetandetillstånd. Psykedelisk musik kan också syfta till att förbättra upplevelsen av att använda dessa droger och har visat sig ha ett betydande inflytande på psykedelisk terapi.",
-        "punk": "paraplykategori av musikgenrer relaterade till punk subkultur, härledd från punkrockmusikscenen men inte nödvändigtvis dess undergenre",
-        "r_b": "Rhythm and blues, ofta förkortat R&B eller R'n'B, är en genre inom populärmusik som har sitt ursprung i afroamerikanska samhällen på 1940 talet. Termen användes ursprungligen av skivbolag för att beskriva inspelningar som främst marknadsfördes till afroamerikaner, vid en tidpunkt då \"rockig, jazzbaserad musik ... [med ett] tungt, ihärdigt beat\" började bli mer populärt.\nI den kommersiella rhythm and blues-musiken som var typisk för 1950-talet till 1970 talet bestod banden vanligtvis av ett piano, en eller två gitarrer, bas, trummor, en eller flera saxofoner och ibland bakgrundssångare. R&B lyriska teman sammanfattar ofta den afroamerikanska historien och erfarenheten av smärta och sökandet efter frihet och glädje, såväl som triumfer och misslyckanden i termer av samhällelig rasism, förtryck, relationer, ekonomi och ambitioner.",
-        "ragtime": "Ragtime, även stavat rag-time eller rag time, är en musikstil känd för sin synkoperade eller \"raggade\" rytm. Den har sitt ursprung i afroamerikanska samhällen i slutet av 1800 talet och blev populär under 1890 till 1910 talen av kompositörer som James Scott, Joseph Lamb och särskilt Scott Joplin. Känd som \"Kungen av Ragtime\" blev Joplin känd genom kompositioner som \"Maple Leaf Rag\" och \"The Entertainer\".",
-        "rai": "Raï, ibland skrivet rai, är en form av algerisk folkmusik som går tillbaka till 1920 talet. Raïs sångare kallas cheb (شاب) eller cheba (شابة), dvs. \"unga\", i motsats till sheikh, dvs. \"gamla\", namnet på chaabisångare. Traditionen uppstod i staden Oran, främst bland de fattiga. Traditionellt sjungs de av män, men i slutet av 1900 talet blev kvinnliga sångare vanliga. Texterna har handlat om sociala frågor som sjukdomar och övervakning av europeiska kolonier som drabbade ursprungsbefolkningar.",
-        "reggae": "Reggae är en musikgenre som har sitt ursprung i Jamaica i slutet av 1960 talet. Termen hänvisar också till modern populärmusik från Jamaica och dess diaspora. Singeln \"Do the Reggay\" från 1968 av Toots and the Maytals var den första populära låten som använde ordet reggae, vilket effektivt namngav genren och introducerade den för en global publik.",
-        "reggaeton": "Reggaeton är en stil av populär och elektronisk musik som har sitt ursprung i Panama under slutet av 1980 talet. Den har populariserats och dominerats av artister från Puerto Rico sedan början av 1990 talet.",
-        "rock": "Rockmusik är en genre inom populärmusik som har sitt ursprung i USA som \"rock and roll\" i slutet av 1940 talet och början av 1950 talet, och utvecklades till en rad olika stilar från mitten av 1960 talet, främst i USA och Storbritannien. Den har sina rötter i rock and roll, en stil som hämtade inspiration från de afroamerikanska musikgenrerna blues och rhythm and blues, såväl som från countrymusik. Rock hämtade också starkt inspiration från genrer som elektrisk blues och folkmusik, och införlivade influenser från jazz och andra stilar. Rock är vanligtvis centrerad kring elgitarren, vanligtvis som en del av en rockgrupp med elbas, trummor och en eller flera sångare.",
-        "salsa": "Salsamusik är en stil inom latinamerikansk musik som kombinerar inslag av kubanska och puertoricanska influenser. Eftersom de flesta av de grundläggande musikaliska komponenterna föregår beteckningen salsa har det funnits många kontroverser om dess ursprung. De flesta låtar som betraktas som salsa är främst baserade på son montuno och son cubano, med inslag av cha-cha-chá, bolero, rumba, mambo, jazz, R&B, bomba och plena. Alla dessa element är anpassade för att passa den grundläggande Son montuno mallen när de framförs inom ramen för salsa.",
-        "singer_songwriter": "en grupp musikgenrer som uppstod i mitten av 1900 talet, med hänvisning till singer-songwriters musik, ofta kännetecknad av politiska eller personliga texter och minimal akustisk ackompanjemang",
-        "ska": "Ska är en musikgenre som har sitt ursprung i Jamaica i slutet av 1950 talet och var föregångaren till rocksteady och reggae. Den kombinerade element av karibisk mento och calypso med amerikansk jazz och rhythm and blues. Ska kännetecknas av en vandrande basgång accentuerad med rytmer i off beat lägret. Den utvecklades i Jamaica på 1960 talet när Stranger Cole, Prince Buster, Clement \"Coxsone\" Dodd och Duke Reid bildade ljudsystem för att spela amerikansk rhythm and blues och sedan började spela in sina egna låtar. I början av 1960 talet var ska den dominerande musikgenren i Jamaica och var populär bland brittiska mods och många skinheads.",
-        "soul": "Soulmusik är en populär musikgenre som har sitt ursprung i afroamerikanska samhällen över hela USA i slutet av 1950 talet och början av 1960 talet. Medryckande rytmer, betonade av handklappningar och spontana kroppsrörelser, är ett viktigt kännetecken för soul. Andra egenskaper är ett samtal och svar mellan huvud och bakgrundssångare, ett särskilt spänt sångljud och enstaka improvisationstillägg, snurrningar och hjälpljud. Soulmusik är känd för att återspegla afroamerikansk identitet och betona vikten av afroamerikansk kultur.",
-        "sound_effects": "Ljudeffekter som musikgenre – ofta omfattande ljudlandskapskomposition, musique concrète och brusmusik – använder miljöljud, mekaniska ljud och Foley inspelningar som primära musikaliska element snarare än traditionella melodier eller harmonier. Denna avantgardistiska metod skapar uppslukande, berättande och texturerade hörselupplevelser.",
-        "soundtrack": "Filmmusik är originalmusik skriven specifikt för att ackompanjera en film eller ett tv program. Musiken består av ett antal orkester, instrumentala eller körstycken som kallas cues, vilka är tidsinställda för att börja och sluta vid specifika punkter under filmen för att förstärka den dramatiska berättelsen och den känslomässiga effekten av scenerna. Musik skrivs av en eller flera kompositörer under ledning av eller i samarbete med filmens regissör eller producent och framförs sedan oftast av en ensemble av musiker – vanligtvis inklusive en orkester eller ett band, instrumentala solister och kör eller sångare – så kallade playback singers och inspelade av en ljudtekniker. Termen används mindre ofta för musik skriven för media som liveteater, tv och radioprogram och videospel, och den musiken kallas vanligtvis antingen soundtrack eller incidentmusik.",
-        "spoken_word": "Spoken word är en performancebaserad genre som kombinerar talad poesi, berättande eller monolog med musikaliskt ackompanjemang eller rytmisk framförande, med fokus på rösten som det primära instrumentet. Med rötter i muntliga traditioner och Beatgenerationen, sammanfogar den litterärt konstnärskap med musik, ofta med teman som social rättvisa, politik och personlig berättelse, ofta åtföljda av jazz, rock eller folkmusikelement.",
-        "swing": "Swingmusik är en jazzstil som utvecklades i USA under slutet av 1920-talet och början av 1930-talet. Den blev nationellt populär från mitten av 1930 talet. Swing representerar den mest berömda eran inom jazz som underhållningsgenre, före den moderna jazzens uppkomst. Swingband hade vanligtvis solister som improviserade på melodin över arrangemanget. Den dansanta swingstilen hos storband och bandledare som Fletcher Henderson och Benny Goodman var den dominerande formen av amerikansk populärmusik från 1935 till 1946, känd som swingeran, då folk dansade Lindy Hop. Verbet \"att swinga\" används också som ett beröm för spel som har ett starkt groove eller driv. Storbandsledare från swingeran inkluderar Benny Goodman, Duke Ellington, Count Basie, Jimmie Lunceford, Cab Calloway, Benny Carter, Jimmy Dorsey, Tommy Dorsey, Earl Hines, Bunny Berigan, Harry James, Lionel Hampton, Glenn Miller och Artie Shaw.",
-        "tango": "Tango är en musikstil i 24 eller 44 takt som har sitt ursprung i Uruguay och Argentina bland europeiska invandrare i slutet av 1800 talet och början av 1900 talet. Den har huvudsakligen spanska, italienska, gaucho, afrikanska och franska kulturella rötter. Den spelas traditionellt på en sologitarr, gitarrduo eller en ensemble, känd som orquesta típica, som inkluderar minst två fioler, flöjt, piano, kontrabas och minst två bandoneóner. Ibland ingår gitarrer och en klarinett i ensemblen. Tango kan vara rent instrumental eller inkludera en sångare. Tangomusik och dans har blivit populära över hela världen.",
-        "trap": "Trapmusik, även känd helt enkelt som trap, är en undergenre av hiphopmusik som har sitt ursprung i södra USA. Lyriska referenser till trap började 1991 men det moderna ljudet av trap dök upp 1999. Genren har fått sitt namn från Atlanta termen \"trap house\", ett droghus. Trap musik har enkla, rytmiska, minimalistiska produktioner som använder syntetiserade trummor och kännetecknas av komplexa hi-hat trumrytmer, virveltrummor och bastrummor, vissa stämda med en lång decay för att avge en basfrekvens. Texterna fokuserar ofta på drogmissbruk och våld i städer.",
-        "waltz": "En vals, troligen härledd från tyskans Ländler, är dansmusik i tretakt, ofta skriven i 34 takt. En vals spelar vanligtvis ett ackord per takt, och den ackompanjemangsstil som särskilt förknippas med valsen är att spela grundtonen på första slaget, de övre tonerna på andra och tredje slaget.",
-        "wellness": "Meditationsmusik är musik som framförs för att underlätta meditation. Den kan ha ett specifikt religiöst innehåll, men har på senare tid också förknippats med moderna kompositörer som använder meditationstekniker i sin kompositionsprocess, eller som komponerar sådan musik utan någon särskild religiös grupp som fokus. Konceptet inkluderar även musik som framförs som en meditationshandling."
     },
     "link_to_genre": "Länk till genre",
     "link_to_genre_title": "Länk till Genre",
@@ -1657,24 +1239,6 @@
             "log_download_failed": "Ingen uppgiftslogg tillgänglig för nerladdning."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Synkronisera Artister för {0}",
-        "sync_provider_albums": "Synkronisera Album för 1 {0}",
-        "sync_provider_tracks": "Synkronisera Spår för {0}",
-        "sync_provider_playlists": "Synkronisera Spellistor för {0}",
-        "sync_provider_radios": "Synkronisera Radio för {0}",
-        "sync_provider_audiobooks": "Synkronisera Ljudböcker för {0}",
-        "sync_provider_podcasts": "Synkronisera Poddsändningar för {0}",
-        "add_playlist_tracks": "Lägg till objekt i spellistan {0}",
-        "remove_playlist_tracks": "Ta bort objekt från spellistan {0}",
-        "database_cleanup": "Databasrensning",
-        "correct_provider_mappings": "Rätta till leverantörsmappningar",
-        "scan_genre_mappings": "Skanna genremappningar",
-        "cache_database_cleanup": "Rensning av cachedatabasen",
-        "scan_missing_artist_artwork": "Skanna saknade artisters konstverk",
-        "refresh_playlist_metadata": "Uppdatera spellistans metadata",
-        "update_metadata": "Uppdatera metadata för {0}"
-    },
     "not_found_headline": "Hoppsan, den här sidan finns inte med på låtlistan.",
     "not_found_subtext": "Låten du letar efter har försvunnit mellan leverantörerna. Gå tillbaka eller hitta något nytt.",
     "radiobrowser_by_popularity": "Efter popularitet",
@@ -1780,15 +1344,5 @@
     "with_artists": "med {artists}",
     "disc": "Skiva {number}",
     "album_type_label": "Albumtyp",
-    "builtin_playlist": {
-        "all_favorite_tracks": "Alla favorit spår",
-        "random_artist": "Slumpmässig artist (från biblioteket)",
-        "random_album": "Slumpmässigt album (från biblioteket)",
-        "random_tracks": "500 slumpmässiga spår (från biblioteket)",
-        "recently_played": "Nyligen spelade spår",
-        "recently_added_tracks": "Nyligen tillagda spår",
-        "infinite_mix": "Oändlig mix (bibliotek)",
-        "infinite_mix_favorites": "Oändlig mix (favoriter)"
-    },
     "now_playing": "Spelas nu"
 }

@@ -145,189 +145,14 @@
         "add_new_provider_button": "{0} provider toevoegen",
         "add_group_player": "Groepspeler toevoegen",
         "group_members": "Groepsleden",
-        "log_level": {
-            "label": "Logniveau",
-            "description": "Stel het logniveau in van deze provider.",
-            "options": {
-                "global": "Globaal",
-                "info": "Info",
-                "warning": "Waarschuwing",
-                "error": "Fout",
-                "debug": "Foutopsporing"
-            }
-        },
-        "flow_mode": {
-            "label": "\"flow mode\" inschakelen",
-            "description": "Schakel de \"flow\" modus in waarbij alle nummers in de wachtrij als een continue audiostream worden verzonden. \nGebruik dit voor spelers die gapless en\/of crossfading niet ondersteunen of als de speler problemen heeft met de overgang tussen nummers."
-        },
-        "auto_play": {
-            "label": "Automatisch afspelen (hervatten bij inschakelen)",
-            "description": "Wanneer deze speler is ingeschakeld, wordt het afspelen automatisch gestart (als er items in de wachtrij staan)."
-        },
-        "output_channels": {
-            "label": "Modus uitgangskanaal",
-            "description": "U kunt deze speler configureren om alleen het linker- of rechterkanaal af te spelen, bijvoorbeeld om een stereopaar met 2 spelers te maken.",
-            "options": {
-                "stereo": "Stereo (beide kanalen)",
-                "left": "Alleen linkerkanaal",
-                "right": "Alleen rechterkanaal",
-                "mono": "Mono (beide kanalen)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Volumenormalisatie inschakelen (gebaseerd op EBU-R128)",
-            "description": "Volumenormalisatie inschakelen op basis van de EBU-R128-standaard zonder het dynamisch bereik te beïnvloeden"
-        },
-        "volume_normalization_target": {
-            "label": "Doelniveau voor volumenormalisatie",
-            "description": "Pas de gemiddelde (waargenomen) luidheid aan naar dit doelniveau, standaard is -17 LUFS \n\n **WAARSCHUWING:** Als u het niveau te hoog instelt, kan dit leiden tot clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizer: bas",
-            "description": "Gebruik de ingebouwde basis equalizer om de lage tonen van het geluid aan te passen."
-        },
-        "eq_mid": {
-            "label": "Equalizer: midden",
-            "description": "Gebruik de ingebouwde basis-equalizer om het middenniveau van audio aan te passen."
-        },
-        "eq_treble": {
-            "label": "Equalizer: hoge tonen",
-            "description": "Gebruik de ingebouwde basis equalizer om de hoge tonen van audio aan te passen."
-        },
-        "crossfade": {
-            "label": "Crossfade inschakelen",
-            "description": "Schakel een crossfade-overgang tussen (wachtrij)nummers in."
-        },
-        "crossfade_duration": {
-            "label": "Duur van crossfade",
-            "description": "Duur in seconden van de crossfade tussen nummers (indien ingeschakeld)"
-        },
-        "hide_player": {
-            "label": "Verberg deze speler in de gebruikersinterface",
-            "description": "Verberg deze speler in de gebruikersinterface. \n\nBesef dat je de speler nog wel gewoon kunt bedienen. Ook blijft hij zichtbaar in de synchronisatiegroepen waar hij in zit."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Te selecteren items wanneer je een artiest (uit de bibliotheek) afspeelt.",
-            "description": "Wanneer je een artiest wilt afspelen, welke items zouden dan in de wachtrij moeten?",
-            "options": {
-                "library_tracks": "Uitsluitend nummers uit de bibliotheek",
-                "library_album_tracks": "Alle nummers van alle albums in de bibliotheek.",
-                "all_tracks": "Alle (top) nummers van (alle) aanbieders.",
-                "all_album_tracks": "Alle nummers van alle albums van (alle) aanbieders."
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Te selecteren items wanneer je een album uit de bibliotheek wilt afspelen.",
-            "description": "Wanneer je een artiest wilt afspelen, welke items moet dan op de wachtrij worden geplaatst?",
-            "options": {
-                "library_tracks": "Alleen nummers in de bibliotheek.",
-                "all_tracks": "Alle nummers voor het album op aanbieder."
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Standaard wachtrij-optie voor de items van de artiest.",
-            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
-            "options": {
-                "play": "Speel nu het nummer(s) van de artiest en bewaar de resterende items van de wachtrij.",
-                "replace": "Wis de wachtrij en speel het nummer(s) van de artiest.",
-                "next": "Speel het item(s) direct na het huidig spelende of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het nummer(s) van de artiest direct na het huidig spelende of gebufferde nummer.",
-                "add": "Voeg de nummers van de artiest toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Standaard wachtrij-optie voor album item(s).",
-            "description": "Definieer de standaard actie voor dit mediatype (wanneer je nog geen actie hebt gespecificeerd).",
-            "options": {
-                "play": "Speel het album nummer nu en behoudt de resterende wachtlijst items.",
-                "replace": "Wis de wachtrij en speel het album nummer.",
-                "next": "Speel het item direct na het huidig afspelende of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het album nummer(s) direct na het huidig spelende of gebufferde item.",
-                "add": "Voeg het album nummer(s) toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Standaard wachrij-optie voor afspeel items.",
-            "description": "Definieer de standaard wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
-            "options": {
-                "play": "Speel het nummer(s) nu en hou de overblijvende wachtrij items.",
-                "replace": "Wis de wachtrij en speel het nummer(s).",
-                "next": "Speel het nummer(s) meteen na het huidige afgespeelde of gebufferde item.",
-                "replace_next": "Wis de wachtrij en speel het nummer(s) direct na het huidig afgespeelde of gebufferde item.",
-                "add": "Voeg het nummer(s) toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Standaard wachtrij-actie voor items op de afspeellijst.",
-            "description": "Definieer de standaard wachtrij-actie voor dit mediatype (wanneer je geen actie gespecificeerd hebt).",
-            "options": {
-                "play": "Speel nu de afspeellijst en hou de overige nummers in de wachtrij.",
-                "replace": "Wis de wachtrij en speel de nummers van de afspeellijst",
-                "next": "Speel het item(s) direct na het nu afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel de afspeellijstnummer(s) af direct na het huidige afgespeelde\/gebufferde item.",
-                "add": "Voeg de nummer(s) van de afspeellijst toe aan het einde van de wachtrij."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Standaard wachtrij-optie voor Radio item(s).",
-            "description": "Definieer de standaardactie voor het in de wachtrij plaatsen voor dit mediatype (als je geen actie hebt opgegeven).",
-            "options": {
-                "play": "Speel het radiostation af en bewaar de resterende wachtrij-item(s).",
-                "replace": "Wis de wachtrij en speel het radiostation af",
-                "next": "Speel het item of de items direct na het huidig afgespeelde\/gebufferde item af.",
-                "replace_next": "Wis de wachtrij en speel het radiostation(s) af direct na het huidige afgespeelde\/gebufferde item.",
-                "add": "Voeg het radiostation(s) toe aan het einde van de wachtrij."
-            }
-        },
         "default": "standaard",
         "provider_depends_on_confirm": "Voordat je verder kunt met de set-up, moet je de provider configureren. Wil je dat nu doen?",
         "category": {
-            "advanced": "Geavanceerde instellingen",
-            "generic": "Algemene instellingen",
-            "announcements": "Configuratie van aankondigingen (announce)",
-            "player_controls": "Spelerbediening",
-            "sync_options": "Synchronisatie-\/importopties",
-            "builtin_playlists": "Ingebouwde afspeellijstinstellingen",
             "web_player": "Webspeler",
-            "playback": "Afspeelinstellingen",
             "protocol_settings": "Uitvoerprotocol(len)",
-            "protocol_output_settings": "{0} ondersteuning inschakelen",
-            "dsp": "Digitale signaalverwerking (DSP)",
             "options": "Speleropties",
-            "audio": "Audio",
             "preferences": "Voorkeuren",
-            "display_settings": "Weergave",
-            "airplay": "AirPlay-specifieke instellingen"
-        },
-        "tts_pre_announce": {
-            "label": "Kondig TTS-aankondigingen vooraf aan",
-            "description": "Wanneer een TTS-bericht (tekst-naar-spraak) naar de aankondigingsfunctie wordt verzonden, laat u de aankondiging voorafgaan door een kort vooraankondigingsgeluid (belsignaal)."
-        },
-        "announce_volume_strategy": {
-            "label": "Volumestrategie voor aankondigingen",
-            "description": "Wanneer er een aankondiging naar deze speler wordt uitgezonden, hoe moet het volume dan tijdelijk worden aangepast (gebruik in combinatie met de volumewaarde hieronder).",
-            "options": {
-                "absolute": "Absoluut volume",
-                "relative": "Relatieve volumetoename",
-                "percentual": "Volumeverhoging met vast percentage",
-                "none": "Pas het volume niet aan"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume voor aankondigingen",
-            "description": "Het procentuele, relatieve of absolute volumeniveau, gebruikt bij de strategie voor aankondigingen."
-        },
-        "announce_volume_min": {
-            "label": "Minimaal volumeniveau voor aankondigingen",
-            "description": "Het volume (aanpassing) van aankondigingen mag niet onder dit niveau komen."
-        },
-        "announce_volume_max": {
-            "label": "Maximaal volumeniveau voor aankondigingen",
-            "description": "Het volume (aanpassing) van aankondigingen mag niet boven dit niveau komen."
-        },
-        "icon": {
-            "label": "Pictogram",
-            "description": "Material design-pictogram voor deze speler. \n\nZie https:\/\/pictogrammers.com\/library\/mdi\/."
+            "display_settings": "Weergave"
         },
         "theme": {
             "label": "Thema",
@@ -378,38 +203,6 @@
         "no_music_providers_detail": "Begin je Music Assistant-ervaring door je muziekproviders toe te voegen.",
         "no_player_providers": "Geen spelerproviders geconfigureerd",
         "no_player_providers_detail": "Configureer spelerproviders om apparaten te selecteren waarop Music Assistant je muziek kan uitvoeren.",
-        "volume_normalization_radio": {
-            "label": "Volumenormalisatiemethode om te gebruiken voor radiostreams",
-            "description": "Stel de voorkeursstrategie voor volumenormalisatie voor radiostreams in. \nStandaard verzamelt Music Assistant een meting van de (gemiddeld waargenomen) luidheid van het radiostation volgens de EBU-R128-specificatie en past vervolgens de totale versterking\/het volume van de stream aan op basis van die meting, zodat het dynamisch bereik van de audio niet wordt beïnvloed. Wanneer er (nog) geen meting bestaat voor een radiostation, zal Music Assistant terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter.\n\nTIP: Radiostreams hebben vaak verschillende luidheidsniveaus, vooral tijdens aankondigingen en commercials.\nU kunt ervoor kiezen om dynamische volumenormalisatie altijd af te dwingen voor radiostreams, zelfs als er een (gemiddelde) luidheidsmeting voor het radiostation bestaat. \n \n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams. \n  - Forceer Dynamische modus - Dwing te allen tijde dynamische volumenivellering af. \n  - Alleen meting (geen fallback) - Pas volumenormalisatie toe op basis van een opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe.\n  - Terugval naar versterkingscorrectie - Pas volumenormalisatie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie.\n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe.\n  - Terugval naar dynamisch - Kies automatisch de beste optie: Pas volumenormalisatie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
-            "options": {
-                "disabled": "Uitgeschakeld",
-                "dynamic": "Forceer dynamische modus",
-                "measurement_only": "Alleen meting (geen fallback)",
-                "fallback_fixed_gain": "Val terug op vaste versterkingscorrectie",
-                "fixed_gain": "Vaste versterkingscorrectie",
-                "fallback_dynamic": "Terugvallen op dynamisch"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Volumenormalisatiemethode om te gebruiken voor nummers",
-            "description": "Stel de voorkeursstrategie voor volumenormalisatie in voor nummers\/liedjes.\n\nMusic Assistant gebruikt een meting van de (gemiddeld waargenomen) luidheid van de nummers volgens de EBU-R128-specificatie om de totale versterking\/volume van de stream aan te passen zonder het dynamische bereik van de audio te beïnvloeden.\nDeze metingen worden ofwel verstrekt door de streamingprovider of, in het geval van lokale bestanden, kunnen worden opgenomen in de ID3-tags (ReplayGain 2.0 \/ Opus R128).\n\nAls de meting niet wordt opgegeven, voert Music Assistant automatisch een meting uit wanneer\/nadat het nummer (voor het eerst) is afgespeeld. Wanneer er (nog) geen meting bestaat voor een nummer, zal Music Assistant standaard terugvallen op een dynamisch (maar minder nauwkeurig) loudness levelling filter. Dit zorgt ervoor dat er geen verschillen in het volumeniveau tussen nummers zijn, zelfs als er nog geen nauwkeurige meting is, maar de dynamische leveler kan het dynamisch bereik soms een beetje comprimeren, hoewel dat in de meeste gevallen niet hoorbaar zou moeten zijn.\n\n**Opties:**\n\n- Uitgeschakeld - pas helemaal geen volumenormalisatie toe op radiostreams.\n - Dynamische kracht - Dwing te allen tijde dynamische volumenormalisatie af. \n - Alleen meting (geen terugval) - Pas (algemene) volume-\/versterkingscorrectie toe op basis van de opgeslagen meting. Als we geen meting hebben, pas dan geen normalisatie toe. \n - Terugval naar versterkingscorrectie - Pas volume-\/versterkingscorrectie toe op basis van opgeslagen metingen. Als we geen meting hebben, vallen we terug op een vooraf gedefinieerde versterkingscorrectie. \n - Vaste versterkingscorrectie - Pas altijd de vaste volume\/versterkingscorrectie toe. \n - Terugval naar dynamisch - Kies automatisch de beste optie: Pas (algemene) volume-\/versterkingscorrectie toe op basis van opgeslagen metingen als we die hebben, sta terugval naar dynamische modus toe als er geen meting beschikbaar is.",
-            "options": {
-                "disabled": "Uitgeschakeld",
-                "dynamic": "Forceer dynamische modus",
-                "measurement_only": "Alleen meten (geen fallback)",
-                "fallback_fixed_gain": "Terugvallen op vaste versterkingscorrectie",
-                "fixed_gain": "Vaste versterkingscorrectie",
-                "fallback_dynamic": "Terugvallen op dynamisch"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Vaste\/fallback gain aanpassing voor nummers",
-            "description": "Vaste\/fallback-versterkingscorrectie om toe te passen op een audiostream van een nummer (hangt af van de instelling 'Volumenormaliseringsmethode').\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt als de volumenormaliseringsmethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Vaste\/fallback versterkingsaanpassing voor radio",
-            "description": "Vaste\/fallback versterkingscorrectie om toe te passen op een radiostream (afhankelijk van de instelling 'Volumenormalisatiemethode').\n\nGebruik een positieve waarde om het volume te verhogen, een negatieve waarde om het volume te verlagen.\n\nDeze instelling wordt gebruikt wanneer de volumenormalisatiemethode is ingesteld op 'Vaste versterkingscorrectie' of 'Terugval naar versterkingscorrectie'."
-        },
         "dynamic_members": {
             "label": "Dynamische groepsleden",
             "description": "Sta leden toe om (tijdelijk) dynamisch lid te worden van de groep, zodat de groep zich min of meer hetzelfde gedraagt als het handmatig synchroniseren van spelers samen, met als belangrijkste verschil dat de groepsspeler de wachtrij vasthoudt."
@@ -482,22 +275,6 @@
                 "name_placeholder": "Mijn nieuwe preset",
                 "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
             }
-        },
-        "power_control": {
-            "label": "Aan\/uit-regeling",
-            "description": "Definieer\/overschrijf het gedrag van de aan\/uit-regeling voor deze speler.\nHiermee kunt u bijvoorbeeld de aan\/uit-commando's omleiden naar een ander apparaat, of een nep aan\/uit gebruiken als uw speler geen aan\/uit-commando's ondersteunt, maar u een speciale status wilt voor een speler die niet in gebruik is."
-        },
-        "volume_control": {
-            "label": "Volumeregeling",
-            "description": "Definieer\/overschrijf het gedrag van de volumeregeling voor deze speler.\nHiermee kun je bijvoorbeeld de volumeregelingscommando's omleiden naar een ander apparaat of het volledig uitschakelen."
-        },
-        "mute_control": {
-            "label": "Mute-bediening",
-            "description": "Definieer het mute bedieningsgedrag voor deze speler.\nHiermee kun je bijvoorbeeld de mute-control omleiden naar een ander apparaat of het volledig uitschakelen.\n\nWe bieden een 'nep' mute control die het dempen simuleert door het volume op 0 te zetten en het volume te herstellen wanneer het dempen wordt opgeheven."
-        },
-        "output_limiter": {
-            "label": "Begrenzing activeren om clippen te voorkomen",
-            "description": "Activeert een begrenzer die geluidsvervorming voorkomt door luide pieken zachter te maken."
         },
         "dsp_enabled": "DSP is ingeschakeld",
         "dsp_disabled": "DSP is uitgeschakeld",
@@ -760,38 +537,6 @@
             "title": "Gelijktijdige achtergrondanalyse",
             "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams",
             "open_settings": "Open Streams-instellingen"
-        },
-        "all_favorite_tracks": {
-            "label": "Alle favoriete nummers",
-            "description": "Genereer een afspeellijst met elk nummer dat als favoriet is gemarkeerd in je bibliotheek."
-        },
-        "random_artist": {
-            "label": "Willekeurige Artiest (uit de bibliotheek)",
-            "description": "Kies een willekeurige artiest uit je bibliotheek en zet hun nummers in de wachtrij."
-        },
-        "random_album": {
-            "label": "Willekeurig Album (uit de bibliotheek)",
-            "description": "Kies een willekeurig album uit je bibliotheek en zet de nummers in de wachtrij."
-        },
-        "random_tracks": {
-            "label": "500 willekeurige nummers (uit de bibliotheek)",
-            "description": "Genereer een afspeellijst met 500 willekeurige nummers uit je bibliotheek."
-        },
-        "recently_played": {
-            "label": "Onlangs afgespeelde nummers",
-            "description": "Toon de nummers die je het laatst hebt afgespeeld als een afspeellijst."
-        },
-        "recently_added_tracks": {
-            "label": "Onlangs toegevoegde nummers",
-            "description": "Toon de nummers die je het laatst aan je bibliotheek hebt toegevoegd als een afspeellijst."
-        },
-        "infinite_mix": {
-            "label": "Oneindige Mix (bibliotheek)",
-            "description": "Een eindeloze, steeds veranderende afspeellijst die telkens 25 willekeurige nummers uit je bibliotheek selecteert wanneer de wachtrij bijna afloopt. Vooraf laden is niet nodig — het geheugengebruik blijft constant, ongeacht de grootte van je bibliotheek."
-        },
-        "infinite_mix_favorites": {
-            "label": "Oneindige Mix (favorieten)",
-            "description": "Zoals de Oneindige Mix, maar beperkt tot je favoriete nummers. Er worden 25 nieuwe willekeurige favorieten toegevoegd wanneer de wachtrij bijna afloopt."
         }
     },
     "show_info": "Bekijk informatie",
@@ -992,62 +737,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Bron selecteren",
-    "in_progress_items": "Verder luisteren...",
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
     "all_enqueue_options": "Alle afspeelopties",
     "music_assistant_source": "Music Assistant-wachtrij",
     "music_assistant_library": "Music Assistant-bibliotheek",
     "select_all_confirmation": "Alle items selecteren? Het kan even duren totdat alle data geladen is.",
     "this_device": "Dit apparaat",
-    "recommendations": {
-        "in_progress_items": "Verder luisteren...",
-        "recommended_new_tracks": "Aanbevolen nieuwe nummers",
-        "recently_played": "Onlangs afgespeeld",
-        "suggested_new_albums_for_you": "Voorgestelde nieuwe albums voor jou",
-        "random_artists": "Willekeurige artiesten",
-        "random_albums": "Willekeurige albums",
-        "custom_mixes": "Aangepaste mixen",
-        "your_listening_history": "Jouw luistergeschiedenis",
-        "popular_albums": "Populaire albums",
-        "staff_picks_tracks": "Redactiekeuze: nummers",
-        "staff_picks_albums": "Redactiekeuze: albums",
-        "radio_stations_for_you": "Radiostations voor jou",
-        "producers__songwriters": "Producenten en songwriters",
-        "new_releases_for_you": "Nieuwe releases voor jou",
-        "recent_favorite_tracks": "Nieuwe favoriete nummers",
-        "favorite_playlists": "Favoriete afspeellijsten",
-        "favorite_radio_stations": "Favoriete radiostations",
-        "listen_again": "Opnieuw luisteren",
-        "in_progress_series": "Vervolg serie...",
-        "recommended": "Aanbevolen",
-        "recently_added": "Onlangs toegevoegd",
-        "episodes_recently_added": "Onlangs toegevoegde afleveringen",
-        "recent_series": "Nieuwe series",
-        "newest_authors": "Nieuwste auteurs",
-        "newest_episodes": "Nieuwste afleveringen",
-        "discover": "Ontdek",
-        "libraries": "Bibliotheken",
-        "library": "Bibliotheek",
-        "trending_podcasts": "Populaire podcasts",
-        "trending_stations": "Populaire stations",
-        "forgotten_tracks": "Vergeten nummers",
-        "forgotten_albums": "Vergeten albums",
-        "forgotten_artists": "Vergeten artiesten",
-        "most_played_tracks": "Meest afgespeelde nummers",
-        "never_played_tracks": "Zelden of nooit afgespeeld",
-        "recent_favorite_albums": "Nieuwe favoriete albums",
-        "recently_added_tracks": "Onlangs toegevoegde nummers",
-        "inspired_by_recently_played": "Geïnspireerd door onlangs afgespeeld",
-        "discover_similar_artists": "Ontdek vergelijkbare artiesten",
-        "discover_similar_tracks": "Ontdek vergelijkbare nummers",
-        "global_top_artists": "Wereldwijde topartiesten",
-        "global_top_tracks": "Wereldwijde topnummers",
-        "made_for_you": "Voor jou gemaakt",
-        "most_played_albums": "Meest gespeelde albums",
-        "recently_added_albums": "Nieuwe albums",
-        "recommended_albums": "Aanbevolen albums",
-        "recommended_artists": "Aanbevolen artiesten"
-    },
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
     "lyrics_will_appear_soon": "De songtekst verschijnt zodra het nummer begint...",
@@ -1267,8 +962,6 @@
     "collection": "Collectie",
     "collections": "Collecties",
     "narrators": "Vertellers",
-    "series_plural": "Series",
-    "series_singular": "Serie",
     "queue_move_end": "Verplaats naar einde",
     "discover": "Ontdek",
     "save_queue_as_playlist": "Sla wachtrij op als afspeellijst",
@@ -1293,67 +986,6 @@
     "description": "Beschrijving",
     "genre": "Genre",
     "genres": "Genres",
-    "genre_names": {
-        "afrobeats": "Afrobeats (West-Afrikaanse Urban\/Popmuziek)",
-        "ambient": "Ambient",
-        "anime_and_video_game_music": "Computerspelmuziek",
-        "asian_music": "Aziatisch",
-        "bluegrass": "Bluegrass",
-        "blues": "Blues",
-        "brazilian_music": "Braziliaans",
-        "chanson": "Chanson",
-        "childrens_music": "Kindermuziek",
-        "christmas_music": "Kerstmuziek",
-        "church_music": "Kerkmuziek",
-        "classical": "Klassiek",
-        "comedy": "Komisch",
-        "country": "Country",
-        "dance": "Dans",
-        "dark_ambient": "Dark Ambient",
-        "dark_wave": "Darkwave",
-        "disco": "Disco",
-        "electronic": "Elektronisch",
-        "experimental": "Experimenteel",
-        "field_recording": "Fonografisch",
-        "folk": "Folk",
-        "funk": "Funk",
-        "gangsta_rap": "Gangstarap",
-        "gospel": "Gospel",
-        "hip_hop": "Hip Hop",
-        "indian_classical": "Indiaas klassiek",
-        "industrial": "Industrial",
-        "jazz": "Jazz",
-        "klezmer": "Klezmer",
-        "latin": "Latin",
-        "marching_band": "Korpsmuziek",
-        "metal": "Metal",
-        "middle_eastern_music": "Midden-Oosterse muziek",
-        "musical": "Musical",
-        "new_age": "New Age",
-        "poetry": "Poëzie",
-        "polka": "Polka",
-        "pop": "Pop",
-        "psychedelic": "Psychedelisch",
-        "punk": "Punk",
-        "r_b": "R&B",
-        "ragtime": "Ragtime",
-        "rai": "Raï",
-        "reggae": "Reggae",
-        "reggaeton": "Reggaeton",
-        "rock": "Rock",
-        "salsa": "Salsa",
-        "singer_songwriter": "Singer-Songwriter",
-        "ska": "Ska",
-        "soul": "Soul",
-        "sound_effects": "Geluidseffecten",
-        "soundtrack": "Filmmuziek",
-        "spoken_word": "Gesproken Woord",
-        "swing": "Swing",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Wals",
-        "wellness": "Meditatie"
-    },
     "link": "Koppelen",
     "link_alias": "Alias koppelen",
     "link_alias_failed": "Alias koppelen mislukt",
@@ -1381,67 +1013,6 @@
         "starting": "De server wordt opgestart. Sommige providers, spelers of functies zijn mogelijk nog niet beschikbaar totdat het opstarten is voltooid.",
         "stopping": "De server wordt afgesloten...",
         "stopped": "De server is gestopt"
-    },
-    "genre_descriptions": {
-        "afrobeats": "Afrobeats is een West-Afrikaans muziekgenre, of ook wel een verzamelnaam voor diverse West-Afrikaanse muziekgenres. Afrobeats is een mix van hiphop, r&b en dance, reggae of dancehall, en diverse Nigeriaanse en Ghanese stijlen. Afrobeats is ontstaan rond begin jaren 2000 in Nigeria, Ghana en Londen. Het brak in de jaren 2010 en 2020 internationaal door dankzij het succes van artiesten als Burna Boy en Wizkid. Afrobeats is een ander genre dan het Nigeriaanse afrobeat.",
-        "ambient": "Ambient is een muziekstijl. Het is geëvolueerd vanuit de synthesizer-muziek van artiesten als Brian Eno en Kraftwerk, en later ook vanuit de dance-wereld. Het is een rustige, lang uitgesponnen muziekstijl met elektronische instrumenten, waarbij men meer bezig is met het creëren van soundscapes dan met liedjes en composities. Kenmerkend aan deze muziek is dat zij zich zonder ritme manifesteert. Ook is vaak het metrum van de muziek niet op te delen in tellen en tempi.",
-        "anime_and_video_game_music": "Computerspelmuziek, of spelmuziek, is een muziekstijl gecomponeerd voor computerspellen.",
-        "asian_music": "Aziatische muziek omvat talloze muziekstijlen, uiteenlopende culturele en religieuze tradities en vormen die hun oorsprong vinden op het Aziatische continent.",
-        "bluegrass": "Bluegrass is een Amerikaanse muziekstijl die tot het countrygenre wordt gerekend. De naam werd voor het eerst gebruikt aan het eind van de jaren 50. De grondlegger van deze stijl, de Amerikaan Bill Monroe, noemde zijn band The Blue Grass Boys naar zijn geboortestaat Kentucky, waarvan de bijnaam The Blue Grass State luidt.",
-        "blues": "Blues is een muziekstijl die ongeveer tussen 1860 en 1900 is ontstaan en zijn oorsprong vindt in de muziek die slaven uit Afrika in het Zuiden van de Verenigde Staten – onder andere in de Mississippidelta, tussen Memphis en New Orleans – maakten. De voornaamste muzikale bronnen die tot het ontstaan van de blues hebben bijgedragen zijn de religieuze liederen (gospels, negrospirituals), de worksongs en de field hollers. Een typische variant van de blues is de cajunmuziek. Muziek maken met elkaar of alleen, met of zonder instrumenten, was voor hen vaak de enige manier om hun lijden uit te drukken en te verzachten.",
-        "brazilian_music": "De muziek van Brazilië omvat verschillende regionale muziekstijlen die beïnvloed zijn door Europese, Amerikaanse, Afrikaanse en Indiaanse vormen. Braziliaanse muziek ontwikkelde een aantal unieke en originele stijlen zoals forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, gaucho muziek, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha en Braziliaanse versies van buitenlandse muziekstijlen, zoals rock, popmuziek, soul, hiphop, discomuziek, countrymuziek, ambient, industriële en psychedelische muziek, rap, klassieke muziek, fado en gospel.",
-        "chanson": "Een chanson is simpelweg het Franse woord voor 'lied', en is daarmee de benaming voor de populairste, meest eigen stijl van Franse zangkunst. Het heeft vaak een poëtisch-verhalende vorm. Een beoefenaar van het chanson wordt in het Nederlands een chansonnier genoemd.[1] Chansons bestaan in traditionele en meer moderne vormen. Een van de begeleidende instrumenten van een traditioneel Frans chanson is de accordeon. Ook anderstalige verhalende liederen worden vaak aangeduid met chanson. De Nederlandse vertaling van het woord chanson, luisterlied, wordt toegeschreven aan Ernst van Altena en aan Jules de Corte.",
-        "childrens_music": "Kindermuziek is muziek gecomponeerd en uitgevoerd voor kinderen. In door Europa beïnvloede contexten betekent dit muziek, meestal liedjes, speciaal geschreven voor een jeugdig publiek. De componisten zijn meestal volwassenen.",
-        "christmas_music": "Kerstmuziek is religieuze of populaire muziek die vooral in de kersttijd wordt uitgevoerd. De gezongen muziek wordt over het algemeen benoemd met het woord kerstlied. Men kan hierbij meerdere soorten onderscheiden.",
-        "church_music": "Onder kerkmuziek verstaat men muziek, die geschreven is met het oog op gebruik ervan in de kerkelijke liturgie.",
-        "classical": "Klassieke muziek of westerse kunstmuziek is de geschoolde muziek die voortgebracht is door, of geworteld is in, de westerse kerkelijke en wereldlijke muziektradities, grofweg vanaf de middeleeuwen tot heden. De kernregels van deze traditie kwamen vast te liggen in de periode 1550-1900. Het overgrote deel van de composities is op een of andere wijze genoteerd.",
-        "comedy": "Komische muziek of muzikale komedie is een genre muziek dat komisch van aard is. De geschiedenis ervan gaat terug tot de eerste eeuw in het oude Griekenland en Rome, en vervolgens tot de Middeleeuwen, de Klassieke en Romantische tijdperken en de 20e eeuw. Verschillende vormen van komisch muziektheater, waaronder \"muzikaal toneelstuk\", \"muzikale komedie\", \"operette\" en \"lichte opera\", zijn ontstaan uit de komische opera's die voor het eerst werden ontwikkeld in het Italië van de late 17e eeuw. Populaire muziekartiesten in de 20e eeuw die geïnteresseerd waren in komedie zijn onder andere Allan Sherman, Frank Zappa, Tiny Tim, Barenaked Ladies, Randy Newman en \"Weird Al\" Yankovic. Artiesten in de 21e eeuw zijn onder andere Tenacious D, Flight of the Conchords, The Lonely Island, Ninja Sex Party en The Axis of Awesome.",
-        "country": "Countrymuziek, ook wel country and western genoemd, is de verzamelnaam voor verschillende stijlen van oorspronkelijk Amerikaanse muziek. De oorsprong valt te herleiden tot de volksmuziek in het niet-stedelijke gebied in het zuidelijke deel van de Verenigde Staten, met name in het bergachtig gebied van de Appalachen als in de cowboymuziek uit het Zuidwesten tot aan Texas.",
-        "dance": "Dansmuziek is amusementsmuziek om op te kunnen dansen, voornamelijk populair onder jongeren en in discotheken. De muziek die je gebruikt is afhankelijk aan de dans die je doet. De meeste dansmuziek heeft gemeen dat het tempo binnen een muziekstuk tamelijk constant is. Voor de meeste dansvormen zijn metrum en tempo gekoppeld aan een bepaald type dans. Dansmuziek heeft naast amusementswaarde ook kunstzinnige waarde. Veel dansmuziek uit het klassieke repertoire heeft niet zozeer de dansfunctie centraal staan, maar veeleer wordt daar de muziek vanwege de artistieke uiting op dans gebaseerd. Zo schreef Bach vele suites die op dans gebaseerd zijn, Chopin gestileerde walsen, en ook vele andere componisten gebruikten de dansmuziek los van het dansen zelf.",
-        "dark_ambient": "Dark ambient (oorspronkelijk ambient industrial genoemd) is een vorm van elektronische muziek die in de jaren tachtig ontstond. Het is een van de subgenres van ambient.",
-        "dark_wave": "Darkwave is een elektronische, melancholieke, donker klinkende gothic-muziekstijl, een vorm van synthpop en new wave.",
-        "disco": "Disco is een genre van dansmuziek dat erg populair was in de jaren '70 van de twintigste eeuw. De melodieuze muziekstijl, gebaseerd op een opzwepend four-on-the-floor bas- en drumritme, sissende hihats met een symfonische achtergrond van orkestrale arrangementen en uitgebreide synthesizer-klankeffecten, vond zijn oorsprong in de Amerikaanse sub- en tegencultuur van minderheidsgroepen zoals Latino's, homo's, Afro-Amerikanen en jonge vrouwen die was ontstaan in de New Yorkse ondergrondse muziekscene eind jaren '60.",
-        "electronic": "Elektronische muziek is een verzamelterm voor muziek die gemaakt is met elektronische muziekinstrumenten. Elk geluid dat wordt geproduceerd door een elektronisch apparaat kan elektronisch genoemd worden. Zelfs in muziek die hoofdzakelijk akoestisch gespeeld wordt, kan het gebruik van elektronische versterkers ervoor zorgen dat de muziek gelinkt wordt met de term \"elektronisch muziek\", zoals in bepaalde jazz- en folkmuziek wel gebeurt. Waar men halverwege de 20e eeuw met de term elektronische muziek nog doelde op de experimenten met elektronische instrumenten, die in contrast stonden met populaire of klassieke muziek, is de term tegenwoordig een uitgebreide losse verzamelnaam geworden, waar een groot aantal van de populaire, underground, experimentele of andere muziek in kan worden ondergebracht.",
-        "experimental": "Experimentele muziek of avant-gardemuziek is een aantal soorten muziek waarin wordt gebroken met de gebruikelijke opvattingen over wat muziek eigenlijk hoort te zijn. Als zodanig vormt het een ondervorm van wat algemeen als de avant-garde wordt aangeduid, een vernieuwing die zich vanaf het begin van de 20e eeuw op alle kunstzinnige gebieden manifesteerde, inclusief de muziek. De componist Arnold Schönberg (van gemengd Amerikaanse en Oost-Europese afkomst) wordt algemeen beschouwd als degene die aan het begin van de 20e eeuw deze tendens in gang zette. Tot zijn bekendste navolgers behoren Igor Stravinsky, Arthur Honegger, Alban Berg en Karlheinz Stockhausen. De Amerikaan John Cage zorgde er enkele decennia later voor dat de experimentele muziek als genre serieus genomen werd.",
-        "field_recording": "Fonografie is de kunst van het opnemen van geluiden in hun natuurlijke omgeving. De meeste fonografen zijn in het bezit van portable recorders voor het vastleggen van deze geluiden. Bij fonografie moeten vaak complexe geluiden worden opgenomen, waardoor er speciale opnameapparatuur voor vereist is. Fonografie speelt een grote rol bij bijvoorbeeld bioakoestiek, zoals het onderzoek naar vogelzang.",
-        "folk": "Folk is een muziekstijl gebaseerd op de oorspronkelijk van generatie op generatie overgedragen volkseigen of regionale volksmuziek, bestaande uit dansmuziek en verhalende liederen voor elke gemoedstoestand en gelegenheid, zoals liefde, blijdschap, verdriet, bruiloft, werk, overspel, ziekte, dood. Het genre kent daardoor zeer veel uiteenlopende verschijningsvormen, mede afhankelijk van waar ter wereld de muziek wordt gemaakt. In het Westen wordt er het vaakst de Noord-Amerikaanse en Engelse variant mee bedoeld.",
-        "funk": "Funk is een sterk ritmische muziekstijl en leunt vooral op het ritmisch staccato samenspel tussen percussie, baslijnen, slaggitaren en blaasinstrumenten. De muziekstroming is halverwege de jaren 1960 ontstaan in de Verenigde Staten toen James Brown een kenmerkende groove ontwikkelde die de nadruk legde op de downbeat - met een zware nadruk op de eerste tel van elke maat (\"The One\"), en de toepassing van veel 16e noten en syncopen op slaggitaar, baslijnen en drums. Er wordt weinig gebruikgemaakt van akkoordprogressie, zoals in de blues, wel van septiem, negende en 13e akkoorden zoals in de bebop. In funk benadrukt de ritmesectie, de zang is ondergeschikt.",
-        "gangsta_rap": "Gangstarap, gangsterrap of straatrap is een onderdeel van de muziekstroming rap, afkomstig uit de getto's van grote Amerikaanse steden. De teksten zijn vaak gewelddadig en seksistisch en gaan over de moeilijke leefomstandigheden in de getto's, het leven in bendes, geweld en drugs. Mede door het provocerende karakter van de teksten werd gangstarap enorm populair bij jongeren, vaak tot grote zorg van ouders en politici. Het genre ontstond voor het eerst in het midden van de jaren tachtig met rappers als Schoolly D en Ice-T, maar werd vooral populair in de eind jaren tachtig door de groep N.W.A. Na de nationale aandacht die Ice-T en N.W.A aantrokken in de jaren tachtig en negentig, werd gangstarap het commercieel lucratiefste subgenre van hiphop.",
-        "gospel": "Gospel of gospelmuziek is een muziekgenre in de christelijke muziek. Het Engelse woord gospel komt van het Oudengelse goð ('goed') en spell ('nieuws, boodschap') en betekent dus net als het Griekse evangelie 'goed nieuws' of 'goede\/blijde boodschap'. De gospelmuziek werd geboren in de katoenvelden van de zuidelijke staten van de Verenigde Staten van Amerika. Het is zwarte religieuze muziek die sterk beïnvloed werd door zowel de ritmische muziek die de slaven meebrachten uit Afrika alsook door de 'bevindelijke' manier van geloven van de blanken. Het leven na de dood, vaak aangeduid als het oversteken van de rivier de Jordaan, is een zeer vaak terugkerend thema.",
-        "hip_hop": "Hiphop-muziek, vaak kortweg hiphop genoemd, is een muziekgenre dat in de Verenigde Staten in de jaren 1970 door Afro-Amerikanen in de binnenstad werd ontwikkeld en dat bestaat uit een gestileerde ritmische muziek die vaak gepaard gaat met rappen, een ritmische en rijmende spraak-zang-techniek. Het ontwikkelde zich als onderdeel van de hiphopcultuur, een subcultuur gedefinieerd door vier belangrijke stilistische elementen: MC'ing\/rappen, turntablism, breakdance en graffiti.",
-        "indian_classical": "Indiase klassieke muziek is de klassieke muziek van het Indiase subcontinent. Het wordt over het algemeen beschreven met termen als Shastriya Sangeet en Marg Sangeet. Er zijn twee belangrijke tradities: de Noord-Indiase klassieke muziek, bekend als Hindustani, en de Zuid-Indiase variant, bekend als Carnatische muziek. Hindustani-muziek legt de nadruk op improvisatie en het verkennen van alle aspecten van een raga, terwijl Carnatische uitvoeringen doorgaans korte, op composities gebaseerde stukken zijn. De twee systemen hebben echter meer overeenkomsten dan verschillen. Een andere unieke klassieke muziektraditie uit het oosten van India is Odissi-muziek, die zich de afgelopen tweeduizend jaar heeft ontwikkeld.",
-        "industrial": "Industrial is een muziekstijl die aan de gevestigde conventies van de rock wilde ontsnappen. Door verregaande experimenten met geluid, tapeloops en vroege elektronische instrumenten wilde men tot een nieuwe vorm van muziek komen.",
-        "jazz": "Jazz is een op improvisatie gebaseerde muziekstijl die beïnvloed is door West-Afrikaanse ritmes en ontstaan is in de Afro-Amerikaanse gemeenschap van New Orleans uit een kruisbestuiving van ragtime, blues, folk en negrospirituals. Oorspronkelijk betekende het woord jazz een \"zeer energieke dans\". Jazz werd in de beginjaren door het grote publiek niet erg geaccepteerd, vooral omdat deze soort muziek geassocieerd werd met losse zeden en een lage sociale status.",
-        "klezmer": "Klezmer is van origine de instrumentale muziek van de Jiddisch sprekende Asjkenazische Joden in met name Oost-Europa. Tot deze cultuur behoren ook Jiddische liederen, een stijl in de traditionele zangkunst.",
-        "latin": "Latinmuziek is een term die in de muziekindustrie wordt gebruikt als een overkoepelende categorie voor verschillende muziekstijlen uit Ibero-Amerika, waaronder Latijns-Amerika, Spanje, Portugal en de Latino-bevolking in Canada en de Verenigde Staten, evenals muziek die in het Spaans of Portugees wordt gezongen. Het kan ook muziek omvatten uit andere gebieden waar Spaanstalige en Portugeestalige muziek wordt gemaakt.",
-        "marching_band": "Korpsmuziek is een op performance gebaseerd, visueel-muzikaal genre waarbij muzikanten koperblazers, houtblazers en slagwerk bespelen terwijl ze zich in gesynchroniseerde, gechoreografeerde formaties voortbewegen, meestal met een tempo van 120-160+ slagen per minuut. Het combineert muzikale performance met atletisch, snel marcheren, waarbij vaak pop-, rock- en klassieke muziek wordt gecombineerd met traditionele militaire marsen.",
-        "metal": "Een overkoepelende categorie muziekgenres binnen de metal-tak, afgeleid van heavy metal, maar niet per se een subgenre daarvan.",
-        "middle_eastern_music": "De verschillende naties van de regio omvatten de Arabisch sprekende landen van het Midden-Oosten, de traditionele Perzische rituele muziek, de Joodse muziek van Israël en de diaspora, Koerdische muziek, Armeense muziek. Azerische muziek, de gevarieerde tradities van de Cypriotische muziek, de Turkse muziek van Turkije, traditionele Assyrische muziek, Koptische rituele muziek in Egypte en andere genres van Egyptische muziek in het algemeen. Algemeen wordt aangenomen dat sommige muziekstijlen uit het Midden-Oosten invloed hebben gehad op Centraal-Azië, de Balkan, Zuid-Italië en Spanje.",
-        "musical": "Een theatermusical is een vorm van theater die muziek, liedjes, gesproken dialogen en dans combineert. Het emotionele deel van het stuk – humor, pathos, liefde, woede – en ook het verhaal op zich worden gebracht door woorden, muziek, bewegingen en technische aspecten als entertainment in een geïntegreerd geheel. Sinds het begin van de 20e eeuw worden musical-theaterstukken kortweg musicals genoemd.",
-        "new_age": "New age is een muziekstijl, die, gelijk aan de new age-beweging in het algemeen aan het begin van de jaren 80 opkwam en als doel heeft de luisteraar door middel van instrumentale en vocale melodieën te laten ontspannen. De nummers, gebaseerd op de zachtere soorten klassieke muziek, jazz en folk, kunnen erg lang duren en hebben meestal een rustige, kalmerende sfeer. New age-muziek gebruikt veelal stijlkenmerken uit de ambient en minimale muziek, zoals geluiden uit de natuur en repetitieve klankstructuren. Ook de niet-Westerse wereldmuziek is een bron waaruit aspecten overgenomen worden als drone, Tibetaanse klankschalen en samples van Chinese en Japanse muziek of de andere Oosterse muzieksoorten als bijvoorbeeld Gamelan of Indiase muziek.",
-        "poetry": "Poëzie als muzikaal genre combineert gesproken woord of voorgedragen verzen met muzikale begeleiding, waardoor een hybride vorm ontstaat die zich richt op emotionele expressie, verhalen vertellen en ritme. Vaak met akoestische instrumenten (piano, gitaar) of experimentele soundscapes, vervaagt dit genre de grens tussen literatuur en lied, waarbij de inherente melodie en cadans van gesproken woorden worden benadrukt.",
-        "polka": "De polka is een volksdans voor paren in een snelle tweekwartsmaat of vierkwartsmaat. De naam polka wordt ook gebruikt voor de bij de dans horende muziekstijl. De grondvorm is een serie kort-kort-lang-stappen met nadruk op de eerste korte stap, die dus wisselend met de linker- en rechtervoet wordt gedaan. De opbouw van de polka is in beginsel: opmaat 1\/16, daarna 1\/8, 1\/8, 3\/16.[1] De melodie wordt begeleid door een baspartij die een stevige afwisseling van de basisnoot en de kwart eronder laat horen.",
-        "pop": "Popmuziek is een afkorting van 'populaire muziek'. Het is evenals eigentijdse muziek een verzamelnaam voor tal van muziekstijlen, maar meer gericht op de populariteit dan naar de diversiteit van de muziek. De gemeenschappelijke noemer van popmuziek is dat een breed publiek toegang heeft tot de muziek. In wezen is dat tegenwoordig altijd het geval, maar in de tijd dat de term ontstond, grofweg ongeveer na 1945, waarin cultuur gemeengoed werd voor alle mensen, veroorzaakt door verbetering en beschikbaarheid van de technologie zoals de platenspeler en de radio. Daarnaast gaf de economische impuls die in de jaren vijftig ontstond jongeren de gelegenheid consument te worden. In de eerste jaren van de popmuziek wordt zij dan ook steeds meer de uitingsvorm voor jongeren. Muziekinstrumenten die in de popmuziek worden gebruikt zijn hoofdzakelijk de elektrische gitaar, de basgitaar, drums en synthesizer.",
-        "psychedelic": "Psychedelische muziek is een verscheidenheid aan muziekgenres die beïnvloed zijn door de psychedelische cultuur en proberen de ervaring onder invloed te zijn van hallucinogene drugs na te bootsen of te versterken. De muzieksoort is sterk verbonden met de cultuur rond de hippies en flowerpower. Psychedelica is door de jaren heen altijd een inspiratie geweest. Tot op de dag van vandaag wordt er muziek gemaakt die de term psychedelisch waardig is.",
-        "punk": "Een overkoepelende categorie van muziekgenres die verwant zijn aan de punksubcultuur, voortgekomen uit de punkrockscene, maar niet per se een subgenre daarvan.",
-        "r_b": "Rhythm-and-blues is een muziekgenre met invloeden uit jazz, gospel en blues dat ontstond in de Afro-Amerikaanse cultuur in de jaren veertig van de 20e eeuw. Op zijn beurt leidde rhythm-and-blues mede tot het ontstaan van onder meer rock-'n-roll en soul, en beïnvloedde ook Europese rockgroepen. In bredere zin wordt de term rhythm-and-blues ook wel gebruikt als benaming voor Afro-Amerikaanse popmuziek in het algemeen.",
-        "ragtime": "Ragtime is een laatnegentiende-eeuwse Amerikaanse muziekvorm, die gekenmerkt wordt door syncopische melodie en begeleiding. Ragtime is een van de muzikale bronnen van de jazz. In 1918 kwam het stuk Rag-Time, door Igor Stravinsky, uit; een stuk voor elf instrumenten, gebaseerd op de jazzmuziek van New Orleans. Ragtime mag zelf echter niet als jazz beschouwd worden. Het ging aan de jazz vooraf. Wel zijn rags veelvuldig door orkesten van oude stijl jazz gespeeld. Ook in de jazzrevivalperiode in de vijftiger jaren van de twintigste eeuw was de muziek uit de ragtimeperiode vaak te horen, bewerkt voor dixielandorkest. In Europa heeft met name de Engelsman Chris Barber zich sterk ingezet voor de ragtime, door het met zijn dixielandorkest regelmatig ten gehore brengen van muziek uit de ragtimeperiode.",
-        "rai": "Rai (Arabisch: راي), ook vaak getranslitereerd als raï, is een Algerijnse muziekvorm die is ontstaan in de omgeving van de stad Oran rond 1920. Dit werd steeds bekender en is later bekender geworden in andere Maghreb-landen. In de jaren negentig van de twintigste eeuw hebben enkele rai-nummers ook in de Nederlandse Top 40 gestaan. Al langer was de rai in Europa populair, met name onder jongeren van Noord-Afrikaanse afkomst.",
-        "reggae": "Reggae is een muzieksoort afkomstig uit Jamaica. De religieuze en culturele stroming rastafari is nauw verbonden met reggae. In november 2018 werd reggae toegevoegd aan de lijst van het immaterieel cultureel erfgoed van UNESCO.",
-        "reggaeton": "Reggaeton is een muziekstroming die zijn oorsprong vindt in Panama, waar men het maakte als Spaanstalige reggae, beïnvloed door de reggae en dancehall uit Jamaica. In de jaren negentig van de twintigste eeuw werd het verder ontwikkeld in de underground van voornamelijk Puerto Rico.",
-        "rock": "Rock is een muziekgenre dat traditioneel gekenmerkt wordt door een bezetting van gitaar, basgitaar en drums, aangevuld met zang en\/of andere instrumenten. Rock werd populair in de Verenigde Staten tijdens de jaren 50, waar het zich ontwikkelde uit bestaande genres zoals rhythm-and-blues en country. Waar het toen alleen uit rock-'n-roll en rockabilly bestond, groeide rock uiteindelijk uit tot een muziekstroming met veel verschillende subgenres. Omdat het genre erg breed is, is 'rock' verworden tot een vrij algemene term. Het beslaat hitparademuziek zoals Kane en K's Choice alswel sommige vormen van metal. Soms worden ook blues en country tot de rock gerekend.",
-        "salsa": "Salsa is een muziekstijl die voortkomt uit de Cubaanse son en Amerikaanse jazz. Het wordt tegenwoordig over de hele wereld gespeeld maar is vooral in Latijns-Amerikaanse landen populair. Naast de son is salsa ook verwant aan andere Latijns-Amerikaanse muziekstijlen zoals merengue, bachata, cumbia, chachacha en bolero (in de stijldanswereld bekend als de rumba). Salsa heeft een specifieke clave, een ritmisch motief waarnaar zowel musici als dansers zich kunnen oriënteren. Op de salsamuziek wordt de salsadans gedanst.",
-        "singer_songwriter": "Een groep muziekgenres die in het midden van de 20e eeuw ontstond en verwijst naar de muziek van singer-songwriters, vaak gekenmerkt door politieke of persoonlijke teksten en minimale akoestische begeleiding.",
-        "ska": "Ska is een aan het einde van de jaren vijftig op Jamaica opgekomen muziekstijl die gekenmerkt wordt door zeer nadrukkelijke accenten tussen de tellen van een vierkwartsmaat. Ska is opgewekte dansmuziek. Doordat een hoofdrol is weggelegd voor de koperblazers, wordt ska ook weleens de jazz van Jamaica genoemd. De iets langzamere afgeleide van ska heet rocksteady. De nog slomere variant is reggae. In Engeland ontstond rond 1980 een Britse variant op het genre, de zogenaamde Two Toneska, die, onder invloed van de punk, aanmerkelijk energieker en sneller was dan zijn Jamaicaanse voorloper.",
-        "soul": "Soul is een muziekstijl die in de jaren vijftig en zestig ontstond uit rhythm-and-blues en gospelmuziek bij de Afro-Amerikaanse bevolking in het zuiden van de Verenigde Staten. Hoofdvertegenwoordigers waren Ray Charles, Sam Cooke, James Brown, Aretha Franklin en Stevie Wonder. Bij soul figureert veelal een zanger(es) met ondersteuning van achtergrondzang en een band met ritmesectie, koperblazers en saxofoons.",
-        "sound_effects": "Geluidseffecten als muziekgenre – vaak een verzameling van soundscape-composities, musique concrète en noise-muziek – gebruiken omgevingsgeluiden, mechanische geluiden en Foley-opnames als primaire muzikale elementen in plaats van traditionele melodieën of harmonieën. Deze avant-gardistische aanpak creëert meeslepende, verhalende en gelaagde auditieve ervaringen.",
-        "soundtrack": "Filmmuziek is een vorm van achtergrondmuziek die tijdens films gespeeld wordt om de sfeer van de film en de emoties van de acteurs te benadrukken. De film kan zo gezien worden als een moderne vorm van melodrama. Veel films zouden zonder filmmuziek minder spanning hebben gehad. Vaak is de muziek bij een film ook nog te koop als aparte cd. Zo'n cd wordt ook wel een soundtrack genoemd. Filmmuziek is een industrie op zichzelf, niet alleen in Hollywood, maar ook in bijvoorbeeld haar Indiase tegenhanger Bollywood.",
-        "spoken_word": "Gesproken woord is een genre dat gesproken poëzie, verhalen of monologen combineert met muzikale begeleiding of ritmische voordracht, waarbij de stem het belangrijkste instrument is. Geworteld in orale tradities en de Beat Generation, versmelt het literaire kunstzinnigheid met muziek, vaak met thema's als sociale rechtvaardigheid, politiek en persoonlijk verhaal, vaak begeleid door jazz, rock of folk elementen.",
-        "swing": "Swingmuziek, ook wel bekend als swing jazz of gewoon swing, is een vorm van jazz die in de Verenigde Staten ontstond in het begin van de jaren 1930 en zich tegen 1935 ontwikkelde tot een kenmerkende stijl. Onder impuls van bigbands zoals die van Fletcher Henderson, Count Basie en Duke Ellington werd deze muziek met haar opwindende ritmes vooral populair als dansmuziek. De bloeiperiode van de swing liep van ongeveer 1930 tot midden jaren 1940. In de Amerikaanse traditie wordt swing meestal geassocieerd met de muziek van onder anderen Count Basie, Duke Ellington, Glenn Miller en Benny Goodman. In de Europese traditie wordt swing meestal geassocieerd met de gipsyjazzmuziek van onder anderen Django Reinhardt, Stéphane Grappelli en hun Quintette du Hot Club de France.",
-        "tango": "Tango is een muziekgenre uit Zuid-Amerika, met name Buenos Aires (Argentinië) en Montevideo (Uruguay). De muziek is nauw verbonden met de gelijknamige dans. Vaak is de muziek instrumentaal. De muziek is eind negentiende eeuw in Argentinië en Uruguay ontstaan met onder andere Afrikaanse, Zuid-Europese, Slavische en Klezmer invloeden. De muziek heeft meestal een tweekwarts- of vierkwartsmaat met een tempo van ongeveer 120 à 130 tellen per minuut. De toonsoort is veelal mineur, waarbij de cadenzen harmonisch zijn.",
-        "trap": "Trap is een subgenre van hiphopmuziek dat ontstond in de late jaren 1990 in het zuiden van de Verenigde Staten. In de southern hiphop werd sinds die tijd trap-achtige beats gemaakt, en daar werd op gerapt. Deze muziekstijl wordt getypeerd door zijn 808 bass, hihats en synthesizers. Trap onderscheidt zich met name door zijn lange, diepe basstonen. Sinds 2012 heeft deze muziekstijl een enorme stimulans gekregen qua bekendheid. Veel producers van elektronische muziek en dj's ontdekten de muziekstijl en gingen het verwerken in hun eigen muziek.",
-        "waltz": "De wals (Frans: valse, Duits: Walzer, Engels: waltz) is een danssoort die oorspronkelijk vanuit de volksmuziek uit Zuid-Duitsland en Oostenrijk rond 1770 is ontstaan. Kenmerkend is de 3\/4-maat, al komen in Latijns-Amerika ook walsen in 6\/8-maat voor. Bekende danswalsen zijn geschreven door Joseph Lanner, Johann Strauss sr., diens zoon Johann Strauss jr. en Pjotr Iljitsj Tsjaikovski. Daarnaast werden er ook (meer gestileerde) walsen geschreven die vooral bedoeld waren voor concertante uitvoeringen, bijvoorbeeld door Frédéric Chopin, Franz Liszt, Johannes Brahms, Gustav Mahler en vooral door Johann Strauss jr. Franz Schubert schreef meerdere walsen voor onder andere piano. Ook Jacques Offenbach en Franz von Suppè schreven diverse walsen.",
-        "wellness": "Meditatiemuziek is muziek die wordt uitgevoerd ter ondersteuning van de meditatiepraktijk. Het kan een specifieke religieuze inhoud hebben, maar wordt de laatste tijd ook geassocieerd met moderne componisten die meditatietechnieken gebruiken in hun compositieproces, of die dergelijke muziek componeren zonder zich te richten op een bepaalde religieuze groep. Het concept omvat ook muziek die wordt uitgevoerd als een meditatiehandeling."
     },
     "link_to_genre": "Koppel aan genre",
     "link_to_genre_title": "Koppel aan genre",
@@ -1670,24 +1241,6 @@
             "log_download_failed": "Geen taaklogboek beschikbaar om te downloaden."
         }
     },
-    "background_task": {
-        "sync_provider_artists": "Synchroniseer artiesten voor {0}",
-        "sync_provider_albums": "Synchroniseer albums voor {0}",
-        "sync_provider_tracks": "Synchroniseer nummers voor {0}",
-        "sync_provider_playlists": "Synchroniseer afspeellijsten voor {0}",
-        "sync_provider_radios": "Synchroniseer radiostations voor {0}",
-        "sync_provider_audiobooks": "Luisterboeken synchroniseren voor {0}",
-        "sync_provider_podcasts": "Podcasts synchroniseren voor {0}",
-        "add_playlist_tracks": "Voeg items toe aan afspeellijst {0}",
-        "remove_playlist_tracks": "Verwijder items uit afspeellijst {0}",
-        "database_cleanup": "Database opschonen",
-        "correct_provider_mappings": "Corrigeer provider-toewijzingen",
-        "scan_genre_mappings": "Scan genre-toewijzingen",
-        "cache_database_cleanup": "Cache-database opschonen",
-        "scan_missing_artist_artwork": "Ontbrekende albumhoezen van artiest scannen",
-        "refresh_playlist_metadata": "Metadata van afspeellijst vernieuwen",
-        "update_metadata": "Metadata bijwerken"
-    },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
     "radiobrowser_by_popularity": "Op populariteit",
@@ -1793,16 +1346,6 @@
     "with_artists": "met {artists}",
     "disc": "Schijf {number}",
     "album_type_label": "Albumtype",
-    "builtin_playlist": {
-        "all_favorite_tracks": "Alle favoriete nummers",
-        "random_artist": "Willekeurige Artiest (uit de bibliotheek)",
-        "random_album": "Willekeurig Album (uit de bibliotheek)",
-        "random_tracks": "500 willekeurige nummers (uit de bibliotheek)",
-        "recently_played": "Onlangs afgespeelde nummers",
-        "recently_added_tracks": "Onlangs toegevoegde nummers",
-        "infinite_mix": "Oneindige Mix (bibliotheek)",
-        "infinite_mix_favorites": "Oneindige Mix (favorieten)"
-    },
     "now_playing": "Speelt nu",
     "artist_topalbums": "Topalbums",
     "in_library": "In je bibliotheek",

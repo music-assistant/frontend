@@ -230,6 +230,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -248,6 +249,7 @@ import { watch } from "vue";
 import { nanoid } from "nanoid";
 import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
 import { openLinkInNewTab } from "@/helpers/utils";
+import { $t } from "@/plugins/i18n";
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
@@ -315,7 +317,7 @@ const config_entries = computed(() => {
     entries.push({
       key: "dsp_note_multi_device_group",
       type: ConfigEntryType.LABEL,
-      label: "You can configure the DSP for each player individually.",
+      label: $t("settings.dsp_note_multi_device_group.label"),
       default_value: null,
       required: false,
       category: "dsp",
@@ -328,8 +330,7 @@ const config_entries = computed(() => {
     entries.push({
       key: "dsp_note_multi_device_group_unsupported",
       type: ConfigEntryType.LABEL,
-      label:
-        "This group type does not support DSP when playing to multiple devices.",
+      label: $t("settings.dsp_note_multi_device_group_unsupported.label"),
       default_value: null,
       required: false,
       category: "dsp",
@@ -469,8 +470,7 @@ const onAction = async function (
       }
     })
     .catch((err) => {
-      // TODO: make this a bit more fancy someday
-      alert(err);
+      toast.error(String(err));
     })
     .finally(() => {
       loading.value = false;

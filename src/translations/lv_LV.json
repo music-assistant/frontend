@@ -145,185 +145,12 @@
         "add_new_provider_button": "Pievienot {0} sniedzēju",
         "add_group_player": "Pievienot grupas atskaņotāju",
         "group_members": "Grupas dalībnieki",
-        "log_level": {
-            "label": "Žurnālfaila līmenis",
-            "description": "Uzstādīt žurnāla detalizētību šim sniedzējam",
-            "options": {
-                "global": "Globālais",
-                "info": "Informatīvs",
-                "warning": "Brīdinājuma",
-                "error": "Kļūdu",
-                "debug": "Atkļūdošanas"
-            }
-        },
-        "flow_mode": {
-            "label": "Iespējot rindas plūsmas režīmu",
-            "description": "Iespējot \"plūsmas\" režīmu, kur visi rindas celiņi tiek sūtīti kā viena audio straume. Izmanto atskaņotājam, kas neatbalsta audio atskaņošanu bez starpām (gapless) un\/vai audio sapludināšanu, vai ja atskaņotājam ir problēmas ar pārejām starp celiņiem."
-        },
-        "auto_play": {
-            "label": "Automātiska atskaņošana (atsākt pēc ieslēgšanas)",
-            "description": "Kad šis atskaņotājs tiek ieslēgts, automātiski sākt atskaņošanu (ja rindā ir vienumi)."
-        },
-        "output_channels": {
-            "label": "Izejas kanāla režīms",
-            "description": "Šo atskaņotāju var uzstādīt, lai tas atskaņotu tikai kreiso vai labo kanālu, piemēram, lai izveidotu stereo pāri no 2 atskaņotājiem.",
-            "options": {
-                "stereo": "Stereo (abi kanāli)",
-                "left": "Tikai kreisais kanāls",
-                "right": "Tikai labais kanāls",
-                "mono": "Mono (abi kanāli)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Iespējot skaļuma normalizēšanu (pēc EBU-R128)",
-            "description": "Iespējot skaļuma normalizēšanu, pamatojoties uz EBU-R128 standartu, neietekmējot skaņās dinamisko diapazonu"
-        },
-        "volume_normalization_target": {
-            "label": "Mērķa līmenis skaļuma normalizēšanai",
-            "description": "Pielāgot vidējo (uztverto) skaļumu uz šo mērķa līmeni, noklusējuma vērtība ir -17 LUFS \n \n **BRĪDINĀJUMS:** Pārāk augsta līmeņa iestatīšana var izraisīt audio apcipršanu (clipping)!"
-        },
-        "eq_bass": {
-            "label": "Ekvalaizers: bass",
-            "description": "Izmanto iebūvēto vienkāršo ekvalaizeru, lai pielāgotu basu (zemo frekvenču) līmeni."
-        },
-        "eq_mid": {
-            "label": "Ekvalaizers: vidus frekvences",
-            "description": "Izmanto iebūvēto vienkāršo ekvalaizeru, lai pielāgotu vidējo frekvenču līmeni."
-        },
-        "eq_treble": {
-            "label": "Ekvalaizers: diskants",
-            "description": "Izmanto iebūvēto vienkāršo ekvalaizeru, lai pielāgotu augsto frekvenču līmeni."
-        },
-        "crossfade": {
-            "label": "Iespējot sapludināšanu",
-            "description": "Iespējot sapludināšanau starp (rindas) dziesmām"
-        },
-        "crossfade_duration": {
-            "label": "Sapludināšanas ilgums",
-            "description": "Dziesmu pārejas sapludināšanas ilgums sekundēs (ja ir iespējots)"
-        },
-        "hide_player": {
-            "label": "Paslēpt šo atskaņotāju lietotāja saskarnē",
-            "description": "Paslēpt šo atskaņotāju lietotāja saskarnē.\n\nŅemiet vērā ka to tāpat varēs kontrolēt un tas būs redzams jebkādās sinhronizācijas grupās kurās atskaņotājs ir iekļauts."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Vienumus kas jāizvēlas, atskaņojot (bibliotēkā esošu) izpildītāju. ",
-            "description": "Ja vēlies atskaņot izpildītāju, kādus ierakstus ievietot rindā?",
-            "options": {
-                "library_tracks": "Tikai bibliotēkā esošās dziesmas.",
-                "library_album_tracks": "Visus dziesmas no visiem albumiem bibliotēkā.",
-                "all_tracks": "Visas (populārākās) dziesmas no (visiem) mūzikas sniedzējiem",
-                "all_album_tracks": "Visas dziesmas no visiem albumiem no (visiem) mūzikas sniedzējiem"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Vienumus kas jāizvēlas, atskaņojot (bibliotēkā esošu) albumu. ",
-            "description": "Ja vēlies atskaņot albumu, kādus ierakstus ievietot rindā?",
-            "options": {
-                "library_tracks": "Tikai bibliotēkā esošās dziesmas",
-                "all_tracks": "Visas albuma dziesmas mūzikas sniedzējā"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Noklusējuma rindas pievinošanas opcija izpildītāja vienumam(-iem).",
-            "description": "Noteikt noklusējuma rindas pievienošanas darbību šim multvides veidam (ja darbība nav noteikta)",
-            "options": {
-                "play": "Atskaņot izpildītāja ierakstu(-s) un paturēt esošās rindas vienumus.",
-                "replace": "Notīrīt rindu un atskaņot izpildītāja ierakstu(-s)",
-                "next": "Atskaņot ierakstu(-s) tūlīt pēc pašlaik atskaņotā\/buferētā ieraksta.",
-                "replace_next": "Notīrīt rindu un atskaņot izpildītāja ierakstu(-s) uzreiz pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "add": "Pievienojiet izpildītāja ierakstu(-us) rindas beigās."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Noklusējuma rindas pievinošanas opcija Albuma vienumam(-iem).",
-            "description": "Noteikt noklusējuma rindas pievienošanas darbību šim multvides veidam (ja darbība nav noteikta)",
-            "options": {
-                "play": "Atskaņot albuma ierakstu(s) tagad un paturēt esošos rindas vienumus.",
-                "replace": "Notīrīt rindu un atskaņot albuma ierakstu(s).",
-                "next": "Atskaņot ierakstu(-s) tūlīt pēc pašlaik atskaņotā\/buferētā ieraksta.",
-                "replace_next": "Notīrīt rindu un atskaņot albuma ierakstu(s) uzreiz pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "add": "Pievienot albuma ierakstu(s) rindas beigās."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Noklusējuma rindas pievinošanas opcija Ierakstu vienumam(-iem).",
-            "description": "Noteikt noklusējuma rindas pievienošanas darbību šim multvides veidam (ja darbība nav noteikta)",
-            "options": {
-                "play": "Atskaņot ierakstu(s) tagad un paturēt esošos rindas vienumus.",
-                "replace": "Notīrīt rindu un atskaņot ierakstu(s).",
-                "next": "Atskaņot ierakstu(s) tūlīt pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "replace_next": "Notīrīt rindu un atskaņot ierakstu(s) uzreiz pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "add": "Pievienot ierakstu(s) rindas beigās."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Noklusējuma rindas pievinošanas opcija Mūsikas saraksta vienumam(-iem).",
-            "description": "Noteikt noklusējuma rindas pievienošanas darbību šim multvides veidam (ja darbība nav noteikta)",
-            "options": {
-                "play": "Atskaņot ierakstu(-s) tagad un paturēt esošos rindas vienumus.",
-                "replace": "Notīrīt rindu un atskaņot mūzikas saraksta ierakstu(-s)",
-                "next": "Atskaņot ierakstu(-s) tūlīt pēc pašlaik atskaņotā\/buferētā ieraksta.",
-                "replace_next": "Notīrīt rindu un atskaņot mūzikas saraksta ierakstu(-s) uzreiz pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "add": "Pievienot mūzikas saraksta ierakstu(-s) rindas beigās."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Noklusējuma rindas pievinošanas opcija Radio vienumam(-iem).",
-            "description": "Noteikt noklusējuma rindas pievienošanas darbību šim multvides veidam (ja darbība nav noteikta)",
-            "options": {
-                "play": "Atskaņot radio staciju tagad un paturēt esošos rindas vienumus.",
-                "replace": "Notīrīt rindu un atskaņot radiostaciju",
-                "next": "Atskaņot ierakstu(-s) tūlīt pēc pašlaik atskaņotā\/buferētā ieraksta.",
-                "replace_next": "Notīrīt rindu un atskaņot radio staciju(-as) uzreiz pēc pašlaik atskaņotā\/buferētā vienuma.",
-                "add": "Pievienot radio staciju(-as) rindas beigās."
-            }
-        },
         "default": "noklusējuma",
         "provider_depends_on_confirm": "Pirms vari uzstādīt {0}, ir jākonfigurē {1} sniedzējs, vai vēlies to izdarīt tagad?",
         "category": {
-            "advanced": "Papildus iestatījumi",
-            "generic": "Vispārīgie iestatījumi",
-            "announcements": "Paziņojumu iestatījumi",
-            "player_controls": "Atskaņotāju vadība",
-            "sync_options": "Sinhronizācijas\/importēšanas opcijas",
-            "builtin_playlists": "Iebūvēto mūzikas sarakstu iestatījumi",
             "web_player": "Web Atskaņotājs",
-            "playback": "Atskaņošanas iestatījumi",
             "protocol_settings": "Protokola iestatījumi",
-            "protocol_output_settings": "Iespējot {0} atbalstu",
-            "dsp": "Digitālā Signāla Apstrāde (DSP)",
             "options": "Atskaņotāja opcijas"
-        },
-        "tts_pre_announce": {
-            "label": "Atskaņot skaņu pirms TTS ziņouma",
-            "description": "Kad TTS (teksta pārvēršana runā) ziņojums tiek nosūtīts ar funkciju Announce, pirms paziņojuma atskaņot īsu skaņu (zvanu)."
-        },
-        "announce_volume_strategy": {
-            "label": "Skaļuma Stratēģija Paziņojumiem",
-            "description": "Kad šajā atskaņotājā tiek pārraidīts paziņojums, kā īslaicīgi pielāgot tā skaļumu (tiek izmantots kopā ar zemāk norādīto skaļuma vērtību)?",
-            "options": {
-                "absolute": "Absolūtais skaļums",
-                "relative": "Relatīvais skaļuma palielinājums",
-                "percentual": "Palielināt skaļumu par noteiktu procentuālo daudzumu",
-                "none": "Neregulēt skaļumu"
-            }
-        },
-        "announce_volume": {
-            "label": "Skaļums priekš Paziņojumiem",
-            "description": "Procentuālais, relatīvais vai absolūtais skaļums, kas tiks izmantots paziņojumu stratēģijā."
-        },
-        "announce_volume_min": {
-            "label": "Minimālais skaļuma līmenis paziņojumiem",
-            "description": "Paziņojumu skaļums (regulēšana) nedrīkst būt mazāks par šo līmeni."
-        },
-        "announce_volume_max": {
-            "label": "Maksimālais skaļuma līmenis paziņojumiem",
-            "description": "Paziņojumu skaļums (regulēšana) nedrīkst pārsniegt šo līmeni."
-        },
-        "icon": {
-            "label": "Ikona",
-            "description": "Atskaņotāja materiālā dizaina ikona.\n\nSkatīt https:\/\/pictogrammers.com\/library\/mdi\/."
         },
         "theme": {
             "label": "Tēma",
@@ -373,38 +200,6 @@
         "no_music_providers_detail": "Sāc lietot Music Assistant pievienojot savus mūzikas servisu sniedzējus",
         "no_player_providers": "Nav konfigurētu Atskaņotāju sniedzēju",
         "no_player_providers_detail": "Iestati atkaņotāju sniedzējus, lai izvēlētos ierīces, ar kurām Music Assistant var atskaņot tavu mūziku.",
-        "volume_normalization_radio": {
-            "label": "Skaļuma normalizācijas metode, ko izmantot priekš radio straumēm",
-            "description": "Iestati vēlamo skaļuma normalizācijas stratēģiju priekš radio straumēm.\nPēc noklusējuma Music Assistant apkopo radio stacijas (vidējā dzirdamā) skaļuma mērijumus balstoties uz EBU-128 specifikācijas un tad pielāgo vispārējo skaļumu\/pastiprinājumu straumei pēc tā, lai netiktu ietekmēts dinamiskais diapazons. Ja šāda mērijuma (vēl) nav, Music Assistant izmantos dinamisku (bet mazāk precīzu) skaļuma pielāgošanas filtru.\n\nPadoms: Radio straumēm parasti ir dažādi skaļuma līmeņi, itsevisķi reklāmu un paziņojumu laikā.\nVari izvēlēties iespējot dinamisko skaļuma normalizāciju pat ja radio stacijai pastāv vidējais skaļuma mērijums.\n\n**Opcijas:**\n\n- Atspējots - nepiemērot nekādu skaļuma normalizāciju visām radio straumēm.\n- Piespiedu dinamiskā korekcija - Vienmēr izmantot dinamisko normalizāciju.\n- Tikai mērijums (bez rezerves varianta) - Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem. Ja šāda mērijuma nav, tad neveikt normalizāciju.\n- Rezerves gadijumā fiksēta korekcija - Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem Ja šāda mērījuma nav, tad izmantot fiksētu skaļuma\/paaugstinājuma korekciju.\n- Piespeidu fiksēta korekcija - Vienmēr izmantot fiksētu skaļuma\/pastiprinājuma korekciju.\n- Rezerves gadījumā dinamiskā korekcija - Automātiski izvēlēties labāko opciju: Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem. Ja šāda mērījuma nav, izmantot dinamisko normalizāciju.",
-            "options": {
-                "disabled": "Atspējota",
-                "dynamic": "Piespiedu dinamiskā korekcija",
-                "measurement_only": "Tikai mērijums (bez rezerves varianta)",
-                "fallback_fixed_gain": "Rezerves gadijumā fiksēta korekcija",
-                "fixed_gain": "Piespeidu fiksēta korekcija",
-                "fallback_dynamic": "Rezerves gadījumā dinamiskā korekcija"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Skaļuma normalizācijas metode, ko izmantot dziesmām",
-            "description": "Iestati vēlamo skaļuma normalizācijas stratēģiju priekš audio celiņiem\/dziesmām. Music Assistant izmanto dziesmas (vidējo dzirdamā) skaļuma mērijumu balstoties uz EBU-R128 specifikāciju lai pielāgotu vispārējo skaļumu\/pastiprinājumu straumei, neietekmējot audio dinamisko diapazonu. Šos mērijumus vai no nodrošina straumes sniedzējs, vai lokālo failu gadījumā tie var būt iekodēti ID3 birkās (ReplayGain 2.0 \/ Opus R128).\nJa šāda mērījuma nav, tad Music Assistant automātiski veiks mērijumu pirmās atskaņošanas laikā. Ja mērijums (vēl) nav, tad Music Assistant noklusēti izmantos dinamisku (bet mazāk precīzu) skaļuma pielāgošanas filtru. Tas nodrošina, ka starp dziesmām nav lieli skaļuma piagumi vai kritieni, pat ja vēl nav precīza mērijuma. Dinamiskais  filtrs var dažkārt nedaudz saspiest dinamisko diapazonu, bet tam nevajadzētu lielākoties būt dzirdamam.\n\n**Opcijas:**\n\n- Atspējots - nepiemērot nekādu skaļuma normalizāciju visām radio straumēm.\n- Piespiedu dinamiskā korekcija - Vienmēr izmantot dinamisko normalizāciju.\n- Tikai mērijums (bez rezerves varianta) - Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem. Ja šāda mērijuma nav, tad neveikt normalizāciju.\n- Rezerves gadijumā fiksēta korekcija - Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem Ja šāda mērījuma nav, tad izmantot fiksētu skaļuma\/paaugstinājuma korekciju.\n- Piespeidu fiksēta korekcija - Vienmēr izmantot fiksētu skaļuma\/pastiprinājuma korekciju.\n- Rezerves gadījumā dinamiskā korekcija - Automātiski izvēlēties labāko opciju: Uzstādīt vispārējo skaļuma\/pastiprinājuma pielabošanu balstoties uz saglabātajiem mērijumiem. Ja šāda mērījuma nav, izmantot dinamisko normalizāciju.",
-            "options": {
-                "disabled": "Atspējota",
-                "dynamic": "Piespiedu dinamiskā korekcija",
-                "measurement_only": "Tikai mērijums (bez rezerves varianta)",
-                "fallback_fixed_gain": "Rezerves gadijumā fiksēta korekcija",
-                "fixed_gain": "Piespeidu fiksēta korekcija",
-                "fallback_dynamic": "Rezerves gadījumā dinamiskā korekcija"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Fiksēta\/rezerves pastiprinājuma regulēšana priekš dziesmām",
-            "description": "Fiksēta\/rezerves pastiprinājuma korekcija, ko izmantot audio straumēm. (atkarīgs no \"Skaļuma normalizācijas metode\" uzstādijuma).\nIzmanto pozitīvu vērtību lai palielinātu skaļuma, negatīvu lai pazeminātu skaļumu.\n\nŠī vērtība tiek izmantota kad normalizācijas metode ir uzstādīta uz \"Piespeidu fiksēta korekcija\" vai \"Rezerves gadījumā fiksēta korekcija\" opcijām."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Fiksēta\/rezerves pastiprinājuma regulēšana priekš radio",
-            "description": "Fiksēta\/rezerves pastiprinājuma korekcija, ko izmantot radio straumēm. (atkarīgs no \"Skaļuma normalizācijas metode\" uzstādijuma).\nIzmanto pozitīvu vērtību lai palielinātu skaļuma, negatīvu lai pazeminātu skaļumu.\n\nŠī vērtība tiek izmantota kad normalizācijas metode ir uzstādīta uz \"Piespeidu fiksēta korekcija\" vai \"Rezerves gadījumā fiksēta korekcija\" opcijām."
-        },
         "dynamic_members": {
             "label": "Dinamiskās grupas dalībnieki",
             "description": "Ļaujiet grupas dalībniekiem (īslaicīgi) dinamiski pievienoties\/izstāties no grupas, lai grupa darbotos līdzīgi manuālai atskaņotāju sinhronizēšanai, ar galvenā atšķirību, ka grupas atskaņotājs pārvalda un uztur rindu."
@@ -477,22 +272,6 @@
                 "name_placeholder": "Mans jaunais profils",
                 "remove_confirm": "Vai tiešām vēlies noņemt šo DSP profilu?"
             }
-        },
-        "power_control": {
-            "label": "Strāvas vadība",
-            "description": "Deinē\/pārveido šī atskaņotāja ieslēgšanas\/izslēgšanas darbības.\nTas ļauj, piemēram, novirzīt ieslēgšanas\/izslēgšanas komandu uz citu ierīci, vai izmantot \"viltus\" ieslēgšanas\/izslēgšanas kontroli, ka tavs atskaņotājs neatbalsta ieslēgšanas\/izslēgšanas komandas, bet tu vēlies atsveisķu stāvokli, kad atskaņotājs netiek izmantots."
-        },
-        "volume_control": {
-            "label": "Skaļuma vadība",
-            "description": "Definē\/pārveido skaļuma kontroles darbības šim atskaņotājam.\nTas ļauj, piemēram pārvirzīt skaļuma vadības komandas uz citu ierīci vai tās atspējot pilnībā."
-        },
-        "mute_control": {
-            "label": "Apklusināšanas vadība",
-            "description": "Definē\/pārveido apklusināšanas darbības šim atskaņotājam.\nTas ļauj, piemēram, novirzīt apklusināšanas komandu uz citu ierīci vai to atspējot pilnībā.\n\nMēs nodrošinām \"viltus\" apklusināšanas iespēju, kas simulē apklusināšanu uzstādot audio skaļumu uz 0, un tad to atjaunojot pēc apklusināšanas noņemšanas."
-        },
-        "output_limiter": {
-            "label": "Iespējot ierobežošanu, lai novērstu apcirpšanu (clipping)",
-            "description": "Aktivizē ierobežotāju, kas novērš audio kropļojumus, pieklusinot skaļuma pīķus."
         },
         "dsp_enabled": "DSP ir iespējots",
         "dsp_disabled": "DSP ir atspējots",
@@ -907,44 +686,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Izvēlieties avotu",
-    "in_progress_items": "Turpiniet klausīties...",
     "play_replace_next": "Atskaņot Nākamo (notīrīt rindu)",
     "all_enqueue_options": "Visas rindu opcijas",
     "music_assistant_source": "Music Assistant Saraksts",
     "music_assistant_library": "Music Assistant Bibliotēka",
     "select_all_confirmation": "Atlasīt visus vienumus? Šī darbība var aizņemt brīdi, lai ielādētu visus datus.",
     "this_device": "Šī ierīce",
-    "recommendations": {
-        "in_progress_items": "Turpini klausīties...",
-        "recommended_new_tracks": "Ieteiktās jaunās dziesmas",
-        "recently_played": "Nesen atskaņots",
-        "suggested_new_albums_for_you": "Ieteiktie jaunie albumi tev",
-        "random_artists": "Nejauši mākslinieki",
-        "random_albums": "Nejauši albumi",
-        "custom_mixes": "Pielāgoti Miksi",
-        "your_listening_history": "Tava klausīšanās vēsture",
-        "popular_albums": "Popoulāri albumi",
-        "staff_picks_tracks": "Personāla izvēle: dziesmas",
-        "staff_picks_albums": "Personāla izvēle: albumi",
-        "radio_stations_for_you": "Radio stacijas tev",
-        "producers__songwriters": "Producenti un dziesmu autori",
-        "new_releases_for_you": "Jaunākie laidieni tev",
-        "recent_favorite_tracks": "Nesen iecienītās dziesmas",
-        "favorite_playlists": "Iecienītākie mūzikas saraksti",
-        "favorite_radio_stations": "Iecienītākās radiostacijas",
-        "listen_again": "Klausīes vēlreiz",
-        "in_progress_series": "Turpini sēriju...",
-        "recommended": "Ieteiktie",
-        "recently_added": "Nesen pievienots",
-        "episodes_recently_added": "Nesen pievienotās epizodes",
-        "recent_series": "Jaunākās sērijas",
-        "newest_authors": "Jaunākie autori",
-        "newest_episodes": "Jaunākās epizodes",
-        "discover": "Atklāt",
-        "libraries": "Bibliotēkas",
-        "library": "Bibliotēka",
-        "trending_podcasts": "Populārie raidieraksti"
-    },
     "homescreen_edit_enable": "Rediģēt sākuma ekrānu",
     "homescreen_edit_disable": "Iziet no sākuma ekrāna rediģēšanas režīma",
     "lyrics_will_appear_soon": "Vārdi parādīsies, kad dziesma sāksies...",
@@ -1163,8 +910,6 @@
     "collection": "Kolekcija",
     "collections": "Kolekcijas",
     "narrators": "Stāstītāji",
-    "series_plural": "Sērijas",
-    "series_singular": "Sērija",
     "queue_move_end": "Pārvietot uz beigām",
     "discover": "Atklāt",
     "save_queue_as_playlist": "Saglabāt rindu kā mūzikas sarakstu",
@@ -1189,66 +934,6 @@
     "description": "Apraksts",
     "genre": "Žanrs",
     "genres": "Žanri",
-    "genre_names": {
-        "ambient": "Noskaņu",
-        "anime_and_video_game_music": "Japāņu animācijas un videospēļu mūzika",
-        "asian_music": "Āzijas mūzika",
-        "bluegrass": "Blūgrāss",
-        "blues": "Blūzs",
-        "brazilian_music": "Brazīlijas mūzika",
-        "chanson": "Šansons",
-        "childrens_music": "Bērnu mūzika",
-        "christmas_music": "Ziemassvētku mūzika",
-        "church_music": "Baznīcas mūzika",
-        "classical": "Klasiskā",
-        "comedy": "Komēdija",
-        "country": "Country",
-        "dance": "Dejas",
-        "dark_ambient": "Tumšās noskaņas",
-        "dark_wave": "Tumšā vilņa (Darkwave)",
-        "disco": "Disko",
-        "electronic": "Elektroniskā",
-        "experimental": "Eksperimentālā",
-        "field_recording": "Vides ieraksts",
-        "folk": "Tautasdziesmas",
-        "funk": "Fanks",
-        "gangsta_rap": "Gangsteru reps",
-        "gospel": "Evaņģēliskā",
-        "hip_hop": "Hiphops",
-        "indian_classical": "Indijas klasiskā",
-        "industrial": "Rūpnieciskā",
-        "jazz": "Džezs",
-        "klezmer": "Klezmers",
-        "latin": "Latīņu",
-        "marching_band": "Pūtēju Orķestris",
-        "metal": "Metāls",
-        "middle_eastern_music": "Tuvo Austrumu mūzika",
-        "musical": "Mūzikls",
-        "new_age": "Ņūeidžs",
-        "poetry": "Dzeja",
-        "polka": "Polka",
-        "pop": "Popmūzika",
-        "psychedelic": "Psihedēliskā",
-        "punk": "Panks",
-        "r_b": "Ritmblūzs",
-        "ragtime": "Regtaims",
-        "rai": "Rai",
-        "reggae": "Regejs",
-        "reggaeton": "Reggaetons",
-        "rock": "Roks",
-        "salsa": "Salsa",
-        "singer_songwriter": "Dziedātāju-rakstītāju",
-        "ska": "Ska",
-        "soul": "Soulmūzika",
-        "sound_effects": "Skaņas efekti",
-        "soundtrack": "Skaņdarbs",
-        "spoken_word": "Melodeklamācija",
-        "swing": "Svings",
-        "tango": "Tango",
-        "trap": "Trap",
-        "waltz": "Valsis",
-        "wellness": "Labsajūtas"
-    },
     "link": "Saite",
     "link_alias": "Saites segvārds",
     "link_alias_failed": "Neizdevās sasaistīt segvārdu",
@@ -1276,22 +961,6 @@
         "starting": "Serveris tiek startēts, daži sniedzēji, atskaņotāji vai funkcijas var nebūt pieejami līdz startēšana nav beigusies.",
         "stopping": "Serveris tiek izslēgts...",
         "stopped": "Serveris ir apturēts"
-    },
-    "genre_descriptions": {
-        "ambient": "Noskaņu (Ambientā) mūzika ir mūzikas žanrs, kas uzsver toni un atmosfēru pār tradicionālās mūzikālo struktūru un ritmu. Tā bieži vien skan \"miermīlīgi\", bez kompozīcijas, izteikta ritma, vai strukturētas melodijas. Noskaņu mūzika izmanto skaņu slāņus, kas var dot atalgojumu gan pasīvai, gan aktīvai klausīšanai, veicinot miera un pārdomu sajūtu. Žanram piemīt \"atmosfēriska\", \"vizuāla\" un \"neuzkrītoša\" kvalitāte. Var tikt iekļautas dabas skaņu ainavas, un daži darbi izmanto ilgstošas un vairākkārt atkārtotas notis. Tajā var arī būt ar \"New Age\" mūziku saistīti elementi, kur instrumenti kā klavieres, stīgu instrumenti un flautas var tikt atdarinātas ar sintezatora palīdzību.",
-        "anime_and_video_game_music": "Videospēļu mūzika (VGM) ir spēļu pavadošie skaņdarbi. Sākontēji šī mūzika bija vienkārša, jo to ierobežoja sākotnējo skaņu čipu un audio ierīču spējas. (Piemērām programmējamie skaņas ģeneratori vai FM sintēzes čipi.) Šie ierobežojumi izveidoja mūzikas stilu, kas tagad pazīstams kā \"čiptune\", kas arī kļuva par agrīno video spēļu skaņu.",
-        "asian_music": "Āzijas mūzika aptver daudzus mūzikas stilus, kultūras un reliģiskās tradīcijas, un formas, kuru izcelsme nāk no Āzijas kontinenta.",
-        "bluegrass": "Blūgrāss ir Amerikas sakņu mūzikas žanrs, kas izveidojās 20. gadsimta 40. gados Apalaču reģionā, ASV. Žanrs savu nosaukumu ir ieguvis no grupas \"Bill Monroe and the Blue Grass Boys.\"  Blūgrāsa saknes meklējamas afroamerikāņu žanros kā blūzā un džezā, kā arī Ziemeļeiropas žanros kā Īru balādēs un deju melodijās  Atsķirībā no Kantrī mūzikas, blūgrāsu parasti spēlē tikai uz akustiskiem instrumentiem, piemēram, vijoles, mandolīnas, bandžo, kontrabasa, un ģitāras. To tālāk attīstīja mūziķi, kuri spēlēja kopā ar Monro, tpstarp piecstīgu bandžo spēlētājs Ērls Skragss, un ģitārists Lesters Flats. Bills Monro reiz raksturoja blūgrāsu šādi: \"Tā ir daļa no metodistu, svētuma un baptistu tradīcijām. Tas ir blūzs un dzežs, un tam piemīt augsta, vientulīga skaņa.\"",
-        "blues": "Blūzs ir mūzikas žanrs un forma, kas radās afroamerikāņu vidū ASV dienvidos 19 gadsimta 60. gados. Blūzā ir iekļauti spirituāļi, darba dziesmas, lauka saucieni, kliedzieni, skanējumi un atskaņām pilnas stāstījuma balādes no afroamerikāņu kultūras. Blūza forma ir plaši izplatīta džezā, ritmblūzā un rokenrolā, un to raksturo \"saukuma un atbildes\" modelis, blūza gamma un akordu progresijas. No tām visizplatītākais ir 12 taktu blūzs. Blūza notis - parasti par pustoni pazeminātas tercijas, kvintes vai septīmas - arī ir neatņemama skanējuma sastāvdaļa. Blūza šafli vai \"ejošais bass\" pastiprina transam līdzīgo ritmu un rada atkārtojošu efektu, ko dēvē par \"grūvu\" (groove.)",
-        "brazilian_music": "Brazīlijas mūzika ietver dažādus reģionālos mūzikas stilus, ko laika gaitā ir  ietekmējušas Eiropas, Amerikas, Āfrikas un Amerikas Pamatiedzīvotāju kultūŗas.  Brazīlijas mūzika ir radījusi unikālus un oriģinālus stilus, piemēram, forró, repente, coco de roda, axé, sertanejo, samba, bossa nova, MPB, gaucho, pagode, tropicália, choro, maracatu, embolada, frevo, brega, modinha, kā arī ārvalstu mūzikas stilu brazīliešu versijas, piemēram, roku, popmūziku, soulu, hiphopu, disko, kantrī, noskaņu, industriālo un psihedēlisko mūziku, repu, klasisko mūziku, fado un gospeļmūziku.",
-        "chanson": "Šansons parasti ir jebkura franču dziesma ar uzsvaru uz lirisko tekstu. Angļu valodā šo terminu visbiežāk lieto, lai apzīmētu vai nu laicīgās daudzbalsīgās franču dziesmas vēlo viduslaiku un renesanses mūzikā, vai arī specifisku franču popmūzikas stilu, kas radās 20. gadsimta 50. un 60. gados. Žanra pirmsākumi meklējami trubadūru un truvēru vienbalsīgajās dziesmās, lai gan vienīgie daudzbalsīgie precedenti bija 16 Adama de la Ala un viens Žana de Leskirela darbs. Tikai līdz ar \"ars nova\" komponistu Gijomu de Mašo kāds komponists sāka rakstīt ievērojamu skaitu daudzbalsīgo šansonu.",
-        "childrens_music": "Bērnu mūzika ir mūzika, kas radīta un izpildīta tieši bērniem. Eiropas kultūras ietekmētajā vidē tā parasti ir mūzika, visbiežāk dziesmas, kas rakstītas speciāli jauniešu vai bērtnu auditorijai. Dziesmu autori un komponisti parasti ir pieaugušie.",
-        "christmas_music": "Ziemassvētku mūzika ietver dažādus mūzikas žanrus, ko regulāri atskaņo vai klausās Ziemassvētku laikā. Ar Ziemassvētkiem saistītā mūzika var būt tīri instrumentāla vai arī, korāļu gadījumā, ar vārdiem par Jēzus Kristus piedzimšanu, tradīcijām kā dāvināšanu un līksmošanu, kultūras tēliem, piem, Salaveci, vai citām tēmām. Daudzām dziesmām ir izteikta ziemas vai sezonālā tēma, vai arī tās ir iekļautas šajā kanonā citu iemeslu dēļ.",
-        "church_music": "Baznīcas mūzika ir kristīgās mūzikas žanrs, kas radīts izpildīšanai baznīcā, vai jebkurā baznīcas liturģijas muzikālā iestudējumā, vai arī ietver mūziku ar svēta rakstura vārdiem, piemēram, korāļi vai himnas.",
-        "classical": "Mākslas mūzika ir mūzika, kam tiek piedēvēta augsta fonoestētiskā vērtība. Tās veidošanā parasti tiek ņemti vērā progresīvi strukturāli un mūzikas teorērijas apsvērumui, vai rakstiskās muzikālās tradīcijas. Šajā kontekstā termini \"nopietna\" vai \"kultivēta\" bieži tiek lietoti, lai attēlotu kontrastu ar parasto, ikdienas mūziku. Daudzās kultūrās pastāv mākslas mūzikas tradīcijas; Rietumu pasaulē šis termins parasti attiecas uz Rietumu klasisko mūziku.",
-        "comedy": "Komēdiskā mūzika, vai muzikālā komēdija ir mūzikas žarns, kam ir izteikts komisks raksturs. Tā vēsture ir meklējama pirmā gadsimta Senajā Grieķijā un Romā, virzoties laikā uz priekšu līdz Viduslaikiem, Klasiskajam un Romantisma laikmetiem, līdz pat 20. Gadsimtam. Pastāv dažādas muzikālā teātra formas, tostarp \"muzikālā luga\", \"muzikālā komēdija\", \"operete\", un \"vieglā opera\", kas attīstījās no komēdijas operām, kas sākotnēji bija veidotas Itālijā - 17. gadsimta beigās. Populāri 20. Gadsimta mākslinieki ietver Alanu Šermani, Franku Zappa, Tiny Tim, Barenaked Ladies, Randiju Ņūmanu, un \"Weird Al\" Jankoviču. 21. Gadsimta mākslinieki ietver Tenacious D, Flight Of The Conchords, The Lonely Island, Ninja Sex Party un The Axis Of Awesome.",
-        "country": "Kantrimūzika, pazīstama arī kā Country un vesterna mūzika, vai vienkārši kantri ir mūzikas žanrs, kas izceļas ar balādēm un deju melodijām. To var atpazīt gan ar tradicionālajiem teksiem un harmonijām, kuras parasti pavada bandžo, mandolīnas, vijoles, harmonikas un dažādu veidu ģotāras - akustiskās, elektriskās, stīla un rezonatoru. Savlaik to dēvēja par \"Hillbilly\" mūziku, termins Kantrimūzika kļuva populārs 20. gadsimta 40. gados, lai ieviestu žanram atbilstošāku nosaukumu.",
-        "metal": "vispārēja kategorija metāla atzara žanriem, kas ir atdalīti no smagā metāla mūzikas, bet nav tieši tā izteikts apakšžanrs"
     },
     "link_to_genre": "Saistīt ar žanru",
     "link_to_genre_title": "Saistīt ar žanru",

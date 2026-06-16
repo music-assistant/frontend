@@ -5,11 +5,7 @@
     >
       <DialogHeader class="gap-3 px-8 pt-8 pb-4 text-left">
         <DialogTitle class="truncate pr-8">
-          {{
-            task
-              ? getBackgroundTaskName(task, t, te)
-              : t("background_tasks.details_title")
-          }}
+          {{ task ? task.name : t("background_tasks.details_title") }}
         </DialogTitle>
       </DialogHeader>
 
@@ -227,7 +223,6 @@ import {
   formatBackgroundTaskSchedule,
   formatBackgroundTaskStatus,
 } from "@/composables/useBackgroundTaskDisplay";
-import { getBackgroundTaskName } from "@/helpers/backgroundTasks";
 import {
   type BackgroundTask,
   TaskStatus,
