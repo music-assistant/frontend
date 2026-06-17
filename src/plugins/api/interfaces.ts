@@ -968,7 +968,6 @@ export interface PlayerSoundMode {
   id: string;
   name: string;
   passive: boolean;
-  translation_key?: string;
 }
 
 export interface PlayerOptionEntry {
@@ -985,7 +984,6 @@ export interface PlayerOption {
   type: PlayerOptionType;
 
   translation_key?: string;
-  translation_params?: string[];
 
   value: PlayerOptionValueType;
   read_only: boolean;

@@ -17,8 +17,6 @@
     "clear_selection": "Vymazať výber",
     "close": "Zatvoriť",
     "create_playlist": "Vytvoriť nový zoznam skladieb na {0}",
-    "crossfade_disabled": "Prelínanie je vypnuté",
-    "crossfade_enabled": "Prelínanie je povolené",
     "dark_mode": "Tmavý režim",
     "settings": {
         "settings": "Nastavenia",
@@ -185,8 +183,6 @@
         "original": "Originál"
     },
     "recently_played": "Nedávno hrané",
-    "radiobrowser_by_country": "Podľa krajiny",
-    "radiobrowser_by_tag": "Podľa značky",
     "load_more_items": "Načítať ďalšie položky...",
     "radio": "Rádio",
     "muted": "Stlmený",
