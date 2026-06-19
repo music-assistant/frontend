@@ -288,11 +288,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :loading="
-                store.activePlayerQueue &&
-                store.activePlayerQueue.extra_attributes
-                  ?.play_action_in_progress === true
-              "
+              :loading="playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
@@ -607,6 +603,20 @@ const backButtonClick = function () {
     name: "discover",
   });
 };
+
+// Resolve the queue playMedia targets directly, since activePlayerQueue is
+// undefined while an external source is active.
+const playActionInProgress = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  const queueId =
+    player.active_source && player.active_source in api.queues
+      ? player.active_source
+      : player.player_id;
+  return (
+    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
+  );
+});
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
