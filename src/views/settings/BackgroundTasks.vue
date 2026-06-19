@@ -107,7 +107,6 @@ import {
   isScheduledTask,
 } from "@/composables/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
-import { getBackgroundTaskName } from "@/helpers/backgroundTasks";
 import { type ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
@@ -141,7 +140,7 @@ const taskLogLoading = ref(false);
 const userLabels = ref<Record<string, string>>({});
 const usersLoaded = ref(false);
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
 const isAdmin = computed(() => store.currentUser?.role === UserRole.ADMIN);
 const {
@@ -221,8 +220,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const getTaskName = (task: BackgroundTask) =>
-  getBackgroundTaskName(task, t, te);
+const getTaskName = (task: BackgroundTask) => task.name;
 
 const clearFinishedTasks = async () => {
   try {

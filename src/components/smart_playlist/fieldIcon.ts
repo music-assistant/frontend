@@ -1,5 +1,6 @@
 import { Ban, CalendarRange, Disc3, Heart, Mic2, Tags } from "lucide-vue-next";
 import { match } from "ts-pattern";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import type { Component } from "vue";
 import type { RuleField } from "@/composables/useSmartPlaylistRulesForm";
 
@@ -11,5 +12,6 @@ export function fieldIcon(field: RuleField): Component {
     .with("album_type", () => Disc3)
     .with("favorite", () => Heart)
     .with("year", () => CalendarRange)
+    .with("explicit", () => ExplicitIcon)
     .otherwise(() => Ban);
 }

@@ -20,13 +20,10 @@ export type InjectedConfigEntry = Omit<ConfigEntry, "type"> & {
   injected: true;
   type: ConfigEntryUIType;
   read_only?: boolean;
-  i18nParams?: Record<string, string | number>;
-  note_key?: string;
 };
 
 export type ServerConfigEntryUI = ConfigEntry & {
   injected?: false;
-  note_key?: string;
 };
 export type ConfigEntryUI = ServerConfigEntryUI | InjectedConfigEntry;
 

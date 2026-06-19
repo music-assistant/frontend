@@ -8,9 +8,7 @@
         <DialogDescription>
           {{
             task
-              ? t("background_tasks.schedule_dialog.description", [
-                  getBackgroundTaskName(task, t, te),
-                ])
+              ? t("background_tasks.schedule_dialog.description", [task.name])
               : t("background_tasks.schedule_dialog.empty_description")
           }}
         </DialogDescription>
@@ -276,7 +274,6 @@ import {
   formatLocalTaskScheduleWeekday,
   getBackgroundTaskBrowserTimeZone,
 } from "@/helpers/backgroundTaskSchedule";
-import { getBackgroundTaskName } from "@/helpers/backgroundTasks";
 import {
   type BackgroundTask,
   type TaskSchedule,
@@ -298,7 +295,7 @@ const emit = defineEmits<{
 
 const open = defineModel<boolean>("open", { required: true });
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const browserTimeZone = getBackgroundTaskBrowserTimeZone();
 const scheduleType = ref<TaskScheduleType>(TaskScheduleType.HOURLY);
 const every = ref(1);

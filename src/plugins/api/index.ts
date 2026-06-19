@@ -2061,7 +2061,7 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core");
   }
 
-  public async getCoreConfig(domain: string): Promise<ProviderConfig> {
+  public async getCoreConfig(domain: string): Promise<CoreConfig> {
     // Return configuration for a single core controller.
     return this.sendCommand("config/core/get", { domain });
   }
