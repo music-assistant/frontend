@@ -1224,6 +1224,7 @@ const menuItems = computed(() => {
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
+      overflowAllowed: !["playlisttracks"].includes(props.itemtype),
     });
   }
 
