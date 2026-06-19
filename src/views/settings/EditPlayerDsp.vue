@@ -12,6 +12,22 @@
       }}</v-toolbar-title>
       <v-menu offset-y transition="slide-y-transition">
         <template #activator="{ props: menuProps }">
+          <Badge
+            v-if="selectedPreset !== null"
+            class="mr-4 d-none d-md-inline text-sm"
+            variant="outline"
+          >
+            {{
+              selectedPreset.preset_id
+                ? $t("settings.dsp.presets.selected_preset.clean", [
+                    selectedPreset.name,
+                  ])
+                : $t("settings.dsp.presets.selected_preset.modified", [
+                    selectedPreset.name,
+                  ])
+            }}
+          </Badge>
+
           <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
             <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
             <span class="d-none d-md-inline">
@@ -249,6 +265,9 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import { Badge } from "@/components/ui/badge";
+
+type SelectedDSPPreset = Pick<DSPConfigPreset, "name" | "preset_id">;
 
 const { t } = useI18n();
 const router = useRouter();
@@ -259,6 +278,7 @@ const props = defineProps<{
 }>();
 
 const dsp = ref<DSPConfig>();
+const selectedPreset = ref<SelectedDSPPreset | null>(null);
 const dspPresets = ref<DSPConfigPreset[]>([]);
 const selectedStage = ref<number | null | "input" | "output">(null);
 const showAddFilterDialog = ref(false);
@@ -268,6 +288,7 @@ const newPresetName = ref("");
 const windowWidth = ref(window.innerWidth);
 const { mobile } = useDisplay();
 let updatedFromServer = false;
+let updatedFromLoadPreset = false;
 
 let unsubPlayerDSP: (() => void) | undefined = undefined;
 
@@ -293,6 +314,20 @@ const stageTitle = (index: number | "input" | "output") => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
   return t(`settings.dsp.types.${dsp.value?.filters[index].type}`);
+};
+
+const changeSelectedPreset = (preset: DSPConfigPreset) => {
+  selectedPreset.value = { preset_id: preset.preset_id, name: preset.name };
+};
+
+const wipeSelectedPreset = () => {
+  selectedPreset.value = null;
+};
+
+const markSelectedPresetAsModified = () => {
+  if (selectedPreset.value) {
+    selectedPreset.value = { name: selectedPreset.value.name };
+  }
 };
 
 const addFilter = () => {
@@ -354,6 +389,8 @@ const loadPreset = async (preset: DSPConfigPreset) => {
   if (!preset || !preset.config) return;
 
   selectedStage.value = "input";
+  changeSelectedPreset(preset);
+  updatedFromLoadPreset = true;
   // Deep copy the preset config to avoid reference issues
   dsp.value = preset.config;
 };
@@ -370,6 +407,7 @@ const savePreset = async () => {
     await api.saveDSPPreset(preset);
     newPresetName.value = "";
     showSavePresetDialog.value = false;
+    changeSelectedPreset(preset);
   } catch (error) {
     console.error("Failed to save DSP preset:", error);
   }
@@ -380,6 +418,11 @@ const removePreset = async (presetId: string | undefined) => {
 
   await api.removeDSPPreset(presetId);
   dspPresets.value = dspPresets.value.filter((p) => p.preset_id !== presetId);
+
+  if (presetId === selectedPreset.value?.preset_id) {
+    // If we're removing the currently selected preset, wipe it from being selected.
+    wipeSelectedPreset();
+  }
 };
 
 // Watchers
@@ -454,8 +497,19 @@ watch(
       updatedFromServer = false;
       return;
     }
+
     if (oldVal === null) return; // We haven't changed anything yet
-    if (newVal) debouncedSave(newVal);
+    if (newVal) {
+      debouncedSave(newVal);
+
+      if (updatedFromLoadPreset) {
+        // Skip updating selected preset, we loaded it from loadPreset
+        updatedFromLoadPreset = false;
+      } else if (selectedPreset.value && selectedPreset.value.preset_id) {
+        // If we modified a loaded preset, mark it as modified
+        markSelectedPresetAsModified();
+      }
+    }
   },
   { deep: true },
 );
