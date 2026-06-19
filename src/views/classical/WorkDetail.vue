@@ -24,21 +24,25 @@
 
     <Toolbar
       :title="$t('recordings')"
-      :count="recordings.length"
+      :count="displayedRecordings.length"
       color="transparent"
     />
     <v-divider />
 
-    <ContextualFilterBanner
-      v-if="filterByArtistId"
-      :count="recordings.length"
-      :performer-name="filterPerformerName"
-      class="recordings-filter-banner"
+    <RecordingsFilter
+      v-model="query"
+      :committed="committed"
+      :count="displayedRecordings.length"
+      :performer-name="committedKind === 'performer' ? performerName : ''"
+      :term="committedKind === 'text' ? committedTerm : ''"
+      class="recordings-filter"
+      @commit="commitFilter"
+      @edit="editFilter"
       @clear="clearFilter"
     />
-    <div v-if="recordings.length" class="recordings-list">
+    <div v-if="displayedRecordings.length" class="recordings-list">
       <WorkRecordingCard
-        v-for="r in recordings"
+        v-for="r in displayedRecordings"
         :key="r.item_id"
         :recording="r"
         :performer-lookup="performerNameLookup"
@@ -48,7 +52,7 @@
         @menu-movement="onMenuMovement"
       />
     </div>
-    <p v-else class="recordings-empty">
+    <p v-else-if="!committed" class="recordings-empty">
       {{ $t("classical_no_recordings_match") }}
     </p>
 
@@ -90,9 +94,10 @@ import {
   type ClassicalRecordingMovement,
   type ClassicalWorkSummary,
 } from "@/services/classical";
-import ContextualFilterBanner from "@/views/classical/components/ContextualFilterBanner.vue";
+import RecordingsFilter from "@/views/classical/components/RecordingsFilter.vue";
 import WorkRecordingCard from "@/views/classical/components/WorkRecordingCard.vue";
 import { openMovementMenu, openRecordingMenu } from "@/views/classical/menu";
+import { normalizeForFilter } from "@/helpers/utils";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -111,7 +116,14 @@ const recordings = ref<ClassicalRecording[]>([]);
 const performers = ref<ClassicalPerformer[]>([]);
 const loading = ref(true);
 
-const filterByArtistId = computed(() => props.filterByArtistId || null);
+// Recordings filter state. `query` is the live input text; `committed` swaps
+// the input for the status banner. A commit is either user-driven (Enter, kind
+// "text") or a performer-context arrival (filterByArtistId, kind "performer").
+const query = ref("");
+const committed = ref(false);
+const committedKind = ref<"text" | "performer" | null>(null);
+const committedTerm = ref("");
+const performerArtistId = ref<string | null>(null);
 
 const performerLookup = computed(() => makePerformerLookup(performers.value));
 
@@ -123,11 +135,57 @@ const performerNameLookup = computed<Record<string, string>>(() => {
   return out;
 });
 
-const filterPerformerName = computed(() =>
-  filterByArtistId.value
-    ? (performerLookup.value[filterByArtistId.value]?.name ?? "")
+const performerName = computed(() =>
+  performerArtistId.value
+    ? (performerLookup.value[performerArtistId.value]?.name ?? "")
     : "",
 );
+
+// Every piece of text the card can surface for a recording, folded for
+// case-insensitive, diacritic-blind substring matching. Memoised so typing
+// against a heavily-recorded work doesn't rebuild it per keystroke.
+const recordingHaystack = (r: ClassicalRecording): string => {
+  const parts: string[] = [];
+  if (r.conductor) parts.push(r.conductor);
+  if (r.orchestra) parts.push(r.orchestra);
+  for (const id of r.performer_ids ?? [])
+    parts.push(performerNameLookup.value[id] ?? "");
+  for (const c of r.credits ?? [])
+    parts.push(performerNameLookup.value[c.artist_id] ?? "");
+  if (r.source_album) parts.push(r.source_album);
+  if (r.year != null) parts.push(String(r.year));
+  return normalizeForFilter(parts.join(" "));
+};
+
+const searchable = computed(() =>
+  recordings.value.map((r) => ({ r, haystack: recordingHaystack(r) })),
+);
+
+const matchesArtist = (r: ClassicalRecording, id: string): boolean =>
+  r.conductor_id === id ||
+  r.orchestra_id === id ||
+  (r.performer_ids?.includes(id) ?? false) ||
+  (r.credits?.some((c) => c.artist_id === id) ?? false);
+
+const displayedRecordings = computed(() => {
+  if (
+    committed.value &&
+    committedKind.value === "performer" &&
+    performerArtistId.value
+  )
+    return recordings.value.filter((r) =>
+      matchesArtist(r, performerArtistId.value!),
+    );
+  const raw =
+    committed.value && committedKind.value === "text"
+      ? committedTerm.value
+      : query.value;
+  const term = normalizeForFilter(raw.trim());
+  if (!term) return recordings.value;
+  return searchable.value
+    .filter((s) => s.haystack.includes(term))
+    .map((s) => s.r);
+});
 
 const artistItem = computed<Artist | undefined>(() => {
   const w = work.value;
@@ -145,10 +203,19 @@ const artistItem = computed<Artist | undefined>(() => {
   });
 });
 
-const load = async (id: string, filter: string | null) => {
+const resetFilter = () => {
+  query.value = "";
+  committed.value = false;
+  committedKind.value = null;
+  committedTerm.value = "";
+  performerArtistId.value = null;
+};
+
+const load = async (id: string) => {
   loading.value = true;
+  resetFilter();
   work.value = await getWork(id);
-  recordings.value = await getWorkRecordings(id, filter ?? undefined);
+  recordings.value = await getWorkRecordings(id);
   if (performers.value.length === 0) {
     performers.value = await getPerformers();
   }
@@ -159,13 +226,57 @@ const load = async (id: string, filter: string | null) => {
 };
 
 watch(
-  () => [props.id, filterByArtistId.value] as const,
-  ([id, filter]) => load(id, filter),
+  () => props.id,
+  (id) => load(id),
   { immediate: true },
 );
 
+// A performer-context arrival pre-commits the filter to that performer. Only
+// truthy values drive this: clearing the param (Show all / banner edit) must
+// not clobber the local input state those handlers set themselves.
+watch(
+  () => props.filterByArtistId,
+  (id) => {
+    if (!id) return;
+    performerArtistId.value = id;
+    committedKind.value = "performer";
+    committed.value = true;
+    committedTerm.value = "";
+    query.value = "";
+  },
+  { immediate: true },
+);
+
+const dropArtistParam = () => {
+  if (props.filterByArtistId)
+    router.replace({ path: `/classical/works/${props.id}` });
+};
+
+const commitFilter = () => {
+  const term = query.value.trim();
+  if (!term) return;
+  committedTerm.value = term;
+  committedKind.value = "text";
+  committed.value = true;
+};
+
+// Banner → editable input, pre-filled with the active term so it can be tweaked.
+const editFilter = () => {
+  if (committedKind.value === "performer") {
+    query.value = performerName.value;
+    dropArtistParam();
+  } else {
+    query.value = committedTerm.value;
+  }
+  committed.value = false;
+  committedKind.value = null;
+  committedTerm.value = "";
+  performerArtistId.value = null;
+};
+
 const clearFilter = () => {
-  router.replace({ path: `/classical/works/${props.id}` });
+  dropArtistParam();
+  resetFilter();
 };
 
 const playRecording = (_r: ClassicalRecording) => {
@@ -229,7 +340,7 @@ const formatWorkType = (raw: string) => {
   text-decoration: underline;
 }
 
-.recordings-filter-banner {
+.recordings-filter {
   margin: 0.5rem 1rem 0;
 }
 
