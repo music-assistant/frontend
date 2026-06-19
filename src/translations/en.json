@@ -150,6 +150,7 @@
             "web_player": "Web Player",
             "protocol_settings": "Output Protocol(s)",
             "options": "Player options",
+            "dsp": "DSP",
             "preferences": "Preferences",
             "display_settings": "Display"
         },
