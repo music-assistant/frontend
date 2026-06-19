@@ -12,11 +12,7 @@
       }}</v-toolbar-title>
       <v-menu offset-y transition="slide-y-transition">
         <template #activator="{ props: menuProps }">
-          <Badge
-            v-if="selectedPreset !== null"
-            class="mr-4 d-none d-md-inline text-sm"
-            variant="outline"
-          >
+          <Badge v-if="selectedPreset !== null" class="mr-4" variant="outline">
             {{
               selectedPreset.preset_id
                 ? $t("settings.dsp.presets.selected_preset.clean", [
