@@ -3,13 +3,7 @@
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="
-      !playerQueue.active ||
-      playerQueue.items == 0 ||
-      isLoading ||
-      isSingleDynamicPlaylist ||
-      isInfiniteStream
-    "
+    :disabled="isSingleDynamicPlaylist || isInfiniteStream"
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.shuffle_enabled, 'primary', ''],
@@ -53,12 +47,6 @@ const compProps = withDefaults(defineProps<Props>(), {
   isVisible: true,
   icon: undefined,
   size: 20,
-});
-
-const isLoading = computed(() => {
-  return (
-    compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
-  );
 });
 
 const isSingleDynamicPlaylist = computed(() =>
