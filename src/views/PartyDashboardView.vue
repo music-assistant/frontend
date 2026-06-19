@@ -1317,4 +1317,8 @@ watch(
   display: flex;
   flex-direction: column;
 }
+
+.content-section--mobile.party-view-active {
+  padding-bottom: 0 !important;
+}
 </style>
