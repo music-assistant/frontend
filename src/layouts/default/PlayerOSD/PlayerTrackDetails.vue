@@ -21,6 +21,7 @@
             store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
+          style="width: 100%; height: 100%"
         >
           <v-img
             class="media-thumb"
