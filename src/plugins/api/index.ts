@@ -55,6 +55,7 @@ import {
   SearchResults,
   SmartPlaylistRules,
   UserRole,
+  AudiobookCollection,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -1011,6 +1012,10 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
     });
+  }
+
+  public getAudiobookCollections(): Promise<AudiobookCollection[]> {
+    return this.sendCommand("music/audiobooks/collections");
   }
 
   // Podcast related endpoints

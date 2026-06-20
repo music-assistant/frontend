@@ -692,7 +692,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem { }
 
 export interface Album extends MediaItem {
   year?: number;
@@ -716,7 +716,7 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem { }
 
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
@@ -733,6 +733,11 @@ export interface Audiobook extends MediaItem {
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
+}
+
+export interface AudiobookCollection {
+  title: string;
+  audiobooks: Audiobook[];
 }
 
 export interface Podcast extends MediaItem {
