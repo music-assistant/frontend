@@ -1017,10 +1017,6 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAudiobookCollections(): Promise<AudiobookCollection[]> {
-    return this.sendCommand("music/audiobooks/collections");
-  }
-
   public getAudiobookCollectionFolders(
     search?: string,
   ): Promise<BrowseFolder[]> {
@@ -1030,7 +1026,7 @@ export class MusicAssistantApi {
   public getAudiobookCollection(
     title: string,
     search?: string,
-  ): Promise<Audiobook[]> {
+  ): Promise<AudiobookCollection> {
     return this.sendCommand("music/audiobooks/get_collection", {
       title,
       search,

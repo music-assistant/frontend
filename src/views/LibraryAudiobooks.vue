@@ -70,7 +70,8 @@ const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
   if (collection.value) {
-    return await api.getAudiobookCollection(collection.value, params.search);
+    return (await api.getAudiobookCollection(collection.value, params.search))
+      .audiobooks;
   }
   const items: MediaItemType[] = [];
   if (params.audiobookCollectionsCollapsed) {
