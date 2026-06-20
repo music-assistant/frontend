@@ -288,6 +288,7 @@ export interface LoadDataParams {
   genreIds?: number | number[];
   favoritesOnly?: boolean;
   albumArtistsFilter?: boolean;
+  audiobookCollectionsCollapsed?: boolean;
   libraryOnly?: boolean;
   hideEmptyFilter?: boolean | null;
   hideFullyPlayed?: boolean;
@@ -306,6 +307,7 @@ export interface Props {
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
+  showAudiobookCollectionsCollapsed?: boolean;
   showSearchButton?: boolean;
   showRefreshButton?: boolean;
   showSelectButton?: boolean;
@@ -342,6 +344,7 @@ export interface Props {
   total?: number;
   infiniteScroll?: boolean;
   path?: string;
+  collection?: string;
   icon?: string | Component;
   restoreState?: boolean;
   onTitleClick?: () => void;
@@ -381,6 +384,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadPagedData: undefined,
   loadItems: undefined,
   path: undefined,
+  collection: undefined,
   icon: undefined,
   restoreState: false,
   onTitleClick: undefined,
@@ -574,6 +578,18 @@ const toggleAlbumArtistsFilter = function () {
     props.itemtype,
     "albumArtistsFilter",
     params.value.albumArtistsFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const toggleAudiobookCollectionsCollapsed = function () {
+  params.value.audiobookCollectionsCollapsed =
+    !params.value.audiobookCollectionsCollapsed;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "audiobookCollectionsCollapsed",
+    params.value.audiobookCollectionsCollapsed,
   );
   loadData(undefined, undefined, true);
 };
@@ -861,6 +877,7 @@ const hasActiveFilters = computed(() => {
     p.favoritesOnly ||
     p.libraryOnly ||
     p.albumArtistsFilter ||
+    p.audiobookCollectionsCollapsed ||
     p.hideFullyPlayed ||
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
@@ -1146,6 +1163,19 @@ const menuItems = computed(() => {
         : "mdi-account-music-outline",
       action: toggleAlbumArtistsFilter,
       active: params.value.albumArtistsFilter,
+      overflowAllowed: true,
+    });
+  }
+
+  // audiobook collections collapsed
+  if (props.showAudiobookCollectionsCollapsed === true) {
+    items.push({
+      label: "tooltip.audiobook_collections_collapsed",
+      icon: params.value.audiobookCollectionsCollapsed
+        ? "mdi-book-multiple"
+        : "mdi-book-multiple-outline",
+      action: toggleAudiobookCollectionsCollapsed,
+      active: params.value.audiobookCollectionsCollapsed,
       overflowAllowed: true,
     });
   }
@@ -1452,6 +1482,15 @@ const restoreSettings = async function () {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
   }
 
+  // get stored/default show audiobookCollectionsCollapsed for this itemtype
+  if (
+    props.showAudiobookCollectionsCollapsed !== false &&
+    prefs.audiobookCollectionsCollapsed !== undefined
+  ) {
+    params.value.audiobookCollectionsCollapsed =
+      prefs.audiobookCollectionsCollapsed;
+  }
+
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)
   if (props.showHideEmptyFilter) {
     params.value.hideEmptyFilter =
@@ -1561,6 +1600,16 @@ watch(
   (newVal) => {
     if (loading.value == true) return;
     // completely reset if the path changes
+    pagedItems.value = [];
+    allItems.value = [];
+    loadData(true);
+  },
+);
+watch(
+  () => props.collection,
+  (newVal) => {
+    if (loading.value == true) return;
+    // completely reset if the collection changes
     pagedItems.value = [];
     allItems.value = [];
     loadData(true);

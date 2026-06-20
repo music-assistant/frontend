@@ -150,6 +150,15 @@
         {{ truncateString(item.metadata.description, 150) }}
       </div>
       <!-- media type label -->
+      <div
+        v-else-if="
+          'folder_type' in item &&
+          !item.provider_mappings &&
+          item.folder_type === 'audiobook_collection'
+        "
+      >
+        {{ $t("collection") }}
+      </div>
       <div v-else-if="'media_type' in item && !item.provider_mappings">
         {{ $t(item.media_type) }}
       </div>

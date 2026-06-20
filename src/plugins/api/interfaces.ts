@@ -149,6 +149,12 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum BrowseFolderType {
+  BROWSE = "browse",
+  AUDIOBOOK_COLLECTION = "audiobook_collection",
+  UNKNOWN = "unknown",
+}
+
 export enum ExternalID {
   MB_ARTIST = "musicbrainz_artistid", // MusicBrainz Artist ID (or AlbumArtist ID)
   MB_ALBUM = "musicbrainz_albumid", // MusicBrainz Album ID
@@ -760,6 +766,7 @@ export interface Genre extends MediaItem {
 export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
+  folder_type: BrowseFolderType;
 }
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;

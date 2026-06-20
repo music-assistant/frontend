@@ -8,6 +8,7 @@ export interface ItemsListingPreferences {
   favoriteFilter?: boolean;
   libraryFilter?: boolean;
   albumArtistsFilter?: boolean;
+  audiobookCollectionsCollapsed?: boolean;
   hideEmptyFilter?: boolean | null;
   hideFullyPlayedFilter?: boolean;
   albumType?: string[];

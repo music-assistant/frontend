@@ -8,13 +8,15 @@ import {
   MediaType,
   Player,
   PlayerQueue,
+  BrowseFolder,
+  BrowseFolderType,
 } from "./interfaces";
 
 /**
  * Returns true when the given queue is currently playing a single dynamic playlist.
  * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
  */
-export const isQueueDynamicPlaylist = function (
+export const isQueueDynamicPlaylist = function(
   queue: PlayerQueue | undefined,
 ): boolean {
   return queue?.is_dynamic ?? false;
@@ -24,7 +26,7 @@ export const isQueueDynamicPlaylist = function (
  * Returns true when the queue's current item is an infinite stream
  * (radio station or AudioSource). Shuffle and repeat don't apply in that case.
  */
-export const isQueueInfiniteStream = function (
+export const isQueueInfiniteStream = function(
   queue: PlayerQueue | undefined,
 ): boolean {
   const mediaType = queue?.current_item?.media_item?.media_type;
@@ -37,7 +39,7 @@ export const isQueueInfiniteStream = function (
  * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
  * flags drive which transport controls are surfaced when active.
  */
-export const isAudioSource = function (
+export const isAudioSource = function(
   item: MediaItemType | ItemMapping | undefined,
 ): item is AudioSource {
   return item?.media_type === MediaType.AUDIO_SOURCE;
@@ -82,7 +84,7 @@ export function requireServerVersion(minVersion: string): boolean {
  * relatives (an artist/album reached from a saved track) as relational support,
  * so a "library" row may exist without the item being a library member.
  */
-export const isItemInLibrary = function (
+export const isItemInLibrary = function(
   item: MediaItemType | ItemMapping | null | undefined,
 ): boolean {
   if (!item) return false;
@@ -101,7 +103,7 @@ export const isItemInLibrary = function (
  * Items outside the library show the icon of their first provider mapping (or
  * the item's own provider as a fallback).
  */
-export const getProviderIconDomain = function (
+export const getProviderIconDomain = function(
   item: MediaItemType | ItemMapping,
 ): string {
   if (isItemInLibrary(item)) return "library";
@@ -112,6 +114,13 @@ export const getProviderIconDomain = function (
   ) {
     return item.provider_mappings[0].provider_domain;
   }
+  if (item.media_type === MediaType.FOLDER) {
+    if (
+      (item as BrowseFolder).folder_type ===
+      BrowseFolderType.AUDIOBOOK_COLLECTION
+    )
+      return "library";
+  }
   return item.provider;
 };
 
@@ -121,7 +130,7 @@ export const getProviderIconDomain = function (
  * bookshelf icon would be redundant and the source is the useful signal. Every
  * other item type follows getProviderIconDomain.
  */
-export const getListItemProviderIconDomain = function (
+export const getListItemProviderIconDomain = function(
   item: MediaItemType | ItemMapping,
 ): string {
   if (
@@ -135,7 +144,7 @@ export const getListItemProviderIconDomain = function (
   return getProviderIconDomain(item);
 };
 
-export const itemIsAvailable = function (
+export const itemIsAvailable = function(
   item: MediaItemType | ItemMapping,
 ): boolean {
   if (item.media_type == MediaType.FOLDER) return true;
@@ -154,7 +163,7 @@ export const itemIsAvailable = function (
   return false;
 };
 
-export const getSourceName = function (player: Player) {
+export const getSourceName = function(player: Player) {
   const source_id = player.active_source || "";
   // source id is a queue id
   if (source_id in api.queues) return api.queues[source_id].display_name;
