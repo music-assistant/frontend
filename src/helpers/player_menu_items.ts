@@ -11,7 +11,10 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { groupMemberPickerVisible } from "@/helpers/utils";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import {
+  isQueueDynamicPlaylist,
+  isQueueInfiniteStream,
+} from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -87,9 +90,10 @@ export const getPlayerMenuItems = (
     });
   }
   const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
+  const isInfiniteStream = isQueueInfiniteStream(playerQueue);
 
   // add enable/disable shuffle menu item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  if (playerQueue && !isSingleDynamicPlaylist && !isInfiniteStream) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -103,7 +107,7 @@ export const getPlayerMenuItems = (
   }
 
   // add repeat mode item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  if (playerQueue && !isSingleDynamicPlaylist && !isInfiniteStream) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
