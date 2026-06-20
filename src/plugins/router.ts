@@ -478,6 +478,16 @@ const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "editqueue/:queueId",
+            name: "editqueue",
+            component: () =>
+              import(
+                /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "editcore/:domain",
             name: "editcore",
             component: () =>

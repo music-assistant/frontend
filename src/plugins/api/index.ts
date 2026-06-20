@@ -35,6 +35,7 @@ import {
   ConfigEntry,
   ConfigValueType,
   CoreConfig,
+  CrossfadeMode,
   DSPConfig,
   DSPConfigPreset,
   EventType,
@@ -43,6 +44,7 @@ import {
   MediaType,
   PlayableMediaItemType,
   PlayerConfig,
+  PlayerQueueConfig,
   Podcast,
   PodcastEpisode,
   ProviderConfig,
@@ -1555,6 +1557,10 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
+  public queueCommandCrossfade(queueId: string, crossfade_mode: CrossfadeMode) {
+    // Configure crossfade setting on the queue.
+    this.playerQueueCommand(queueId, "crossfade", { crossfade_mode });
+  }
   public queueCommandDontStopTheMusic(
     queueId: string,
     dont_stop_the_music_enabled: boolean,
@@ -2014,6 +2020,39 @@ export class MusicAssistantApi {
     // remove the configuration of a player
     return this.sendCommand("config/players/remove", {
       player_id,
+    });
+  }
+
+  // PlayerQueue Config related functions
+
+  public async getPlayerQueueConfig(
+    queue_id: string,
+  ): Promise<PlayerQueueConfig> {
+    // Return configuration for a single queue.
+    return this.sendCommand("config/player_queues/get", { queue_id });
+  }
+
+  public async getPlayerQueueConfigEntries(
+    queue_id: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>,
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to configure a queue.
+    return this.sendCommand("config/player_queues/get_entries", {
+      queue_id,
+      action,
+      values,
+    });
+  }
+
+  public async savePlayerQueueConfig(
+    queue_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<PlayerQueueConfig> {
+    // Save/update PlayerQueueConfig.
+    return this.sendCommand("config/player_queues/save", {
+      queue_id,
+      values,
     });
   }
 

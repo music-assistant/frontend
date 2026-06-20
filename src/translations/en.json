@@ -121,6 +121,7 @@
         "provider_disabled": "This provider entry is disabled",
         "provider_name": "Custom name for this provider entry",
         "providers": "Providers",
+        "queue_settings": "Queue settings",
         "reload": "Reload",
         "save": "Save",
         "settings": "Settings",
@@ -671,7 +672,7 @@
     "power_off_player": "Power off",
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronize with another player",
-    "open_player_settings": "Open settings",
+    "open_queue_settings": "Open queue settings",
     "select_repeat_mode": "Select repeat mode",
     "repeat_mode": {
         "all": "Repeat entire queue",

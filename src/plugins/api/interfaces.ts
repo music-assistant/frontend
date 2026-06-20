@@ -257,6 +257,12 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
+export enum CrossfadeMode {
+  DISABLED = "disabled", // no crossfade
+  STANDARD_CROSSFADE = "standard_crossfade", // standard crossfade only
+  SMART_CROSSFADE = "smart_crossfade", // smart crossfade with beat matching and EQ filters
+}
+
 export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
@@ -603,6 +609,11 @@ export interface CoreConfig extends Config {
   last_error?: string;
 }
 
+export interface PlayerQueueConfig extends Config {
+  // PlayerQueue Configuration.
+  queue_id: string;
+}
+
 //// media_items
 
 export interface ProviderMapping {
@@ -875,6 +886,9 @@ export interface PlayerQueue {
   shuffle_enabled: boolean;
   dont_stop_the_music_enabled: boolean;
   repeat_mode: RepeatMode;
+  crossfade_mode?: CrossfadeMode;
+  // smart_fades_available: whether the smart_crossfade option can be selected (server-derived)
+  smart_fades_available?: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
