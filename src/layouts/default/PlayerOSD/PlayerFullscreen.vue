@@ -513,6 +513,12 @@
             class="media-controls-item"
             max-height="35px"
           />
+          <CrossfadeBtn
+            v-if="$vuetify.display.mdAndUp"
+            :player-queue="store.activePlayerQueue"
+            class="media-controls-item"
+            max-height="30px"
+          />
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
               v-if="store.activePlayerQueue"
@@ -593,6 +599,7 @@ import {
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
+import CrossfadeBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";

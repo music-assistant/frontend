@@ -261,15 +261,17 @@ export const getPlayerMenuItems = (
       icon: "mdi-all-inclusive",
     });
   }
-  // add player settings (admin only)
+  // add queue settings (admin only)
   if (authManager.isAdmin()) {
     menuItems.push({
-      label: "open_player_settings",
+      label: "open_queue_settings",
       labelArgs: [],
       action: () => {
         store.showFullscreenPlayer = false;
         store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}`);
+        router.push(
+          `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
+        );
       },
       icon: "mdi-cog-outline",
     });
