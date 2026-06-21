@@ -513,6 +513,8 @@ export interface ConfigValueOption {
   value: ConfigValueType;
   // disabled: when true the option is shown but not selectable (currently unavailable)
   disabled?: boolean;
+  // disabled_reason: optional explanation of why the option is disabled
+  disabled_reason?: string;
 }
 
 export interface ConfigEntry {
