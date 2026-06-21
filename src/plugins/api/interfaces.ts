@@ -511,6 +511,8 @@ export interface ConfigValueOption {
   // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
+  // disabled: when true the option is shown but not selectable (currently unavailable)
+  disabled?: boolean;
 }
 
 export interface ConfigEntry {
