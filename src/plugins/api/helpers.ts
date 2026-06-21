@@ -8,6 +8,8 @@ import {
   MediaType,
   Player,
   PlayerQueue,
+  BrowseFolder,
+  BrowseFolderType,
 } from "./interfaces";
 
 /**
@@ -111,6 +113,13 @@ export const getProviderIconDomain = function (
     item.provider_mappings.length > 0
   ) {
     return item.provider_mappings[0].provider_domain;
+  }
+  if (item.media_type === MediaType.FOLDER) {
+    if (
+      (item as BrowseFolder).folder_type ===
+      BrowseFolderType.AUDIOBOOK_COLLECTION
+    )
+      return "library";
   }
   return item.provider;
 };

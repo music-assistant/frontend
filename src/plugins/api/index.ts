@@ -56,6 +56,8 @@ import {
   SearchResults,
   SmartPlaylistRules,
   UserRole,
+  AudiobookCollection,
+  BrowseFolder,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
@@ -982,6 +984,7 @@ export class MusicAssistantApi {
     order_by?: string,
     provider?: string | string[],
     genre?: number | number[],
+    without_collections?: boolean,
   ): Promise<Audiobook[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -991,6 +994,7 @@ export class MusicAssistantApi {
       order_by,
       provider,
       genre,
+      without_collections,
     });
   }
 
@@ -1011,6 +1015,22 @@ export class MusicAssistantApi {
     return this.sendCommand("music/audiobooks/audiobook_versions", {
       item_id,
       provider_instance_id_or_domain,
+    });
+  }
+
+  public getAudiobookCollectionFolders(
+    search?: string,
+  ): Promise<BrowseFolder[]> {
+    return this.sendCommand("music/audiobooks/collection_folders", { search });
+  }
+
+  public getAudiobookCollection(
+    title: string,
+    search?: string,
+  ): Promise<AudiobookCollection> {
+    return this.sendCommand("music/audiobooks/get_collection", {
+      title,
+      search,
     });
   }
 

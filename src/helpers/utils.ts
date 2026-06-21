@@ -2,6 +2,7 @@ import { api } from "@/plugins/api";
 import {
   Artist,
   BrowseFolder,
+  BrowseFolderType,
   ImageType,
   ItemMapping,
   MediaItemImage,
@@ -785,8 +786,20 @@ export const handleMediaItemClick = function (
     return;
   }
 
-  // folder items always open in browse view
+  // folder items always open in browse view, unless folder_type indicates otherwise
   if (item.media_type == MediaType.FOLDER) {
+    if (
+      (item as BrowseFolder).folder_type ==
+      BrowseFolderType.AUDIOBOOK_COLLECTION
+    ) {
+      router.push({
+        name: "audiobooks",
+        query: {
+          collection: (item as BrowseFolder).name,
+        },
+      });
+      return;
+    }
     router.push({
       name: "browse",
       query: {
