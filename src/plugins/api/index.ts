@@ -35,7 +35,6 @@ import {
   ConfigEntry,
   ConfigValueType,
   CoreConfig,
-  CrossfadeMode,
   DSPConfig,
   DSPConfigPreset,
   EventType,
@@ -1557,9 +1556,16 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
-  public queueCommandCrossfade(queueId: string, crossfade_mode: CrossfadeMode) {
-    // Configure crossfade setting on the queue.
-    this.playerQueueCommand(queueId, "crossfade", { crossfade_mode });
+  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
+    // Enable or disable crossfade on the queue.
+    this.playerQueueCommand(queueId, "crossfade", { crossfade_enabled });
+  }
+  public queueCommandCrossfadeToggle(queueId: string) {
+    // Toggle crossfade on/off for a queue
+    this.queueCommandCrossfade(
+      queueId,
+      !this.queues[queueId].crossfade_enabled,
+    );
   }
   public queueCommandDontStopTheMusic(
     queueId: string,

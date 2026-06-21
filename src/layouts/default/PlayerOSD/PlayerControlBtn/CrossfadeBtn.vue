@@ -1,5 +1,5 @@
 <template>
-  <!-- crossfade button: cycles disabled -> standard -> smart (if available) -> disabled -->
+  <!-- crossfade on/off toggle (shows a "magic" icon when smart fades are active) -->
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
@@ -10,14 +10,16 @@
       isSingleDynamicPlaylist ||
       isInfiniteStream
     "
-    :color="crossfadeMode != CrossfadeMode.DISABLED ? 'primary' : icon?.color"
+    :color="playerQueue.crossfade_enabled ? 'primary' : icon?.color"
     variant="button"
-    @click="cycleCrossfade"
+    @click="
+      api.queueCommandCrossfade(
+        playerQueue.queue_id,
+        !playerQueue.crossfade_enabled,
+      )
+    "
   >
-    <Sparkles
-      v-if="crossfadeMode == CrossfadeMode.SMART_CROSSFADE"
-      :size="size"
-    />
+    <Sparkles v-if="smartFadesActive" :size="size" />
     <Blend v-else :size="size" />
   </Icon>
 </template>
@@ -26,7 +28,7 @@
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
-import { CrossfadeMode, PlayerQueue } from "@/plugins/api/interfaces";
+import { PlayerQueue } from "@/plugins/api/interfaces";
 import {
   isQueueDynamicPlaylist,
   isQueueInfiniteStream,
@@ -47,8 +49,11 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const crossfadeMode = computed(
-  () => compProps.playerQueue?.crossfade_mode ?? CrossfadeMode.DISABLED,
+// smart fades are "active" when crossfade is on and smart fades are available
+const smartFadesActive = computed(
+  () =>
+    !!compProps.playerQueue?.crossfade_enabled &&
+    !!compProps.playerQueue?.smart_fades_available,
 );
 
 const isLoading = computed(() => {
@@ -64,21 +69,4 @@ const isSingleDynamicPlaylist = computed(() =>
 const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),
 );
-
-const cycleCrossfade = function () {
-  const queue = compProps.playerQueue;
-  if (!queue) return;
-  // cycle to the next mode, skipping smart crossfade when it is not available
-  let nextMode: CrossfadeMode;
-  if (crossfadeMode.value == CrossfadeMode.DISABLED) {
-    nextMode = CrossfadeMode.STANDARD_CROSSFADE;
-  } else if (crossfadeMode.value == CrossfadeMode.STANDARD_CROSSFADE) {
-    nextMode = queue.smart_fades_available
-      ? CrossfadeMode.SMART_CROSSFADE
-      : CrossfadeMode.DISABLED;
-  } else {
-    nextMode = CrossfadeMode.DISABLED;
-  }
-  api.queueCommandCrossfade(queue.queue_id, nextMode);
-};
 </script>
