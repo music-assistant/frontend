@@ -28,7 +28,7 @@
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import api from "@/plugins/api";
-import { CrossfadeMode, PlayerQueue } from "@/plugins/api/interfaces";
+import { PlayerQueue } from "@/plugins/api/interfaces";
 import {
   isQueueDynamicPlaylist,
   isQueueInfiniteStream,
@@ -49,9 +49,9 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-// smart fades are "active" when the effective crossfade mode is smart crossfade
+// smart fades are "active" when the server reports the effective crossfade is smart crossfade
 const smartFadesActive = computed(
-  () => compProps.playerQueue?.crossfade_mode === CrossfadeMode.SMART_CROSSFADE,
+  () => compProps.playerQueue?.smart_fades_active === true,
 );
 
 const isLoading = computed(() => {
