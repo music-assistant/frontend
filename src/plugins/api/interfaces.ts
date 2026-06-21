@@ -884,10 +884,10 @@ export interface PlayerQueue {
   shuffle_enabled: boolean;
   dont_stop_the_music_enabled: boolean;
   repeat_mode: RepeatMode;
-  crossfade_enabled?: boolean;
+  crossfade_enabled: boolean;
   // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
   // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
-  smart_fades_active?: boolean;
+  smart_fades_active: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
