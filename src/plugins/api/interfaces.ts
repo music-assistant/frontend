@@ -257,6 +257,12 @@ export enum RepeatMode {
   ALL = "all", // repeat entire queue
 }
 
+export enum CrossfadeMode {
+  DISABLED = "disabled", // no crossfade
+  STANDARD_CROSSFADE = "standard_crossfade", // standard crossfade
+  SMART_CROSSFADE = "smart_crossfade", // smart crossfade (beat-matched)
+}
+
 export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
@@ -881,9 +887,9 @@ export interface PlayerQueue {
   dont_stop_the_music_enabled: boolean;
   repeat_mode: RepeatMode;
   crossfade_enabled?: boolean;
-  // smart_fades_available: whether smart crossfade is currently usable (server-derived); lets
-  // clients show a "smart fades" indicator when crossfade is on and smart fades are available
-  smart_fades_available?: boolean;
+  // crossfade_mode: effective crossfade state (disabled/standard/smart), server-derived and
+  // read-only. Use crossfade_enabled to toggle; use this to display the active state.
+  crossfade_mode?: CrossfadeMode;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
