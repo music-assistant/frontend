@@ -1,7 +1,9 @@
 <template>
   <!-- crossfade on/off toggle (shows a "magic" icon when smart fades are active) -->
   <Icon
-    v-if="isVisible && playerQueue"
+    v-if="
+      isVisible && playerQueue && playerQueue.crossfade_enabled !== undefined
+    "
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
       !playerQueue.active ||

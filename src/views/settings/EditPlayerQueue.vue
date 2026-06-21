@@ -90,10 +90,16 @@ const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
   // immediately apply a config value change and refresh from the server response
-  const updatedConfig = await api.savePlayerQueueConfig(props.queueId!, values);
-  for (const [key, entry] of Object.entries(updatedConfig.values)) {
-    config.value!.values[key] = entry;
-  }
+  await api
+    .savePlayerQueueConfig(props.queueId!, values)
+    .then((updatedConfig) => {
+      for (const [key, entry] of Object.entries(updatedConfig.values)) {
+        config.value!.values[key] = entry;
+      }
+    })
+    .catch((err) => {
+      toast.error(err.message || err);
+    });
 };
 </script>
 

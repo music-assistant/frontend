@@ -269,7 +269,9 @@ export const getPlayerMenuItems = (
       action: () => {
         store.showFullscreenPlayer = false;
         store.showPlayersMenu = false;
-        router.push(`/settings/editqueue/${player.player_id}`);
+        router.push(
+          `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
+        );
       },
       icon: "mdi-cog-outline",
     });
