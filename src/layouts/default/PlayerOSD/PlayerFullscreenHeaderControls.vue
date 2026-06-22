@@ -346,7 +346,7 @@ const smartFadesActive = computed(
 // Hide the control entirely for external sources, audiosources and radio streams.
 const showCrossfade = computed(() => {
   const q = queue.value;
-  if (!q || !q.active || q.items === 0) return false;
+  if (!q || !q.active) return false;
   if (isQueueInfiniteStream(q)) return false;
   return "crossfade_enabled" in q;
 });
@@ -375,6 +375,7 @@ const showAutoPlay = computed(() => {
 const showRadio = computed(() => {
   const q = queue.value;
   if (!q || !q.active) return false;
+  if (isQueueInfiniteStream(q)) return false;
   return radioModeActive.value || showAutoPlay.value;
 });
 

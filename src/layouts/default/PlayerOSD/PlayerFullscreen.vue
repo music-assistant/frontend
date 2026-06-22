@@ -381,7 +381,6 @@
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <Icon
-            v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :title="$t('tooltip.favorite')"
             variant="button"
@@ -437,7 +436,6 @@
           />
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
-              v-if="store.activePlayerQueue"
               style="max-height: 30px; min-height: 0; min-width: 0"
               :size="18"
             />

@@ -1,25 +1,26 @@
 <template>
   <!-- repeat button -->
   <Icon
-    v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="!playerQueue.active || isLoading || isInfiniteStream"
+    :disabled="
+      !playerQueue || !playerQueue.active || isLoading || isInfiniteStream
+    "
     :color="
       getValueFromSources(icon?.color, [
-        [playerQueue.repeat_mode == RepeatMode.OFF, undefined],
-        [playerQueue.repeat_mode == RepeatMode.ALL, 'primary'],
-        [playerQueue.repeat_mode == RepeatMode.ONE, 'primary'],
+        [playerQueue?.repeat_mode == RepeatMode.OFF, undefined],
+        [playerQueue?.repeat_mode == RepeatMode.ALL, 'primary'],
+        [playerQueue?.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
     variant="button"
-    @click="api.queueCommandRepeat(playerQueue.queue_id || '', nextRepeatMode)"
+    @click="api.queueCommandRepeat(playerQueue?.queue_id || '', nextRepeatMode)"
   >
     <IconRepeatOff
-      v-if="playerQueue.repeat_mode == RepeatMode.OFF"
+      v-if="playerQueue?.repeat_mode == RepeatMode.OFF"
       :size="size"
     />
     <IconRepeat
-      v-else-if="playerQueue.repeat_mode == RepeatMode.ALL"
+      v-else-if="playerQueue?.repeat_mode == RepeatMode.ALL"
       :size="size"
     />
     <IconRepeatOnce v-else :size="size" />
@@ -42,12 +43,10 @@ import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
-  isVisible?: boolean;
   icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
-  isVisible: true,
   icon: undefined,
   size: 20,
 });
