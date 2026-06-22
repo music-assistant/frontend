@@ -112,19 +112,19 @@
       </PopoverContent>
     </Popover>
 
-    <!-- radio mode + auto play popout -->
+    <!-- radio mode (infinite mix) popout -->
     <Popover v-if="showRadio && queue" v-model:open="radioOpen" modal>
       <PopoverTrigger as-child>
         <Button
           variant="outline"
           :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="pillClass"
+          :class="[radioModeActive ? '' : 'text-muted-foreground', pillClass]"
           :aria-label="$t('radio')"
         >
           <RadioTower :size="16" />
           <span v-if="showLabel">{{ $t("radio") }}</span>
           <span
-            v-if="radioActive"
+            v-if="radioModeActive"
             class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
             aria-hidden="true"
           ></span>
@@ -167,23 +167,75 @@
               {{ $t("radio_not_active") }}
             </p>
           </div>
+        </div>
+      </PopoverContent>
+    </Popover>
 
-          <label
-            v-if="showAutoPlay"
-            class="hover:bg-accent -mx-1 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2"
+    <!-- auto play (don't stop the music) popout -->
+    <Popover v-if="showAutoPlay && queue" v-model:open="autoPlayOpen" modal>
+      <PopoverTrigger as-child>
+        <Button
+          variant="outline"
+          :size="showLabel ? 'xs' : 'icon-xs'"
+          :class="[
+            autoPlayBlockedByRadio ? 'text-muted-foreground' : '',
+            pillClass,
+          ]"
+          :aria-label="$t('auto_play')"
+        >
+          <InfinityIcon :size="16" />
+          <span v-if="showLabel">{{ $t("auto_play") }}</span>
+          <span
+            v-if="autoPlayEnabled && !autoPlayBlockedByRadio"
+            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
+            aria-hidden="true"
+          ></span>
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent align="end" :side-offset="6">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <InfinityIcon :size="20" />
+            <span class="text-[0.95rem] font-semibold">{{
+              $t("auto_play")
+            }}</span>
+          </div>
+
+          <p class="text-muted-foreground text-sm leading-snug">
+            {{ $t("auto_play_explanation") }}
+          </p>
+
+          <div
+            v-if="autoPlayBlockedByRadio"
+            class="bg-accent rounded-md px-3 py-2"
           >
-            <div class="min-w-0 flex-1">
-              <p class="text-sm font-semibold">{{ $t("auto_play") }}</p>
-              <p class="text-muted-foreground mt-0.5 text-sm leading-snug">
-                {{ $t("auto_play_explanation") }}
-              </p>
-            </div>
-            <Switch
-              :model-value="autoPlayEnabled"
-              class="mt-0.5 shrink-0"
-              @update:model-value="(v) => toggleAutoPlay(!!v)"
-            />
-          </label>
+            <p class="text-muted-foreground text-sm font-semibold">
+              {{ $t("auto_play_radio_active") }}
+            </p>
+          </div>
+          <div
+            v-else-if="autoPlayEnabled"
+            class="bg-primary/10 rounded-md px-3 py-2"
+          >
+            <p class="text-primary text-sm font-semibold">
+              {{ $t("auto_play_active") }}
+            </p>
+          </div>
+
+          <Button
+            class="mt-1 w-full"
+            :variant="autoPlayEnabled ? 'outline' : 'default'"
+            size="sm"
+            :disabled="autoPlayBlockedByRadio"
+            @click="toggleAutoPlay(!autoPlayEnabled)"
+          >
+            {{
+              autoPlayEnabled
+                ? $t("dont_stop_the_music_disable")
+                : $t("dont_stop_the_music_enable")
+            }}
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -270,7 +322,13 @@
     <Teleport to="body">
       <Transition name="fs-popover-scrim">
         <div
-          v-if="radioOpen || crossfadeOpen || offsetOpen || lyricsInfoOpen"
+          v-if="
+            radioOpen ||
+            autoPlayOpen ||
+            crossfadeOpen ||
+            offsetOpen ||
+            lyricsInfoOpen
+          "
           class="fullscreen-popover-scrim"
           aria-hidden="true"
         ></div>
@@ -287,7 +345,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
@@ -296,6 +353,7 @@ import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
   ChevronsLeftRight,
+  InfinityIcon,
   MicVocal,
   Minus,
   Plus,
@@ -320,6 +378,7 @@ const queue = computed(() => store.activePlayerQueue);
 // local open-state so we can render a shared scrim behind whichever popout shows
 const crossfadeOpen = ref(false);
 const radioOpen = ref(false);
+const autoPlayOpen = ref(false);
 const offsetOpen = ref(false);
 const lyricsInfoOpen = ref(false);
 
@@ -357,7 +416,7 @@ const toggleCrossfade = () => {
   api.queueCommandCrossfade(q.queue_id, !q.crossfade_enabled);
 };
 
-// --- radio mode + auto play ---
+// --- radio mode (infinite mix) + auto play ---
 const radioSources = computed<MediaItemType[]>(
   () => queue.value?.radio_source ?? [],
 );
@@ -365,18 +424,24 @@ const radioModeActive = computed(() => radioSources.value.length > 0);
 const autoPlayEnabled = computed(
   () => queue.value?.dont_stop_the_music_enabled === true,
 );
-const radioActive = computed(
-  () => radioModeActive.value || autoPlayEnabled.value,
-);
-const showAutoPlay = computed(() => {
-  const q = queue.value;
-  return !!q && "dont_stop_the_music_enabled" in q;
-});
+// Radio mode and auto play are mutually exclusive: while radio is active the
+// queue keeps refilling itself, so auto play (which only kicks in when the queue
+// runs out) is moot. Grey it out / disable toggling while radio mode is active.
+const autoPlayBlockedByRadio = computed(() => radioModeActive.value);
+// Radio (infinite mix) applies to an active queue playing the user's selection.
+// Always shown for such queues so it can be opened to start the mix; it appears
+// greyed-out (muted) until radio mode is actually active.
 const showRadio = computed(() => {
   const q = queue.value;
   if (!q || !q.active) return false;
   if (isQueueInfiniteStream(q)) return false;
-  return radioModeActive.value || showAutoPlay.value;
+  return true;
+});
+const showAutoPlay = computed(() => {
+  const q = queue.value;
+  if (!q || !q.active) return false;
+  if (isQueueInfiniteStream(q)) return false;
+  return "dont_stop_the_music_enabled" in q;
 });
 
 const toggleAutoPlay = (val: boolean) => {
