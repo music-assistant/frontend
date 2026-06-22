@@ -882,7 +882,7 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  dont_stop_the_music_enabled: boolean;
+  autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
   crossfade_enabled: boolean;
   // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
