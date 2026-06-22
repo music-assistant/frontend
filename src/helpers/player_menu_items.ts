@@ -11,7 +11,10 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { groupMemberPickerVisible } from "@/helpers/utils";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import {
+  isQueueDynamicPlaylist,
+  isQueueInfiniteStream,
+} from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -20,8 +23,13 @@ import { store } from "@/plugins/store";
 export const getPlayerMenuItems = (
   player: Player,
   playerQueue?: PlayerQueue,
+  options?: { hideItemsWithDedicatedControls?: boolean },
 ): ContextMenuItem[] => {
   const menuItems: ContextMenuItem[] = [];
+  // when true, omit items that already have a dedicated control elsewhere in
+  // the surrounding layout (e.g. the fullscreen player header) to avoid
+  // duplicated, redundant entries in the overflow menu.
+  const hideDedicated = options?.hideItemsWithDedicatedControls === true;
   // power off/on
   if (player?.power_control != PLAYER_CONTROL_NONE) {
     menuItems.push({
@@ -87,6 +95,7 @@ export const getPlayerMenuItems = (
     });
   }
   const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
+  const isInfiniteStream = isQueueInfiniteStream(playerQueue);
 
   // add enable/disable shuffle menu item
   if (playerQueue && !isSingleDynamicPlaylist) {
@@ -134,6 +143,26 @@ export const getPlayerMenuItems = (
         },
       ],
       icon: "mdi-repeat",
+    });
+  }
+
+  // add enable/disable crossfade menu item
+  if (
+    playerQueue &&
+    !hideDedicated &&
+    !isSingleDynamicPlaylist &&
+    !isInfiniteStream &&
+    "crossfade_enabled" in playerQueue
+  ) {
+    menuItems.push({
+      label: playerQueue.crossfade_enabled
+        ? "crossfade_disable"
+        : "crossfade_enable",
+      labelArgs: [],
+      action: () => {
+        api.queueCommandCrossfadeToggle(playerQueue.queue_id);
+      },
+      icon: "mdi-transition",
     });
   }
 
@@ -247,6 +276,7 @@ export const getPlayerMenuItems = (
   // add 'don't stop the music' menu item
   if (
     playerQueue &&
+    !hideDedicated &&
     !isSingleDynamicPlaylist &&
     "dont_stop_the_music_enabled" in playerQueue
   ) {

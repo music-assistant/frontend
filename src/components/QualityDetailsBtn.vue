@@ -8,8 +8,42 @@
     :max-height="$vuetify.display.height - 150"
   >
     <template #activator="{ props }">
+      <!-- pill variant: matches the shadcn pill controls in the player header -->
+      <Button
+        v-if="pill"
+        v-bind="props"
+        variant="outline"
+        size="sm"
+        class="rounded-full text-xs font-medium"
+        :disabled="
+          !store.activePlayerQueue ||
+          !store.activePlayerQueue?.active ||
+          store.activePlayerQueue?.items == 0
+        "
+      >
+        <span
+          class="quality-pill-dot"
+          :style="{
+            backgroundColor: qualityTierToColor(maxOutputQualityTier),
+          }"
+        ></span>
+        <span class="tracking-wide">
+          <template v-if="maxOutputQualityTier == QualityTier.LOW">LQ</template>
+          <template v-else-if="maxOutputQualityTier == QualityTier.GOOD"
+            >SQ</template
+          >
+          <template v-else-if="maxOutputQualityTier == QualityTier.LOSSLESS"
+            >HQ</template
+          >
+          <template v-else-if="maxOutputQualityTier == QualityTier.HIRES"
+            >HR</template
+          >
+        </span>
+      </Button>
+
+      <!-- default chip variant -->
       <v-chip
-        v-if="streamDetails"
+        v-else
         :disabled="
           !store.activePlayerQueue ||
           !store.activePlayerQueue?.active ||
@@ -558,6 +592,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
@@ -570,6 +605,10 @@ import {
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+
+// render the quality indicator as a rounded "pill" (matching the shadcn player
+// header controls) instead of the default square chip
+defineProps<{ pill?: boolean }>();
 
 // computed properties
 const streamDetails = computed(() => {
@@ -1155,5 +1194,13 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   border-radius: 50%;
   margin: auto;
   margin-right: 10px;
+}
+
+.quality-pill-dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
 </style>
