@@ -645,7 +645,11 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
-  if (name.includes("player") || name === "addgroup") {
+  if (
+    name.includes("player") ||
+    name.includes("queue") ||
+    name === "addgroup"
+  ) {
     return "players";
   }
   if (
@@ -841,6 +845,9 @@ const breadcrumbItems = computed(() => {
     })
     .with("editplayeroptions", () => {
       items.push({ title: t("settings.category.options"), disabled: true });
+    })
+    .with("editqueue", () => {
+      items.push({ title: t("settings.queue_settings"), disabled: true });
     })
     .with("editcore", () => {
       const domain = route.params.domain as string;
