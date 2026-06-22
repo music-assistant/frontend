@@ -189,7 +189,9 @@ const preferredPlayers = computed(() => {
 watch(
   () => store.showPlayersMenu,
   (newVal) => {
-    if (!newVal) {
+    if (newVal) {
+      showSubPlayers.value = true;
+    } else {
       // Save preferences and reset state when menu closes
       playerSearchQuery.value = "";
       if (store.activePlayerId) {

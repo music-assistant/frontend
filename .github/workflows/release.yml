@@ -41,7 +41,7 @@ jobs:
       version: ${{ inputs.version }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create and push tag
         run: |
@@ -54,7 +54,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        uses: release-drafter/release-drafter@v7.3.1
+        uses: release-drafter/release-drafter@v7.4.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.version }}
 
@@ -157,7 +157,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Checkout server repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: music-assistant/server
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}

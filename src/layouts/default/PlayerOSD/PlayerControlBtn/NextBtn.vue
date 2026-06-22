@@ -1,11 +1,10 @@
 <template>
   <!-- next button -->
   <Icon
-    v-if="isVisible && player && showNextPrev"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="!canNext || isLoading"
+    :disabled="!player || !canNext || isLoading"
     variant="button"
-    @click="api.playerCommandNext(player.player_id)"
+    @click="api.playerCommandNext(player!.player_id)"
   >
     <SkipForward :size="size" />
   </Icon>
@@ -25,25 +24,17 @@ import { SkipForward } from "lucide-vue-next";
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  isVisible?: boolean;
   icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  isVisible: true,
   icon: undefined,
   size: 20,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
 const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
-
-// Hide the button when the active queue item is an AudioSource without
-// next/previous support.
-const showNextPrev = computed(() =>
-  activeAudioSource.value ? activeAudioSource.value.can_next_previous : true,
-);
 
 const queueHasNext = computed(() => {
   if (!compProps.playerQueue?.active) return false;

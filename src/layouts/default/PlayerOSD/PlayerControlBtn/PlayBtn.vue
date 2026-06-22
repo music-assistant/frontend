@@ -1,10 +1,9 @@
 <template>
   <!-- play/pause/stop button -->
   <Icon
-    v-if="isVisible && player"
     v-bind="{ ...icon, ...$attrs }"
     class="play-btn-icon"
-    :disabled="isDisabled"
+    :disabled="!player || isLoading || isDisabled"
     variant="button"
     @click="onClick"
   >
@@ -23,7 +22,7 @@
     />
   </Icon>
   <v-progress-circular
-    v-if="isVisible && player && isLoading"
+    v-if="player && isLoading"
     class="play-btn-spinner"
     indeterminate
     :size="compProps.spinnerSize"
@@ -50,7 +49,6 @@ import { computed, toRef } from "vue";
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  isVisible?: boolean;
   icon?: IconProps;
   spinnerSize?: number;
   size?: number;
@@ -59,7 +57,6 @@ export interface Props {
 
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  isVisible: true,
   icon: undefined,
   spinnerSize: 46,
   size: 24,

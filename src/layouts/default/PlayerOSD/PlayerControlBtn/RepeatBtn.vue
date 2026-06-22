@@ -1,40 +1,26 @@
 <template>
   <!-- repeat button -->
   <Icon
-    v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
-      !playerQueue.active ||
-      playerQueue.items == 0 ||
-      isLoading ||
-      isSingleDynamicPlaylist ||
-      isInfiniteStream
+      !playerQueue || !playerQueue.active || isLoading || isInfiniteStream
     "
     :color="
       getValueFromSources(icon?.color, [
-        [playerQueue.repeat_mode == RepeatMode.OFF, undefined],
-        [playerQueue.repeat_mode == RepeatMode.ALL, 'primary'],
-        [playerQueue.repeat_mode == RepeatMode.ONE, 'primary'],
+        [playerQueue?.repeat_mode == RepeatMode.OFF, undefined],
+        [playerQueue?.repeat_mode == RepeatMode.ALL, 'primary'],
+        [playerQueue?.repeat_mode == RepeatMode.ONE, 'primary'],
       ])
     "
     variant="button"
-    @click="
-      api.queueCommandRepeat(
-        playerQueue.queue_id || '',
-        getValueFromSources(undefined as RepeatMode | undefined, [
-          [playerQueue.repeat_mode == RepeatMode.OFF, RepeatMode.ALL],
-          [playerQueue.repeat_mode == RepeatMode.ALL, RepeatMode.ONE],
-          [playerQueue.repeat_mode == RepeatMode.ONE, RepeatMode.OFF],
-        ]) ?? RepeatMode.OFF,
-      )
-    "
+    @click="api.queueCommandRepeat(playerQueue?.queue_id || '', nextRepeatMode)"
   >
     <IconRepeatOff
-      v-if="playerQueue.repeat_mode == RepeatMode.OFF"
+      v-if="playerQueue?.repeat_mode == RepeatMode.OFF"
       :size="size"
     />
     <IconRepeat
-      v-else-if="playerQueue.repeat_mode == RepeatMode.ALL"
+      v-else-if="playerQueue?.repeat_mode == RepeatMode.ALL"
       :size="size"
     />
     <IconRepeatOnce v-else :size="size" />
@@ -57,12 +43,10 @@ import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 // properties
 export interface Props {
   playerQueue: PlayerQueue | undefined;
-  isVisible?: boolean;
   icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
-  isVisible: true,
   icon: undefined,
   size: 20,
 });
@@ -80,4 +64,17 @@ const isSingleDynamicPlaylist = computed(() =>
 const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),
 );
+
+// Determine the next repeat mode when the button is pressed. Radio/dynamic
+// queues have no defined end, so "repeat all" doesn't apply there — only allow
+// toggling "repeat one" on and off.
+const nextRepeatMode = computed<RepeatMode>(() => {
+  const current = compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
+  if (isSingleDynamicPlaylist.value) {
+    return current === RepeatMode.ONE ? RepeatMode.OFF : RepeatMode.ONE;
+  }
+  if (current === RepeatMode.OFF) return RepeatMode.ALL;
+  if (current === RepeatMode.ALL) return RepeatMode.ONE;
+  return RepeatMode.OFF;
+});
 </script>

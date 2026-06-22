@@ -173,6 +173,14 @@
       :clearable="true"
       :multiple="confEntry.multi_value"
       :items="displayOptions"
+      :item-props="
+        (item) => ({
+          title: item.title,
+          value: item.value,
+          disabled: item.disabled,
+          subtitle: item.disabled ? item.disabled_reason : undefined,
+        })
+      "
       :disabled="isFieldDisabled"
       :label="displayLabel()"
       :required="confEntry.required"
@@ -338,6 +346,8 @@ const displayOptions = computed(() => {
     const option: ConfigValueOption = {
       title: orgOption.title?.toString() || orgOption.value?.toString() || "",
       value: orgOption.value,
+      disabled: orgOption.disabled,
+      disabled_reason: orgOption.disabled_reason,
     };
     if (option.value == props.confEntry.default_value) {
       option.title += ` [${$t("settings.default")}]`;

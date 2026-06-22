@@ -247,7 +247,11 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { watch } from "vue";
 
 import { nanoid } from "nanoid";
-import { ConfigEntryUI, UI_ENTRY_TYPE } from "@/helpers/config_entry_ui";
+import {
+  ConfigEntryUI,
+  UI_ENTRY_TYPE,
+  isInjected,
+} from "@/helpers/config_entry_ui";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 // global refs
@@ -348,6 +352,16 @@ const config_entries = computed(() => {
       category: "options",
       injected: true,
     });
+  }
+  // Frontend-injected entries need their category heading translated here
+  // (server-provided entries get category_label resolved server-side).
+  for (const entry of entries) {
+    if (isInjected(entry) && entry.category) {
+      entry.category_label = $t(
+        `settings.category.${entry.category}`,
+        entry.category,
+      );
+    }
   }
   return entries;
 });

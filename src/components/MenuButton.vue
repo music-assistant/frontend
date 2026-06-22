@@ -54,7 +54,7 @@ withDefaults(defineProps<Props>(), {
   text: undefined,
   disabled: false,
   width: 200,
-  loading: true,
+  loading: false,
 });
 
 // emitters
