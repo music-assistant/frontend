@@ -191,9 +191,9 @@
 </template>
 
 <script setup lang="ts">
+import { Camera, User } from "@lucide/vue";
 import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
-import { Camera, User } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -201,27 +201,27 @@ import { toast } from "vue-sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { profileSettingsSchema } from "@/lib/forms/profile";

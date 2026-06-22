@@ -226,52 +226,52 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyMedia,
-} from "@/components/ui/empty";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyMedia,
+} from "@/components/ui/empty";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  handleMenuBtnClick,
-  panelViewItemResponsive,
-  scrollElement,
+    handleMenuBtnClick,
+    panelViewItemResponsive,
+    scrollElement,
 } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
-  ItemMapping,
-  MediaItemTypeOrItemMapping,
-  MediaType,
-  PlaybackState,
-  PodcastEpisode,
-  ProviderFeature,
-  ProviderType,
-  Radio,
-  type Album,
-  type Genre,
-  type MediaItemType,
-  type Track,
+    EventMessage,
+    EventType,
+    ItemMapping,
+    MediaItemTypeOrItemMapping,
+    MediaType,
+    PlaybackState,
+    PodcastEpisode,
+    ProviderFeature,
+    ProviderType,
+    Radio,
+    type Album,
+    type Genre,
+    type MediaItemType,
+    type Track,
 } from "@/plugins/api/interfaces";
-import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
 import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  watchEffect,
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+    watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";

@@ -68,24 +68,24 @@
 import Container from "@/components/Container.vue";
 import CreateAliasDialog from "@/components/genre/CreateAliasDialog.vue";
 import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
-import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";
+import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
+import {
+    ArrowUpFromLine,
+    ChevronDown,
+    ChevronUp,
+    Link,
+    Plus,
+    Route,
+    Trash2,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import {
-  Route,
-  Plus,
-  Link,
-  Trash2,
-  ArrowUpFromLine,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-vue-next";
 
 interface Props {
   genre: Genre;

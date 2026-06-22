@@ -84,23 +84,23 @@ import ProviderIcon from "@/components/ProviderIcon.vue";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
 } from "@/components/ui/sheet";
 import api from "@/plugins/api";
 import type {
-  MediaItemType,
-  MediaItemTypeOrItemMapping,
-  Playlist,
+    MediaItemType,
+    MediaItemTypeOrItemMapping,
+    Playlist,
 } from "@/plugins/api/interfaces";
 import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListPlus } from "lucide-vue-next";
+import { ListPlus } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const show = ref<boolean>(false);

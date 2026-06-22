@@ -5,16 +5,16 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "@lucide/vue";
 import type { Column } from "@tanstack/vue-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 

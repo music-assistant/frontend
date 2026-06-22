@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-vue-next";
+import { ChevronDown, ChevronUp, ChevronsUpDown } from "@lucide/vue";
 
 interface Props {
   label: string;

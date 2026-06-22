@@ -192,19 +192,19 @@ import { Button } from "@/components/ui/button";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-  ConfigValueType,
-  EventMessage,
-  EventType,
-  ProviderConfig,
-  ProviderStatus,
+    ConfigValueType,
+    EventMessage,
+    EventType,
+    ProviderConfig,
+    ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { RefreshCw, Trash2, TriangleAlert } from "lucide-vue-next";
+import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";
 import { nanoid } from "nanoid";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 
 // global refs

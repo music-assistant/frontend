@@ -56,16 +56,16 @@
 </template>
 
 <script setup lang="ts">
-import { Library, Sparkles } from "lucide-vue-next";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { $t } from "@/plugins/i18n";
-import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import {
-  useSmartPlaylistRulesForm,
-  type RuleRow,
-  type SmartPlaylistRulesFormInit,
+    useSmartPlaylistRulesForm,
+    type RuleRow,
+    type SmartPlaylistRulesFormInit,
 } from "@/composables/useSmartPlaylistRulesForm";
+import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { Library, Sparkles } from "@lucide/vue";
 import SmartPlaylistDedupField from "./SmartPlaylistDedupField.vue";
 import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
 import SmartPlaylistSeedSection from "./SmartPlaylistSeedSection.vue";

@@ -86,13 +86,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
-  SEED_MAX,
-  useSmartPlaylistSeedItems,
-  type SeedKind,
+    SEED_MAX,
+    useSmartPlaylistSeedItems,
+    type SeedKind,
 } from "@/composables/useSmartPlaylistSeedItems";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "lucide-vue-next";
+import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "@lucide/vue";
 import { computed, toRef, type Component } from "vue";
 import SmartPlaylistSeedPicker from "./SmartPlaylistSeedPicker.vue";
 

@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'package.json'
-      - 'yarn.lock'
+      - 'pnpm-lock.yaml'
   workflow_dispatch:
 
 env:
@@ -86,24 +86,31 @@ jobs:
       #   continue-on-error: true
 
       # 4. Show lockfile changes for easy review
-      - name: Lockfile Changes
-        uses: Simek/yarn-lock-changes@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          collapsibleThreshold: 10
-          updateComment: true
-        continue-on-error: true
+      # NOTE: Simek/yarn-lock-changes only supports yarn.lock and has no pnpm
+      # equivalent. Disabled after the pnpm migration; revisit with a
+      # pnpm-lock.yaml-aware action if lockfile-diff comments are wanted.
+      # - name: Lockfile Changes
+      #   uses: Simek/yarn-lock-changes@main
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     collapsibleThreshold: 10
+      #     updateComment: true
+      #   continue-on-error: true
 
-      # 5. Run yarn audit for known vulnerabilities
+      # 5. Run pnpm audit for known vulnerabilities
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
-      - name: Yarn Audit
+      - name: pnpm Audit
         run: |
-          echo "### Yarn Audit Results" >> $GITHUB_STEP_SUMMARY
-          if yarn audit --level moderate --groups dependencies; then
+          echo "### pnpm Audit Results" >> $GITHUB_STEP_SUMMARY
+          if pnpm audit --audit-level moderate --prod; then
             echo "✅ No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ Vulnerabilities detected - review output above" >> $GITHUB_STEP_SUMMARY
@@ -141,13 +148,13 @@ jobs:
             echo "✅ No package.json changes detected" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Check yarn.lock integrity
+          # Check pnpm-lock.yaml integrity
           if git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "package.json"; then
-            if ! git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "yarn.lock"; then
+            if ! git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -q "pnpm-lock.yaml"; then
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "### ⚠️ Warning" >> $GITHUB_STEP_SUMMARY
-              echo "package.json changed but yarn.lock was not updated!" >> $GITHUB_STEP_SUMMARY
-              echo "::warning::package.json changed but yarn.lock was not updated"
+              echo "package.json changed but pnpm-lock.yaml was not updated!" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::package.json changed but pnpm-lock.yaml was not updated"
             fi
           fi
 

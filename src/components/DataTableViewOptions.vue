@@ -1,16 +1,16 @@
 <script setup lang="ts">
+import { Settings2 } from "@lucide/vue";
 import type { Table } from "@tanstack/vue-table";
-import { Settings2 } from "lucide-vue-next";
 import { computed } from "vue";
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 const props = defineProps<{

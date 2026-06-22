@@ -37,12 +37,12 @@ import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import {
-  MediaType,
-  PlaybackState,
-  Player,
-  PlayerQueue,
+    MediaType,
+    PlaybackState,
+    Player,
+    PlayerQueue,
 } from "@/plugins/api/interfaces";
-import { Pause, Play, Square } from "lucide-vue-next";
+import { Pause, Play, Square } from "@lucide/vue";
 import { computed, toRef } from "vue";
 
 // properties

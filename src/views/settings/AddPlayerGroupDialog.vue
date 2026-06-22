@@ -47,16 +47,16 @@
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronRight, Users } from "lucide-vue-next";
+import { ChevronRight, Users } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 

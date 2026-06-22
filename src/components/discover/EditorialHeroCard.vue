@@ -43,18 +43,18 @@
 <script setup lang="ts">
 import { itemArtwork } from "@/components/discover/editorialArtwork";
 import {
-  getArtistsString,
-  handleMediaItemClick,
-  handleMenuBtnClick,
-  handlePlayBtnClick,
+    getArtistsString,
+    handleMediaItemClick,
+    handleMenuBtnClick,
+    handlePlayBtnClick,
 } from "@/helpers/utils";
 import {
-  type Album,
-  type ItemMapping,
-  type MediaItemType,
-  type Track,
+    type Album,
+    type ItemMapping,
+    type MediaItemType,
+    type Track,
 } from "@/plugins/api/interfaces";
-import { Play, Sparkles } from "lucide-vue-next";
+import { Play, Sparkles } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

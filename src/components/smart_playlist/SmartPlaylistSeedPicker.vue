@@ -90,15 +90,15 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeedKind } from "@/composables/useSmartPlaylistSeedItems";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Plus } from "lucide-vue-next";
+import { Loader2, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, ref } from "vue";
 

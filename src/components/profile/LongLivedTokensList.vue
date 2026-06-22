@@ -74,15 +74,15 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import CreateTokenDialog from "@/components/users/CreateTokenDialog.vue";
 import type { AuthToken } from "@/plugins/api/interfaces";
-import { Key, Plus, Trash2 } from "lucide-vue-next";
+import { Key, Plus, Trash2 } from "@lucide/vue";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 

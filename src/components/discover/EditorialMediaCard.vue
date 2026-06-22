@@ -80,22 +80,22 @@ import { itemArtwork } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-  getArtistsString,
-  getBrowseFolderName,
-  handleMediaItemClick,
-  handleMenuBtnClick,
-  handlePlayBtnClick,
+    getArtistsString,
+    getBrowseFolderName,
+    handleMediaItemClick,
+    handleMenuBtnClick,
+    handlePlayBtnClick,
 } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
-  type Album,
-  type BrowseFolder,
-  type ItemMapping,
-  type MediaItemType,
-  MediaType,
-  type Track,
+    type Album,
+    type BrowseFolder,
+    type ItemMapping,
+    type MediaItemType,
+    MediaType,
+    type Track,
 } from "@/plugins/api/interfaces";
-import { Play } from "lucide-vue-next";
+import { Play } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

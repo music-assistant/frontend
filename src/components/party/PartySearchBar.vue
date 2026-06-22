@@ -56,16 +56,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
 } from "@/components/ui/input-group";
-import { ArrowLeft, Music, Search, UserRound, X } from "lucide-vue-next";
+import { $t } from "@/plugins/i18n";
+import { ArrowLeft, Music, Search, UserRound, X } from "@lucide/vue";
+import { computed, ref } from "vue";
 
 defineProps<{
   searchQuery: string;

@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { PlusCircle, X } from "lucide-vue-next";
+import { PlusCircle, X } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
 import { computed, ref } from "vue";
 
@@ -99,9 +99,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 

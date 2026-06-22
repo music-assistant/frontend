@@ -92,29 +92,29 @@
 </template>
 
 <script setup lang="ts">
+import { Copy } from "@lucide/vue";
 import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
-import { Copy } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
 } from "@/components/ui/input-group";
 import { copyToClipboard } from "@/helpers/utils";
 import { createTokenSchema, tokenNameSchema } from "@/lib/forms/profile";

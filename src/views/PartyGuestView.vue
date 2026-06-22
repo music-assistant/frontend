@@ -215,23 +215,23 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
 import api from "@/plugins/api";
 import {
-  type Artist,
-  type EventMessage,
-  EventType,
-  PlaybackState,
-  type QueueItem,
-  type Track,
+    type Artist,
+    type EventMessage,
+    EventType,
+    PlaybackState,
+    type QueueItem,
+    type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Music, Search } from "lucide-vue-next";
+import { ArrowLeft, Music, Search } from "@lucide/vue";
 import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
 } from "vue";
 import { toast } from "vue-sonner";
 import { useTheme } from "vuetify";

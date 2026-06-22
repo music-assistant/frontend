@@ -187,7 +187,7 @@ import EditorialGenreTile from "@/components/discover/EditorialGenreTile.vue";
 import EditorialHeroCard from "@/components/discover/EditorialHeroCard.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf, {
-  type EditorialShelfExpose,
+    type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
@@ -195,36 +195,36 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  EventType,
-  MediaType,
-  PlaybackState,
-  type EventMessage,
-  type Genre,
-  type ItemMapping,
-  type MediaItemTypeOrItemMapping,
-  type Player,
-  type RecommendationFolder,
+    EventType,
+    MediaType,
+    PlaybackState,
+    type EventMessage,
+    type Genre,
+    type ItemMapping,
+    type MediaItemTypeOrItemMapping,
+    type Player,
+    type RecommendationFolder,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronUp,
+    Eye,
+    EyeOff,
+    RefreshCw,
+} from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
 import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Eye,
-  EyeOff,
-  RefreshCw,
-} from "lucide-vue-next";
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
 } from "vue";
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {

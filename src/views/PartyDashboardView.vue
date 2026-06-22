@@ -288,46 +288,46 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import {
-  ImageColorPalette,
-  getMediaItemImageUrl,
-  paletteFromServer,
+    ImageColorPalette,
+    getMediaItemImageUrl,
+    paletteFromServer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  EventMessage,
-  EventType,
-  MediaType,
-  PlaybackState,
-  QueueItem,
-  Track,
+    EventMessage,
+    EventType,
+    MediaType,
+    PlaybackState,
+    QueueItem,
+    Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import Color from "color";
 import {
-  Maximize2,
-  Minimize2,
-  Music,
-  Settings,
-  Speaker,
-  WifiIcon,
-  WifiOff,
-} from "lucide-vue-next";
+    Maximize2,
+    Minimize2,
+    Music,
+    Settings,
+    Speaker,
+    WifiIcon,
+    WifiOff,
+} from "@lucide/vue";
+import { useColorMode } from "@vueuse/core";
+import Color from "color";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useColorMode } from "@vueuse/core";
 
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();

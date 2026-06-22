@@ -22,29 +22,29 @@ export interface ExcludedGenreRow {
 </script>
 
 <script setup lang="ts">
+import {
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    RefreshCw,
+    Search,
+} from "@lucide/vue";
 import type {
-  Column,
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
+    Column,
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
 } from "@tanstack/vue-table";
 import {
-  FlexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable,
+    FlexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useVueTable,
 } from "@tanstack/vue-table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  RefreshCw,
-  Search,
-} from "lucide-vue-next";
 import { h, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -57,25 +57,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toSentenceCase } from "@/helpers/utils";
 import type { Genre } from "@/plugins/api/interfaces";

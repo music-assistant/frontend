@@ -19,13 +19,13 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
 } from "@/components/ui/input-group";
 import { ProviderStage } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Search } from "lucide-vue-next";
+import { Search } from "@lucide/vue";
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 

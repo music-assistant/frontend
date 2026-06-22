@@ -238,25 +238,23 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-  getMediaImageUrl,
-  getPlayerName,
-  ImageColorPalette,
-  isBuiltinPlayer,
-  paletteFromServer,
+    getMediaImageUrl,
+    getPlayerName,
+    ImageColorPalette,
+    isBuiltinPlayer,
+    paletteFromServer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-  PlaybackState,
-  Player,
-  PLAYER_CONTROL_NONE,
-  PlayerFeature,
-  PlayerType,
+    PlaybackState,
+    Player,
+    PLAYER_CONTROL_NONE,
+    PlayerType
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
-import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
+import { MoreVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
 import { computed, toRef } from "vue";
 
 // properties

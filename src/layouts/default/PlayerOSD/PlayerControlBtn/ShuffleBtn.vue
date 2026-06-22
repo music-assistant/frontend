@@ -28,10 +28,10 @@ defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { PlayerQueue } from "@/plugins/api/interfaces";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
+import { PlayerQueue } from "@/plugins/api/interfaces";
+import { Shuffle } from "@lucide/vue";
 import { IconArrowsRight } from "@tabler/icons-vue";
-import { Shuffle } from "lucide-vue-next";
 import { computed } from "vue";
 
 // properties

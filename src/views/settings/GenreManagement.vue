@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChartGantt, RefreshCw, ScanLine } from "lucide-vue-next";
+import { ChartGantt, RefreshCw, ScanLine } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -108,11 +108,11 @@ import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
 import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
 import GenreTable from "@/components/genre/GenreTable.vue";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";

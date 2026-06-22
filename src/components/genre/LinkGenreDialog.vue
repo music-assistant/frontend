@@ -59,30 +59,30 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
 } from "@/components/ui/command";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import { api } from "@/plugins/api";
 import type { Genre, MediaItemType } from "@/plugins/api/interfaces";
 import { eventbus, type LinkGenreDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Check, ChevronsUpDown } from "lucide-vue-next";
+import { Check, ChevronsUpDown } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";

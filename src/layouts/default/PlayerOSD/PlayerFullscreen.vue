@@ -506,33 +506,33 @@ import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-  ImageColorPalette,
-  formatDuration,
-  getMediaImageUrl,
-  getPlayerName,
-  sleep,
+    ImageColorPalette,
+    formatDuration,
+    getMediaImageUrl,
+    getPlayerName,
+    sleep,
 } from "@/helpers/utils";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
-  EventMessage,
-  EventType,
-  MediaItemChapter,
-  MediaItemType,
-  MediaType,
-  PlaybackState,
-  PlayerQueue,
-  PlayerType,
-  QueueItem,
-  QueueOption,
-  Track,
+    EventMessage,
+    EventType,
+    MediaItemChapter,
+    MediaItemType,
+    MediaType,
+    PlaybackState,
+    PlayerQueue,
+    PlayerType,
+    QueueItem,
+    QueueOption,
+    Track,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
@@ -540,15 +540,15 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
 import Color from "color";
-import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "lucide-vue-next";
 import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  watchEffect,
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+    watchEffect,
 } from "vue";
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";

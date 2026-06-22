@@ -286,10 +286,10 @@ import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";
@@ -298,7 +298,7 @@ import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Settings } from "lucide-vue-next";
+import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";

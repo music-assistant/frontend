@@ -341,9 +341,9 @@
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import api from "@/plugins/api";
@@ -352,14 +352,14 @@ import type { MediaItemType } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
-  ChevronsLeftRight,
-  InfinityIcon,
-  MicVocal,
-  Minus,
-  Plus,
-  RadioTower,
-  Sparkles,
-} from "lucide-vue-next";
+    ChevronsLeftRight,
+    InfinityIcon,
+    MicVocal,
+    Minus,
+    Plus,
+    RadioTower,
+    Sparkles,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineProps<{
