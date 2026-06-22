@@ -1195,6 +1195,7 @@ const menuItems = computed(() => {
       closeOnContentClick: true,
       overflowAllowed: true,
       subItems: [
+        { label: "genre_content_type.all", value: undefined },
         { label: "genre_content_type.audiobooks", value: MediaType.AUDIOBOOK },
         { label: "genre_content_type.podcasts", value: MediaType.PODCAST },
       ].map((entry) => {

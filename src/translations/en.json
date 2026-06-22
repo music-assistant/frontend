@@ -19,6 +19,7 @@
     },
     "albums": "Albums",
     "genre_content_type": {
+        "all": "All",
         "audiobooks": "Audiobooks",
         "podcasts": "Podcasts"
     },
