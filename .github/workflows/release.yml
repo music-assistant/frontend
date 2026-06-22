@@ -81,7 +81,8 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-
+        with:
+          version: 11.8.0
       - name: Set up Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
         with:
