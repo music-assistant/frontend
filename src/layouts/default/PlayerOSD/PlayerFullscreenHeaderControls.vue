@@ -12,8 +12,8 @@
       <PopoverTrigger as-child>
         <Button
           variant="outline"
-          :size="showLabel ? 'sm' : 'icon-sm'"
-          class="rounded-full text-xs font-medium"
+          :size="showLabel ? 'xs' : 'icon-xs'"
+          :class="pillClass"
           :aria-label="$t('lyrics_offset')"
         >
           <ChevronsLeftRight :size="16" />
@@ -63,23 +63,21 @@
     <Button
       v-if="lyricsState === 'available' || lyricsState === 'loading'"
       variant="outline"
-      :size="showLabel ? 'sm' : 'icon-sm'"
-      class="rounded-full text-xs font-medium"
+      :size="showLabel ? 'xs' : 'icon-xs'"
+      :class="pillClass"
       :aria-label="$t('lyrics')"
       @click="emit('toggle-lyrics')"
     >
-      <span class="relative inline-flex">
-        <MicVocal
-          :size="16"
-          :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
-        />
-        <span
-          v-if="lyricsActive"
-          class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-          aria-hidden="true"
-        ></span>
-      </span>
+      <MicVocal
+        :size="16"
+        :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
+      />
       <span v-if="showLabel">{{ $t("lyrics") }}</span>
+      <span
+        v-if="lyricsActive"
+        class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
+        aria-hidden="true"
+      ></span>
     </Button>
 
     <!-- lyrics: unavailable -> short explanation popout -->
@@ -91,8 +89,8 @@
       <PopoverTrigger as-child>
         <Button
           variant="outline"
-          :size="showLabel ? 'sm' : 'icon-sm'"
-          class="text-muted-foreground rounded-full text-xs font-medium"
+          :size="showLabel ? 'xs' : 'icon-xs'"
+          :class="['text-muted-foreground', pillClass]"
           :aria-label="$t('lyrics')"
         >
           <MicVocal :size="16" />
@@ -119,19 +117,17 @@
       <PopoverTrigger as-child>
         <Button
           variant="outline"
-          :size="showLabel ? 'sm' : 'icon-sm'"
-          class="rounded-full text-xs font-medium"
+          :size="showLabel ? 'xs' : 'icon-xs'"
+          :class="pillClass"
           :aria-label="$t('radio')"
         >
-          <span class="relative inline-flex">
-            <RadioTower :size="16" />
-            <span
-              v-if="radioActive"
-              class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-              aria-hidden="true"
-            ></span>
-          </span>
+          <RadioTower :size="16" />
           <span v-if="showLabel">{{ $t("radio") }}</span>
+          <span
+            v-if="radioActive"
+            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
+            aria-hidden="true"
+          ></span>
         </Button>
       </PopoverTrigger>
 
@@ -166,6 +162,12 @@
             </div>
           </div>
 
+          <div v-else class="bg-accent rounded-md px-3 py-2">
+            <p class="text-muted-foreground text-sm font-semibold">
+              {{ $t("radio_not_active") }}
+            </p>
+          </div>
+
           <label
             v-if="showAutoPlay"
             class="hover:bg-accent -mx-1 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2"
@@ -191,19 +193,17 @@
       <PopoverTrigger as-child>
         <Button
           variant="outline"
-          :size="showLabel ? 'sm' : 'icon-sm'"
-          class="rounded-full text-xs font-medium"
+          :size="showLabel ? 'xs' : 'icon-xs'"
+          :class="pillClass"
           :aria-label="$t('crossfade')"
         >
-          <span class="relative inline-flex">
-            <CrossfadeIcon :size="16" />
-            <span
-              v-if="crossfadeEnabled"
-              class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-              aria-hidden="true"
-            ></span>
-          </span>
+          <CrossfadeIcon :size="16" />
           <span v-if="showLabel">{{ $t("crossfade") }}</span>
+          <span
+            v-if="crossfadeEnabled"
+            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
+            aria-hidden="true"
+          ></span>
         </Button>
       </PopoverTrigger>
 
@@ -324,6 +324,13 @@ const offsetOpen = ref(false);
 const lyricsInfoOpen = ref(false);
 
 const showLabel = computed(() => !store.mobileLayout);
+
+// Frosted-glass pill styling: in light mode the outline variant uses a solid
+// white background (harsh over the cover gradient), while dark mode already uses
+// a translucent background. Override the light background with a translucent one
+// + backdrop blur so the pills blend with the cover artwork in both themes.
+const pillClass =
+  "relative bg-background/40 backdrop-blur-md hover:bg-background/60";
 
 // --- crossfade ---
 const crossfadeEnabled = computed(

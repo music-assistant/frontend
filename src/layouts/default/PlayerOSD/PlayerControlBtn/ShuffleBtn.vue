@@ -3,13 +3,7 @@
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="
-      !playerQueue.active ||
-      playerQueue.items == 0 ||
-      isLoading ||
-      isSingleDynamicPlaylist ||
-      isInfiniteStream
-    "
+    :disabled="!playerQueue.active || isLoading || isInfiniteStream"
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.shuffle_enabled, 'primary', ''],
@@ -34,10 +28,7 @@ import Icon, { IconProps } from "@/components/Icon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { PlayerQueue } from "@/plugins/api/interfaces";
-import {
-  isQueueDynamicPlaylist,
-  isQueueInfiniteStream,
-} from "@/plugins/api/helpers";
+import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { IconArrowsRight } from "@tabler/icons-vue";
 import { Shuffle } from "lucide-vue-next";
 import { computed } from "vue";
@@ -60,10 +51,6 @@ const isLoading = computed(() => {
     compProps.playerQueue?.extra_attributes?.play_action_in_progress === true
   );
 });
-
-const isSingleDynamicPlaylist = computed(() =>
-  isQueueDynamicPlaylist(compProps.playerQueue),
-);
 
 const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),

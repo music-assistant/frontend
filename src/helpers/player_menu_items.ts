@@ -23,13 +23,20 @@ import { store } from "@/plugins/store";
 export const getPlayerMenuItems = (
   player: Player,
   playerQueue?: PlayerQueue,
-  options?: { hideItemsWithDedicatedControls?: boolean },
+  options?: {
+    hideItemsWithDedicatedControls?: boolean;
+    hideShuffleRepeat?: boolean;
+  },
 ): ContextMenuItem[] => {
   const menuItems: ContextMenuItem[] = [];
   // when true, omit items that already have a dedicated control elsewhere in
   // the surrounding layout (e.g. the fullscreen player header) to avoid
   // duplicated, redundant entries in the overflow menu.
   const hideDedicated = options?.hideItemsWithDedicatedControls === true;
+  // when true, omit shuffle/repeat because dedicated controls for them are
+  // currently visible elsewhere (they are responsive and hidden on small
+  // screens, so the overflow menu remains the fallback on mobile).
+  const hideShuffleRepeat = options?.hideShuffleRepeat === true;
   // power off/on
   if (player?.power_control != PLAYER_CONTROL_NONE) {
     menuItems.push({
@@ -98,7 +105,7 @@ export const getPlayerMenuItems = (
   const isInfiniteStream = isQueueInfiniteStream(playerQueue);
 
   // add enable/disable shuffle menu item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  if (playerQueue && !isSingleDynamicPlaylist && !hideShuffleRepeat) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -112,7 +119,7 @@ export const getPlayerMenuItems = (
   }
 
   // add repeat mode item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  if (playerQueue && !isSingleDynamicPlaylist && !hideShuffleRepeat) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -223,7 +230,7 @@ export const getPlayerMenuItems = (
   const selectableSources = player.source_list.filter(
     (s) => !s.passive || s.id == player.active_source,
   );
-  if (!player.synced_to && selectableSources.length > 0) {
+  if (!player.synced_to && selectableSources.length > 1) {
     menuItems.push({
       label: "select_source",
       labelArgs: [],
@@ -250,7 +257,7 @@ export const getPlayerMenuItems = (
   const selectableSoundModes = player.sound_mode_list.filter(
     (s) => !s.passive || s.id == player.active_sound_mode,
   );
-  if (selectableSoundModes.length > 0) {
+  if (selectableSoundModes.length > 1) {
     menuItems.push({
       label: "select_sound_mode",
       labelArgs: [],

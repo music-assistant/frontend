@@ -8,13 +8,13 @@
     :max-height="$vuetify.display.height - 150"
   >
     <template #activator="{ props }">
-      <!-- pill variant: matches the shadcn pill controls in the player header -->
+      <!-- header button variant: matches the shadcn controls in the player header -->
       <Button
         v-if="pill"
         v-bind="props"
         variant="outline"
-        size="sm"
-        class="rounded-full text-xs font-medium"
+        size="xs"
+        class="bg-background/40 backdrop-blur-md hover:bg-background/60"
         :disabled="
           !store.activePlayerQueue ||
           !store.activePlayerQueue?.active ||

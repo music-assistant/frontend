@@ -3,13 +3,7 @@
   <Icon
     v-if="isVisible && playerQueue"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="
-      !playerQueue.active ||
-      playerQueue.items == 0 ||
-      isLoading ||
-      isSingleDynamicPlaylist ||
-      isInfiniteStream
-    "
+    :disabled="!playerQueue.active || isLoading || isInfiniteStream"
     :color="
       getValueFromSources(icon?.color, [
         [playerQueue.repeat_mode == RepeatMode.OFF, undefined],
@@ -18,16 +12,7 @@
       ])
     "
     variant="button"
-    @click="
-      api.queueCommandRepeat(
-        playerQueue.queue_id || '',
-        getValueFromSources(undefined as RepeatMode | undefined, [
-          [playerQueue.repeat_mode == RepeatMode.OFF, RepeatMode.ALL],
-          [playerQueue.repeat_mode == RepeatMode.ALL, RepeatMode.ONE],
-          [playerQueue.repeat_mode == RepeatMode.ONE, RepeatMode.OFF],
-        ]) ?? RepeatMode.OFF,
-      )
-    "
+    @click="api.queueCommandRepeat(playerQueue.queue_id || '', nextRepeatMode)"
   >
     <IconRepeatOff
       v-if="playerQueue.repeat_mode == RepeatMode.OFF"
@@ -80,4 +65,17 @@ const isSingleDynamicPlaylist = computed(() =>
 const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),
 );
+
+// Determine the next repeat mode when the button is pressed. Radio/dynamic
+// queues have no defined end, so "repeat all" doesn't apply there — only allow
+// toggling "repeat one" on and off.
+const nextRepeatMode = computed<RepeatMode>(() => {
+  const current = compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
+  if (isSingleDynamicPlaylist.value) {
+    return current === RepeatMode.ONE ? RepeatMode.OFF : RepeatMode.ONE;
+  }
+  if (current === RepeatMode.OFF) return RepeatMode.ALL;
+  if (current === RepeatMode.ALL) return RepeatMode.ONE;
+  return RepeatMode.OFF;
+});
 </script>

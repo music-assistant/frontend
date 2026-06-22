@@ -472,9 +472,9 @@
           "
         >
           <Button
-            class="gap-1.5 rounded-full text-xs font-medium"
             variant="outline"
-            size="sm"
+            size="xs"
+            class="bg-background/40 backdrop-blur-md hover:bg-background/60"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -557,7 +557,7 @@ import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
-const { name } = useDisplay();
+const { name, mdAndUp } = useDisplay();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
 // The player select button is important enough to keep pinned at the bottom in
@@ -1267,6 +1267,7 @@ const openQueueMenu = function (evt: Event) {
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue, {
       hideItemsWithDedicatedControls: true,
+      hideShuffleRepeat: mdAndUp.value,
     }),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
