@@ -5,8 +5,8 @@ name: Auto Release
 
 on:
   schedule:
-    # Run at 01:00 UTC every day
-    - cron: "0 1 * * *"
+    - cron: "0 4 * * *"
+      timezone: "Europe/Amsterdam"
   workflow_dispatch: # Allow manual trigger for testing
 
 permissions:
