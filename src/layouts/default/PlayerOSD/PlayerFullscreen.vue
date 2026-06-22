@@ -1266,7 +1266,7 @@ const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue, {
-      hideItemsWithDedicatedControls: true,
+      context: "queue",
       hideShuffleRepeat: mdAndUp.value,
     }),
     posX: (evt as PointerEvent).clientX,
