@@ -222,6 +222,15 @@ importers:
       vue-tsc:
         specifier: 3.3.5
         version: 3.3.5(typescript@6.0.3)
+      workbox-build:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-precaching:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-window:
+        specifier: ^7.4.1
+        version: 7.4.1
 
 packages:
 
