@@ -41,7 +41,7 @@ jobs:
       version: ${{ inputs.version }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create and push tag
         run: |
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.version }}
 
@@ -157,7 +157,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Checkout server repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: music-assistant/server
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
