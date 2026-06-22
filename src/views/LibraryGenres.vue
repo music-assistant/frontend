@@ -16,6 +16,7 @@
     :total="total"
     :show-provider-filter="true"
     :show-hide-empty-filter="true"
+    :show-genre-content-type-filter="true"
     :extra-menu-items="extraMenuItems"
   />
   <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
@@ -83,15 +84,23 @@ const loadItems = async function (params: LoadDataParams) {
         : undefined,
     genre: params.genreIds,
     hide_empty: params.hideEmptyFilter,
+    media_type: params.genreContentTypeFilter,
   });
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.provider) {
+  if (
+    !params.favoritesOnly &&
+    !params.provider &&
+    !params.genreContentTypeFilter
+  ) {
     total.value = store.libraryGenresCount;
     return;
   }
-  if (params.provider && params.provider.length > 0) {
+  if (
+    (params.provider && params.provider.length > 0) ||
+    params.genreContentTypeFilter
+  ) {
     total.value = undefined;
     return;
   }

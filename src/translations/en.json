@@ -18,6 +18,10 @@
         "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
+    "genre_content_type": {
+        "audiobooks": "Audiobooks",
+        "podcasts": "Podcasts"
+    },
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
@@ -624,7 +628,8 @@
         "filter_genre": "Filter by genre",
         "show_only_default_genres": "Show only default genres",
         "show_all_genres": "Show all genres",
-        "filter_hide_fully_played": "Hide fully-played episodes"
+        "filter_hide_fully_played": "Hide fully-played episodes",
+        "genre_content_type": "Media type"
     },
     "topresult": "Top result",
     "track": "Track",
