@@ -1,11 +1,11 @@
 <template>
   <Button
-    v-if="isVisible && store.activePlayerQueue"
     variant="icon"
     :ripple="false"
     icon
     v-bind="$attrs"
     :disabled="
+      !store.activePlayerQueue ||
       !store.activePlayerId ||
       (store.showFullscreenPlayer &&
         !store.curQueueItem &&
@@ -26,12 +26,10 @@ import { ListVideo } from "lucide-vue-next";
 import { computed } from "vue";
 
 export interface Props {
-  isVisible?: boolean;
   size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
-  isVisible: true,
   size: 20,
 });
 

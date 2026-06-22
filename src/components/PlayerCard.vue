@@ -298,7 +298,9 @@ const playerQueue = computed(() => {
 
 const openPlayerMenu = function (evt: Event) {
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(compProps.player, playerQueue.value),
+    items: getPlayerMenuItems(compProps.player, playerQueue.value, {
+      context: "player",
+    }),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });
