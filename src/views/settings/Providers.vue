@@ -273,12 +273,12 @@ import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-    EventType,
-    ProviderConfig,
-    ProviderFeature,
-    ProviderStage,
-    ProviderStatus,
-    ProviderType,
+  EventType,
+  ProviderConfig,
+  ProviderFeature,
+  ProviderStage,
+  ProviderStatus,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";

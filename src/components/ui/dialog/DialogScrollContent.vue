@@ -4,11 +4,11 @@ import { X } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type { DialogContentEmits, DialogContentProps } from "reka-ui";
 import {
-    DialogClose,
-    DialogContent,
-    DialogOverlay,
-    DialogPortal,
-    useForwardPropsEmits,
+  DialogClose,
+  DialogContent,
+  DialogOverlay,
+  DialogPortal,
+  useForwardPropsEmits,
 } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 

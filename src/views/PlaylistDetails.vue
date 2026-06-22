@@ -77,20 +77,20 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
 import {
-    EventType,
-    type EventMessage,
-    type MediaItemType,
-    type Playlist,
-    type SmartPlaylistRules,
+  EventType,
+  type EventMessage,
+  type MediaItemType,
+  type Playlist,
+  type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
 import { Settings2 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";

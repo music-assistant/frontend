@@ -99,23 +99,23 @@ import BackgroundTaskItem from "@/components/settings/background-tasks/Backgroun
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
-    canEditTaskSchedule,
-    canRemoveTask,
-    canRunTaskManually,
-    isCancelableTask,
-    isRetryableTask,
-    isScheduledTask,
+  canEditTaskSchedule,
+  canRemoveTask,
+  canRunTaskManually,
+  isCancelableTask,
+  isRetryableTask,
+  isScheduledTask,
 } from "@/composables/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { copyToClipboard } from "@/helpers/utils";
 import { type ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
-    type BackgroundTask,
-    type TaskSchedule,
-    type User,
-    TaskStatus,
-    UserRole,
+  type BackgroundTask,
+  type TaskSchedule,
+  type User,
+  TaskStatus,
+  UserRole,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";

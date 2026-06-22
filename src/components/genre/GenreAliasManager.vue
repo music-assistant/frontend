@@ -76,13 +76,13 @@ import { Button } from "@/components/ui/button";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
 import {
-    ArrowUpFromLine,
-    ChevronDown,
-    ChevronUp,
-    Link,
-    Plus,
-    Route,
-    Trash2,
+  ArrowUpFromLine,
+  ChevronDown,
+  ChevronUp,
+  Link,
+  Plus,
+  Route,
+  Trash2,
 } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";

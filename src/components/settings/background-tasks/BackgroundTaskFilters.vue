@@ -11,9 +11,9 @@
 
 <script setup lang="ts">
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
 } from "@/components/ui/input-group";
 import { Search } from "@lucide/vue";
 import { onBeforeUnmount, ref, watch } from "vue";

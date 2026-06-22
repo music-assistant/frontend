@@ -70,39 +70,39 @@
 <script setup lang="ts">
 import Button from "@/components/Button.vue";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import api from "@/plugins/api";
 import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import {
-    MediaType,
-    ProviderFeature,
-    QueueOption,
-    type Audiobook,
-    type PodcastEpisode,
-    type Radio,
-    type Track,
+  MediaType,
+  ProviderFeature,
+  QueueOption,
+  type Audiobook,
+  type PodcastEpisode,
+  type Radio,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
-    EllipsisIcon,
-    Gauge,
-    Heart,
-    Info,
-    PlusCircle,
-    RadioTower,
+  EllipsisIcon,
+  Gauge,
+  Heart,
+  Info,
+  PlusCircle,
+  RadioTower,
 } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 

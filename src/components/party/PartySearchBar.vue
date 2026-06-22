@@ -58,10 +58,10 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
 } from "@/components/ui/input-group";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft, Music, Search, UserRound, X } from "@lucide/vue";

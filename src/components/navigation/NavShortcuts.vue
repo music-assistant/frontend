@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { LucideIcon } from "@lucide/vue";
 import {
-    BookAudio,
-    Disc3,
-    EllipsisVertical,
-    ListMusic,
-    Mic2,
-    Music,
-    Podcast,
-    Radio,
-    Tag,
+  BookAudio,
+  Disc3,
+  EllipsisVertical,
+  ListMusic,
+  Mic2,
+  Music,
+  Podcast,
+  Radio,
+  Tag,
 } from "@lucide/vue";
 import { computed, markRaw } from "vue";
 import { useI18n } from "vue-i18n";
@@ -17,14 +17,14 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { Button } from "@/components/ui/button";
 import {
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarMenuSkeleton,
-    useSidebar,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";

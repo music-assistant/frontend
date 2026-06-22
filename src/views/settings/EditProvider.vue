@@ -192,11 +192,11 @@ import { Button } from "@/components/ui/button";
 import { markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-    ConfigValueType,
-    EventMessage,
-    EventType,
-    ProviderConfig,
-    ProviderStatus,
+  ConfigValueType,
+  EventMessage,
+  EventType,
+  ProviderConfig,
+  ProviderStatus,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { RefreshCw, Trash2, TriangleAlert } from "@lucide/vue";

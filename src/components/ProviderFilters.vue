@@ -19,9 +19,9 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
 } from "@/components/ui/input-group";
 import { ProviderStage } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";

@@ -420,34 +420,34 @@
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
-    getImageThumbForItem,
-    handleMediaItemClick,
-    handlePlayBtnClick,
-    markdownToHtml,
-    parseBool,
-    truncateString,
+  getImageThumbForItem,
+  handleMediaItemClick,
+  handlePlayBtnClick,
+  markdownToHtml,
+  parseBool,
+  truncateString,
 } from "@/helpers/utils";
 import {
-    ContextMenuItem,
-    getContextMenuItems,
+  ContextMenuItem,
+  getContextMenuItems,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
-    Album,
-    Artist,
-    Genre,
-    ItemMapping,
-    MediaItemType,
+  Album,
+  Artist,
+  Genre,
+  ItemMapping,
+  MediaItemType,
 } from "@/plugins/api/interfaces";
 import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";

@@ -467,9 +467,9 @@ import { Button } from "@/components/ui/button";
 import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
-    ConfigEntryType,
-    ConfigValueType,
-    SECURE_STRING_SUBSTITUTE
+  ConfigEntryType,
+  ConfigValueType,
+  SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { HelpCircle } from "@lucide/vue";

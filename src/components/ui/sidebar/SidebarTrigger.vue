@@ -2,9 +2,9 @@
 import NavUser from "@/components/navigation/NavUser.vue";
 import { Button } from "@/components/ui/button";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 // import { toggleHAMenu } from "@/plugins/homeassistant";
 // import { store } from "@/plugins/store";

@@ -191,21 +191,21 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    NumberField,
-    NumberFieldContent,
-    NumberFieldInput,
+  NumberField,
+  NumberFieldContent,
+  NumberFieldInput,
 } from "@/components/ui/number-field";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import type {
-    RuleField,
-    RuleOperator,
-    RuleRow,
+  RuleField,
+  RuleOperator,
+  RuleRow,
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";

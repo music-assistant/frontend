@@ -59,9 +59,9 @@
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
-    useSmartPlaylistRulesForm,
-    type RuleRow,
-    type SmartPlaylistRulesFormInit,
+  useSmartPlaylistRulesForm,
+  type RuleRow,
+  type SmartPlaylistRulesFormInit,
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";

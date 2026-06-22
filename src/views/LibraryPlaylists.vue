@@ -28,9 +28,9 @@ import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/cons
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import api from "@/plugins/api";
 import {
-    EventMessage,
-    EventType,
-    ProviderFeature,
+  EventMessage,
+  EventType,
+  ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";

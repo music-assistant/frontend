@@ -74,11 +74,11 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import CreateTokenDialog from "@/components/users/CreateTokenDialog.vue";
 import type { AuthToken } from "@/plugins/api/interfaces";

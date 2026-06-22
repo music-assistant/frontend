@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils";
 import { Check } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type {
-    DropdownMenuCheckboxItemEmits,
-    DropdownMenuCheckboxItemProps,
+  DropdownMenuCheckboxItemEmits,
+  DropdownMenuCheckboxItemProps,
 } from "reka-ui";
 import {
-    DropdownMenuCheckboxItem,
-    DropdownMenuItemIndicator,
-    useForwardPropsEmits,
+  DropdownMenuCheckboxItem,
+  DropdownMenuItemIndicator,
+  useForwardPropsEmits,
 } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 

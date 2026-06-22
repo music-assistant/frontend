@@ -238,18 +238,18 @@ import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
-    getMediaImageUrl,
-    getPlayerName,
-    ImageColorPalette,
-    isBuiltinPlayer,
-    paletteFromServer,
+  getMediaImageUrl,
+  getPlayerName,
+  ImageColorPalette,
+  isBuiltinPlayer,
+  paletteFromServer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
-    PlaybackState,
-    Player,
-    PLAYER_CONTROL_NONE,
-    PlayerType
+  PlaybackState,
+  Player,
+  PLAYER_CONTROL_NONE,
+  PlayerType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";

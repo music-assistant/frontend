@@ -80,22 +80,22 @@ import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Badge } from "@/components/ui/badge";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
 } from "@/components/ui/input-group";
 import { api } from "@/plugins/api";
 import {
-    ProviderConfig,
-    ProviderManifest,
-    ProviderStage,
-    ProviderType,
+  ProviderConfig,
+  ProviderManifest,
+  ProviderStage,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";

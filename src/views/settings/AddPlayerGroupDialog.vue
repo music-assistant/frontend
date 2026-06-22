@@ -47,10 +47,10 @@
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";

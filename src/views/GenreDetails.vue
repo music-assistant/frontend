@@ -180,23 +180,23 @@ import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-    EventMessage,
-    EventType,
-    Genre,
-    MediaItemType,
-    MediaItemTypeOrItemMapping,
-    MediaType,
+  EventMessage,
+  EventType,
+  Genre,
+  MediaItemType,
+  MediaItemTypeOrItemMapping,
+  MediaType,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { SquareArrowRightEnter } from "@lucide/vue";
 import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-    watch,
-    type Component,
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type Component,
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";

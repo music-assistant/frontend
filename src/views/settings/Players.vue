@@ -185,10 +185,10 @@ import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import {
-    EventType,
-    PlayerConfig,
-    PlayerType,
-    ProviderFeature,
+  EventType,
+  PlayerConfig,
+  PlayerType,
+  ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { Plus } from "@lucide/vue";

@@ -286,10 +286,10 @@ import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { openLinkInNewTab } from "@/helpers/utils";

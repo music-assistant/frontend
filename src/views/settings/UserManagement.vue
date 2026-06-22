@@ -141,15 +141,15 @@
 
 <script setup lang="ts">
 import {
-    Key,
-    Monitor,
-    MonitorOff,
-    MoreVertical,
-    Pencil,
-    Plus,
-    Search,
-    Trash2,
-    User as UserIcon,
+  Key,
+  Monitor,
+  MonitorOff,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  User as UserIcon,
 } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -161,11 +161,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";

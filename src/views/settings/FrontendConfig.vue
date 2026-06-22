@@ -44,18 +44,18 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { DEFAULT_MENU_ITEMS, DEVICE_SETTING_KEYS } from "@/constants";
 import {
-    ConfigEntry,
-    ConfigEntryType,
-    ConfigValueType,
+  ConfigEntry,
+  ConfigEntryType,
+  ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { companionMode } from "@/plugins/companion";
 import { $t, i18n } from "@/plugins/i18n";

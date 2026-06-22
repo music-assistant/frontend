@@ -4,10 +4,10 @@ import { Check } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type { SelectItemProps } from "reka-ui";
 import {
-    SelectItem,
-    SelectItemIndicator,
-    SelectItemText,
-    useForwardProps,
+  SelectItem,
+  SelectItemIndicator,
+  SelectItemText,
+  useForwardProps,
 } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 

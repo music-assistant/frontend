@@ -210,23 +210,23 @@ import { useI18n } from "vue-i18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    formatBackgroundTaskDate,
-    formatBackgroundTaskFailureSummary,
-    formatBackgroundTaskSchedule,
-    formatBackgroundTaskStatus,
+  formatBackgroundTaskDate,
+  formatBackgroundTaskFailureSummary,
+  formatBackgroundTaskSchedule,
+  formatBackgroundTaskStatus,
 } from "@/composables/useBackgroundTaskDisplay";
 import {
-    type BackgroundTask,
-    TaskStatus,
-    UserRole,
+  type BackgroundTask,
+  TaskStatus,
+  UserRole,
 } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";

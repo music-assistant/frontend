@@ -81,23 +81,23 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
-    Popover,
-    PopoverAnchor,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-    TagsInputInput,
-    TagsInputItem,
-    TagsInputItemDelete,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
 } from "@/components/ui/tags-input";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronsUpDown, X } from "@lucide/vue";

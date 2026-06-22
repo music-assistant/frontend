@@ -64,24 +64,24 @@ import ListviewItem from "@/components/ListviewItem.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import { Button } from "@/components/ui/button";
 import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
 } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
-    PlaybackState,
-    type Audiobook,
-    type MediaItemType,
-    type Playlist,
-    type PodcastEpisode,
-    type Radio,
-    type Track,
+  PlaybackState,
+  type Audiobook,
+  type MediaItemType,
+  type Playlist,
+  type PodcastEpisode,
+  type Radio,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Music2, SlidersHorizontal } from "@lucide/vue";

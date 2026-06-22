@@ -25,9 +25,9 @@
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
 } from "@/components/ui/input-group";
 import { api } from "@/plugins/api";
 import { PlayerType, ProviderType } from "@/plugins/api/interfaces";

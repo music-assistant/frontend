@@ -108,11 +108,11 @@ import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
 import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
 import GenreTable from "@/components/genre/GenreTable.vue";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";

@@ -51,16 +51,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
-    NumberField,
-    NumberFieldContent,
-    NumberFieldDecrement,
-    NumberFieldIncrement,
-    NumberFieldInput,
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
 } from "@/components/ui/number-field";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { HelpCircle } from "@lucide/vue";
 import { computed } from "vue";

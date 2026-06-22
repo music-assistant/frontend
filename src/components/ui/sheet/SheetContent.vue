@@ -4,10 +4,10 @@ import { X } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
 import type { DialogContentEmits, DialogContentProps } from "reka-ui";
 import {
-    DialogClose,
-    DialogContent,
-    DialogPortal,
-    useForwardPropsEmits,
+  DialogClose,
+  DialogContent,
+  DialogPortal,
+  useForwardPropsEmits,
 } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 import SheetOverlay from "./SheetOverlay.vue";

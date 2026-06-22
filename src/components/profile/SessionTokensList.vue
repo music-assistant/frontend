@@ -55,11 +55,11 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import type { AuthToken } from "@/plugins/api/interfaces";
 import { Monitor, MonitorOff, Trash2 } from "@lucide/vue";
