@@ -1,4 +1,7 @@
 allowBuilds:
-  '@parcel/watcher': true
+  "@parcel/watcher": true
   esbuild: true
   vue-demi: true
+
+overrides:
+  "minimatch@9": "9.0.9"
