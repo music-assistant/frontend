@@ -82,7 +82,7 @@ import {
 } from "@/components/ui/card";
 import CreateTokenDialog from "@/components/users/CreateTokenDialog.vue";
 import type { AuthToken } from "@/plugins/api/interfaces";
-import { Key, Plus, Trash2 } from "lucide-vue-next";
+import { Key, Plus, Trash2 } from "@lucide/vue";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 

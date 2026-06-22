@@ -14,7 +14,7 @@ import {
   Radio,
   Search,
   Settings,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { Component } from "vue";
 
 export type MenuGroup = "explore" | "library" | "system";

@@ -249,14 +249,12 @@ import {
   PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
-  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
-import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
+import { MoreVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
 import { computed, toRef } from "vue";
 
 // properties

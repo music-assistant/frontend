@@ -103,7 +103,7 @@ import {
   Info,
   PlusCircle,
   RadioTower,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 const PLAYBACK_SPEED_OPTIONS = [1, 1.25, 1.5, 2, 3] as const;

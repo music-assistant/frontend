@@ -1,8 +1,8 @@
-import { Ban, CalendarRange, Disc3, Heart, Mic2, Tags } from "lucide-vue-next";
-import { match } from "ts-pattern";
 import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
-import type { Component } from "vue";
 import type { RuleField } from "@/composables/useSmartPlaylistRulesForm";
+import { Ban, CalendarRange, Disc3, Heart, Mic2, Tags } from "@lucide/vue";
+import { match } from "ts-pattern";
+import type { Component } from "vue";
 
 export function fieldIcon(field: RuleField): Component {
   return match(field)

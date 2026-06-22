@@ -359,7 +359,7 @@ import {
   Plus,
   RadioTower,
   Sparkles,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineProps<{

@@ -418,6 +418,15 @@
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getImageThumbForItem,
@@ -444,24 +453,15 @@ import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
-import { useUserPreferences } from "@/composables/userPreferences";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 // properties
 export interface Props {

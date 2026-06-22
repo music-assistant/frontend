@@ -63,16 +63,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { QueueItem } from "@/plugins/api/interfaces";
-import { getMediaItemImageUrl } from "@/helpers/utils";
-import { $t } from "@/plugins/i18n";
 import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
-import { Music, Rocket, UserRound } from "lucide-vue-next";
+import { getMediaItemImageUrl } from "@/helpers/utils";
+import type { QueueItem } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { Music, Rocket, UserRound } from "@lucide/vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   item: QueueItem;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
+import { Check } from "@lucide/vue";
 import { reactiveOmit } from "@vueuse/core";
-import { Check } from "lucide-vue-next";
 import type { SelectItemProps } from "reka-ui";
 import {
   SelectItem,

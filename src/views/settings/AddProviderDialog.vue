@@ -99,7 +99,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronRight, Search } from "lucide-vue-next";
+import { ChevronRight, Search } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, nextTick, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";

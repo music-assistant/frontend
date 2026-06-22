@@ -8,7 +8,6 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
-  PlaybackState,
   Player,
   PlayerConfig,
   PlayerType,
@@ -23,11 +22,11 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;

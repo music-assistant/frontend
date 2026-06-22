@@ -23,13 +23,13 @@
 
 <script setup lang="ts">
 import AddGenreDialog from "@/components/AddGenreDialog.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

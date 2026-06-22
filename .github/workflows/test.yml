@@ -14,46 +14,38 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Cache Node.js modules
-        id: yarn-cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          cache: pnpm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --silent
+        run: pnpm install --frozen-lockfile
         env:
           CI: true
 
       - name: Run tests
-        run: yarn test:run
+        run: pnpm test:run
         env:
           CI: true
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
         env:
           CI: true
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         env:
           CI: true
 
       # disable typecheck for now
       # - name: Typecheck
-      #   run: yarn typecheck
+      #   run: pnpm typecheck
       #   env:
       #     CI: true

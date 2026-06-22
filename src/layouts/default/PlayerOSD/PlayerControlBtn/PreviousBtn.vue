@@ -13,12 +13,12 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
-import api from "@/plugins/api";
-import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
+import api from "@/plugins/api";
+import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
+import { SkipBack } from "@lucide/vue";
 import { computed, toRef } from "vue";
-import { SkipBack } from "lucide-vue-next";
 
 // properties
 export interface Props {

@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, Download, RefreshCw } from "lucide-vue-next";
+import { AlertCircle, Download, RefreshCw } from "@lucide/vue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import { Button } from "@/components/ui/button";

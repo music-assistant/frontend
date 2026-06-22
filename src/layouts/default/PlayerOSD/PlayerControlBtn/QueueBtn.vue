@@ -22,7 +22,7 @@
 defineOptions({ inheritAttrs: false });
 import Button from "@/components/Button.vue";
 import { store } from "@/plugins/store";
-import { ListVideo } from "lucide-vue-next";
+import { ListVideo } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {

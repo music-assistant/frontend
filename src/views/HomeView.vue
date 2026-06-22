@@ -46,14 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Check, Compass } from "lucide-vue-next";
+import { Check, Compass } from "@lucide/vue";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 

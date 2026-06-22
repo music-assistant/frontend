@@ -282,7 +282,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";

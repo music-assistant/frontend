@@ -462,20 +462,19 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
-  ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { HelpCircle } from "lucide-vue-next";
-import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
+import { HelpCircle } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
