@@ -143,11 +143,6 @@
         "group_members": "Členové skupiny",
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
-        "category": {
-            "web_player": "Webový přehrávač",
-            "protocol_settings": "Výstupní protokol(y)",
-            "options": "Možnosti přehrávače"
-        },
         "theme": {
             "label": "Téma",
             "options": {
@@ -413,6 +408,11 @@
         "no_group_providers": "Momentálně nemáte žádné poskytovatele, kteří by podporovali vytváření skupin.",
         "provider_codeowners": "Na tomto poskytovateli se podílí\/spravuje jej",
         "provider_credits": "Umožněno díky",
+        "category": {
+            "web_player": "Webový přehrávač",
+            "protocol_settings": "Výstupní protokol(y)",
+            "options": "Možnosti přehrávače"
+        },
         "onboarding_subtitle": "Začněme připojením zdrojů hudby a audio zařízení.",
         "onboarding_music_title": "Hudba",
         "onboarding_music_desc": "Připojte své streamovací služby, jako je Spotify, Tidal nebo místní hudební knihovnu.",
@@ -604,7 +604,6 @@
     "power_off_player": "Vypnout",
     "powered_off_players": "Vypnuté přehrávače",
     "sync_player_with": "Propojit s jiným přehrávačem",
-    "open_player_settings": "Nastavení",
     "select_repeat_mode": "Vyběr režimu opakování",
     "repeat_mode": {
         "all": "Opakovat celou frontu",

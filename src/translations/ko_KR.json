@@ -141,7 +141,6 @@
         "group_members": "그룹 구성원",
         "default": "기본값",
         "provider_depends_on_confirm": "{0} 설정하기 전에 {1} 공급자를 구성해야 합니다. 지금 구성하시겠습니까?",
-        "category": {},
         "theme": {
             "label": "테마",
             "options": {
@@ -300,7 +299,6 @@
     "power_off_player": "전원 끄기",
     "powered_off_players": "꺼져 있는 플레이어",
     "sync_player_with": "다른 플레이어와 동기화",
-    "open_player_settings": "설정 열기",
     "select_repeat_mode": "반복 모드 선택",
     "repeat_mode": {
         "all": "전체 대기열 반복",

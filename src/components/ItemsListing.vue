@@ -294,6 +294,7 @@ export interface LoadDataParams {
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
+  genreContentTypeFilter?: MediaType;
 }
 // properties
 export interface Props {
@@ -329,6 +330,7 @@ export interface Props {
   emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
+  showGenreContentTypeFilter?: boolean;
   showHideEmptyFilter?: boolean;
   showHideFullyPlayedFilter?: boolean;
   allowCollapse?: boolean;
@@ -375,6 +377,7 @@ const props = withDefaults(defineProps<Props>(), {
   subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
+  showGenreContentTypeFilter: false,
   showHideEmptyFilter: false,
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
@@ -593,6 +596,19 @@ const toggleHideEmptyFilter = function () {
     props.itemtype,
     "hideEmptyFilter",
     params.value.hideEmptyFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const changeGenreContentTypeFilter = function (mediaType?: MediaType) {
+  // single-select: clicking the active type clears it back to "all"
+  params.value.genreContentTypeFilter =
+    params.value.genreContentTypeFilter === mediaType ? undefined : mediaType;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "genreContentTypeFilter",
+    params.value.genreContentTypeFilter,
   );
   loadData(undefined, undefined, true);
 };
@@ -865,6 +881,7 @@ const hasActiveFilters = computed(() => {
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
     (p.albumType && p.albumType.length > 0) ||
+    Boolean(p.genreContentTypeFilter) ||
     genreActive ||
     // hide-empty genres filter: true (hide empty) and null (defaults only)
     // both narrow the result; false/undefined means "show all"
@@ -1167,6 +1184,32 @@ const menuItems = computed(() => {
     });
   }
 
+  // genre content-type filter (music / audiobooks / podcasts)
+  if (props.showGenreContentTypeFilter === true) {
+    const active = params.value.genreContentTypeFilter;
+    items.push({
+      label: "tooltip.genre_content_type",
+      icon: "mdi-bookshelf",
+      disabled: loading.value,
+      active: !!active,
+      closeOnContentClick: true,
+      overflowAllowed: true,
+      subItems: [
+        { label: "genre_content_type.all", value: undefined },
+        { label: "genre_content_type.audiobooks", value: MediaType.AUDIOBOOK },
+        { label: "genre_content_type.podcasts", value: MediaType.PODCAST },
+      ].map((entry) => {
+        return {
+          label: entry.label,
+          selected: active === entry.value,
+          action: () => {
+            changeGenreContentTypeFilter(entry.value);
+          },
+        };
+      }),
+    });
+  }
+
   // album type filter
   if (props.showAlbumTypeFilter) {
     items.push({
@@ -1466,6 +1509,14 @@ const restoreSettings = async function () {
   // get stored/default albumType filter for this itemtype
   if (props.showAlbumTypeFilter === true && prefs.albumType) {
     params.value.albumType = prefs.albumType;
+  }
+
+  // get stored genre content-type filter for this itemtype
+  if (
+    props.showGenreContentTypeFilter === true &&
+    prefs.genreContentTypeFilter
+  ) {
+    params.value.genreContentTypeFilter = prefs.genreContentTypeFilter;
   }
 
   // get stored/default provider filter for this itemtype

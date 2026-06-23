@@ -18,6 +18,11 @@
         "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
+    "genre_content_type": {
+        "all": "All",
+        "audiobooks": "Audiobooks",
+        "podcasts": "Podcasts"
+    },
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
@@ -624,7 +629,8 @@
         "filter_genre": "Filter by genre",
         "show_only_default_genres": "Show only default genres",
         "show_all_genres": "Show all genres",
-        "filter_hide_fully_played": "Hide fully-played episodes"
+        "filter_hide_fully_played": "Hide fully-played episodes",
+        "genre_content_type": "Media type"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -681,8 +687,8 @@
     },
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
-    "dont_stop_the_music_enable": "Enable auto play",
-    "dont_stop_the_music_disable": "Disable auto play",
+    "autoplay_enable": "Enable Autoplay",
+    "autoplay_disable": "Disable Autoplay",
     "crossfade_enable": "Enable crossfade",
     "crossfade_disable": "Disable crossfade",
     "crossfade": "Crossfade",
@@ -693,10 +699,10 @@
     "radio_explanation": "Radio turns the media you selected into an endless, dynamic mix, continuously blending in similar tracks to keep the music going.",
     "radio_active": "Radio is active, based on:",
     "radio_not_active": "Radio is off, your queue is playing exactly the selection you chose.",
-    "auto_play": "Auto play",
-    "auto_play_explanation": "Keep the music going. When your queue runs out, similar tracks are added automatically based on what you have been listening to.",
-    "auto_play_active": "Auto play is on.",
-    "auto_play_radio_active": "Not needed while radio is active, your queue already keeps going on its own.",
+    "autoplay": "Autoplay",
+    "autoplay_explanation": "When your queue runs out, additional tracks are added automatically so the music will not stop.",
+    "autoplay_active": "Autoplay is on.",
+    "autoplay_radio_active": "Not needed while radio is active, your queue already keeps going on its own.",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
