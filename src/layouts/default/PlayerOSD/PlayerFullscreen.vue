@@ -390,11 +390,7 @@
           >
             <Heart
               :size="18"
-              :fill="
-                store.curQueueItem?.media_item?.favorite
-                  ? 'currentColor'
-                  : 'none'
-              "
+              :fill="currentItemFavorite ? 'currentColor' : 'none'"
             />
           </Icon>
           <ShuffleBtn
@@ -588,6 +584,19 @@ const hoveredMarqueeSync = new MarqueeTextSync();
 const queueItems = ref<QueueItem[]>([]);
 const activeQueuePanel = ref(0);
 const tempHide = ref(false);
+
+// Track the favorite state of the current queue item independently from
+// media_item.favorite so optimistic updates survive server-side queue refreshes
+// (which replace the whole current_item object and would reset the field).
+const currentItemFavorite = ref(false);
+watch(
+  () => store.curQueueItem?.queue_item_id,
+  () => {
+    currentItemFavorite.value =
+      store.curQueueItem?.media_item?.favorite ?? false;
+  },
+  { immediate: true },
+);
 
 // Badge colors for guest request badges (loaded from party/config)
 const requestBadgeColor = ref("#2196f3");
@@ -1437,6 +1446,23 @@ onMounted(() => {
   onBeforeUnmount(unsub);
 });
 
+// sync currentItemFavorite when the server confirms a favorite change
+onMounted(() => {
+  const unsub = api.subscribe(
+    EventType.MEDIA_ITEM_UPDATED,
+    (evt: EventMessage) => {
+      const updatedItem = evt.data as MediaItemType;
+      if (
+        "favorite" in updatedItem &&
+        store.curQueueItem?.media_item?.uri === updatedItem.uri
+      ) {
+        currentItemFavorite.value = updatedItem.favorite;
+      }
+    },
+  );
+  onBeforeUnmount(unsub);
+});
+
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
@@ -1454,7 +1480,8 @@ onMounted(() => {
 const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   // the heart icon/button was clicked
   if (!store.curQueueItem?.media_item) return;
-  if (!store.curQueueItem.media_item.favorite) {
+  if (!currentItemFavorite.value) {
+    currentItemFavorite.value = true; // optimistic — survives server queue refresh
     api.toggleFavorite(store.curQueueItem.media_item);
     return;
   }
@@ -1509,6 +1536,7 @@ const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
         );
         resolvedItem.favorite = false;
         store.curQueueItem!.media_item!.favorite = false;
+        currentItemFavorite.value = false;
       },
       icon: "mdi-heart",
     });
