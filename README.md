@@ -25,13 +25,13 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 
 ```sh
 nvm use node
-yarn install
+pnpm install
 ```
 
 ### Compile and Hot-Reload for Development
 
 ```sh
-yarn dev
+pnpm dev
 ```
 
 This will launch an auto-reload development environment (usually at http://localhost:3000)
@@ -41,13 +41,13 @@ You can either connect to a locally launched dev server or an existing running s
 ### Type-Check, Compile and Minify for Production
 
 ```sh
-yarn build
+pnpm build
 ```
 
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
-yarn lint
+pnpm lint
 ```
 
 ## UI Framework

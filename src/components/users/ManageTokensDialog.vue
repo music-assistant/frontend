@@ -261,10 +261,10 @@
 </template>
 
 <script setup lang="ts">
+import { Copy, Key, Monitor, Plus, Trash2 } from "@lucide/vue";
 import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
-import { Copy, Key, Monitor, Plus, Trash2 } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";

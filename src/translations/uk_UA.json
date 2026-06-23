@@ -143,11 +143,6 @@
         "group_members": "Члени групи",
         "default": "за замовчуванням",
         "provider_depends_on_confirm": "Перш ніж налаштувати {0}, потрібно налаштувати провайдер {1}. Ви хочете зробити це зараз?",
-        "category": {
-            "web_player": "Вебплеєр",
-            "protocol_settings": "Налаштування протоколу",
-            "options": "Параметри плеєра"
-        },
         "theme": {
             "label": "Тема",
             "options": {
@@ -412,6 +407,11 @@
         "no_group_providers": "Наразі у вас немає провайдерів, які підтримують створення груп",
         "provider_codeowners": "Цей провайдер надається\/підтримується",
         "provider_credits": "Це стало можливим завдяки",
+        "category": {
+            "web_player": "Вебплеєр",
+            "protocol_settings": "Налаштування протоколу",
+            "options": "Параметри плеєра"
+        },
         "onboarding_subtitle": "Почнімо з підключення джерел музики та аудіопристроїв.",
         "onboarding_music_title": "Музика",
         "onboarding_music_desc": "Підключіть потокові сервіси, такі як Spotify, Tidal або локальну музичну бібліотеку.",
@@ -569,7 +569,6 @@
     "power_off_player": "Вимкнути живлення",
     "powered_off_players": "Вимкнені плеєри",
     "sync_player_with": "Синхронізація з іншим плеєром",
-    "open_player_settings": "Відкрити налаштування",
     "select_repeat_mode": "Виберіть режим повтору",
     "repeat_mode": {
         "all": "Повторити всю чергу",

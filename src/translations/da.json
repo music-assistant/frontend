@@ -141,9 +141,6 @@
         "group_members": "Enheder i gruppen",
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan opsætte {0}, skal du have konfigureret {1} udbyderen, vil du gøre det nu?",
-        "category": {
-            "options": "Afspillerindstillinger"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -323,6 +320,9 @@
         "restore_defaults_failed": "Kunne ikke gendanne genrestandarder",
         "full_restore_failed": "Kunne ikke udføre fuld gendannelse af genre",
         "error_loading_genres": "Fejl ved indlæsning af genrer",
+        "category": {
+            "options": "Afspillerindstillinger"
+        },
         "player_needs_setup": "Denne afspiller kræver opsætning"
     },
     "show_info": "Vis info",
@@ -391,7 +391,8 @@
         "select_all": "Vælg alle elementer",
         "hide_empty_genres": "Skjul tomme genrer",
         "show_empty_genres": "Vis tomme genrer",
-        "filter_genre": "Filtrer efter genre"
+        "filter_genre": "Filtrer efter genre",
+        "select_provider": "Vælg udbyder"
     },
     "topresult": "Bedste resultat",
     "track": "Sang",
@@ -439,7 +440,6 @@
     "power_off_player": "Sluk",
     "powered_off_players": "Slukkede afspillere",
     "sync_player_with": "Synkroniser med en anden spiller",
-    "open_player_settings": "Åbn indstillinger",
     "select_repeat_mode": "Vælg gentagelsestilstand",
     "repeat_mode": {
         "all": "Gentag hele køen",
@@ -583,5 +583,46 @@
     "playlist_mix_allowed": "Disse medietyper kan blandes.",
     "playlist_mix_not_allowed": "Denne udbyder understøtter ikke blanding af medietyper i afspilningslister. Vælg venligst, hvilken medietype du ønsker at oprette en afspilningsliste for:",
     "playlist_create_provider_error": "Kan ikke få fat i udbyder.",
-    "playlist_create_no_type_selected": "Ingen medietype valgt"
+    "playlist_create_no_type_selected": "Ingen medietype valgt",
+    "smart_playlist": {
+        "match_all": "alle",
+        "match_any": "enhver",
+        "match_following": "af følgende regler",
+        "no_filters": "Ingen filtre endnu. Tilføj et for at begrænse resultatet.",
+        "no_rules": "Ingen regler endnu. Tilføj en for at begynde at matche numre.",
+        "no_rules_desc": "Numre udvælges tilfældigt fra hele dit bibliotek. Tilføj en regel for at begrænse udvalget.",
+        "no_rules_title": "Alle bibliotekets numre",
+        "op_between": "mellem",
+        "picker_empty_no_match": "Ingen {label} matcher din søgning.",
+        "picker_empty_remote": "Skriv for at søge efter en {label}.",
+        "picker_empty_search": "Skriv mindst 2 tegn for at finde en {label}.",
+        "op_is": "er",
+        "op_is_not": "er ikke",
+        "seed_count_hint": "Op til 50 numre fra din streamingudbyder, opdateres ved hver afspilning.",
+        "seed_filters_hint": "Filtre er kun efter bedste evne. Nogle musikudbydere leverer ikke de nødvendige metadata til at anvende filtre.",
+        "seed_heading": "Opdag musik, der ligner følgende numre, kunstnere, album eller playlister",
+        "seed_no_provider": "Ingen streamingtjenester understøtter lignende numre",
+        "type_library": "Fra mit bibliotek",
+        "type_library_desc": "Byg ud fra musik, du allerede har i dit bibliotek.",
+        "type_seed": "Opdag",
+        "type_seed_desc": "Opdag musik via dine streamingtjenester.",
+        "add_seed": "Tilføj kilde",
+        "seed_label": "Kilde",
+        "seed_album_pick": "Vælg et album",
+        "seed_full": "Du har nået det maksimale antal kilder",
+        "seed_playlist_pick": "Vælg en playliste",
+        "name_label": "Navn",
+        "name_required": "Indtast et navn",
+        "field_album_type_is": "Album type er",
+        "field_album_type_is_not": "Album type er ikke"
+    },
+    "background_tasks": {
+        "toast": {
+            "log_download_failed": "Ingen opgavelog tilgængelig til at hente."
+        }
+    },
+    "artist_topalbums": "Top albums",
+    "in_library": "I dit bibliotek",
+    "artist_all_albums": "Alle albums",
+    "artist_all_tracks": "Alle numre"
 }

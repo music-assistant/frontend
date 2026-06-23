@@ -143,7 +143,6 @@
         "group_members": "Membros do grupo",
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar o {0}, você precisa ter o provedor {1} configurado. Deseja fazer isso agora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -434,7 +433,6 @@
     "power_off_player": "Desligar",
     "powered_off_players": "Desligar players",
     "sync_player_with": "Sincronizar com outro player",
-    "open_player_settings": "Abrir configurações do player",
     "select_repeat_mode": "Selecione o modo de repetição",
     "repeat_mode": {
         "all": "Repetir fila inteira",

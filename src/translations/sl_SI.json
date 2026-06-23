@@ -141,7 +141,6 @@
         "group_members": "Člani skupine",
         "default": "Privzeto",
         "provider_depends_on_confirm": "Preden lahko nastavite {0}, morate konfigurirati ponudnika {1}. Ali želite to storiti zdaj?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -306,7 +305,6 @@
     "power_off_player": "Izklop",
     "powered_off_players": "Predvajalniki brez napajanja",
     "sync_player_with": "Sinhronizirajte z drugim predvajalnikom",
-    "open_player_settings": "Odprite nastavitve",
     "select_repeat_mode": "Izberite način ponavljanja",
     "repeat_mode": {
         "all": "Ponovi celotno čakalno vrsto",

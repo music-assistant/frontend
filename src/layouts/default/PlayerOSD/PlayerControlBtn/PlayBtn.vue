@@ -42,7 +42,7 @@ import {
   Player,
   PlayerQueue,
 } from "@/plugins/api/interfaces";
-import { Pause, Play, Square } from "lucide-vue-next";
+import { Pause, Play, Square } from "@lucide/vue";
 import { computed, toRef } from "vue";
 
 // properties

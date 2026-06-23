@@ -141,7 +141,6 @@
         "group_members": "Miembros del grupo",
         "default": "predeterminado",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, necesita tener configurado el proveedor {1}, ¿quiere hacerlo ahora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -311,7 +310,6 @@
     "power_off_player": "Apagar",
     "powered_off_players": "Reproductores apagados",
     "sync_player_with": "Sincronizar con otro reproductor",
-    "open_player_settings": "Abrir ajustes del reproductor",
     "select_repeat_mode": "Selecciona el modo de repetición",
     "repeat_mode": {
         "all": "Repetir la cola entera",

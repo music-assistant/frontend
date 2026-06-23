@@ -517,8 +517,8 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
+import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -540,8 +540,8 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
 import Color from "color";
-import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,

@@ -1567,21 +1567,15 @@ export class MusicAssistantApi {
       !this.queues[queueId].crossfade_enabled,
     );
   }
-  public queueCommandDontStopTheMusic(
-    queueId: string,
-    dont_stop_the_music_enabled: boolean,
-  ) {
-    // Configure dont_stop_the_music setting on the the queue.
-    this.playerQueueCommand(queueId, "dont_stop_the_music", {
-      dont_stop_the_music_enabled,
+  public queueCommandAutoplay(queueId: string, autoplay_enabled: boolean) {
+    // Configure autoplay setting on the the queue.
+    this.playerQueueCommand(queueId, "autoplay", {
+      autoplay_enabled,
     });
   }
-  public queueCommandDontStopTheMusicToggle(queueId: string) {
-    // Toggle dont_stop_the_music mode of a queue
-    this.queueCommandDontStopTheMusic(
-      queueId,
-      !this.queues[queueId].dont_stop_the_music_enabled,
-    );
+  public queueCommandAutoplayToggle(queueId: string) {
+    // Toggle autoplay mode of a queue
+    this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
   }
   public queueCommandSetPlaybackSpeed(
     queue_id: string,

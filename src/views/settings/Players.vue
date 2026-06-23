@@ -191,7 +191,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";

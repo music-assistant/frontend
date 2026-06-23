@@ -113,7 +113,7 @@ import { Player, PlayerFeature } from "@/plugins/api/interfaces";
 
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Search, Speaker } from "lucide-vue-next";
+import { Search, Speaker } from "@lucide/vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
