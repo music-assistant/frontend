@@ -5,8 +5,8 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "@lucide/vue";
 import type { Column } from "@tanstack/vue-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {

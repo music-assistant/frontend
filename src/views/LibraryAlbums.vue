@@ -24,7 +24,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Disc3 } from "lucide-vue-next";
+import { Disc3 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({

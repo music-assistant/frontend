@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { Search } from "lucide-vue-next";
+import { Search } from "@lucide/vue";
 
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";

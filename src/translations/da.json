@@ -25,8 +25,6 @@
     "clear_selection": "Ryd valg",
     "close": "Luk",
     "create_playlist": "Opret ny afspilningsliste på {0}",
-    "crossfade_disabled": "Crossfade er deaktiveret",
-    "crossfade_enabled": "Crossfade er aktiveret",
     "dark_mode": "Mørk tilstand",
     "delete_db": "Slet emne fra databasen",
     "details": "Detaljer",
@@ -103,7 +101,6 @@
         "no_providers": "Ingen musikudbydere konfigureret",
         "no_providers_detail": "Start din Music Assistant-oplevelse ved at tilføje dine musikudbydere nedenfor.",
         "not_loaded": "Udbyderen er (endnu) ikke indlæst",
-        "password": "Adgangskode",
         "player_address": "Adresse",
         "player_disabled": "Denne afspiller er deaktiveret",
         "player_id": "Afspiller-ID",
@@ -125,7 +122,6 @@
         "setup_provider": "Opsæt udbyder {0}",
         "sync": "Synkroniser nu",
         "sync_running": "Denne udbyder synkroniseres",
-        "username": "Brugernavn",
         "core_modules": "Generelle moduler",
         "server_info": "Serveroplysninger",
         "server_id": "Server-ID",
@@ -417,8 +413,6 @@
     "item_in_library": "Dette element er tilgængeligt i biblioteket",
     "back": "Tilbage",
     "recently_played": "Nyligt afspillet",
-    "radiobrowser_by_country": "Efter land",
-    "radiobrowser_by_tag": "Efter tag",
     "load_more_items": "Indlæs flere emner...",
     "radio": "Radio",
     "muted": "dæmpet",
@@ -446,7 +440,6 @@
     "power_off_player": "Sluk",
     "powered_off_players": "Slukkede afspillere",
     "sync_player_with": "Synkroniser med en anden spiller",
-    "open_player_settings": "Åbn indstillinger",
     "select_repeat_mode": "Vælg gentagelsestilstand",
     "repeat_mode": {
         "all": "Gentag hele køen",
@@ -630,11 +623,6 @@
     },
     "artist_topalbums": "Top albums",
     "in_library": "I dit bibliotek",
-    "provider": {
-        "lastfm": {
-            "tag_tracks": "Opdag {0} numre"
-        }
-    },
     "artist_all_albums": "Alle albums",
     "artist_all_tracks": "Alle numre"
 }

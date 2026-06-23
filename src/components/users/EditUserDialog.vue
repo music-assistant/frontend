@@ -237,7 +237,7 @@
           :disabled="loading"
           :loading="loading"
         >
-          {{ $t("edit") }}
+          {{ $t("settings.save") }}
         </Button>
       </DialogFooter>
     </DialogContent>

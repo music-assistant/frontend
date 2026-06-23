@@ -95,7 +95,7 @@ import {
   MediaType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { Play } from "lucide-vue-next";
+import { Play } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

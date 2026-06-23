@@ -27,8 +27,6 @@
     "clear_selection": "Selectie wissen",
     "close": "Sluiten",
     "create_playlist": "Maak een nieuwe afspeellijst aan op {0}",
-    "crossfade_disabled": "Crossfade is uitgeschakeld",
-    "crossfade_enabled": "Crossfade is ingeschakeld",
     "dark_mode": "Donkere Modus",
     "delete_db": "Verwijder item in database",
     "details": "Details",
@@ -105,7 +103,6 @@
         "no_providers": "Geen muziekproviders geconfigureerd",
         "no_providers_detail": "Begin je Music Assistant-ervaring door je Muziekproviders hieronder toe te voegen.",
         "not_loaded": "Deze provider is (nog) niet geladen",
-        "password": "Wachtwoord",
         "player_address": "Adres",
         "player_disabled": "Deze speler is uitgeschakeled",
         "player_id": "Speler-ID",
@@ -127,7 +124,6 @@
         "setup_provider": "Provider: {0} instellen",
         "sync": "Nu synchroniseren",
         "sync_running": "Deze provider wordt nu gesynchroniseerd",
-        "username": "Username",
         "core_modules": "Systeemmodule",
         "server_info": "Serverinformatie",
         "server_id": "Server-ID",
@@ -263,7 +259,7 @@
             "presets": {
                 "load": "DSP Preset laden",
                 "empty_warning": "Geen DSP preset beschikbaar",
-                "save": "DSP Preset opslaan",
+                "save": "Preset opslaan",
                 "name": "Presetnaam",
                 "name_placeholder": "Mijn nieuwe preset",
                 "remove_confirm": "Weet je zeker dat je deze DSP preset wilt verwijderen?"
@@ -418,7 +414,8 @@
             "protocol_settings": "Uitvoerprotocol(len)",
             "options": "Speleropties",
             "preferences": "Voorkeuren",
-            "display_settings": "Weergave"
+            "display_settings": "Weergave",
+            "dsp": "DSP"
         },
         "onboarding_subtitle": "Laten we beginnen met het aansluiten van je muziekbronnen en audioapparaten.",
         "onboarding_music_title": "Muziek",
@@ -441,7 +438,7 @@
         "reconfigure": "Opnieuw instellen",
         "fix_now": "Nu oplossen",
         "web_player_enabled": {
-            "label": "Schakel de ingebouwde (Sendspin) Webspeler in.",
+            "label": "Schakel de ingebouwde (Sendspin) Webspeler in",
             "description": "Sta afspelen op dit apparaat\/in deze browser toe met de ingebouwde Sendspin-webspeler."
         },
         "enable_browser_controls": {
@@ -526,8 +523,8 @@
             "title": "Audio-analysedekking",
             "col_provider": "Provider",
             "col_coverage": "Dekking",
-            "col_pending": "In afwachting",
-            "col_stale": "Niet actueel",
+            "col_pending": "In de wacht",
+            "col_stale": "Verouderd",
             "col_version": "Versie",
             "unavailable": "niet beschikbaar",
             "none": "—"
@@ -536,8 +533,20 @@
         "audio_analysis_concurrency": {
             "title": "Gelijktijdige achtergrondanalyse",
             "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams.",
-            "open_settings": "Open Streams-instellingen"
-        }
+            "open_settings": "Streamsinstellingen openen"
+        },
+        "provider_status_auth_required": "Authenticatie vereist",
+        "provider_status_incompatible": "Niet ondersteund op dit systeem",
+        "provider_status_error": "Installatie mislukt",
+        "remove_provider": "Verwijder provider",
+        "remove_provider_confirm": "Weet je zeker dat je deze provider wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "save_failed": "De providerinstellingen konden niet worden opgeslagen.",
+        "retry": "Opnieuw proberen",
+        "abort_setup": "Installatie afbreken",
+        "provider_saved": "Providerinstellingen opgeslagen",
+        "provider_reloading": "Provider wordt opnieuw geladen…",
+        "provider_removed": "Provider verwijderd",
+        "queue_settings": "Wachtrijinstellingen"
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Toon selectieboxen",
@@ -633,8 +642,6 @@
     "item_in_library": "Dit item is beschikbaar in de bibliotheek",
     "back": "Terug",
     "recently_played": "Onlangs afgespeeld",
-    "radiobrowser_by_country": "Per land",
-    "radiobrowser_by_tag": "Op tag",
     "load_more_items": "Meer items laden...",
     "radio": "Radio",
     "muted": "gedempt",
@@ -662,7 +669,6 @@
     "power_off_player": "Speler uitschakelen",
     "powered_off_players": "Uitgeschakelde spelers",
     "sync_player_with": "Synchroniseren met een andere speler",
-    "open_player_settings": "Instellingen openen",
     "select_repeat_mode": "Selecteer de herhaalmodus",
     "repeat_mode": {
         "all": "Herhaal de hele wachtrij",
@@ -671,9 +677,9 @@
     },
     "shuffle_disable": "Shuffle uitschakelen",
     "shuffle_enable": "Shuffle inschakelen",
-    "dont_stop_the_music_enable": "Schakel 'Don't Stop The Music!' in",
-    "dont_stop_the_music_disable": "Schakel 'Don't Stop The Music!' uit",
-    "open_dsp_settings": "Open DSP-instellingen",
+    "dont_stop_the_music_enable": "Schakel Autoplay in",
+    "dont_stop_the_music_disable": "Schakel Autoplay uit",
+    "open_dsp_settings": "DSP-instellingen openen",
     "audiobook": "Luisterboek",
     "audiobooks": "Luisterboeken",
     "chapter": "Hoofdstuk",
@@ -747,9 +753,6 @@
     "homescreen_edit_enable": "Startscherm bewerken",
     "homescreen_edit_disable": "Verlaat bewerkingsmodus",
     "lyrics_will_appear_soon": "De songtekst verschijnt zodra het nummer begint...",
-    "radiobrowser_by_votes": "Op stemmen",
-    "radiobrowser_by_clicks": "Op klikken",
-    "radiobrowser_by_language": "Op taal",
     "optional": "Optioneel",
     "created": "Aangemaakt",
     "last_used": "Laatst gebruikt",
@@ -909,40 +912,6 @@
         "qr_invalid": "Ongeldige QR-code. Scan een Music Assistant Externe ID QR-code.",
         "qr_camera_error": "Kon camera niet benaderen. Controleer de machtigingen."
     },
-    "remote": {
-        "connect_title": "Maak verbinding met je server",
-        "subtitle": "Maak vanaf overal verbinding met je thuisserver",
-        "subtitle_login": "Log in om toegang te krijgen tot je muziek",
-        "remote_id": "Externe ID",
-        "remote_id_placeholder": "bijv., MA-X7K9-P2M4",
-        "remote_id_hint": "Je vindt jouw Externe ID in de serverinstellingen van Music Assistant onder \"Externe Toegang\".",
-        "recent_connections": "Recente verbindingen",
-        "connect": "Verbinden",
-        "connect_locally": "Maak in plaats daarvan verbinding met de lokale server",
-        "login_title": "Inloggen bij jouw server",
-        "username": "Gebruikersnaam",
-        "password": "Wachtwoord",
-        "remember_me": "Onthoud mij op dit apparaat",
-        "sign_in": "Inloggen",
-        "back": "Terug",
-        "connecting": "Verbinden...",
-        "status_connecting_signaling": "Verbinden met de signaleringsserver...",
-        "status_finding_server": "Op zoek naar jouw server...",
-        "status_establishing": "Beveiligde verbinding tot stand brengen...",
-        "cancel": "Annuleren",
-        "connection_failed": "Verbinding mislukt",
-        "retry": "Probeer het opnieuw",
-        "error_unknown": "Er is een onbekende fout opgetreden",
-        "error_login_failed": "Inloggen mislukt. Controleer je inloggegevens.",
-        "error_server_not_found": "Server niet gevonden. Zorg ervoor dat je Music Assistant server actief is en dat Externe Toegang is ingeschakeld.",
-        "login_with_ha": "Inloggen met Home Assistant",
-        "or": "of",
-        "subtitle_oauth": "Voltooi het inlogproces in je browser",
-        "oauth_waiting_title": "Voltooi het inlogproces",
-        "oauth_waiting_message": "Er is een browservenster geopend. Meld je eerst aan bij Home Assistant en keer vervolgens terug naar deze pagina.",
-        "oauth_waiting_hint": "Wachten op authenticatie...",
-        "error_oauth_failed": "Authenticeren met Home Assistant is mislukt."
-    },
     "yes": "Ja",
     "no": "Nee",
     "uri_copied": "URI gekopieerd naar het klembord",
@@ -1023,34 +992,7 @@
     "player_options": {
         "open": "Speleropties openen",
         "settable": "Instelbare speleropties voor de speler {0}",
-        "read_only": "Alleen-lezen speleropties voor speler {0}",
-        "adaptive_drc": "Adaptieve DRC",
-        "bass": "Bas",
-        "bass_extension": "Basversterking",
-        "clear_voice": "Duidelijke stem",
-        "dts_dialogue_control": "DTS-dialoogcontrole",
-        "dialogue_level": "Dialoogniveau",
-        "dialogue_lift": "Dialooglift",
-        "dimmer": "Dimmer",
-        "enhancer": "Verbeteraar",
-        "equalizer_high": "Equalizer hoog",
-        "equalizer_low": "Equalizer laag",
-        "equalizer_mid": "Equalizer midden",
-        "equalizer_mode": "Equalizer-modus",
-        "extra_bass": "Extra bas",
-        "link_audio_delay": "Audiovertraging koppelen",
-        "link_control": "Linkcontrole",
-        "link_audio_quality": "Link audiokwaliteit",
-        "party_mode": "Partymodus",
-        "pure_direct": "Zuiver direct",
-        "sleep": "Slaaptimer",
-        "speaker_a": "Speaker A",
-        "speaker_b": "Speaker B",
-        "subwoofer_volume": "Subwoofervolume",
-        "surround_3d": "Surround 3D",
-        "surround_decoder_type": "Surround-decodertype",
-        "tone_control_mode": "Toonregelingsmodus",
-        "treble": "Treble"
+        "read_only": "Alleen-lezen speleropties voor speler {0}"
     },
     "select_sound_mode": "Selecteer geluidsmodus",
     "refresh": "Vernieuwen",
@@ -1130,7 +1072,7 @@
     "background_tasks": {
         "title": "Achtergrondtaken",
         "description": "Monitor geplande taken en recente, langlopende acties.",
-        "total": "Totaal {0} achtergrondtaken",
+        "total": "Totaal {0} achtergrondtaak\/-taken",
         "clear_finished": "Wis voltooide",
         "empty_title": "Geen achtergrondtaken",
         "empty_description": "Geplande taken en langlopende acties worden hier weergegeven.",
@@ -1173,7 +1115,7 @@
         "open": "Achtergrondtaken openen",
         "status": {
             "idle": "Inactief",
-            "pending": "In afwachting",
+            "pending": "In de wacht",
             "running": "Aan het uitvoeren",
             "success": "Gelukt",
             "partial_success": "Gedeeltelijk gelukt",
@@ -1244,8 +1186,6 @@
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende providers verdwenen. Ga terug of zoek naar iets nieuws.",
-    "radiobrowser_by_popularity": "Op populariteit",
-    "radiobrowser_by_category": "Op categorie",
     "restore_genre": "Herstellen",
     "genre_name": "Genrenaam",
     "export_playlist": "Exporteer afspeellijst",
@@ -1265,7 +1205,7 @@
     "change_playback_speed": "Afspeelsnelheid wijzigen",
     "shortcut": {
         "add_to": "Toevoegen aan snelkoppelingen",
-        "remove_from": "Verwijderen uit snelkoppelingen"
+        "remove_from": "Snelkoppeling verwijderen"
     },
     "smart_playlist": {
         "create": "Maak Slimme afspeellijst",
@@ -1354,32 +1294,27 @@
     "now_playing": "Speelt nu",
     "artist_topalbums": "Topalbums",
     "in_library": "In je bibliotheek",
-    "provider": {
-        "bbc_sounds": {
-            "listen_live": "Luister Live",
-            "schedule_programmes": "Agenda en Programma's",
-            "today": "Vandaag",
-            "yesterday": "Gisteren"
-        },
-        "deezer": {
-            "genre_flows": "Deezer Genre Flows",
-            "mood_flows": "Deezer Stemming Flows",
-            "radios": "Deezer Radio's"
-        },
-        "lastfm": {
-            "country_top_artists": "Topartiesten voor {0}",
-            "country_top_tracks": "Topnummers voor {0}",
-            "tag_albums": "Ontdek {0} Albums",
-            "tag_artists": "Ontdek {0} Artiesten",
-            "tag_tracks": "Ontdek {0} Nummers"
-        },
-        "opensubsonic": {
-            "starred_items": "Favoriete Items"
-        }
-    },
     "artist_no_library_albums": "Je hebt geen albums van deze artiest in je bibliotheek.",
     "artist_no_library_tracks": "Je hebt geen nummers van deze artiest in je bibliotheek.",
     "artist_all_albums": "Alle albums",
     "artist_all_tracks": "Alle nummers",
-    "on_provider": "Op {0}"
+    "on_provider": "Op {0}",
+    "open_queue_settings": "Wachtrijinstellingen openen",
+    "crossfade_enable": "Crossfade inschakelen",
+    "crossfade_disable": "Crossfade uitschakelen",
+    "crossfade": "Crossfade",
+    "crossfade_explanation": "De overgang van het huidige nummer naar het volgende nummer verloopt soepel, waardoor stille pauzes tussen de nummers worden voorkomen.",
+    "crossfade_active": "Crossfade is ingeschakeld.",
+    "crossfade_active_with_smart": "Crossfade is ingeschakeld met smart fades",
+    "crossfade_smart_active": "De timing van de fade wordt automatisch aangepast aan elk nummer.",
+    "radio_explanation": "De radio maakt van de door jou geselecteerde media een eindeloze, dynamische mix, waarbij continu vergelijkbare nummers worden toegevoegd om de muziek gaande te houden.",
+    "radio_active": "De radio is actief, gebaseerd op:",
+    "radio_not_active": "De radio staat uit, je afspeellijst speelt precies de selectie af die je hebt gekozen.",
+    "auto_play": "Autoplay",
+    "auto_play_explanation": "Zorgt ervoor dat de muziek niet stopt. Als je afspeellijst afloopt, worden er automatisch vergelijkbare nummers toegevoegd op basis van wat je hebt beluisterd.",
+    "auto_play_active": "Autoplay is ingeschakeld.",
+    "auto_play_radio_active": "Dit is niet nodig wanneer de radio modus actief is, je wachtrij loopt vanzelf door.",
+    "lyrics": "Songtekst",
+    "lyrics_unavailable_song": "Er is (nog) geen songtekst beschikbaar voor dit nummer.",
+    "lyrics_unavailable_content": "Er is geen songtekst beschikbaar voor deze inhoud."
 }

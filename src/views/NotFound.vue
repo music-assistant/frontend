@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Compass } from "lucide-vue-next";
+import { ArrowLeft, Compass } from "@lucide/vue";
 import { useRouter } from "vue-router";
 
 defineOptions({ name: "NotFound" });

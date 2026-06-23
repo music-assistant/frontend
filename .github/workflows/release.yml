@@ -41,7 +41,7 @@ jobs:
       version: ${{ inputs.version }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create and push tag
         run: |
@@ -54,7 +54,7 @@ jobs:
 
       - name: Generate release notes with Release Drafter
         id: release_drafter
-        uses: release-drafter/release-drafter@v7.3.1
+        uses: release-drafter/release-drafter@v7.4.0
         with:
           config-name: release-drafter.yml
           version: ${{ inputs.version }}
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.version }}
 
@@ -79,15 +79,19 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
       - name: Set up Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+          cache: pnpm
 
       - name: Install dependencies
         run: |
-          yarn install
+          pnpm install
           python3 -m pip install build tomli tomli-w
 
       - name: Set Python project version
@@ -106,7 +110,7 @@ jobs:
 
       - name: Build package
         run: |
-          yarn build
+          pnpm build
           rm -rf dist music_assistant_frontend.egg-info
           python3 -m build
 
@@ -157,7 +161,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}
 
       - name: Checkout server repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: music-assistant/server
           token: ${{ secrets.PRIVILEGED_GITHUB_TOKEN }}

@@ -511,6 +511,10 @@ export interface ConfigValueOption {
   // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
+  // disabled: when true the option is shown but not selectable (currently unavailable)
+  disabled?: boolean;
+  // disabled_reason: optional explanation of why the option is disabled
+  disabled_reason?: string;
 }
 
 export interface ConfigEntry {
@@ -578,7 +582,10 @@ export interface ProviderConfig extends Config {
   name?: string;
   // default_name: default name to use when there is name available
   default_name?: string;
-  last_error?: string;
+  // last_error: structured error if the provider could not be setup with this config
+  last_error?: ProviderError;
+  // status: load/lifecycle status, derived server-side
+  status?: ProviderStatus;
 }
 
 export interface PlayerConfig extends Config {
@@ -598,6 +605,11 @@ export interface CoreConfig extends Config {
   domain: string;
   manifest: ProviderManifest; // copied here for the UI only
   last_error?: string;
+}
+
+export interface PlayerQueueConfig extends Config {
+  // PlayerQueue Configuration.
+  queue_id: string;
 }
 
 //// media_items
@@ -671,7 +683,6 @@ interface _MediaItemBase {
   uri: string;
   external_ids?: Array<[ExternalID, string]>;
   is_playable: boolean; // if the item is playable (can be used in play_media command)
-  translation_key?: string; // an optional translation key identifier
   media_type: MediaType;
 }
 
@@ -871,8 +882,12 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  dont_stop_the_music_enabled: boolean;
+  autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
+  crossfade_enabled: boolean;
+  // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
+  // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
+  smart_fades_active: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -966,7 +981,6 @@ export interface PlayerSoundMode {
   id: string;
   name: string;
   passive: boolean;
-  translation_key?: string;
 }
 
 export interface PlayerOptionEntry {
@@ -983,7 +997,6 @@ export interface PlayerOption {
   type: PlayerOptionType;
 
   translation_key?: string;
-  translation_params?: string[];
 
   value: PlayerOptionValueType;
   read_only: boolean;
@@ -1083,6 +1096,23 @@ export enum ProviderStage {
   DEPRECATED = "deprecated",
 }
 
+export enum ProviderStatus {
+  LOADED = "loaded",
+  LOADING = "loading",
+  DISABLED = "disabled",
+  AUTH_REQUIRED = "auth_required",
+  INCOMPATIBLE = "incompatible",
+  ERROR = "error",
+}
+
+export interface ProviderError {
+  // Structured error describing why a provider failed to load. The server
+  // localizes `message` (translation key/args are stripped server-side), so the
+  // client renders it directly.
+  error_code: number;
+  message: string;
+}
+
 export interface ProviderInstance {
   // Provider instance details when a provider is serialized over the api.
   type: ProviderType;
@@ -1137,8 +1167,6 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
-  translation_key?: string;
-  translation_args: unknown[];
   logs: string[];
   schedule?: TaskSchedule;
   last_run?: string;

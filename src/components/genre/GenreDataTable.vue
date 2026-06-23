@@ -22,6 +22,14 @@ export interface ExcludedGenreRow {
 </script>
 
 <script setup lang="ts">
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  RefreshCw,
+  Search,
+} from "@lucide/vue";
 import type {
   Column,
   ColumnDef,
@@ -37,14 +45,6 @@ import {
   getSortedRowModel,
   useVueTable,
 } from "@tanstack/vue-table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  RefreshCw,
-  Search,
-} from "lucide-vue-next";
 import { h, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

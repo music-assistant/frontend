@@ -189,7 +189,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { SquareArrowRightEnter } from "lucide-vue-next";
+import { SquareArrowRightEnter } from "@lucide/vue";
 import {
   computed,
   onBeforeUnmount,

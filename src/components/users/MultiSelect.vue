@@ -100,7 +100,7 @@ import {
   TagsInputItemDelete,
 } from "@/components/ui/tags-input";
 import { cn } from "@/lib/utils";
-import { CheckIcon, ChevronsUpDown, X } from "lucide-vue-next";
+import { CheckIcon, ChevronsUpDown, X } from "@lucide/vue";
 import { TagsInputRoot } from "reka-ui";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";

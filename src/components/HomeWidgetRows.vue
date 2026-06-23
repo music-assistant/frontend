@@ -208,7 +208,6 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useDebounceFn } from "@vueuse/core";
 import {
   ChevronDown,
   ChevronLeft,
@@ -217,7 +216,8 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-} from "lucide-vue-next";
+} from "@lucide/vue";
+import { useDebounceFn } from "@vueuse/core";
 import {
   computed,
   nextTick,
