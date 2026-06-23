@@ -177,6 +177,8 @@
             v-if="editMode"
             variant="ghost"
             size="icon-sm"
+            :title="genresEnabled ? $t('disable') : $t('enable')"
+            :aria-label="genresEnabled ? $t('disable') : $t('enable')"
             @click="toggleGenres"
           >
             <Eye v-if="genresEnabled" />
