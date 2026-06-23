@@ -94,7 +94,7 @@ import { getMediaItemImageUrl } from "@/helpers/utils";
 import type { Artist, Track } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { CircleCheck, ListPlus, Music, Rocket } from "lucide-vue-next";
+import { CircleCheck, ListPlus, Music, Rocket } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps<{

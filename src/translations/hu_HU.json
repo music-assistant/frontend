@@ -143,11 +143,6 @@
         "group_members": "Csoporttagok",
         "default": "alapértelmezett",
         "provider_depends_on_confirm": "A(z) {0} beállításához konfigurálnia kell a(z) {1} szolgáltatót. Szeretné ezt most megtenni?",
-        "category": {
-            "web_player": "Webes lejátszó",
-            "protocol_settings": "Kimeneti protokoll(ok)",
-            "options": "Lejátszó beállítások"
-        },
         "theme": {
             "label": "Téma",
             "options": {
@@ -414,6 +409,11 @@
         "no_group_providers": "Jelenleg nincs olyan szolgáltató, amely támogatná csoportok létrehozását",
         "provider_codeowners": "Ezt a szolgáltatót közreműködő\/karbantartó:",
         "provider_credits": "Lehetővé tette:",
+        "category": {
+            "web_player": "Webes lejátszó",
+            "protocol_settings": "Kimeneti protokoll(ok)",
+            "options": "Lejátszó beállítások"
+        },
         "onboarding_subtitle": "Kezdjük azzal, hogy csatlakoztatjuk zenei forrásait és audioeszközeit.",
         "onboarding_music_title": "Zene",
         "onboarding_music_desc": "Csatlakoztassa streaming szolgáltatásait, mint a Spotify, Tidal, vagy helyi zenekönyvtárát.",
@@ -636,7 +636,6 @@
     "power_off_player": "Kikapcsolás",
     "powered_off_players": "Kikapcsolt lejátszók",
     "sync_player_with": "Szinkronizálás másik lejátszóval",
-    "open_player_settings": "Beállítások megnyitása",
     "select_repeat_mode": "Ismétlési mód kiválasztása",
     "repeat_mode": {
         "all": "Teljes lejátszási sor ismétlése",
@@ -960,34 +959,7 @@
     "player_options": {
         "open": "Lejátszó beállítások megnyitása",
         "settable": "Beállítható lejátszó beállítások a(z) {0} lejátszóhoz",
-        "read_only": "Csak olvasható lejátszó beállítások a(z) {0} lejátszóhoz",
-        "adaptive_drc": "Adaptív DRC",
-        "bass": "Mély",
-        "bass_extension": "Mély kiterjesztés",
-        "clear_voice": "Tiszta hang",
-        "dts_dialogue_control": "DTS párbeszéd szabályozás",
-        "dialogue_level": "Párbeszéd szint",
-        "dialogue_lift": "Párbeszéd kiemelés",
-        "dimmer": "Fényerő szabályozó",
-        "enhancer": "Hangjavító",
-        "equalizer_high": "Equalizer magas",
-        "equalizer_low": "Equalizer mély",
-        "equalizer_mid": "Equalizer közép",
-        "equalizer_mode": "Equalizer mód",
-        "extra_bass": "Extra mély",
-        "link_audio_delay": "Kapcsolat hang késleltetés",
-        "link_control": "Kapcsolat vezérlés",
-        "link_audio_quality": "Kapcsolat hangminőség",
-        "party_mode": "Party mód",
-        "pure_direct": "Közvetlen üzemmód",
-        "sleep": "Alvás időzítő",
-        "speaker_a": "A hangszóró",
-        "speaker_b": "B hangszóró",
-        "subwoofer_volume": "Mélysugárzó hangerő",
-        "surround_3d": "3D térhatás",
-        "surround_decoder_type": "Térhatás dekóder típus",
-        "tone_control_mode": "Hangszín szabályozás mód",
-        "treble": "Magas"
+        "read_only": "Csak olvasható lejátszó beállítások a(z) {0} lejátszóhoz"
     },
     "select_sound_mode": "Hangmód kiválasztása",
     "refresh": "Frissítés",

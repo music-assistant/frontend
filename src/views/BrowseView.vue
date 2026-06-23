@@ -48,10 +48,10 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
 import api from "@/plugins/api";
+import { MediaItemType, MediaType } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
-import { Folder } from "lucide-vue-next";
+import { Folder } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

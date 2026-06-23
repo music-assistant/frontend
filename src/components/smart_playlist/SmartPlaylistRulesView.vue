@@ -107,9 +107,9 @@
 import { Badge } from "@/components/ui/badge";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { fieldIcon } from "./fieldIcon";
-import { Ban, Library, Sparkles, Timer } from "lucide-vue-next";
+import { Ban, Library, Sparkles, Timer } from "@lucide/vue";
 import { computed, type Component } from "vue";
+import { fieldIcon } from "./fieldIcon";
 
 interface RuleViewRow {
   key: string;

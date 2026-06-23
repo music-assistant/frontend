@@ -122,9 +122,9 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { fieldIcon } from "./fieldIcon";
-import { Info, Plus } from "lucide-vue-next";
+import { Info, Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
+import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleRow from "./SmartPlaylistRuleRow.vue";
 
 defineProps<{

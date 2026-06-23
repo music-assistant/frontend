@@ -26,7 +26,7 @@
 // import { useSidebar } from "@/components/ui/sidebar";
 // import { toggleHAMenu } from "@/plugins/homeassistant";
 // import { store } from "@/plugins/store";
-// import { ArrowLeftToLine } from "lucide-vue-next";
+// import { ArrowLeftToLine } from "@lucide/vue";
 import NavUser from "./NavUser.vue";
 
 // const { isMobile, setOpenMobile } = useSidebar();

@@ -40,7 +40,7 @@ import { copyToClipboard } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AlertCircle, Check } from "lucide-vue-next";
+import { AlertCircle, Check } from "@lucide/vue";
 import QRCode from "qrcode";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 

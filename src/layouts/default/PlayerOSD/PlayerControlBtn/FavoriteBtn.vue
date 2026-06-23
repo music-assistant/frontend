@@ -1,6 +1,5 @@
 <template>
   <Icon
-    v-if="isVisible"
     v-bind="props.icon"
     :disabled="disabled || !item"
     :icon="item?.favorite ? 'mdi-heart' : 'mdi-heart-outline'"
@@ -25,7 +24,6 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   item: undefined,
-  isVisible: true,
   icon: undefined,
   disabled: false,
 });

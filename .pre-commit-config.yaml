@@ -22,8 +22,8 @@ repos:
   - repo: local
     hooks:
       - id: lint
-        name: yarn lint
-        entry: yarn lint
+        name: pnpm lint
+        entry: pnpm lint
         language: system
         files: ^src/
         exclude_types: [csv, json, css, scss]

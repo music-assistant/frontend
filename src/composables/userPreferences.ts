@@ -1,5 +1,6 @@
 import { computed, ComputedRef } from "vue";
 import { api } from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 export interface ItemsListingPreferences {
@@ -12,6 +13,7 @@ export interface ItemsListingPreferences {
   hideFullyPlayedFilter?: boolean;
   albumType?: string[];
   providerFilter?: string[];
+  genreContentTypeFilter?: MediaType;
   expand?: boolean;
   search?: string;
 }
