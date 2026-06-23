@@ -48,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -63,7 +62,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-vue-next";
+import { HelpCircle } from "@lucide/vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   modelValue: number | undefined;

@@ -113,7 +113,7 @@ import { Player, PlayerFeature } from "@/plugins/api/interfaces";
 
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Search, Speaker } from "lucide-vue-next";
+import { Search, Speaker } from "@lucide/vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const showSubPlayers = ref(false);
@@ -189,7 +189,9 @@ const preferredPlayers = computed(() => {
 watch(
   () => store.showPlayersMenu,
   (newVal) => {
-    if (!newVal) {
+    if (newVal) {
+      showSubPlayers.value = true;
+    } else {
       // Save preferences and reset state when menu closes
       playerSearchQuery.value = "";
       if (store.activePlayerId) {

@@ -58,17 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
+import computeElapsedTime from "@/helpers/elapsed";
+import api from "@/plugins/api";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Rocket, UserRound } from "lucide-vue-next";
 import { store } from "@/plugins/store";
-import api from "@/plugins/api";
-import computeElapsedTime from "@/helpers/elapsed";
+import { Rocket, UserRound } from "@lucide/vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 const { config: partyConfig } = usePartyConfig();
 

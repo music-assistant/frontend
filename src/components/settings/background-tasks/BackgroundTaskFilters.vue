@@ -15,7 +15,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Search } from "lucide-vue-next";
+import { Search } from "@lucide/vue";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 

@@ -315,7 +315,6 @@ import {
   Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import Color from "color";
 import {
   Maximize2,
   Minimize2,
@@ -324,10 +323,11 @@ import {
   Speaker,
   WifiIcon,
   WifiOff,
-} from "lucide-vue-next";
+} from "@lucide/vue";
+import { useColorMode } from "@vueuse/core";
+import Color from "color";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useColorMode } from "@vueuse/core";
 
 const router = useRouter();
 const { config: partyConfig, fetchConfig } = usePartyConfig();

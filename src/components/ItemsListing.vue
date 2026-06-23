@@ -226,6 +226,10 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -233,10 +237,6 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
-import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
-import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
-import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
@@ -261,9 +261,9 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -1224,6 +1224,7 @@ const menuItems = computed(() => {
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
+      overflowAllowed: !["playlisttracks"].includes(props.itemtype),
     });
   }
 

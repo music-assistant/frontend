@@ -68,11 +68,11 @@
 </template>
 
 <script setup lang="ts">
+import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Compass, Menu, Search, Speaker } from "lucide-vue-next";
+import { Compass, Menu, Search, Speaker } from "@lucide/vue";
 import { useRoute, useRouter } from "vue-router";
-import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 
 const router = useRouter();
 const route = useRoute();

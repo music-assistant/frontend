@@ -62,7 +62,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { AuthToken } from "@/plugins/api/interfaces";
-import { Monitor, MonitorOff, Trash2 } from "lucide-vue-next";
+import { Monitor, MonitorOff, Trash2 } from "@lucide/vue";
 
 defineProps<{
   tokens: AuthToken[];

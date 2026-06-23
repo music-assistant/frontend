@@ -56,7 +56,7 @@ import { api } from "@/plugins/api";
 import { ProviderFeature } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ChevronRight, Users } from "lucide-vue-next";
+import { ChevronRight, Users } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 

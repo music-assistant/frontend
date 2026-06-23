@@ -82,7 +82,7 @@ import { api } from "@/plugins/api";
 import type { Genre, MediaItemType } from "@/plugins/api/interfaces";
 import { eventbus, type LinkGenreDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { Check, ChevronsUpDown } from "lucide-vue-next";
+import { Check, ChevronsUpDown } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
