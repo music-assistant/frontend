@@ -84,23 +84,37 @@ export default defineConfig({
     outDir: "./music_assistant_frontend",
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("vuetify")) return "vuetify";
-            if (id.includes("vue-i18n") || id.includes("@intlify"))
-              return "vue-i18n";
-            if (id.includes("vue-router")) return "vue-router";
-            if (id.includes("@vueuse")) return "vueuse";
-            if (id.includes("reka-ui")) return "reka-ui";
-            if (id.includes("swiper")) return "swiper";
-            if (id.includes("lucide")) return "lucide";
-            if (id.includes("colorthief") || id.includes("color/"))
-              return "color";
-            if (id.includes("@mdi/js") || id.includes("material-design-icons"))
-              return "mdi";
-            if (id.includes("marked")) return "marked";
-            if (id.includes("qrcode")) return "qrcode";
-          }
+        // Vite 8 / Rolldown removed the object form of `manualChunks` and
+        // deprecated the function form. The function-based `name` of a
+        // `codeSplitting` group has the same `(id) => string | null`
+        // signature, so the chunking logic is unchanged.
+        codeSplitting: {
+          groups: [
+            {
+              name(id) {
+                if (id.includes("node_modules")) {
+                  if (id.includes("vuetify")) return "vuetify";
+                  if (id.includes("vue-i18n") || id.includes("@intlify"))
+                    return "vue-i18n";
+                  if (id.includes("vue-router")) return "vue-router";
+                  if (id.includes("@vueuse")) return "vueuse";
+                  if (id.includes("reka-ui")) return "reka-ui";
+                  if (id.includes("swiper")) return "swiper";
+                  if (id.includes("lucide")) return "lucide";
+                  if (id.includes("colorthief") || id.includes("color/"))
+                    return "color";
+                  if (
+                    id.includes("@mdi/js") ||
+                    id.includes("material-design-icons")
+                  )
+                    return "mdi";
+                  if (id.includes("marked")) return "marked";
+                  if (id.includes("qrcode")) return "qrcode";
+                }
+                return null;
+              },
+            },
+          ],
         },
       },
     },
