@@ -694,7 +694,7 @@
     "radio_active": "Radio is active, based on:",
     "radio_not_active": "Radio is off, your queue is playing exactly the selection you chose.",
     "autoplay": "Autoplay",
-    "autoplay_explanation": "Keep the music going. When your queue runs out, similar tracks are added automatically based on what you have been listening to.",
+    "autoplay_explanation": "When your queue runs out, additional tracks are added automatically so the music will not stop.",
     "autoplay_active": "Autoplay is on.",
     "autoplay_radio_active": "Not needed while radio is active, your queue already keeps going on its own.",
     "open_dsp_settings": "Open DSP settings",
