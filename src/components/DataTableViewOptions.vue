@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const props = defineProps<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   table: Table<any>;
 }>();
 

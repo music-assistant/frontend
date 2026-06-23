@@ -624,6 +624,7 @@ import { store } from "@/plugins/store";
 import {
   AudioFormat,
   ContentType,
+  DSPDetails,
   DSPFilter,
   DSPFilterType,
   DSPState,
@@ -678,9 +679,10 @@ const loudness = computed(() => {
 // Groups players with identical DSPDetails (and therefore output format) together
 const dsp_grouped = computed(() => {
   if (!streamDetails.value || !streamDetails.value.dsp) return [];
-  let grouped = [];
+  const grouped: { dsp: DSPDetails; player_id: string; players: string[] }[] =
+    [];
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
-    let identical_dsp = grouped.find(
+    const identical_dsp = grouped.find(
       (g) => JSON.stringify(g.dsp) === JSON.stringify(dsp),
     );
     if (identical_dsp) {
@@ -776,8 +778,8 @@ const inputQualityTier = computed(() => {
     return QualityTier.UNKNOWN;
 
   // Prefer making this decision based on codec type
-  let content_type = sd.audio_format.content_type;
-  let codec_type = sd.audio_format.codec_type;
+  const content_type = sd.audio_format.content_type;
+  const codec_type = sd.audio_format.codec_type;
 
   if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;

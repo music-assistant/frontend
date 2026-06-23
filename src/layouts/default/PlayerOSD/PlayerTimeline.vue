@@ -249,7 +249,6 @@ const computedElapsedTime = computed(() => {
   if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
   else stopTick();
   if (isDragging.value) {
-    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
     tempTime.value = curTimeValue.value;
     return curTimeValue.value;
   }

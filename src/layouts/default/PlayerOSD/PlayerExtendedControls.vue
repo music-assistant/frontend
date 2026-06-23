@@ -36,7 +36,6 @@ import PlayerVolume from "./PlayerVolume.vue";
 
 // properties
 export interface Props {
-  // eslint-disable-next-line vue/require-default-prop
   queue?: {
     isVisible?: boolean;
     showQueueDialog?: boolean;

@@ -228,7 +228,7 @@ describe("useSmartPlaylistSeedItems", () => {
       };
       useSmartPlaylistSeedItems();
       const trackSearchFn = (
-        mockSetupDebouncedSearch.mock.calls.at(-1)?.[0] as SearchFnArg
+        mockSetupDebouncedSearch.mock.calls.at(-1)![0] as SearchFnArg
       ).searchFn;
 
       const results = await trackSearchFn("anything");
