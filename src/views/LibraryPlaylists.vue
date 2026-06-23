@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    ref="listingRef"
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"
@@ -23,6 +24,7 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import api from "@/plugins/api";
 import {
@@ -33,9 +35,9 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { toast } from "vue-sonner";
-import { ListMusic } from "lucide-vue-next";
+import { ListMusic } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { toast } from "vue-sonner";
 
 defineOptions({
   name: "Playlists",
@@ -44,6 +46,7 @@ defineOptions({
 const updateAvailable = ref(false);
 const total = ref(store.libraryPlaylistsCount);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
+const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
 const sortKeys = [
   "name",
@@ -115,6 +118,21 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
+  // Smart Playlist option inside the "Create Playlist" submenu
+  if (
+    Object.values(api.providers).some(
+      (p) => p.available && p.domain === SMART_PLAYLIST_PROVIDER_DOMAIN,
+    )
+  ) {
+    playListCreateItems.push({
+      label: "smart_playlist.create",
+      action: () => {
+        eventbus.emit("createSmartPlaylist", {});
+      },
+      icon: "mdi-playlist-star",
+      overflowAllowed: true,
+    });
+  }
   if (playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
@@ -140,8 +158,13 @@ onMounted(() => {
       EventType.MEDIA_ITEM_DELETED,
     ],
     (evt: EventMessage) => {
-      // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith("library://playlist")) {
+      if (!evt.object_id?.startsWith("library://playlist")) return;
+      if (
+        evt.event === EventType.MEDIA_ITEM_ADDED ||
+        evt.event === EventType.MEDIA_ITEM_DELETED
+      ) {
+        listingRef.value?.reload?.();
+      } else {
         updateAvailable.value = true;
       }
     },

@@ -108,9 +108,9 @@ bc.onmessage = (event) => {
   }
 };
 
-// Called on close
-window.addEventListener("unload", function () {
-  // Stop listening to any events, since we will soon close.
+// Called on close — skip if page is entering bfcache (may be restored)
+window.addEventListener("pagehide", function (event) {
+  if (event.persisted) return;
   bc.onmessage = null;
   if (isPlaybackMode(webPlayer.tabMode) && webPlayer.player_id) {
     bc.postMessage(BC_MSG.CONTROL_AVAILABLE);
@@ -270,11 +270,6 @@ export const webPlayer = reactive({
   interacted: false,
   // Timestamp from when the last update was sent
   lastUpdate: 0,
-  // Callback for sync delay changes, registered by SendspinPlayer
-  onSyncDelayChange: null as ((delay: number) => void) | null,
-  setSyncDelay(delay: number) {
-    this.onSyncDelayChange?.(delay);
-  },
   async setMode(mode: WebPlayerMode) {
     this.mode = mode;
     await this.setTabMode(mode);
@@ -344,40 +339,22 @@ export const webPlayer = reactive({
     this.tabMode = mode;
 
     if (this.player_id) {
+      // The sendspin session follows the main API connection: tear the web player
+      // down when the server connection is lost, and let App.vue re-apply the mode
+      // (which remounts the player) once it is restored. A sendspin transport drop
+      // that leaves the main connection intact is recovered by sendspin-js's own
+      // reconnect, so it does not need to be handled here.
       unsubSubscriptions.push(
         api.subscribe(EventType.DISCONNECTED, () => {
-          // Reset sendspin connection state so a fresh connection is created on reconnect
           resetSendspinConnection();
-          // Reconnect is handled in App.vue
           this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
         }),
       );
-      if (isPlaybackMode(this.mode)) {
-        unsubSubscriptions.push(
-          api.subscribe(
-            EventType.PLAYER_UPDATED,
-            () => {
-              if (
-                this.player_id &&
-                api.players[this.player_id] &&
-                !api.players[this.player_id].available
-              ) {
-                // The player timed out, now that the browser gave us some time again, try to restart it
-                if (isPlaybackMode(this.tabMode)) {
-                  this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
-                }
-                this.setTabMode(this.mode);
-              }
-            },
-            this.player_id,
-          ),
-        );
-      }
       unsubSubscriptions.push(
         api.subscribe(
           EventType.PLAYER_REMOVED,
           () => {
-            // Silently switch back
+            // Player removed server-side: silently fall back to controls only.
             this.setTabMode(WebPlayerMode.CONTROLS_ONLY, true);
           },
           this.player_id,

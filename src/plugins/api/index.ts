@@ -2,7 +2,7 @@ import { store } from "../store";
 /* eslint-disable no-constant-condition */
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
-import { $t } from "../i18n";
+import { $t, i18n } from "../i18n";
 import type { ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
 import { getDeviceName } from "./helpers";
@@ -43,6 +43,7 @@ import {
   MediaType,
   PlayableMediaItemType,
   PlayerConfig,
+  PlayerQueueConfig,
   Podcast,
   PodcastEpisode,
   ProviderConfig,
@@ -53,10 +54,14 @@ import {
   RemoteAccessInfo,
   RepeatMode,
   SearchResults,
+  SmartPlaylistRules,
   UserRole,
 } from "./interfaces";
 
 const DEBUG = process.env.NODE_ENV === "development";
+
+// Server-side string localization + the translations/set_locale command landed in API schema 32.
+const TRANSLATIONS_SCHEMA_VERSION = 32;
 
 export enum ConnectionState {
   DISCONNECTED = "disconnected", // Not connected
@@ -80,6 +85,12 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
+  public queueElapsedTime = reactive<{
+    [queue_id: string]: {
+      elapsed_time: number;
+      elapsed_time_last_updated: number;
+    };
+  }>({});
   public providers = reactive<{ [instance_id: string]: ProviderInstance }>({});
   public providerManifests = reactive<{ [domain: string]: ProviderManifest }>(
     {},
@@ -377,6 +388,9 @@ export class MusicAssistantApi {
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
     Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    Object.keys(this.queueElapsedTime).forEach(
+      (key) => delete this.queueElapsedTime[key],
+    );
     Object.keys(this.providers).forEach((key) => delete this.providers[key]);
     Object.keys(this.providerManifests).forEach(
       (key) => delete this.providerManifests[key],
@@ -486,6 +500,18 @@ export class MusicAssistantApi {
       item_id,
       provider_instance_id_or_domain,
       in_library_only,
+    });
+  }
+
+  public getSimilarTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    limit = 25,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/tracks/similar_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
+      limit,
     });
   }
 
@@ -601,13 +627,23 @@ export class MusicAssistantApi {
   public getArtistTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
-    in_library_only = false,
-    provider_filter?: string[],
+    provider_filter?: string,
   ): Promise<Track[]> {
     return this.sendCommand("music/artists/artist_tracks", {
       item_id,
       provider_instance_id_or_domain,
-      in_library_only,
+      provider_filter,
+    });
+  }
+
+  public getArtistTopTracks(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Track[]> {
+    return this.sendCommand("music/artists/top_tracks", {
+      item_id,
+      provider_instance_id_or_domain,
       provider_filter,
     });
   }
@@ -615,12 +651,38 @@ export class MusicAssistantApi {
   public getArtistAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
-    in_library_only = false,
+    provider_filter?: string,
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/artist_albums", {
       item_id,
       provider_instance_id_or_domain,
-      in_library_only,
+      provider_filter,
+    });
+  }
+
+  public getArtistTopAlbums(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+  ): Promise<Album[]> {
+    return this.sendCommand("music/artists/top_albums", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+    });
+  }
+
+  public getSimilarArtists(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    limit = 25,
+  ): Promise<Artist[]> {
+    return this.sendCommand("music/artists/similar_artists", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      limit,
     });
   }
 
@@ -785,6 +847,18 @@ export class MusicAssistantApi {
     });
   }
 
+  public updatePlaylist(
+    item_id: string | number,
+    update: Playlist,
+    overwrite: boolean = false,
+  ): Promise<Playlist> {
+    return this.sendCommand("music/playlists/update", {
+      item_id,
+      update,
+      overwrite,
+    });
+  }
+
   public exportPlaylist(db_playlist_id: string | number): Promise<string> {
     return this.sendCommand("music/playlists/export_playlist", {
       db_playlist_id,
@@ -801,6 +875,42 @@ export class MusicAssistantApi {
       library_matching,
       match_providers,
     });
+  }
+
+  public createSmartPlaylist(
+    name: string,
+    rules: SmartPlaylistRules,
+    is_dynamic: boolean = true,
+  ): Promise<Playlist> {
+    return this.sendCommand("smart_playlists/create", {
+      name,
+      rules,
+      is_dynamic,
+    });
+  }
+
+  public getSmartPlaylistRules(
+    db_playlist_id: string | number,
+  ): Promise<SmartPlaylistRules | null> {
+    return this.sendCommand("smart_playlists/get_rules", {
+      playlist_id: db_playlist_id,
+    });
+  }
+
+  public updateSmartPlaylistRules(
+    db_playlist_id: string | number,
+    rules: SmartPlaylistRules,
+  ): Promise<void> {
+    return this.sendCommand("smart_playlists/update_rules", {
+      playlist_id: db_playlist_id,
+      rules,
+    });
+  }
+
+  public countSmartPlaylistTracks(
+    rules: SmartPlaylistRules,
+  ): Promise<{ count: number; duration_seconds: number }> {
+    return this.sendCommand("smart_playlists/count_tracks", { rules });
   }
 
   /**
@@ -1446,21 +1556,36 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
-  public queueCommandDontStopTheMusic(
-    queueId: string,
-    dont_stop_the_music_enabled: boolean,
-  ) {
-    // Configure dont_stop_the_music setting on the the queue.
-    this.playerQueueCommand(queueId, "dont_stop_the_music", {
-      dont_stop_the_music_enabled,
+  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
+    // Enable or disable crossfade on the queue.
+    this.playerQueueCommand(queueId, "crossfade", { crossfade_enabled });
+  }
+  public queueCommandCrossfadeToggle(queueId: string) {
+    // Toggle crossfade on/off for a queue
+    this.queueCommandCrossfade(
+      queueId,
+      !this.queues[queueId].crossfade_enabled,
+    );
+  }
+  public queueCommandAutoplay(queueId: string, autoplay_enabled: boolean) {
+    // Configure autoplay setting on the the queue.
+    this.playerQueueCommand(queueId, "autoplay", {
+      autoplay_enabled,
     });
   }
-  public queueCommandDontStopTheMusicToggle(queueId: string) {
-    // Toggle dont_stop_the_music mode of a queue
-    this.queueCommandDontStopTheMusic(
-      queueId,
-      !this.queues[queueId].dont_stop_the_music_enabled,
-    );
+  public queueCommandAutoplayToggle(queueId: string) {
+    // Toggle autoplay mode of a queue
+    this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
+  }
+  public queueCommandSetPlaybackSpeed(
+    queue_id: string,
+    speed: number,
+    queue_item_id: string,
+  ) {
+    this.playerQueueCommand(queue_id, "set_playback_speed", {
+      speed,
+      queue_item_id,
+    });
   }
   public playerQueueCommand(
     queue_id: string,
@@ -1745,6 +1870,7 @@ export class MusicAssistantApi {
     radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
+    sort_by?: string,
   ): Promise<void> {
     if (
       !queue_id &&
@@ -1761,6 +1887,7 @@ export class MusicAssistantApi {
       option,
       radio_mode,
       start_item,
+      sort_by,
     });
   }
 
@@ -1896,6 +2023,39 @@ export class MusicAssistantApi {
     });
   }
 
+  // PlayerQueue Config related functions
+
+  public async getPlayerQueueConfig(
+    queue_id: string,
+  ): Promise<PlayerQueueConfig> {
+    // Return configuration for a single queue.
+    return this.sendCommand("config/player_queues/get", { queue_id });
+  }
+
+  public async getPlayerQueueConfigEntries(
+    queue_id: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>,
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to configure a queue.
+    return this.sendCommand("config/player_queues/get_entries", {
+      queue_id,
+      action,
+      values,
+    });
+  }
+
+  public async savePlayerQueueConfig(
+    queue_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<PlayerQueueConfig> {
+    // Save/update PlayerQueueConfig.
+    return this.sendCommand("config/player_queues/save", {
+      queue_id,
+      values,
+    });
+  }
+
   // DSP related functions
 
   public async getDSPConfig(player_id: string): Promise<DSPConfig> {
@@ -1940,7 +2100,7 @@ export class MusicAssistantApi {
     return this.sendCommand("config/core");
   }
 
-  public async getCoreConfig(domain: string): Promise<ProviderConfig> {
+  public async getCoreConfig(domain: string): Promise<CoreConfig> {
     // Return configuration for a single core controller.
     return this.sendCommand("config/core/get", { domain });
   }
@@ -2153,16 +2313,33 @@ export class MusicAssistantApi {
     if (msg.event == EventType.QUEUE_ADDED) {
       const queue = msg.data as PlayerQueue;
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_UPDATED) {
       const queue = msg.data as PlayerQueue;
       if (queue.queue_id in this.queues)
         Object.assign(this.queues[queue.queue_id], queue);
       else this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     } else if (msg.event == EventType.QUEUE_TIME_UPDATED) {
       const queueId = msg.object_id as string;
       if (queueId in this.queues) {
-        this.queues[queueId].elapsed_time = msg.data as unknown as number;
-        this.queues[queueId].elapsed_time_last_updated = Date.now() / 1000;
+        const now = Date.now() / 1000;
+        const elapsed = msg.data as unknown as number;
+        if (queueId in this.queueElapsedTime) {
+          this.queueElapsedTime[queueId].elapsed_time = elapsed;
+          this.queueElapsedTime[queueId].elapsed_time_last_updated = now;
+        } else {
+          this.queueElapsedTime[queueId] = {
+            elapsed_time: elapsed,
+            elapsed_time_last_updated: now,
+          };
+        }
       }
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
@@ -2175,6 +2352,7 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.PLAYER_REMOVED) {
       delete this.players[msg.object_id!];
       delete this.queues[msg.object_id!];
+      delete this.queueElapsedTime[msg.object_id!];
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
@@ -2252,11 +2430,38 @@ export class MusicAssistantApi {
     this.serverInfo.value = msg;
     // ServerInfo means transport is connected and server is ready, but not yet authenticated
     this.state.value = ConnectionState.CONNECTED;
+    // declare our UI locale so the server localizes server-provided strings (config labels,
+    // media/folder names, provider descriptions). Handled server-side before the auth gate,
+    // so it also works on the Ingress path where the frontend skips the auth command.
+    // best-effort, fire-and-forget: a transport failure here shouldn't break the connect flow
+    void this.setLocale(i18n.global.locale.value).catch(() => undefined);
     this.signalEvent({
       event: EventType.CONNECTED,
       object_id: "",
       data: msg,
     });
+  }
+
+  /** Whether the connected server localizes server-provided strings (schema >= 32). */
+  public get supportsServerSideTranslations(): boolean {
+    return (
+      (this.serverInfo.value?.schema_version ?? 0) >=
+      TRANSLATIONS_SCHEMA_VERSION
+    );
+  }
+
+  /**
+   * Declare the connection's UI locale to the server (translations/set_locale).
+   *
+   * The server resolves server-provided strings for this locale at serialization. Older servers
+   * (schema < 32) don't implement the command, so it is skipped there and they keep serving their
+   * default-locale strings.
+   */
+  public async setLocale(locale: string): Promise<void> {
+    if (!locale || locale === "auto" || !this.supportsServerSideTranslations) {
+      return;
+    }
+    await this.sendCommand("translations/set_locale", { locale });
   }
 
   /**
@@ -2731,6 +2936,10 @@ export class MusicAssistantApi {
     }
     for (const queue of await this.getPlayerQueues()) {
       this.queues[queue.queue_id] = queue;
+      this.queueElapsedTime[queue.queue_id] = {
+        elapsed_time: queue.elapsed_time,
+        elapsed_time_last_updated: queue.elapsed_time_last_updated,
+      };
     }
 
     for (const prov of await this.sendCommand<ProviderManifest[]>(

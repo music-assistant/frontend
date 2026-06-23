@@ -1,5 +1,5 @@
-import { computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useI18n } from "vue-i18n";
+import { formatBackgroundTaskScheduleLabel } from "@/helpers/backgroundTaskSchedule";
+import { type BackgroundTask, TaskStatus } from "@/plugins/api/interfaces";
 import {
   AlertTriangle,
   Ban,
@@ -9,13 +9,9 @@ import {
   LoaderCircle,
   type LucideIcon,
   XCircle,
-} from "lucide-vue-next";
-import {
-  getBackgroundTaskName,
-  hasSelfContainedBackgroundTaskTitle,
-} from "@/helpers/backgroundTasks";
-import { formatBackgroundTaskScheduleLabel } from "@/helpers/backgroundTaskSchedule";
-import { type BackgroundTask, TaskStatus } from "@/plugins/api/interfaces";
+} from "@lucide/vue";
+import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { useI18n } from "vue-i18n";
 
 export const isScheduledTask = (task: BackgroundTask) => task.schedule != null;
 export const isActiveTask = (task: BackgroundTask) =>
@@ -39,7 +35,7 @@ export function useBackgroundTaskDisplay(
   const { t, te } = useI18n();
   const task = computed(() => toValue(taskRef));
 
-  const displayName = computed(() => getBackgroundTaskName(task.value, t, te));
+  const displayName = computed(() => task.value.name);
   const isScheduled = computed(() => isScheduledTask(task.value));
   const isActive = computed(() => isActiveTask(task.value));
   const showProgressBar = computed(
@@ -207,12 +203,6 @@ const getTaskSummary = (
   t: (key: string, args?: unknown[]) => string,
 ) => {
   const parts: string[] = [];
-  const providerName = String(task.metadata.provider_name || "");
-  const mediaType = String(task.metadata.media_type || "");
-
-  if (providerName && !hasSelfContainedBackgroundTaskTitle(task)) {
-    parts.push(mediaType ? `${providerName} ${mediaType}` : providerName);
-  }
 
   const schedule = formatBackgroundTaskSchedule(task.schedule, t);
   if (schedule) {

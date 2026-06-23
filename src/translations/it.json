@@ -27,8 +27,6 @@
     "clear_selection": "Cancella selezione",
     "close": "Chiudi",
     "create_playlist": "Crea nuova playlist su {0}",
-    "crossfade_disabled": "Crossfade è disabilitato",
-    "crossfade_enabled": "Crossfade è abilitato",
     "dark_mode": "Modalità scura",
     "delete_db": "Elimina elemento dal database",
     "details": "Dettagli",
@@ -105,7 +103,6 @@
         "no_providers": "Nessun Provider Musicale configurato",
         "no_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali qui sotto.",
         "not_loaded": "Questo provider non è (ancora) caricato",
-        "password": "Password",
         "player_address": "Indirizzo",
         "player_disabled": "Questo lettore è disabilitato",
         "player_id": "ID lettore",
@@ -127,7 +124,6 @@
         "setup_provider": "Impostazioni provider: {0}",
         "sync": "Sincronizza ora",
         "sync_running": "Questo provider si sta sincronizzando",
-        "username": "Nome utente",
         "core_modules": "Moduli principali",
         "server_info": "Informazione server",
         "server_id": "ID server",
@@ -145,179 +141,8 @@
         "add_new_provider_button": "Aggiungi {0} provider",
         "add_group_player": "Aggiungi lettore di gruppo",
         "group_members": "Membri del gruppo",
-        "log_level": {
-            "label": "Livello di registro",
-            "description": "Imposta il livello di dettaglio del registro per questo provider.",
-            "options": {
-                "global": "Globale",
-                "info": "Informazioni",
-                "warning": "Avviso",
-                "error": "Errore",
-                "debug": "Debug"
-            }
-        },
-        "flow_mode": {
-            "label": "Abilita la modalità flusso coda",
-            "description": "Abilita la modalità \"flusso\" in cui tutte le tracce in coda vengono inviate come un flusso audio continuo. Da utilizzare per i lettori che non supportano nativamente gapless e\/o crossfading o se il lettore ha problemi di transizione tra le tracce."
-        },
-        "auto_play": {
-            "label": "Riproduzione automatica (ripresa all'accensione)",
-            "description": "Quando questo lettore è acceso, la riproduzione inizia automaticamente (se ci sono elementi in coda)."
-        },
-        "output_channels": {
-            "label": "Modalità canale di uscita",
-            "description": "È possibile configurare questo lettore in modo che riproduca solo il canale sinistro o destro, ad esempio per creare una coppia stereo con 2 lettori.",
-            "options": {
-                "stereo": "Stereo (entrambi i canali)",
-                "left": "Solo canale sinistro",
-                "right": "Solo canale destro",
-                "mono": "Mono (entrambi i canali)"
-            }
-        },
-        "volume_normalization": {
-            "label": "Abilita la normalizzazione del volume (basata su EBU-R128)",
-            "description": "Abilita la normalizzazione del volume in base allo standard EBU-R128 senza influire sulla gamma dinamica"
-        },
-        "volume_normalization_target": {
-            "label": "Livello target per la normalizzazione del volume",
-            "description": "Regola il volume medio (percepito) a questo livello target, il valore predefinito è -17 LUFS\n\n**ATTENZIONE:** Impostare un livello troppo alto potrebbe causare clipping!"
-        },
-        "eq_bass": {
-            "label": "Equalizzatore: bassi",
-            "description": "Utilizzare l'equalizzatore di base integrato per regolare il livello dei bassi (toni bassi) dell'audio."
-        },
-        "eq_mid": {
-            "label": "Equalizzatore: medi",
-            "description": "Utilizzare l'equalizzatore di base integrato per regolare il livello medio dell'audio."
-        },
-        "eq_treble": {
-            "label": "Equalizzatore: alti",
-            "description": "Utilizzare l'equalizzatore di base integrato per regolare il livello degli acuti (toni alti) dell'audio."
-        },
-        "crossfade": {
-            "label": "Abilita dissolvenza incrociata",
-            "description": "Abilita una transizione incrociata tra le tracce (in coda)."
-        },
-        "crossfade_duration": {
-            "label": "Durata della dissolvenza incrociata",
-            "description": "Durata in secondi del crossfade tra le tracce (se abilitato)"
-        },
-        "hide_player": {
-            "label": "Nascondi questo lettore nell'interfaccia utente",
-            "description": "Nascondi questo lettore nell'interfaccia utente.\n\nNota che può ancora essere controllato e verrà visualizzato anche in tutti i gruppi di sincronizzazione a cui appartiene il lettore."
-        },
-        "default_enqueue_select_artist": {
-            "label": "Elementi da selezionare quando si riproduce un artista (presente nella libreria).",
-            "description": "Se vuoi riprodurre un artista, quali elementi dovresti aggiungere alla coda?",
-            "options": {
-                "library_tracks": "Solo tracce in libreria",
-                "library_album_tracks": "Tutte le tracce di tutti gli album nella libreria",
-                "all_tracks": "Tutte le tracce (principali) da (tutti) i provider",
-                "all_album_tracks": "Tutte le tracce da tutti gli album da (tutti) i provider"
-            }
-        },
-        "default_enqueue_select_album": {
-            "label": "Elementi da selezionare quando si riproduce un album (nella libreria).",
-            "description": "Se vuoi riprodurre un album, quali elementi devi aggiungere alla coda?",
-            "options": {
-                "library_tracks": "Solo tracce in libreria",
-                "all_tracks": "Tutte le tracce per l'album sul provider"
-            }
-        },
-        "default_enqueue_action_artist": {
-            "label": "Opzione di accodamento predefinita per gli elementi dell'artista.",
-            "description": "Definisci l'azione di inserimento predefinita per questo tipo di supporto (se non hai specificato una azione).",
-            "options": {
-                "play": "Riproduci subito le tracce dell'artista e conserva gli elementi rimanenti nella coda.",
-                "replace": "Cancella la coda e riproduci le tracce dell'artista",
-                "next": "Riproduce l'elemento\/gli elementi subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "replace_next": "Cancella la coda e riproduce la traccia o le tracce dell'artista subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "add": "Aggiungi le tracce dell'artista alla fine della coda."
-            }
-        },
-        "default_enqueue_action_album": {
-            "label": "Opzione di accodamento predefinita per gli elementi dell'album.",
-            "description": "Definisci l'azione di inserimento predefinita per questo tipo di supporto (se non hai specificato una azione).",
-            "options": {
-                "play": "Riproduci subito le tracce dell'album e conserva gli elementi rimanenti nella coda.",
-                "replace": "Cancella la coda e riproduci le tracce dell'album",
-                "next": "Riproduce l'elemento\/gli elementi subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "replace_next": "Cancella la coda e riproduce la traccia o le tracce dell'album subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "add": "Aggiungi le tracce dell'album alla fine della coda."
-            }
-        },
-        "default_enqueue_action_track": {
-            "label": "Opzione di accodamento predefinita per gli elementi della Traccia.",
-            "description": "Definisci l'azione di inserimento nella coda predefinita per questo tipo di supporto (se non hai specificato una azione).",
-            "options": {
-                "play": "Riproduci la\/le traccia\/e ora e conserva gli elementi rimanenti nella coda.",
-                "replace": "Cancella la coda e riproduci le tracce.",
-                "next": "Riproduce l'elemento\/gli elementi subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "replace_next": "Cancella la coda e riproduce la traccia (o le tracce) della playlist subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "add": "Aggiungi le tracce della playlist alla fine della coda."
-            }
-        },
-        "default_enqueue_action_playlist": {
-            "label": "Opzione di inserimento predefinita per gli elementi della playlist.",
-            "description": "Definisci l'azione di inserimento nella coda predefinita per questo tipo di supporto (se non hai specificato un'azione).",
-            "options": {
-                "play": "Riproduci la stazione radio ora e conserva gli elementi rimanenti nella coda.",
-                "replace": "Cancella la coda e riproduci le tracce della playlist",
-                "next": "Riproduce l'elemento\/gli elementi subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "replace_next": "Cancella la coda e riproduce la traccia (o le tracce) della playlist subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "add": "Aggiungi le tracce della playlist alla fine della coda."
-            }
-        },
-        "default_enqueue_action_radio": {
-            "label": "Opzione di accodamento predefinita per gli elementi Radio.",
-            "description": "Definisci l'azione d'inserimento nella coda predefinita per questo tipo di supporto (se non hai specificato una azione).",
-            "options": {
-                "play": "Riproduci la stazione radio ora e conserva gli elementi rimanenti nella coda.",
-                "replace": "Cancella la coda e riproduci le tracce della playlist",
-                "next": "Riproduce l'elemento\/gli elementi subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "replace_next": "Cancella la coda e riproduci la stazione radio subito dopo l'elemento attualmente riprodotto\/messo in buffer.",
-                "add": "Aggiungere la\/le stazione\/i radio alla fine della coda."
-            }
-        },
         "default": "Predefinito",
         "provider_depends_on_confirm": "Prima di poter impostare {0}, devi aver configurato il {1} provider. Vuoi farlo ora?",
-        "category": {
-            "advanced": "Impostazioni avanzate",
-            "generic": "Impostazioni generiche",
-            "announcements": "Configurazione degli annunci",
-            "player_controls": "Controlli generali",
-            "sync_options": "Sincronizzazione\/importazione opzioni"
-        },
-        "tts_pre_announce": {
-            "label": "Pre-annunciare annunci TTS",
-            "description": "Quando un messaggio TTS (text-to-speech) viene inviato alla funzione Annuncio, anteporre all'annuncio un breve suono di preannuncio (fischio di campanello)."
-        },
-        "announce_volume_strategy": {
-            "label": "Strategia di volume per gli annunci",
-            "description": "Quando un annuncio viene trasmesso a questo lettore, come si deve regolare temporaneamente il volume (da utilizzare in combinazione con il valore del volume riportato di seguito)?",
-            "options": {
-                "absolute": "Volume assoluto",
-                "relative": "Aumento del volume relativo",
-                "percentual": "Aumento del volume in percentuale fissa",
-                "none": "Non regolare il volume"
-            }
-        },
-        "announce_volume": {
-            "label": "Volume per gli annunci",
-            "description": "Il livello del volume percentuale, relativo o assoluto, utilizzato con la strategia per gli annunci."
-        },
-        "announce_volume_min": {
-            "label": "Livello minimo del volume per gli annunci",
-            "description": "Il volume (regolazione) degli annunci non dovrebbe scendere al di sotto di questo livello."
-        },
-        "announce_volume_max": {
-            "label": "Livello massimo del volume per gli annunci",
-            "description": "Il volume (la regolazione) degli annunci non dovrebbe superare questo livello."
-        },
-        "icon": {
-            "label": "Icona",
-            "description": "Icona di Material Design per questo lettore.\n\nVedi https:\/\/pictogrammers.com\/library\/mdi\/."
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -364,38 +189,6 @@
         "no_music_providers_detail": "Inizia la tua esperienza con Music Assistant aggiungendo i tuoi provider musicali.",
         "no_player_providers": "Nessun provider dei lettori configurato",
         "no_player_providers_detail": "Configura i provider dei lettori per selezionare i dispositivi sui quali Music Assistant può riprodurre la tua musica.",
-        "volume_normalization_radio": {
-            "label": "Metodo di normalizzazione del volume da utilizzare per i flussi radiofonici",
-            "description": "Imposta la strategia di normalizzazione del volume preferita per i flussi radio.\nPer impostazione predefinita, Music Assistant raccoglie una misurazione della sonorità (media percepita) della stazione radio in base alle specifiche EBU-R128 e quindi regola il guadagno\/volume complessivo del flusso in base a tale misurazione, in modo che la gamma dinamica dell'audio non venga influenzata. Quando non esiste (ancora) alcuna misurazione per una stazione radio, Music Assistant ricorrerà a un filtro di livellamento della sonorità dinamico (ma meno accurato).\n\nSUGGERIMENTO: i flussi radio hanno spesso livelli di sonorità variabili, in particolare durante annunci e spot pubblicitari.\nPuoi scegliere di imporre la normalizzazione dinamica del volume ai flussi radio, anche se esiste una misurazione della sonorità (media) per la stazione radio.\n\n**Opzioni:**\n\n- Disabilitato: non applicare affatto la normalizzazione del volume ai flussi radio.\n- Forza dinamica: applica sempre il livellamento dinamico del volume.\n- Solo misurazione (nessuna alternativa): applica la correzione (complessiva) del volume\/guadagno in base alla misurazione memorizzata. Se non abbiamo alcuna misurazione, non applicare la normalizzazione.\n- Alternativa alla correzione del guadagno - Applica la correzione del volume\/guadagno (complessiva) in base alla misurazione memorizzata. Se non abbiamo alcuna misurazione, alternativa a una correzione del guadagno predefinita.\n- Correzione del guadagno fissa - Applica sempre la correzione del volume\/guadagno fissa.\n- Alternativa alla dinamica - Scegli automaticamente l'opzione migliore: applica la correzione del volume\/guadagno (complessiva) in base alla misurazione memorizzata, se ne abbiamo, consenti l'alternativa alla modalità dinamica se non è disponibile alcuna misurazione.",
-            "options": {
-                "disabled": "Disabilitato",
-                "dynamic": "Forza dinamica",
-                "measurement_only": "Solo misurazione (nessun Alternativa)",
-                "fallback_fixed_gain": "Alternativa per ottenere la correzione",
-                "fixed_gain": "Correzione del guadagno fissa",
-                "fallback_dynamic": "Alternativo su dinamico"
-            }
-        },
-        "volume_normalization_tracks": {
-            "label": "Metodo di normalizzazione del volume da utilizzare per le tracce",
-            "description": "Imposta la strategia di normalizzazione del volume preferito per tracce\/canzoni.\nMusic Assistant utilizza una misurazione della sonorità (media percepita) delle tracce in base alle specifiche EBU-R128 per regolare il guadagno\/volume complessivo dello streaming senza influire sulla gamma dinamica dell'audio.\nQueste misurazioni sono fornite dal provider di streaming o, in caso di file locali, possono essere contenute nei tag ID3 (ReplayGain 2.0 \/ Opus R128).\nSe la misurazione non è fornita, Music Assistant eseguirà automaticamente una misurazione quando\/dopo che la traccia viene (per la prima) riprodotta. Quando non esiste (ancora) alcuna misurazione per una traccia, Music Assistant ricorrerà per impostazione predefinita a un filtro di livellamento della sonorità dinamico (ma meno accurato). Ciò garantisce che non vi siano grandi picchi\/cadute nel livello del volume tra le tracce, anche se non vi è ancora una misurazione accurata, ma il livellatore dinamico può talvolta comprimere un po' la gamma dinamica, anche se ciò non dovrebbe essere udibile nella maggior parte dei casi.\n\n**Opzioni:**\n\n- Disabilitato: non applicare affatto la normalizzazione del volume per gli streaming radio. \n- Forza dinamica - Applica sempre il livellamento dinamico del volume.\n- Solo misurazione (nessuna alternativa) - Applica la correzione volume\/guadagno (complessiva) in base alla misurazione memorizzata. Se non abbiamo alcuna misurazione, non applicare la normalizzazione.\n- Alternativa alla correzione del guadagno - Applica la correzione volume\/guadagno (complessiva) in base alla misurazione memorizzata. Se non abbiamo alcuna misurazione, alternativa a una correzione del guadagno predefinita.\n- Correzione del guadagno fissa - Applica sempre la correzione volume\/guadagno fissa.\n- Alternativa alla dinamica - Scegli automaticamente l'opzione migliore: applica la correzione volume\/guadagno (complessiva) in base alla misurazione memorizzata, se ne abbiamo, consenti l'alternativa alla modalità dinamica se non è disponibile alcuna misurazione.",
-            "options": {
-                "disabled": "Disabilitato",
-                "dynamic": "Forza dinamica",
-                "measurement_only": "Solo misurazione (nessun Alternativa)",
-                "fallback_fixed_gain": "Alternativa per ottenere la correzione",
-                "fixed_gain": "Correzione del guadagno fisso",
-                "fallback_dynamic": "Alternativo su dinamico"
-            }
-        },
-        "volume_normalization_fixed_gain_tracks": {
-            "label": "Regolazione del guadagno fisso\/alternativa per le tracce",
-            "description": "Correzione del guadagno fisso\/alternativa da applicare a un flusso audio di traccia (dipende dall'impostazione \"Metodo di normalizzazione del volume\").\nUtilizzare un valore positivo per aumentare il volume, un valore negativo per diminuirlo.\n\nQuesta impostazione viene utilizzata quando il metodo di normalizzazione del volume è impostato su \"Correzione del guadagno fisso\" o \"Alternativa per la correzione del guadagno\"."
-        },
-        "volume_normalization_fixed_gain_radio": {
-            "label": "Regolazione del guadagno fisso\/alternativa per la radio",
-            "description": "Correzione del guadagno fisso\/alternativa da applicare a un flusso radio (dipende dall'impostazione 'Metodo di normalizzazione del volume').\nUtilizzare un valore positivo per aumentare il volume, un valore negativo per diminuirlo.\n\nQuesta impostazione viene utilizzata quando il metodo di normalizzazione del volume è impostato su 'Correzione del guadagno fisso' o 'Alternativa per la correzione del guadagno'."
-        },
         "dynamic_members": {
             "label": "Membri dinamici del gruppo",
             "description": "Consentire ai membri di unirsi\/abbandonare il gruppo (temporaneamente) in modo dinamico, in modo che il gruppo si comporti più o meno come se i lettori fossero sincronizzati manualmente, con la differenza principale che il lettore del gruppo manterrà la coda."
@@ -464,20 +257,6 @@
                 "remove_confirm": "Confermi di voler rimuovere questo preset DSP?"
             }
         },
-        "power_control": {
-            "label": "Accensione e spegnimento",
-            "description": "Definisci\/sovrascrivi comportamento dell'alimentazione per questo player.\nConsente, per esempio, di inoltrare i comandi on\/off a un diverso apparecchio, o, nel caso in cui si voglia avere un controllo di stato per un player non in uso consente di utilizzare un controllo fittizio se il player non supporta comandi on\/off"
-        },
-        "volume_control": {
-            "label": "Controllo del volume"
-        },
-        "mute_control": {
-            "label": "Controllo del silenziamento"
-        },
-        "output_limiter": {
-            "label": "Abilitare limitazione per prevenire clipping",
-            "description": "Attiva limitatore che previene distorsioni audio riducendo i picchi massimi."
-        },
         "dsp_enabled": "DSP abilitato",
         "dsp_note_multi_device_group": {
             "label": "Possibilità di configurare DSP per ogni player individualmente."
@@ -516,7 +295,12 @@
         "onboarding_title": "Benvenuto in Music Assistant!",
         "profile_description": "Gestisci impostazioni e preferenze tuo account personale",
         "users": "Utenti",
-        "users_description": "Gestisci account utenti, ruoli e autorizzazioni"
+        "users_description": "Gestisci account utenti, ruoli e autorizzazioni",
+        "audio_analysis": "Analisi audio",
+        "sendspin_static_delay": {
+            "label": "Ritardo di riproduzione costante (ms)",
+            "description": "Ritardo in millisecondi per sincronizzare questo lettore con altri lettori. Aumentare in caso di ritardo nella riproduzione dell'audio, ad esempio per compensare la latenza causata da un amplificatore, da altoparlanti attivi o dal sistema operativo."
+        }
     },
     "show_info": "Mostra info",
     "show_select_boxes": "Mostra caselle di selezione",
@@ -547,7 +331,8 @@
         "play_count": "Conteggio delle riproduzioni",
         "play_count_desc": "Conteggio delle riproduzioni (decrescente)",
         "artist_name": "Album artista",
-        "artist_name_desc": "Artista dell'album (decrescente)"
+        "artist_name_desc": "Artista dell'album (decrescente)",
+        "album_sort_name": "Album (in ordine alfabetico)"
     },
     "state": {
         "idle": "Inattivo",
@@ -602,8 +387,6 @@
     "item_in_library": "Questo articolo è disponibile nella libreria",
     "back": "Indietro",
     "recently_played": "Riprodotto recentemente",
-    "radiobrowser_by_country": "Per nazione",
-    "radiobrowser_by_tag": "Per tag...",
     "load_more_items": "Carica altri elementi...",
     "radio": "Radio",
     "muted": "Disattivato",
@@ -630,7 +413,6 @@
     "power_off_player": "Spento",
     "powered_off_players": "Lettori disattivati",
     "sync_player_with": "Sincronizza con un altro lettore",
-    "open_player_settings": "Apri impostazioni",
     "select_repeat_mode": "Seleziona la modalità di ripetizione",
     "repeat_mode": {
         "all": "Ripeti l'intera coda",
@@ -702,27 +484,12 @@
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Seleziona la fonte",
-    "in_progress_items": "Continua ad ascoltare...",
     "music_assistant_source": "Coda Music Assistant",
     "music_assistant_library": "Libreria Music Assistant",
     "select_all_confirmation": "Selezionare tutti gli elementi? Quest'operazione potrebbe impiegare tempo a caricare tutti i dati.",
     "this_device": "Questo dispositivo",
-    "recommendations": {
-        "in_progress_items": "Continua ad ascoltare...",
-        "random_artists": "Artisti casuali",
-        "random_albums": "Album casuali",
-        "your_listening_history": "Storico ascolto",
-        "popular_albums": "Album popolari",
-        "radio_stations_for_you": "Stazioni radio per te",
-        "producers__songwriters": "Produttori & autori",
-        "recent_favorite_tracks": "Tracce recentemente preferite",
-        "favorite_playlists": "Playlist preferite",
-        "favorite_radio_stations": "Stazioni radio preferite"
-    },
     "homescreen_edit_enable": "Modifica schermata Home",
     "lyrics_will_appear_soon": "Testi appariranno all'inizio della canzone...",
-    "radiobrowser_by_clicks": "Per click",
-    "radiobrowser_by_language": "Per lingua",
     "optional": "Opzionale",
     "created": "Creato",
     "last_used": "Ultimo utilizzo",
@@ -813,8 +580,8 @@
         "error_login_failed": "Login fallito. Per favore verifica le tue credenziali.",
         "error_oauth_failed": "Autenticazione con Home Assistant fallita."
     },
-    "remote": {
-        "connect_title": "Connessione a tuo server",
-        "subtitle": "Connettiti al tuo home server da ovunque"
-    }
+    "edit_playlist": "Modifica la playlist",
+    "edit_radio": "Modifica stazione radio",
+    "edit_track": "Modifica il brano",
+    "uri_read_only": "URI (sola lettura)"
 }

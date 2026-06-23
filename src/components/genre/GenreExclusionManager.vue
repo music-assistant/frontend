@@ -27,9 +27,7 @@
               <GenreIcon class="size-[30px]" />
             </div>
           </template>
-          <template #title>{{
-            getGenreDisplayName(genre.name, genre.translation_key, t, te)
-          }}</template>
+          <template #title>{{ genre.name }}</template>
         </ListItem>
       </v-list>
     </Container>
@@ -38,17 +36,16 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
-import { getGenreDisplayName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { Genre, MediaType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { ChevronDown, ChevronUp } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { ChevronUp, ChevronDown } from "lucide-vue-next";
 
 interface Props {
   mediaType: MediaType;
@@ -57,7 +54,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 
 const isAdmin = computed(() => authManager.isAdmin());
 const sectionExpanded = ref(false);

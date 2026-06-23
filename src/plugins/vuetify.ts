@@ -40,6 +40,11 @@ export default createVuetify(
       },
     },
     theme: {
+      // Use a private id rather than the well-known
+      // "vuetify-theme-stylesheet" default: anything injecting CSS into
+      // the page (extensions, userscripts, other libraries) can target
+      // the public id by name and overwrite the runtime CSS variables.
+      stylesheetId: "mass-vuetify-theme",
       defaultTheme: "dark",
       themes: {
         light: {

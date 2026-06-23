@@ -8,8 +8,42 @@
     :max-height="$vuetify.display.height - 150"
   >
     <template #activator="{ props }">
+      <!-- header button variant: matches the shadcn controls in the player header -->
+      <Button
+        v-if="pill"
+        v-bind="props"
+        variant="outline"
+        size="xs"
+        class="bg-background/40 backdrop-blur-md hover:bg-background/60"
+        :disabled="
+          !store.activePlayerQueue ||
+          !store.activePlayerQueue?.active ||
+          store.activePlayerQueue?.items == 0
+        "
+      >
+        <span
+          class="quality-pill-dot"
+          :style="{
+            backgroundColor: qualityTierToColor(maxOutputQualityTier),
+          }"
+        ></span>
+        <span class="tracking-wide">
+          <template v-if="maxOutputQualityTier == QualityTier.LOW">LQ</template>
+          <template v-else-if="maxOutputQualityTier == QualityTier.GOOD"
+            >SQ</template
+          >
+          <template v-else-if="maxOutputQualityTier == QualityTier.LOSSLESS"
+            >HQ</template
+          >
+          <template v-else-if="maxOutputQualityTier == QualityTier.HIRES"
+            >HR</template
+          >
+        </span>
+      </Button>
+
+      <!-- default chip variant -->
       <v-chip
-        v-if="streamDetails"
+        v-else
         :disabled="
           !store.activePlayerQueue ||
           !store.activePlayerQueue?.active ||
@@ -44,7 +78,7 @@
             <!-- Fileinfo -->
             <div class="line-space"></div>
             <!-- Volume Normalization -->
-            <div class="line-space"></div>
+            <div v-if="loudness" class="line-space"></div>
             <!-- Branch if multiple players playing -->
             <div class="line-branch-start-left"></div>
             <!-- Player -->
@@ -115,7 +149,7 @@
             <!-- Fileinfo -->
             <div class="line-straight"></div>
             <!-- Volume Normalization -->
-            <div class="line-with-dot"></div>
+            <div v-if="loudness" class="line-with-dot"></div>
             <!-- Branch if multiple players playing -->
             <div
               v-if="dsp_grouped.length >= 2"
@@ -558,6 +592,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
@@ -570,6 +605,10 @@ import {
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+
+// render the quality indicator as a rounded "pill" (matching the shadcn player
+// header controls) instead of the default square chip
+defineProps<{ pill?: boolean }>();
 
 // computed properties
 const streamDetails = computed(() => {
@@ -650,6 +689,7 @@ const getContentTypeIcon = function (contentType: ContentType) {
   if (contentType == ContentType.OGG) return iconOgg;
   if (contentType == ContentType.M4A) return iconM4a;
   if (contentType == ContentType.WAV) return iconWAV;
+  if (contentType == ContentType.ALAC) return iconALAC;
   if (isPcm(contentType)) return iconPcm;
   return null;
 };
@@ -696,7 +736,11 @@ const isContentTypeLossless = function (contentType: ContentType) {
 };
 
 const isHiResFormat = function (audioFormat: AudioFormat) {
-  if (!isContentTypeLossless(audioFormat.content_type)) return false;
+  if (
+    !isContentTypeLossless(audioFormat.content_type) &&
+    !isContentTypeLossless(audioFormat.codec_type)
+  )
+    return false;
   return audioFormat.bit_depth > 16 || audioFormat.sample_rate > 48000;
 };
 
@@ -707,10 +751,14 @@ const inputQualityTier = computed(() => {
 
   // Prefer making this decision based on codec type
   let content_type = sd.audio_format.content_type;
+  let codec_type = sd.audio_format.codec_type;
 
   if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;
-  } else if (isContentTypeLossless(content_type)) {
+  } else if (
+    isContentTypeLossless(content_type) ||
+    isContentTypeLossless(codec_type)
+  ) {
     return QualityTier.LOSSLESS;
   } else if (sd.audio_format.bit_rate >= 256) {
     return QualityTier.GOOD;
@@ -734,7 +782,10 @@ const outputQualityTiers = computed(() => {
     let player_tier = QualityTier.UNKNOWN;
     if (isHiResFormat(dsp.output_format)) {
       player_tier = QualityTier.HIRES;
-    } else if (isContentTypeLossless(dsp.output_format.content_type)) {
+    } else if (
+      isContentTypeLossless(dsp.output_format.content_type) ||
+      isContentTypeLossless(dsp.output_format.codec_type)
+    ) {
       player_tier = QualityTier.LOSSLESS;
     } else if (dsp.output_format.bit_rate >= 256) {
       player_tier = QualityTier.GOOD;
@@ -823,6 +874,7 @@ export const iconM4a = new URL("@/assets/m4a.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 export const iconPcm = new URL("@/assets/pcm.svg", import.meta.url).href;
 export const iconWAV = new URL("@/assets/wav.png", import.meta.url).href;
+export const iconALAC = new URL("@/assets/alac.png", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)
   .href;
@@ -1142,5 +1194,13 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
   border-radius: 50%;
   margin: auto;
   margin-right: 10px;
+}
+
+.quality-pill-dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
 </style>

@@ -13,14 +13,17 @@
     </template>
 
     <template #title>
-      <slot name="title">
-        <button
-          v-if="title || (store.mobileLayout && isDiscoverPage)"
-          @click="emit('titleClicked')"
-        >
-          {{ title || (isDiscoverPage ? $t("discover") : "") }}
-        </button>
-      </slot>
+      <div :class="{ 'toolbar-title-wrapper': subtitle }">
+        <slot name="title">
+          <button
+            v-if="title || (store.mobileLayout && isDiscoverPage)"
+            @click="emit('titleClicked')"
+          >
+            {{ title || (isDiscoverPage ? $t("discover") : "") }}
+          </button>
+        </slot>
+        <span v-if="subtitle" class="toolbar-subtitle">{{ subtitle }}</span>
+      </div>
     </template>
 
     <template v-if="$slots.append || menuItems?.length" #append>
@@ -29,8 +32,8 @@
         v-for="menuItem of menuItems?.filter(
           (x) =>
             !x.hide &&
-            !enforceOverflowMenu &&
-            (getBreakpointValue('bp8') || x.overflowAllowed === false),
+            (x.overflowAllowed === false ||
+              (!enforceOverflowMenu && getBreakpointValue('bp8'))),
         )"
         :key="menuItem.label"
         variant="text"
@@ -76,12 +79,14 @@
               style="width: 15px; margin-left: -10px"
               v-bind="props"
             >
-              <v-icon
-                icon="mdi-dots-vertical"
-                :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
-                size="22"
-                style="margin-right: -5px; width: 15px"
-              />
+              <v-badge :model-value="menuActive == true" color="primary" dot>
+                <v-icon
+                  icon="mdi-dots-vertical"
+                  :color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+                  size="22"
+                  style="margin-right: -5px; width: 15px"
+                />
+              </v-badge>
             </v-btn>
           </template>
           <v-list density="compact" slim tile>
@@ -174,8 +179,11 @@ interface Props {
   color?: string;
   icon?: string | Component;
   title?: string;
+  subtitle?: string;
   menuItems?: ToolBarMenuItem[];
   enforceOverflowMenu?: boolean;
+  // shows an "active" dot on the overflow (3-dots) button, e.g. when filters apply
+  menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
 }
@@ -183,9 +191,11 @@ withDefaults(defineProps<Props>(), {
   color: "transparent",
   icon: undefined,
   title: undefined,
+  subtitle: undefined,
   count: undefined,
   menuItems: undefined,
   enforceOverflowMenu: false,
+  menuActive: false,
   iconAction: undefined,
 });
 
@@ -241,5 +251,19 @@ export interface ToolBarMenuItem extends ContextMenuItem {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.toolbar-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.toolbar-subtitle {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.6;
 }
 </style>

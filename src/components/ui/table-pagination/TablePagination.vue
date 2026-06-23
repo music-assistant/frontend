@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight } from "@lucide/vue";
 
 import { Button } from "@/components/ui/button";
 

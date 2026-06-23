@@ -288,11 +288,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :loading="
-                store.activePlayerQueue &&
-                store.activePlayerQueue.extra_attributes
-                  ?.play_action_in_progress === true
-              "
+              :loading="playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
@@ -316,8 +312,11 @@
                 :title="$t('tooltip.favorite')"
                 @click="api.toggleFavorite(item)"
               />
-              <!-- provider icon -->
-              <provider-icon :domain="item.provider" :size="25" />
+              <!-- details can be reached out of library context, so always show
+              the membership badge (bookshelf when in library, else source) -->
+              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
               <Merge
                 v-if="
@@ -385,37 +384,51 @@
                 (e: MouseEvent) => showGenreChipContextMenu(e, genre)
               "
             >
-              {{
-                getGenreDisplayName(genre.name, genre.translation_key, t, te)
-              }}
+              {{ genre.name }}
             </v-chip>
           </div>
         </div>
       </v-layout>
     </v-card>
-    <v-dialog v-model="showFullInfo" max-width="975" width="auto">
-      <v-card>
+    <Dialog v-if="!$slots['description-dialog']" v-model:open="showFullInfo">
+      <DialogContent class="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>{{ headerTitle }}</DialogTitle>
+        </DialogHeader>
         <!-- eslint-disable vue/no-v-html -->
-        <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-        <v-card-text v-html="fullDescription" />
+        <div
+          class="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
+          style="max-height: 60vh; overflow-y: auto"
+          v-html="fullDescription"
+        ></div>
         <!-- eslint-enable vue/no-v-html -->
-        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
-        <v-card-actions>
-          <v-btn color="primary" block @click="showFullInfo = false">
-            {{ $t("close") }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+        <DialogFooter>
+          <Button @click="showFullInfo = false">{{ $t("close") }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <slot
+      name="description-dialog"
+      :open="showFullInfo"
+      :on-open-change="(v: boolean) => (showFullInfo = v)"
+      :close="() => (showFullInfo = false)"
+    ></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
-  getGenreDescription,
-  getGenreDisplayName,
   getImageThumbForItem,
   handleMediaItemClick,
   handlePlayBtnClick,
@@ -428,6 +441,7 @@ import {
   getContextMenuItems,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
+import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
@@ -439,10 +453,9 @@ import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
@@ -453,6 +466,7 @@ import ProviderIcon from "./ProviderIcon.vue";
 // properties
 export interface Props {
   item?: MediaItemType;
+  sortBy?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
@@ -466,18 +480,10 @@ const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
 
 const marqueeSync = new MarqueeTextSync();
 const router = useRouter();
-const { t, te } = useI18n();
+const { getPreference } = useUserPreferences();
 
 const headerTitle = computed(() => {
   if (!compProps.item) return "";
-  if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
-  }
   return compProps.item.name;
 });
 
@@ -512,6 +518,17 @@ watch(
   },
   { immediate: true },
 );
+
+// Watch shortcuts preference to update overflow menu when shortcuts change
+const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
+watch(shortcutsPreference, async () => {
+  if (compProps.item) {
+    menuItems.value = await getContextMenuItems(
+      [compProps.item],
+      compProps.item,
+    );
+  }
+});
 
 const showGenreChipContextMenu = (evt: MouseEvent, genre: Genre) => {
   if (
@@ -587,6 +604,20 @@ const backButtonClick = function () {
   });
 };
 
+// Resolve the queue playMedia targets directly, since activePlayerQueue is
+// undefined while an external source is active.
+const playActionInProgress = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  const queueId =
+    player.active_source && player.active_source in api.queues
+      ? player.active_source
+      : player.player_id;
+  return (
+    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
+  );
+});
+
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
   handlePlayBtnClick(
@@ -595,6 +626,7 @@ const playButtonClick = function (forceMenu = false) {
     playButton.getBoundingClientRect().top + 36,
     undefined,
     forceMenu,
+    compProps.sortBy,
   );
 };
 
@@ -602,13 +634,6 @@ const rawDescription = computed(() => {
   if (!compProps.item) return "";
   if (compProps.item.metadata && compProps.item.metadata.description) {
     return compProps.item.metadata.description;
-  } else if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDescription(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
   } else if (compProps.item.metadata && compProps.item.metadata.copyright) {
     return compProps.item.metadata.copyright;
   } else if ("artists" in compProps.item) {

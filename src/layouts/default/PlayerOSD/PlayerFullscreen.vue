@@ -7,6 +7,7 @@
     z-index="9000"
     :retain-focus="false"
     persistent
+    no-click-animation
   >
     <v-card
       class="fullscreen-player-card"
@@ -14,44 +15,26 @@
     >
       <v-toolbar class="v-toolbar-default" color="transparent">
         <template #prepend>
-          <Button icon @click="store.showFullscreenPlayer = false">
-            <v-icon icon="mdi-chevron-down" />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            @click="store.showFullscreenPlayer = false"
+          >
+            <ChevronDownIcon class="size-5" />
           </Button>
         </template>
         <template #append>
-          <v-menu v-if="store.activePlayerQueue?.radio_source.length" scrim>
-            <template #activator="{ props }">
-              <Button v-bind="props" icon>
-                <v-icon color="accent" icon="mdi-radio-tower" />
-              </Button>
-            </template>
-
-            <v-card
-              :title="$t('queue_radio_enabled')"
-              :subtitle="$t('queue_radio_based_on')"
-            >
-              <template #text>
-                <div
-                  v-for="source in store.activePlayerQueue?.radio_source"
-                  :key="source.uri"
-                >
-                  <a @click="itemClick(source)">{{ source.name }}</a>
-                </div>
-              </template>
-            </v-card>
-          </v-menu>
-
-          <SpeakerBtn
-            v-if="!showExpandedPlayerSelectButton"
-            @click="
-              () => {
-                store.showFullscreenPlayer = false;
-              }
-            "
+          <PlayerFullscreenHeaderControls
+            :lyrics-state="lyricsState"
+            :lyrics-active="lyricsActive"
+            :show-lyrics-offset="showLyricsOffset"
+            :lyrics-offset-display="lyricsOffsetDisplay"
+            @toggle-lyrics="toggleLyrics"
+            @offset-press="startRepeatingOffset"
           />
 
-          <Button icon @click.stop="openQueueMenu">
-            <v-icon icon="mdi-dots-vertical" />
+          <Button variant="ghost" size="icon-sm" @click.stop="openQueueMenu">
+            <EllipsisVerticalIcon class="size-5" />
           </Button>
         </template>
       </v-toolbar>
@@ -60,7 +43,7 @@
       <div class="main">
         <!-- left column: media thumb + details-->
         <div
-          v-if="getBreakpointValue('bp7') || !store.showQueueItems"
+          v-if="getBreakpointValue('bp7') || !showRightColumn"
           class="main-media-details"
         >
           <div
@@ -94,14 +77,14 @@
             <!-- player name as title if its powered off-->
             <v-card-title
               v-if="store.activePlayer?.powered == false"
-              :style="`font-size: ${titleFontSize};`"
+              :style="`font-size: ${titleFontSize};font-weight:600;`"
             >
               {{ store.activePlayer?.name }}
             </v-card-title>
             <!-- current media title -->
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="onTitleClick"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -111,7 +94,7 @@
             <!-- no player selected message -->
             <v-card-title
               v-else
-              :style="`font-size: ${titleFontSize};cursor:pointer;`"
+              :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="store.showPlayersMenu = true"
             >
               <MarqueeText :sync="playerMarqueeSync">
@@ -175,26 +158,16 @@
             >
               {{ $t("queue_empty") }}
             </v-card-subtitle>
-
-            <!-- streamdetails/contenttype button-->
-            <div
-              v-if="
-                store.activePlayer?.powered != false &&
-                store.curQueueItem?.streamdetails
-              "
-              style="padding-top: min(10px, 1vh)"
-            >
-              <QualityDetailsBtn />
-            </div>
           </div>
         </div>
 
-        <!-- right column: queue items-->
+        <!-- right column: queue items or lyrics-->
         <div
-          v-if="store.showQueueItems && store.activePlayerQueue"
+          v-if="showRightColumn && store.activePlayerQueue"
           class="main-queue-items"
         >
           <v-tabs
+            v-if="!showLyrics"
             v-model="activeQueuePanel"
             hide-slider
             density="compact"
@@ -219,16 +192,13 @@
                 inline
               />
             </v-tab>
-            <v-tab v-if="hasLyrics" :value="2">
-              {{ $t("lyrics") }}
-            </v-tab>
           </v-tabs>
           <div
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
             <v-virtual-scroll
-              v-if="!tempHide && activeQueuePanel !== 2"
+              v-if="!tempHide && !showLyrics"
               ref="virtualScrollRef"
               :item-height="70"
               height="100%"
@@ -359,7 +329,7 @@
               </template>
             </v-virtual-scroll>
             <!-- Lyrics view -->
-            <div v-if="activeQueuePanel === 2" class="lyrics-wrapper">
+            <div v-if="showLyrics" class="lyrics-wrapper">
               <LyricsViewer
                 :media-item="store.curQueueItem?.media_item"
                 :position="lyricsElapsedTime"
@@ -367,6 +337,7 @@
                 :text-color="sliderColor"
                 :lyrics="currentLyrics.plain"
                 :lrc-lyrics="currentLyrics.synced"
+                :offset="lyricsOffset"
               />
             </div>
           </div>
@@ -374,7 +345,7 @@
 
         <!-- right column: media image (on small but wide screens)-->
         <div
-          v-if="!store.showQueueItems && $vuetify.display.height <= 600"
+          v-if="!showRightColumn && $vuetify.display.height <= 600"
           class="main-queue-items"
         >
           <div class="main-media-details-image main-media-details-image-alt">
@@ -410,7 +381,6 @@
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <Icon
-            v-if="store.activePlayerQueue"
             :disabled="!store.curQueueItem?.media_item"
             :title="$t('tooltip.favorite')"
             variant="button"
@@ -460,12 +430,12 @@
             class="media-controls-item"
             max-height="35px"
           />
-          <QueueBtn
-            v-if="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="30px"
-            :size="18"
-          />
+          <div class="media-controls-item queue-btn-wrapper">
+            <QueueBtn
+              style="max-height: 30px; min-height: 0; min-width: 0"
+              :size="18"
+            />
+          </div>
         </div>
 
         <!-- volume control -->
@@ -483,22 +453,22 @@
           />
         </div>
 
-        <!-- player select button -->
+        <!-- player select button (compact, Spotify-style) -->
         <div
           v-if="showExpandedPlayerSelectButton"
           class="row"
           style="
-            height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding-bottom: 15px;
-            padding-top: 15px;
+            padding-bottom: 8px;
+            padding-top: 4px;
           "
         >
-          <v-btn
-            class="responsive-icon-holder-btn"
-            variant="outlined"
+          <Button
+            variant="outline"
+            size="xs"
+            class="bg-background/40 backdrop-blur-md hover:bg-background/60"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -506,9 +476,12 @@
               }
             "
           >
-            <v-icon :icon="store.activePlayer?.icon || 'mdi-speaker'" />
+            <v-icon
+              :icon="store.activePlayer?.icon || 'mdi-speaker'"
+              size="16"
+            />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
-          </v-btn>
+          </Button>
         </div>
       </div>
     </v-card>
@@ -516,7 +489,6 @@
 </template>
 
 <script setup lang="ts">
-import Button from "@/components/Button.vue";
 import Icon from "@/components/Icon.vue";
 import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
@@ -524,7 +496,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
-import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -541,6 +513,7 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
@@ -563,8 +536,8 @@ import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
+import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
 import Color from "color";
-import { Heart } from "lucide-vue-next";
 import {
   computed,
   onBeforeUnmount,
@@ -576,12 +549,15 @@ import {
 import { useDisplay } from "vuetify";
 import { ContextMenuItem } from "../ItemContextMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
-import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
-const { name } = useDisplay();
+const { name, mdAndUp } = useDisplay();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
+// The player select button is important enough to keep pinned at the bottom in
+// (almost) all cases. Only on very short screens is it hidden entirely — it is
+// never moved up into the header.
+const MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON = 480;
 const showAlbumSubtitle = computed(
   () => vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS,
 );
@@ -657,20 +633,137 @@ const hasLyrics = computed(() => {
   );
 });
 
+// True while we're fetching lyrics for the current track.
+const lyricsLoading = ref(false);
+
+// Drives the lyrics header button: whether lyrics can be shown, are loading,
+// or are unavailable (and why).
+const lyricsState = computed<
+  "available" | "loading" | "unavailable-song" | "unavailable-content" | "none"
+>(() => {
+  if (!store.curQueueItem) return "none";
+  if (store.curQueueItem.media_item?.media_type !== MediaType.TRACK)
+    return "unavailable-content";
+  if (lyricsLoading.value) return "loading";
+  if (hasLyrics.value) return "available";
+  return "unavailable-song";
+});
+
+// Lyrics are reached through a dedicated button in the header and shown in
+// their own panel, independent of the queue list (which has its own toggle).
+const showLyrics = ref(false);
+const lyricsActive = computed(() => showLyrics.value);
+
+const toggleLyrics = () => {
+  showLyrics.value = !showLyrics.value;
+};
+
+// If the panel was opened optimistically while lyrics were still loading but
+// the track turns out to have none, close it again so we don't show an empty
+// panel.
+watch(lyricsState, (state) => {
+  if (
+    showLyrics.value &&
+    (state === "unavailable-song" ||
+      state === "unavailable-content" ||
+      state === "none")
+  ) {
+    showLyrics.value = false;
+  }
+});
+
+// Whether the right-hand column (queue list or lyrics) is visible. Used to
+// collapse the media details column on small/narrow screens.
+const showRightColumn = computed(
+  () => store.showQueueItems || showLyrics.value,
+);
+
+// Protocols with accurate playback time reporting don't need a latency offset.
+const ACCURATE_TIME_PROTOCOLS = ["airplay"];
+
+const showLyricsOffset = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  let domain: string | undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== "native"
+  ) {
+    domain =
+      player.output_protocols?.find(
+        (p) => p.output_protocol_id === player.active_output_protocol,
+      )?.protocol_domain ?? undefined;
+  }
+  if (!domain) {
+    domain = player.provider.split("--")[0];
+  }
+  return !ACCURATE_TIME_PROTOCOLS.includes(domain);
+});
+
+// Lyrics latency offset, in seconds. Adjustable via the lyrics sync pill in
+// the header; persists across tracks within the session.
+const lyricsOffset = ref(0);
+
+const lyricsOffsetDisplay = computed(() => {
+  const val = lyricsOffset.value;
+  const sign = val > 0 ? "+" : "";
+  return `${sign}${val.toFixed(1)}`;
+});
+
+const adjustLyricsOffset = (delta: number) => {
+  const next = Math.round((lyricsOffset.value + delta) * 10) / 10;
+  lyricsOffset.value = Math.max(-9.9, Math.min(9.9, next));
+};
+
+// Press-and-hold: first step on press, then accelerate after a short delay.
+let offsetHoldDelay: number | null = null;
+let offsetHoldInterval: number | null = null;
+
+const stopRepeatingOffset = () => {
+  if (offsetHoldDelay !== null) {
+    clearTimeout(offsetHoldDelay);
+    offsetHoldDelay = null;
+  }
+  if (offsetHoldInterval !== null) {
+    clearInterval(offsetHoldInterval);
+    offsetHoldInterval = null;
+  }
+  window.removeEventListener("mouseup", stopRepeatingOffset);
+  window.removeEventListener("touchend", stopRepeatingOffset);
+  window.removeEventListener("touchcancel", stopRepeatingOffset);
+};
+
+const startRepeatingOffset = (delta: number) => {
+  stopRepeatingOffset();
+  adjustLyricsOffset(delta);
+  offsetHoldDelay = window.setTimeout(() => {
+    offsetHoldInterval = window.setInterval(
+      () => adjustLyricsOffset(delta),
+      80,
+    );
+  }, 400);
+  window.addEventListener("mouseup", stopRepeatingOffset);
+  window.addEventListener("touchend", stopRepeatingOffset);
+  window.addEventListener("touchcancel", stopRepeatingOffset);
+};
+
 // Fetch lyrics for the current track (only when fullscreen player is open)
+let lyricsLoadGeneration = 0;
 const fetchLyrics = async () => {
+  const generation = ++lyricsLoadGeneration;
   // Clear lyrics immediately
   currentLyrics.value = { plain: null, synced: null };
 
-  // Only fetch lyrics when fullscreen player is open
-  if (!store.showFullscreenPlayer) {
-    return;
-  }
-
   const mediaItem = store.curQueueItem?.media_item;
+  const isTrack = mediaItem?.media_type === MediaType.TRACK;
 
-  // Only proceed if we have a track media item
-  if (!mediaItem || mediaItem.media_type !== MediaType.TRACK) {
+  // Show the loading state right away for tracks so the header button doesn't
+  // flash "unavailable" before we've looked the lyrics up.
+  lyricsLoading.value = isTrack === true && store.showFullscreenPlayer;
+
+  // Only fetch lyrics when fullscreen player is open and the item is a track.
+  if (!store.showFullscreenPlayer || !isTrack) {
+    lyricsLoading.value = false;
     return;
   }
 
@@ -682,12 +775,15 @@ const fetchLyrics = async () => {
 
   if (existingPlain || existingSynced) {
     currentLyrics.value = { plain: existingPlain, synced: existingSynced };
+    lyricsLoading.value = false;
     return;
   }
 
   // Fetch lyrics from API
   try {
     const [lyrics, lrcLyrics] = await api.getTrackLyrics(track);
+    // a newer track change started while awaiting; this result is stale
+    if (generation !== lyricsLoadGeneration) return;
     currentLyrics.value = { plain: lyrics, synced: lrcLyrics };
 
     // Also update the media item's metadata for future reference
@@ -699,7 +795,10 @@ const fetchLyrics = async () => {
       };
     }
   } catch (error) {
+    if (generation !== lyricsLoadGeneration) return;
     console.error("Failed to fetch track lyrics:", error);
+  } finally {
+    if (generation === lyricsLoadGeneration) lyricsLoading.value = false;
   }
 };
 
@@ -738,22 +837,9 @@ const titleFontSize = computed(() => {
 });
 
 const subTitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.95em";
-    case "sm":
-      return "1.15em";
-    case "md":
-      return "1.3em";
-    case "lg":
-      return store.showQueueItems ? "1.2em" : "1.5em";
-    case "xl":
-      return store.showQueueItems ? "1.3em" : "1.65em";
-    case "xxl":
-      return store.showQueueItems ? "1.35em" : "1.8em";
-    default:
-      return "1.0em";
-  }
+  // Anchor album/artist size to the track title using the EditorialMediaCard
+  // tile ratio (subtitle 12px / title 14px).
+  return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
 });
 
 const queueTitleFontSize = computed(() => {
@@ -795,7 +881,9 @@ const queueSubtitleFontSize = computed(() => {
 });
 
 const showExpandedPlayerSelectButton = computed(() => {
-  return vuetify.display.height.value > MIN_HEIGHT_SHOW_FULL_DETAILS;
+  // Always show the player select button at the bottom; only hide it on very
+  // short screens (never relocate it to the header).
+  return vuetify.display.height.value > MIN_HEIGHT_SHOW_PLAYER_SELECT_BUTTON;
 });
 
 // methods
@@ -1184,7 +1272,10 @@ const openQueueItemMenu = function (evt: Event, item: QueueItem) {
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue),
+    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue, {
+      context: "queue",
+      hideShuffleRepeat: mdAndUp.value,
+    }),
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });
@@ -1230,13 +1321,26 @@ const virtualScrollRef = ref<InstanceType<
 > | null>(null);
 const loadingMore = ref(false);
 const allItemsLoaded = ref(false);
+// Number of queue items fetched per page, and the distance we keep loaded past
+// the current index so the "queue" tab (sliced from current_index) never empties.
+const QUEUE_PAGE_SIZE = 50;
+// Bumped on every reset; an in-flight page load compares against it to detect it
+// belongs to an outdated queue state and must discard its result.
+let loadGeneration = 0;
 
 const resetItems = async function () {
+  // invalidate any in-flight load and release the loading guard, so a fetch that
+  // errored (e.g. on a dropped remote connection) cannot wedge later loads.
+  loadGeneration += 1;
+  loadingMore.value = false;
   tempHide.value = true;
   queueItems.value = [];
   allItemsLoaded.value = false;
   await sleep(100);
   tempHide.value = false;
+  if (store.showFullscreenPlayer && store.showQueueItems) {
+    loadNextPage();
+  }
 };
 
 const loadNextPage = async function () {
@@ -1247,23 +1351,44 @@ const loadNextPage = async function () {
     return;
   }
   loadingMore.value = true;
-  const pageSize = 50;
+  const generation = loadGeneration;
   const offset = queueItems.value.length;
   // On first load, ensure we fetch enough items to cover past the current
   // index so that nextItems (which slices from current_index) has data.
-  const minNeeded = (store.activePlayerQueue.current_index || 0) + pageSize;
+  const minNeeded =
+    (store.activePlayerQueue.current_index || 0) + QUEUE_PAGE_SIZE;
   const limit =
-    offset === 0 ? Math.max(pageSize, minNeeded - offset) : pageSize;
-  const result = await api.getPlayerQueueItems(
-    store.activePlayerQueue.queue_id,
-    limit,
-    offset,
-  );
-  queueItems.value.push(...result);
-  if (result.length < limit) {
-    allItemsLoaded.value = true;
+    offset === 0
+      ? Math.max(QUEUE_PAGE_SIZE, minNeeded - offset)
+      : QUEUE_PAGE_SIZE;
+  try {
+    const result = await api.getPlayerQueueItems(
+      store.activePlayerQueue.queue_id,
+      limit,
+      offset,
+    );
+    // a reset happened while awaiting; this page is stale, so drop it
+    if (generation !== loadGeneration) return;
+    queueItems.value.push(...result);
+    if (result.length < limit) {
+      allItemsLoaded.value = true;
+    }
+  } finally {
+    // leave the guard untouched if a reset already started a newer load
+    if (generation === loadGeneration) {
+      loadingMore.value = false;
+    }
   }
-  loadingMore.value = false;
+};
+
+// fetch another page when the loaded window no longer extends a full page past
+// the current index, which it is sliced from to build the "queue" tab
+const ensureWindowAheadOfIndex = function () {
+  if (!store.showFullscreenPlayer || !store.showQueueItems) return;
+  const index = store.activePlayerQueue?.current_index ?? 0;
+  if (queueItems.value.length - index < QUEUE_PAGE_SIZE) {
+    loadNextPage();
+  }
 };
 
 const onQueueScroll = function (e: Event) {
@@ -1296,20 +1421,17 @@ onMounted(async () => {
   }
 });
 
-// load initial page when queue items become visible
+// load the initial page (or top up a window that went stale while hidden) when
+// the queue items become visible
 watch(
   [() => store.showFullscreenPlayer, () => store.showQueueItems],
-  () => {
-    if (
-      store.showFullscreenPlayer &&
-      store.showQueueItems &&
-      queueItems.value.length === 0
-    ) {
-      loadNextPage();
-    }
-  },
+  ensureWindowAheadOfIndex,
   { immediate: true },
 );
+
+// keep extending the window as playback advances so the "queue" tab, which
+// slices nextItems from current_index, keeps showing the upcoming items
+watch(() => store.activePlayerQueue?.current_index, ensureWindowAheadOfIndex);
 
 // listen for item updates to refresh items when that happens
 onMounted(() => {
@@ -1351,6 +1473,7 @@ onMounted(() => {
   window.addEventListener("keydown", onKeydown);
   onBeforeUnmount(() => {
     window.removeEventListener("keydown", onKeydown);
+    stopRepeatingOffset();
   });
 });
 
@@ -1485,55 +1608,22 @@ const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
 watchEffect(() => {
-  const LIGHT_TEXT_COLOR = Color("white");
-  const DARK_TEXT_COLOR = Color("black");
-  // Minimum WCAG contrast ration between the background and the text
-  // W3C recommends at least 4.5
-  const MIN_CONTRAST = 5;
-  const ADJUSTMENT_INCREMENT = 0.05;
-
-  // Determine the base color from palette or fallback to theme default
-  const coverImageColorCode = vuetify.theme.current.value.dark
+  const isDarkTheme = vuetify.theme.current.value.dark;
+  const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
     : compProps.colorPalette.lightColor || "#fff";
 
-  // Start with the original cover color as background
-  let bgColor = Color(coverImageColorCode);
+  const textHex = isDarkTheme ? "#ffffff" : "#000000";
+  const inverseTextHex = isDarkTheme ? "#000000" : "#ffffff";
 
-  // Calculate contrast with white and black
-  const lightContrast = LIGHT_TEXT_COLOR.contrast(bgColor);
-  const darkContrast = DARK_TEXT_COLOR.contrast(bgColor);
-
-  // Choose the color with higher contrast as starting value
-  const isLight = lightContrast >= darkContrast;
-  let textColor = isLight ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
-  let contrast = Math.max(lightContrast, darkContrast);
-
-  // If the best contrast still doesn't meet requirements, adjust background
-  if (contrast < MIN_CONTRAST) {
-    // Darken light bg or lighten dark bg until contrast is good
-    let adjustment = ADJUSTMENT_INCREMENT;
-
-    while (contrast < MIN_CONTRAST && adjustment <= 0.5) {
-      if (isLight) {
-        bgColor = bgColor.darken(ADJUSTMENT_INCREMENT);
-      } else {
-        bgColor = bgColor.lighten(ADJUSTMENT_INCREMENT);
-      }
-
-      contrast = Color(textColor).contrast(bgColor);
-      adjustment += ADJUSTMENT_INCREMENT;
-    }
-  }
-
-  // Keep color between text and sliders consistent.
-  // Also, this text color has a better contrast than the automatically selected one
-  document.documentElement.style.setProperty("--text-color", textColor.hex());
+  document.documentElement.style.setProperty("--text-color", textHex);
   document.documentElement.style.setProperty(
     "--text-color-inverse",
-    isLight ? DARK_TEXT_COLOR.hex() : LIGHT_TEXT_COLOR.hex(),
+    inverseTextHex,
   );
-  sliderColor.value = textColor.hex();
+  sliderColor.value = textHex;
+
+  const bgColor = Color(bgHex);
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
@@ -1676,6 +1766,12 @@ watchEffect(() => {
   height: 100%;
 }
 
+.queue-btn-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .media-controls-item {
     margin: 0 5px;
@@ -1730,19 +1826,6 @@ watchEffect(() => {
   text-align: center;
 }
 
-.responsive-icon-holder-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.62;
-  cursor: pointer !important;
-}
-
-.responsive-icon-holder-btn:focus,
-.responsive-icon-holder-btn:hover {
-  opacity: 1;
-}
-
 div,
 button {
   color: var(--text-color);
@@ -1772,6 +1855,14 @@ button {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.lyrics-wrapper > :deep(.lyrics-container) {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
 }
 
 .lyrics-wrapper :deep(.lyrics-line),

@@ -351,6 +351,16 @@ const routes: RouteRecordRaw[] = [
             meta: { requiresAdmin: true },
           },
           {
+            path: "audio-analysis",
+            name: "audioanalysissettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
             path: "remote-access",
             name: "remoteaccesssettings",
             component: () =>
@@ -463,6 +473,16 @@ const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "editdsp" */ "@/views/settings/EditPlayerDsp.vue"
+              ),
+            props: true,
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: "editqueue/:queueId",
+            name: "editqueue",
+            component: () =>
+              import(
+                /* webpackChunkName: "editqueue" */ "@/views/settings/EditPlayerQueue.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },

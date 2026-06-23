@@ -1,11 +1,10 @@
 <template>
   <!-- next button -->
   <Icon
-    v-if="isVisible && player"
     v-bind="{ ...icon, ...$attrs }"
-    :disabled="!canNext || isLoading"
+    :disabled="!player || !canNext || isLoading"
     variant="button"
-    @click="api.playerCommandNext(player.player_id)"
+    @click="api.playerCommandNext(player!.player_id)"
   >
     <SkipForward :size="size" />
   </Icon>
@@ -14,28 +13,28 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import { useActiveAudioSource } from "@/composables/activeAudioSource";
+import { useActiveSource } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
-import { useActiveSource } from "@/composables/activeSource";
+import { SkipForward } from "@lucide/vue";
 import { computed, toRef } from "vue";
-import { SkipForward } from "lucide-vue-next";
 
 // properties
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  isVisible?: boolean;
   icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  isVisible: true,
   icon: undefined,
   size: 20,
 });
 
 const { activeSource } = useActiveSource(toRef(compProps, "player"));
+const { activeAudioSource } = useActiveAudioSource(toRef(compProps, "player"));
 
 const queueHasNext = computed(() => {
   if (!compProps.playerQueue?.active) return false;
@@ -54,6 +53,10 @@ const playerHasNext = computed(() => {
 });
 
 const canNext = computed(() => {
+  // AudioSource queue items carry their own capability flags
+  if (activeAudioSource.value) {
+    return activeAudioSource.value.can_next_previous;
+  }
   // Check if active source can next/previous
   if (activeSource.value) {
     return activeSource.value.can_next_previous;

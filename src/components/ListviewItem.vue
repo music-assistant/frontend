@@ -3,64 +3,77 @@
   <ListItem
     link
     :show-menu-btn="showMenu"
-    :class="{ unavailable: !isAvailable }"
+    :class="{
+      unavailable: !isAvailable,
+      'listitem-selecting': showCheckboxes,
+      'album-track-row': albumTrackView,
+    }"
     @click.stop="onClick"
     @menu.stop="onMenu"
   >
     <template #prepend>
-      <div v-if="showCheckboxes" class="media-thumb listitem-media-thumb">
-        <v-checkbox
+      <div v-if="showCheckboxes" class="flex items-center space-x-2 checkbox">
+        <Checkbox
+          :id="`listviewitem-checkbox-${item.item_id}`"
           :model-value="isSelected"
           @click.stop
           @update:model-value="
-            (x: boolean | null) => {
-              if (x != null) emit('select', item, x);
+            (x: boolean | 'indeterminate') => {
+              if (x != 'indeterminate') emit('select', item, x);
             }
           "
         />
+        <label :for="`listviewitem-checkbox-${item.item_id}`">
+          <ListviewItemTitle
+            :display-name="displayName"
+            :item="item"
+            :show-checkboxes="showCheckboxes"
+            :is-playing="isPlaying"
+          />
+        </label>
       </div>
-      <div v-else class="media-thumb listitem-media-thumb">
-        <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+      <div v-else class="listitem-prepend">
+        <div
+          v-if="
+            albumTrackView &&
+            showTrackNumber &&
+            'track_number' in item &&
+            item.track_number
+          "
+          class="track-number"
+        >
+          {{ item.track_number }}
+        </div>
+        <div v-else class="media-thumb listitem-media-thumb">
+          <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+        </div>
       </div>
     </template>
 
     <!-- title -->
-    <template #title>
-      <span v-if="item.media_type == MediaType.FOLDER">
-        <span>{{ getBrowseFolderName(item as BrowseFolder, t) }}</span>
-      </span>
-      <span v-else :class="{ 'is-playing': isPlaying }">
-        {{ displayName }}
-        <span v-if="'version' in item && item.version"
-          >({{ item.version }})</span
-        >
-        <span
-          v-if="
-            item.media_type == MediaType.TRACK && item.metadata?.release_date
-          "
-        >
-          ({{ new Date(item.metadata.release_date).getFullYear() }})</span
-        >
-      </span>
-      <!-- explicit icon -->
-      <v-tooltip v-if="item && item.metadata" location="bottom">
-        <template #activator="{ props }">
-          <v-icon
-            v-if="parseBool(item.metadata.explicit || false)"
-            v-bind="props"
-            icon="mdi-alpha-e-box"
-            width="35"
-          />
-        </template>
-        <span>{{ $t("tooltip.explicit") }}</span>
-      </v-tooltip>
+    <template v-if="!showCheckboxes" #title>
+      <ListviewItemTitle
+        :display-name="displayName"
+        :item="item"
+        :show-checkboxes="showCheckboxes"
+        :is-playing="isPlaying"
+        :album-track-view="albumTrackView"
+      />
     </template>
 
     <!-- subtitle -->
     <template #subtitle>
+      <!-- album track view: only show collaborating artist(s), if any -->
+      <template v-if="albumTrackView">
+        <div v-if="collabArtists" class="ma-line-clamp-1">
+          {{ $t("with_artists", { artists: collabArtists }) }}
+        </div>
+      </template>
       <!-- track: artists(s) + album (check for provider_mappings to filter out ItemMapping) -->
       <div
-        v-if="item.media_type == MediaType.TRACK && 'provider_mappings' in item"
+        v-else-if="
+          item.media_type == MediaType.TRACK && 'provider_mappings' in item
+        "
         class="ma-line-clamp-1"
       >
         <v-item-group>
@@ -161,14 +174,24 @@
         </v-tooltip>
       </v-img>
 
+      <!-- track duration (album track view) -->
+      <span
+        v-if="
+          albumTrackView &&
+          showDuration &&
+          'duration' in item &&
+          item.duration &&
+          !$vuetify.display.mobile
+        "
+        class="track-duration"
+      >
+        {{ formatDuration(item.duration) }}
+      </span>
+
       <!-- provider icon -->
       <provider-icon
         v-if="getBreakpointValue('bp2') && showProvider"
-        :domain="
-          item.media_type == MediaType.PLAYLIST
-            ? item.provider_mappings[0].provider_domain
-            : item.provider
-        "
+        :domain="getListItemProviderIconDomain(item)"
         :size="24"
       />
 
@@ -193,11 +216,11 @@
           showFavorite &&
           !$vuetify.display.mobile
         "
+        class="favorite-button-wrapper"
       >
         <FavouriteButton :item="item" />
       </div>
 
-      <!-- play button -->
       <v-btn
         v-if="item.is_playable && (showPlayButton ?? getBreakpointValue('bp0'))"
         icon
@@ -219,32 +242,32 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
   getArtistsString,
-  getBrowseFolderName,
-  getGenreDisplayName,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
-  parseBool,
   truncateString,
 } from "@/helpers/utils";
+import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
   AlbumType,
   ContentType,
   MediaType,
-  type BrowseFolder,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { VTooltip } from "vuetify/components";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import ProviderIcon from "./ProviderIcon.vue";
 import { iconHiRes } from "./QualityDetailsBtn.vue";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import ListviewItemTitle from "./ListviewItemTitle.vue";
+
 // properties
 export interface Props {
   item: MediaItemType;
+  albumTrackView?: boolean;
   showTrackNumber?: boolean;
   showDiscNumber?: boolean;
   showPosition?: boolean;
@@ -262,24 +285,13 @@ export interface Props {
   showPlayButton?: boolean;
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
+  sortBy?: string;
 }
 
-// global refs
-const { t, te } = useI18n();
-
-const displayName = computed(() => {
-  if (compProps.item.media_type === MediaType.GENRE) {
-    return getGenreDisplayName(
-      compProps.item.name,
-      compProps.item.translation_key,
-      t,
-      te,
-    );
-  }
-  return compProps.item.name;
-});
+const displayName = computed(() => compProps.item.name);
 
 const compProps = withDefaults(defineProps<Props>(), {
+  albumTrackView: false,
   showTrackNumber: true,
   showDiscNumber: true,
   showProvider: true,
@@ -297,6 +309,19 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
+const collabArtists = computed(() => {
+  if (!("artists" in compProps.item) || !compProps.item.artists) return "";
+  const albumArtists =
+    compProps.parentItem && "artists" in compProps.parentItem
+      ? compProps.parentItem.artists
+      : [];
+  const albumNames = new Set(albumArtists.map((a) => a.name.toLowerCase()));
+  const collab = compProps.item.artists.filter(
+    (a) => !albumNames.has(a.name.toLowerCase()),
+  );
+  return collab.map((a) => a.name).join(" | ");
+});
+
 const HiResDetails = computed(() => {
   if (!("provider_mappings" in compProps.item)) return "";
   for (const prov of compProps.item.provider_mappings) {
@@ -335,6 +360,8 @@ const onMenu = function (evt: Event) {
     mouseEvt.clientX,
     mouseEvt.clientY,
     compProps.parentItem,
+    true,
+    compProps.sortBy,
   );
 };
 
@@ -356,13 +383,54 @@ const onPlayClick = function (evt: PointerEvent) {
     evt.clientX,
     evt.clientY,
     compProps.parentItem,
+    undefined,
+    compProps.sortBy,
   );
 };
 </script>
 
 <style scoped>
+.list-item-main.listitem-selecting {
+  padding: 7px 0 !important;
+}
+
+.checkbox {
+  margin-left: 20px;
+}
+
 .unavailable {
   opacity: 0.3;
+}
+
+.listitem-prepend {
+  display: flex;
+  align-items: center;
+}
+
+.track-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  margin-right: 12px;
+  font-size: 0.875rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.album-track-row :deep(.v-list-item__content) {
+  margin-bottom: 1px;
+}
+
+.favorite-button-wrapper {
+  margin-inline: 10px;
+}
+
+.track-duration {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  margin-right: 12px;
+  white-space: nowrap;
 }
 
 .dimmed {

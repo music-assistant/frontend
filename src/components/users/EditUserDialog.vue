@@ -157,10 +157,7 @@
               </template>
             </form.Field>
 
-            <form.Field
-              v-if="form.state.values.password"
-              name="confirmPassword"
-            >
+            <form.Field v-if="passwordValue" name="confirmPassword">
               <template #default="{ field }">
                 <Field :data-invalid="isInvalid(field)">
                   <FieldLabel :for="field.name">
@@ -240,7 +237,7 @@
           :disabled="loading"
           :loading="loading"
         >
-          {{ $t("edit") }}
+          {{ $t("settings.save") }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -433,6 +430,8 @@ const form = useForm({
     }
   },
 });
+
+const passwordValue = form.useStore((state) => state.values.password);
 
 const isInvalid = (field: AnyFieldApi) => {
   return field.state.meta.errors.length > 0;

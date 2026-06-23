@@ -103,6 +103,7 @@ export enum MediaType {
   PLAYLIST = "playlist",
   RADIO = "radio",
   AUDIOBOOK = "audiobook",
+  AUDIO_SOURCE = "audio_source",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
   GENRE = "genre",
@@ -264,8 +265,13 @@ export enum PlaybackState {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  GROUP = "group", // A (dedicated) group player or playergroup.
   STEREO_PAIR = "stereo_pair",
+  GROUP = "group", // A (dedicated) group player or playergroup.
+  PROTOCOL = "protocol",
+  DISPLAY = "display",
+  VISUALIZER = "visualizer",
+  LIGHT = "light",
+  UNKNOWN = "unknown",
 }
 
 export enum PlayerOptionType {
@@ -291,6 +297,15 @@ export enum PlayerFeature {
   SELECT_SOURCE = "select_source",
   SELECT_SOUND_MODE = "select_sound_mode",
   OPTIONS = "options",
+}
+
+export enum SourceControl {
+  PLAY = "play",
+  PAUSE = "pause",
+  NEXT = "next",
+  PREVIOUS = "previous",
+  SEEK = "seek",
+  UNKNOWN = "unknown",
 }
 
 export enum EventType {
@@ -338,7 +353,9 @@ export enum ProviderFeature {
   LIBRARY_GENRES = "library_genres",
   // additional library features
   ARTIST_ALBUMS = "artist_albums",
+  ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
+  ARTIST_TOPALBUMS = "artist_topalbums",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -350,6 +367,7 @@ export enum ProviderFeature {
   LIBRARY_GENRES_EDIT = "library_genres_edit",
   // bonus features
   SIMILAR_TRACKS = "similar_tracks",
+  SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
   PLAYLIST_CREATE = "playlist_create",
@@ -374,6 +392,7 @@ export enum ProviderType {
   PLAYER = "player",
   METADATA = "metadata",
   PLUGIN = "plugin",
+  AUDIO_ANALYSIS = "audio_analysis",
 }
 
 export enum ConfigEntryType {
@@ -492,6 +511,10 @@ export interface ConfigValueOption {
   // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
+  // disabled: when true the option is shown but not selectable (currently unavailable)
+  disabled?: boolean;
+  // disabled_reason: optional explanation of why the option is disabled
+  disabled_reason?: string;
 }
 
 export interface ConfigEntry {
@@ -534,14 +557,8 @@ export interface ConfigEntry {
   // requires_reload: indicates that a reload of the provider (or player playback)
   // is required when this setting is changed
   requires_reload?: boolean;
-  // translation_key: optional custom translation key for this entry
-  translation_key?: string;
-  // translation_params: optional parameters for the translation key
-  translation_params?: string[];
-  // category_translation_key: optional custom translation key for the category
-  category_translation_key?: string;
-  // category_translation_params: optional parameters for the category translation key
-  category_translation_params?: string[];
+  // category_label: localized category display name, resolved server-side
+  category_label?: string | null;
   // advanced: indicates this is an advanced setting (hidden by default)
   advanced?: boolean;
 
@@ -565,7 +582,10 @@ export interface ProviderConfig extends Config {
   name?: string;
   // default_name: default name to use when there is name available
   default_name?: string;
-  last_error?: string;
+  // last_error: structured error if the provider could not be setup with this config
+  last_error?: ProviderError;
+  // status: load/lifecycle status, derived server-side
+  status?: ProviderStatus;
 }
 
 export interface PlayerConfig extends Config {
@@ -585,6 +605,11 @@ export interface CoreConfig extends Config {
   domain: string;
   manifest: ProviderManifest; // copied here for the UI only
   last_error?: string;
+}
+
+export interface PlayerQueueConfig extends Config {
+  // PlayerQueue Configuration.
+  queue_id: string;
 }
 
 //// media_items
@@ -614,6 +639,10 @@ export interface MediaItemImage {
   path: string;
   provider: string;
   remotely_accessible: boolean;
+  // Opaque sha256(provider+path) id used to address the image via the
+  // canonical /imageproxy/<proxy_id> endpoint. Injected by the server on
+  // schema_version >= 31; absent on older servers.
+  proxy_id?: string;
 }
 
 export interface MediaItemChapter {
@@ -654,7 +683,6 @@ interface _MediaItemBase {
   uri: string;
   external_ids?: Array<[ExternalID, string]>;
   is_playable: boolean; // if the item is playable (can be used in play_media command)
-  translation_key?: string; // an optional translation key identifier
   media_type: MediaType;
 }
 
@@ -699,6 +727,14 @@ export interface Playlist extends MediaItem {
 
 export interface Radio extends MediaItem {}
 
+export interface AudioSource extends MediaItem {
+  can_play_pause: boolean;
+  can_seek: boolean;
+  can_next_previous: boolean;
+  exclusive: boolean;
+  allow_external_trigger: boolean;
+}
+
 export interface Audiobook extends MediaItem {
   publisher: string;
   authors: string[];
@@ -731,6 +767,7 @@ export interface BrowseFolder extends MediaItem {
 }
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
+  subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
 }
 
@@ -739,6 +776,7 @@ export type MediaItemType =
   | Album
   | Track
   | Radio
+  | AudioSource
   | Playlist
   | Audiobook
   | Podcast
@@ -746,7 +784,12 @@ export type MediaItemType =
   | Genre
   | BrowseFolder;
 
-export type PlayableMediaItemType = Track | Radio | Audiobook | PodcastEpisode;
+export type PlayableMediaItemType =
+  | Track
+  | Radio
+  | AudioSource
+  | Audiobook
+  | PodcastEpisode;
 export type MediaItemTypeOrItemMapping = MediaItemType | ItemMapping;
 
 export interface SearchResults {
@@ -826,6 +869,7 @@ export interface QueueItem {
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
     party_boosted?: boolean; // true if added as "boost" (play next)
+    playback_speed?: number; // current playback speed multiplier (audiobook/podcast)
   };
 }
 
@@ -838,8 +882,12 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  dont_stop_the_music_enabled: boolean;
+  autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
+  crossfade_enabled: boolean;
+  // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
+  // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
+  smart_fades_active: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -861,6 +909,7 @@ export interface PlayerQueue {
   next_item?: QueueItem;
   radio_source: MediaItemType[];
   enqueued_media_items: MediaItemType[];
+  is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
   // additional data that is not part of the standard model
   // must be serializable types only
@@ -894,6 +943,15 @@ export interface DeviceInfo {
   identifiers: Record<IdentifierType, string>;
 }
 
+export interface MediaItemPalette {
+  background_dark?: [number, number, number] | null;
+  background_light?: [number, number, number] | null;
+  primary?: [number, number, number] | null;
+  accent?: [number, number, number] | null;
+  on_dark?: [number, number, number] | null;
+  on_light?: [number, number, number] | null;
+}
+
 export interface PlayerMedia {
   uri: string; // uri or other identifier of the loaded media
   media_type: MediaType;
@@ -901,6 +959,7 @@ export interface PlayerMedia {
   artist?: string; // optional
   album?: string; // optional
   image_url?: string; // optional
+  palette?: MediaItemPalette | null; // optional
   duration?: number; // optional
   source_id?: string; // optional
   elapsed_time?: number; // optional
@@ -922,7 +981,6 @@ export interface PlayerSoundMode {
   id: string;
   name: string;
   passive: boolean;
-  translation_key?: string;
 }
 
 export interface PlayerOptionEntry {
@@ -939,7 +997,6 @@ export interface PlayerOption {
   type: PlayerOptionType;
 
   translation_key?: string;
-  translation_params?: string[];
 
   value: PlayerOptionValueType;
   read_only: boolean;
@@ -1039,6 +1096,23 @@ export enum ProviderStage {
   DEPRECATED = "deprecated",
 }
 
+export enum ProviderStatus {
+  LOADED = "loaded",
+  LOADING = "loading",
+  DISABLED = "disabled",
+  AUTH_REQUIRED = "auth_required",
+  INCOMPATIBLE = "incompatible",
+  ERROR = "error",
+}
+
+export interface ProviderError {
+  // Structured error describing why a provider failed to load. The server
+  // localizes `message` (translation key/args are stripped server-side), so the
+  // client renders it directly.
+  error_code: number;
+  message: string;
+}
+
 export interface ProviderInstance {
   // Provider instance details when a provider is serialized over the api.
   type: ProviderType;
@@ -1093,8 +1167,6 @@ export interface BackgroundTask {
   id: string;
   name: string;
   status: TaskStatus;
-  translation_key?: string;
-  translation_args: unknown[];
   logs: string[];
   schedule?: TaskSchedule;
   last_run?: string;
@@ -1239,4 +1311,40 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+}
+
+export interface SmartPlaylistRules {
+  genre_ids: number[];
+  artist_ids: number[];
+  album_ids: number[];
+  favorites_only: boolean;
+  explicit?: boolean | null;
+  seed_track_uris?: string[];
+  seed_artist_uris?: string[];
+  seed_album_uris?: string[];
+  seed_playlist_uris?: string[];
+  seed_names?: Record<string, string>;
+  min_popularity?: number;
+  logic: "AND" | "OR";
+  limit: number;
+  genre_names?: Record<number, string>;
+  artist_names?: Record<number, string>;
+  album_names?: Record<number, string>;
+  year_from?: number;
+  year_to?: number;
+  excluded_artist_ids?: number[];
+  excluded_album_ids?: number[];
+  excluded_genre_ids?: number[];
+  excluded_track_uris?: string[];
+  excluded_artist_names?: Record<number, string>;
+  excluded_album_names?: Record<number, string>;
+  excluded_genre_names?: Record<number, string>;
+  dedup_hours?: number;
+  album_types?: string[];
+  excluded_album_types?: string[];
+}
+
+export interface SmartPlaylistTrackStats {
+  count: number;
+  duration_seconds: number;
 }

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 // import { toggleHAMenu } from "@/plugins/homeassistant";
 // import { store } from "@/plugins/store";
-import { PanelLeft } from "lucide-vue-next";
+import { PanelLeft } from "@lucide/vue";
 import { computed, type HTMLAttributes } from "vue";
 import { useSidebar } from "./utils";
 

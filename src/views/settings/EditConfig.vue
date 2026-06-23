@@ -53,10 +53,7 @@
             size="icon"
             class="help-btn"
             @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
+              conf_entry.description
                 ? (showHelpInfo = conf_entry)
                 : openLink(conf_entry.help_link!)
             "
@@ -126,10 +123,7 @@
             size="icon"
             class="help-btn"
             @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
+              conf_entry.description
                 ? (showHelpInfo = conf_entry)
                 : openLink(conf_entry.help_link!)
             "
@@ -197,10 +191,7 @@
               size="icon"
               class="help-btn"
               @click="
-                $t(
-                  `settings.${conf_entry?.key}.description`,
-                  conf_entry.description || '',
-                )
+                conf_entry.description
                   ? (showHelpInfo = conf_entry)
                   : openLink(conf_entry.help_link!)
               "
@@ -315,10 +306,7 @@
                   size="icon"
                   class="help-btn"
                   @click="
-                    $t(
-                      `settings.${conf_entry?.key}.description`,
-                      conf_entry.description || '',
-                    )
+                    conf_entry.description
                       ? (showHelpInfo = conf_entry)
                       : openLink(conf_entry.help_link!)
                   "
@@ -385,10 +373,7 @@
             size="icon"
             class="help-btn"
             @click="
-              $t(
-                `settings.${conf_entry?.key}.description`,
-                conf_entry.description || '',
-              )
+              conf_entry.description
                 ? (showHelpInfo = conf_entry)
                 : openLink(conf_entry.help_link!)
             "
@@ -436,23 +421,12 @@
     <v-card>
       <v-card-text>
         <h2>
-          {{
-            $t(`settings.${showHelpInfo?.key}.label`, showHelpInfo?.label || "")
-          }}
+          {{ showHelpInfo?.label || "" }}
         </h2>
       </v-card-text>
       <!-- eslint-disable vue/no-v-html -->
       <!-- eslint-disable vue/no-v-text-v-html-on-component -->
-      <v-card-text
-        v-html="
-          markdownToHtml(
-            $t(
-              `settings.${showHelpInfo?.key}.description`,
-              showHelpInfo?.description || '',
-            ),
-          )
-        "
-      />
+      <v-card-text v-html="markdownToHtml(showHelpInfo?.description || '')" />
       <!-- eslint-enable vue/no-v-html -->
       <!-- eslint-enable vue/no-v-text-v-html-on-component -->
       <v-card-actions>
@@ -488,20 +462,19 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { Button } from "@/components/ui/button";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
 import {
-  ConfigEntry,
   ConfigEntryType,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { HelpCircle } from "lucide-vue-next";
-import { computed, onBeforeUnmount, ref, VNodeRef, watch } from "vue";
+import { HelpCircle } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
-import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
 const router = useRouter();
@@ -546,12 +519,21 @@ const panels = computed(() => {
   const allCategories = new Set(
     entries
       .value!.map((x) => x.category)
-      .filter((x) => !["generic", "advanced", "protocol_general"].includes(x)),
+      .filter(
+        (x) =>
+          ![
+            "preferences",
+            "display_settings",
+            "generic",
+            "advanced",
+            "protocol_general",
+          ].includes(x),
+      ),
   );
-  // ensure generic is always first
+  // ensure preferences, display_settings, and generic are always first
   // advanced category is deprecated - advanced settings are now distributed across categories
   // protocol_general is handled separately in the protocol section
-  return ["generic", ...allCategories];
+  return ["preferences", "display_settings", "generic", ...allCategories];
 });
 
 const regularPanels = computed(() => {
@@ -867,32 +849,14 @@ const entriesForCategory = function (category: string) {
 };
 
 const getCategoryTranslation = function (category: string) {
-  // Find the first entry in this category that has a category_translation_key
-  // prefer translation_key over key (using key for translations is deprecated)
+  // The display name comes from `category_label`: resolved server-side for server entries, and
+  // set at construction for frontend-only entries. Read it from any entry in this category.
   const entriesInCategory = entriesForCategory(category);
-
-  // For protocol categories with no visible entries, check all entries (including enabled entry)
   let entryWithTranslation: ConfigEntryUI | undefined = entriesInCategory[0];
   if (!entryWithTranslation && isProtocolCategory(category) && entries.value) {
     entryWithTranslation = entries.value.find((e) => e.category === category);
   }
-
-  if (entryWithTranslation?.category_translation_key) {
-    const translationKey = entryWithTranslation.category_translation_key;
-    // If category_translation_params are provided, pass them directly
-    if (
-      entryWithTranslation.category_translation_params &&
-      entryWithTranslation.category_translation_params.length > 0
-    ) {
-      return $t(
-        translationKey,
-        entryWithTranslation.category_translation_params,
-      );
-    }
-    return $t(translationKey, category);
-  }
-  // Fallback to the old/deprecated pattern of using the category directly
-  return $t(`settings.category.${category}`, category);
+  return entryWithTranslation?.category_label || category;
 };
 
 const getCurrentValues = function () {
@@ -945,18 +909,10 @@ const getCategoryIcon = function (category: string): string {
 };
 
 const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
-  // overly complicated way to determine we have a description for the entry
-  // in either the translations (by entry key), on the entry itself as fallback
-  // OR it has a help link
+  // description is resolved server-side (or set by the frontend for its own settings); the entry
+  // either has one, or a help link
   return (
-    (
-      $t(
-        `settings.${conf_entry?.key}.description`,
-        conf_entry.description || " ",
-      ) ||
-      conf_entry.help_link ||
-      " "
-    )?.length > 1
+    ((conf_entry.description || conf_entry.help_link || " ")?.length ?? 0) > 1
   );
 };
 </script>

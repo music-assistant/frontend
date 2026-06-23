@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
+import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { api, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
@@ -46,6 +47,7 @@ import "vue-sonner/style.css";
 import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
+import { pruneStaleProviderFilters } from "./composables/userPreferences";
 import { initializeCompanionIntegration } from "./plugins/companion";
 // import {
 //   subscribeToHAProperties,
@@ -62,6 +64,7 @@ import {
   WebPlayerMode,
 } from "./plugins/web_player";
 import Login from "./views/Login.vue";
+import { useUserPreferences } from "@/composables/userPreferences";
 
 const theme = useTheme();
 const router = useRouter();
@@ -86,27 +89,31 @@ const showMainApp = computed(() => {
 });
 
 const setTheme = function () {
-  const themePref = localStorage.getItem("frontend.settings.theme") || "auto";
+  // TODO: Remove localStorage fallback once migration period is over (theme moved to user preferences)
+  const themePref =
+    (store.currentUser?.preferences?.theme as string) ||
+    localStorage.getItem("frontend.settings.theme") ||
+    "auto";
   let themeValue: "light" | "dark";
 
   if (themePref == "dark") {
     // forced dark mode
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else if (themePref == "light") {
     // forced light mode
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   } else if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   ) {
     // dark mode is enabled in browser
-    theme.global.name.value = "dark";
+    theme.change("dark");
     themeValue = "dark";
   } else {
     // light mode is enabled in browser
-    theme.global.name.value = "light";
+    theme.change("light");
     themeValue = "light";
   }
 
@@ -189,6 +196,39 @@ const handleLocalConnect = async (serverAddress: string) => {
 
 let initializationCompleted = false;
 
+// TODO: Remove this migration code in v2.9 release
+// Added in: current version
+// Can be removed: v2.9
+async function migrateLocalStorageToUserPreferences() {
+  // Check if migration already done
+  if (
+    localStorage.getItem("frontend.settings.migrated_to_user_prefs") === "true"
+  ) {
+    return;
+  }
+
+  const { setPreference } = useUserPreferences();
+  const settingsToMigrate = ["theme", "language", "menu_items"];
+
+  try {
+    for (const key of settingsToMigrate) {
+      const value = localStorage.getItem(`frontend.settings.${key}`);
+      if (value !== null && !store.currentUser?.preferences?.[key]) {
+        // Only migrate if backend doesn't already have a value
+        console.log(`[Migration] Migrating ${key} to user preferences:`, value);
+        await setPreference(key, value);
+      }
+    }
+
+    localStorage.setItem("frontend.settings.migrated_to_user_prefs", "true");
+    console.log(
+      "[Migration] Successfully migrated frontend settings to user preferences",
+    );
+  } catch (error) {
+    console.error("[Migration] Failed to migrate settings:", error);
+  }
+}
+
 const completeInitialization = async () => {
   // Guard against multiple initializations
   if (initializationCompleted) {
@@ -216,6 +256,10 @@ const completeInitialization = async () => {
   // subscribeToHAProperties({ kioskMode: kioskPref, router });
   // }
 
+  // TODO: Remove this migration code in v2.9 release
+  // Migrate localStorage settings to user preferences (one-time migration)
+  await migrateLocalStorageToUserPreferences();
+
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
@@ -225,6 +269,8 @@ const completeInitialization = async () => {
   if (!isPartyGuest) {
     // Full initialization for regular and non-party guest users
     await api.fetchState();
+    // Drop persisted filters for providers that are no longer installed.
+    await pruneStaleProviderFilters();
     store.libraryArtistsCount = await api.getLibraryArtistsCount();
     store.libraryAlbumsCount = await api.getLibraryAlbumsCount();
     store.libraryPlaylistsCount = await api.getLibraryPlaylistsCount();
@@ -318,6 +364,8 @@ const completeInitialization = async () => {
 };
 
 onMounted(async () => {
+  initGlobalShortcutsSync();
+
   // Detect if running as installed PWA (works across iOS, Android, and desktop)
   const nav = window.navigator as Navigator & { standalone?: boolean };
   store.isInPWAMode =
@@ -325,8 +373,11 @@ onMounted(async () => {
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: fullscreen)").matches;
 
-  // Cache language settings
-  const langPref = localStorage.getItem("frontend.settings.language") || "auto";
+  // TODO: Remove localStorage fallback once migration period is over (language moved to user preferences)
+  const langPref =
+    (store.currentUser?.preferences?.language as string | undefined) ||
+    localStorage.getItem("frontend.settings.language") ||
+    "auto";
   if (langPref !== "auto") {
     i18n.global.locale.value = langPref;
   }
@@ -334,6 +385,43 @@ onMounted(async () => {
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
 
   setTheme();
+
+  // Watch for user data changes and reapply theme/language
+  watch(
+    () => store.currentUser,
+    (newUser) => {
+      if (newUser) {
+        setTheme();
+        const userLangPref =
+          (store.currentUser?.preferences?.language as string | undefined) ||
+          localStorage.getItem("frontend.settings.language") ||
+          "auto";
+        if (userLangPref !== "auto") {
+          i18n.global.locale.value = userLangPref;
+        }
+      }
+    },
+  );
+
+  // Push UI locale changes to the server so server-provided strings (config labels, media/folder
+  // names, provider descriptions) re-localize. Initial/reconnect locale is sent from the api on
+  // ServerInfo; this catches later changes (language preference applied, manual switch).
+  watch(
+    () => i18n.global.locale.value,
+    async (locale) => {
+      // Only relevant for servers that localize server-provided strings; older servers can't
+      // re-localize, so there's nothing to push or re-fetch.
+      if (!api.supportsServerSideTranslations) return;
+      try {
+        await api.setLocale(locale as string);
+        if (api.state.value === ConnectionState.AUTHENTICATED) {
+          await api.fetchState();
+        }
+      } catch {
+        // best-effort: a failed locale push / refresh shouldn't break the UI
+      }
+    },
+  );
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", setTheme);
@@ -421,6 +509,11 @@ onMounted(async () => {
     } catch (error) {
       console.error("[App] Failed to update party status:", error);
     }
+  });
+
+  // Re-prune when the provider set changes at runtime.
+  api.subscribe(EventType.PROVIDERS_UPDATED, () => {
+    pruneStaleProviderFilters();
   });
 });
 

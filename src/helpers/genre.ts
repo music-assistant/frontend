@@ -1,5 +1,5 @@
+import { Route } from "@lucide/vue";
 import type { Component } from "vue";
-import { Route } from "lucide-vue-next";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { api } from "@/plugins/api";
@@ -25,6 +25,7 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.ARTIST]: "mdi-account-music",
   [MediaType.PLAYLIST]: "mdi-playlist-music",
   [MediaType.RADIO]: "mdi-radio",
+  [MediaType.AUDIO_SOURCE]: "mdi-audio-input-rca",
   [MediaType.AUDIOBOOK]: "mdi-book-music",
   [MediaType.PODCAST]: "mdi-podcast",
   [MediaType.GENRE]: GenreIcon,

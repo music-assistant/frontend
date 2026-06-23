@@ -1,13 +1,16 @@
 <!-- eslint-disable vue/no-v-for-template-key-on-child -->
 <template>
-  <section v-if="!(hideOnEmpty && pagedItems.length == 0)">
+  <section v-if="!(hideOnEmpty && pagedItems.length == 0 && !hasActiveFilters)">
     <!-- eslint-disable vue/no-template-shadow -->
     <Toolbar
       :icon="icon"
       :title="title"
+      :subtitle="subtitle"
       :count="params.search ? pagedItems.length : total || allItems.length"
       color="transparent"
       :menu-items="menuItems"
+      :enforce-overflow-menu="true"
+      :menu-active="hasActiveFilters"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -89,13 +92,16 @@
               :is-selected="isSelected(item)"
               :show-checkboxes="showCheckboxes"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks'].includes(itemtype)
+                ['tracks', 'albums', 'albumtracks', 'artists'].includes(
+                  itemtype,
+                )
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -117,6 +123,7 @@
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </v-col>
@@ -127,12 +134,17 @@
           v-if="viewMode == 'list'"
           :item-height="70"
           height="100%"
-          :items="pagedItems"
+          :items="listDisplayItems"
           style="height: 100%; overflow: hidden"
         >
           <template #default="{ item }">
+            <div v-if="'isDiscHeader' in item" class="disc-header">
+              {{ $t("disc", { number: item.disc }) }}
+            </div>
             <ListviewItem
+              v-else
               :item="item"
+              :album-track-view="itemtype === 'albumtracks'"
               :show-track-number="showTrackNumber"
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
@@ -147,34 +159,35 @@
               :show-details="itemtype.includes('versions')"
               :disable-play-button="isPlayActionInProgress"
               :parent-item="parentItem"
+              :sort-by="params.sortBy"
               @select="onSelect"
             />
           </template>
         </v-virtual-scroll>
       </v-infinite-scroll>
 
-      <!-- show alert if no item found -->
-      <div v-if="!loading && pagedItems.length == 0">
-        <v-alert
-          v-if="
-            !loading &&
-            pagedItems.length == 0 &&
-            (params.search || params.favoritesOnly)
-          "
-          :title="$t('no_content_filter')"
-        >
-          <v-btn
-            v-if="params.search"
-            style="margin-top: 15px"
-            @click="redirectSearch"
-          >
+      <!-- subtle message shown when there are no items to display -->
+      <Empty
+        v-if="!loading && pagedItems.length == 0"
+        class="border-none gap-3 py-8"
+      >
+        <EmptyMedia variant="icon">
+          <FilterX v-if="hasActiveFilters" class="h-5 w-5" />
+          <ListMusic v-else class="h-5 w-5" />
+        </EmptyMedia>
+        <EmptyDescription>
+          {{
+            hasActiveFilters
+              ? $t("no_content_filter")
+              : emptyMessage || $t("no_content")
+          }}
+        </EmptyDescription>
+        <EmptyContent v-if="hasActiveFilters && params.search">
+          <Button variant="outline" size="sm" @click="redirectSearch">
             {{ $t("try_global_search") }}
-          </v-btn>
-        </v-alert>
-        <v-alert v-else-if="!loading && pagedItems.length == 0">
-          {{ $t("no_content") }}
-        </v-alert>
-      </div>
+          </Button>
+        </EmptyContent>
+      </Empty>
 
       <!-- box shown when item(s) selected -->
       <v-snackbar
@@ -194,6 +207,8 @@
                   evt.clientX,
                   evt.clientY,
                   parentItem,
+                  true,
+                  params.sortBy,
                 )
             "
           >
@@ -211,13 +226,19 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Eye, EyeClosed, Layers } from "lucide-vue-next";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyMedia,
+} from "@/components/ui/empty";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
-  getGenreDisplayName,
   handleMenuBtnClick,
   panelViewItemResponsive,
   scrollElement,
@@ -242,6 +263,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -268,9 +290,11 @@ export interface LoadDataParams {
   albumArtistsFilter?: boolean;
   libraryOnly?: boolean;
   hideEmptyFilter?: boolean | null;
+  hideFullyPlayed?: boolean;
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
+  genreContentTypeFilter?: MediaType;
 }
 // properties
 export interface Props {
@@ -288,12 +312,27 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  // when set, the provider filter allows only a single selection at a time
+  singleProviderFilter?: boolean;
+  // when set, the provider filter is a required single selector: exactly one
+  // provider is always selected (defaulting to the first available option) and
+  // it cannot be cleared to "all".
+  requireProviderSelection?: boolean;
+  // explicit list of provider instance_ids to offer in the provider filter.
+  // when set, it replaces the itemtype-derived list (and is not limited to
+  // music providers).
+  providerFilterOptions?: string[];
   updateAvailable?: boolean;
   title?: string;
+  subtitle?: string;
   hideOnEmpty?: boolean;
+  // custom message shown when the listing has no items and no active filters
+  emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
+  showGenreContentTypeFilter?: boolean;
   showHideEmptyFilter?: boolean;
+  showHideFullyPlayedFilter?: boolean;
   allowCollapse?: boolean;
   allowKeyHooks?: boolean;
   extraMenuItems?: ToolBarMenuItem[];
@@ -320,20 +359,27 @@ const props = withDefaults(defineProps<Props>(), {
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
+  emptyMessage: undefined,
   showSearchButton: undefined,
   showRefreshButton: undefined,
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  singleProviderFilter: false,
+  requireProviderSelection: false,
+  providerFilterOptions: undefined,
   allowCollapse: false,
   allowKeyHooks: false,
   limit: 50,
   total: undefined,
   infiniteScroll: true,
   title: undefined,
+  subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
+  showGenreContentTypeFilter: false,
   showHideEmptyFilter: false,
+  showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
   loadPagedData: undefined,
   loadItems: undefined,
@@ -375,6 +421,40 @@ const allItemsReceived = ref(false);
 const initialDataReceived = ref(false);
 const tempHide = ref(false);
 const genreOptions = ref<{ label: string; value: number }[]>([]);
+
+// below this item count, the per-listing search option is hidden to reduce
+// clutter (consumers can force it on/off via the showSearchButton prop).
+const SEARCH_ITEM_THRESHOLD = 25;
+
+interface DiscHeader {
+  isDiscHeader: true;
+  disc: number;
+}
+
+const discNumber = (i: MediaItemType) =>
+  "disc_number" in i ? i.disc_number : undefined;
+
+// for multi-disc albums (in default track order), insert a "Disc X" header
+// before the first track of each disc.
+const listDisplayItems = computed<(MediaItemType | DiscHeader)[]>(() => {
+  const multiDisc =
+    props.itemtype === "albumtracks" &&
+    allItems.value.some((i) => (discNumber(i) ?? 0) > 1);
+  if (!multiDisc || params.value.sortBy !== "track_number") {
+    return pagedItems.value;
+  }
+  const result: (MediaItemType | DiscHeader)[] = [];
+  let lastDisc: number | undefined;
+  for (const item of pagedItems.value) {
+    const disc = discNumber(item);
+    if (disc && disc !== lastDisc) {
+      result.push({ isDiscHeader: true, disc });
+      lastDisc = disc;
+    }
+    result.push(item);
+  }
+  return result;
+});
 
 // methods
 const applyQueryGenreFilter = function () {
@@ -468,6 +548,17 @@ const toggleFavoriteFilter = function () {
   loadData(undefined, undefined, true);
 };
 
+const toggleHideFullyPlayedFilter = function () {
+  params.value.hideFullyPlayed = !params.value.hideFullyPlayed;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "hideFullyPlayedFilter",
+    params.value.hideFullyPlayed,
+  );
+  loadData(undefined, undefined, true);
+};
+
 const toggleLibraryOnlyFilter = function () {
   params.value.libraryOnly = !params.value.libraryOnly;
   setItemsListingPreference(
@@ -505,6 +596,19 @@ const toggleHideEmptyFilter = function () {
     props.itemtype,
     "hideEmptyFilter",
     params.value.hideEmptyFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const changeGenreContentTypeFilter = function (mediaType?: MediaType) {
+  // single-select: clicking the active type clears it back to "all"
+  params.value.genreContentTypeFilter =
+    params.value.genreContentTypeFilter === mediaType ? undefined : mediaType;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "genreContentTypeFilter",
+    params.value.genreContentTypeFilter,
   );
   loadData(undefined, undefined, true);
 };
@@ -660,16 +764,27 @@ const changeAlbumTypeFilter = function (albumType: string) {
 };
 
 const changeProviderFilter = function (providerId: string) {
-  if (params.value.provider?.includes(providerId))
+  if (props.requireProviderSelection) {
+    // required selector: always keep exactly one provider selected — clicking
+    // the active provider is a no-op (it cannot be cleared to "all").
+    if (params.value.provider?.[0] === providerId) return;
+    params.value.provider = [providerId];
+  } else if (props.singleProviderFilter) {
+    // single-select: clicking the active provider clears it, otherwise it
+    // replaces the current selection.
+    params.value.provider = params.value.provider?.includes(providerId)
+      ? undefined
+      : [providerId];
+  } else if (params.value.provider?.includes(providerId)) {
     params.value.provider = params.value.provider?.filter(
       (id) => id !== providerId,
     );
-  else {
+  } else {
     params.value.provider = params.value.provider || [];
     params.value.provider.push(providerId);
   }
   // If the array is empty, set to undefined (show all)
-  if (params.value.provider.length === 0) {
+  if (params.value.provider?.length === 0) {
     params.value.provider = undefined;
   }
   setItemsListingPreference(
@@ -680,6 +795,16 @@ const changeProviderFilter = function (providerId: string) {
   );
   loadData(true, undefined, true);
 };
+
+// the provider list shown by both the provider filter and the provider selector
+const providerFilterSubItems = () =>
+  musicProviders.value.map((provider) => ({
+    label: provider.label,
+    selected: params.value.provider?.includes(provider.value),
+    action: () => {
+      changeProviderFilter(provider.value);
+    },
+  }));
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
@@ -738,8 +863,58 @@ const isSearchActive = computed(() => {
   return searchActive;
 });
 
+// true when the listing has been narrowed by any user-controllable filter
+// (search, favorites, provider, genre, album-type, ...). Used to keep an
+// otherwise hidden-on-empty listing visible — and to explain an empty result —
+// whenever the emptiness might be caused by filtering rather than missing data.
+const hasActiveFilters = computed(() => {
+  const p = params.value;
+  const genreActive = Array.isArray(p.genreIds)
+    ? p.genreIds.length > 0
+    : p.genreIds !== undefined;
+  return Boolean(
+    (p.search && p.search.length > 0) ||
+    p.favoritesOnly ||
+    p.libraryOnly ||
+    p.albumArtistsFilter ||
+    p.hideFullyPlayed ||
+    // a required selector always has a provider chosen — that is not a "filter"
+    (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
+    (p.albumType && p.albumType.length > 0) ||
+    Boolean(p.genreContentTypeFilter) ||
+    genreActive ||
+    // hide-empty genres filter: true (hide empty) and null (defaults only)
+    // both narrow the result; false/undefined means "show all"
+    p.hideEmptyFilter === true ||
+    p.hideEmptyFilter === null,
+  );
+});
+
+// total number of items this listing represents. For flat (loadItems)
+// listings every item is loaded up front, so allItems holds the true total.
+// Server-paged listings only know their total when the parent passes it.
+const totalItemCount = computed(() => {
+  if (props.total !== undefined) return props.total;
+  if (props.loadItems != null) return allItems.value.length;
+  // server-paged without a known total: assume large enough to warrant search
+  return Number.POSITIVE_INFINITY;
+});
+
+// whether the search option is offered. An explicit showSearchButton wins;
+// otherwise search is auto-hidden for small listings to reduce clutter, but
+// kept available while a search is actually in progress.
+const searchAvailable = computed(() => {
+  if (props.showSearchButton === true) return true;
+  if (props.showSearchButton === false) return false;
+  return (
+    isSearchActive.value ||
+    showSearch.value ||
+    totalItemCount.value >= SEARCH_ITEM_THRESHOLD
+  );
+});
+
 const showSearchInput = computed(() => {
-  return showSearch.value && expanded.value;
+  return searchAvailable.value && showSearch.value && expanded.value;
 });
 
 const isLibraryItem = computed(() => {
@@ -765,26 +940,76 @@ const isPlayActionInProgress = computed(() => {
 });
 
 const musicProviders = computed(() => {
-  // Map itemtype to required ProviderFeature(s)
-  const featureMap: Record<string, ProviderFeature | ProviderFeature[]> = {
-    artists: ProviderFeature.LIBRARY_ARTISTS,
-    albums: ProviderFeature.LIBRARY_ALBUMS,
-    tracks: ProviderFeature.LIBRARY_TRACKS,
+  // explicit provider list supplied by the parent: resolve the given
+  // instance_ids to labels as-is, without any itemtype/type filtering.
+  if (props.providerFilterOptions) {
+    return props.providerFilterOptions
+      .map((instanceId) => api.providers[instanceId])
+      .filter((provider) => provider !== undefined)
+      .filter(
+        // honour an admin's personal provider filter, like the default branch
+        // (but without the music-only type guard: these options are
+        // intentionally allowed to include any provider type).
+        (provider) =>
+          !(
+            store.currentUser &&
+            store.currentUser.provider_filter.length &&
+            !store.currentUser.provider_filter.includes(provider.instance_id)
+          ),
+      )
+      .map((provider) => ({
+        label: provider.name,
+        value: provider.instance_id,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  // Map itemtype to the ProviderFeatures that mark a provider as a possible
+  // source of that mediatype. This is intentionally broader than the
+  // LIBRARY_* (sync) features: a provider without a syncable library can still
+  // contribute items to the library by being browsed/searched and favorited
+  // (e.g. catalog providers exposing an artist's albums/tracks).
+  const featureMap: Record<string, ProviderFeature[]> = {
+    artists: [
+      ProviderFeature.LIBRARY_ARTISTS,
+      ProviderFeature.ARTIST_ALBUMS,
+      ProviderFeature.ARTIST_TOPALBUMS,
+      ProviderFeature.ARTIST_TRACKS,
+      ProviderFeature.ARTIST_TOPTRACKS,
+    ],
+    albums: [
+      ProviderFeature.LIBRARY_ALBUMS,
+      ProviderFeature.ARTIST_ALBUMS,
+      ProviderFeature.ARTIST_TOPALBUMS,
+    ],
+    tracks: [
+      ProviderFeature.LIBRARY_TRACKS,
+      ProviderFeature.ARTIST_TRACKS,
+      ProviderFeature.ARTIST_TOPTRACKS,
+    ],
     artisttracks: [
+      ProviderFeature.ARTIST_TRACKS,
       ProviderFeature.ARTIST_TOPTRACKS,
       ProviderFeature.LIBRARY_TRACKS,
     ],
-    playlists: ProviderFeature.LIBRARY_PLAYLISTS,
-    radios: ProviderFeature.LIBRARY_RADIOS,
-    podcasts: ProviderFeature.LIBRARY_PODCASTS,
-    audiobooks: ProviderFeature.LIBRARY_AUDIOBOOKS,
-    genres: ProviderFeature.LIBRARY_GENRES,
+    playlists: [ProviderFeature.LIBRARY_PLAYLISTS],
+    radios: [ProviderFeature.LIBRARY_RADIOS],
+    podcasts: [ProviderFeature.LIBRARY_PODCASTS],
+    audiobooks: [ProviderFeature.LIBRARY_AUDIOBOOKS],
+    genres: [ProviderFeature.LIBRARY_GENRES],
   };
 
   const requiredFeatures = featureMap[props.itemtype];
 
   return Object.values(api.providers)
     .filter((provider) => {
+      // include Smart Playlist plugin provider in the playlists filter
+      if (
+        props.itemtype === "playlists" &&
+        provider.domain === SMART_PLAYLIST_PROVIDER_DOMAIN
+      ) {
+        return provider.available;
+      }
       if (provider.type !== ProviderType.MUSIC) return false;
       if (
         store.currentUser &&
@@ -797,10 +1022,7 @@ const musicProviders = computed(() => {
       }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
-        const features = Array.isArray(requiredFeatures)
-          ? requiredFeatures
-          : [requiredFeatures];
-        return features.some((feature) =>
+        return requiredFeatures.some((feature) =>
           provider.supported_features.includes(feature),
         );
       }
@@ -813,6 +1035,22 @@ const musicProviders = computed(() => {
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
+
+// whether the provider filter is offered. An explicit showProviderFilter wins;
+// otherwise (like the search button) it is shown by default whenever the parent
+// supplies a curated provider list and more than one provider can contribute.
+const providerFilterAvailable = computed(() => {
+  if (props.showProviderFilter === false) return false;
+  if (musicProviders.value.length <= 1) return false;
+  if (props.showProviderFilter === true) return true;
+  return props.providerFilterOptions !== undefined;
+});
+
+// only one provider can be active at a time in both single-select and the
+// stricter required-selection mode.
+const singleProviderSelect = computed(
+  () => props.singleProviderFilter || props.requireProviderSelection,
+);
 
 watchEffect(() => {
   if (!showSearchInput.value) {
@@ -903,6 +1141,19 @@ const menuItems = computed(() => {
     });
   }
 
+  // hide fully played filter (e.g. podcast episodes)
+  if (props.showHideFullyPlayedFilter === true) {
+    items.push({
+      label: "tooltip.filter_hide_fully_played",
+      icon: params.value.hideFullyPlayed
+        ? "mdi-eye-off"
+        : "mdi-eye-off-outline",
+      action: toggleHideFullyPlayedFilter,
+      active: params.value.hideFullyPlayed,
+      overflowAllowed: true,
+    });
+  }
+
   // album artists only filter
   if (props.showAlbumArtistsOnlyFilter === true) {
     items.push({
@@ -930,6 +1181,32 @@ const menuItems = computed(() => {
       action: toggleHideEmptyFilter,
       active: hef === true || hef === null,
       overflowAllowed: true,
+    });
+  }
+
+  // genre content-type filter (music / audiobooks / podcasts)
+  if (props.showGenreContentTypeFilter === true) {
+    const active = params.value.genreContentTypeFilter;
+    items.push({
+      label: "tooltip.genre_content_type",
+      icon: "mdi-bookshelf",
+      disabled: loading.value,
+      active: !!active,
+      closeOnContentClick: true,
+      overflowAllowed: true,
+      subItems: [
+        { label: "genre_content_type.all", value: undefined },
+        { label: "genre_content_type.audiobooks", value: MediaType.AUDIOBOOK },
+        { label: "genre_content_type.podcasts", value: MediaType.PODCAST },
+      ].map((entry) => {
+        return {
+          label: entry.label,
+          selected: active === entry.value,
+          action: () => {
+            changeGenreContentTypeFilter(entry.value);
+          },
+        };
+      }),
     });
   }
 
@@ -962,24 +1239,18 @@ const menuItems = computed(() => {
     });
   }
 
-  // provider filter
-  if (props.showProviderFilter && musicProviders.value.length > 1) {
+  // provider filter — lives in the overflow menu alongside the other filters and
+  // shows the active dot when it narrows results (multi-select stays open to
+  // toggle several; single-select closes on pick).
+  if (providerFilterAvailable.value && !props.requireProviderSelection) {
     items.push({
       label: "tooltip.filter_provider",
       icon: "mdi-package-variant",
       disabled: loading.value,
-      active: params.value.provider && params.value.provider.length > 0,
-      closeOnContentClick: false,
+      active: !!params.value.provider && params.value.provider.length > 0,
+      closeOnContentClick: props.singleProviderFilter,
       overflowAllowed: true,
-      subItems: musicProviders.value.map((provider) => {
-        return {
-          label: provider.label,
-          selected: params.value.provider?.includes(provider.value),
-          action: () => {
-            changeProviderFilter(provider.value);
-          },
-        };
-      }),
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -996,6 +1267,7 @@ const menuItems = computed(() => {
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
+      overflowAllowed: !["playlisttracks"].includes(props.itemtype),
     });
   }
 
@@ -1018,8 +1290,8 @@ const menuItems = computed(() => {
     });
   }
 
-  // toggle search
-  if (props.showSearchButton !== false) {
+  // toggle search (auto-hidden for small listings)
+  if (searchAvailable.value) {
     items.push({
       label: isSearchActive.value
         ? "tooltip.search_filter_active"
@@ -1029,6 +1301,21 @@ const menuItems = computed(() => {
       active: isSearchActive.value,
       disabled: loading.value,
       overflowAllowed: false,
+    });
+  }
+
+  // provider selector — a required single selection shown as a dedicated button
+  // beside search (like the conditional search button). It always has a provider
+  // chosen, so it is not a filter and never shows the active dot.
+  if (providerFilterAvailable.value && props.requireProviderSelection) {
+    items.push({
+      label: "tooltip.select_provider",
+      icon: "mdi-package-variant",
+      disabled: loading.value,
+      // single selection: close on pick so only one stays checked.
+      closeOnContentClick: true,
+      overflowAllowed: false,
+      subItems: providerFilterSubItems(),
     });
   }
 
@@ -1070,12 +1357,13 @@ const menuItems = computed(() => {
     items.push(...props.extraMenuItems);
   }
 
-  // toggle expand
+  // toggle collapse/expand — kept as a dedicated button next to the menu
   if (props.allowCollapse === true) {
     items.push({
       label: "tooltip.collapse_expand",
       icon: "mdi-chevron-up",
       action: toggleExpand,
+      overflowAllowed: false,
     });
   }
 
@@ -1165,7 +1453,10 @@ const restoreSettings = async function () {
     viewMode.value = props.forcedViewMode;
   } else if (prefs.viewMode) {
     viewMode.value = prefs.viewMode;
-  } else if (props.itemtype == "artists") {
+  } else if (
+    props.itemtype == "artists" ||
+    props.itemtype == "similarartists"
+  ) {
     viewMode.value = "panel";
   } else if (props.itemtype == "albums") {
     viewMode.value = "panel";
@@ -1185,6 +1476,10 @@ const restoreSettings = async function () {
   // get stored/default favoriteOnlyFilter for this itemtype
   if (props.showFavoritesOnlyFilter !== false && prefs.favoriteFilter) {
     params.value.favoritesOnly = prefs.favoriteFilter;
+  }
+
+  if (props.showHideFullyPlayedFilter === true && prefs.hideFullyPlayedFilter) {
+    params.value.hideFullyPlayed = prefs.hideFullyPlayedFilter;
   }
 
   // get stored/default libraryOnlyFilter for this itemtype
@@ -1216,9 +1511,34 @@ const restoreSettings = async function () {
     params.value.albumType = prefs.albumType;
   }
 
+  // get stored genre content-type filter for this itemtype
+  if (
+    props.showGenreContentTypeFilter === true &&
+    prefs.genreContentTypeFilter
+  ) {
+    params.value.genreContentTypeFilter = prefs.genreContentTypeFilter;
+  }
+
   // get stored/default provider filter for this itemtype
-  if (props.showProviderFilter === true && prefs.providerFilter) {
-    params.value.provider = prefs.providerFilter;
+  // only apply stored filter if there are multiple providers available
+  // with a single provider, any stored filter is either redundant or stale
+  if (providerFilterAvailable.value && prefs.providerFilter) {
+    const validIds = new Set(musicProviders.value.map((p) => p.value));
+    const filtered = prefs.providerFilter.filter((id) => validIds.has(id));
+    // single-select mode keeps at most one provider, so collapse any stored
+    // multi-select value (e.g. left over from a previous multi-select listing).
+    const next = singleProviderSelect.value ? filtered.slice(0, 1) : filtered;
+    params.value.provider = next.length > 0 ? next : undefined;
+  }
+
+  // required selector: when nothing valid is stored, default to the first
+  // available provider so exactly one is always selected.
+  if (
+    props.requireProviderSelection &&
+    musicProviders.value.length > 0 &&
+    !params.value.provider?.length
+  ) {
+    params.value.provider = [musicProviders.value[0].value];
   }
 
   // get stored searchquery (but only if we're allowed to store the state)
@@ -1328,6 +1648,23 @@ watch(
 // Watch savedPrefs and restore settings when they change (e.g., when user loads)
 watch(savedPrefs, () => restoreSettings(), { immediate: true });
 
+// When a provider stops being usable at runtime, drop it from the active filter
+// and reload so the view refreshes without a remount. Only the live query is
+// touched, not the saved preference: a temporarily unavailable provider keeps
+// its filter so it is reapplied on return. Cleaning up removed providers from
+// the saved preference is handled by pruneStaleProviderFilters.
+watch(
+  () => musicProviders.value.map((p) => p.value).join("|"),
+  () => {
+    if (!params.value.provider || params.value.provider.length === 0) return;
+    const validIds = new Set(musicProviders.value.map((p) => p.value));
+    const next = params.value.provider.filter((id) => validIds.has(id));
+    if (next.length === params.value.provider.length) return;
+    params.value.provider = next.length > 0 ? next : undefined;
+    loadData(true, undefined, true);
+  },
+);
+
 const itemtypeToMediaType: Partial<Record<string, MediaType>> = {
   tracks: MediaType.TRACK,
   albums: MediaType.ALBUM,
@@ -1357,7 +1694,7 @@ const loadGenreOptions = async () => {
       });
       for (const genre of page) {
         all.push({
-          label: getGenreDisplayName(genre.name, genre.translation_key, t, te),
+          label: genre.name,
           value: Number(genre.item_id),
         });
       }
@@ -1472,10 +1809,8 @@ const getSortName = function (
   preferSortName = false,
 ) {
   if (!item) return "";
-  if ("translation_key" in item && item.translation_key && item.name)
-    return t(item.translation_key, [item.name]);
-  if ("translation_key" in item && item.translation_key)
-    return t(item.translation_key);
+  // names (incl. translated folder/media names) are resolved server-side, so we sort
+  // by item.name, falling back to sort_name when explicitly preferred.
   if (preferSortName && "sort_name" in item && item.sort_name)
     return item.sort_name;
   return item.name;
@@ -1542,14 +1877,25 @@ const getFilteredItems = function (
     );
   }
 
-  if (params.sortBy == "album") {
-    result.sort((a, b) =>
-      getSortName((a as Track).album).localeCompare(
-        getSortName((b as Track).album),
+  if (params.sortBy == "album" || params.sortBy == "album_sort_name") {
+    const preferSortName = params.sortBy == "album_sort_name";
+    result.sort((a, b) => {
+      const albumCompare = getSortName(
+        (a as Track).album,
+        preferSortName,
+      ).localeCompare(
+        getSortName((b as Track).album, preferSortName),
         undefined,
         { numeric: true },
-      ),
-    );
+      );
+      if (albumCompare !== 0) return albumCompare;
+      const discCompare =
+        ((a as Track).disc_number ?? 0) - ((b as Track).disc_number ?? 0);
+      if (discCompare !== 0) return discCompare;
+      return (
+        ((a as Track).track_number ?? 0) - ((b as Track).track_number ?? 0)
+      );
+    });
   }
   if (params.sortBy == "artist") {
     result.sort((a, b) =>
@@ -1611,6 +1957,10 @@ const getFilteredItems = function (
     result = result.filter((x) => x.favorite);
   }
 
+  if (params.hideFullyPlayed) {
+    result = result.filter((x) => (x as PodcastEpisode).fully_played !== true);
+  }
+
   if (params.albumType && params.albumType.length > 0) {
     result = result.filter((x) =>
       params.albumType?.includes((x as Album).album_type),
@@ -1642,9 +1992,24 @@ const selectAll = async function () {
     showCheckboxes.value = true;
   }
 };
+
+defineExpose({
+  sortBy: computed(() => params.value.sortBy),
+  reload: () => loadData(true, true),
+});
 </script>
 
 <style scoped>
+.disc-header {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 16px 8px 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
 /* ThumbView panel columns */
 .col-2 {
   width: 50%;

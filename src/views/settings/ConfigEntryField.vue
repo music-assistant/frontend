@@ -19,7 +19,7 @@
       density="comfortable"
       class="config-alert"
     >
-      {{ getTranslatedLabel() }}
+      {{ displayLabel() }}
     </v-alert>
 
     <!-- alert value -->
@@ -30,7 +30,7 @@
       variant="tonal"
       class="config-alert"
     >
-      {{ getTranslatedLabel() }}
+      {{ displayLabel() }}
     </v-alert>
 
     <!-- action type -->
@@ -44,7 +44,7 @@
       :disabled="isFieldDisabled"
       @click="$emit('action')"
     >
-      {{ getTranslatedActionLabel() }}
+      {{ displayActionLabel() }}
     </v-btn>
 
     <!-- DSP Config Button -->
@@ -79,7 +79,7 @@
     <v-checkbox
       v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
       :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       color="primary"
       :disabled="isFieldDisabled"
       hide-details
@@ -98,7 +98,7 @@
       class="config-slider-wrapper"
     >
       <v-label class="config-slider-label">
-        {{ getTranslatedLabel() }}
+        {{ displayLabel() }}
       </v-label>
       <div class="config-slider-block">
         <v-slider
@@ -141,7 +141,7 @@
     <v-text-field
       v-else-if="confEntry.type == ConfigEntryType.SECURE_STRING"
       :model-value="confEntry.value"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :disabled="isFieldDisabled"
       :rules="[
@@ -172,9 +172,17 @@
       :chips="confEntry.multi_value"
       :clearable="true"
       :multiple="confEntry.multi_value"
-      :items="translatedOptions"
+      :items="displayOptions"
+      :item-props="
+        (item) => ({
+          title: item.title,
+          value: item.value,
+          disabled: item.disabled,
+          subtitle: item.disabled ? item.disabled_reason : undefined,
+        })
+      "
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) =>
@@ -196,7 +204,7 @@
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -216,7 +224,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :prepend-inner-icon="confEntry.value as string"
       variant="outlined"
       density="comfortable"
@@ -234,7 +242,7 @@
       chips
       :clearable="true"
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -252,7 +260,7 @@
       :placeholder="confEntry.default_value?.toString()"
       clearable
       :disabled="isFieldDisabled"
-      :label="getTranslatedLabel()"
+      :label="displayLabel()"
       :required="confEntry.required"
       :rules="[
         (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
@@ -303,40 +311,13 @@ const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;
 }>();
 
-// Helper function to get the translated label for a config entry
-const getTranslatedLabel = () => {
-  // prefer translation_key over key (using key for translations is deprecated)
-  const key = props.confEntry.translation_key || props.confEntry.key;
-  const translationKey = `settings.${key}.label`;
-  const fallback = props.confEntry.label;
+// Labels arrive display-ready: server-provided entries are resolved server-side for the
+// connection locale, and frontend-only entries are translated where they are constructed.
+// This field just surfaces them, so there is no translation lookup here.
+const displayLabel = () => props.confEntry.label || props.confEntry.key;
 
-  // If translation_params are provided, pass them directly
-  if (
-    props.confEntry.translation_params &&
-    props.confEntry.translation_params.length > 0
-  ) {
-    return $t(translationKey, props.confEntry.translation_params) || fallback;
-  }
-
-  return $t(translationKey, fallback);
-};
-
-// Helper function to get the translated action label for a config entry
-const getTranslatedActionLabel = () => {
-  const key = props.confEntry.translation_key || props.confEntry.key;
-  const translationKey = `settings.${key}.label`;
-  const fallback = props.confEntry.action_label || props.confEntry.label;
-
-  // If translation_params are provided, pass them directly
-  if (
-    props.confEntry.translation_params &&
-    props.confEntry.translation_params.length > 0
-  ) {
-    return $t(translationKey, props.confEntry.translation_params) || fallback;
-  }
-
-  return $t(translationKey, fallback);
-};
+const displayActionLabel = () =>
+  props.confEntry.action_label || props.confEntry.label || props.confEntry.key;
 
 const onUpdateValue = (value: ConfigValueType) => {
   // When value is cleared (null/undefined/empty array), emit the default value instead
@@ -357,27 +338,16 @@ const onClear = () => {
   emit("update:value", null);
 };
 
-const translatedOptions = computed(() => {
+const displayOptions = computed(() => {
   if (!props.confEntry.options) return [];
   const options: ConfigValueOption[] = [];
   for (const orgOption of props.confEntry.options) {
-    let cleanVal = orgOption.value?.toString() || "";
-    let cleanTitle = orgOption.title?.toString() || "";
-    for (const specialChar of ["@", "$", "|"]) {
-      if (cleanVal.includes(specialChar)) {
-        cleanVal = cleanVal.replaceAll(specialChar, "");
-      }
-      if (cleanTitle.includes(specialChar)) {
-        cleanTitle = cleanTitle.toString().replaceAll(specialChar, "");
-      }
-    }
-    let title = $t(
-      `settings.${props.confEntry.key}.options.${cleanVal}`,
-      cleanTitle,
-    );
+    // option titles are resolved server-side for the connection locale; use them directly
     const option: ConfigValueOption = {
-      title: title,
+      title: orgOption.title?.toString() || orgOption.value?.toString() || "",
       value: orgOption.value,
+      disabled: orgOption.disabled,
+      disabled_reason: orgOption.disabled_reason,
     };
     if (option.value == props.confEntry.default_value) {
       option.title += ` [${$t("settings.default")}]`;

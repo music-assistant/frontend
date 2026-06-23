@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { MoreVertical } from "lucide-vue-next";
+import { MoreVertical } from "@lucide/vue";
 
 import { Button } from "@/components/ui/button";
 import {

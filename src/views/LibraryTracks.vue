@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    ref="itemsListing"
     itemtype="tracks"
     path="librarytracks"
     :show-provider="false"
@@ -28,7 +29,11 @@
     :total="total"
     :show-provider-filter="true"
   />
-  <AddManualLink v-model="showAddEditDialog" :type="MediaType.RADIO" />
+  <AddManualLink
+    v-model="showAddEditDialog"
+    :type="MediaType.TRACK"
+    @success="itemsListing?.reload()"
+  />
 </template>
 
 <script setup lang="ts">
@@ -37,7 +42,7 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Music2 } from "lucide-vue-next";
+import { Music2 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -47,6 +52,7 @@ defineOptions({
 const updateAvailable = ref<boolean>(false);
 const total = ref(store.libraryTracksCount);
 const showAddEditDialog = ref(false);
+const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
 const sortKeys = [
   "name",

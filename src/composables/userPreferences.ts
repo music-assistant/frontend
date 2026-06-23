@@ -1,5 +1,6 @@
 import { computed, ComputedRef } from "vue";
 import { api } from "@/plugins/api";
+import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 
 export interface ItemsListingPreferences {
@@ -9,10 +10,47 @@ export interface ItemsListingPreferences {
   libraryFilter?: boolean;
   albumArtistsFilter?: boolean;
   hideEmptyFilter?: boolean | null;
+  hideFullyPlayedFilter?: boolean;
   albumType?: string[];
   providerFilter?: string[];
+  genreContentTypeFilter?: MediaType;
   expand?: boolean;
   search?: string;
+}
+
+/**
+ * Standalone helper — usable outside Vue component setup (e.g. composables).
+ * Sets a single user preference key, deep-clones the value, and persists to the server.
+ */
+export async function setUserPreference(
+  key: string,
+  value: unknown,
+): Promise<void> {
+  if (!store.currentUser) {
+    console.warn("Cannot set preference: no user logged in");
+    return;
+  }
+
+  if (!store.currentUser.preferences) {
+    store.currentUser.preferences = {};
+  }
+
+  const plainValue = JSON.parse(JSON.stringify(value));
+
+  const updatedPreferences = {
+    ...store.currentUser.preferences,
+    [key]: plainValue,
+  };
+
+  store.currentUser.preferences = updatedPreferences;
+
+  try {
+    await api.updateUser(store.currentUser.user_id, {
+      preferences: updatedPreferences,
+    });
+  } catch (error) {
+    console.error("Failed to update user preferences:", error);
+  }
 }
 
 /**
@@ -44,32 +82,7 @@ export function useUserPreferences() {
    * Updates optimistically on the client and sends to server
    */
   async function setPreference(key: string, value: unknown): Promise<void> {
-    if (!store.currentUser) {
-      console.warn("Cannot set preference: no user logged in");
-      return;
-    }
-
-    if (!store.currentUser.preferences) {
-      store.currentUser.preferences = {};
-    }
-
-    // Deep clone to ensure we have plain objects, not reactive/computed refs
-    const plainValue = JSON.parse(JSON.stringify(value));
-
-    const updatedPreferences = {
-      ...store.currentUser.preferences,
-      [key]: plainValue,
-    };
-
-    store.currentUser.preferences = updatedPreferences;
-
-    try {
-      await api.updateUser(store.currentUser.user_id, {
-        preferences: updatedPreferences,
-      });
-    } catch (error) {
-      console.error("Failed to update user preferences:", error);
-    }
+    await setUserPreference(key, value);
   }
 
   /**
@@ -117,4 +130,58 @@ export function useUserPreferences() {
     getItemsListingPreferences,
     setItemsListingPreference,
   };
+}
+
+/**
+ * Drop ids from every itemsListing.*.providerFilter for providers that no
+ * longer have a config. Writes once if anything changed.
+ *
+ * Keyed off configs rather than loaded instances (api.providers): a disabled,
+ * failing, or still-starting provider keeps its config and so keeps its filter.
+ * Only a removed provider has no config.
+ */
+export async function pruneStaleProviderFilters(): Promise<void> {
+  if (!store.currentUser?.preferences) return;
+
+  let configuredIds: Set<string>;
+  try {
+    const configs = await api.getProviderConfigs();
+    configuredIds = new Set(configs.map((config) => config.instance_id));
+  } catch (error) {
+    console.error("Failed to load provider configs for filter pruning:", error);
+    return;
+  }
+  // No configs yet (server not ready): never wipe filters.
+  if (configuredIds.size === 0) return;
+
+  const prefs = store.currentUser.preferences;
+  const updatedPrefs: Record<string, unknown> = { ...prefs };
+  let changed = false;
+
+  for (const key of Object.keys(prefs)) {
+    if (!key.startsWith("itemsListing.")) continue;
+    const value = prefs[key] as ItemsListingPreferences | undefined;
+    if (!value || !Array.isArray(value.providerFilter)) continue;
+    const pruned = value.providerFilter.filter((id) => configuredIds.has(id));
+    if (pruned.length === value.providerFilter.length) continue;
+    changed = true;
+    const next: ItemsListingPreferences = { ...value };
+    if (pruned.length === 0) {
+      delete next.providerFilter;
+    } else {
+      next.providerFilter = pruned;
+    }
+    updatedPrefs[key] = next;
+  }
+
+  if (!changed) return;
+
+  store.currentUser.preferences = updatedPrefs;
+  try {
+    await api.updateUser(store.currentUser.user_id, {
+      preferences: updatedPrefs,
+    });
+  } catch (error) {
+    console.error("Failed to prune stale provider filters:", error);
+  }
 }

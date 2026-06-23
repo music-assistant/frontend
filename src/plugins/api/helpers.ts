@@ -1,7 +1,139 @@
 // several helpers for dealing with the api and its (media) items
 
 import api from ".";
-import { MediaItemType, ItemMapping, MediaType, Player } from "./interfaces";
+import {
+  AudioSource,
+  MediaItemType,
+  ItemMapping,
+  MediaType,
+  Player,
+  PlayerQueue,
+} from "./interfaces";
+
+/**
+ * Returns true when the given queue is currently playing a single dynamic playlist.
+ * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
+ */
+export const isQueueDynamicPlaylist = function (
+  queue: PlayerQueue | undefined,
+): boolean {
+  return queue?.is_dynamic ?? false;
+};
+
+/**
+ * Returns true when the queue's current item is an infinite stream
+ * (radio station or AudioSource). Shuffle and repeat don't apply in that case.
+ */
+export const isQueueInfiniteStream = function (
+  queue: PlayerQueue | undefined,
+): boolean {
+  const mediaType = queue?.current_item?.media_item?.media_type;
+  return mediaType === MediaType.RADIO || mediaType === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Type guard for AudioSource media items.
+ * AudioSource is a first-class MediaItem representing a plugin source
+ * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
+ * flags drive which transport controls are surfaced when active.
+ */
+export const isAudioSource = function (
+  item: MediaItemType | ItemMapping | undefined,
+): item is AudioSource {
+  return item?.media_type === MediaType.AUDIO_SOURCE;
+};
+
+/**
+ * Check if the connected server meets a minimum version requirement.
+ * Returns true if server version >= the required version, or if the server
+ * reports version 0.0.0 (development builds).
+ */
+export function requireServerVersion(minVersion: string): boolean {
+  const serverVersion = api.serverInfo.value?.server_version;
+  if (!serverVersion) return false;
+
+  const parseVersion = (v: string): number[] => {
+    // Strip any suffix like "beta1", "b2", "dev", etc.
+    return v
+      .replace(/[-].*/g, "")
+      .split(".")
+      .map((n) => parseInt(n, 10) || 0);
+  };
+
+  const server = parseVersion(serverVersion);
+  // Development builds (0.0.0) always pass
+  if (server[0] === 0 && server[1] === 0 && server[2] === 0) return true;
+
+  const required = parseVersion(minVersion);
+  for (let i = 0; i < Math.max(server.length, required.length); i++) {
+    const s = server[i] || 0;
+    const r = required[i] || 0;
+    if (s > r) return true;
+    if (s < r) return false;
+  }
+  return true; // equal
+}
+
+/**
+ * Whether the item is a member of the user's library.
+ *
+ * Membership is derived from the per-provider-mapping in_library flag, NOT from
+ * provider == "library". The backend creates library DB rows for an item's
+ * relatives (an artist/album reached from a saved track) as relational support,
+ * so a "library" row may exist without the item being a library member.
+ */
+export const isItemInLibrary = function (
+  item: MediaItemType | ItemMapping | null | undefined,
+): boolean {
+  if (!item) return false;
+  // favoriting forces an item into the library, so favorite implies membership
+  if ("favorite" in item && item.favorite === true) return true;
+  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
+    return item.provider_mappings.some((pm) => !!pm.in_library);
+  }
+  return false;
+};
+
+/**
+ * Domain to feed ProviderIcon for an item's source/membership badge.
+ * Any in-library item shows the library (bookshelf) icon, regardless of media
+ * type, so the user can tell at a glance whether it is in or out of library.
+ * Items outside the library show the icon of their first provider mapping (or
+ * the item's own provider as a fallback).
+ */
+export const getProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (isItemInLibrary(item)) return "library";
+  if (
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return item.provider;
+};
+
+/**
+ * Provider icon domain for media listing tiles. Playlists always surface their
+ * source provider icon: a playlist listing is library-only by definition, so a
+ * bookshelf icon would be redundant and the source is the useful signal. Every
+ * other item type follows getProviderIconDomain.
+ */
+export const getListItemProviderIconDomain = function (
+  item: MediaItemType | ItemMapping,
+): string {
+  if (
+    item.media_type === MediaType.PLAYLIST &&
+    "provider_mappings" in item &&
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.length > 0
+  ) {
+    return item.provider_mappings[0].provider_domain;
+  }
+  return getProviderIconDomain(item);
+};
 
 export const itemIsAvailable = function (
   item: MediaItemType | ItemMapping,

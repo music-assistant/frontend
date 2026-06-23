@@ -170,17 +170,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         env:
           VITE_REMOTE_MODE: 'true'
           VITE_SIGNALING_URL: 'wss://signaling.music-assistant.io/ws'
@@ -200,7 +203,7 @@ jobs:
 
 1. Connect your repository to Cloudflare Pages
 2. Configure build settings:
-   - Build command: `yarn build`
+   - Build command: `pnpm build`
    - Build output directory: `dist`
 3. Add environment variables:
    - `VITE_REMOTE_MODE`: `true`
