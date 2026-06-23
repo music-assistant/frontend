@@ -143,10 +143,6 @@
         "group_members": "Membres du groupe",
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
-        "category": {
-            "web_player": "Lecteur Web",
-            "protocol_settings": "Protocole(s) de sortie"
-        },
         "theme": {
             "label": "Thème",
             "options": {
@@ -413,6 +409,10 @@
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
         "provider_codeowners": "Ce fournisseur est fourni\/maintenu par",
         "provider_credits": "Rendu possible par",
+        "category": {
+            "web_player": "Lecteur Web",
+            "protocol_settings": "Protocole(s) de sortie"
+        },
         "onboarding_subtitle": "Pour commencer, connectez vos sources musicales et vos appareils audio.",
         "onboarding_music_title": "Musique",
         "onboarding_music_desc": "Connectez vos services de streaming comme Spotify, Tidal ou votre bibliothèque musicale locale.",
@@ -589,7 +589,6 @@
     "power_off_player": "Éteindre",
     "powered_off_players": "Lecteurs éteints",
     "sync_player_with": "Synchroniser avec un autre lecteur",
-    "open_player_settings": "Ouvrir les paramètres",
     "select_repeat_mode": "Sélectionner le mode de répétition",
     "repeat_mode": {
         "all": "Répéter toute la file d'attente",
@@ -891,27 +890,6 @@
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",
     "genre_name": "Nom du genre",
-    "player_options": {
-        "enhancer": "Améliorateur",
-        "equalizer_high": "Égaliseur aigus",
-        "equalizer_low": "Égaliseur graves",
-        "equalizer_mid": "Égaliseur médiums",
-        "equalizer_mode": "Mode égaliseur",
-        "extra_bass": "Basses renforcées",
-        "link_audio_delay": "Délai audio du lien",
-        "link_control": "Contrôle du lien",
-        "link_audio_quality": "Qualité audio du lien",
-        "party_mode": "Mode fête",
-        "pure_direct": "Direct pur",
-        "sleep": "Minuterie de mise en veille",
-        "speaker_a": "Haut-parleur A",
-        "speaker_b": "Haut-parleur B",
-        "subwoofer_volume": "Volume du subwoofer",
-        "surround_3d": "Surround 3D",
-        "surround_decoder_type": "Type de décodeur surround",
-        "tone_control_mode": "Mode de contrôle de tonalité",
-        "treble": "Aigus"
-    },
     "providers": {
         "party": {
             "guest_page": {

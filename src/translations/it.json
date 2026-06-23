@@ -143,7 +143,6 @@
         "group_members": "Membri del gruppo",
         "default": "Predefinito",
         "provider_depends_on_confirm": "Prima di poter impostare {0}, devi aver configurato il {1} provider. Vuoi farlo ora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -414,7 +413,6 @@
     "power_off_player": "Spento",
     "powered_off_players": "Lettori disattivati",
     "sync_player_with": "Sincronizza con un altro lettore",
-    "open_player_settings": "Apri impostazioni",
     "select_repeat_mode": "Seleziona la modalità di ripetizione",
     "repeat_mode": {
         "all": "Ripeti l'intera coda",

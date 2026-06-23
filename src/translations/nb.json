@@ -143,10 +143,6 @@
         "group_members": "Gruppemedlemmer",
         "default": "standard",
         "provider_depends_on_confirm": "Før du kan sette opp {0}, må du ha konfigurert {1} -leverandøren. Vil du gjøre det nå?",
-        "category": {
-            "web_player": "Nettspiller",
-            "options": "Spillerinnstillinger"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -323,6 +319,12 @@
         "view_players": "Se spillere",
         "api_docs": "API-dokumentasjon",
         "provider_credits": "Gjort mulig av",
+        "category": {
+            "web_player": "Nettspiller",
+            "options": "Spillerinnstillinger",
+            "preferences": "Innstillinger",
+            "display_settings": "Visning"
+        },
         "onboarding_music_title": "Musikk",
         "onboarding_add_music": "Legg til musikk",
         "onboarding_player_title": "Spillere",
@@ -377,7 +379,27 @@
         "restore_defaults_failed": "Kunne ikke gjenopprette standardinnstillingene for sjangeren",
         "full_restore_failed": "Kunne ikke utføre fullstendig gjenoppretting av sjangeren",
         "error_loading_genres": "Feil ved lasting av sjangre",
-        "player_needs_setup": "Denne spilleren krever nye innstillinger"
+        "player_needs_setup": "Denne spilleren krever nye innstillinger",
+        "audio_analysis_coverage": {
+            "col_provider": "Leverandør",
+            "col_version": "Versjon",
+            "unavailable": "utilgjengelig",
+            "none": "—"
+        },
+        "audio_analysis_concurrency": {
+            "open_settings": "Åpne strømme-innstillinger"
+        },
+        "provider_status_auth_required": "Pålogging kreves",
+        "provider_status_incompatible": "Støttes ikke på dette systemet",
+        "provider_status_error": "Konfigurasjonen mislyktes",
+        "remove_provider": "Fjern leverandør",
+        "remove_provider_confirm": "Vil du fjerne denne leverandøren? Dette kan ikke angres.",
+        "save_failed": "Kunne ikke lagre leverandørinnstillingene",
+        "retry": "Prøv på nytt",
+        "abort_setup": "Avbryt konfigurasjonen",
+        "provider_saved": "Leverandørinnstillingene er lagret",
+        "provider_reloading": "Laster inn leverandør…",
+        "provider_removed": "Leverandøren er fjernet"
     },
     "show_info": "Vis informasjon",
     "show_select_boxes": "Vis valgbokser",
@@ -445,7 +467,8 @@
         "select_all": "Velg alle elementer",
         "hide_empty_genres": "Skjul tomme sjangere",
         "show_empty_genres": "Vis tomme sjangere",
-        "filter_genre": "Filtrer etter sjanger"
+        "filter_genre": "Filtrer etter sjanger",
+        "select_provider": "Velg leverandør"
     },
     "topresult": "Toppresultat",
     "track": "Spor",
@@ -492,7 +515,6 @@
     "power_off_player": "Slå av",
     "powered_off_players": "Avslåtte spillere",
     "sync_player_with": "Synkroniser med en annen spiller",
-    "open_player_settings": "Åpne innstillinger",
     "select_repeat_mode": "Velg repetisjonsmodus",
     "repeat_mode": {
         "all": "Gjenta hele køen",
@@ -644,5 +666,133 @@
         "replace": "Spill av nå (erstatt kø)",
         "replace_next": "Spill av som neste (erstatt kø)",
         "add": "Legg til i køen"
-    }
+    },
+    "background_tasks": {
+        "copy": "Kopier",
+        "download": "Last ned",
+        "result": "Resultat",
+        "last_result": "Siste resultat",
+        "media_type": "Medietype",
+        "system": "System",
+        "status": {
+            "idle": "Inaktiv",
+            "success": "Suksess",
+            "partial_success": "Delvis suksess",
+            "failed": "Mislyktes",
+            "cancelled": "Avlyst",
+            "unknown": "Ukjent"
+        },
+        "schedule": {
+            "never": "aldri",
+            "daily_at": "Daglig kl. {0}"
+        },
+        "schedule_dialog": {
+            "hourly": "Hver time"
+        },
+        "failure": {
+            "issue": "problem",
+            "issues": "problemer",
+            "summary": "{0} {1}",
+            "summary_with_message": "{0} {1} • {2}"
+        },
+        "toast": {
+            "log_download_failed": "Ingen oppgavelogg tilgjengelig for nedlasting."
+        }
+    },
+    "providers": {
+        "party": {
+            "disable_guest_access": "Deaktiver gjestetilgang",
+            "enable_guest_access": "Aktiver gjestetilgang",
+            "guest_access_enabled": "Gjestetilgang aktivert",
+            "guest_access_toggle_failed": "Kunne ikke slå av\/på gjestetilgang",
+            "powered_by": "Drevet av",
+            "guest_page": {
+                "added": "Lagt til",
+                "already_in_queue": "Allerede i kø"
+            }
+        }
+    },
+    "export_playlist": "Eksporter spilleliste",
+    "import_playlist": "Importer spilleliste",
+    "import_playlist_title": "Importer spilleliste",
+    "edit_playlist": "Rediger spilleliste",
+    "edit_radio": "Rediger radiostasjon",
+    "edit_track": "Rediger spor",
+    "similar_tracks": "Lignende spor",
+    "similar_artists": "Lignende artister",
+    "audio_source": "Lydkilde",
+    "smart_playlist": {
+        "edit_rules": "Rediger regler",
+        "off": "Av",
+        "saving": "Lagrer…",
+        "seed_artist_pick": "Velg en artist",
+        "seed_track_pick": "Velg et spor",
+        "track_count_hint": "Uten filtre vises alle sporene i biblioteket. Ved å legge til filtre begrenses utvalget.",
+        "year_from": "Fra",
+        "year_to": "Til",
+        "dynamic_sample_heading": "Dynamisk spilleliste",
+        "add_filter": "Legg til filter",
+        "add_first_filter": "Legg til et filter",
+        "add_first_rule": "Legg til en regel",
+        "add_rule": "Legg til regel",
+        "filter_inactive": "Inaktiv",
+        "hours_unit": "timer",
+        "edited": "«{name}» oppdatert",
+        "empty_desc": "Ingen spor oppfyller dine nåværende kriterier. Juster filteret eller velg et annet utgangspunkt for å komme i gang.",
+        "empty_title": "Ingenting å spille ennå",
+        "favorites_yes": "Ja",
+        "field_album_is": "Album er",
+        "field_album_is_not": "Album er ikke",
+        "field_artist_is": "Artist er",
+        "field_artist_is_not": "Artist er ikke",
+        "field_favorite": "Favoritt",
+        "field_genre_is": "Sjanger er",
+        "field_genre_is_not": "Sjanger er ikke",
+        "field_year": "År",
+        "match_all": "alle",
+        "match_following": "av følgende regler",
+        "no_filters": "Ingen filtre ennå. Legg til et filter for å begrense søkeresultatet.",
+        "no_rules": "Ingen regler ennå. Legg til en for å begynne å matche spor.",
+        "no_rules_desc": "Sporene velges tilfeldig fra hele biblioteket ditt. Legg til en regel for å begrense utvalget.",
+        "no_rules_title": "Alle spor i biblioteket",
+        "op_between": "mellom",
+        "picker_empty_no_match": "Ingen {label} samsvarer med søket ditt.",
+        "picker_empty_remote": "Skriv for å søke etter en {label}.",
+        "picker_empty_search": "Skriv inn minst 2 tegn for å finne en {label}.",
+        "op_is": "er",
+        "op_is_not": "er ikke",
+        "type_library": "Fra biblioteket mitt",
+        "type_seed": "Oppdag",
+        "type_seed_desc": "Oppdag musikk via strømmetjenestene dine.",
+        "seed_album_pick": "Velg et album",
+        "seed_playlist_pick": "Velg en spilleliste",
+        "name_label": "Navn",
+        "name_required": "Vennligst skriv inn et navn.",
+        "results_library": "Bibliotekresultater",
+        "results_other": "Andre resultater",
+        "field_album_type_is": "Albumtypen er",
+        "field_album_type_is_not": "Albumtypen er ikke",
+        "field_explicit": "Eksplisitt",
+        "explicit_allowed": "Tillatt",
+        "explicit_only": "Kun eksplisitt",
+        "explicit_not_allowed": "Ikke tillatt"
+    },
+    "explore": "Utforsk",
+    "shortcuts": "Snarveier",
+    "system": "System",
+    "add_url_item_failed": "Kunne ikke legge til elementet",
+    "added_to_library": "\"{0}\" lagt til i biblioteket",
+    "browse_by_genre": "Bla gjennom etter sjanger",
+    "top_picks_for_you": "Toppvalg for deg",
+    "with_artists": "med {artists}",
+    "disc": "Skive {number}",
+    "album_type_label": "Albumtype",
+    "now_playing": "Spiller nå",
+    "artist_topalbums": "Toppalbum",
+    "in_library": "I biblioteket ditt",
+    "artist_no_library_albums": "Du har ingen album i biblioteket ditt for denne artisten.",
+    "artist_no_library_tracks": "Du har ingen spor i biblioteket ditt for denne artisten.",
+    "artist_all_albums": "Alle album",
+    "artist_all_tracks": "Alle spor",
+    "on_provider": "På {0}"
 }
