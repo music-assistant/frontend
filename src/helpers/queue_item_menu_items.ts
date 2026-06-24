@@ -1,7 +1,8 @@
 // shared logic to build the per-item context menu for the fullscreen queue list
+import { radioModeSupported } from "@/helpers/radio";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import api from "@/plugins/api";
-import { MediaType, QueueItem } from "@/plugins/api/interfaces";
+import { MediaType, QueueItem, QueueOption } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
@@ -33,20 +34,22 @@ export const getQueueItemMenuItems = (
       icon: "mdi-skip-next-circle-outline",
       disabled: locked,
     },
-    {
-      label: "queue_move_up",
+  ];
+
+  // start a radio (endless similar-tracks mix) based on this item
+  const mediaItem = item.media_item;
+  if (mediaItem && radioModeSupported(mediaItem)) {
+    menuItems.push({
+      label: "play_radio",
       labelArgs: [],
-      action: () => api.queueCommandMoveUp(queueId, item.queue_item_id),
-      icon: "mdi-arrow-up",
-      disabled: locked,
-    },
-    {
-      label: "queue_move_down",
-      labelArgs: [],
-      action: () => api.queueCommandMoveDown(queueId, item.queue_item_id),
-      icon: "mdi-arrow-down",
-      disabled: locked,
-    },
+      action: () => api.playMedia([mediaItem.uri], QueueOption.REPLACE, true),
+      icon: "mdi-radio-tower",
+      disabled: false,
+    });
+  }
+
+  // quick reorder / remove (drag the handle for fine-grained moves)
+  menuItems.push(
     {
       label: "queue_move_end",
       labelArgs: [],
@@ -61,10 +64,9 @@ export const getQueueItemMenuItems = (
       icon: "mdi-delete",
       disabled: locked,
     },
-  ];
+  );
 
   // tracks can be opened in their detail page (closes the fullscreen player)
-  const mediaItem = item.media_item;
   if (mediaItem?.media_type === MediaType.TRACK) {
     menuItems.push({
       label: "show_info",
