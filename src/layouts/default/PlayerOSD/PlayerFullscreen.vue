@@ -193,6 +193,7 @@
             <div
               v-else
               class="queue-virt"
+              :class="{ 'queue-virt--dragging': isDragging }"
               :style="{ height: `${totalSize}px` }"
             >
               <div
@@ -201,7 +202,9 @@
                 :ref="measureRow"
                 :data-index="row.index"
                 class="queue-virt-row"
-                :style="{ transform: `translateY(${row.vItem.start}px)` }"
+                :style="{
+                  transform: `translateY(${row.vItem.start + rowOffset(row.index)}px)`,
+                }"
               >
                 <!-- section divider (Now playing / Up next) -->
                 <div v-if="row.divider" class="queue-divider">
@@ -222,6 +225,7 @@
                   :item="row.item"
                   :state="row.state"
                   :is-playing="playerActive"
+                  :dragging="draggingIndex === row.index"
                   :marquee-sync="
                     row.state === 'playing'
                       ? playerMarqueeSync
@@ -231,6 +235,7 @@
                   :boost-badge-color="boostBadgeColor"
                   @click="(e: Event) => openQueueItemMenu(e, row.index)"
                   @menu="(e: Event) => openQueueItemMenu(e, row.index)"
+                  @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
                 />
                 <!-- placeholder while the page loads -->
                 <div v-else class="queue-skeleton">
@@ -263,6 +268,20 @@
                     </span>
                   </button>
                 </div>
+              </div>
+              <!-- floating ghost of the dragged item; tracks the pointer -->
+              <div
+                v-if="isDragging && draggedItem"
+                class="queue-ghost"
+                :style="{ transform: `translateY(${ghostY}px)` }"
+              >
+                <QueueListItem
+                  :item="draggedItem"
+                  state="upcoming"
+                  ghost
+                  :request-badge-color="requestBadgeColor"
+                  :boost-badge-color="boostBadgeColor"
+                />
               </div>
             </div>
           </div>
@@ -586,6 +605,12 @@ const {
   queueSubtitleFontSize,
   openQueueItemMenu,
   chapterClicked,
+  startItemDrag,
+  draggingIndex,
+  isDragging,
+  draggedItem,
+  ghostY,
+  rowOffset,
 } = useFullscreenQueue(showLyrics);
 
 // Protocols with accurate playback time reporting don't need a latency offset.
@@ -1273,6 +1298,22 @@ watchEffect(() => {
   top: 0;
   left: 0;
   width: 100%;
+}
+
+/* While dragging, the rows slide smoothly as the landing gap opens/moves. */
+.queue-virt--dragging .queue-virt-row {
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Floating clone of the dragged row; sits above the list and tracks the
+   pointer. Positioned via an inline translateY in content space. */
+.queue-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 3;
+  pointer-events: none;
 }
 
 /* Placeholder shown while a page of items is still loading. */
