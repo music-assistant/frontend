@@ -1,5 +1,5 @@
+import { Route } from "@lucide/vue";
 import type { Component } from "vue";
-import { Route } from "lucide-vue-next";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { api } from "@/plugins/api";

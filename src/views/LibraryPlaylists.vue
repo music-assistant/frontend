@@ -35,7 +35,7 @@ import {
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListMusic } from "lucide-vue-next";
+import { ListMusic } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 

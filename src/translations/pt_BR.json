@@ -27,8 +27,6 @@
     "clear_selection": "Limpar seleção",
     "close": "Fechar",
     "create_playlist": "Criar nova playlist em {0}",
-    "crossfade_disabled": "O crossfade está desativado",
-    "crossfade_enabled": "O crossfade está ativado",
     "dark_mode": "Modo escuro",
     "delete_db": "Excluir item do banco de dados",
     "details": "Detalhes",
@@ -105,7 +103,6 @@
         "no_providers": "Nenhum provedor de música configurado",
         "no_providers_detail": "Comece sua experiência com o Music Assistant adicionando seus provedores de música abaixo.",
         "not_loaded": "O provedor (ainda) não está carregado",
-        "password": "Senha",
         "player_address": "Endereço",
         "player_disabled": "Esse reprodutor está desativado",
         "player_id": "ID do reprodutor",
@@ -127,7 +124,6 @@
         "setup_provider": "Configurar o provedor: {0}",
         "sync": "Sincronizar agora",
         "sync_running": "Esse provedor está sendo sincronizado",
-        "username": "Usuário",
         "core_modules": "Módulos principais",
         "server_info": "Informação do servidor",
         "server_id": "ID do servidor",
@@ -147,7 +143,6 @@
         "group_members": "Membros do grupo",
         "default": "padrão",
         "provider_depends_on_confirm": "Antes de poder configurar o {0}, você precisa ter o provedor {1} configurado. Deseja fazer isso agora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -412,8 +407,6 @@
     "item_in_library": "Esse item está disponível na biblioteca",
     "back": "Voltar",
     "recently_played": "Reproduzido recentemente",
-    "radiobrowser_by_country": "Por país",
-    "radiobrowser_by_tag": "Por tag",
     "load_more_items": "Carregar mais itens...",
     "radio": "Rádio",
     "muted": "mudo",
@@ -440,7 +433,6 @@
     "power_off_player": "Desligar",
     "powered_off_players": "Desligar players",
     "sync_player_with": "Sincronizar com outro player",
-    "open_player_settings": "Abrir configurações do player",
     "select_repeat_mode": "Selecione o modo de repetição",
     "repeat_mode": {
         "all": "Repetir fila inteira",
@@ -525,9 +517,6 @@
     "homescreen_edit_enable": "Editar tela inicial",
     "homescreen_edit_disable": "Sair do modo de edição da tela inicial",
     "lyrics_will_appear_soon": "A letra aparecerá quando a música começar...",
-    "radiobrowser_by_votes": "Por votos",
-    "radiobrowser_by_clicks": "Por cliques",
-    "radiobrowser_by_language": "Por idioma",
     "auth": {
         "username": "Nome de usuário",
         "password": "Senha",
@@ -556,15 +545,6 @@
         "cancel": "Cancelar",
         "connecting": "Conectando...",
         "authenticating": "Autenticando..."
-    },
-    "remote": {
-        "password": "Senha",
-        "back": "Voltar",
-        "connecting": "Conectando...",
-        "cancel": "Cancelar",
-        "connection_failed": "Falha na conexão",
-        "retry": "Tente novamente",
-        "or": "ou"
     },
     "yes": "Sim",
     "no": "Não"

@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChartGantt, RefreshCw, ScanLine } from "lucide-vue-next";
+import { ChartGantt, RefreshCw, ScanLine } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";

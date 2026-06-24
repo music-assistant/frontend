@@ -224,7 +224,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Music, Search } from "lucide-vue-next";
+import { ArrowLeft, Music, Search } from "@lucide/vue";
 import {
   computed,
   nextTick,

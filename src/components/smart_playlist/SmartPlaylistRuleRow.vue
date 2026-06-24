@@ -209,9 +209,9 @@ import type {
 } from "@/composables/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { fieldIcon } from "./fieldIcon";
-import { X } from "lucide-vue-next";
+import { X } from "@lucide/vue";
 import { computed } from "vue";
+import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleValuePicker from "./SmartPlaylistRuleValuePicker.vue";
 
 const props = defineProps<{

@@ -71,12 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import DynamicPlaylistSample from "@/components/DynamicPlaylistSample.vue";
 import InfoHeader from "@/components/InfoHeader.vue";
+import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
-import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import {
   Dialog,
   DialogContent,
@@ -84,16 +83,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Settings2 } from "lucide-vue-next";
+import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
+import { api } from "@/plugins/api";
 import {
   EventType,
-  type Playlist,
   type EventMessage,
   type MediaItemType,
+  type Playlist,
   type SmartPlaylistRules,
 } from "@/plugins/api/interfaces";
-import { api } from "@/plugins/api";
-import { watch, ref, onMounted, onBeforeUnmount } from "vue";
+import { Settings2 } from "@lucide/vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 export interface Props {
   itemId: string;

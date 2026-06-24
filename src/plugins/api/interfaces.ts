@@ -511,6 +511,10 @@ export interface ConfigValueOption {
   // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
+  // disabled: when true the option is shown but not selectable (currently unavailable)
+  disabled?: boolean;
+  // disabled_reason: optional explanation of why the option is disabled
+  disabled_reason?: string;
 }
 
 export interface ConfigEntry {
@@ -601,6 +605,11 @@ export interface CoreConfig extends Config {
   domain: string;
   manifest: ProviderManifest; // copied here for the UI only
   last_error?: string;
+}
+
+export interface PlayerQueueConfig extends Config {
+  // PlayerQueue Configuration.
+  queue_id: string;
 }
 
 //// media_items
@@ -873,8 +882,12 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  dont_stop_the_music_enabled: boolean;
+  autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
+  crossfade_enabled: boolean;
+  // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
+  // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
+  smart_fades_active: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -968,7 +981,6 @@ export interface PlayerSoundMode {
   id: string;
   name: string;
   passive: boolean;
-  translation_key?: string;
 }
 
 export interface PlayerOptionEntry {
@@ -985,7 +997,6 @@ export interface PlayerOption {
   type: PlayerOptionType;
 
   translation_key?: string;
-  translation_params?: string[];
 
   value: PlayerOptionValueType;
   read_only: boolean;

@@ -54,7 +54,7 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { Play, Sparkles } from "lucide-vue-next";
+import { Play, Sparkles } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env sh
 
-# Ensure yarn is available in PATH
-export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+# Ensure a recent Node + pnpm are available in PATH.
+# Homebrew's node (/opt/homebrew/bin) must come before /usr/local/bin, which
+# may hold an old Node (e.g. 20.x) that pnpm 11 refuses to run on (needs >=22.13).
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-yarn lint
-yarn test:run
+pnpm lint
+pnpm test:run
