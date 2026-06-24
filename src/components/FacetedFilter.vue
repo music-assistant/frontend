@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { PlusCircle, X } from "lucide-vue-next";
+import { PlusCircle, X } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
 import { computed, ref } from "vue";
 

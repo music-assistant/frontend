@@ -288,11 +288,7 @@
               icon="mdi-play-circle-outline"
               :text="truncateString($t('play'), 14)"
               :disabled="!item"
-              :loading="
-                store.activePlayerQueue &&
-                store.activePlayerQueue.extra_attributes
-                  ?.play_action_in_progress === true
-              "
+              :loading="playActionInProgress"
               :open-menu-on-click="!store.activePlayer"
               style="margin-right: 8px; margin-bottom: 4px"
               @click="playButtonClick"
@@ -422,6 +418,15 @@
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
   getImageThumbForItem,
@@ -448,24 +453,15 @@ import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { ArrowLeft, Merge, Trash2 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
-import { useUserPreferences } from "@/composables/userPreferences";
 import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 // properties
 export interface Props {
@@ -607,6 +603,20 @@ const backButtonClick = function () {
     name: "discover",
   });
 };
+
+// Resolve the queue playMedia targets directly, since activePlayerQueue is
+// undefined while an external source is active.
+const playActionInProgress = computed(() => {
+  const player = store.activePlayer;
+  if (!player) return false;
+  const queueId =
+    player.active_source && player.active_source in api.queues
+      ? player.active_source
+      : player.player_id;
+  return (
+    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
+  );
+});
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;

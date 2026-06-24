@@ -226,6 +226,10 @@ import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -233,10 +237,6 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
-import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
-import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
-import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
@@ -261,9 +261,9 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -294,6 +294,7 @@ export interface LoadDataParams {
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
+  genreContentTypeFilter?: MediaType;
 }
 // properties
 export interface Props {
@@ -329,6 +330,7 @@ export interface Props {
   emptyMessage?: string;
   showLibraryOnlyFilter?: boolean;
   showGenreFilter?: boolean;
+  showGenreContentTypeFilter?: boolean;
   showHideEmptyFilter?: boolean;
   showHideFullyPlayedFilter?: boolean;
   allowCollapse?: boolean;
@@ -375,6 +377,7 @@ const props = withDefaults(defineProps<Props>(), {
   subtitle: undefined,
   showLibraryOnlyFilter: false,
   showGenreFilter: false,
+  showGenreContentTypeFilter: false,
   showHideEmptyFilter: false,
   showHideFullyPlayedFilter: false,
   extraMenuItems: undefined,
@@ -593,6 +596,19 @@ const toggleHideEmptyFilter = function () {
     props.itemtype,
     "hideEmptyFilter",
     params.value.hideEmptyFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const changeGenreContentTypeFilter = function (mediaType?: MediaType) {
+  // single-select: clicking the active type clears it back to "all"
+  params.value.genreContentTypeFilter =
+    params.value.genreContentTypeFilter === mediaType ? undefined : mediaType;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "genreContentTypeFilter",
+    params.value.genreContentTypeFilter,
   );
   loadData(undefined, undefined, true);
 };
@@ -865,6 +881,7 @@ const hasActiveFilters = computed(() => {
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||
     (p.albumType && p.albumType.length > 0) ||
+    Boolean(p.genreContentTypeFilter) ||
     genreActive ||
     // hide-empty genres filter: true (hide empty) and null (defaults only)
     // both narrow the result; false/undefined means "show all"
@@ -1167,6 +1184,32 @@ const menuItems = computed(() => {
     });
   }
 
+  // genre content-type filter (music / audiobooks / podcasts)
+  if (props.showGenreContentTypeFilter === true) {
+    const active = params.value.genreContentTypeFilter;
+    items.push({
+      label: "tooltip.genre_content_type",
+      icon: "mdi-bookshelf",
+      disabled: loading.value,
+      active: !!active,
+      closeOnContentClick: true,
+      overflowAllowed: true,
+      subItems: [
+        { label: "genre_content_type.all", value: undefined },
+        { label: "genre_content_type.audiobooks", value: MediaType.AUDIOBOOK },
+        { label: "genre_content_type.podcasts", value: MediaType.PODCAST },
+      ].map((entry) => {
+        return {
+          label: entry.label,
+          selected: active === entry.value,
+          action: () => {
+            changeGenreContentTypeFilter(entry.value);
+          },
+        };
+      }),
+    });
+  }
+
   // album type filter
   if (props.showAlbumTypeFilter) {
     items.push({
@@ -1224,6 +1267,7 @@ const menuItems = computed(() => {
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
+      overflowAllowed: !["playlisttracks"].includes(props.itemtype),
     });
   }
 
@@ -1465,6 +1509,14 @@ const restoreSettings = async function () {
   // get stored/default albumType filter for this itemtype
   if (props.showAlbumTypeFilter === true && prefs.albumType) {
     params.value.albumType = prefs.albumType;
+  }
+
+  // get stored genre content-type filter for this itemtype
+  if (
+    props.showGenreContentTypeFilter === true &&
+    prefs.genreContentTypeFilter
+  ) {
+    params.value.genreContentTypeFilter = prefs.genreContentTypeFilter;
   }
 
   // get stored/default provider filter for this itemtype

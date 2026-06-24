@@ -166,8 +166,25 @@
         />
       </EditorialShelf>
 
-      <section v-if="genres.length" class="ed-section ed-genres">
-        <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
+      <section
+        v-if="showGenres"
+        class="ed-section ed-genres"
+        :class="{ 'ed-dimmed': editMode && !genresEnabled }"
+      >
+        <div class="ed-genres__head">
+          <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
+          <Button
+            v-if="editMode"
+            variant="ghost"
+            size="icon-sm"
+            :title="genresEnabled ? $t('disable') : $t('enable')"
+            :aria-label="genresEnabled ? $t('disable') : $t('enable')"
+            @click="toggleGenres"
+          >
+            <Eye v-if="genresEnabled" />
+            <EyeOff v-else />
+          </Button>
+        </div>
         <div class="ed-genres__grid">
           <EditorialGenreTile
             v-for="genre in genres"
@@ -208,7 +225,6 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useDebounceFn } from "@vueuse/core";
 import {
   ChevronDown,
   ChevronLeft,
@@ -217,7 +233,8 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-} from "lucide-vue-next";
+} from "@lucide/vue";
+import { useDebounceFn } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -280,6 +297,14 @@ const showTopPicks = computed(
 );
 const toggleTopPicks = () =>
   setPreference("discoverTopPicksEnabled", !topPicksEnabled.value);
+
+const genresEnabledPref = getPreference<boolean>("discoverGenresEnabled", true);
+const genresEnabled = computed(() => genresEnabledPref.value !== false);
+const showGenres = computed(
+  () => genres.value.length > 0 && (props.editMode || genresEnabled.value),
+);
+const toggleGenres = () =>
+  setPreference("discoverGenresEnabled", !genresEnabled.value);
 
 function playerSortScore(player: Player) {
   if (player.playback_state == PlaybackState.PLAYING) return 0;
@@ -805,8 +830,14 @@ onBeforeUnmount(() => {
 .ed-genres {
   padding: 0 28px;
 }
+.ed-genres__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
 .ed-genres__title {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.4px;

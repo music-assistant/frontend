@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LucideIcon } from "lucide-vue-next";
+import type { LucideIcon } from "@lucide/vue";
 import {
   BookAudio,
   Disc3,
@@ -10,7 +10,7 @@ import {
   Podcast,
   Radio,
   Tag,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed, markRaw } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";

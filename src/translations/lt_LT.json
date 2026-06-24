@@ -143,11 +143,6 @@
         "group_members": "Grupės nariai",
         "default": "numatytasis",
         "provider_depends_on_confirm": "Prieš nustatymą {0}, jums reikia turėti {1} Paslaugų teikėjas sukonfigūruotas, ar norite tai padaryti dabar?",
-        "category": {
-            "web_player": "Žiniatinklio grotuvas",
-            "protocol_settings": "Išvesties protokolas(-ai)",
-            "options": "Žaidėjo parinktys"
-        },
         "theme": {
             "label": "Tema",
             "options": {
@@ -414,6 +409,11 @@
         "no_group_providers": "Šiuo metu neturite jokių tiekėjų, kurie palaikytų grupių kūrimą",
         "provider_codeowners": "Šį teikėją teikia \/ prižiūri",
         "provider_credits": "Įgalino",
+        "category": {
+            "web_player": "Žiniatinklio grotuvas",
+            "protocol_settings": "Išvesties protokolas(-ai)",
+            "options": "Žaidėjo parinktys"
+        },
         "onboarding_subtitle": "Pradėkime prijungdami muzikos šaltinius ir garso įrenginius.",
         "onboarding_music_title": "Muzika",
         "onboarding_music_desc": "Prijunkite savo transliacijos paslaugas, tokias kaip Spotify, Tidal arba vietinę muzikos biblioteką.",
@@ -648,7 +648,6 @@
     "power_off_player": "Išjungti",
     "powered_off_players": "Neįgalinti grotuvai",
     "sync_player_with": "Sinchronizuokite su kitu grotuvu",
-    "open_player_settings": "Atidaryti nustatymus",
     "select_repeat_mode": "Pasirinkite kartojimo režimą",
     "repeat_mode": {
         "all": "Pakartokite visą eilę",
@@ -972,34 +971,7 @@
     "player_options": {
         "open": "Atidaryti žaidėjo parinktis",
         "settable": "Nustatomos žaidėjo parinktys žaidėjui {0}",
-        "read_only": "Žaidėjo parinktys, skirtos tik skaitymui {0}",
-        "adaptive_drc": "Adaptyvusis DRC",
-        "bass": "Bosai",
-        "bass_extension": "Boso pratęsimas",
-        "clear_voice": "Aiškus balsas",
-        "dts_dialogue_control": "DTS dialogo valdymas",
-        "dialogue_level": "Dialogo lygis",
-        "dialogue_lift": "Dialogo pakėlimas",
-        "dimmer": "Pritemdymas",
-        "enhancer": "Stiprintuvas",
-        "equalizer_high": "Aukštas ekvalaizerio lygis",
-        "equalizer_low": "Žemas ekvalaizerio lygis",
-        "equalizer_mid": "Vidutinio dažnio ekvalaizeris",
-        "equalizer_mode": "Ekvalaizerio režimas",
-        "extra_bass": "Papildomi bosai",
-        "link_audio_delay": "Garso ryšio vėlavimas",
-        "link_control": "Sąsajos valdymas",
-        "link_audio_quality": "Nuorodos garso kokybė",
-        "party_mode": "Vakarėlio režimas",
-        "pure_direct": "Grynai tiesioginis",
-        "sleep": "Miego laikmatis",
-        "speaker_a": "A garsiakalbis",
-        "speaker_b": "B garsiakalbis",
-        "subwoofer_volume": "Žemųjų dažnių garsiakalbio garsumas",
-        "surround_3d": "Erdvinis 3D garsas",
-        "surround_decoder_type": "Erdvinio garso dekoderio tipas",
-        "tone_control_mode": "Tonų valdymo režimas",
-        "treble": "Aukštas dažnis"
+        "read_only": "Žaidėjo parinktys, skirtos tik skaitymui {0}"
     },
     "select_sound_mode": "Pasirinkite garso režimą",
     "refresh": "Atnaujinti",

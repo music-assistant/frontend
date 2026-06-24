@@ -16,6 +16,7 @@
     :total="total"
     :show-provider-filter="true"
     :show-hide-empty-filter="true"
+    :show-genre-content-type-filter="true"
     :extra-menu-items="extraMenuItems"
   />
   <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
@@ -23,13 +24,13 @@
 
 <script setup lang="ts">
 import AddGenreDialog from "@/components/AddGenreDialog.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
 import { EventMessage, EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -83,15 +84,26 @@ const loadItems = async function (params: LoadDataParams) {
         : undefined,
     genre: params.genreIds,
     hide_empty: params.hideEmptyFilter,
+    // when media_type is set the backend ignores hide_empty (media_type implies
+    // non-empty and takes precedence), so the hide-empty toggle is a no-op while
+    // a content-type filter is active.
+    media_type: params.genreContentTypeFilter,
   });
 };
 
 const setTotals = async function (params: LoadDataParams) {
-  if (!params.favoritesOnly && !params.provider) {
+  if (
+    !params.favoritesOnly &&
+    !params.provider &&
+    !params.genreContentTypeFilter
+  ) {
     total.value = store.libraryGenresCount;
     return;
   }
-  if (params.provider && params.provider.length > 0) {
+  if (
+    (params.provider && params.provider.length > 0) ||
+    params.genreContentTypeFilter
+  ) {
     total.value = undefined;
     return;
   }

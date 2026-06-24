@@ -45,8 +45,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { ArrowLeft, Music, UserRound } from "lucide-vue-next";
