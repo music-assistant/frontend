@@ -132,9 +132,6 @@ importers:
       '@fontsource/roboto':
         specifier: 5.2.10
         version: 5.2.10
-      '@mdi/svg':
-        specifier: 7.4.47
-        version: 7.4.47
       '@types/color':
         specifier: 4.2.1
         version: 4.2.1
@@ -1325,9 +1322,6 @@ packages:
 
   '@mdi/font@7.4.47':
     resolution: {integrity: sha512-43MtGpd585SNzHZPcYowu/84Vz2a2g31TvPMTm9uTiCSWzaheQySUcSyUH/46fPnuPQWof2yd0pGBtzee/IQWw==}
-
-  '@mdi/svg@7.4.47':
-    resolution: {integrity: sha512-WQ2gDll12T9WD34fdRFgQVgO8bag3gavrAgJ0frN4phlwdJARpE6gO1YvLEMJR0KKgoc+/Ea/A0Pp11I00xBvw==}
 
   '@napi-rs/wasm-runtime@1.1.5':
     resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
@@ -5860,8 +5854,6 @@ snapshots:
       vue: 3.5.35(typescript@6.0.3)
 
   '@mdi/font@7.4.47': {}
-
-  '@mdi/svg@7.4.47': {}
 
   '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
