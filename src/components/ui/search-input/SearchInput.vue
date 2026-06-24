@@ -47,14 +47,19 @@ defineExpose({
       v-bind="inputAttrs"
       :value="props.modelValue"
       :placeholder="props.placeholder"
-      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @input="
+        emit('update:modelValue', ($event.target as HTMLInputElement).value)
+      "
       @focus="emit('focus')"
       @blur="emit('blur')"
     />
     <InputGroupButton
       v-if="props.clearable"
       v-show="props.modelValue"
-      @click="emit('update:modelValue', ''); emit('clear')"
+      @click="
+        emit('update:modelValue', '');
+        emit('clear');
+      "
     >
       <X class="size-4" />
     </InputGroupButton>
