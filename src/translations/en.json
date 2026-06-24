@@ -1319,6 +1319,8 @@
     "disc": "Disc {number}",
     "album_type_label": "Album type",
     "now_playing": "Now playing",
+    "up_next": "Up next",
+    "queue_buffered_explanation": "This track is already buffered by the player to play next.",
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",
