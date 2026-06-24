@@ -4,6 +4,7 @@
 // keep that component focused on layout.
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -392,6 +393,26 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     );
   };
 
+  // ---- drag-to-reorder (up-next items only) --------------------------------
+
+  // Pointer-driven reorder of the up-next items, in its own composable. While
+  // dragging it stops the list from following playback (so it can't yank).
+  const {
+    startItemDrag,
+    draggingIndex,
+    isDragging,
+    draggedItem,
+    ghostY,
+    rowOffset,
+  } = useQueueDragReorder({
+    scrollEl: queueScrollRef,
+    getVirtualItems: () => virtualizer.value.getVirtualItems(),
+    itemAt,
+    onDragStart: () => {
+      followCurrent.value = false;
+    },
+  });
+
   // ---- party badge colors --------------------------------------------------
 
   const { config: partyConfig, fetchConfig: fetchPartyConfig } =
@@ -490,5 +511,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     queueSubtitleFontSize,
     openQueueItemMenu,
     chapterClicked,
+    startItemDrag,
+    draggingIndex,
+    isDragging,
+    draggedItem,
+    ghostY,
+    rowOffset,
   };
 }

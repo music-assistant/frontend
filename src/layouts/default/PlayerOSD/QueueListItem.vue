@@ -14,6 +14,8 @@
       'qitem--playing': state === 'playing',
       'qitem--buffered': state === 'buffered',
       'qitem--unavailable': !item.available,
+      'qitem--dragging': dragging,
+      'qitem--ghost': ghost,
     }"
     :data-queue-current="state === 'playing' ? 'true' : undefined"
     role="button"
@@ -52,7 +54,7 @@
       </div>
     </div>
 
-    <!-- trailing badges + menu -->
+    <!-- trailing badges + actions -->
     <div class="qitem__append">
       <PartyPlayerBadge
         v-if="item.extra_attributes?.party_guest === true"
@@ -82,10 +84,22 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
+      <!-- drag handle to reorder (up-next items only) -->
+      <button
+        v-if="state === 'upcoming'"
+        type="button"
+        class="qitem__action qitem__grip"
+        :aria-label="$t('queue_reorder')"
+        @pointerdown.stop.prevent="emit('dragstart', $event)"
+        @click.stop
+        @contextmenu.prevent
+      >
+        <GripVerticalIcon class="size-4" />
+      </button>
       <Button
         variant="ghost"
         size="icon-sm"
-        class="qitem__menu"
+        class="qitem__action qitem__menu"
         :aria-label="$t('queue_options')"
         @click.stop="emit('menu', $event)"
         @pointerdown.stop
@@ -112,7 +126,12 @@ import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { formatDuration } from "@/helpers/utils";
 import { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { EllipsisVerticalIcon, InfoIcon, TriangleAlertIcon } from "@lucide/vue";
+import {
+  EllipsisVerticalIcon,
+  GripVerticalIcon,
+  InfoIcon,
+  TriangleAlertIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 export type QueueItemState = "played" | "playing" | "buffered" | "upcoming";
@@ -126,6 +145,10 @@ interface Props {
   marqueeSync?: MarqueeTextSync;
   requestBadgeColor?: string;
   boostBadgeColor?: string;
+  // Whether this row is the one currently being dragged to reorder.
+  dragging?: boolean;
+  // Whether this is the floating "ghost" clone that follows the pointer.
+  ghost?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -133,11 +156,14 @@ const props = withDefaults(defineProps<Props>(), {
   marqueeSync: undefined,
   requestBadgeColor: "#2196f3",
   boostBadgeColor: "#ff5722",
+  dragging: false,
+  ghost: false,
 });
 
 const emit = defineEmits<{
   (e: "click", event: Event): void;
   (e: "menu", event: Event): void;
+  (e: "dragstart", event: PointerEvent): void;
 }>();
 
 const hovered = ref(false);
@@ -290,19 +316,73 @@ const albumName = computed(() => {
   opacity: 0.85;
 }
 
-.qitem__menu {
+.qitem__action {
   opacity: 0;
 }
 
-.qitem:hover .qitem__menu,
-.qitem:focus-within .qitem__menu {
+.qitem:hover .qitem__action,
+.qitem:focus-within .qitem__action {
   opacity: 1;
 }
 
-/* Touch devices have no hover — always reveal the menu affordance. */
+/* Touch devices have no hover — always reveal the action affordances. */
 @media (hover: none) {
-  .qitem__menu {
+  .qitem__action {
     opacity: 1;
   }
+}
+
+/* Drag handle: a plain button (not a shadcn Button) so we fully control the
+   pointer gesture. Sized to match the icon-sm buttons beside it. */
+.qitem__grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  color: var(--text-color, currentColor);
+  cursor: grab;
+  /* Stop the browser from hijacking the gesture as a scroll on touch. */
+  touch-action: none;
+}
+
+.qitem__grip:hover {
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 12%,
+    transparent
+  );
+}
+
+/* The source row stays in place but invisible while dragging — the floating
+   ghost is its stand-in, and the other rows slide to open the landing gap. */
+.qitem--dragging {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.qitem--dragging .qitem__grip {
+  cursor: grabbing;
+}
+
+/* The floating clone that tracks the pointer. Lifted off the list with a
+   shadow + subtle scale; its own action buttons are hidden. */
+.qitem--ghost {
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 14%,
+    #80808055
+  );
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  transform: scale(1.015);
+  cursor: grabbing;
+}
+
+.qitem--ghost .qitem__action {
+  display: none;
 }
 </style>
