@@ -174,7 +174,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Trash2 } from "lucide-vue-next";
+import { Trash2 } from "@lucide/vue";
 import { onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
