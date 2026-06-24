@@ -298,7 +298,7 @@ import { requireServerVersion } from "@/plugins/api/helpers";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Settings } from "lucide-vue-next";
+import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, provide, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -645,7 +645,11 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
-  if (name.includes("player") || name === "addgroup") {
+  if (
+    name.includes("player") ||
+    name.includes("queue") ||
+    name === "addgroup"
+  ) {
     return "players";
   }
   if (
@@ -841,6 +845,9 @@ const breadcrumbItems = computed(() => {
     })
     .with("editplayeroptions", () => {
       items.push({ title: t("settings.category.options"), disabled: true });
+    })
+    .with("editqueue", () => {
+      items.push({ title: t("settings.queue_settings"), disabled: true });
     })
     .with("editcore", () => {
       const domain = route.params.domain as string;

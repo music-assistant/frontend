@@ -42,9 +42,9 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Library, Sparkles } from "lucide-vue-next";
 import type { SmartPlaylistMode } from "@/composables/useSmartPlaylistRulesForm";
 import { $t } from "@/plugins/i18n";
+import { Check, Library, Sparkles } from "@lucide/vue";
 
 const props = defineProps<{
   modelValue: SmartPlaylistMode;

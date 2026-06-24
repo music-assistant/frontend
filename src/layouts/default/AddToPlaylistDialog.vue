@@ -100,7 +100,7 @@ import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListPlus } from "lucide-vue-next";
+import { ListPlus } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const show = ref<boolean>(false);

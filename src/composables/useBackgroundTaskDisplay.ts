@@ -1,5 +1,5 @@
-import { computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useI18n } from "vue-i18n";
+import { formatBackgroundTaskScheduleLabel } from "@/helpers/backgroundTaskSchedule";
+import { type BackgroundTask, TaskStatus } from "@/plugins/api/interfaces";
 import {
   AlertTriangle,
   Ban,
@@ -9,9 +9,9 @@ import {
   LoaderCircle,
   type LucideIcon,
   XCircle,
-} from "lucide-vue-next";
-import { formatBackgroundTaskScheduleLabel } from "@/helpers/backgroundTaskSchedule";
-import { type BackgroundTask, TaskStatus } from "@/plugins/api/interfaces";
+} from "@lucide/vue";
+import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { useI18n } from "vue-i18n";
 
 export const isScheduledTask = (task: BackgroundTask) => task.schedule != null;
 export const isActiveTask = (task: BackgroundTask) =>

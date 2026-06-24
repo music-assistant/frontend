@@ -72,7 +72,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
-import { Music2, SlidersHorizontal } from "lucide-vue-next";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -85,6 +84,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Music2, SlidersHorizontal } from "@lucide/vue";
 import { ref, watch } from "vue";
 
 export interface Props {

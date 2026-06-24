@@ -15,9 +15,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { Clock, ListPlus, Rocket } from "@lucide/vue";
 import Color from "color";
-import { Clock, ListPlus, Rocket } from "lucide-vue-next";
+import { computed } from "vue";
 
 const props = defineProps<{
   tokens: number;
