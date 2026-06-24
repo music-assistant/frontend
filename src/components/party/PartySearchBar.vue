@@ -11,30 +11,19 @@
       <ArrowLeft :size="20" />
     </Button>
 
-    <InputGroup class="search-input-group">
-      <InputGroupAddon>
-        <Search />
-      </InputGroupAddon>
-      <InputGroupInput
-        ref="inputRef"
-        :model-value="searchQuery"
-        :placeholder="$t('providers.party.guest_page.search_placeholder')"
-        autofocus
-        inputmode="search"
-        enterkeyhint="search"
-        @update:model-value="$emit('update:searchQuery', $event)"
-        @keydown.enter="$emit('submit')"
-      />
-      <InputGroupAddon align="inline-end">
-        <InputGroupButton
-          v-if="searchQuery"
-          size="icon-sm"
-          @click="$emit('clear')"
-        >
-          <X :size="16" />
-        </InputGroupButton>
-      </InputGroupAddon>
-    </InputGroup>
+    <SearchInput
+      ref="searchInputRef"
+      class="search-input-group"
+      :model-value="searchQuery"
+      :placeholder="$t('providers.party.guest_page.search_placeholder')"
+      clearable
+      autofocus
+      inputmode="search"
+      enterkeyhint="search"
+      @update:model-value="$emit('update:searchQuery', $event)"
+      @clear="$emit('clear')"
+      @keydown.enter="$emit('submit')"
+    />
   </div>
 
   <!-- Search Filter Chips -->
@@ -59,13 +48,8 @@
 import { computed, ref } from "vue";
 import { $t } from "@/plugins/i18n";
 import { Button } from "@/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { ArrowLeft, Music, Search, UserRound, X } from "lucide-vue-next";
+import { SearchInput } from "@/components/ui/search-input";
+import { ArrowLeft, Music, UserRound } from "lucide-vue-next";
 
 defineProps<{
   searchQuery: string;
@@ -82,13 +66,9 @@ defineEmits<{
   submit: [];
 }>();
 
-const inputRef = ref<InstanceType<typeof InputGroupInput> | null>(null);
+const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null);
 
-const focus = () => {
-  inputRef.value?.focus();
-};
-
-defineExpose({ focus });
+defineExpose({ focus: () => searchInputRef.value?.focus() });
 
 const filters = computed(() => [
   { value: "all", label: $t("searchtype_all"), icon: null },
