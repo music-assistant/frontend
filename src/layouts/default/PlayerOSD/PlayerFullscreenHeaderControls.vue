@@ -59,274 +59,158 @@
       </PopoverContent>
     </Popover>
 
-    <!-- lyrics: clickable toggle while available or still loading -->
-    <Button
-      v-if="lyricsState === 'available' || lyricsState === 'loading'"
-      variant="outline"
-      :size="showLabel ? 'xs' : 'icon-xs'"
-      :class="pillClass"
-      :aria-label="$t('lyrics')"
-      @click="emit('toggle-lyrics')"
-    >
-      <MicVocal
-        :size="16"
-        :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
-      />
-      <span v-if="showLabel">{{ $t("lyrics") }}</span>
-      <span
-        v-if="lyricsActive"
-        class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-        aria-hidden="true"
-      ></span>
-    </Button>
-
-    <!-- lyrics: unavailable -> short explanation popout -->
-    <Popover
-      v-else-if="lyricsState !== 'none'"
-      v-model:open="lyricsInfoOpen"
-      modal
-    >
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="['text-muted-foreground', pillClass]"
-          :aria-label="$t('lyrics')"
-        >
-          <MicVocal :size="16" />
-          <span v-if="showLabel">{{ $t("lyrics") }}</span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="end" :side-offset="6" class="w-64">
-        <div class="flex items-start gap-2">
-          <MicVocal :size="18" class="text-muted-foreground mt-0.5 shrink-0" />
-          <p class="text-muted-foreground text-sm leading-snug">
-            {{
-              lyricsState === "unavailable-content"
-                ? $t("lyrics_unavailable_content")
-                : $t("lyrics_unavailable_song")
-            }}
-          </p>
-        </div>
-      </PopoverContent>
-    </Popover>
-
-    <!-- radio mode (infinite mix) popout -->
-    <Popover v-if="showRadio && queue" v-model:open="radioOpen" modal>
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="[radioModeActive ? '' : 'text-muted-foreground', pillClass]"
-          :aria-label="$t('radio')"
-        >
-          <RadioTower :size="16" />
-          <span v-if="showLabel">{{ $t("radio") }}</span>
-          <span
-            v-if="radioModeActive"
-            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-            aria-hidden="true"
-          ></span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="end" :side-offset="6">
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <RadioTower :size="20" />
-            <span class="text-[0.95rem] font-semibold">{{ $t("radio") }}</span>
-          </div>
-
-          <p class="text-muted-foreground text-sm leading-snug">
-            {{ $t("radio_explanation") }}
-          </p>
-
-          <div
-            v-if="radioModeActive"
-            class="bg-primary/10 rounded-md px-3 py-2"
-          >
-            <p class="text-primary text-sm font-semibold">
-              {{ $t("radio_active") }}
-            </p>
-            <div class="mt-1 flex flex-col gap-0.5">
-              <button
-                v-for="source in radioSources"
-                :key="source.uri"
-                type="button"
-                class="text-muted-foreground hover:text-foreground truncate text-left text-sm underline-offset-2 hover:underline"
-                @click="openSource(source)"
-              >
-                {{ source.name }}
-              </button>
-            </div>
-          </div>
-
-          <div v-else class="bg-accent rounded-md px-3 py-2">
-            <p class="text-muted-foreground text-sm font-semibold">
-              {{ $t("radio_not_active") }}
-            </p>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-
-    <!-- autoplay popout -->
-    <Popover v-if="showAutoplay && queue" v-model:open="autoplayOpen" modal>
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="[
-            autoplayBlockedByRadio ? 'text-muted-foreground' : '',
-            pillClass,
-          ]"
-          :aria-label="$t('autoplay')"
-        >
-          <InfinityIcon :size="16" />
-          <span v-if="showLabel">{{ $t("autoplay") }}</span>
-          <span
-            v-if="autoplayEnabled && !autoplayBlockedByRadio"
-            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-            aria-hidden="true"
-          ></span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="end" :side-offset="6">
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <InfinityIcon :size="20" />
-            <span class="text-[0.95rem] font-semibold">{{
-              $t("autoplay")
-            }}</span>
-          </div>
-
-          <p class="text-muted-foreground text-sm leading-snug">
-            {{ $t("autoplay_explanation") }}
-          </p>
-
-          <div
-            v-if="autoplayBlockedByRadio"
-            class="bg-accent rounded-md px-3 py-2"
-          >
-            <p class="text-muted-foreground text-sm font-semibold">
-              {{ $t("autoplay_radio_active") }}
-            </p>
-          </div>
-          <div
-            v-else-if="autoplayEnabled"
-            class="bg-primary/10 rounded-md px-3 py-2"
-          >
-            <p class="text-primary text-sm font-semibold">
-              {{ $t("autoplay_active") }}
-            </p>
-          </div>
-
+    <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
+    <TooltipProvider v-if="lyricsState === 'available'" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
           <Button
-            class="mt-1 w-full"
-            :variant="autoplayEnabled ? 'outline' : 'default'"
-            size="sm"
-            :disabled="autoplayBlockedByRadio"
+            variant="outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="[
+              pillClass,
+              lyricsActive
+                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
+                : '',
+            ]"
+            :aria-label="$t('lyrics')"
+            @click="emit('toggle-lyrics')"
+          >
+            <MicVocal :size="16" />
+            <span v-if="showLabel">{{ $t("lyrics") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          {{ lyricsActive ? $t("lyrics_hide") : $t("lyrics_show") }}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+    <!-- lyrics: loading or unavailable -> greyed out with an explanatory tooltip -->
+    <TooltipProvider v-else-if="lyricsState !== 'none'" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="['text-muted-foreground cursor-default', pillClass]"
+            :aria-label="$t('lyrics')"
+          >
+            <MicVocal
+              :size="16"
+              :class="lyricsState === 'loading' ? 'animate-pulse' : ''"
+            />
+            <span v-if="showLabel">{{ $t("lyrics") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          {{ lyricsTooltip }}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+    <!-- radio mode (infinite mix): non-interactive indicator, only shown while
+         radio is actually active. Tooltip explains what the mix is based on. -->
+    <TooltipProvider v-if="radioModeActive" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            as="span"
+            variant="outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="['cursor-default', pillClass]"
+            :aria-label="$t('radio')"
+          >
+            <RadioTower :size="16" />
+            <span v-if="showLabel">{{ $t("radio") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          <p class="font-medium">{{ $t("radio_active") }}</p>
+          <p class="mt-1 opacity-80">
+            {{ radioSources.map((source) => source.name).join(", ") }}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
+    <!-- autoplay: direct toggle (primary while enabled). Hidden while radio is
+         active or for infinite streams (autoplay is moot there). -->
+    <TooltipProvider v-if="showAutoplay && queue" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="[
+              pillClass,
+              autoplayEnabled
+                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
+                : '',
+            ]"
+            :aria-label="$t('autoplay')"
             @click="toggleAutoplay(!autoplayEnabled)"
           >
+            <InfinityIcon :size="16" />
+            <span v-if="showLabel">{{ $t("autoplay") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          <p class="font-medium">
             {{
               autoplayEnabled ? $t("autoplay_disable") : $t("autoplay_enable")
             }}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-
-    <!-- crossfade control with explanation popout -->
-    <Popover v-if="showCrossfade && queue" v-model:open="crossfadeOpen" modal>
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="pillClass"
-          :aria-label="$t('crossfade')"
-        >
-          <CrossfadeIcon :size="16" />
-          <span v-if="showLabel">{{ $t("crossfade") }}</span>
-          <span
-            v-if="crossfadeEnabled"
-            class="bg-primary ring-background absolute -top-1 -right-1 size-2 rounded-full ring-2"
-            aria-hidden="true"
-          ></span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="end" :side-offset="6">
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <CrossfadeIcon :size="20" :smart="smartFadesActive" />
-            <span class="text-[0.95rem] font-semibold">{{
-              $t("crossfade")
-            }}</span>
-          </div>
-
-          <p class="text-muted-foreground text-sm leading-snug">
-            {{ $t("crossfade_explanation") }}
           </p>
+          <p v-if="!autoplayEnabled" class="mt-1 opacity-80">
+            {{ $t("autoplay_explanation") }}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
 
-          <div
-            v-if="crossfadeEnabled"
-            class="rounded-md px-3 py-2"
-            :class="smartFadesActive ? 'bg-primary/10' : 'bg-accent'"
-          >
-            <div class="flex items-start gap-2">
-              <Sparkles
-                v-if="smartFadesActive"
-                :size="16"
-                class="smart-twinkle text-primary mt-0.5 shrink-0"
-                aria-hidden="true"
-              />
-              <div>
-                <p class="text-primary text-sm font-semibold">
-                  {{
-                    smartFadesActive
-                      ? $t("crossfade_active_with_smart")
-                      : $t("crossfade_active")
-                  }}
-                </p>
-                <p
-                  v-if="smartFadesActive"
-                  class="text-muted-foreground mt-1 text-sm leading-snug"
-                >
-                  {{ $t("crossfade_smart_active") }}
-                </p>
-              </div>
-            </div>
-          </div>
-
+    <!-- crossfade: direct toggle (primary while enabled). The icon twinkles
+         while smart fades are active. -->
+    <TooltipProvider v-if="showCrossfade && queue" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
           <Button
-            class="mt-1 w-full"
-            :variant="crossfadeEnabled ? 'outline' : 'default'"
-            size="sm"
+            variant="outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="[
+              pillClass,
+              crossfadeEnabled
+                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
+                : '',
+            ]"
+            :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
+            <CrossfadeIcon
+              :size="16"
+              :smart="crossfadeEnabled && smartFadesActive"
+            />
+            <span v-if="showLabel">{{ $t("crossfade") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          <p class="font-medium">
             {{
               crossfadeEnabled
                 ? $t("crossfade_disable")
                 : $t("crossfade_enable")
             }}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </p>
+          <p v-if="!crossfadeEnabled" class="mt-1 opacity-80">
+            {{ $t("crossfade_explanation") }}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
 
     <!-- subtle scrim/blur behind whichever popout is open -->
     <Teleport to="body">
       <Transition name="fs-popover-scrim">
         <div
-          v-if="
-            radioOpen ||
-            autoplayOpen ||
-            crossfadeOpen ||
-            offsetOpen ||
-            lyricsInfoOpen
-          "
+          v-if="offsetOpen"
           class="fullscreen-popover-scrim"
           aria-hidden="true"
         ></div>
@@ -343,11 +227,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import type { MediaItemType } from "@/plugins/api/interfaces";
-import router from "@/plugins/router";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
   ChevronsLeftRight,
@@ -356,11 +246,10 @@ import {
   Minus,
   Plus,
   RadioTower,
-  Sparkles,
 } from "@lucide/vue";
 import { computed, ref } from "vue";
 
-defineProps<{
+const props = defineProps<{
   lyricsState?: string;
   lyricsActive?: boolean;
   showLyricsOffset?: boolean;
@@ -371,14 +260,17 @@ const emit = defineEmits<{
   (e: "offset-press", delta: number): void;
 }>();
 
+// Explanation shown in the tooltip when lyrics can't be opened (yet).
+const lyricsTooltip = computed(() =>
+  props.lyricsState === "loading"
+    ? $t("lyrics_loading")
+    : $t("lyrics_unavailable_song"),
+);
+
 const queue = computed(() => store.activePlayerQueue);
 
 // local open-state so we can render a shared scrim behind whichever popout shows
-const crossfadeOpen = ref(false);
-const radioOpen = ref(false);
-const autoplayOpen = ref(false);
 const offsetOpen = ref(false);
-const lyricsInfoOpen = ref(false);
 
 const showLabel = computed(() => !store.mobileLayout);
 
@@ -420,23 +312,13 @@ const radioSources = computed<MediaItemType[]>(
 );
 const radioModeActive = computed(() => radioSources.value.length > 0);
 const autoplayEnabled = computed(() => queue.value?.autoplay_enabled === true);
-// Radio mode and autoplay are mutually exclusive: while radio is active the
-// queue keeps refilling itself, so autoplay (which only kicks in when the queue
-// runs out) is moot. Grey it out / disable toggling while radio mode is active.
-const autoplayBlockedByRadio = computed(() => radioModeActive.value);
-// Radio (infinite mix) applies to an active queue playing the user's selection.
-// Always shown for such queues so it can be opened to start the mix; it appears
-// greyed-out (muted) until radio mode is actually active.
-const showRadio = computed(() => {
-  const q = queue.value;
-  if (!q || !q.active) return false;
-  if (isQueueInfiniteStream(q)) return false;
-  return true;
-});
 const showAutoplay = computed(() => {
   const q = queue.value;
   if (!q || !q.active) return false;
   if (isQueueInfiniteStream(q)) return false;
+  // Radio mode and autoplay are mutually exclusive: while radio is active the
+  // queue keeps refilling itself, so autoplay is moot — hide the button.
+  if (radioModeActive.value) return false;
   return "autoplay_enabled" in q;
 });
 
@@ -445,15 +327,6 @@ const toggleAutoplay = (val: boolean) => {
   if (!q) return;
   api.queueCommandAutoplay(q.queue_id, val);
 };
-
-const openSource = (item: MediaItemType) => {
-  radioOpen.value = false;
-  store.showFullscreenPlayer = false;
-  router.push({
-    name: item.media_type,
-    params: { itemId: item.item_id, provider: item.provider },
-  });
-};
 </script>
 
 <style scoped>
@@ -461,31 +334,6 @@ const openSource = (item: MediaItemType) => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-/* gentle "twinkle" to reinforce that smart fades are active */
-.smart-twinkle {
-  transform-origin: center;
-  animation: smart-twinkle 1.8s ease-in-out infinite;
-}
-
-@keyframes smart-twinkle {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(0.82) rotate(-8deg);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1) rotate(8deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .smart-twinkle {
-    animation: none;
-    opacity: 1;
-  }
 }
 
 /* subtle blurred scrim behind an open popout to set it apart from the player */
