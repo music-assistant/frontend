@@ -13,7 +13,6 @@
       :reference="reference"
       align="start"
       :side-offset="0"
-      :style="surfaceStyle"
       class="z-[999999] min-w-[300px] max-h-[85vh] overflow-y-auto"
     >
       <!-- play menu header -->
@@ -37,7 +36,6 @@
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            :style="surfaceStyle"
             class="max-h-[70vh] overflow-y-auto"
           >
             <DropdownMenuItem
@@ -72,7 +70,6 @@
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            :style="surfaceStyle"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -133,16 +130,6 @@ const posY = ref(0);
 const showPlayMenuHeader = ref<boolean>(false);
 
 const visibleItems = computed(() => items.value.filter((x) => !x.hide));
-const surfaceStyle = computed(() =>
-  store.showFullscreenPlayer
-    ? {
-        background: "var(--fullscreen-player-bg)",
-        color: "var(--text-color)",
-        "--accent": "color-mix(in srgb, var(--text-color) 14%, transparent)",
-        "--accent-foreground": "var(--text-color)",
-      }
-    : undefined,
-);
 
 const reference = computed(() => ({
   getBoundingClientRect: () => new DOMRect(posX.value, posY.value, 0, 0),

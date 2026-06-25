@@ -1240,11 +1240,6 @@ watchEffect(() => {
   const topColor = bgColor.lighten(0.25);
   const bottomColor = bgColor.darken(0.25);
   backgroundColor.value = `linear-gradient(to bottom, ${topColor.hex()}, ${bottomColor.hex()})`;
-
-  document.documentElement.style.setProperty(
-    "--fullscreen-player-bg",
-    backgroundColor.value,
-  );
 });
 </script>
 
