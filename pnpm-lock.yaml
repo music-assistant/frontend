@@ -23,9 +23,6 @@ importers:
       '@mdi/font':
         specifier: 7.4.47
         version: 7.4.47
-      '@mdi/js':
-        specifier: 7.4.47
-        version: 7.4.47
       '@scure/base':
         specifier: ^2.2.0
         version: 2.2.0
@@ -1325,9 +1322,6 @@ packages:
 
   '@mdi/font@7.4.47':
     resolution: {integrity: sha512-43MtGpd585SNzHZPcYowu/84Vz2a2g31TvPMTm9uTiCSWzaheQySUcSyUH/46fPnuPQWof2yd0pGBtzee/IQWw==}
-
-  '@mdi/js@7.4.47':
-    resolution: {integrity: sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==}
 
   '@napi-rs/wasm-runtime@1.1.5':
     resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
@@ -5860,8 +5854,6 @@ snapshots:
       vue: 3.5.35(typescript@6.0.3)
 
   '@mdi/font@7.4.47': {}
-
-  '@mdi/js@7.4.47': {}
 
   '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:

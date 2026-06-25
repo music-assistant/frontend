@@ -67,14 +67,13 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
+                  !!store.activePlayer?.group_members.length
                 "
+                :size="128"
               />
             </div>
           </div>
@@ -307,14 +306,13 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
+                  !!store.activePlayer?.group_members.length
                 "
+                :size="128"
               />
             </div>
           </div>
@@ -426,9 +424,10 @@
               }
             "
           >
-            <v-icon
-              :icon="store.activePlayer?.icon || 'mdi-speaker'"
-              size="16"
+            <PlayerIcon
+              :icon="store.activePlayer?.icon"
+              :size="20"
+              class="mr-1"
             />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
@@ -445,6 +444,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
