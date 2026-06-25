@@ -17,9 +17,21 @@ export const registry: Record<string, Component> = {
   "apple-tv": AppleTv,
 };
 
-/** Alternate / legacy names resolved to canonical registry keys. */
+/**
+ * Alternate / legacy names resolved to a canonical name. The target may be an
+ * MA registry key or a Lucide kebab name (getLucideIcon falls through to Lucide
+ * after alias resolution), so friendly suggestion labels that have no matching
+ * Lucide export can still render a real icon.
+ */
 export const aliases: Record<string, string> = {
   homepod: "homepod-mini",
   "apple-homepod-mini": "homepod-mini",
   appletv: "apple-tv",
+  // Descriptive suggestion labels with no direct Lucide export → closest icon.
+  "speaker-loud": "volume-2",
+  "bluetooth-speaker": "bluetooth",
+  // Names Lucide renamed/removed in newer versions.
+  "laptop-2": "laptop-minimal",
+  tree: "tree-pine",
+  home: "house",
 };

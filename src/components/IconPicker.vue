@@ -25,8 +25,8 @@
         class="mr-2"
       />
       <component
-        v-else-if="modelValue && getLucideIcon(modelValue)"
         :is="getLucideIcon(modelValue)"
+        v-else-if="modelValue && getLucideIcon(modelValue)"
         :size="20"
         class="mr-2"
       />
@@ -81,7 +81,11 @@ const searchQuery = ref("");
 // When no query: show curated suggestions only.
 // Otherwise: rank across all MA + Lucide icons, boost suggested ones.
 const filteredItems = computed(() => {
-  const q = searchQuery.value?.trim().toLowerCase() ?? "";
+  const raw = searchQuery.value?.trim().toLowerCase() ?? "";
+  // Legacy mdi-* values aren't part of the Lucide/MA set. Rather than show a
+  // dead "No data available", treat them as an empty query so the picker
+  // cleanly falls back to the curated suggestions to pick a replacement from.
+  const q = raw.startsWith("mdi-") ? "" : raw;
 
   if (!q) {
     return SUGGESTED_ICON_NAMES.map((name) => ({ value: name }));
