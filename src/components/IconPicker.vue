@@ -18,9 +18,15 @@
   >
     <!-- icon preview in the input field -->
     <template #prepend-inner>
+      <v-icon
+        v-if="modelValue?.startsWith('mdi-')"
+        :icon="modelValue"
+        :size="20"
+        class="mr-2"
+      />
       <component
+        v-else-if="modelValue && getLucideIcon(modelValue)"
         :is="getLucideIcon(modelValue)"
-        v-if="modelValue && getLucideIcon(modelValue)"
         :size="20"
         class="mr-2"
       />
