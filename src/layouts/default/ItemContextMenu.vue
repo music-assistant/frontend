@@ -4,127 +4,124 @@
   we steer its visibility through the centralized eventbus.
 -->
 <template>
-  <v-menu
-    v-model="show"
-    :target="[posX, posY]"
-    :scrim="!store.showPlayersMenu"
-    style="z-index: 999999"
-    z-index="999999"
-    @update:model-value="
-      (v) => {
-        store.dialogActive = v;
-      }
-    "
+  <DropdownMenu
+    :open="show"
+    :modal="!store.showPlayersMenu"
+    @update:open="onOpenChange"
   >
-    <v-card min-width="300" style="max-height: 85vh; overflow-y: auto">
-      <v-list density="compact" slim tile>
-        <!-- play menu header -->
-        <div v-if="showPlayMenuHeader" class="menurow">
-          <v-list-item
-            link
-            append-icon="mdi-chevron-right"
-            :title="$t('play_on')"
-            :subtitle="store.activePlayer?.name || $t('no_player')"
-            style="padding-left: 25px"
-            @click.stop="playMenuHeaderClicked"
+    <DropdownMenuContent
+      :reference="reference"
+      align="start"
+      :side-offset="0"
+      class="z-[999999] min-w-[300px] max-h-[85vh] overflow-y-auto"
+    >
+      <!-- play menu header -->
+      <template v-if="showPlayMenuHeader">
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger class="gap-3 py-2">
+            <MenuItemIcon
+              :icon="
+                store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
+              "
+              :size="32"
+            />
+            <div class="flex flex-col">
+              <span>{{ $t("play_on") }}</span>
+              <span class="text-muted-foreground text-xs">{{
+                store.activePlayer?.name || $t("no_player")
+              }}</span>
+            </div>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent
+            align="start"
+            :align-offset="-5"
+            :side-offset="6"
+            class="max-h-[70vh] overflow-y-auto"
           >
-            <template #prepend>
-              <v-icon
-                size="40"
-                style="margin-left: -8px"
-                :icon="
-                  store.activePlayer ? store.activePlayer.icon : 'mdi-speaker'
-                "
-              />
-            </template>
-          </v-list-item>
-        </div>
-        <v-divider
-          v-if="showPlayMenuHeader"
-          style="margin-top: 5px; margin-bottom: 5px"
-        />
-        <div
-          v-for="menuItem of items.filter((x) => !x.hide)"
-          :key="menuItem.label"
-          class="menurow"
-          :class="{ 'menu-item-error': menuItem.color === 'error' }"
-        >
-          <v-list-item
-            variant="text"
-            :title="$t(menuItem.label, menuItem.labelArgs || [])"
-            :disabled="menuItem.disabled == true"
-            :prepend-icon="
-              typeof menuItem.icon === 'string' ? menuItem.icon : undefined
-            "
-            :color="menuItem.color"
-            border="bottom"
-            :append-icon="
-              menuItem.selected
-                ? 'mdi-check'
-                : menuItem.subItems?.length
-                  ? 'mdi-chevron-right'
-                  : undefined
-            "
-            style="padding-left: 25px"
-            @click.stop="(e) => menuItemClicked(e, menuItem)"
-          >
-            <template
-              v-if="menuItem.icon && typeof menuItem.icon !== 'string'"
-              #prepend
+            <DropdownMenuItem
+              v-for="player of playerSubItems"
+              :key="player.label"
+              @select="onSelect($event, player)"
             >
-              <component :is="menuItem.icon" class="w-5 h-5" />
-            </template>
-          </v-list-item>
-        </div>
-      </v-list>
-    </v-card>
-  </v-menu>
-  <!-- submenu -->
-  <v-menu
-    v-model="showSubmenu"
-    :target="[subMenuPosX, subMenuPosY]"
-    style="z-index: 999999"
-    z-index="999999"
-  >
-    <v-card min-width="260">
-      <v-list density="compact" slim tile>
-        <div
-          v-for="subMenuItem of subMenuItems.filter((x) => !x.hide)"
-          :key="subMenuItem.label"
-          class="menurow"
-          :class="{ 'menu-item-error': subMenuItem.color === 'error' }"
-        >
-          <v-list-item
-            variant="text"
-            :title="$t(subMenuItem.label, subMenuItem.labelArgs || [])"
-            :disabled="subMenuItem.disabled == true"
-            :prepend-icon="
-              typeof subMenuItem.icon === 'string'
-                ? subMenuItem.icon
-                : undefined
-            "
-            :color="subMenuItem.color"
-            :append-icon="subMenuItem.selected ? 'mdi-check' : undefined"
-            @click.stop="(e) => menuItemClicked(e, subMenuItem)"
+              <MenuItemIcon :icon="player.icon" />
+              <span class="flex-1">{{ player.label }}</span>
+              <Check v-if="player.selected" class="ml-auto size-4" />
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+      </template>
+
+      <template v-for="menuItem of visibleItems" :key="menuItem.label">
+        <!-- item with submenu -->
+        <DropdownMenuSub v-if="menuItem.subItems && menuItem.subItems.length">
+          <DropdownMenuSubTrigger
+            :class="[
+              'gap-3',
+              { 'text-destructive': menuItem.color === 'error' },
+            ]"
           >
-            <template
-              v-if="subMenuItem.icon && typeof subMenuItem.icon !== 'string'"
-              #prepend
+            <MenuItemIcon :icon="menuItem.icon" />
+            <span class="flex-1">{{
+              $t(menuItem.label, menuItem.labelArgs || [])
+            }}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent
+            align="start"
+            :align-offset="-5"
+            :side-offset="6"
+          >
+            <DropdownMenuItem
+              v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
+              :key="subMenuItem.label"
+              :disabled="subMenuItem.disabled === true"
+              :variant="
+                subMenuItem.color === 'error' ? 'destructive' : 'default'
+              "
+              @select="onSelect($event, subMenuItem)"
             >
-              <component :is="subMenuItem.icon" class="w-5 h-5" />
-            </template>
-          </v-list-item>
-        </div>
-      </v-list>
-    </v-card>
-  </v-menu>
+              <MenuItemIcon :icon="subMenuItem.icon" />
+              <span class="flex-1">{{
+                $t(subMenuItem.label, subMenuItem.labelArgs || [])
+              }}</span>
+              <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <!-- leaf item -->
+        <DropdownMenuItem
+          v-else
+          :disabled="menuItem.disabled === true"
+          :variant="menuItem.color === 'error' ? 'destructive' : 'default'"
+          @select="onSelect($event, menuItem)"
+        >
+          <MenuItemIcon :icon="menuItem.icon" />
+          <span class="flex-1">{{
+            $t(menuItem.label, menuItem.labelArgs || [])
+          }}</span>
+          <Check v-if="menuItem.selected" class="ml-auto size-4" />
+        </DropdownMenuItem>
+      </template>
+    </DropdownMenuContent>
+  </DropdownMenu>
 </template>
 
 <script setup lang="ts">
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { Check } from "@lucide/vue";
+import { computed, h, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { VIcon } from "vuetify/components";
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
@@ -132,10 +129,38 @@ const posX = ref(0);
 const posY = ref(0);
 const showPlayMenuHeader = ref<boolean>(false);
 
-const showSubmenu = ref<boolean>(false);
-const subMenuItems = ref<ContextMenuItem[]>([]);
-const subMenuPosX = ref(0);
-const subMenuPosY = ref(0);
+const visibleItems = computed(() => items.value.filter((x) => !x.hide));
+
+const reference = computed(() => ({
+  getBoundingClientRect: () => new DOMRect(posX.value, posY.value, 0, 0),
+}));
+
+const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
+  if (!props.icon) return null;
+  return typeof props.icon === "string"
+    ? h(VIcon, {
+        icon: props.icon,
+        size: props.size ?? 20,
+        class: "shrink-0",
+      })
+    : h(props.icon, { class: "size-4 shrink-0" });
+};
+
+const playerSubItems = computed<ContextMenuItem[]>(() => {
+  const sortedPlayers = Object.values(api.players)
+    .filter((x) => playerVisible(x))
+    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
+  return sortedPlayers.map((player) => ({
+    label: player.name,
+    action: () => {
+      store.activePlayerId = player.player_id;
+    },
+    icon: player.icon,
+    selected: store.activePlayerId == player.player_id,
+    close_on_click: false,
+  }));
+});
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -144,6 +169,7 @@ onMounted(() => {
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
       show.value = true;
+      store.dialogActive = true;
     });
   });
   onBeforeUnmount(() => {
@@ -151,64 +177,22 @@ onMounted(() => {
   });
 });
 
-const menuItemClicked = function (
-  evt: MouseEvent | KeyboardEvent,
-  menuItem: ContextMenuItem,
-) {
-  if (menuItem.subItems) {
-    evt.preventDefault();
-    subMenuItems.value = menuItem.subItems;
-    ((subMenuPosX.value = (evt as PointerEvent).clientX),
-      (subMenuPosY.value = (evt as PointerEvent).clientY),
-      (showSubmenu.value = true));
-    return;
-  } else if (menuItem.action) {
-    menuItem.action();
-    // Toggle selected state for multi-select menus (optimistic update)
-    if (menuItem.close_on_click === false) {
-      menuItem.selected = !menuItem.selected;
-      // Trigger reactivity by reassigning the array
-      items.value = [...items.value];
-    }
-  }
-  if (showSubmenu.value) {
-    showSubmenu.value = false;
-    if (menuItem.close_on_click == false) {
-      return;
-    }
-  }
-  if (menuItem.close_on_click == false) {
-    return;
-  }
-  show.value = false;
-  store.dialogActive = false;
+const onOpenChange = function (value: boolean) {
+  show.value = value;
+  store.dialogActive = value;
 };
 
-const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
-  evt.preventDefault();
-  const _subItems: ContextMenuItem[] = [];
-
-  const sortedPlayers = Object.values(api.players)
-    .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
-
-  for (const player of sortedPlayers) {
-    _subItems.push({
-      label: player.name,
-      action: () => {
-        evt.preventDefault();
-        store.activePlayerId = player.player_id;
-      },
-      icon: player.icon,
-      selected: store.activePlayerId == player.player_id,
-      close_on_click: false,
-    });
+const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
+  if (menuItem.action) {
+    menuItem.action();
   }
-
-  subMenuItems.value = _subItems;
-  ((subMenuPosX.value = (evt as PointerEvent).clientX),
-    (subMenuPosY.value = (evt as PointerEvent).clientY),
-    (showSubmenu.value = true));
+  // Keep the menu open for multi-select style items (optimistic update).
+  if (menuItem.close_on_click === false) {
+    evt.preventDefault();
+    menuItem.selected = !menuItem.selected;
+    // Trigger reactivity by reassigning the array
+    items.value = [...items.value];
+  }
 };
 </script>
 
@@ -217,6 +201,16 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
 import router from "@/plugins/router";
 
+import {
+  getShortcutMoveAvailability,
+  isShortcutCapReached,
+  isShortcutMediaType,
+  isShortcutPinnedItem,
+  moveShortcutStandaloneItem,
+  pinShortcutStandalone,
+  unpinShortcutStandaloneItem,
+} from "@/composables/useShortcuts";
+import { radioModeSupported } from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
 import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -236,18 +230,36 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import {
-  getShortcutMoveAvailability,
-  isShortcutMediaType,
-  isShortcutPinnedItem,
-  isShortcutCapReached,
-  moveShortcutStandaloneItem,
-  pinShortcutStandalone,
-  unpinShortcutStandaloneItem,
-} from "@/composables/useShortcuts";
 
-import type { Component } from "vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import {
+  ArrowDown,
+  ArrowUp,
+  Disc3,
+  Download,
+  Folder,
+  Heart,
+  History,
+  Image,
+  Info,
+  LibraryBig,
+  Link,
+  ListMusic,
+  ListPlus,
+  Merge,
+  MicVocal,
+  MinusCircle,
+  Pencil,
+  Pin,
+  PinOff,
+  PlayCircle,
+  PlusCircle,
+  RadioTower,
+  RefreshCw,
+  SkipForward,
+  Trash2,
+} from "@lucide/vue";
+import type { Component } from "vue";
 
 export interface ContextMenuItem {
   label: string;
@@ -324,11 +336,11 @@ export const showContextMenuForMediaItem = async function (
 };
 
 const queueOptionIconMap = {
-  [QueueOption.NEXT]: "mdi-skip-next-circle-outline",
-  [QueueOption.ADD]: "mdi-playlist-plus",
-  [QueueOption.REPLACE]: "mdi-play-circle-outline",
-  [QueueOption.REPLACE_NEXT]: "mdi-skip-next-circle-outline",
-  [QueueOption.PLAY]: "mdi-play-circle-outline",
+  [QueueOption.NEXT]: SkipForward,
+  [QueueOption.ADD]: ListPlus,
+  [QueueOption.REPLACE]: PlayCircle,
+  [QueueOption.REPLACE_NEXT]: SkipForward,
+  [QueueOption.PLAY]: PlayCircle,
 };
 
 export const showPlayMenuForMediaItem = async function (
@@ -366,7 +378,7 @@ export const showPlayMenuForMediaItem = async function (
           true,
         );
       },
-      icon: "mdi-radio-tower",
+      icon: RadioTower,
       labelArgs: [],
       disabled: !store.activePlayer,
     });
@@ -451,7 +463,7 @@ export const getContextMenuItems = async function (
           },
         });
       },
-      icon: "mdi-information-outline",
+      icon: Info,
     });
   }
 
@@ -473,7 +485,7 @@ export const getContextMenuItems = async function (
           },
         });
       },
-      icon: "mdi-folder",
+      icon: Folder,
     });
   }
 
@@ -497,7 +509,7 @@ export const getContextMenuItems = async function (
             },
           });
         },
-        icon: "mdi-account-music",
+        icon: MicVocal,
       });
     }
   }
@@ -520,7 +532,7 @@ export const getContextMenuItems = async function (
           },
         });
       },
-      icon: "mdi-album",
+      icon: Disc3,
     });
   }
 
@@ -575,7 +587,7 @@ export const getContextMenuItems = async function (
         // Clear the multi-select after action
         eventbus.emit("clearSelection");
       },
-      icon: "mdi-bookshelf",
+      icon: LibraryBig,
     });
   }
   // remove from library
@@ -614,7 +626,7 @@ export const getContextMenuItems = async function (
           },
         });
       },
-      icon: "mdi-bookshelf",
+      icon: LibraryBig,
     });
   }
   // Favorites handling - supports mixed states like played/unplayed
@@ -649,7 +661,7 @@ export const getContextMenuItems = async function (
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
-          icon: "mdi-heart",
+          icon: Heart,
         });
       }
       // If all items are not favorited, show "add to favorites"
@@ -664,7 +676,7 @@ export const getContextMenuItems = async function (
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
-          icon: "mdi-heart-outline",
+          icon: Heart,
         });
       }
       // If mixed state, show both options
@@ -681,7 +693,7 @@ export const getContextMenuItems = async function (
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
-          icon: "mdi-heart-outline",
+          icon: Heart,
         });
 
         contextMenuItems.push({
@@ -696,7 +708,7 @@ export const getContextMenuItems = async function (
             // Clear the multi-select after action
             eventbus.emit("clearSelection");
           },
-          icon: "mdi-heart",
+          icon: Heart,
         });
       }
     }
@@ -721,7 +733,7 @@ export const getContextMenuItems = async function (
             items.map((x) => ("position" in x ? x.position : 0) as number),
           );
         },
-        icon: "mdi-minus-circle-outline",
+        icon: MinusCircle,
       });
     }
   }
@@ -742,7 +754,7 @@ export const getContextMenuItems = async function (
           parentItem: parentItem,
         });
       },
-      icon: "mdi-plus-circle-outline",
+      icon: PlusCircle,
     });
   }
 
@@ -755,7 +767,7 @@ export const getContextMenuItems = async function (
     if (items[0].fully_played || items[0].resume_position_ms) {
       contextMenuItems.push({
         label: "mark_unplayed",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await api.markItemUnPlayed(items[0]);
           (items[0] as PodcastEpisode).fully_played = false;
@@ -765,7 +777,7 @@ export const getContextMenuItems = async function (
       // mark played
       contextMenuItems.push({
         label: "mark_played",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await api.markItemPlayed(items[0], true);
           (items[0] as PodcastEpisode).fully_played = true;
@@ -785,7 +797,7 @@ export const getContextMenuItems = async function (
           Object.assign(items[0], updatedInfo);
         }
       },
-      icon: "mdi-image-album",
+      icon: Image,
     });
   }
   // edit item (for builtin provider items that support editing)
@@ -827,7 +839,7 @@ export const getContextMenuItems = async function (
         action: () => {
           eventbus.emit("editItemDialog", item);
         },
-        icon: "mdi-pencil",
+        icon: Pencil,
       });
     }
   }
@@ -851,7 +863,7 @@ export const getContextMenuItems = async function (
           });
         }
       },
-      icon: "mdi-refresh",
+      icon: RefreshCw,
     });
   }
   // export playlist
@@ -877,7 +889,7 @@ export const getContextMenuItems = async function (
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       },
-      icon: "mdi-export",
+      icon: Download,
     });
   }
   // pin / unpin shortcut in sidebar (playlist, artist, album, track, radio, podcast, audiobook, genre)
@@ -897,14 +909,14 @@ export const getContextMenuItems = async function (
           label: "queue_move_up",
           labelArgs: [],
           action: () => moveShortcutStandaloneItem(shortcutItem, "up"),
-          icon: "mdi-arrow-up",
+          icon: ArrowUp,
           disabled: !canMoveUp,
         });
         contextMenuItems.push({
           label: "queue_move_down",
           labelArgs: [],
           action: () => moveShortcutStandaloneItem(shortcutItem, "down"),
-          icon: "mdi-arrow-down",
+          icon: ArrowDown,
           disabled: !canMoveDown,
         });
       }
@@ -912,14 +924,14 @@ export const getContextMenuItems = async function (
         label: "shortcut.remove_from",
         labelArgs: [],
         action: () => unpinShortcutStandaloneItem(shortcutItem),
-        icon: "mdi-pin-off-outline",
+        icon: PinOff,
       });
     } else {
       contextMenuItems.push({
         label: "shortcut.add_to",
         labelArgs: [],
         action: () => pinShortcutStandalone(shortcutItem),
-        icon: "mdi-pin-outline",
+        icon: Pin,
         disabled: isShortcutCapReached(),
       });
     }
@@ -953,7 +965,7 @@ export const getContextMenuItems = async function (
           mapping: mapping,
         });
       },
-      icon: "mdi-link",
+      icon: Link,
     });
   }
   // link to genre (library items only, non-genre)
@@ -991,7 +1003,7 @@ export const getContextMenuItems = async function (
         });
         eventbus.emit("clearSelection");
       },
-      icon: "mdi-merge",
+      icon: Merge,
     });
   }
   // delete genre(s) (admin only, all items must be library genres)
@@ -1011,7 +1023,7 @@ export const getContextMenuItems = async function (
         });
         eventbus.emit("clearSelection");
       },
-      icon: "mdi-delete",
+      icon: Trash2,
     });
   }
   return contextMenuItems;
@@ -1066,7 +1078,7 @@ export const getPlaybackContextMenuItems = async function (
             sortBy,
           );
         },
-        icon: "mdi-play-circle-outline",
+        icon: PlayCircle,
         labelArgs: [],
         disabled: !store.activePlayer,
       });
@@ -1085,7 +1097,7 @@ export const getPlaybackContextMenuItems = async function (
             sortBy,
           );
         },
-        icon: "mdi-play-circle-outline",
+        icon: PlayCircle,
         labelArgs: [],
         disabled: !store.activePlayer,
       });
@@ -1097,7 +1109,7 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
         },
-        icon: "mdi-play-circle-outline",
+        icon: PlayCircle,
         labelArgs: [],
         disabled: !store.activePlayer,
       });
@@ -1115,7 +1127,7 @@ export const getPlaybackContextMenuItems = async function (
           defaultEnqueueOption,
         );
       },
-      icon: "mdi-play-circle-outline",
+      icon: PlayCircle,
       labelArgs: [],
       disabled: !store.activePlayer,
     });
@@ -1132,7 +1144,7 @@ export const getPlaybackContextMenuItems = async function (
           true,
         );
       },
-      icon: "mdi-radio-tower",
+      icon: RadioTower,
       labelArgs: [],
       disabled: !store.activePlayer,
     });
@@ -1164,7 +1176,7 @@ export const getPlaybackContextMenuItems = async function (
   playMenuItems.push({
     label: "enqueue",
     subItems: enqueueSubItems,
-    icon: "mdi-playlist-music",
+    icon: ListMusic,
     labelArgs: [],
   });
   // Multi-select mark as played/unplayed for podcast episodes
@@ -1193,7 +1205,7 @@ export const getPlaybackContextMenuItems = async function (
     if (allFullyPlayed) {
       playMenuItems.push({
         label: "mark_unplayed",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await Promise.all(
             podcastEpisodes.map(async (item: PodcastEpisode) => {
@@ -1209,7 +1221,7 @@ export const getPlaybackContextMenuItems = async function (
     else if (allUnplayed) {
       playMenuItems.push({
         label: "mark_played",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await Promise.all(
             podcastEpisodes.map(async (item: PodcastEpisode) => {
@@ -1224,7 +1236,7 @@ export const getPlaybackContextMenuItems = async function (
     else {
       playMenuItems.push({
         label: "mark_played",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await Promise.all(
             podcastEpisodes.map(async (item: PodcastEpisode) => {
@@ -1237,7 +1249,7 @@ export const getPlaybackContextMenuItems = async function (
 
       playMenuItems.push({
         label: "mark_unplayed",
-        icon: "mdi-clock-fast",
+        icon: History,
         action: async () => {
           await Promise.all(
             podcastEpisodes.map(async (item: PodcastEpisode) => {
@@ -1252,74 +1264,4 @@ export const getPlaybackContextMenuItems = async function (
   }
   return playMenuItems;
 };
-
-const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
-  if (
-    ![
-      MediaType.TRACK,
-      MediaType.ARTIST,
-      MediaType.ALBUM,
-      MediaType.PLAYLIST,
-    ].includes(item.media_type)
-  ) {
-    return;
-  }
-  // Dynamic playlists own their own track feed — radio mode would conflict
-  if (item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic) {
-    return false;
-  }
-  if ("provider_mappings" in item) {
-    for (const provId of item.provider_mappings) {
-      if (
-        api.providers[provId.provider_instance]?.supported_features.includes(
-          ProviderFeature.SIMILAR_TRACKS,
-        )
-      )
-        return true;
-    }
-  } else if (
-    api.providers[item.provider]?.supported_features.includes(
-      ProviderFeature.SIMILAR_TRACKS,
-    )
-  ) {
-    return true;
-  }
-  // we also support a generic radio mode if we have ANY provider with similar track feature
-  // and the track is (matched) in the library
-  if (item.provider == "library") {
-    for (const prov of Object.values(api.providers)) {
-      if (prov.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
-        return true;
-    }
-  }
-
-  return false;
-};
 </script>
-
-<style scoped>
-.menurow :deep(.v-list-item__prepend) {
-  width: 45px;
-  margin-left: -5px;
-}
-
-.menurow :deep(.v-expansion-panel-title) {
-  padding: 0;
-  padding-right: 10px;
-  min-height: 40px !important;
-  height: 40px !important;
-}
-
-.menurow :deep(.v-expansion-panel-title--active) {
-  height: 40px !important;
-}
-
-.menurow :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.menu-item-error :deep(.v-list-item-title),
-.menu-item-error :deep(.v-icon) {
-  color: rgb(var(--v-theme-error)) !important;
-}
-</style>

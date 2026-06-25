@@ -18,6 +18,11 @@
         "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
+    "genre_content_type": {
+        "all": "All",
+        "audiobooks": "Audiobooks",
+        "podcasts": "Podcasts"
+    },
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
@@ -77,6 +82,7 @@
     "queue_next_items": "Next items",
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
+    "queue_reorder": "Drag to reorder",
     "queue_radio_based_on": "The queue is dynamically filled with tracks based on:",
     "queue_radio_enabled": "Radio mode is enabled",
     "radios": "Radio",
@@ -624,7 +630,8 @@
         "filter_genre": "Filter by genre",
         "show_only_default_genres": "Show only default genres",
         "show_all_genres": "Show all genres",
-        "filter_hide_fully_played": "Hide fully-played episodes"
+        "filter_hide_fully_played": "Hide fully-played episodes",
+        "genre_content_type": "Media type"
     },
     "topresult": "Top result",
     "track": "Track",
@@ -1218,11 +1225,15 @@
     "uri_read_only": "URI (read-only)",
     "lyrics": "Lyrics",
     "lyrics_offset": "Lyrics offset",
-    "lyrics_unavailable_song": "Lyrics are not (yet) available for this song.",
-    "lyrics_unavailable_content": "Lyrics aren't available for this content.",
+    "lyrics_show": "Show lyrics for this track",
+    "lyrics_hide": "Hide lyrics for this track",
+    "lyrics_loading": "Lyrics are being fetched...",
+    "lyrics_unavailable_song": "There are no lyrics available for this track (yet).",
+    "lyrics_unavailable_content": "Lyrics are not available for this media type.",
     "similar_tracks": "Similar tracks",
     "similar_artists": "Similar artists",
     "audio_source": "Audio source",
+    "show_audio_chain_details": "Show audio chain details",
     "change_playback_speed": "Change playback speed",
     "shortcut": {
         "add_to": "Add to shortcuts",
@@ -1313,6 +1324,8 @@
     "disc": "Disc {number}",
     "album_type_label": "Album type",
     "now_playing": "Now playing",
+    "up_next": "Up next",
+    "queue_buffered_explanation": "This track is already buffered by the player to play next.",
     "artist_topalbums": "Top albums",
     "in_library": "In your library",
     "artist_no_library_albums": "You don't have any albums in your library for this artist.",

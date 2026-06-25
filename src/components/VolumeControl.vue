@@ -95,9 +95,8 @@
               v-if="showSyncControls"
               :ripple="false"
               :disabled="
-                childPlayer.player_id == player.player_id ||
-                (player.static_group_members.includes(childPlayer.player_id) &&
-                  player.group_members.includes(childPlayer.player_id))
+                player.static_group_members.includes(childPlayer.player_id) &&
+                player.group_members.includes(childPlayer.player_id)
               "
               :model-value="
                 player.group_members.includes(childPlayer.player_id) ||
