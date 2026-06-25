@@ -84,10 +84,6 @@ export default defineConfig({
     outDir: "./music_assistant_frontend",
     rollupOptions: {
       output: {
-        // Vite 8 / Rolldown removed the object form of `manualChunks` and
-        // deprecated the function form. The function-based `name` of a
-        // `codeSplitting` group has the same `(id) => string | null`
-        // signature, so the chunking logic is unchanged.
         codeSplitting: {
           groups: [
             {
