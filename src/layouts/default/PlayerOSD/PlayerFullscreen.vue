@@ -33,8 +33,13 @@
             @offset-press="startRepeatingOffset"
           />
 
-          <Button variant="ghost" size="icon-sm" @click.stop="openQueueMenu">
-            <EllipsisVerticalIcon class="size-5" />
+          <Button
+            variant="outline"
+            size="icon-xs"
+            class="ml-2 size-7 bg-background/40 backdrop-blur-md hover:bg-background/60"
+            @click.stop="openQueueMenu"
+          >
+            <EllipsisVerticalIcon :size="16" />
           </Button>
         </template>
       </v-toolbar>
@@ -549,11 +554,12 @@ const lyricsLoading = ref(false);
 // Drives the lyrics header button: whether lyrics can be shown, are loading,
 // or are unavailable (and why).
 const lyricsState = computed<
-  "available" | "loading" | "unavailable-song" | "unavailable-content" | "none"
+  "available" | "loading" | "unavailable-song" | "none"
 >(() => {
   if (!store.curQueueItem) return "none";
+  // Lyrics only make sense for tracks; hide the button entirely otherwise.
   if (store.curQueueItem.media_item?.media_type !== MediaType.TRACK)
-    return "unavailable-content";
+    return "none";
   if (lyricsLoading.value) return "loading";
   if (hasLyrics.value) return "available";
   return "unavailable-song";
@@ -572,12 +578,7 @@ const toggleLyrics = () => {
 // the track turns out to have none, close it again so we don't show an empty
 // panel.
 watch(lyricsState, (state) => {
-  if (
-    showLyrics.value &&
-    (state === "unavailable-song" ||
-      state === "unavailable-content" ||
-      state === "none")
-  ) {
+  if (showLyrics.value && (state === "unavailable-song" || state === "none")) {
     showLyrics.value = false;
   }
 });

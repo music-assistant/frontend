@@ -4,6 +4,7 @@
 // keep that component focused on layout.
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
 import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
 import {
@@ -11,14 +12,11 @@ import {
   EventType,
   MediaItemChapter,
   MediaItemType,
-  MediaType,
   PlaybackState,
   QueueItem,
   QueueOption,
-  Track,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import {
@@ -257,128 +255,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
 
   // ---- per-item context menu / actions ------------------------------------
 
-  const itemClick = (item: MediaItemType) => {
-    // a media item in the list was clicked
-    store.showFullscreenPlayer = false;
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-  };
-
-  const queueCommand = (item: QueueItem | undefined, command: string) => {
-    if (!item || !store.activePlayerQueue) return;
-    if (command == "play_now") {
-      api.queueCommandPlayIndex(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    } else if (command == "move_next") {
-      api.queueCommandMoveNext(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    } else if (command == "up") {
-      api.queueCommandMoveUp(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    } else if (command == "down") {
-      api.queueCommandMoveDown(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    } else if (command == "end") {
-      api.queueCommandMoveItemEnd(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    } else if (command == "delete") {
-      api.queueCommandDelete(
-        store.activePlayerQueue.queue_id,
-        item.queue_item_id,
-      );
-    }
-  };
-
   const openQueueItemMenu = (evt: Event, index: number) => {
     const item = itemAt(index);
     if (!item) return;
-    const itemIndex = index;
-    const menuItems = [
-      {
-        label: "play_now",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "play_now");
-        },
-        icon: "mdi-play-circle-outline",
-        disabled:
-          itemIndex === store.activePlayerQueue?.current_index ||
-          itemIndex === store.activePlayerQueue?.index_in_buffer,
-      },
-      {
-        label: "play_next",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "move_next");
-        },
-        icon: "mdi-skip-next-circle-outline",
-        disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-      },
-      {
-        label: "queue_move_up",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "up");
-        },
-        icon: "mdi-arrow-up",
-        disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-      },
-      {
-        label: "queue_move_down",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "down");
-        },
-        icon: "mdi-arrow-down",
-        disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-      },
-      {
-        label: "queue_move_end",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "end");
-        },
-        icon: "mdi-arrow-collapse-down",
-        disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-      },
-      {
-        label: "queue_delete",
-        labelArgs: [],
-        action: () => {
-          queueCommand(item, "delete");
-        },
-        icon: "mdi-delete",
-        disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-      },
-    ];
-    if (item?.media_item?.media_type == MediaType.TRACK) {
-      menuItems.push({
-        label: "show_info",
-        labelArgs: [],
-        action: () => {
-          itemClick(item.media_item as Track);
-        },
-        icon: "mdi-information-outline",
-        disabled: false,
-      });
-    }
     eventbus.emit("contextmenu", {
-      items: menuItems,
+      items: getQueueItemMenuItems(item, index),
       posX: (evt as PointerEvent).clientX,
       posY: (evt as PointerEvent).clientY,
     });
