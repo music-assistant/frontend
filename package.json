@@ -81,7 +81,7 @@
         "sass": "1.101.0",
         "typescript": "6.0.3",
         "unplugin": "^3.0.0",
-        "vite": "^7.3.2",
+        "vite": "^8.0.16",
         "vite-plugin-pwa": "1.3.0",
         "vite-plugin-vuetify": "2.1.3",
         "vite-plugin-webfont-dl": "3.12.0",
