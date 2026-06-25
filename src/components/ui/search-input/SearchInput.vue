@@ -5,7 +5,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Search as SearchIcon, X } from "lucide-vue-next";
+import { Search as SearchIcon, X } from "@lucide/vue";
 import { cn } from "@/lib/utils";
 import { computed, ref, useAttrs } from "vue";
 

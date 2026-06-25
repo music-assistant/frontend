@@ -47,7 +47,9 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
-import { ArrowLeft, Music, UserRound } from "lucide-vue-next";
+import { ArrowLeft, Music, UserRound } from "@lucide/vue";
+import { $t } from "@/plugins/i18n";
+import { computed, ref } from "vue";
 
 defineProps<{
   searchQuery: string;
