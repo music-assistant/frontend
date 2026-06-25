@@ -217,6 +217,7 @@ const playMenuHeaderClicked = function (evt: MouseEvent | KeyboardEvent) {
 
 import router from "@/plugins/router";
 
+import { radioModeSupported } from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
 import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -1251,49 +1252,6 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
-};
-
-const radioModeSupported = function (item: MediaItemTypeOrItemMapping) {
-  if (
-    ![
-      MediaType.TRACK,
-      MediaType.ARTIST,
-      MediaType.ALBUM,
-      MediaType.PLAYLIST,
-    ].includes(item.media_type)
-  ) {
-    return;
-  }
-  // Dynamic playlists own their own track feed — radio mode would conflict
-  if (item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic) {
-    return false;
-  }
-  if ("provider_mappings" in item) {
-    for (const provId of item.provider_mappings) {
-      if (
-        api.providers[provId.provider_instance]?.supported_features.includes(
-          ProviderFeature.SIMILAR_TRACKS,
-        )
-      )
-        return true;
-    }
-  } else if (
-    api.providers[item.provider]?.supported_features.includes(
-      ProviderFeature.SIMILAR_TRACKS,
-    )
-  ) {
-    return true;
-  }
-  // we also support a generic radio mode if we have ANY provider with similar track feature
-  // and the track is (matched) in the library
-  if (item.provider == "library") {
-    for (const prov of Object.values(api.providers)) {
-      if (prov.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
-        return true;
-    }
-  }
-
-  return false;
 };
 </script>
 

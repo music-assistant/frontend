@@ -166,179 +166,123 @@
           v-if="showRightColumn && store.activePlayerQueue"
           class="main-queue-items"
         >
-          <v-tabs
-            v-if="!showLyrics"
-            v-model="activeQueuePanel"
-            hide-slider
-            density="compact"
-            @click="activeQueuePanelClick"
-          >
-            <v-tab :value="0">
-              {{ $t("queue") }}
-              <v-badge
-                color="grey"
-                :content="
-                  (store.activePlayerQueue?.items || 0) -
-                  (store.activePlayerQueue?.current_index || 0)
-                "
-                inline
-              />
-            </v-tab>
-            <v-tab :value="1">
-              {{ $t("played") }}
-              <v-badge
-                color="grey"
-                :content="store.activePlayerQueue?.current_index"
-                inline
-              />
-            </v-tab>
-          </v-tabs>
+          <!-- Lyrics view -->
+          <div v-if="showLyrics" class="lyrics-wrapper">
+            <LyricsViewer
+              :media-item="store.curQueueItem?.media_item"
+              :position="lyricsElapsedTime"
+              :stream-details="store.curQueueItem?.streamdetails"
+              :text-color="sliderColor"
+              :lyrics="currentLyrics.plain"
+              :lrc-lyrics="currentLyrics.synced"
+              :offset="lyricsOffset"
+            />
+          </div>
+          <!-- Unified queue list: played → now playing → up next (virtualized) -->
           <div
+            v-else
+            ref="queueScrollRef"
             class="queue-items-scroll-box"
             :style="`--queue-title-size: ${queueTitleFontSize}; --queue-subtitle-size: ${queueSubtitleFontSize};`"
           >
-            <v-virtual-scroll
-              v-if="!tempHide && !showLyrics"
-              ref="virtualScrollRef"
-              :item-height="70"
-              height="100%"
-              :items="activeQueuePanel == 0 ? nextItems : previousItems"
-              @scroll="onQueueScroll"
+            <!-- empty state -->
+            <div v-if="!totalItems" class="queue-empty">
+              {{ $t("queue_empty") }}
+            </div>
+            <!-- virtual spacer sized to the whole queue; only visible rows render -->
+            <div
+              v-else
+              class="queue-virt"
+              :class="{ 'queue-virt--dragging': isDragging }"
+              :style="{ height: `${totalSize}px` }"
             >
-              <template #default="{ item, index }">
-                <ListItem
-                  link
-                  :show-menu-btn="true"
-                  :disabled="!item.available"
-                  @click.stop="(e: Event) => openQueueItemMenu(e, item)"
-                  @menu.stop="(e: Event) => openQueueItemMenu(e, item)"
-                  @mouseenter="hoveredQueueIndex = index"
-                  @mouseleave="hoveredQueueIndex = -1"
-                >
-                  <template #prepend>
-                    <div class="media-thumb listitem-media-thumb">
-                      <MediaItemThumb size="50" :item="item" />
-                    </div>
-                  </template>
-                  <template #title>
-                    <div class="title-row">
-                      <!-- only scroll the currently playing track, or when hovered with a separate sync group -->
-                      <MarqueeText
-                        :sync="
-                          index == 0 && activeQueuePanel == 0
-                            ? playerMarqueeSync
-                            : hoveredMarqueeSync
-                        "
-                        :disabled="
-                          !(
-                            (index == 0 && activeQueuePanel == 0) ||
-                            hoveredQueueIndex == index
-                          )
-                        "
-                      >
-                        <span
-                          :class="{
-                            'is-playing':
-                              item.queue_item_id ===
-                              store.curQueueItem?.queue_item_id,
-                          }"
-                        >
-                          {{ item.name }}
-                        </span>
-                      </MarqueeText>
-                    </div>
-                  </template>
-                  <template #subtitle>
-                    <div class="d-flex">
-                      <span style="white-space: nowrap" class="pr-1">
-                        {{ formatDuration(item.duration) }} |
-                      </span>
-                      <MarqueeText
-                        :sync="
-                          index == 0 && activeQueuePanel == 0
-                            ? playerMarqueeSync
-                            : hoveredMarqueeSync
-                        "
-                        :disabled="
-                          !(
-                            (index == 0 && activeQueuePanel == 0) ||
-                            hoveredQueueIndex == index
-                          )
-                        "
-                      >
-                        <span
-                          v-if="
-                            item.media_item &&
-                            'album' in item.media_item &&
-                            item.media_item.album
-                          "
-                        >
-                          {{ item.media_item.album.name }}
-                        </span>
-                      </MarqueeText>
-                    </div>
-                  </template>
-                  <template #append>
-                    <PartyPlayerBadge
-                      v-if="item.extra_attributes?.party_guest === true"
-                      :type="
-                        item.extra_attributes?.party_boosted === true
-                          ? 'boost'
-                          : 'request'
-                      "
-                      :badge-color="
-                        item.extra_attributes?.party_boosted === true
-                          ? boostBadgeColor
-                          : requestBadgeColor
-                      "
-                    />
-                    <NowPlayingBadge
-                      v-if="
-                        item.queue_item_id ===
-                          store.curQueueItem?.queue_item_id &&
-                        store.activePlayer?.playback_state != PlaybackState.IDLE
-                      "
-                      :show-badge="getBreakpointValue('bp4')"
-                    />
-                    <v-icon v-if="!item.available">mdi-alert</v-icon>
-                  </template>
-                </ListItem>
-                <!-- Show chapters -->
+              <div
+                v-for="row in virtualRows"
+                :key="row.index"
+                :ref="measureRow"
+                :data-index="row.index"
+                class="queue-virt-row"
+                :style="{
+                  transform: `translateY(${row.vItem.start + rowOffset(row.index)}px)`,
+                }"
+              >
+                <!-- section divider (Now playing / Up next) -->
+                <div v-if="row.divider" class="queue-divider">
+                  <span class="queue-divider__label">{{
+                    $t(row.divider)
+                  }}</span>
+                  <span
+                    v-if="row.divider === 'up_next' && upNextCount"
+                    class="queue-divider__count"
+                  >
+                    {{ upNextCount }}
+                  </span>
+                  <span class="queue-divider__line"></span>
+                </div>
+                <!-- loaded item -->
+                <QueueListItem
+                  v-if="row.item"
+                  :item="row.item"
+                  :state="row.state"
+                  :is-playing="playerActive"
+                  :dragging="draggingIndex === row.index"
+                  :marquee-sync="
+                    row.state === 'playing'
+                      ? playerMarqueeSync
+                      : hoveredMarqueeSync
+                  "
+                  :request-badge-color="requestBadgeColor"
+                  :boost-badge-color="boostBadgeColor"
+                  @click="(e: Event) => openQueueItemMenu(e, row.index)"
+                  @menu="(e: Event) => openQueueItemMenu(e, row.index)"
+                  @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
+                />
+                <!-- placeholder while the page loads -->
+                <div v-else class="queue-skeleton">
+                  <div class="queue-skeleton__thumb"></div>
+                  <div class="queue-skeleton__lines">
+                    <div class="queue-skeleton__line"></div>
+                    <div
+                      class="queue-skeleton__line queue-skeleton__line--sub"
+                    ></div>
+                  </div>
+                </div>
+                <!-- chapters for the current audiobook item -->
                 <div
                   v-if="
-                    item.queue_item_id == store.curQueueItem?.queue_item_id &&
-                    item.media_item?.metadata?.chapters?.length
+                    row.state === 'playing' &&
+                    row.item?.media_item?.metadata?.chapters?.length
                   "
-                  style="margin-left: 50px"
+                  class="queue-chapters"
                 >
-                  <v-list-item
-                    v-for="chapter in item.media_item.metadata?.chapters"
+                  <button
+                    v-for="chapter in row.item.media_item.metadata.chapters"
                     :key="chapter.position"
-                    @click.stop="chapterClicked(item.media_item, chapter)"
+                    type="button"
+                    class="queue-chapter"
+                    @click.stop="chapterClicked(row.item.media_item, chapter)"
                   >
-                    <template #title>
-                      <div>{{ chapter.name }}</div>
-                    </template>
-                    <template #append>
-                      <span v-if="chapter.end" class="text-caption"
-                        >{{ formatDuration(chapter.end - chapter.start) }}
-                      </span>
-                    </template>
-                  </v-list-item>
+                    <span class="queue-chapter__name">{{ chapter.name }}</span>
+                    <span v-if="chapter.end" class="queue-chapter__time">
+                      {{ formatDuration(chapter.end - chapter.start) }}
+                    </span>
+                  </button>
                 </div>
-              </template>
-            </v-virtual-scroll>
-            <!-- Lyrics view -->
-            <div v-if="showLyrics" class="lyrics-wrapper">
-              <LyricsViewer
-                :media-item="store.curQueueItem?.media_item"
-                :position="lyricsElapsedTime"
-                :stream-details="store.curQueueItem?.streamdetails"
-                :text-color="sliderColor"
-                :lyrics="currentLyrics.plain"
-                :lrc-lyrics="currentLyrics.synced"
-                :offset="lyricsOffset"
-              />
+              </div>
+              <!-- floating ghost of the dragged item; tracks the pointer -->
+              <div
+                v-if="isDragging && draggedItem"
+                class="queue-ghost"
+                :style="{ transform: `translateY(${ghostY}px)` }"
+              >
+                <QueueListItem
+                  :item="draggedItem"
+                  state="upcoming"
+                  ghost
+                  :request-badge-color="requestBadgeColor"
+                  :boost-badge-color="boostBadgeColor"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -490,15 +434,10 @@
 
 <script setup lang="ts">
 import Icon from "@/components/Icon.vue";
-import ListItem from "@/components/ListItem.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
-import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
@@ -506,7 +445,6 @@ import {
   formatDuration,
   getMediaImageUrl,
   getPlayerName,
-  sleep,
 } from "@/helpers/utils";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
@@ -515,19 +453,16 @@ import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vu
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
+import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
   EventMessage,
   EventType,
-  MediaItemChapter,
   MediaItemType,
   MediaType,
-  PlaybackState,
-  PlayerQueue,
   PlayerType,
-  QueueItem,
-  QueueOption,
   Track,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -577,13 +512,6 @@ const playBtnStyle = computed(() => {
 });
 
 const playerMarqueeSync = new MarqueeTextSync();
-const hoveredQueueIndex = ref(-1);
-const hoveredMarqueeSync = new MarqueeTextSync();
-
-// Local refs
-const queueItems = ref<QueueItem[]>([]);
-const activeQueuePanel = ref(0);
-const tempHide = ref(false);
 
 // Track the favorite state of the current queue item independently from
 // media_item.favorite so optimistic updates survive server-side queue refreshes
@@ -598,26 +526,8 @@ watch(
   { immediate: true },
 );
 
-// Badge colors for guest request badges (loaded from party/config)
-const requestBadgeColor = ref("#2196f3");
-const boostBadgeColor = ref("#ff5722");
-
 const { elapsedTime: lyricsElapsedTime } = useLyricsElapsedTime();
 
-// Computed properties
-
-const nextItems = computed(() => {
-  if (store.activePlayerQueue) {
-    return queueItems.value.slice(store.activePlayerQueue.current_index);
-  } else return [];
-});
-const previousItems = computed(() => {
-  if (store.activePlayerQueue) {
-    return queueItems.value
-      .slice(0, store.activePlayerQueue.current_index)
-      .reverse();
-  } else return [];
-});
 // Local reactive state for lyrics
 const currentLyrics = ref<{ plain: string | null; synced: string | null }>({
   plain: null,
@@ -677,6 +587,31 @@ watch(lyricsState, (state) => {
 const showRightColumn = computed(
   () => store.showQueueItems || showLyrics.value,
 );
+
+// The unified queue list (virtualized rows, paging, now-playing focus, per-item
+// menu and chapters) lives in its own composable to keep this component lean.
+const {
+  queueScrollRef,
+  virtualRows,
+  totalItems,
+  upNextCount,
+  totalSize,
+  measureRow,
+  playerActive,
+  hoveredMarqueeSync,
+  requestBadgeColor,
+  boostBadgeColor,
+  queueTitleFontSize,
+  queueSubtitleFontSize,
+  openQueueItemMenu,
+  chapterClicked,
+  startItemDrag,
+  draggingIndex,
+  isDragging,
+  draggedItem,
+  ghostY,
+  rowOffset,
+} = useFullscreenQueue(showLyrics);
 
 // Protocols with accurate playback time reporting don't need a latency offset.
 const ACCURATE_TIME_PROTOCOLS = ["airplay"];
@@ -842,44 +777,6 @@ const subTitleFontSize = computed(() => {
   return `${(parseFloat(titleFontSize.value) * (12 / 14)).toFixed(3)}em`;
 });
 
-const queueTitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.875rem";
-    case "sm":
-      return "0.875rem";
-    case "md":
-      return "0.925rem";
-    case "lg":
-      return "0.9rem";
-    case "xl":
-      return "0.925rem";
-    case "xxl":
-      return "0.975rem";
-    default:
-      return "0.875rem";
-  }
-});
-
-const queueSubtitleFontSize = computed(() => {
-  switch (name.value) {
-    case "xs":
-      return "0.775rem";
-    case "sm":
-      return "0.775rem";
-    case "md":
-      return "0.8rem";
-    case "lg":
-      return "0.8rem";
-    case "xl":
-      return "0.8rem";
-    case "xxl":
-      return "0.85rem";
-    default:
-      return "0.775rem";
-  }
-});
-
 const showExpandedPlayerSelectButton = computed(() => {
   // Always show the player select button at the bottom; only hide it on very
   // short screens (never relocate it to the header).
@@ -887,18 +784,6 @@ const showExpandedPlayerSelectButton = computed(() => {
 });
 
 // methods
-
-const itemClick = function (item: MediaItemType) {
-  // mediaItem in the list is clicked
-  store.showFullscreenPlayer = false;
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
-};
 
 // Helper to parse a Music Assistant URI
 // Supports both formats:
@@ -1191,84 +1076,6 @@ const onArtistClick = async function () {
   }
 };
 
-const openQueueItemMenu = function (evt: Event, item: QueueItem) {
-  const itemIndex = queueItems.value.indexOf(item);
-  const menuItems = [
-    {
-      label: "play_now",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "play_now");
-      },
-      icon: "mdi-play-circle-outline",
-      disabled:
-        itemIndex === store.activePlayerQueue?.current_index ||
-        itemIndex === store.activePlayerQueue?.index_in_buffer,
-    },
-    {
-      label: "play_next",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "move_next");
-      },
-      icon: "mdi-skip-next-circle-outline",
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-    },
-    {
-      label: "queue_move_up",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "up");
-      },
-      icon: "mdi-arrow-up",
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-    },
-    {
-      label: "queue_move_down",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "down");
-      },
-      icon: "mdi-arrow-down",
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-    },
-    {
-      label: "queue_move_end",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "end");
-      },
-      icon: "mdi-arrow-collapse-down",
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-    },
-    {
-      label: "queue_delete",
-      labelArgs: [],
-      action: () => {
-        queueCommand(item, "delete");
-      },
-      icon: "mdi-delete",
-      disabled: itemIndex <= (store.activePlayerQueue?.index_in_buffer || 0),
-    },
-  ];
-  if (item?.media_item?.media_type == MediaType.TRACK) {
-    menuItems.push({
-      label: "show_info",
-      labelArgs: [],
-      action: () => {
-        itemClick(item.media_item as Track);
-      },
-      icon: "mdi-information-outline",
-      disabled: false,
-    });
-  }
-  eventbus.emit("contextmenu", {
-    items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
-  });
-};
-
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
   eventbus.emit("contextmenu", {
@@ -1280,171 +1087,6 @@ const openQueueMenu = function (evt: Event) {
     posY: (evt as PointerEvent).clientY,
   });
 };
-
-const queueCommand = function (item: QueueItem | undefined, command: string) {
-  if (!item || !store.activePlayerQueue) return;
-  if (command == "play_now") {
-    api.queueCommandPlayIndex(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  } else if (command == "move_next") {
-    api.queueCommandMoveNext(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  } else if (command == "up") {
-    api.queueCommandMoveUp(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  } else if (command == "down") {
-    api.queueCommandMoveDown(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  } else if (command == "end") {
-    api.queueCommandMoveItemEnd(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  } else if (command == "delete") {
-    api.queueCommandDelete(
-      store.activePlayerQueue?.queue_id,
-      item.queue_item_id,
-    );
-  }
-};
-
-const virtualScrollRef = ref<InstanceType<
-  typeof import("vuetify/components").VVirtualScroll
-> | null>(null);
-const loadingMore = ref(false);
-const allItemsLoaded = ref(false);
-// Number of queue items fetched per page, and the distance we keep loaded past
-// the current index so the "queue" tab (sliced from current_index) never empties.
-const QUEUE_PAGE_SIZE = 50;
-// Bumped on every reset; an in-flight page load compares against it to detect it
-// belongs to an outdated queue state and must discard its result.
-let loadGeneration = 0;
-
-const resetItems = async function () {
-  // invalidate any in-flight load and release the loading guard, so a fetch that
-  // errored (e.g. on a dropped remote connection) cannot wedge later loads.
-  loadGeneration += 1;
-  loadingMore.value = false;
-  tempHide.value = true;
-  queueItems.value = [];
-  allItemsLoaded.value = false;
-  await sleep(100);
-  tempHide.value = false;
-  if (store.showFullscreenPlayer && store.showQueueItems) {
-    loadNextPage();
-  }
-};
-
-const loadNextPage = async function () {
-  if (loadingMore.value || allItemsLoaded.value) return;
-  if (!store.activePlayerQueue || store.activePlayerQueue.items == 0) return;
-  if (queueItems.value.length >= store.activePlayerQueue.items) {
-    allItemsLoaded.value = true;
-    return;
-  }
-  loadingMore.value = true;
-  const generation = loadGeneration;
-  const offset = queueItems.value.length;
-  // On first load, ensure we fetch enough items to cover past the current
-  // index so that nextItems (which slices from current_index) has data.
-  const minNeeded =
-    (store.activePlayerQueue.current_index || 0) + QUEUE_PAGE_SIZE;
-  const limit =
-    offset === 0
-      ? Math.max(QUEUE_PAGE_SIZE, minNeeded - offset)
-      : QUEUE_PAGE_SIZE;
-  try {
-    const result = await api.getPlayerQueueItems(
-      store.activePlayerQueue.queue_id,
-      limit,
-      offset,
-    );
-    // a reset happened while awaiting; this page is stale, so drop it
-    if (generation !== loadGeneration) return;
-    queueItems.value.push(...result);
-    if (result.length < limit) {
-      allItemsLoaded.value = true;
-    }
-  } finally {
-    // leave the guard untouched if a reset already started a newer load
-    if (generation === loadGeneration) {
-      loadingMore.value = false;
-    }
-  }
-};
-
-// fetch another page when the loaded window no longer extends a full page past
-// the current index, which it is sliced from to build the "queue" tab
-const ensureWindowAheadOfIndex = function () {
-  if (!store.showFullscreenPlayer || !store.showQueueItems) return;
-  const index = store.activePlayerQueue?.current_index ?? 0;
-  if (queueItems.value.length - index < QUEUE_PAGE_SIZE) {
-    loadNextPage();
-  }
-};
-
-const onQueueScroll = function (e: Event) {
-  const target = e.target as HTMLElement;
-  if (!target) return;
-  const threshold = 500;
-  if (
-    target.scrollTop + target.clientHeight >=
-    target.scrollHeight - threshold
-  ) {
-    loadNextPage();
-  }
-};
-
-// Fetch badge colors from party config
-const { config: partyConfig, fetchConfig: fetchPartyConfig } = usePartyConfig();
-
-// React to party config changes (e.g., admin changes badge colors)
-watch(partyConfig, (newConfig) => {
-  if (newConfig) {
-    requestBadgeColor.value = newConfig.request_badge_color ?? "#2196F3";
-    boostBadgeColor.value = newConfig.boost_badge_color ?? "#FF5722";
-  }
-});
-
-onMounted(async () => {
-  // Only fetch badge colors if party provider is loaded
-  if (Object.values(api.providers).some((p) => p.domain === "party")) {
-    await fetchPartyConfig();
-  }
-});
-
-// load the initial page (or top up a window that went stale while hidden) when
-// the queue items become visible
-watch(
-  [() => store.showFullscreenPlayer, () => store.showQueueItems],
-  ensureWindowAheadOfIndex,
-  { immediate: true },
-);
-
-// keep extending the window as playback advances so the "queue" tab, which
-// slices nextItems from current_index, keeps showing the upcoming items
-watch(() => store.activePlayerQueue?.current_index, ensureWindowAheadOfIndex);
-
-// listen for item updates to refresh items when that happens
-onMounted(() => {
-  const unsub = api.subscribe(
-    EventType.QUEUE_ITEMS_UPDATED,
-    (evt: EventMessage) => {
-      if (evt.object_id != store.activePlayerQueue?.queue_id) return;
-      const queue = evt.data as PlayerQueue;
-      resetItems();
-    },
-  );
-  onBeforeUnmount(unsub);
-});
 
 // sync currentItemFavorite when the server confirms a favorite change
 onMounted(() => {
@@ -1574,36 +1216,6 @@ const onHeartBtnClick = async function (evt: PointerEvent | MouseEvent) {
   });
 };
 
-const activeQueuePanelClick = function () {
-  // this hack is needed in order to force refresh the infinite scroller
-  // otherwise it will not attempt to load more items if the end was reached
-  // and then we load new items with a different size
-  tempHide.value = true;
-  sleep(100).then(() => {
-    tempHide.value = false;
-  });
-};
-
-const chapterClicked = function (
-  item: MediaItemType,
-  chapter: MediaItemChapter,
-) {
-  api.playMedia(
-    item.uri,
-    QueueOption.PLAY,
-    undefined,
-    chapter.position.toString(),
-  );
-};
-
-// watchers
-watch(
-  () => store.activePlayerId,
-  (val) => {
-    resetItems();
-  },
-  { immediate: true },
-);
 const sliderColor = ref<string | undefined>(undefined);
 const backgroundColor = ref<string | undefined>(undefined);
 
@@ -1667,19 +1279,175 @@ watchEffect(() => {
 .queue-items-scroll-box {
   flex: 1;
   min-height: 0;
-  overflow-y: scroll;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  /* Keep the list clear of the progress bar / controls below. */
+  margin-bottom: 24px;
+  scroll-behavior: auto;
 }
 
-.queue-items-scroll-box :deep(.v-list-item-title) {
-  font-size: var(--queue-title-size, 1rem);
+/* Virtual list: a spacer sized to the whole queue, with only the visible rows
+   rendered and absolutely positioned via an inline translateY. */
+.queue-virt {
+  position: relative;
+  width: 100%;
 }
 
-.queue-items-scroll-box :deep(.v-list-item-subtitle) {
-  font-size: var(--queue-subtitle-size, 0.875rem);
+.queue-virt-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
-.v-infinite-scroll--vertical {
-  overflow-y: unset;
+/* While dragging, the rows slide smoothly as the landing gap opens/moves. */
+.queue-virt--dragging .queue-virt-row {
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Floating clone of the dragged row; sits above the list and tracks the
+   pointer. Positioned via an inline translateY in content space. */
+.queue-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Placeholder shown while a page of items is still loading. */
+.queue-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+  padding: 6px 8px;
+}
+
+.queue-skeleton__thumb {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 10%,
+    transparent
+  );
+}
+
+.queue-skeleton__lines {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.queue-skeleton__line {
+  width: 55%;
+  height: 12px;
+  border-radius: 4px;
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 10%,
+    transparent
+  );
+}
+
+.queue-skeleton__line--sub {
+  width: 38%;
+  height: 10px;
+}
+
+/* Section divider between played / now playing / up next. */
+.queue-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 8px 6px;
+}
+
+.queue-divider__label {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-color, currentColor);
+  opacity: 0.65;
+}
+
+.queue-divider__count {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-color, currentColor);
+  opacity: 0.4;
+}
+
+.queue-divider__line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 18%,
+    transparent
+  );
+}
+
+/* Audiobook chapters under the current item. */
+.queue-chapters {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 6px 60px;
+}
+
+.queue-chapter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-align: left;
+  color: var(--text-color, currentColor);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.queue-chapter:hover {
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 8%,
+    transparent
+  );
+}
+
+.queue-chapter__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--queue-subtitle-size, 0.8rem);
+}
+
+.queue-chapter__time {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.queue-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  opacity: 0.6;
 }
 
 .main-media-details-image {
@@ -1741,13 +1509,6 @@ watchEffect(() => {
 
 .track-info-subtitle {
   opacity: 0.5;
-}
-
-.v-tab {
-  opacity: 0.5;
-}
-.v-tab-item--selected {
-  opacity: 1;
 }
 
 .media-controls {
@@ -1884,12 +1645,6 @@ button {
   .lyrics-wrapper :deep(.break-note) {
     font-size: clamp(1.4rem, 2vw, 2.2rem);
   }
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .icon-thumb-large {

@@ -1,39 +1,75 @@
 <template>
-  <div style="width: auto; height: 24px">
-    <div v-if="store.activePlayer" style="width: 100%">
-      <v-slider
-        v-model="curTimeValue"
+  <div class="w-auto h-6">
+    <div v-if="store.activePlayer">
+      <SliderRoot
+        v-model="wrappedCurTimeValue"
+        data-slot="slider"
+        class="relative flex items-center select-none touch-none w-full h-5 mb-2"
         :disabled="!canSeek"
-        style="width: 100%"
         :min="0"
-        :max="store.activePlayer?.current_media?.duration"
-        hide-details
-        :track-size="4"
-        :thumb-size="isThumbHidden ? 0 : 10"
-        :show-ticks="chapterTicks ? 'always' : false"
-        :ticks="chapterTicks"
-        tick-size="4"
-        :color="color"
-        @touchstart="isThumbHidden = false"
-        @touchend="isThumbHidden = true"
-        @mouseenter="isThumbHidden = false"
-        @mouseleave="isThumbHidden = true"
-        @start="startDragging"
-        @end="stopDragging"
+        :max="store.activePlayer?.current_media?.duration ?? 0"
+        :step="0.1"
+        @value-commit="stopDragging"
+        @pointerenter="isThumbHidden = !canSeek"
+        @pointerleave="isThumbHidden = true"
       >
-        <template #tick-label="{ tick }">
-          <a
-            v-if="
-              showLabels &&
-              !isThumbHidden &&
-              Object.values(chapterTicks).length < 6
-            "
-            class="text-caption"
-            @click="chapterClicked(tick.value)"
-            >{{ tick.label }}</a
+        <!-- color-mix is the same logic as tailwind's bg-color/30 -->
+        <SliderTrack
+          data-slot="slider-track"
+          class="relative grow rounded-full h-1"
+          :style="{
+            'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
+          }"
+        >
+          <SliderRange
+            data-slot="slider-range"
+            class="absolute rounded-full h-1.5 top-1/2 -translate-y-1/2"
+            :style="{ 'background-color': color }"
+          />
+          <!-- pointerdown.stop prevents reka's slider track tap action -->
+          <button
+            v-for="tick in chapterTicks"
+            :key="tick.position"
+            type="button"
+            class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-4 w-3 items-center justify-center"
+            :style="{ left: `${tick.percent}%` }"
+            :aria-label="tick.name"
+            @pointerdown.stop
+            @click.stop="chapterClicked(tick)"
           >
+            <span
+              class="w-1 h-1 rounded-full bg-background"
+              aria-hidden="true"
+            ></span>
+          </button>
+        </SliderTrack>
+        <SliderThumb
+          data-slot="slider-thumb"
+          :style="{ 'background-color': color }"
+          :class="
+            cn(
+              'w-2.5 h-2.5 rounded-full shadow-sm',
+              !isThumbHidden || isDragging ? 'block' : 'hidden',
+            )
+          "
+        />
+        <!-- chapter labels above the track -->
+        <template
+          v-if="showLabels && !isThumbHidden && chapterTicks.length < 6"
+        >
+          <button
+            v-for="tick in chapterTicks"
+            :key="`label-${tick.position}`"
+            type="button"
+            class="absolute bottom-full mb-1 -translate-x-1/2 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
+            :style="{ left: `${tick.percent}%` }"
+            @pointerdown.stop
+            @click="chapterClicked(tick)"
+          >
+            {{ tick.name }}
+          </button>
         </template>
-      </v-slider>
+      </SliderRoot>
 
       <div v-if="showLabels" class="time-text-row">
         <!-- current time detail -->
@@ -59,13 +95,16 @@
 
 <script setup lang="ts">
 import api from "@/plugins/api";
-import { MediaType } from "@/plugins/api/interfaces";
+import { MediaType, type MediaItemChapter } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { formatDuration } from "@/helpers/utils";
 import { ref, computed, watch, toRef, onUnmounted } from "vue";
 import computeElapsedTime from "@/helpers/elapsed";
+import { computeChapterTicks } from "@/helpers/chapters";
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
+import { cn } from "@/lib/utils";
 
 // properties
 export interface Props {
@@ -75,7 +114,7 @@ export interface Props {
 
 withDefaults(defineProps<Props>(), {
   showLabels: false,
-  color: undefined,
+  color: "var(--foreground)",
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -95,6 +134,19 @@ const tempTime = ref(0);
 const nowTick = ref(0);
 let rafId: number | null = null;
 let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+// reka slider expects number[]
+const wrappedCurTimeValue = computed<number[]>({
+  get: () => [curTimeValue.value],
+  set: (newValue: number[]) => {
+    // reka emits update:modelValue on user interaction, drag or track click
+    // a setter call means the user is seeking, must be marked as dragging to stop the playback
+    // watcher from fighting the thumb, and stash the target for the commit seek
+    isDragging.value = true;
+    curTimeValue.value = newValue[0];
+    tempTime.value = newValue[0];
+  },
+});
 
 const startTick = () => {
   if (rafId === null) {
@@ -253,15 +305,12 @@ const computedElapsedTime = computed(() => {
   return 0;
 });
 
-const chapterTicks = computed(() => {
-  const ticks: Record<number, string> = {};
-  if (store.curQueueItem?.media_item?.metadata?.chapters) {
-    store.curQueueItem.media_item.metadata.chapters.forEach((chapter) => {
-      ticks[chapter.start] = chapter.name;
-    });
-  }
-  return ticks;
-});
+const chapterTicks = computed(() =>
+  computeChapterTicks(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    store.activePlayer?.current_media?.duration,
+  ),
+);
 
 //watch
 watch(computedElapsedTime, (newTime) => {
@@ -271,13 +320,9 @@ watch(computedElapsedTime, (newTime) => {
 });
 
 // methods
-const startDragging = function () {
-  isDragging.value = true;
-};
-
 const stopDragging = () => {
   isDragging.value = false;
-  if (!isDragging.value && store.activePlayer) {
+  if (store.activePlayer) {
     api.playerCommandSeek(
       store.activePlayer.player_id,
       Math.round(tempTime.value),
@@ -285,20 +330,14 @@ const stopDragging = () => {
   }
 };
 
-const chapterClicked = function (chaperPos: number) {
-  if (store.curQueueItem?.media_item?.metadata?.chapters) {
-    for (const chapter of store.curQueueItem.media_item.metadata.chapters) {
-      if (chapter.start == chaperPos) {
-        api.playMedia(
-          store.curQueueItem.media_item.uri,
-          undefined,
-          undefined,
-          chapter.position.toString(),
-        );
-        return;
-      }
-    }
-  }
+const chapterClicked = function (chapter: MediaItemChapter) {
+  if (!store.curQueueItem?.media_item) return;
+  api.playMedia(
+    store.curQueueItem.media_item.uri,
+    undefined,
+    undefined,
+    chapter.position.toString(),
+  );
 };
 </script>
 
@@ -326,9 +365,5 @@ const chapterClicked = function (chaperPos: number) {
 }
 .time-text-row > div {
   width: calc(100% / 2);
-}
-.v-slider.v-input--horizontal {
-  align-items: center;
-  margin-inline: 0px;
 }
 </style>
