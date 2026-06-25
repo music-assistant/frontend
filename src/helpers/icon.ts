@@ -8,11 +8,17 @@ export const MA_ICON_NAMES: readonly string[] = Object.keys(
 ).sort();
 
 function kebabToPascal(name: string): string {
-  return name.replace(/(^|-)([a-z])/g, (_, __, c: string) => c.toUpperCase());
+  return name
+    .split("-")
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join("");
 }
 
 function pascalToKebab(name: string): string {
-  return name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([a-zA-Z])(\d)/g, "$1-$2")
+    .toLowerCase();
 }
 
 type LucideModule = Record<string, unknown>;
@@ -28,7 +34,9 @@ export function getLucideIcon(
   if (MaIcons.registry[canonical]) return MaIcons.registry[canonical];
   // Fall through to Lucide
   const comp = lucideModule[kebabToPascal(canonical)];
-  return typeof comp === "function" ? (comp as Component) : undefined;
+  return comp && (typeof comp === "object" || typeof comp === "function")
+    ? (comp as Component)
+    : undefined;
 }
 
 /** Returns true if the icon string is an MDI icon (starts with "mdi-"). */
@@ -42,7 +50,8 @@ export async function getLucideIconNames(): Promise<readonly string[]> {
     .filter((key) => {
       const val = lucideModule[key];
       return (
-        typeof val === "function" &&
+        val != null &&
+        (typeof val === "object" || typeof val === "function") &&
         /^[A-Z]/.test(key) && // icon exports are PascalCase
         !key.endsWith("Icon") && // skip *Icon suffix aliases
         !key.startsWith("Lucide") // skip Lucide* prefix aliases
