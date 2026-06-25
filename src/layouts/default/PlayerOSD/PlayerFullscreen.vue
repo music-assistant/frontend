@@ -224,6 +224,8 @@
                   </span>
                   <span class="queue-divider__line"></span>
                 </div>
+                <!-- queue mode banner (radio mix / autoplay state) under Up next -->
+                <QueueModeBanner v-if="row.divider === 'up_next'" />
                 <!-- loaded item -->
                 <QueueListItem
                   v-if="row.item"
@@ -458,6 +460,7 @@ import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
+import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";

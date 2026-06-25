@@ -135,7 +135,7 @@
 
     <!-- autoplay: direct toggle (primary while enabled). Hidden while radio is
          active or for infinite streams (autoplay is moot there). -->
-    <TooltipProvider v-if="showAutoplay && queue" :delay-duration="200">
+    <TooltipProvider v-if="autoplayApplicable && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
@@ -148,7 +148,7 @@
                 : '',
             ]"
             :aria-label="$t('autoplay')"
-            @click="toggleAutoplay(!autoplayEnabled)"
+            @click="setAutoplay(!autoplayEnabled)"
           >
             <InfinityIcon :size="16" />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
@@ -234,9 +234,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
+import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
-import type { MediaItemType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
@@ -267,7 +267,15 @@ const lyricsTooltip = computed(() =>
     : $t("lyrics_unavailable_song"),
 );
 
-const queue = computed(() => store.activePlayerQueue);
+// Shared radio/autoplay state (also used by the queue mode banner).
+const {
+  queue,
+  radioSources,
+  radioModeActive,
+  autoplayEnabled,
+  autoplayApplicable,
+  setAutoplay,
+} = useQueueModes();
 
 // local open-state so we can render a shared scrim behind whichever popout shows
 const offsetOpen = ref(false);
@@ -304,28 +312,6 @@ const toggleCrossfade = () => {
   const q = queue.value;
   if (!q) return;
   api.queueCommandCrossfade(q.queue_id, !q.crossfade_enabled);
-};
-
-// --- radio mode (infinite mix) + autoplay ---
-const radioSources = computed<MediaItemType[]>(
-  () => queue.value?.radio_source ?? [],
-);
-const radioModeActive = computed(() => radioSources.value.length > 0);
-const autoplayEnabled = computed(() => queue.value?.autoplay_enabled === true);
-const showAutoplay = computed(() => {
-  const q = queue.value;
-  if (!q || !q.active) return false;
-  if (isQueueInfiniteStream(q)) return false;
-  // Radio mode and autoplay are mutually exclusive: while radio is active the
-  // queue keeps refilling itself, so autoplay is moot — hide the button.
-  if (radioModeActive.value) return false;
-  return "autoplay_enabled" in q;
-});
-
-const toggleAutoplay = (val: boolean) => {
-  const q = queue.value;
-  if (!q) return;
-  api.queueCommandAutoplay(q.queue_id, val);
 };
 </script>
 
