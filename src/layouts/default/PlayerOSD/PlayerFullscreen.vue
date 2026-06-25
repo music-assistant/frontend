@@ -238,7 +238,6 @@
                   "
                   :request-badge-color="requestBadgeColor"
                   :boost-badge-color="boostBadgeColor"
-                  @click="(e: Event) => openQueueItemMenu(e, row.index)"
                   @menu="(e: Event) => openQueueItemMenu(e, row.index)"
                   @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
                 />
