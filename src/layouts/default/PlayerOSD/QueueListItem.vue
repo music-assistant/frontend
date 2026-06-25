@@ -367,18 +367,18 @@ const albumName = computed(() => {
   cursor: grabbing;
 }
 
-/* The floating clone that tracks the pointer. Lifted off the list with a
-   shadow + subtle scale; its own action buttons are hidden. */
+/* The floating clone that tracks the pointer. Tinted with the same themed
+   color the rows use (no clashing gray) and lifted with a soft shadow so it
+   reads as picked-up, not detached. Its own action buttons are hidden. */
 .qitem--ghost {
   background: color-mix(
     in srgb,
-    var(--text-color, currentColor) 14%,
-    #80808055
+    var(--text-color, currentColor) 10%,
+    transparent
   );
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-  transform: scale(1.015);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   cursor: grabbing;
 }
 
