@@ -11,9 +11,9 @@
   >
     <DropdownMenuContent
       :reference="reference"
-      align="start"
+      align="end"
       :side-offset="0"
-      class="z-[999999] min-w-[300px] max-h-[85vh] overflow-y-auto"
+      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
     >
       <!-- play menu header -->
       <template v-if="showPlayMenuHeader">
@@ -39,7 +39,7 @@
               @select="onSelect($event, player)"
             >
               <MenuItemIcon :icon="player.icon" />
-              <span class="flex-1">{{ player.label }}</span>
+              <span class="flex-1 truncate min-w-0">{{ player.label }}</span>
               <Check v-if="player.selected" class="ml-auto size-4" />
             </DropdownMenuItem>
           </DropdownMenuSubContent>
@@ -57,7 +57,7 @@
             ]"
           >
             <MenuItemIcon :icon="menuItem.icon" />
-            <span class="flex-1">{{
+            <span class="flex-1 truncate min-w-0">{{
               $t(menuItem.label, menuItem.labelArgs || [])
             }}</span>
           </DropdownMenuSubTrigger>
@@ -76,7 +76,7 @@
               @select="onSelect($event, subMenuItem)"
             >
               <MenuItemIcon :icon="subMenuItem.icon" />
-              <span class="flex-1">{{
+              <span class="flex-1 truncate min-w-0">{{
                 $t(subMenuItem.label, subMenuItem.labelArgs || [])
               }}</span>
               <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
@@ -91,7 +91,7 @@
           @select="onSelect($event, menuItem)"
         >
           <MenuItemIcon :icon="menuItem.icon" />
-          <span class="flex-1">{{
+          <span class="flex-1 truncate min-w-0">{{
             $t(menuItem.label, menuItem.labelArgs || [])
           }}</span>
           <Check v-if="menuItem.selected" class="ml-auto size-4" />
@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,7 +112,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getLucideIcon } from "@/helpers/icon";
 import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
