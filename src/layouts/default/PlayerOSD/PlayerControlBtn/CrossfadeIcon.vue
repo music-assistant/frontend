@@ -53,18 +53,33 @@ withDefaults(
   overflow: visible;
 }
 
+/* whole-icon "breathing" glow so the smart state is noticeable at a glance */
+.crossfade-icon.is-smart {
+  animation: crossfade-smart-pulse 2.4s ease-in-out infinite;
+}
+
+/*
+  In smart mode fade the two base rings a touch so the bright travelling spark
+  clearly stands out. This matters most when the icon sits on the solid
+  primary-coloured (blue) button: there the stroke is white, and an equally
+  white spark would otherwise be invisible against the (white) rings.
+*/
+.crossfade-icon.is-smart > circle:not(.crossfade-spark) {
+  opacity: 0.4;
+}
+
 /*
   A short bright dash that travels around each circle.
   The circumference of a circle with r=7 is 2 * PI * 7 ≈ 43.98, so we use a
-  dash of length 3 with a gap that fills the rest, then animate the offset by
+  dash of length 4 with a gap that fills the rest, then animate the offset by
   the full circumference for a seamless loop.
 */
 .crossfade-spark {
   stroke: color-mix(in srgb, currentColor 20%, #ffffff);
   stroke-linecap: round;
-  stroke-dasharray: 3 40.98;
+  stroke-dasharray: 4 39.98;
   stroke-dashoffset: 0;
-  filter: drop-shadow(0 0 2px currentColor);
+  filter: drop-shadow(0 0 3px currentColor);
   animation: crossfade-spark-travel 2.4s linear infinite;
 }
 
@@ -90,7 +105,20 @@ withDefaults(
   }
 }
 
+@keyframes crossfade-smart-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 3px currentColor);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .crossfade-icon.is-smart {
+    animation: none;
+  }
   .crossfade-spark {
     animation: none;
     opacity: 0.85;

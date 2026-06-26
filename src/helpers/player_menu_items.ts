@@ -249,6 +249,20 @@ export const getPlayerMenuItems = (
       });
     }
 
+    // open player settings (player menu only)
+    if (isPlayer) {
+      menuItems.push({
+        label: "open_player_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}`);
+        },
+        icon: "mdi-cog-outline",
+      });
+    }
+
     // open dsp settings (player menu only)
     if (isPlayer && player.type !== PlayerType.GROUP) {
       menuItems.push({
@@ -263,7 +277,7 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // open player settings (both menus)
+    // open player options (both menus)
     if (player.options.length > 0) {
       menuItems.push({
         label: "player_options.open",

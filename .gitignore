@@ -123,3 +123,4 @@ venv/*
 !.vscode/launch.json
 !.vscode/tasks.json
 .coverage
+/.worktrees

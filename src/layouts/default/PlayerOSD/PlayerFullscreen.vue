@@ -33,8 +33,13 @@
             @offset-press="startRepeatingOffset"
           />
 
-          <Button variant="ghost" size="icon-sm" @click.stop="openQueueMenu">
-            <EllipsisVerticalIcon class="size-5" />
+          <Button
+            variant="outline"
+            size="icon-xs"
+            class="ml-2 size-7 bg-background/40 backdrop-blur-md hover:bg-background/60"
+            @click.stop="openQueueMenu"
+          >
+            <EllipsisVerticalIcon :size="16" />
           </Button>
         </template>
       </v-toolbar>
@@ -62,14 +67,13 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
+                  !!store.activePlayer?.group_members.length
                 "
+                :size="128"
               />
             </div>
           </div>
@@ -219,6 +223,8 @@
                   </span>
                   <span class="queue-divider__line"></span>
                 </div>
+                <!-- queue mode banner (radio mix / autoplay state) under Up next -->
+                <QueueModeBanner v-if="row.divider === 'up_next'" />
                 <!-- loaded item -->
                 <QueueListItem
                   v-if="row.item"
@@ -233,7 +239,6 @@
                   "
                   :request-badge-color="requestBadgeColor"
                   :boost-badge-color="boostBadgeColor"
-                  @click="(e: Event) => openQueueItemMenu(e, row.index)"
                   @menu="(e: Event) => openQueueItemMenu(e, row.index)"
                   @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
                 />
@@ -301,14 +306,13 @@
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
-              <v-icon
-                size="128"
-                :icon="
+              <PlayerIcon
+                :icon="store.activePlayer?.icon"
+                :grouped="
                   store.activePlayer?.type == PlayerType.PLAYER &&
-                  store.activePlayer?.group_members.length
-                    ? 'mdi-speaker-multiple'
-                    : store.activePlayer?.icon || 'mdi-speaker'
+                  !!store.activePlayer?.group_members.length
                 "
+                :size="128"
               />
             </div>
           </div>
@@ -420,9 +424,10 @@
               }
             "
           >
-            <v-icon
-              :icon="store.activePlayer?.icon || 'mdi-speaker'"
-              size="16"
+            <PlayerIcon
+              :icon="store.activePlayer?.icon"
+              :size="20"
+              class="mr-1"
             />
             {{ store.activePlayer ? getPlayerName(store.activePlayer) : "" }}
           </Button>
@@ -439,6 +444,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -454,6 +460,7 @@ import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
+import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
@@ -549,11 +556,12 @@ const lyricsLoading = ref(false);
 // Drives the lyrics header button: whether lyrics can be shown, are loading,
 // or are unavailable (and why).
 const lyricsState = computed<
-  "available" | "loading" | "unavailable-song" | "unavailable-content" | "none"
+  "available" | "loading" | "unavailable-song" | "none"
 >(() => {
   if (!store.curQueueItem) return "none";
+  // Lyrics only make sense for tracks; hide the button entirely otherwise.
   if (store.curQueueItem.media_item?.media_type !== MediaType.TRACK)
-    return "unavailable-content";
+    return "none";
   if (lyricsLoading.value) return "loading";
   if (hasLyrics.value) return "available";
   return "unavailable-song";
@@ -572,12 +580,7 @@ const toggleLyrics = () => {
 // the track turns out to have none, close it again so we don't show an empty
 // panel.
 watch(lyricsState, (state) => {
-  if (
-    showLyrics.value &&
-    (state === "unavailable-song" ||
-      state === "unavailable-content" ||
-      state === "none")
-  ) {
+  if (showLyrics.value && (state === "unavailable-song" || state === "none")) {
     showLyrics.value = false;
   }
 });
