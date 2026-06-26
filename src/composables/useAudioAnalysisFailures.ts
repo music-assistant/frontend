@@ -165,6 +165,12 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
 
   async function refresh(): Promise<void> {
     loading.value = true;
+    // Drop failed lookups (cached as null) so they're retried — a refresh is
+    // often triggered precisely because a provider just came up and a name that
+    // couldn't resolve before now can. Successful resolutions are kept.
+    for (const [key, value] of nameCache) {
+      if (value === null) nameCache.delete(key);
+    }
     try {
       const rows = await api.sendCommand<ServerFailure[]>(
         "audio_analysis/failures",

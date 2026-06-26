@@ -244,8 +244,11 @@ onMounted(() => {
   refresh();
 });
 
+// `api.providers` is a reactive object mutated in place (never reassigned), so
+// watch a derived primitive: the set of providers changing is what matters for
+// re-resolving track names that couldn't be looked up before a provider was up.
 watch(
-  () => api.providers,
+  () => Object.keys(api.providers).length,
   () => {
     refresh();
   },

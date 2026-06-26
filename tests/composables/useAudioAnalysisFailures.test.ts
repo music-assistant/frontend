@@ -241,6 +241,24 @@ describe("useAudioAnalysisFailures", () => {
     expect(ok.name).toBe("Fine");
   });
 
+  it("retries a previously-failed name lookup on the next refresh", async () => {
+    mockFailures([serverFailure({ item_id: "flaky" })]);
+    // First lookup fails (e.g. the provider wasn't up yet), later ones succeed
+    // via the default beforeEach implementation.
+    mockGetTrack.mockRejectedValueOnce(new Error("provider not ready"));
+
+    const f = useAudioAnalysisFailures();
+    await f.refresh();
+    expect(f.pageRows.value[0].name).toBe("flaky");
+    expect(mockGetTrack).toHaveBeenCalledTimes(1);
+
+    // A later refresh (e.g. triggered when a provider connects) drops the
+    // cached null and retries, which now resolves the name.
+    await f.refresh();
+    expect(mockGetTrack).toHaveBeenCalledTimes(2);
+    expect(f.pageRows.value[0].name).toBe("Track flaky");
+  });
+
   it("only resolves names for the visible page, not the whole list", async () => {
     mockFailures([
       serverFailure({ item_id: "1" }),
