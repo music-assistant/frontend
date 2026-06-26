@@ -5,6 +5,7 @@
         id="searchInput"
         v-model="store.globalSearchTerm"
         clearable
+        :aria-label="$t('search')"
         :placeholder="$t('type_to_search')"
         @focus="searchHasFocus = true"
         @blur="searchHasFocus = false"

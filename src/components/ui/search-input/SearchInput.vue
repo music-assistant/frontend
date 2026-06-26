@@ -54,9 +54,12 @@ defineExpose({
     <InputGroupButton
       v-if="props.clearable"
       v-show="props.modelValue"
+      type="button"
+      aria-label="Clear"
       @click="
         emit('update:modelValue', '');
         emit('clear');
+        inputRef?.focus();
       "
     >
       <X class="size-4" />
