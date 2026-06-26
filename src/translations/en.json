@@ -682,6 +682,7 @@
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronize with another player",
     "open_queue_settings": "Open queue settings",
+    "open_player_settings": "Open player settings",
     "select_repeat_mode": "Select repeat mode",
     "repeat_mode": {
         "all": "Repeat entire queue",
