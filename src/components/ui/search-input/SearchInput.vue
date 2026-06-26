@@ -45,11 +45,9 @@ defineExpose({
     <InputGroupInput
       ref="inputRef"
       v-bind="inputAttrs"
-      :value="props.modelValue"
+      :model-value="props.modelValue"
       :placeholder="props.placeholder"
-      @input="
-        emit('update:modelValue', ($event.target as HTMLInputElement).value)
-      "
+      @update:model-value="emit('update:modelValue', String($event ?? ''))"
       @focus="emit('focus')"
       @blur="emit('blur')"
     />
