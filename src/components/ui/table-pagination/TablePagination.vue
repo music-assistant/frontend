@@ -7,6 +7,7 @@
         size="icon"
         class="size-8"
         :disabled="page <= 1"
+        :aria-label="$t('tooltip.previous_page')"
         @click="emit('prev')"
       >
         <ChevronLeft class="size-4" />
@@ -19,6 +20,7 @@
         size="icon"
         class="size-8"
         :disabled="!hasNextPage"
+        :aria-label="$t('tooltip.next_page')"
         @click="emit('next')"
       >
         <ChevronRight class="size-4" />

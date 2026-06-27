@@ -20,6 +20,7 @@
         hide-details
         density="compact"
         style="max-width: 100px"
+        :aria-label="config.label"
         @focus="isEditing = true"
         @blur="isEditing = false"
       />

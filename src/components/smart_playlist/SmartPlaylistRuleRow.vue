@@ -70,6 +70,7 @@
         variant="ghost"
         size="icon"
         class="ml-auto h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive sm:hidden"
+        :aria-label="$t('tooltip.remove_rule')"
         @click="emit('remove')"
       >
         <X class="h-3.5 w-3.5" />
@@ -180,6 +181,7 @@
       variant="ghost"
       size="icon"
       class="hidden h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive sm:flex"
+      :aria-label="$t('tooltip.remove_rule')"
       @click="emit('remove')"
     >
       <X class="h-3.5 w-3.5" />

@@ -401,6 +401,7 @@ const table = useVueTable({
                       <img
                         v-if="row.thumbSrc"
                         :src="row.thumbSrc"
+                        :alt="$t('tooltip.artwork')"
                         class="size-8 rounded object-cover grayscale"
                       />
                       <GenreIcon v-else class="size-4 text-muted-foreground" />
@@ -424,6 +425,7 @@ const table = useVueTable({
                         variant="ghost"
                         size="icon"
                         class="size-7"
+                        :aria-label="$t('tooltip.restore_genre')"
                         :disabled="restorePendingId === row.id"
                         @click="emit('restore', row.genre)"
                       >

@@ -28,6 +28,7 @@
             style="border-radius: 4px"
             size="60"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+            :alt="$t('tooltip.artwork')"
           />
         </div>
         <!-- fallback: display player icon -->
