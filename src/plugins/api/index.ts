@@ -1805,6 +1805,37 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  // Sleep timer related functions/commands
+
+  public getSleepTimer(playerId: string): Promise<number | null> {
+    /*
+      Return the active sleep timer expiry (unix utc timestamp) or null.
+    */
+    return this.sendCommand("players/sleep_timer/get", {
+      player_id: playerId,
+    });
+  }
+
+  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+    /*
+      Set a sleep timer that stops playback after the given number of seconds.
+      Returns the expiry (unix utc timestamp).
+    */
+    return this.sendCommand("players/sleep_timer/set", {
+      player_id: playerId,
+      seconds,
+    });
+  }
+
+  public clearSleepTimer(playerId: string): Promise<void> {
+    /*
+      Clear the active sleep timer for the given player.
+    */
+    return this.sendCommand("players/sleep_timer/clear", {
+      player_id: playerId,
+    });
+  }
+
   // PlayerGroup related functions/commands
 
   public playerCommandGroupVolume(playerId: string, newVolume: number) {

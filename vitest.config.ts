@@ -1,5 +1,5 @@
 import { defineConfig, mergeConfig } from "vite";
-import "vitest/config";
+import { configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
 
 export default mergeConfig(
@@ -10,6 +10,9 @@ export default mergeConfig(
       globals: true,
       css: false,
       setupFiles: [],
+      // Ignore nested git worktrees so a sibling branch's tests under
+      // ./.worktrees aren't picked up by this repo's suite.
+      exclude: [...configDefaults.exclude, "**/.worktrees/**"],
     },
   }),
 );
