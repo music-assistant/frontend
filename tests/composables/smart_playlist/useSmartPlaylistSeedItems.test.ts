@@ -44,6 +44,7 @@ vi.mock("@/plugins/api", () => ({
 
 import api from "@/plugins/api";
 import { useSmartPlaylistSeedItems } from "@/composables/useSmartPlaylistSeedItems";
+import type { Album, Track } from "@/plugins/api/interfaces";
 
 interface SearchFnArg {
   searchFn: (q: string) => Promise<unknown[]>;
@@ -65,7 +66,7 @@ describe("useSmartPlaylistSeedItems", () => {
     const seed = useSmartPlaylistSeedItems();
 
     seed.trackSearch.value = "query";
-    seed.trackResults.value = [{ item_id: "x" } as any];
+    seed.trackResults.value = [{ item_id: "x" } as unknown as Track];
 
     const added = seed.addSeedFromSearch(
       {
@@ -84,7 +85,7 @@ describe("useSmartPlaylistSeedItems", () => {
         ],
         artists: [{ name: "Artist" }],
         name: "Song",
-      } as any,
+      } as unknown as Track,
       "track",
     );
 
@@ -116,7 +117,7 @@ describe("useSmartPlaylistSeedItems", () => {
         ],
         artists: [{ name: "RAM" }],
         name: "One Last Call",
-      } as any,
+      } as unknown as Album,
       "album",
     );
 
@@ -228,7 +229,7 @@ describe("useSmartPlaylistSeedItems", () => {
       };
       useSmartPlaylistSeedItems();
       const trackSearchFn = (
-        mockSetupDebouncedSearch.mock.calls.at(-1)?.[0] as SearchFnArg
+        mockSetupDebouncedSearch.mock.calls.at(-1)![0] as SearchFnArg
       ).searchFn;
 
       const results = await trackSearchFn("anything");

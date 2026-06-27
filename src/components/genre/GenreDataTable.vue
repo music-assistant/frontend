@@ -166,7 +166,8 @@ const columns: ColumnDef<GenreRow>[] = [
     accessorKey: "displayName",
     header: ({ column }) =>
       h(DataTableColumnHeader, {
-        column: column as Column<any, unknown>,
+        // h() can't infer the generic prop, so cast to the widened Column type.
+        column: column as Column<unknown, unknown>,
         title: toSentenceCase(t("genre_name")),
       }),
     cell: ({ row }) => {
@@ -205,7 +206,8 @@ const columns: ColumnDef<GenreRow>[] = [
     accessorKey: "aliasCount",
     header: ({ column }) =>
       h(DataTableColumnHeader, {
-        column: column as Column<any, unknown>,
+        // h() can't infer the generic prop, so cast to the widened Column type.
+        column: column as Column<unknown, unknown>,
         title: toSentenceCase(t("aliases")),
       }),
     cell: ({ row }) =>
@@ -221,7 +223,8 @@ const columns: ColumnDef<GenreRow>[] = [
       accessorKey: countKey,
       header: ({ column }) =>
         h(DataTableColumnHeader, {
-          column: column as Column<any, unknown>,
+          // h() can't infer the generic prop, so cast to the widened Column type.
+          column: column as Column<unknown, unknown>,
           title: toSentenceCase(t(`${key}s`)),
         }),
       cell: ({ row }) =>

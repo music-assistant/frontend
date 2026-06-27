@@ -30,6 +30,7 @@ import {
   moveShortcutStandaloneItem,
   pinShortcutStandalone,
   reorderShortcutStandalone,
+  type ShortcutItem,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 
@@ -74,7 +75,9 @@ describe("useShortcuts standalone helpers", () => {
       ],
     };
 
-    expect(isShortcutPinnedItem(resolvedLibraryPodcast as any)).toBe(true);
+    expect(
+      isShortcutPinnedItem(resolvedLibraryPodcast as unknown as ShortcutItem),
+    ).toBe(true);
   });
 
   it("removes pinned shortcut for resolved library podcast item", async () => {
@@ -97,7 +100,9 @@ describe("useShortcuts standalone helpers", () => {
       ],
     };
 
-    await unpinShortcutStandaloneItem(resolvedLibraryPodcast as any);
+    await unpinShortcutStandaloneItem(
+      resolvedLibraryPodcast as unknown as ShortcutItem,
+    );
 
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -117,7 +122,7 @@ describe("useShortcuts standalone helpers", () => {
       uri: RAW_PODCAST_URI,
     };
 
-    await pinShortcutStandalone(podcastItem as any);
+    await pinShortcutStandalone(podcastItem as unknown as ShortcutItem);
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -174,7 +179,9 @@ describe("useShortcuts standalone helpers", () => {
       uri: RAW_PODCAST_URI,
     };
 
-    expect(getShortcutMoveAvailability(podcastItem as any)).toEqual({
+    expect(
+      getShortcutMoveAvailability(podcastItem as unknown as ShortcutItem),
+    ).toEqual({
       canMoveUp: false,
       canMoveDown: true,
     });
@@ -194,7 +201,10 @@ describe("useShortcuts standalone helpers", () => {
       uri: RAW_PODCAST_URI,
     };
 
-    await moveShortcutStandaloneItem(podcastItem as any, "down");
+    await moveShortcutStandaloneItem(
+      podcastItem as unknown as ShortcutItem,
+      "down",
+    );
 
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
@@ -217,7 +227,10 @@ describe("useShortcuts standalone helpers", () => {
       uri: RAW_PODCAST_URI,
     };
 
-    await moveShortcutStandaloneItem(podcastItem as any, "up");
+    await moveShortcutStandaloneItem(
+      podcastItem as unknown as ShortcutItem,
+      "up",
+    );
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(storeMock.currentUser.preferences["sidebar.shortcuts"]).toEqual([
