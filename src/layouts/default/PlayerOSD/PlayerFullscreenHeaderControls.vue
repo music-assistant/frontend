@@ -1,5 +1,8 @@
 <template>
   <div class="fullscreen-header-controls">
+    <!-- sleep timer countdown (only while a timer is running) -->
+    <SleepTimerBtn pill />
+
     <!-- streaming quality details chip (moved up from under the track info) -->
     <QualityDetailsBtn v-if="store.curQueueItem?.streamdetails" pill />
 
@@ -221,6 +224,7 @@
 
 <script setup lang="ts">
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
+import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import { Button } from "@/components/ui/button";
 import {
   Popover,

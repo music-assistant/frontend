@@ -691,6 +691,17 @@
     },
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
+    "sleep_timer": "Sleep timer",
+    "sleep_timer_active": "Sleep timer · {0}",
+    "sleep_timer_remaining": "Stops in {0}",
+    "sleep_timer_cancel": "Cancel sleep timer",
+    "sleep_timer_preset": {
+        "15": "15 minutes",
+        "30": "30 minutes",
+        "45": "45 minutes",
+        "60": "1 hour",
+        "120": "2 hours"
+    },
     "autoplay_enable": "Enable Autoplay",
     "autoplay_disable": "Disable Autoplay",
     "crossfade_enable": "Enable crossfade",
