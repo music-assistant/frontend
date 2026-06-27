@@ -555,7 +555,7 @@
             "cleared_many": "Cleared {0} failures.",
             "clear_error": "Couldn't clear failures. Please try again.",
             "load_error": "Couldn't load failures from the server."
-        }
+        },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
         "provider_status_error": "Setup failed",
