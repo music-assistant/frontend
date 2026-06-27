@@ -42,6 +42,7 @@
         type="file"
         accept=".txt"
         class="d-none"
+        :aria-label="$t('tooltip.import_file')"
         @change="handleApoUpload"
       />
     </div>

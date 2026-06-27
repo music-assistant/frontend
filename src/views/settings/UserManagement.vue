@@ -55,6 +55,7 @@
                       variant="ghost"
                       size="icon"
                       class="size-8 shrink-0"
+                      :aria-label="$t('tooltip.user_options')"
                       @click.stop
                     >
                       <MoreVertical :size="16" />

@@ -37,6 +37,7 @@
               variant="secondary"
               size="icon-sm"
               class="rounded-full"
+              :aria-label="$t('tooltip.decrease_offset')"
               @click.stop
               @mousedown.stop="emit('offset-press', -0.1)"
               @touchstart.stop.prevent="emit('offset-press', -0.1)"
@@ -51,6 +52,7 @@
               variant="secondary"
               size="icon-sm"
               class="rounded-full"
+              :aria-label="$t('tooltip.increase_offset')"
               @click.stop
               @mousedown.stop="emit('offset-press', 0.1)"
               @touchstart.stop.prevent="emit('offset-press', 0.1)"

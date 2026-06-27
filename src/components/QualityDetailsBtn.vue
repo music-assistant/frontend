@@ -256,6 +256,7 @@
               <img
                 class="streamdetails-icon invert-on-light-mode"
                 :src="inputFileIcon"
+                alt=""
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
@@ -321,6 +322,7 @@
               <img
                 class="streamdetails-icon invert-on-light-mode"
                 src="@/assets/level.png"
+                alt=""
               />
               {{ loudness }}
               <v-tooltip location="top" :open-on-click="true" max-width="350">
@@ -422,6 +424,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{
                   $t("streamdetails.input_gain", [dsp.input_gain.toFixed(1)])
@@ -435,6 +438,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp-disabled.svg"
+                  alt=""
                 />
                 {{ $t("streamdetails.dsp_unsupported") }}
                 <v-tooltip location="top" :open-on-click="true" max-width="300">
@@ -455,6 +459,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{ dspFilterText(filter) }}
               </div>
@@ -466,6 +471,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{
                   $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
@@ -476,6 +482,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{ $t("streamdetails.output_limiter") }}
                 <v-tooltip location="top" :open-on-click="true" max-width="300">
@@ -502,6 +509,7 @@
                       streamDetails.dsp[player_id].output_format.content_type,
                     ) || iconFallback
                   "
+                  alt=""
                 />
                 {{
                   streamDetails.dsp[player_id].output_format.sample_rate / 1000
