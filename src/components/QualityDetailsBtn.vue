@@ -259,6 +259,15 @@
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
+              <template
+                v-if="
+                  (inputQualityTier == QualityTier.GOOD ||
+                    inputQualityTier == QualityTier.LOW) &&
+                  streamDetails.audio_format.bit_rate
+                "
+              >
+                / {{ streamDetails.audio_format.bit_rate.toFixed(0) }} kbps
+              </template>
               <v-tooltip location="top" :open-on-click="true" max-width="300">
                 <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props"
