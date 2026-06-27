@@ -318,8 +318,6 @@
     },
     "shuffle_disable": "Deshabilitar reproducción aleatoria",
     "shuffle_enable": "Activar reproducción aleatoria",
-    "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
-    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'",
     "uri_copied": "URI copiado en el portapapeles",
     "uri_copy_failed": "Error al copiar URI al portapapeles",
     "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",

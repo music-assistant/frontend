@@ -10,6 +10,7 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -59,6 +60,15 @@ export const getPlayerMenuItems = (
       },
       icon: "mdi-stop",
     });
+  }
+
+  // sleep timer (both menus); available while playing/paused or already running
+  if (
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused" ||
+    sleepTimerActive(player)
+  ) {
+    menuItems.push(getSleepTimerMenuItem(player));
   }
 
   const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);

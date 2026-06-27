@@ -313,6 +313,7 @@ export enum EventType {
   PLAYER_UPDATED = "player_updated",
   PLAYER_REMOVED = "player_removed",
   PLAYER_SETTINGS_UPDATED = "player_settings_updated",
+  PLAYER_SLEEP_TIMER_UPDATED = "player_sleep_timer_updated",
   QUEUE_ADDED = "queue_added",
   QUEUE_UPDATED = "queue_updated",
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
@@ -1053,6 +1054,10 @@ export interface Player {
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
   active_output_protocol: string | null;
+
+  // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
+  // will stop playback, or null when no sleep timer is set.
+  sleep_timer_expires_at?: number | null;
 }
 
 // provider
