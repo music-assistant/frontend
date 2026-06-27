@@ -9,6 +9,8 @@
   />
   <SpeakerBtn id="extended-controls-speaker-button" :color="player.color" />
 
+  <SleepTimerBtn class="mr-1" />
+
   <QueueBtn
     v-if="queue && queue.isVisible"
     :color="queue.color"
@@ -28,6 +30,7 @@ import ActivePlayerPopover from "@/components/ActivePlayerPopover.vue";
 import { store } from "@/plugins/store";
 import PlayerTrackMenu from "./PlayerControlBtn/PlayerTrackMenu.vue";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
+import SleepTimerBtn from "./PlayerControlBtn/SleepTimerBtn.vue";
 import SpeakerBtn from "./PlayerControlBtn/SpeakerBtn.vue";
 import PlayerVolume from "./PlayerVolume.vue";
 
