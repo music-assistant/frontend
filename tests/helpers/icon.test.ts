@@ -39,11 +39,9 @@ describe("icon helpers", () => {
     });
 
     it("resolves MA icon aliases", () => {
-      // Test that aliases work (if any are defined)
-      // This will pass even if no aliases exist, but validates the lookup path
-      const result = getLucideIcon("some-alias-that-might-exist");
-      // Just verify it doesn't throw
-      expect(result === undefined || result !== undefined).toBe(true);
+      // Test that aliases work (if any are defined). Even when no aliases
+      // exist, this validates the lookup path runs without throwing.
+      expect(() => getLucideIcon("some-alias-that-might-exist")).not.toThrow();
     });
   });
 

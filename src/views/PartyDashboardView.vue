@@ -635,6 +635,9 @@ const albumArtUrl = computed(() => {
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)
+// oxlint false positive: every code path returns (early `{}` + final object),
+// which ESLint's vue/return-in-computed-property correctly accepts.
+// oxlint-disable-next-line vue/return-in-computed-property
 const gradientBackgroundStyle = computed(() => {
   // When using album art, the .background-image element handles visuals
   if (useAlbumArtBackground.value && albumArtUrl.value) {

@@ -249,6 +249,10 @@ const computedElapsedTime = computed(() => {
   if (isPlaying && (usingQueue || hasCurrentMedia)) startTick();
   else stopTick();
   if (isDragging.value) {
+    // While dragging, mirror the live time into tempTime so the thumb tracks
+    // the pointer. Intentional side effect in a computed (oxlint's vue plugin
+    // flags it; ESLint has the rule off, so disable it for oxlint only).
+    // oxlint-disable-next-line vue/no-side-effects-in-computed-properties
     tempTime.value = curTimeValue.value;
     return curTimeValue.value;
   }

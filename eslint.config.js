@@ -26,7 +26,6 @@ export default defineConfigWithVueTs(
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/no-explicit-any": "off",
       // Successor to the old `ban-types` rule the project already opted out of
       // (see the inline disables it used). Empty/`{}` interface patterns are
       // used intentionally here (e.g. Vue SFC shims, nominal interfaces).
