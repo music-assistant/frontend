@@ -10,6 +10,7 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -59,6 +60,15 @@ export const getPlayerMenuItems = (
       },
       icon: "mdi-stop",
     });
+  }
+
+  // sleep timer (both menus); available while playing/paused or already running
+  if (
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused" ||
+    sleepTimerActive(player)
+  ) {
+    menuItems.push(getSleepTimerMenuItem(player));
   }
 
   const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
@@ -249,6 +259,20 @@ export const getPlayerMenuItems = (
       });
     }
 
+    // open player settings (player menu only)
+    if (isPlayer) {
+      menuItems.push({
+        label: "open_player_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}`);
+        },
+        icon: "mdi-cog-outline",
+      });
+    }
+
     // open dsp settings (player menu only)
     if (isPlayer && player.type !== PlayerType.GROUP) {
       menuItems.push({
@@ -263,7 +287,7 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // open player settings (both menus)
+    // open player options (both menus)
     if (player.options.length > 0) {
       menuItems.push({
         label: "player_options.open",

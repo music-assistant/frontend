@@ -9,9 +9,9 @@
       :style="player.powered == false ? 'opacity: 0.6' : 'opacity: 1'"
     >
       <template #prepend>
-        <v-icon
-          :size="25"
+        <PlayerIcon
           :icon="player.icon"
+          :size="25"
           style="margin-left: 6px; opacity: 0.6"
         />
       </template>
@@ -142,6 +142,7 @@ import {
   groupMemberPickerVisible,
   truncateString,
 } from "@/helpers/utils";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {

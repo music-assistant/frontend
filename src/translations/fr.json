@@ -597,8 +597,6 @@
     },
     "shuffle_disable": "Désactiver la lecture aléatoire",
     "shuffle_enable": "Activer la lecture aléatoire",
-    "dont_stop_the_music_enable": "Activer « N'arrêtez pas la musique ! »",
-    "dont_stop_the_music_disable": "Désactiver « N'arrêtez pas la musique ! »",
     "open_dsp_settings": "Ouvrir les paramètres DSP",
     "audiobook": "Livre audio",
     "audiobooks": "Livres audio",

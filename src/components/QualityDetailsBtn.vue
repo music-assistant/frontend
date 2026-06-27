@@ -9,37 +9,48 @@
   >
     <template #activator="{ props }">
       <!-- header button variant: matches the shadcn controls in the player header -->
-      <Button
-        v-if="pill"
-        v-bind="props"
-        variant="outline"
-        size="xs"
-        class="bg-background/40 backdrop-blur-md hover:bg-background/60"
-        :disabled="
-          !store.activePlayerQueue ||
-          !store.activePlayerQueue?.active ||
-          store.activePlayerQueue?.items == 0
-        "
-      >
-        <span
-          class="quality-pill-dot"
-          :style="{
-            backgroundColor: qualityTierToColor(maxOutputQualityTier),
-          }"
-        ></span>
-        <span class="tracking-wide">
-          <template v-if="maxOutputQualityTier == QualityTier.LOW">LQ</template>
-          <template v-else-if="maxOutputQualityTier == QualityTier.GOOD"
-            >SQ</template
-          >
-          <template v-else-if="maxOutputQualityTier == QualityTier.LOSSLESS"
-            >HQ</template
-          >
-          <template v-else-if="maxOutputQualityTier == QualityTier.HIRES"
-            >HR</template
-          >
-        </span>
-      </Button>
+      <TooltipProvider v-if="pill" :delay-duration="200">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              v-bind="props"
+              variant="outline"
+              size="xs"
+              class="bg-background/40 backdrop-blur-md hover:bg-background/60"
+              :disabled="
+                !store.activePlayerQueue ||
+                !store.activePlayerQueue?.active ||
+                store.activePlayerQueue?.items == 0
+              "
+            >
+              <span
+                class="quality-pill-dot"
+                :style="{
+                  backgroundColor: qualityTierToColor(maxOutputQualityTier),
+                }"
+              ></span>
+              <span class="tracking-wide">
+                <template v-if="maxOutputQualityTier == QualityTier.LOW"
+                  >LQ</template
+                >
+                <template v-else-if="maxOutputQualityTier == QualityTier.GOOD"
+                  >SQ</template
+                >
+                <template
+                  v-else-if="maxOutputQualityTier == QualityTier.LOSSLESS"
+                  >HQ</template
+                >
+                <template v-else-if="maxOutputQualityTier == QualityTier.HIRES"
+                  >HR</template
+                >
+              </span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" class="z-[10001]">
+            {{ $t("show_audio_chain_details") }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <!-- default chip variant -->
       <v-chip
@@ -248,6 +259,15 @@
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
+              <template
+                v-if="
+                  (inputQualityTier == QualityTier.GOOD ||
+                    inputQualityTier == QualityTier.LOW) &&
+                  streamDetails.audio_format.bit_rate
+                "
+              >
+                / {{ streamDetails.audio_format.bit_rate.toFixed(0) }} kbps
+              </template>
               <v-tooltip location="top" :open-on-click="true" max-width="300">
                 <template #activator="{ props }">
                   <v-icon class="ml-2" size="small" v-bind="props"
@@ -593,6 +613,12 @@
 import { computed, ref } from "vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
