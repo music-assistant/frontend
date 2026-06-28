@@ -49,15 +49,17 @@
 
 <script setup lang="ts">
 import {
+  getAllSearchableIconNames,
   getLucideIcon,
   getLucideIconNames,
-  MA_ICON_NAMES,
   SUGGESTED_ICON_NAMES,
 } from "@/helpers/icon";
 import { computed, onMounted, ref } from "vue";
 
+const searchableIconNames = ref<readonly string[]>([]);
 const lucideIconNames = ref<readonly string[]>([]);
 onMounted(() => {
+  searchableIconNames.value = getAllSearchableIconNames();
   getLucideIconNames().then((names) => {
     lucideIconNames.value = names;
   });
@@ -94,8 +96,8 @@ const filteredItems = computed(() => {
   const suggestedSet = new Set(SUGGESTED_ICON_NAMES);
   const ranked: { rank: number; name: string }[] = [];
 
-  // MA icons searched first so they appear at the top when matched
-  for (const name of [...MA_ICON_NAMES, ...lucideIconNames.value]) {
+  // Search across MA icons (including aliases) and Lucide icons
+  for (const name of [...searchableIconNames.value, ...lucideIconNames.value]) {
     const parts = name.split("-");
     let rank: number;
 

@@ -25,6 +25,7 @@
               class="media-thumb"
               size="44"
               :src="getMediaImageUrl(player.current_media.image_url)"
+              :alt="$t('tooltip.artwork')"
             />
           </div>
           <!-- fallback: display player icon -->
@@ -134,6 +135,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :aria-label="$t('tooltip.toggle_power')"
           @click.stop="
             api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
@@ -154,6 +156,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn group-expand-btn"
+          :aria-label="$t('tooltip.group_members')"
           @click.stop="$emit('toggle-expand', player)"
         >
           <v-badge
@@ -211,6 +214,7 @@
           size="icon"
           class="player-command-btn"
           style="margin-right: -5px"
+          :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
           <MoreVertical

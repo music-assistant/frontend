@@ -44,6 +44,11 @@ export function isMdiIcon(name: string | null | undefined): boolean {
   return !!name?.startsWith("mdi-");
 }
 
+/** All searchable MA icon names including aliases, sorted alphabetically. */
+export function getAllSearchableIconNames(): readonly string[] {
+  return [...MA_ICON_NAMES, ...Object.keys(MaIcons.aliases)].sort();
+}
+
 /** All Lucide icon names in kebab-case, sorted alphabetically. Awaits the async module. */
 export async function getLucideIconNames(): Promise<readonly string[]> {
   return Object.keys(lucideModule)

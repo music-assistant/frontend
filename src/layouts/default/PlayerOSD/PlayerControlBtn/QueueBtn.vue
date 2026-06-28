@@ -3,6 +3,7 @@
     variant="icon"
     :ripple="false"
     icon
+    :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
     :disabled="
       !store.activePlayerQueue ||

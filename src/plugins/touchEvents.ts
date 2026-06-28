@@ -28,7 +28,6 @@ const TouchEvents = {
           return undefined;
         },
       });
-      // eslint-disable-next-line no-empty
     } catch (e) {}
 
     // Hold Directive

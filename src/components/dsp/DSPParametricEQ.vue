@@ -42,6 +42,7 @@
         type="file"
         accept=".txt"
         class="d-none"
+        :aria-label="$t('tooltip.import_file')"
         @change="handleApoUpload"
       />
     </div>
@@ -235,7 +236,7 @@ const importApoSettings = (content: string) => {
   const lines = content.split("\n");
   const bands: ParametricEQBand[] = [];
   let usesChannelField = false;
-  let importPreamp: Partial<Record<AudioChannel, number>> = {};
+  const importPreamp: Partial<Record<AudioChannel, number>> = {};
 
   // Default to all channels
   let currentChannel = AudioChannel.ALL;

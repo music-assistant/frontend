@@ -14,6 +14,7 @@
         width="100%"
         height="100%"
         cover
+        alt=""
         class="background-image"
         :src="fanartImage"
         :gradient="
@@ -83,6 +84,7 @@
           <img
             v-if="artistLogo"
             :src="artistLogo"
+            :alt="$t('tooltip.artwork')"
             width="auto"
             height="80"
             style="padding-left: 10px"

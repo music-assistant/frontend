@@ -574,7 +574,7 @@ const getWebSocketUrlFromLocation = (): string => {
   const loc = window.location;
   const protocol = loc.protocol === "https:" ? "wss:" : "ws:";
   // Remove any trailing slash and hash
-  let basePath = loc.pathname.replace(/\/$/, "").split("#")[0];
+  const basePath = loc.pathname.replace(/\/$/, "").split("#")[0];
   // Don't add /ws if already present
   if (basePath.endsWith("/ws")) {
     return `${protocol}//${loc.host}${basePath}`;
@@ -589,7 +589,7 @@ const buildWebSocketUrl = (address: string): string => {
   try {
     const url = new URL(address);
     const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    let basePath = url.pathname.replace(/\/$/, "");
+    const basePath = url.pathname.replace(/\/$/, "");
     // Don't add /ws if already present
     if (basePath.endsWith("/ws")) {
       return `${protocol}//${url.host}${basePath}`;

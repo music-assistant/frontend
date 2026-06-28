@@ -256,6 +256,7 @@
               <img
                 class="streamdetails-icon invert-on-light-mode"
                 :src="inputFileIcon"
+                alt=""
               />
               {{ streamDetails.audio_format.sample_rate / 1000 }} kHz /
               {{ streamDetails.audio_format.bit_depth }} bits
@@ -321,6 +322,7 @@
               <img
                 class="streamdetails-icon invert-on-light-mode"
                 src="@/assets/level.png"
+                alt=""
               />
               {{ loudness }}
               <v-tooltip location="top" :open-on-click="true" max-width="350">
@@ -422,6 +424,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{
                   $t("streamdetails.input_gain", [dsp.input_gain.toFixed(1)])
@@ -435,6 +438,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp-disabled.svg"
+                  alt=""
                 />
                 {{ $t("streamdetails.dsp_unsupported") }}
                 <v-tooltip location="top" :open-on-click="true" max-width="300">
@@ -455,6 +459,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{ dspFilterText(filter) }}
               </div>
@@ -466,6 +471,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{
                   $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
@@ -476,6 +482,7 @@
                 <img
                   class="streamdetails-icon invert-on-dark-mode"
                   src="@/assets/dsp.svg"
+                  alt=""
                 />
                 {{ $t("streamdetails.output_limiter") }}
                 <v-tooltip location="top" :open-on-click="true" max-width="300">
@@ -502,6 +509,7 @@
                       streamDetails.dsp[player_id].output_format.content_type,
                     ) || iconFallback
                   "
+                  alt=""
                 />
                 {{
                   streamDetails.dsp[player_id].output_format.sample_rate / 1000
@@ -624,6 +632,7 @@ import { store } from "@/plugins/store";
 import {
   AudioFormat,
   ContentType,
+  DSPDetails,
   DSPFilter,
   DSPFilterType,
   DSPState,
@@ -678,9 +687,10 @@ const loudness = computed(() => {
 // Groups players with identical DSPDetails (and therefore output format) together
 const dsp_grouped = computed(() => {
   if (!streamDetails.value || !streamDetails.value.dsp) return [];
-  let grouped = [];
+  const grouped: { dsp: DSPDetails; player_id: string; players: string[] }[] =
+    [];
   for (const [player_id, dsp] of Object.entries(streamDetails.value.dsp)) {
-    let identical_dsp = grouped.find(
+    const identical_dsp = grouped.find(
       (g) => JSON.stringify(g.dsp) === JSON.stringify(dsp),
     );
     if (identical_dsp) {
@@ -776,8 +786,8 @@ const inputQualityTier = computed(() => {
     return QualityTier.UNKNOWN;
 
   // Prefer making this decision based on codec type
-  let content_type = sd.audio_format.content_type;
-  let codec_type = sd.audio_format.codec_type;
+  const content_type = sd.audio_format.content_type;
+  const codec_type = sd.audio_format.codec_type;
 
   if (isHiResFormat(sd.audio_format)) {
     return QualityTier.HIRES;

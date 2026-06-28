@@ -25,7 +25,7 @@
             $vuetify.theme.current.dark ? 'hiresicon' : 'hiresiconinverted'
           "
         >
-          <img :src="iconHiRes" width="30" />
+          <img :src="iconHiRes" width="30" alt="" />
           <v-tooltip activator="parent" location="bottom">
             {{ HiResDetails }}
           </v-tooltip>

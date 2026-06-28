@@ -221,7 +221,6 @@
 </template>
 
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
@@ -856,7 +855,7 @@ const loadAllItems = async function () {
 
 // computed properties
 const isSearchActive = computed(() => {
-  var searchActive = false;
+  let searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
     searchActive = true;
   }

@@ -38,6 +38,7 @@
             >
               <v-img
                 :src="getMediaItemImageUrl(image, 256)"
+                :alt="$t('tooltip.artwork')"
                 class="bg-grey-lighten-2"
                 width="100%"
               >

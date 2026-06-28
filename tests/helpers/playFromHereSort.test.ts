@@ -68,7 +68,12 @@ vi.mock("colorthief", () => ({
 }));
 
 import { handlePlayBtnClick, handleMenuBtnClick } from "@/helpers/utils";
-import { MediaType } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  type Album,
+  type Playlist,
+  type Track,
+} from "@/plugins/api/interfaces";
 
 const makePlaylistTrack = (id: string) =>
   ({
@@ -77,7 +82,7 @@ const makePlaylistTrack = (id: string) =>
     media_type: MediaType.TRACK,
     name: `Track ${id}`,
     is_playable: true,
-  }) as any;
+  }) as unknown as Track;
 
 const makePlaylist = (id: string) =>
   ({
@@ -86,7 +91,7 @@ const makePlaylist = (id: string) =>
     media_type: MediaType.PLAYLIST,
     name: `Playlist ${id}`,
     is_playable: true,
-  }) as any;
+  }) as unknown as Playlist;
 
 const makeAlbum = (id: string) =>
   ({
@@ -95,7 +100,7 @@ const makeAlbum = (id: string) =>
     media_type: MediaType.ALBUM,
     name: `Album ${id}`,
     is_playable: true,
-  }) as any;
+  }) as unknown as Album;
 
 beforeEach(() => {
   mockPlayMedia.mockReset();

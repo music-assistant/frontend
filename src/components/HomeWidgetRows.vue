@@ -24,7 +24,12 @@
           </div>
         </template>
         <template v-if="editMode" #actions>
-          <Button variant="ghost" size="icon-sm" @click="togglePlayers">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            :aria-label="$t('tooltip.toggle_players')"
+            @click="togglePlayers"
+          >
             <Eye v-if="playersEnabled" />
             <EyeOff v-else />
           </Button>
@@ -70,6 +75,7 @@
             v-if="editMode"
             variant="ghost"
             size="icon-sm"
+            :aria-label="$t('tooltip.toggle_top_picks')"
             @click="toggleTopPicks"
           >
             <Eye v-if="topPicksEnabled" />
@@ -137,6 +143,7 @@
           <Button
             variant="ghost"
             size="icon-sm"
+            :aria-label="$t('tooltip.toggle_row')"
             @click="toggleRow(row.folder.uri)"
           >
             <Eye v-if="row.setting.enabled" />
@@ -146,6 +153,7 @@
             variant="ghost"
             size="icon-sm"
             :disabled="idx === 0"
+            :aria-label="$t('tooltip.move_row_up')"
             @click="moveRow(row.folder.uri, -1)"
           >
             <ChevronUp />
@@ -154,6 +162,7 @@
             variant="ghost"
             size="icon-sm"
             :disabled="idx === displayedRows.length - 1"
+            :aria-label="$t('tooltip.move_row_down')"
             @click="moveRow(row.folder.uri, 1)"
           >
             <ChevronDown />

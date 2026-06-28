@@ -167,6 +167,7 @@
         v-if="HiResDetails && getBreakpointValue('bp3')"
         :src="iconHiRes"
         width="30"
+        alt=""
         :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
       >
         <v-tooltip activator="parent" location="bottom">
