@@ -1350,6 +1350,7 @@
     "autoplay_radio_active": "Not needed while radio is active, your queue already keeps going on its own.",
     "genre_content_type": {
         "all": "All",
+        "music": "Music",
         "audiobooks": "Audiobooks",
         "podcasts": "Podcasts"
     },

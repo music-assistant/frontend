@@ -1,23 +1,27 @@
 <template>
+  <Toolbar
+    :title="$t('genres')"
+    :icon="GenreIcon"
+    :menu-items="menuItems"
+    :enforce-overflow-menu="true"
+  />
   <ItemsListing
-    :key="refreshKey"
+    v-for="section in sections"
+    :key="`${section.key}-${refreshKey}`"
     itemtype="genres"
-    path="librarygenres"
+    :path="`librarygenres_${section.key}`"
+    :title="$t(section.label)"
+    :icon="section.icon"
     :show-provider="false"
     :show-favorites-only-filter="true"
-    :load-paged-data="loadItems"
-    :update-available="updateAvailable"
-    :title="$t('genres')"
-    :allow-key-hooks="true"
-    :show-search-button="true"
-    :sort-keys="sortKeys"
-    :icon="GenreIcon"
-    :restore-state="restoreState"
-    :total="total"
-    :show-provider-filter="true"
     :show-hide-empty-filter="true"
-    :show-genre-content-type-filter="true"
-    :extra-menu-items="extraMenuItems"
+    :show-search-button="true"
+    :allow-collapse="true"
+    :hide-on-empty="false"
+    :sort-keys="sortKeys"
+    :limit="500"
+    :infinite-scroll="false"
+    :load-paged-data="section.load"
   />
   <AddGenreDialog v-model="showAddGenreDialog" @success="handleGenreAdded" />
 </template>
@@ -26,22 +30,24 @@
 import AddGenreDialog from "@/components/AddGenreDialog.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import Toolbar, { type ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { genreContentTypeIcon } from "@/helpers/genre";
 import api from "@/plugins/api";
-import { EventMessage, EventType } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  Genre,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { store } from "@/plugins/store";
-import { Plus } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
   name: "Genres",
 });
 
-const updateAvailable = ref(false);
-const total = ref(store.libraryGenresCount);
 const showAddGenreDialog = ref(false);
 const refreshKey = ref(0);
-const restoreState = ref(true);
 
 const sortKeys = [
   "name",
@@ -54,82 +60,59 @@ const sortKeys = [
   "play_count_desc",
 ];
 
-const extraMenuItems = computed(() => {
+// one collapsible section per taxonomy, scoped server-side via content_type. Server-paged so
+// each section's own filters (favorites / default-non-empty-all / search) re-fetch.
+const loadSection = (contentType: MediaType | "music") => {
+  return async (params: LoadDataParams): Promise<Genre[]> => {
+    return await api.getLibraryGenres({
+      content_type: contentType,
+      favorite: params.favoritesOnly || undefined,
+      search: params.search,
+      limit: params.limit,
+      offset: params.offset,
+      order_by: params.sortBy,
+      hide_empty: params.hideEmptyFilter,
+    });
+  };
+};
+
+const sections = [
+  {
+    key: "music",
+    label: "genre_content_type.music",
+    icon: genreContentTypeIcon(null),
+    load: loadSection("music"),
+  },
+  {
+    key: "podcasts",
+    label: "genre_content_type.podcasts",
+    icon: genreContentTypeIcon(MediaType.PODCAST),
+    load: loadSection(MediaType.PODCAST),
+  },
+  {
+    key: "audiobooks",
+    label: "genre_content_type.audiobooks",
+    icon: genreContentTypeIcon(MediaType.AUDIOBOOK),
+    load: loadSection(MediaType.AUDIOBOOK),
+  },
+];
+
+const menuItems = computed<ToolBarMenuItem[]>(() => {
   if (!authManager.isAdmin()) return [];
   return [
     {
       label: "add_genre",
       labelArgs: [],
+      icon: "mdi-plus",
       action: () => {
         showAddGenreDialog.value = true;
       },
-      icon: Plus,
     },
   ];
 });
 
-const loadItems = async function (params: LoadDataParams) {
-  updateAvailable.value = false;
-  setTotals(params);
-
-  return await api.getLibraryGenres({
-    favorite: params.favoritesOnly || undefined,
-    search: params.search,
-    limit: params.limit,
-    offset: params.offset,
-    order_by: params.sortBy,
-    provider:
-      params.provider && params.provider.length > 0
-        ? params.provider
-        : undefined,
-    genre: params.genreIds,
-    hide_empty: params.hideEmptyFilter,
-    // when media_type is set the backend ignores hide_empty (media_type implies
-    // non-empty and takes precedence), so the hide-empty toggle is a no-op while
-    // a content-type filter is active.
-    media_type: params.genreContentTypeFilter,
-  });
-};
-
-const setTotals = async function (params: LoadDataParams) {
-  if (
-    !params.favoritesOnly &&
-    !params.provider &&
-    !params.genreContentTypeFilter
-  ) {
-    total.value = store.libraryGenresCount;
-    return;
-  }
-  if (
-    (params.provider && params.provider.length > 0) ||
-    params.genreContentTypeFilter
-  ) {
-    total.value = undefined;
-    return;
-  }
-  total.value = await api.getLibraryGenresCount(params.favoritesOnly || false);
-};
-
-const handleGenreAdded = async () => {
-  // Update the total count from store
-  total.value = store.libraryGenresCount;
-  // Disable restore state temporarily to force fresh data load
-  restoreState.value = false;
-  // Trigger a refresh by setting updateAvailable and incrementing the key
-  updateAvailable.value = true;
-  // Force ItemsListing to remount and reload data
+const handleGenreAdded = () => {
   refreshKey.value++;
-  // Re-enable restore state after a short delay
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  restoreState.value = true;
-};
-
-const triggerRefresh = async () => {
-  restoreState.value = false;
-  updateAvailable.value = true;
-  refreshKey.value++;
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  restoreState.value = true;
 };
 
 onMounted(() => {
@@ -141,7 +124,7 @@ onMounted(() => {
     ],
     (evt: EventMessage) => {
       if (evt.object_id?.startsWith("library://genre")) {
-        triggerRefresh();
+        refreshKey.value++;
       }
     },
   );

@@ -760,6 +760,8 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases: string[] | null;
+  // taxonomy this genre belongs to; null/undefined = music/general
+  content_type?: MediaType | null;
 }
 
 export interface BrowseFolder extends MediaItem {

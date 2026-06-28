@@ -45,7 +45,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from "@tanstack/vue-table";
-import { h, ref } from "vue";
+import { computed, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTableColumnHeader from "@/components/DataTableColumnHeader.vue";
@@ -77,8 +77,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { genreContentTypeIcon } from "@/helpers/genre";
 import { toSentenceCase } from "@/helpers/utils";
 import type { Genre } from "@/plugins/api/interfaces";
+import { MediaType } from "@/plugins/api/interfaces";
+import { VIcon } from "vuetify/components";
 import GenreDataTableRowActions from "./GenreDataTableRowActions.vue";
 
 interface FilterOption {
@@ -86,17 +89,36 @@ interface FilterOption {
   label: string;
 }
 
+type CountMediaType =
+  | "track"
+  | "album"
+  | "artist"
+  | "playlist"
+  | "podcast"
+  | "audiobook";
+type CountKey = `${CountMediaType}Count`;
+
+// count columns relevant to each taxonomy; "all" shows everything.
+const MEDIA_TYPES_BY_TAXONOMY: Record<string, CountMediaType[]> = {
+  all: ["track", "album", "artist", "playlist", "podcast", "audiobook"],
+  music: ["track", "album", "artist", "playlist"],
+  podcast: ["podcast"],
+  audiobook: ["audiobook"],
+};
+
 const props = defineProps<{
   data: GenreRow[];
   excludedData: ExcludedGenreRow[];
   loading: boolean;
   countsLoading: boolean;
   filterOptions: FilterOption[];
+  contentTypeOptions: FilterOption[];
   pendingId: string | null;
   restorePendingId: string | null;
 }>();
 
 const filter = defineModel<string>("filter", { required: true });
+const contentType = defineModel<string>("contentType", { required: true });
 
 const emit = defineEmits<{
   navigate: [genre: Genre];
@@ -117,17 +139,8 @@ function formatCount(val: number | null): string {
   return val.toLocaleString();
 }
 
-type MediaType =
-  | "track"
-  | "album"
-  | "artist"
-  | "playlist"
-  | "podcast"
-  | "audiobook";
-type CountKey = `${MediaType}Count`;
-
 const mediaTypeDefs: Array<{
-  key: MediaType;
+  key: CountMediaType;
   countKey: CountKey;
   id: string;
 }> = [
@@ -138,6 +151,27 @@ const mediaTypeDefs: Array<{
   { key: "podcast", countKey: "podcastCount", id: "podcasts" },
   { key: "audiobook", countKey: "audiobookCount", id: "audiobooks" },
 ];
+
+// Drive column visibility from the selected taxonomy: hide count columns that
+// don't apply, and only show the "Media type" column in the combined ("all") view.
+const showMediaTypeColumn = computed(() => contentType.value === "all");
+const genreTaxonomyLabel = (genre: Genre): string => {
+  if (genre.content_type === MediaType.PODCAST) return t("podcast");
+  if (genre.content_type === MediaType.AUDIOBOOK) return t("audiobook");
+  return t("genre_content_type.music");
+};
+
+watch(
+  contentType,
+  () => {
+    const relevant =
+      MEDIA_TYPES_BY_TAXONOMY[contentType.value] ?? MEDIA_TYPES_BY_TAXONOMY.all;
+    const vis: VisibilityState = { mediatype: showMediaTypeColumn.value };
+    for (const d of mediaTypeDefs) vis[d.id] = relevant.includes(d.key);
+    columnVisibility.value = vis;
+  },
+  { immediate: true },
+);
 
 const columns: ColumnDef<GenreRow>[] = [
   {
@@ -202,6 +236,31 @@ const columns: ColumnDef<GenreRow>[] = [
     enableHiding: false,
   },
   {
+    id: "mediatype",
+    accessorFn: (row) => genreTaxonomyLabel(row.genre),
+    header: ({ column }) =>
+      h(DataTableColumnHeader, {
+        column: column as Column<unknown, unknown>,
+        title: toSentenceCase(t("tooltip.genre_content_type")),
+        align: "center",
+      }),
+    cell: ({ row }) =>
+      h(
+        "span",
+        {
+          class: "flex justify-center",
+          title: genreTaxonomyLabel(row.original.genre),
+        },
+        [
+          h(VIcon, {
+            icon: genreContentTypeIcon(row.original.genre.content_type),
+            size: 16,
+            class: "text-muted-foreground",
+          }),
+        ],
+      ),
+  },
+  {
     id: "aliases",
     accessorKey: "aliasCount",
     header: ({ column }) =>
@@ -209,13 +268,16 @@ const columns: ColumnDef<GenreRow>[] = [
         // h() can't infer the generic prop, so cast to the widened Column type.
         column: column as Column<unknown, unknown>,
         title: toSentenceCase(t("aliases")),
+        align: "center",
       }),
     cell: ({ row }) =>
-      h(
-        Badge,
-        { variant: "outline", class: "text-muted-foreground px-1.5" },
-        () => String(row.original.aliasCount),
-      ),
+      h("div", { class: "flex justify-center" }, [
+        h(
+          Badge,
+          { variant: "outline", class: "text-muted-foreground px-1.5" },
+          () => String(row.original.aliasCount),
+        ),
+      ]),
   },
   ...mediaTypeDefs.map(
     ({ key, countKey, id }): ColumnDef<GenreRow> => ({
@@ -226,13 +288,14 @@ const columns: ColumnDef<GenreRow>[] = [
           // h() can't infer the generic prop, so cast to the widened Column type.
           column: column as Column<unknown, unknown>,
           title: toSentenceCase(t(`${key}s`)),
+          align: "center",
         }),
       cell: ({ row }) =>
         h(
           "div",
           {
             class:
-              "cursor-pointer tabular-nums text-muted-foreground hover:text-foreground",
+              "cursor-pointer text-center tabular-nums text-muted-foreground hover:text-foreground",
             onClick: () => emit("navigate-library", row.original.genre, key),
           },
           formatCount(row.original[countKey]),
@@ -320,6 +383,20 @@ const table = useVueTable({
         />
       </div>
       <div class="flex items-center gap-2">
+        <Select v-model="contentType">
+          <SelectTrigger size="sm" class="w-fit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="opt in contentTypeOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
         <Select v-model="filter">
           <SelectTrigger size="sm" class="w-fit">
             <SelectValue />

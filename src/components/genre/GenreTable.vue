@@ -1,8 +1,10 @@
 <template>
   <GenreDataTable
     v-model:filter="filter"
-    :data="activeGenreRows"
-    :excluded-data="excludedGenreRows"
+    v-model:content-type="contentType"
+    :content-type-options="contentTypeOptions"
+    :data="filteredGenreRows"
+    :excluded-data="filteredExcludedRows"
     :loading="loading"
     :counts-loading="countsLoading"
     :filter-options="filterOptions"
@@ -29,7 +31,7 @@ import { scheduleGenreScan } from "@/helpers/genre";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import type { EventMessage, Genre } from "@/plugins/api/interfaces";
-import { EventType, ImageType } from "@/plugins/api/interfaces";
+import { EventType, ImageType, MediaType } from "@/plugins/api/interfaces";
 
 interface Props {
   version?: number;
@@ -98,6 +100,37 @@ const excludedGenreRows = computed<ExcludedGenreRow[]>(() =>
     displayName: genre.name,
     thumbSrc: getImageThumbForItem(genre, ImageType.THUMB, 40) ?? undefined,
   })),
+);
+
+// Filter rows by the selected taxonomy. Music genres carry no content_type
+// (null); podcast/audiobook genres carry their media type. "all" shows everything.
+const contentType = ref("all");
+
+const contentTypeOptions = [
+  { value: "all", label: t("genre_content_type.all") },
+  { value: "music", label: t("genre_content_type.music") },
+  { value: "podcast", label: t("genre_content_type.podcasts") },
+  { value: "audiobook", label: t("genre_content_type.audiobooks") },
+];
+
+const matchesContentType = (genre: Genre): boolean => {
+  switch (contentType.value) {
+    case "music":
+      return !genre.content_type;
+    case "podcast":
+      return genre.content_type === MediaType.PODCAST;
+    case "audiobook":
+      return genre.content_type === MediaType.AUDIOBOOK;
+    default:
+      return true;
+  }
+};
+
+const filteredGenreRows = computed(() =>
+  activeGenreRows.value.filter((r) => matchesContentType(r.genre)),
+);
+const filteredExcludedRows = computed(() =>
+  excludedGenreRows.value.filter((r) => matchesContentType(r.genre)),
 );
 
 const loadData = async () => {

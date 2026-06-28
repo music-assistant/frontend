@@ -2,26 +2,6 @@
   <div class="space-y-6 p-6">
     <GenreManagementHeader />
 
-    <!-- Background Scanner -->
-    <Card>
-      <CardHeader>
-        <div class="flex items-center gap-2">
-          <ScanLine class="size-4 text-primary" />
-          <CardTitle>{{ $t("settings.background_scanner") }}</CardTitle>
-        </div>
-        <CardDescription>
-          {{ $t("settings.background_scanner_description") }}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <GenreScannerPanel
-          :status="scannerStatus"
-          :triggering="scanTriggering"
-          @trigger="triggerScan"
-        />
-      </CardContent>
-    </Card>
-
     <!-- Genre Library Administration -->
     <Card>
       <CardHeader>
@@ -87,6 +67,8 @@
       v-model:show-restore-dialog="showRestoreDialog"
       v-model:show-full-restore-dialog="showFullRestoreDialog"
       v-model:show-full-restore-dialog2="showFullRestoreDialog2"
+      v-model:restore-content-type="restoreContentType"
+      :content-type-options="restoreContentTypeOptions"
       :restore-in-progress="restoreInProgress"
       :full-restore-in-progress="fullRestoreInProgress"
       @restore="restoreDefaults"
@@ -97,15 +79,14 @@
 </template>
 
 <script setup lang="ts">
-import { ChartGantt, RefreshCw, ScanLine } from "@lucide/vue";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { ChartGantt, RefreshCw } from "@lucide/vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
 import GenreManagementHeader from "@/components/genre/GenreManagementHeader.vue";
 import GenreRestoreDialogs from "@/components/genre/GenreRestoreDialogs.vue";
 import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
-import GenreScannerPanel from "@/components/genre/GenreScannerPanel.vue";
 import GenreTable from "@/components/genre/GenreTable.vue";
 import {
   Card,
@@ -118,8 +99,6 @@ import { Separator } from "@/components/ui/separator";
 import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
-const SCANNER_POLL_INTERVAL_MS = 30000;
-
 const { t } = useI18n();
 
 const tableVersion = ref(0);
@@ -129,45 +108,24 @@ const showRestoreDialog = ref(false);
 const showFullRestoreDialog = ref(false);
 const showFullRestoreDialog2 = ref(false);
 
-// Scanner state
-const scannerStatus = ref<{
-  running: boolean;
-  last_scan_time: number;
-  last_scan_ago_seconds: number | null;
-  last_scan_mapped: number | null;
-} | null>(null);
-const scanTriggering = ref(false);
-let scannerPollInterval: ReturnType<typeof setInterval> | null = null;
-
-const loadScannerStatus = async () => {
-  try {
-    scannerStatus.value = await api.getGenreScannerStatus();
-  } catch (error) {
-    toast.error(t("settings.scanner_status_failed"));
-  }
-};
-
-const triggerScan = async () => {
-  scanTriggering.value = true;
-  try {
-    const result = await api.triggerGenreScan();
-    if (result.status === "already_running") {
-      toast.info(t("settings.scan_already_running"));
-    } else {
-      toast.success(t("settings.scan_triggered"));
-    }
-    await loadScannerStatus();
-  } catch (error) {
-    toast.error(t("settings.scan_trigger_failed"));
-  } finally {
-    scanTriggering.value = false;
-  }
-};
+// Targeted, non-destructive restore: restore only the chosen taxonomy's defaults.
+const restoreContentType = ref<"all" | "music" | "podcast" | "audiobook">(
+  "all",
+);
+const restoreContentTypeOptions = [
+  { value: "all", label: t("genre_content_type.all") },
+  { value: "music", label: t("genre_content_type.music") },
+  { value: "podcast", label: t("genre_content_type.podcasts") },
+  { value: "audiobook", label: t("genre_content_type.audiobooks") },
+];
 
 const restoreDefaults = async () => {
   restoreInProgress.value = true;
   try {
-    const restored = await api.restoreGenreDefaults(false);
+    const restored = await api.restoreGenreDefaults(
+      false,
+      restoreContentType.value,
+    );
     showRestoreDialog.value = false;
     if (restored.length === 0) {
       toast.info(t("settings.restore_all_present"));
@@ -213,19 +171,4 @@ const onTableDataChanged = async () => {
     store.prevState = undefined;
   }
 };
-
-onMounted(() => {
-  loadScannerStatus();
-  scannerPollInterval = setInterval(
-    loadScannerStatus,
-    SCANNER_POLL_INTERVAL_MS,
-  );
-});
-
-onBeforeUnmount(() => {
-  if (scannerPollInterval) {
-    clearInterval(scannerPollInterval);
-    scannerPollInterval = null;
-  }
-});
 </script>

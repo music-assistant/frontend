@@ -1,4 +1,3 @@
-import { MediaType } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockUpdateUser, storeMock } = vi.hoisted(() => {
@@ -32,30 +31,28 @@ function readPrefs(path: string, itemtype: string) {
   return useUserPreferences().getItemsListingPreferences(path, itemtype).value;
 }
 
-describe("userPreferences - genreContentTypeFilter", () => {
+describe("userPreferences - itemsListing", () => {
   beforeEach(() => {
     mockUpdateUser.mockReset();
     mockUpdateUser.mockResolvedValue(undefined);
     storeMock.currentUser = { user_id: "u1", preferences: {} };
   });
 
-  it("persists the genre media-type filter under the namespaced key", async () => {
+  it("persists a filter under the namespaced key", async () => {
     const { setItemsListingPreference } = useUserPreferences();
 
     await setItemsListingPreference(
       "librarygenres",
       "genres",
-      "genreContentTypeFilter",
-      MediaType.AUDIOBOOK,
+      "hideEmptyFilter",
+      true,
     );
 
-    expect(readPrefs("librarygenres", "genres").genreContentTypeFilter).toBe(
-      MediaType.AUDIOBOOK,
-    );
+    expect(readPrefs("librarygenres", "genres").hideEmptyFilter).toBe(true);
     expect(mockUpdateUser).toHaveBeenCalledWith("u1", {
       preferences: {
         "itemsListing.librarygenres.genres": {
-          genreContentTypeFilter: MediaType.AUDIOBOOK,
+          hideEmptyFilter: true,
         },
       },
     });
@@ -73,13 +70,13 @@ describe("userPreferences - genreContentTypeFilter", () => {
     await setItemsListingPreference(
       "librarygenres",
       "genres",
-      "genreContentTypeFilter",
-      MediaType.PODCAST,
+      "favoriteFilter",
+      true,
     );
 
     const prefs = readPrefs("librarygenres", "genres");
     expect(prefs.hideEmptyFilter).toBe(true);
-    expect(prefs.genreContentTypeFilter).toBe(MediaType.PODCAST);
+    expect(prefs.favoriteFilter).toBe(true);
   });
 
   it("keeps the filter isolated per path/itemtype", async () => {
@@ -88,13 +85,11 @@ describe("userPreferences - genreContentTypeFilter", () => {
     await setItemsListingPreference(
       "librarygenres",
       "genres",
-      "genreContentTypeFilter",
-      MediaType.PODCAST,
+      "favoriteFilter",
+      true,
     );
 
-    expect(
-      readPrefs("libraryalbums", "albums").genreContentTypeFilter,
-    ).toBeUndefined();
+    expect(readPrefs("libraryalbums", "albums").favoriteFilter).toBeUndefined();
   });
 
   it("clears the filter when set back to undefined (toggle-off)", async () => {
@@ -103,18 +98,16 @@ describe("userPreferences - genreContentTypeFilter", () => {
     await setItemsListingPreference(
       "librarygenres",
       "genres",
-      "genreContentTypeFilter",
-      MediaType.PODCAST,
+      "favoriteFilter",
+      true,
     );
     await setItemsListingPreference(
       "librarygenres",
       "genres",
-      "genreContentTypeFilter",
+      "favoriteFilter",
       undefined,
     );
 
-    expect(
-      readPrefs("librarygenres", "genres").genreContentTypeFilter,
-    ).toBeUndefined();
+    expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
   });
 });
