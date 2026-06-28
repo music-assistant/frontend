@@ -883,6 +883,10 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
+  // smart_shuffle_active: whether shuffle is currently in "smart" mode (server-derived,
+  // read-only). True when shuffle is on with the per-queue smart-shuffle setting enabled,
+  // or while radio mode is active. Lets clients show a smart-shuffle indicator.
+  smart_shuffle_active: boolean;
   autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
   crossfade_enabled: boolean;

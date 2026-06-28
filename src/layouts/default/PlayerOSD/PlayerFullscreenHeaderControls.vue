@@ -204,7 +204,13 @@
                 : $t("crossfade_enable")
             }}
           </p>
-          <p v-if="!crossfadeEnabled" class="mt-1 opacity-80">
+          <p
+            v-if="crossfadeEnabled && smartFadesActive"
+            class="mt-1 opacity-80"
+          >
+            {{ $t("crossfade_smart_active") }}
+          </p>
+          <p v-else-if="!crossfadeEnabled" class="mt-1 opacity-80">
             {{ $t("crossfade_explanation") }}
           </p>
         </TooltipContent>
