@@ -249,6 +249,8 @@ const columns: ColumnDef<GenreRow>[] = [
         "span",
         {
           class: "flex justify-center",
+          role: "img",
+          "aria-label": genreTaxonomyLabel(row.original.genre),
           title: genreTaxonomyLabel(row.original.genre),
         },
         [
@@ -256,6 +258,7 @@ const columns: ColumnDef<GenreRow>[] = [
             icon: genreContentTypeIcon(row.original.genre.content_type),
             size: 16,
             class: "text-muted-foreground",
+            "aria-hidden": "true",
           }),
         ],
       ),

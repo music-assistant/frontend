@@ -132,9 +132,6 @@ const restoreDefaults = async () => {
     } else {
       toast.success(t("settings.restore_success", [restored.length]));
     }
-    if (store.prevState?.path === "librarygenres") {
-      store.prevState = undefined;
-    }
     tableVersion.value++;
   } catch (error) {
     toast.error(t("settings.restore_defaults_failed"));
@@ -154,9 +151,6 @@ const fullRestore = async () => {
     const restored = await api.restoreGenreDefaults(true);
     showFullRestoreDialog2.value = false;
     toast.success(t("settings.full_restore_success", [restored.length]));
-    if (store.prevState?.path === "librarygenres") {
-      store.prevState = undefined;
-    }
     tableVersion.value++;
   } catch (error) {
     toast.error(t("settings.full_restore_failed"));
@@ -167,8 +161,5 @@ const fullRestore = async () => {
 
 const onTableDataChanged = async () => {
   store.libraryGenresCount = await api.getLibraryGenresCount();
-  if (store.prevState?.path === "librarygenres") {
-    store.prevState = undefined;
-  }
 };
 </script>
