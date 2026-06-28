@@ -18,6 +18,7 @@
           <Button
             variant="ghost"
             size="icon-sm"
+            :aria-label="$t('tooltip.close_fullscreen')"
             @click="store.showFullscreenPlayer = false"
           >
             <ChevronDownIcon class="size-5" />
@@ -37,6 +38,7 @@
             variant="outline"
             size="icon-xs"
             class="ml-2 size-7 bg-background/40 backdrop-blur-md hover:bg-background/60"
+            :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
           >
             <EllipsisVerticalIcon :size="16" />
@@ -64,6 +66,7 @@
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
+              :alt="$t('tooltip.artwork')"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">
@@ -303,6 +306,7 @@
               :src="
                 getMediaImageUrl(store.activePlayer.current_media.image_url)
               "
+              :alt="$t('tooltip.artwork')"
             />
             <!-- fallback: display player icon in box -->
             <div v-else class="icon-thumb-large">

@@ -1,0 +1,10 @@
+# Build output
+dist
+dev-dist
+coverage
+
+# Generated / vendored
+pnpm-lock.yaml
+
+# Lokalise-managed translation files use their own formatting
+src/translations

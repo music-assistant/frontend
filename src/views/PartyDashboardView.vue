@@ -53,6 +53,7 @@
             v-if="isFullscreen && !hideBackButton"
             variant="ghost-icon"
             size="icon-sm"
+            :aria-label="$t('tooltip.exit_fullscreen')"
             @click="goFullscreen(false)"
           >
             <Minimize2 :size="13" />
@@ -82,6 +83,7 @@
               v-if="partyInstanceId"
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('tooltip.party_settings')"
               @click="goToSettings"
             >
               <Settings :size="13" />
@@ -89,6 +91,7 @@
             <Button
               variant="ghost-icon"
               size="icon-sm"
+              :aria-label="$t('tooltip.enter_fullscreen')"
               @click="goFullscreen(true)"
             >
               <Maximize2 :size="13" />
@@ -638,6 +641,9 @@ const albumArtUrl = computed(() => {
 });
 
 // Gradient background style (used when album art is disabled, or as fallback)
+// oxlint false positive: every code path returns (early `{}` + final object),
+// which ESLint's vue/return-in-computed-property correctly accepts.
+// oxlint-disable-next-line vue/return-in-computed-property
 const gradientBackgroundStyle = computed(() => {
   // When using album art, the .background-image element handles visuals
   if (useAlbumArtBackground.value && albumArtUrl.value) {

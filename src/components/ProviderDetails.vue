@@ -71,6 +71,7 @@
               "
               :src="iconHiRes"
               width="30"
+              alt=""
               :class="
                 $vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'
               "

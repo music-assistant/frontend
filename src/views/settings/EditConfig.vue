@@ -52,6 +52,7 @@
             variant="ghost"
             size="icon"
             class="help-btn"
+            :aria-label="$t('tooltip.help')"
             @click="
               conf_entry.description
                 ? (showHelpInfo = conf_entry)
@@ -122,6 +123,7 @@
             variant="ghost"
             size="icon"
             class="help-btn"
+            :aria-label="$t('tooltip.help')"
             @click="
               conf_entry.description
                 ? (showHelpInfo = conf_entry)
@@ -305,6 +307,7 @@
                   variant="ghost"
                   size="icon"
                   class="help-btn"
+                  :aria-label="$t('tooltip.help')"
                   @click="
                     conf_entry.description
                       ? (showHelpInfo = conf_entry)
@@ -372,6 +375,7 @@
             variant="ghost"
             size="icon"
             class="help-btn"
+            :aria-label="$t('tooltip.help')"
             @click="
               conf_entry.description
                 ? (showHelpInfo = conf_entry)

@@ -35,7 +35,7 @@ jobs:
           CI: true
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint:check
         env:
           CI: true
 

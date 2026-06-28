@@ -264,7 +264,7 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 const getTranslatedSupportedMediaTypes = (): string[] => {
-  let translatedItems: string[] = [];
+  const translatedItems: string[] = [];
   playlistAllowedMediaTypes.value.forEach((item, _, __) => {
     translatedItems.push($t(item));
   });

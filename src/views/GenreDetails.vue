@@ -60,6 +60,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('artists') })"
             @click.stop="navigateTo('artists')"
           />
         </template>
@@ -78,6 +79,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('albums') })"
             @click.stop="navigateTo('albums')"
           />
         </template>
@@ -97,6 +99,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('tracks') })"
             @click.stop="navigateTo('tracks')"
           />
         </template>
@@ -115,6 +118,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('playlists') })"
             @click.stop="navigateTo('playlists')"
           />
         </template>
@@ -133,6 +137,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('podcasts') })"
             @click.stop="navigateTo('podcasts')"
           />
         </template>
@@ -151,6 +156,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('audiobooks') })"
             @click.stop="navigateTo('audiobooks')"
           />
         </template>

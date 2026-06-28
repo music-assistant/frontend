@@ -24,6 +24,7 @@
           v-if="player.power_control != PLAYER_CONTROL_NONE"
           class="powerbtn"
           variant="icon"
+          :aria-label="$t('tooltip.toggle_power')"
           @click.stop="api.playerCommandPowerToggle(player.player_id)"
         >
           <v-icon :size="25" icon="mdi-power" />
@@ -50,6 +51,7 @@
         variant="plain"
         :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
         class="expandbtn"
+        :aria-label="$t('tooltip.toggle_subplayers')"
         @click.stop="$emit('toggle-expand', player)"
       />
     </div>

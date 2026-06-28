@@ -4,7 +4,7 @@ export default {
 };
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="TData, TValue">
 import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "@lucide/vue";
 import type { Column } from "@tanstack/vue-table";
 
@@ -19,8 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 
 defineProps<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  column: Column<any, unknown>;
+  column: Column<TData, TValue>;
   title: string;
   align?: "left" | "right";
 }>();
