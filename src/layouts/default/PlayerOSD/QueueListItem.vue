@@ -86,14 +86,14 @@
         class="size-4 shrink-0 text-destructive"
       />
       <!-- Fixed-width slot the duration and the action buttons share: on desktop
-           the duration shows by default and is swapped for the buttons on hover;
-           on touch there's no duration and the buttons stay visible. -->
+           the duration shows by default and is swapped for the menu on hover;
+           on mobile there's no duration, just the grip. -->
       <div class="qitem__trailing">
         <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
         <div class="qitem__actions">
-          <!-- drag handle to reorder (up-next items only) -->
+          <!-- drag handle to reorder (touch only; desktop drags the whole row) -->
           <button
-            v-if="state === 'upcoming'"
+            v-if="isMobile && state === 'upcoming'"
             type="button"
             class="qitem__grip"
             :aria-label="$t('queue_reorder')"
@@ -103,7 +103,9 @@
           >
             <GripVerticalIcon class="size-4" />
           </button>
+          <!-- context menu button (desktop only; touch uses a long press) -->
           <Button
+            v-if="!isMobile"
             variant="ghost"
             size="icon-sm"
             class="qitem__menu"
@@ -437,9 +439,8 @@ onBeforeUnmount(cancelLongPress);
   opacity: 0.85;
 }
 
-/* Mobile layout: drop the duration entirely, show only the grip (the whole-row
-   drag is mouse-only), and reach the context menu via long-press rather than a
-   button. */
+/* Mobile layout: no duration, and the grip stays visible (the menu button isn't
+   rendered — the context menu opens on long-press). */
 .qitem--mobile .qitem__duration {
   display: none;
 }
@@ -449,19 +450,11 @@ onBeforeUnmount(cancelLongPress);
   pointer-events: auto;
 }
 
-.qitem--mobile .qitem__grip {
-  display: inline-flex;
-}
-
-.qitem--mobile .qitem__menu {
-  display: none;
-}
-
 /* Drag handle: a plain button (not a shadcn Button) so we fully control the
-   pointer gesture. Sized to match the icon-sm buttons beside it. Hidden on
-   desktop, where the whole row is draggable instead. */
+   pointer gesture. Sized to match the icon-sm buttons beside it. Rendered only
+   in the mobile layout — desktop drags the whole row instead. */
 .qitem__grip {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
