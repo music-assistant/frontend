@@ -9,20 +9,24 @@
 <template>
   <div
     class="qitem"
-    :class="{
-      'qitem--played': state === 'played',
-      'qitem--playing': state === 'playing',
-      'qitem--buffered': state === 'buffered',
-      'qitem--unavailable': !item.available,
-      'qitem--dragging': dragging,
-      'qitem--ghost': ghost,
-    }"
+    :class="[
+      draggable ? 'cursor-grab' : 'cursor-pointer',
+      {
+        'qitem--played': state === 'played',
+        'qitem--playing': state === 'playing',
+        'qitem--buffered': state === 'buffered',
+        'qitem--unavailable': !item.available,
+        'qitem--dragging': dragging,
+        'qitem--ghost': ghost,
+      },
+    ]"
     :data-queue-current="state === 'playing' ? 'true' : undefined"
     role="button"
     tabindex="0"
     @click="emit('click', $event)"
     @contextmenu.prevent="emit('menu', $event)"
     @keydown.enter.prevent="emit('click', $event)"
+    @pointerdown="onRowPointerDown"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
   >
@@ -39,19 +43,14 @@
       <MarqueeText :sync="marqueeSync" :disabled="!marqueeActive">
         <span class="qitem__title">{{ title }}</span>
       </MarqueeText>
-      <div class="qitem__subtitle">
+      <div v-if="artistName" class="qitem__subtitle">
         <MarqueeText
-          v-if="artistName"
           class="qitem__artist"
           :sync="marqueeSync"
           :disabled="!marqueeActive"
         >
           <span>{{ artistName }}</span>
         </MarqueeText>
-        <span v-if="artistName" class="qitem__sep">·</span>
-        <span class="qitem__sub-duration">{{
-          formatDuration(item.duration)
-        }}</span>
       </div>
     </div>
 
@@ -87,7 +86,7 @@
       />
       <!-- Fixed-width slot the duration and the action buttons share: on desktop
            the duration shows by default and is swapped for the buttons on hover;
-           on touch the duration lives in the subtitle and the buttons stay. -->
+           on touch there's no duration and the buttons stay visible. -->
       <div class="qitem__trailing">
         <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
         <div class="qitem__actions">
@@ -196,6 +195,16 @@ const artistName = computed(() => {
   }
   return "";
 });
+
+// Only up-next items can be reordered; the floating ghost is never a drag source.
+const draggable = computed(() => props.state === "upcoming" && !props.ghost);
+
+// Desktop drags the whole row; touch keeps using the explicit grip handle so
+// list scrolling isn't hijacked.
+const onRowPointerDown = (event: PointerEvent) => {
+  if (!draggable.value || event.pointerType !== "mouse") return;
+  emit("dragstart", event);
+};
 </script>
 
 <style scoped>
@@ -205,7 +214,6 @@ const artistName = computed(() => {
   gap: 12px;
   padding: 6px 8px;
   border-radius: 8px;
-  cursor: pointer;
   color: var(--text-color, currentColor);
   transition:
     background-color 0.12s ease,
@@ -300,23 +308,6 @@ const artistName = computed(() => {
   overflow: hidden;
 }
 
-/* Subtitle duration is touch-only — hidden on hover-capable (desktop) devices,
-   where the duration lives in the trailing slot instead. */
-.qitem__sep,
-.qitem__sub-duration {
-  display: none;
-}
-
-.qitem__sep {
-  opacity: 0.6;
-}
-
-.qitem__sub-duration {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
 .qitem__append {
   flex: 0 0 auto;
   display: flex;
@@ -381,8 +372,8 @@ const artistName = computed(() => {
   opacity: 0.85;
 }
 
-/* Touch devices have no hover: keep the buttons visible and move the duration
-   into the subtitle next to the artist. */
+/* Touch devices have no hover: drop the duration entirely, keep the buttons
+   visible, and bring back the grip handle (the whole-row drag is mouse-only). */
 @media (hover: none) {
   .qitem__duration {
     display: none;
@@ -393,16 +384,16 @@ const artistName = computed(() => {
     pointer-events: auto;
   }
 
-  .qitem__sep,
-  .qitem__sub-duration {
-    display: inline;
+  .qitem__grip {
+    display: inline-flex;
   }
 }
 
 /* Drag handle: a plain button (not a shadcn Button) so we fully control the
-   pointer gesture. Sized to match the icon-sm buttons beside it. */
+   pointer gesture. Sized to match the icon-sm buttons beside it. Hidden on
+   desktop, where the whole row is draggable instead. */
 .qitem__grip {
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
@@ -434,17 +425,11 @@ const artistName = computed(() => {
   cursor: grabbing;
 }
 
-/* The floating clone that tracks the pointer. Tinted with the same themed
-   color the rows use (no clashing gray) and lifted with a soft shadow so it
-   reads as picked-up, not detached. Its own action buttons are hidden. */
+/* The floating clone that tracks the pointer. Tinted MA blue (the now-playing
+   accent) so a drag-in-progress reads clearly, and lifted with a soft shadow so
+   it reads as picked-up, not detached. Its own action buttons are hidden. */
 .qitem--ghost {
-  background: color-mix(
-    in srgb,
-    var(--text-color, currentColor) 10%,
-    transparent
-  );
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   cursor: grabbing;
 }
