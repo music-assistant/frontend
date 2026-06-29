@@ -140,7 +140,7 @@ import {
   InfoIcon,
   TriangleAlertIcon,
 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 
 export type QueueItemState = "played" | "playing" | "buffered" | "upcoming";
 
@@ -199,12 +199,69 @@ const artistName = computed(() => {
 // Only up-next items can be reordered; the floating ghost is never a drag source.
 const draggable = computed(() => props.state === "upcoming" && !props.ghost);
 
-// Desktop drags the whole row; touch keeps using the explicit grip handle so
-// list scrolling isn't hijacked.
-const onRowPointerDown = (event: PointerEvent) => {
-  if (!draggable.value || event.pointerType !== "mouse") return;
-  emit("dragstart", event);
+const LONG_PRESS_MS = 450;
+// Pointer travel (px) that turns a long press into a scroll and cancels it.
+const LONG_PRESS_MOVE = 10;
+
+let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+let longPressAbort: AbortController | null = null;
+
+const cancelLongPress = () => {
+  if (longPressTimer !== null) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  longPressAbort?.abort();
+  longPressAbort = null;
 };
+
+// Touch: a long press (no scroll) opens the context menu, since the menu button
+// is hidden on touch. The native long-press menu is suppressed for the duration
+// of the press so it can't fire on top of ours.
+const startLongPress = (event: PointerEvent) => {
+  cancelLongPress();
+  const startX = event.clientX;
+  const startY = event.clientY;
+  longPressAbort = new AbortController();
+  const { signal } = longPressAbort;
+  window.addEventListener(
+    "pointermove",
+    (e: PointerEvent) => {
+      if (
+        Math.hypot(e.clientX - startX, e.clientY - startY) > LONG_PRESS_MOVE
+      ) {
+        cancelLongPress();
+      }
+    },
+    { passive: true, signal },
+  );
+  window.addEventListener("pointerup", cancelLongPress, { signal });
+  window.addEventListener("pointercancel", cancelLongPress, { signal });
+  window.addEventListener(
+    "contextmenu",
+    (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    { capture: true, signal },
+  );
+  longPressTimer = setTimeout(() => {
+    longPressTimer = null;
+    emit("menu", event);
+  }, LONG_PRESS_MS);
+};
+
+// Desktop drives a whole-row drag with the mouse; touch arms a long press.
+const onRowPointerDown = (event: PointerEvent) => {
+  if (props.ghost) return;
+  if (event.pointerType === "mouse") {
+    if (draggable.value) emit("dragstart", event);
+    return;
+  }
+  startLongPress(event);
+};
+
+onBeforeUnmount(cancelLongPress);
 </script>
 
 <style scoped>
@@ -219,6 +276,7 @@ const onRowPointerDown = (event: PointerEvent) => {
     background-color 0.12s ease,
     opacity 0.12s ease;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .qitem:hover {
@@ -372,8 +430,9 @@ const onRowPointerDown = (event: PointerEvent) => {
   opacity: 0.85;
 }
 
-/* Touch devices have no hover: drop the duration entirely, keep the buttons
-   visible, and bring back the grip handle (the whole-row drag is mouse-only). */
+/* Touch devices have no hover: drop the duration entirely, show only the grip
+   (the whole-row drag is mouse-only), and reach the context menu via long-press
+   rather than a button. */
 @media (hover: none) {
   .qitem__duration {
     display: none;
@@ -386,6 +445,10 @@ const onRowPointerDown = (event: PointerEvent) => {
 
   .qitem__grip {
     display: inline-flex;
+  }
+
+  .qitem__menu {
+    display: none;
   }
 }
 
