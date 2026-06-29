@@ -23,7 +23,7 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { EventMessage, EventType } from "@/plugins/api/interfaces";
+import { ArtistType, EventMessage, EventType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
@@ -59,6 +59,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    ArtistType.SINGER,
   );
 };
 

@@ -131,7 +131,7 @@
       </div>
       <!-- audiobook author(s) -->
       <div v-else-if="'authors' in item && item.authors">
-        {{ item.authors.join(" / ") }}
+        {{ getAuthorsNarratorsArray(item.authors).join(" / ") }}
       </div>
       <!-- audiobook publisher -->
       <div v-else-if="'publisher' in item && item.publisher">
@@ -243,6 +243,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import {
   formatDuration,
   getArtistsString,
+  getAuthorsNarratorsArray,
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,

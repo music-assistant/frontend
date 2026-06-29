@@ -149,6 +149,13 @@ export enum AlbumType {
   UNKNOWN = "unknown",
 }
 
+export enum ArtistType {
+  SINGER = "singer",
+  AUTHOR = "author",
+  NARRATOR = "narrator",
+  UNKNOWN = "unknown",
+}
+
 export enum ExternalID {
   MB_ARTIST = "musicbrainz_artistid", // MusicBrainz Artist ID (or AlbumArtist ID)
   MB_ALBUM = "musicbrainz_albumid", // MusicBrainz Album ID
@@ -702,7 +709,9 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem {
+  artist_type: ArtistType;
+}
 
 export interface Album extends MediaItem {
   year?: number;
@@ -738,8 +747,8 @@ export interface AudioSource extends MediaItem {
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  authors: string[];
-  narrators: string[];
+  authors: string[] | Artist[];
+  narrators: string[] | Artist[];
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
