@@ -18,6 +18,7 @@
         'qitem--unavailable': !item.available,
         'qitem--dragging': dragging,
         'qitem--ghost': ghost,
+        'qitem--mobile': isMobile,
       },
     ]"
     :data-queue-current="state === 'playing' ? 'true' : undefined"
@@ -134,6 +135,7 @@ import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { formatDuration } from "@/helpers/utils";
 import { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   EllipsisVerticalIcon,
   GripVerticalIcon,
@@ -198,6 +200,11 @@ const artistName = computed(() => {
 
 // Only up-next items can be reordered; the floating ghost is never a drag source.
 const draggable = computed(() => props.state === "upcoming" && !props.ghost);
+
+// Mobile layout drops the duration, shows only the grip, and reaches the
+// context menu via long-press. Width-based (store.mobileLayout) rather than a
+// hover media query, which isn't reliable in the PWA / device emulation.
+const isMobile = computed(() => store.mobileLayout);
 
 const LONG_PRESS_MS = 450;
 // Pointer travel (px) that turns a long press into a scroll and cancels it.
@@ -430,26 +437,24 @@ onBeforeUnmount(cancelLongPress);
   opacity: 0.85;
 }
 
-/* Touch devices have no hover: drop the duration entirely, show only the grip
-   (the whole-row drag is mouse-only), and reach the context menu via long-press
-   rather than a button. */
-@media (hover: none) {
-  .qitem__duration {
-    display: none;
-  }
+/* Mobile layout: drop the duration entirely, show only the grip (the whole-row
+   drag is mouse-only), and reach the context menu via long-press rather than a
+   button. */
+.qitem--mobile .qitem__duration {
+  display: none;
+}
 
-  .qitem__actions {
-    opacity: 1;
-    pointer-events: auto;
-  }
+.qitem--mobile .qitem__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
 
-  .qitem__grip {
-    display: inline-flex;
-  }
+.qitem--mobile .qitem__grip {
+  display: inline-flex;
+}
 
-  .qitem__menu {
-    display: none;
-  }
+.qitem--mobile .qitem__menu {
+  display: none;
 }
 
 /* Drag handle: a plain button (not a shadcn Button) so we fully control the
