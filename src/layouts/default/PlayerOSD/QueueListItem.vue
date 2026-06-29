@@ -39,20 +39,24 @@
       <MarqueeText :sync="marqueeSync" :disabled="!marqueeActive">
         <span class="qitem__title">{{ title }}</span>
       </MarqueeText>
-      <div v-if="artistName" class="qitem__subtitle">
+      <div class="qitem__subtitle">
         <MarqueeText
+          v-if="artistName"
           class="qitem__artist"
           :sync="marqueeSync"
           :disabled="!marqueeActive"
         >
           <span>{{ artistName }}</span>
         </MarqueeText>
+        <span v-if="artistName" class="qitem__sep">·</span>
+        <span class="qitem__sub-duration">{{
+          formatDuration(item.duration)
+        }}</span>
       </div>
     </div>
 
     <!-- trailing badges + actions -->
     <div class="qitem__append">
-      <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
       <PartyPlayerBadge
         v-if="item.extra_attributes?.party_guest === true"
         :type="
@@ -81,32 +85,35 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
-      <!-- Fixed-width slot so the duration keeps the same right edge whether or
-           not the drag handle is present (now-playing/played rows omit it) and
-           while a row is being dragged (its actions are hidden). -->
-      <div class="qitem__actions">
-        <!-- drag handle to reorder (up-next items only) -->
-        <button
-          v-if="state === 'upcoming'"
-          type="button"
-          class="qitem__action qitem__grip"
-          :aria-label="$t('queue_reorder')"
-          @pointerdown.stop.prevent="emit('dragstart', $event)"
-          @click.stop
-          @contextmenu.prevent
-        >
-          <GripVerticalIcon class="size-4" />
-        </button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          class="qitem__action qitem__menu"
-          :aria-label="$t('queue_options')"
-          @click.stop="emit('menu', $event)"
-          @pointerdown.stop
-        >
-          <EllipsisVerticalIcon class="size-4" />
-        </Button>
+      <!-- Fixed-width slot the duration and the action buttons share: on desktop
+           the duration shows by default and is swapped for the buttons on hover;
+           on touch the duration lives in the subtitle and the buttons stay. -->
+      <div class="qitem__trailing">
+        <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
+        <div class="qitem__actions">
+          <!-- drag handle to reorder (up-next items only) -->
+          <button
+            v-if="state === 'upcoming'"
+            type="button"
+            class="qitem__grip"
+            :aria-label="$t('queue_reorder')"
+            @pointerdown.stop.prevent="emit('dragstart', $event)"
+            @click.stop
+            @contextmenu.prevent
+          >
+            <GripVerticalIcon class="size-4" />
+          </button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            class="qitem__menu"
+            :aria-label="$t('queue_options')"
+            @click.stop="emit('menu', $event)"
+            @pointerdown.stop
+          >
+            <EllipsisVerticalIcon class="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
   </div>
@@ -288,17 +295,26 @@ const artistName = computed(() => {
   opacity: 0.7;
 }
 
-.qitem__duration {
-  white-space: nowrap;
-  margin-right: 6px;
-  font-size: var(--queue-subtitle-size, 0.78rem);
-  opacity: 0.7;
-  font-variant-numeric: tabular-nums;
-}
-
 .qitem__artist {
   min-width: 0;
   overflow: hidden;
+}
+
+/* Subtitle duration is touch-only — hidden on hover-capable (desktop) devices,
+   where the duration lives in the trailing slot instead. */
+.qitem__sep,
+.qitem__sub-duration {
+  display: none;
+}
+
+.qitem__sep {
+  opacity: 0.6;
+}
+
+.qitem__sub-duration {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .qitem__append {
@@ -308,15 +324,49 @@ const artistName = computed(() => {
   gap: 4px;
 }
 
-/* Reserve room for both trailing buttons (2 × 2rem + gap) and right-align them
-   so the duration's right edge is identical across every row state. */
-.qitem__actions {
+/* The duration and the action buttons share this fixed-width slot (2 × 2rem +
+   gap), both pinned to the right edge so nothing shifts when they swap. */
+.qitem__trailing {
+  position: relative;
   flex: 0 0 auto;
+  width: calc(4rem + 4px);
+  height: 2rem;
+}
+
+.qitem__duration {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+  font-size: var(--queue-subtitle-size, 0.78rem);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.qitem__actions {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  width: calc(4rem + 4px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Desktop: swap the duration out for the action buttons on hover/focus. */
+.qitem:hover .qitem__duration,
+.qitem:focus-within .qitem__duration {
+  opacity: 0;
+}
+
+.qitem:hover .qitem__actions,
+.qitem:focus-within .qitem__actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .qitem__info {
@@ -331,19 +381,21 @@ const artistName = computed(() => {
   opacity: 0.85;
 }
 
-.qitem__action {
-  opacity: 0;
-}
-
-.qitem:hover .qitem__action,
-.qitem:focus-within .qitem__action {
-  opacity: 1;
-}
-
-/* Touch devices have no hover — always reveal the action affordances. */
+/* Touch devices have no hover: keep the buttons visible and move the duration
+   into the subtitle next to the artist. */
 @media (hover: none) {
-  .qitem__action {
+  .qitem__duration {
+    display: none;
+  }
+
+  .qitem__actions {
     opacity: 1;
+    pointer-events: auto;
+  }
+
+  .qitem__sep,
+  .qitem__sub-duration {
+    display: inline;
   }
 }
 
@@ -397,7 +449,7 @@ const artistName = computed(() => {
   cursor: grabbing;
 }
 
-.qitem--ghost .qitem__action {
+.qitem--ghost .qitem__actions {
   display: none;
 }
 </style>
