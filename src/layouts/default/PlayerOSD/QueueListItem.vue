@@ -81,28 +81,33 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
-      <!-- drag handle to reorder (up-next items only) -->
-      <button
-        v-if="state === 'upcoming'"
-        type="button"
-        class="qitem__action qitem__grip"
-        :aria-label="$t('queue_reorder')"
-        @pointerdown.stop.prevent="emit('dragstart', $event)"
-        @click.stop
-        @contextmenu.prevent
-      >
-        <GripVerticalIcon class="size-4" />
-      </button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        class="qitem__action qitem__menu"
-        :aria-label="$t('queue_options')"
-        @click.stop="emit('menu', $event)"
-        @pointerdown.stop
-      >
-        <EllipsisVerticalIcon class="size-4" />
-      </Button>
+      <!-- Fixed-width slot so the duration keeps the same right edge whether or
+           not the drag handle is present (now-playing/played rows omit it) and
+           while a row is being dragged (its actions are hidden). -->
+      <div class="qitem__actions">
+        <!-- drag handle to reorder (up-next items only) -->
+        <button
+          v-if="state === 'upcoming'"
+          type="button"
+          class="qitem__action qitem__grip"
+          :aria-label="$t('queue_reorder')"
+          @pointerdown.stop.prevent="emit('dragstart', $event)"
+          @click.stop
+          @contextmenu.prevent
+        >
+          <GripVerticalIcon class="size-4" />
+        </button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="qitem__action qitem__menu"
+          :aria-label="$t('queue_options')"
+          @click.stop="emit('menu', $event)"
+          @pointerdown.stop
+        >
+          <EllipsisVerticalIcon class="size-4" />
+        </Button>
+      </div>
     </div>
   </div>
 </template>
@@ -301,6 +306,17 @@ const artistName = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Reserve room for both trailing buttons (2 × 2rem + gap) and right-align them
+   so the duration's right edge is identical across every row state. */
+.qitem__actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: calc(4rem + 4px);
 }
 
 .qitem__info {
