@@ -37,25 +37,22 @@
     <!-- title + subtitle -->
     <div class="qitem__body">
       <MarqueeText :sync="marqueeSync" :disabled="!marqueeActive">
-        <span class="qitem__title">{{ item.name }}</span>
+        <span class="qitem__title">{{ title }}</span>
       </MarqueeText>
-      <div class="qitem__subtitle">
-        <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
-        <template v-if="albumName">
-          <span class="qitem__sep">·</span>
-          <MarqueeText
-            class="qitem__album"
-            :sync="marqueeSync"
-            :disabled="!marqueeActive"
-          >
-            <span>{{ albumName }}</span>
-          </MarqueeText>
-        </template>
+      <div v-if="artistName" class="qitem__subtitle">
+        <MarqueeText
+          class="qitem__artist"
+          :sync="marqueeSync"
+          :disabled="!marqueeActive"
+        >
+          <span>{{ artistName }}</span>
+        </MarqueeText>
       </div>
     </div>
 
     <!-- trailing badges + actions -->
     <div class="qitem__append">
+      <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
       <PartyPlayerBadge
         v-if="item.extra_attributes?.party_guest === true"
         :type="
@@ -178,10 +175,12 @@ const showEqualizer = computed(
   () => props.state === "playing" && props.isPlaying,
 );
 
-const albumName = computed(() => {
+const title = computed(() => props.item.media_item?.name || props.item.name);
+
+const artistName = computed(() => {
   const mediaItem = props.item.media_item;
-  if (mediaItem && "album" in mediaItem && mediaItem.album) {
-    return mediaItem.album.name;
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists?.length) {
+    return mediaItem.artists.map((a) => a.name).join(", ");
   }
   return "";
 });
@@ -286,13 +285,13 @@ const albumName = computed(() => {
 
 .qitem__duration {
   white-space: nowrap;
+  margin-right: 6px;
+  font-size: var(--queue-subtitle-size, 0.78rem);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
 }
 
-.qitem__sep {
-  opacity: 0.6;
-}
-
-.qitem__album {
+.qitem__artist {
   min-width: 0;
   overflow: hidden;
 }
