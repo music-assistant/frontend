@@ -80,7 +80,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.8.0
       - name: Set up Node ${{ env.NODE_VERSION }}
