@@ -729,6 +729,7 @@
     },
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
+    "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
