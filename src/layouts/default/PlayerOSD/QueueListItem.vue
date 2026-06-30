@@ -16,6 +16,7 @@
       'qitem--unavailable': !item.available,
       'qitem--dragging': dragging,
       'qitem--ghost': ghost,
+      'qitem--mobile': isMobile,
     }"
     :data-queue-current="state === 'playing' ? 'true' : undefined"
     role="button"
@@ -37,20 +38,16 @@
     <!-- title + subtitle -->
     <div class="qitem__body">
       <MarqueeText :sync="marqueeSync" :disabled="!marqueeActive">
-        <span class="qitem__title">{{ item.name }}</span>
+        <span class="qitem__title">{{ title }}</span>
       </MarqueeText>
-      <div class="qitem__subtitle">
-        <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
-        <template v-if="albumName">
-          <span class="qitem__sep">·</span>
-          <MarqueeText
-            class="qitem__album"
-            :sync="marqueeSync"
-            :disabled="!marqueeActive"
-          >
-            <span>{{ albumName }}</span>
-          </MarqueeText>
-        </template>
+      <div v-if="artistName" class="qitem__subtitle">
+        <MarqueeText
+          class="qitem__artist"
+          :sync="marqueeSync"
+          :disabled="!marqueeActive"
+        >
+          <span>{{ artistName }}</span>
+        </MarqueeText>
       </div>
     </div>
 
@@ -84,28 +81,36 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
-      <!-- drag handle to reorder (up-next items only) -->
-      <button
-        v-if="state === 'upcoming'"
-        type="button"
-        class="qitem__action qitem__grip"
-        :aria-label="$t('queue_reorder')"
-        @pointerdown.stop.prevent="emit('dragstart', $event)"
-        @click.stop
-        @contextmenu.prevent
-      >
-        <GripVerticalIcon class="size-4" />
-      </button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        class="qitem__action qitem__menu"
-        :aria-label="$t('queue_options')"
-        @click.stop="emit('menu', $event)"
-        @pointerdown.stop
-      >
-        <EllipsisVerticalIcon class="size-4" />
-      </Button>
+      <!-- duration sits to the left of the always-visible action buttons -->
+      <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
+      <!-- Fixed-width slot so the menu stays aligned whether or not a row has a
+           grip (only up-next rows are reorderable). -->
+      <div class="qitem__actions">
+        <!-- drag handle to reorder. Active on up-next items; disabled/grayed on
+             every other row (now playing, buffered, played can't be reordered). -->
+        <button
+          type="button"
+          class="qitem__grip"
+          :disabled="state !== 'upcoming'"
+          :aria-label="$t('queue_reorder')"
+          @pointerdown.stop.prevent="emit('dragstart', $event)"
+          @click.stop
+          @contextmenu.prevent
+        >
+          <GripVerticalIcon class="size-4" />
+        </button>
+        <!-- context menu button -->
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="qitem__menu"
+          :aria-label="$t('queue_options')"
+          @click.stop="emit('menu', $event)"
+          @pointerdown.stop
+        >
+          <EllipsisVerticalIcon class="size-4" />
+        </Button>
+      </div>
     </div>
   </div>
 </template>
@@ -126,6 +131,7 @@ import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { formatDuration } from "@/helpers/utils";
 import { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   EllipsisVerticalIcon,
   GripVerticalIcon,
@@ -178,13 +184,20 @@ const showEqualizer = computed(
   () => props.state === "playing" && props.isPlaying,
 );
 
-const albumName = computed(() => {
+const title = computed(() => props.item.media_item?.name || props.item.name);
+
+const artistName = computed(() => {
   const mediaItem = props.item.media_item;
-  if (mediaItem && "album" in mediaItem && mediaItem.album) {
-    return mediaItem.album.name;
+  if (mediaItem && "artists" in mediaItem && mediaItem.artists?.length) {
+    return mediaItem.artists.map((a) => a.name).join(", ");
   }
   return "";
 });
+
+// Mobile layout drops the duration and shows the grip alongside the menu
+// button. Width-based (store.mobileLayout) rather than a hover media query,
+// which isn't reliable in the PWA / device emulation.
+const isMobile = computed(() => store.mobileLayout);
 </script>
 
 <style scoped>
@@ -226,8 +239,7 @@ const albumName = computed(() => {
   background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
-/* Buffered = already loaded into the stream and locked to play next. Sits in
-   the "up next" list but keeps a faint tint so it reads as already cued. */
+/* Buffered: locked into the stream to play next — faint tint reads as cued. */
 .qitem--buffered {
   background: color-mix(in srgb, var(--primary) 5%, transparent);
 }
@@ -284,15 +296,7 @@ const albumName = computed(() => {
   opacity: 0.7;
 }
 
-.qitem__duration {
-  white-space: nowrap;
-}
-
-.qitem__sep {
-  opacity: 0.6;
-}
-
-.qitem__album {
+.qitem__artist {
   min-width: 0;
   overflow: hidden;
 }
@@ -302,6 +306,24 @@ const albumName = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.qitem__duration {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: var(--queue-subtitle-size, 0.78rem);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fixed-width + right-aligned so the menu aligns with or without a grip. */
+.qitem__actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: calc(4rem + 4px);
 }
 
 .qitem__info {
@@ -316,24 +338,12 @@ const albumName = computed(() => {
   opacity: 0.85;
 }
 
-.qitem__action {
-  opacity: 0;
+/* Mobile layout drops the duration; the grip + menu stay visible. */
+.qitem--mobile .qitem__duration {
+  display: none;
 }
 
-.qitem:hover .qitem__action,
-.qitem:focus-within .qitem__action {
-  opacity: 1;
-}
-
-/* Touch devices have no hover — always reveal the action affordances. */
-@media (hover: none) {
-  .qitem__action {
-    opacity: 1;
-  }
-}
-
-/* Drag handle: a plain button (not a shadcn Button) so we fully control the
-   pointer gesture. Sized to match the icon-sm buttons beside it. */
+/* Drag handle: plain button for full pointer-gesture control, sized like icon-sm. */
 .qitem__grip {
   display: inline-flex;
   align-items: center;
@@ -344,11 +354,11 @@ const albumName = computed(() => {
   border-radius: 6px;
   color: var(--text-color, currentColor);
   cursor: grab;
-  /* Stop the browser from hijacking the gesture as a scroll on touch. */
+  /* Don't let touch turn the drag into a scroll. */
   touch-action: none;
 }
 
-.qitem__grip:hover {
+.qitem__grip:not(:disabled):hover {
   background: color-mix(
     in srgb,
     var(--text-color, currentColor) 12%,
@@ -356,8 +366,13 @@ const albumName = computed(() => {
   );
 }
 
-/* The source row stays in place but invisible while dragging — the floating
-   ghost is its stand-in, and the other rows slide to open the landing gap. */
+/* Non-reorderable rows: solid muted color (not opacity) stays legible when dimmed. */
+.qitem__grip:disabled {
+  color: var(--muted-foreground);
+  cursor: default;
+}
+
+/* Source row hides in place; the ghost stands in while dragging. */
 .qitem--dragging {
   opacity: 0;
   pointer-events: none;
@@ -367,22 +382,14 @@ const albumName = computed(() => {
   cursor: grabbing;
 }
 
-/* The floating clone that tracks the pointer. Tinted with the same themed
-   color the rows use (no clashing gray) and lifted with a soft shadow so it
-   reads as picked-up, not detached. Its own action buttons are hidden. */
+/* Floating drag clone: accent-tinted + shadowed so it reads as picked-up. */
 .qitem--ghost {
-  background: color-mix(
-    in srgb,
-    var(--text-color, currentColor) 10%,
-    transparent
-  );
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   cursor: grabbing;
 }
 
-.qitem--ghost .qitem__action {
+.qitem--ghost .qitem__actions {
   display: none;
 }
 </style>
