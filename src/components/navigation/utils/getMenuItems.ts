@@ -29,7 +29,7 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
-export const getMenuItems = function () {
+export const getMenuItems = function() {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   const userMenuItems = store.currentUser?.preferences?.menu_items as
     | string
@@ -174,6 +174,16 @@ export const getMenuItems = function () {
         path: "/settings",
         isLibraryNode: true,
         group: "system",
+      });
+    }
+
+    if (enabledMenuItemStr === "authors_narrators") {
+      items.push({
+        label: "authors_narrators",
+        icon: ArtistIcon,
+        path: "/authors_narrators",
+        isLibraryNode: true,
+        group: "library",
       });
     }
   }

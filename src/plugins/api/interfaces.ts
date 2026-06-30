@@ -364,6 +364,8 @@ export enum ProviderFeature {
   ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",
   ARTIST_TOPALBUMS = "artist_topalbums",
+  AUTHOR_AUDIOBOOKS = "author_audiobooks",
+  NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -735,7 +737,7 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem { }
 
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
