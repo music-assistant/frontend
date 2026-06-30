@@ -86,11 +86,13 @@
       <!-- Fixed-width slot so the menu stays aligned whether or not a row has a
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
-        <!-- drag handle to reorder (up-next items only) -->
+        <!-- drag handle to reorder. Shown active on up-next items; shown
+             disabled/grayed on already-played items (can't be reordered). -->
         <button
-          v-if="state === 'upcoming'"
+          v-if="state === 'upcoming' || state === 'played'"
           type="button"
           class="qitem__grip"
+          :disabled="state !== 'upcoming'"
           :aria-label="$t('queue_reorder')"
           @pointerdown.stop.prevent="emit('dragstart', $event)"
           @click.stop
@@ -362,12 +364,18 @@ const isMobile = computed(() => store.mobileLayout);
   touch-action: none;
 }
 
-.qitem__grip:hover {
+.qitem__grip:not(:disabled):hover {
   background: color-mix(
     in srgb,
     var(--text-color, currentColor) 12%,
     transparent
   );
+}
+
+/* Already-played rows: the handle is present for alignment but can't reorder. */
+.qitem__grip:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* The source row stays in place but invisible while dragging — the floating
