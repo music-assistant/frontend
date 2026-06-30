@@ -239,8 +239,7 @@ const isMobile = computed(() => store.mobileLayout);
   background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
-/* Buffered = already loaded into the stream and locked to play next. Sits in
-   the "up next" list but keeps a faint tint so it reads as already cued. */
+/* Buffered: locked into the stream to play next — faint tint reads as cued. */
 .qitem--buffered {
   background: color-mix(in srgb, var(--primary) 5%, transparent);
 }
@@ -317,8 +316,7 @@ const isMobile = computed(() => store.mobileLayout);
   font-variant-numeric: tabular-nums;
 }
 
-/* Fixed-width (2 × 2rem + gap) and right-aligned, so the menu keeps the same
-   position whether or not a row has a grip. */
+/* Fixed-width + right-aligned so the menu aligns with or without a grip. */
 .qitem__actions {
   flex: 0 0 auto;
   display: flex;
@@ -345,9 +343,7 @@ const isMobile = computed(() => store.mobileLayout);
   display: none;
 }
 
-/* Drag handle: a plain button (not a shadcn Button) so we fully control the
-   pointer gesture. Sized to match the icon-sm buttons beside it. Shown on
-   up-next rows and is the only way to start a reorder. */
+/* Drag handle: plain button for full pointer-gesture control, sized like icon-sm. */
 .qitem__grip {
   display: inline-flex;
   align-items: center;
@@ -358,7 +354,7 @@ const isMobile = computed(() => store.mobileLayout);
   border-radius: 6px;
   color: var(--text-color, currentColor);
   cursor: grab;
-  /* Stop the browser from hijacking the gesture as a scroll on touch. */
+  /* Don't let touch turn the drag into a scroll. */
   touch-action: none;
 }
 
@@ -370,16 +366,13 @@ const isMobile = computed(() => store.mobileLayout);
   );
 }
 
-/* Non-upcoming rows: the handle is present for alignment but can't reorder.
-   A solid muted color (not opacity) so it stays legible even on the already
-   dimmed played rows. */
+/* Non-reorderable rows: solid muted color (not opacity) stays legible when dimmed. */
 .qitem__grip:disabled {
   color: var(--muted-foreground);
   cursor: default;
 }
 
-/* The source row stays in place but invisible while dragging — the floating
-   ghost is its stand-in, and the other rows slide to open the landing gap. */
+/* Source row hides in place; the ghost stands in while dragging. */
 .qitem--dragging {
   opacity: 0;
   pointer-events: none;
@@ -389,9 +382,7 @@ const isMobile = computed(() => store.mobileLayout);
   cursor: grabbing;
 }
 
-/* The floating clone that tracks the pointer. Tinted MA blue (the now-playing
-   accent) so a drag-in-progress reads clearly, and lifted with a soft shadow so
-   it reads as picked-up, not detached. Its own action buttons are hidden. */
+/* Floating drag clone: accent-tinted + shadowed so it reads as picked-up. */
 .qitem--ghost {
   background: var(--primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
