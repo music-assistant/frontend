@@ -29,7 +29,7 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
-export const getMenuItems = function() {
+export const getMenuItems = function () {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   const userMenuItems = store.currentUser?.preferences?.menu_items as
     | string

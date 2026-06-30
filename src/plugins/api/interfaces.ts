@@ -737,7 +737,7 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem { }
+export interface Radio extends MediaItem {}
 
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
