@@ -16,6 +16,7 @@
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
+    :on-icon-click="onIconClick"
   />
 </template>
 
@@ -33,6 +34,7 @@ defineOptions({
 
 const updateAvailable = ref(false);
 const total = ref(store.libraryArtistsCount);
+const showArtistType = ref<ArtistType>(ArtistType.AUTHOR);
 
 const sortKeys = [
   "name",
@@ -47,6 +49,14 @@ const sortKeys = [
   "play_count_desc",
 ];
 
+const onIconClick = function () {
+  if (showArtistType.value === ArtistType.AUTHOR) {
+    showArtistType.value = ArtistType.NARRATOR;
+  } else {
+    showArtistType.value = ArtistType.AUTHOR;
+  }
+};
+
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -59,7 +69,7 @@ const loadItems = async function (params: LoadDataParams) {
     params.albumArtistsFilter,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
-    ArtistType.AUTHOR,
+    showArtistType.value,
   );
 };
 

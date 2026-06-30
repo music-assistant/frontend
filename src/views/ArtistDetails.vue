@@ -184,7 +184,7 @@
         :show-provider-filter="true"
         :single-provider-filter="true"
         :provider-filter-options="mappingProviderIds"
-        :show-album-type-filter="true"
+        :show-album-type-filter="false"
         :show-refresh-button="false"
         :load-items="loadArtistAudiobooks"
         :sort-keys="[
@@ -401,9 +401,11 @@ const loadAllAudiobooks = async function (params: LoadDataParams) {
   const providerId = params.provider?.[0] ?? mappings[0]?.provider_instance;
   const source = mappings.find((m) => m.provider_instance === providerId);
   if (!source) return [];
+  if (!itemDetails.value) return [];
   return await api.getArtistAudiobooks(
     source.item_id,
     source.provider_instance,
+    itemDetails.value.artist_type,
   );
 };
 
