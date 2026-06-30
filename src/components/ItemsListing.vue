@@ -1437,10 +1437,13 @@ const loadData = async function (
   tempHide.value = false;
 };
 
-// Get preferences as a computed ref that updates automatically
-const savedPrefs = getItemsListingPreferences(
-  props.path || props.itemtype,
-  props.itemtype,
+// Re-derive from the current props.path: browse reuses one ItemsListing
+// instance across folders, so a ref bound to the mount-time path would read
+// and reset the wrong folder's saved sort/view settings.
+const savedPrefs = computed(
+  () =>
+    getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
+      .value,
 );
 
 const restoreSettings = async function () {
@@ -1553,6 +1556,18 @@ const keyListener = function (e: KeyboardEvent) {
   if (e.key === "Escape") closeSearch();
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
+
+  // ignore keystrokes typed into another editable element (e.g. the search box
+  // in the player drawer) so we don't steal focus to our own search input.
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  ) {
+    return;
+  }
 
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();

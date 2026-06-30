@@ -1357,7 +1357,6 @@ export interface SmartPlaylistRules {
   excluded_artist_names?: Record<number, string>;
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
-  dedup_hours?: number;
   album_types?: string[];
   excluded_album_types?: string[];
 }

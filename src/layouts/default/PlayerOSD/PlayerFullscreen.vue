@@ -1579,6 +1579,11 @@ watchEffect(() => {
   width: calc(100% / 3);
 }
 
+/* Match the marginless transport icons so the play button stays centred. */
+.media-controls > .queue-btn-wrapper {
+  margin: 0;
+}
+
 .mediacontrols-right {
   display: table-cell;
   text-align: right;

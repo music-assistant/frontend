@@ -735,8 +735,6 @@
         "add_first_filter": "Legg til et filter",
         "add_first_rule": "Legg til en regel",
         "add_rule": "Legg til regel",
-        "filter_inactive": "Inaktiv",
-        "hours_unit": "timer",
         "edited": "«{name}» oppdatert",
         "empty_desc": "Ingen spor oppfyller dine nåværende kriterier. Juster filteret eller velg et annet utgangspunkt for å komme i gang.",
         "empty_title": "Ingenting å spille ennå",
