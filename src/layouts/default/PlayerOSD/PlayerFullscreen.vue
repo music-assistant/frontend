@@ -408,11 +408,11 @@
         <!-- player select button (compact, Spotify-style) -->
         <div
           v-if="showExpandedPlayerSelectButton"
+          class="row"
           style="
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
             padding-bottom: 8px;
             padding-top: 4px;
           "
@@ -1575,12 +1575,16 @@ watchEffect(() => {
   max-width: 100%;
 }
 
-/* Equal-width columns (same idiom as .media-controls-bottom) so the play
-   button stays at the true horizontal centre regardless of each control's
-   content width. */
 .media-controls > div {
-  flex-basis: 0;
-  flex-grow: 1;
+  width: calc(100% / 3);
+}
+
+/* The play button's circle has a fixed 60px width, so its wrapper must centre
+   it — otherwise it left-aligns in its column and drifts off the row centre. */
+.play-btn-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mediacontrols-right {
