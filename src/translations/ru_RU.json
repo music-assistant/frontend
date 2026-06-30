@@ -53,7 +53,6 @@
     "play_now": "Играть сейчас",
     "play_on": "Играть на: {0}",
     "play_playlist_from": "Воспроизвести плейлист отсюда",
-    "play_radio": "Включить радио",
     "player_type": {
         "group": "Группа",
         "player": "Плеер",
@@ -74,8 +73,6 @@
     "queue_next_items": "Следующие элементы",
     "queue_options": "Параметры очереди",
     "queue_previous_items": "Прослушанные элементы",
-    "queue_radio_based_on": "Очередь динамически заполняется треками на основе:",
-    "queue_radio_enabled": "Режим радио включен",
     "radios": "Радио",
     "read_more": "читать далее",
     "refresh_item": "Обновить элемент",

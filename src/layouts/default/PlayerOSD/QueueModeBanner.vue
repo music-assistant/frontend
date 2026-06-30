@@ -1,10 +1,10 @@
 <template>
   <!-- Informational banner that surfaces the queue's "what happens next" mode:
-       an infinite radio mix, or the autoplay on/off state. Rendered inside the
-       fullscreen queue list (just below the "Up next" divider). Mutually
-       exclusive: radio takes precedence, otherwise the autoplay state shows.
-       Collapsible: collapsed shows just the title line (the explanation is
-       hidden); the expanded/collapsed choice is remembered per user. -->
+       dynamic mode (the queue refills itself from its sources) or the autoplay
+       on/off state. Rendered inside the fullscreen queue list (just below the
+       "Up next" divider). Mutually exclusive: dynamic mode takes precedence,
+       otherwise the autoplay state shows. Collapsible: collapsed shows just the
+       title line (the explanation is hidden); the choice is remembered per user. -->
   <div
     v-if="mode"
     class="queue-mode-banner"
@@ -14,8 +14,7 @@
     ]"
   >
     <div class="queue-mode-banner__icon" @click="toggleCollapsed">
-      <RadioTower v-if="mode === 'radio'" :size="collapsed ? 14 : 20" />
-      <InfinityIcon v-else :size="collapsed ? 14 : 20" />
+      <InfinityIcon :size="collapsed ? 14 : 20" />
     </div>
 
     <div class="queue-mode-banner__body">
@@ -23,15 +22,34 @@
         {{ title }}
       </p>
       <p v-if="!collapsed" class="queue-mode-banner__desc">
-        {{ description }}
-        <button
-          v-if="mode === 'autoplay' && canConfigure"
-          type="button"
-          class="queue-mode-banner__link"
-          @click="openQueueSettings"
-        >
-          {{ $t("settings.configure") }}
-        </button>
+        <!-- dynamic mode: name each source (seed) as a link to navigate to it -->
+        <template v-if="mode === 'dynamic' && sources.length">
+          {{ $t("autoplay_dynamic_lead") }}
+          <span
+            v-for="source in sources"
+            :key="source.uri"
+            class="queue-mode-banner__source"
+          >
+            <button
+              type="button"
+              class="queue-mode-banner__source-link"
+              @click="gotoSource(source)"
+            >
+              {{ source.name }}
+            </button>
+          </span>
+        </template>
+        <template v-else>
+          {{ description }}
+          <button
+            v-if="mode === 'autoplay' && canConfigure"
+            type="button"
+            class="queue-mode-banner__link"
+            @click="openQueueSettings"
+          >
+            {{ $t("settings.configure") }}
+          </button>
+        </template>
       </p>
     </div>
 
@@ -80,43 +98,46 @@ import {
 } from "@/components/ui/tooltip";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import type { ItemMapping } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import { ChevronDown, InfinityIcon, RadioTower } from "@lucide/vue";
+import { ChevronDown, InfinityIcon } from "@lucide/vue";
 import { computed } from "vue";
 
-// Shared radio/autoplay state (kept in sync with the header pills).
+// Shared dynamic/autoplay state (kept in sync with the header pills).
 const {
   queue,
-  radioSources,
-  radioModeActive,
+  sources,
+  dynamicModeActive,
   autoplayEnabled,
   autoplayApplicable,
   setAutoplay,
 } = useQueueModes();
 
-// Radio seed names, joined for the description line.
-const radioSeeds = computed(() =>
-  radioSources.value
+// Source (seed) names, joined for the description line.
+const seedNames = computed(() =>
+  sources.value
     .map((source) => source.name)
     .filter(Boolean)
     .join(", "),
 );
 
-// Which mode the banner represents (radio wins; else autoplay; else hidden).
-const mode = computed<"radio" | "autoplay" | null>(() => {
-  if (radioModeActive.value) return "radio";
+// Which mode the banner represents (dynamic wins; else autoplay; else hidden).
+const mode = computed<"dynamic" | "autoplay" | null>(() => {
+  if (dynamicModeActive.value) return "dynamic";
   if (autoplayApplicable.value) return "autoplay";
   return null;
 });
 
 // Active (primary-tinted) vs muted appearance.
-const active = computed(() => mode.value === "radio" || autoplayEnabled.value);
+const active = computed(
+  () => mode.value === "dynamic" || autoplayEnabled.value,
+);
 
 const title = computed(() => {
-  if (mode.value === "radio") return $t("queue_radio_enabled");
+  if (mode.value === "dynamic") return $t("autoplay_dynamic_title");
   if (mode.value === "autoplay")
     return autoplayEnabled.value
       ? $t("autoplay_on_title")
@@ -124,15 +145,21 @@ const title = computed(() => {
   return "";
 });
 
+// Describe the mode, naming the queue's source items when known so the copy
+// reads "…playing <Artist>, <Album>" rather than a generic line.
 const description = computed(() => {
-  if (mode.value === "radio")
-    return radioSeeds.value
-      ? `${$t("queue_radio_based_on")} ${radioSeeds.value}`
-      : $t("radio_explanation");
-  if (mode.value === "autoplay")
-    return autoplayEnabled.value
-      ? $t("autoplay_on_desc")
+  // dynamic mode names its sources as links in the template; this is the
+  // fallback line shown only when there are no named sources.
+  if (mode.value === "dynamic") return $t("autoplay_dynamic_desc");
+  if (mode.value === "autoplay") {
+    if (autoplayEnabled.value)
+      return seedNames.value
+        ? $t("autoplay_on_desc_sources", [seedNames.value])
+        : $t("autoplay_on_desc");
+    return seedNames.value
+      ? $t("autoplay_off_desc_sources", [seedNames.value])
       : $t("autoplay_off_desc");
+  }
   return "";
 });
 
@@ -153,6 +180,15 @@ const openQueueSettings = () => {
   if (!q) return;
   store.showFullscreenPlayer = false;
   router.push(`/settings/editqueue/${q.queue_id}`);
+};
+
+// Navigate to a source item's details page (closing the fullscreen player).
+const gotoSource = (source: ItemMapping) => {
+  store.showFullscreenPlayer = false;
+  router.push({
+    name: source.media_type,
+    params: { itemId: source.item_id, provider: source.provider },
+  });
 };
 </script>
 
@@ -250,6 +286,31 @@ const openQueueSettings = () => {
 }
 
 .queue-mode-banner__link:hover {
+  text-decoration: underline;
+}
+
+/* Source (seed) links in the dynamic-mode description. Spacing/commas come from
+   pseudo-elements so they don't depend on template whitespace. */
+.queue-mode-banner__source:first-of-type::before {
+  content: " ";
+}
+
+.queue-mode-banner__source:not(:last-of-type)::after {
+  content: ", ";
+}
+
+.queue-mode-banner__source-link {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.queue-mode-banner__source-link:hover {
   text-decoration: underline;
 }
 

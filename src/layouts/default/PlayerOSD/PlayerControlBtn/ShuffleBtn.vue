@@ -3,7 +3,11 @@
   <Icon
     v-bind="{ ...icon, ...$attrs }"
     :disabled="
-      !playerQueue || !playerQueue.active || isLoading || isInfiniteStream
+      !playerQueue ||
+      !playerQueue.active ||
+      isLoading ||
+      isInfiniteStream ||
+      isDynamic
     "
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
@@ -57,6 +61,10 @@ const isInfiniteStream = computed(() =>
   isQueueInfiniteStream(compProps.playerQueue),
 );
 
+// In dynamic mode the queue manages its own ordering (smart shuffle is implied),
+// so manual shuffle toggling doesn't apply.
+const isDynamic = computed(() => compProps.playerQueue?.is_dynamic === true);
+
 // Server-derived: shuffle is on with the per-queue smart-shuffle setting, or
 // radio mode is active (the server sets this in both cases). Drives the
 // twinkling smart-shuffle indicator.
@@ -64,11 +72,11 @@ const smartShuffleActive = computed(
   () => compProps.playerQueue?.smart_shuffle_active === true,
 );
 
-// Whether shuffle is in effect at all (plain or smart) — drives the icon choice
-// and the primary highlight.
+// Whether shuffle is enabled — drives the icon choice and the primary
+// highlight. The backend owns the smart/plain relationship, so this stays a
+// pure read of shuffle_enabled (smart state is surfaced via smartShuffleActive).
 const shuffleActive = computed(
-  () =>
-    compProps.playerQueue?.shuffle_enabled === true || smartShuffleActive.value,
+  () => compProps.playerQueue?.shuffle_enabled === true,
 );
 
 // State-aware tooltip reflecting plain vs smart shuffle.

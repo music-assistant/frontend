@@ -357,13 +357,10 @@ const loadOverviewRows = async () => {
     overviewRows.value = [];
   }
 
-  // Fallback: if no overview rows returned, try loading radio base tracks
+  // Fallback: if no overview rows returned, try loading the genre's tracks
   if (overviewRows.value.length === 0) {
     try {
-      const tracks = await api.getGenreRadioBaseTracks(
-        itemDetails.value.item_id,
-        itemDetails.value.provider,
-      );
+      const tracks = await api.getGenreTracks(itemDetails.value.item_id);
       overviewRows.value = [
         {
           title: t("tracks"),
@@ -372,7 +369,7 @@ const loadOverviewRows = async () => {
         },
       ];
     } catch (error) {
-      console.error("Failed to load genre radio base tracks:", error);
+      console.error("Failed to load genre tracks:", error);
       overviewRows.value = [];
     }
   }

@@ -118,7 +118,6 @@ describe("handlePlayBtnClick with sortBy", () => {
     expect(mockPlayMedia).toHaveBeenCalledWith(
       playlist.uri,
       undefined,
-      false,
       track.item_id,
       undefined,
       "name",
@@ -134,7 +133,6 @@ describe("handlePlayBtnClick with sortBy", () => {
     expect(mockPlayMedia).toHaveBeenCalledWith(
       playlist.uri,
       undefined,
-      false,
       track.item_id,
       undefined,
       undefined,
@@ -150,7 +148,6 @@ describe("handlePlayBtnClick with sortBy", () => {
     expect(mockPlayMedia).toHaveBeenCalledWith(
       album.uri,
       undefined,
-      false,
       track.item_id,
       undefined,
       "name",
@@ -173,7 +170,6 @@ describe("handlePlayBtnClick with sortBy", () => {
       expect(mockPlayMedia).toHaveBeenCalledWith(
         playlist.uri,
         undefined,
-        false,
         track.item_id,
         undefined,
         sortKey,

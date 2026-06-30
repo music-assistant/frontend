@@ -1,8 +1,12 @@
 // shared logic to build the per-item context menu for the fullscreen queue list
-import { radioModeSupported } from "@/helpers/radio";
+import {
+  gotoRadio,
+  radioActionLabelKey,
+  radioSupported,
+} from "@/helpers/radio";
 import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
 import api from "@/plugins/api";
-import { MediaType, QueueItem, QueueOption } from "@/plugins/api/interfaces";
+import { MediaType, QueueItem } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
@@ -36,13 +40,13 @@ export const getQueueItemMenuItems = (
     },
   ];
 
-  // start a radio (endless similar-tracks mix) based on this item
+  // go to this item's radio (a dynamic playlist generated from it as the seed)
   const mediaItem = item.media_item;
-  if (mediaItem && radioModeSupported(mediaItem)) {
+  if (mediaItem && radioSupported(mediaItem)) {
     menuItems.push({
-      label: "play_radio",
+      label: radioActionLabelKey(mediaItem),
       labelArgs: [],
-      action: () => api.playMedia([mediaItem.uri], QueueOption.REPLACE, true),
+      action: () => gotoRadio(mediaItem),
       icon: "mdi-radio-tower",
       disabled: false,
     });

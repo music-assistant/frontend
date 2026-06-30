@@ -1230,13 +1230,17 @@ export class MusicAssistantApi {
     });
   }
 
-  public getGenreRadioBaseTracks(
-    item_id: string,
-    provider_instance_id_or_domain: string,
+  public getGenreTracks(
+    item_id: string | number,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
   ): Promise<Track[]> {
-    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+    return this.sendCommand("music/genres/tracks", {
       item_id,
-      provider_instance_id_or_domain,
+      limit,
+      offset,
+      order_by,
     });
   }
 
@@ -1898,7 +1902,6 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
@@ -1916,7 +1919,6 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      radio_mode,
       start_item,
       sort_by,
     });

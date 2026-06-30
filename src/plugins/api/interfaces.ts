@@ -912,7 +912,10 @@ export interface PlayerQueue {
   state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
-  radio_source: MediaItemType[];
+  // The queue's enqueued parent items (its origin), present regardless of mode.
+  // When one or more sources are dynamic, the queue runs in dynamic mode
+  // (is_dynamic), implicitly enabling autoplay and smart shuffle.
+  sources: ItemMapping[];
   enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward

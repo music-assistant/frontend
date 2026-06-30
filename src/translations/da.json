@@ -51,7 +51,6 @@
     "play_now": "Afspil nu",
     "play_on": "Spil på: {0}",
     "play_playlist_from": "Afspil afspilningsliste herfra",
-    "play_radio": "Start radio",
     "player_type": {
         "group": "Gruppe",
         "player": "Afspiller",
@@ -72,8 +71,6 @@
     "queue_next_items": "Næste emner",
     "queue_options": "Indstillinger for kø",
     "queue_previous_items": "Afspillede emner",
-    "queue_radio_based_on": "Køen fyldes dynamisk med spor baseret på {0}:",
-    "queue_radio_enabled": "Radiotilstand er aktiveret",
     "radios": "Radio",
     "read_more": "Læs mere",
     "refresh_item": "Opdater emne",

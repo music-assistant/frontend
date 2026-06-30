@@ -51,7 +51,6 @@
     "play_now": "Predvajaj zdaj",
     "play_on": "Igraj na: {0}",
     "play_playlist_from": "Predvajajte seznam predvajanja od tukaj",
-    "play_radio": "Zaženi radio",
     "player_type": {
         "group": "Skupina",
         "player": "Predvajalnik",
@@ -72,8 +71,6 @@
     "queue_next_items": "Naslednji predmeti",
     "queue_options": "Možnosti čakalne vrste",
     "queue_previous_items": "Predvajani predmeti",
-    "queue_radio_based_on": "Čakalna vrsta se dinamično napolni s skladbami, ki temeljijo na {0}:",
-    "queue_radio_enabled": "Radijski način je omogočen",
     "radios": "Radio",
     "read_more": "preberi več",
     "refresh_item": "Osveži element",
