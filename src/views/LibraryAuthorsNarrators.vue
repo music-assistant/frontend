@@ -7,7 +7,7 @@
     :load-paged-data="loadItems"
     :show-album-artists-only-filter="false"
     :update-available="updateAvailable"
-    :title="$t('authors_and_narrators')"
+    :title="$t('authors_narrators')"
     :allow-key-hooks="true"
     :show-search-button="true"
     :show-genre-filter="true"
