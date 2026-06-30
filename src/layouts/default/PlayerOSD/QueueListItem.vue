@@ -329,6 +329,7 @@ const isMobile = computed(() => store.mobileLayout);
 .qitem__info {
   display: inline-flex;
   align-items: center;
+  margin-right: 8px;
   color: var(--text-color, currentColor);
   cursor: help;
   opacity: 0.5;
