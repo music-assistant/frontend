@@ -55,7 +55,7 @@
         "vue-qrcode-reader": "^5.7.3",
         "vue-router": "5.1.0",
         "vue-sonner": "^2.0.9",
-        "vuetify": "3.12.0",
+        "vuetify": "4.1.2",
         "vuetify-sonner": "^0.4.2",
         "websocket-ts": "2.3.0",
         "zod": "^4.4.3"
