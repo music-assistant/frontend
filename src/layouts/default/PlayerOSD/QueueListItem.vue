@@ -329,7 +329,6 @@ const isMobile = computed(() => store.mobileLayout);
 .qitem__info {
   display: inline-flex;
   align-items: center;
-  /* Match the duration's optical gap to the action buttons. */
   margin-right: 8px;
   color: var(--text-color, currentColor);
   cursor: help;
