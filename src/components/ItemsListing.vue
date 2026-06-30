@@ -1437,10 +1437,13 @@ const loadData = async function (
   tempHide.value = false;
 };
 
-// Get preferences as a computed ref that updates automatically
-const savedPrefs = getItemsListingPreferences(
-  props.path || props.itemtype,
-  props.itemtype,
+// Re-derive from the current props.path: browse reuses one ItemsListing
+// instance across folders, so a ref bound to the mount-time path would read
+// and reset the wrong folder's saved sort/view settings.
+const savedPrefs = computed(
+  () =>
+    getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
+      .value,
 );
 
 const restoreSettings = async function () {
