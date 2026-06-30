@@ -1579,12 +1579,12 @@ watchEffect(() => {
   width: calc(100% / 3);
 }
 
-/* The play button's circle has a fixed 60px width, so its wrapper must centre
-   it — otherwise it left-aligns in its column and drifts off the row centre. */
-.play-btn-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* The transport icons carry no horizontal margin, but the queue button is the
+   only .media-controls-item that picks up its 5/10px margin — pushing the row's
+   right side out and drifting the centred play button left. Zero it so every
+   control is evenly spaced and the play button sits on the true centre. */
+.media-controls > .queue-btn-wrapper {
+  margin: 0;
 }
 
 .mediacontrols-right {
