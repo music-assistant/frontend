@@ -21,7 +21,7 @@
     },
     "dependencies": {
         "@internationalized/date": "3.12.2",
-        "@intlify/unplugin-vue-i18n": "11.1.2",
+        "@intlify/unplugin-vue-i18n": "11.2.4",
         "@lucide/vue": "^1.21.0",
         "@mdi/font": "7.4.47",
         "@scure/base": "^2.2.0",
