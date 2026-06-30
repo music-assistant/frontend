@@ -9,25 +9,21 @@
 <template>
   <div
     class="qitem"
-    :class="[
-      draggable ? 'cursor-grab' : 'cursor-pointer',
-      {
-        'qitem--played': state === 'played',
-        'qitem--playing': state === 'playing',
-        'qitem--buffered': state === 'buffered',
-        'qitem--unavailable': !item.available,
-        'qitem--dragging': dragging,
-        'qitem--ghost': ghost,
-        'qitem--mobile': isMobile,
-      },
-    ]"
+    :class="{
+      'qitem--played': state === 'played',
+      'qitem--playing': state === 'playing',
+      'qitem--buffered': state === 'buffered',
+      'qitem--unavailable': !item.available,
+      'qitem--dragging': dragging,
+      'qitem--ghost': ghost,
+      'qitem--mobile': isMobile,
+    }"
     :data-queue-current="state === 'playing' ? 'true' : undefined"
     role="button"
     tabindex="0"
     @click="emit('click', $event)"
     @contextmenu.prevent="emit('menu', $event)"
     @keydown.enter.prevent="emit('click', $event)"
-    @pointerdown="onRowPointerDown"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
   >
@@ -197,19 +193,10 @@ const artistName = computed(() => {
   return "";
 });
 
-// Only up-next items can be reordered; the floating ghost is never a drag source.
-const draggable = computed(() => props.state === "upcoming" && !props.ghost);
-
 // Mobile layout drops the duration and shows the grip alongside the menu
 // button. Width-based (store.mobileLayout) rather than a hover media query,
 // which isn't reliable in the PWA / device emulation.
 const isMobile = computed(() => store.mobileLayout);
-
-// Desktop drives a whole-row drag with the mouse; touch reorders via the grip.
-const onRowPointerDown = (event: PointerEvent) => {
-  if (!draggable.value || event.pointerType !== "mouse") return;
-  emit("dragstart", event);
-};
 </script>
 
 <style scoped>
@@ -219,6 +206,7 @@ const onRowPointerDown = (event: PointerEvent) => {
   gap: 12px;
   padding: 6px 8px;
   border-radius: 8px;
+  cursor: pointer;
   color: var(--text-color, currentColor);
   transition:
     background-color 0.12s ease,
@@ -359,7 +347,7 @@ const onRowPointerDown = (event: PointerEvent) => {
 
 /* Drag handle: a plain button (not a shadcn Button) so we fully control the
    pointer gesture. Sized to match the icon-sm buttons beside it. Shown on
-   up-next rows; the whole row is also draggable on desktop. */
+   up-next rows and is the only way to start a reorder. */
 .qitem__grip {
   display: inline-flex;
   align-items: center;
