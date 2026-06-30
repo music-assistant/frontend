@@ -1557,6 +1557,18 @@ const keyListener = function (e: KeyboardEvent) {
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
+  // ignore keystrokes typed into another editable element (e.g. the search box
+  // in the player drawer) so we don't steal focus to our own search input.
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  ) {
+    return;
+  }
+
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
