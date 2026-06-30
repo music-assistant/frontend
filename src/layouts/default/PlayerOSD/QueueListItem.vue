@@ -87,7 +87,7 @@
       />
       <!-- Fixed-width slot the duration and the action buttons share: on desktop
            the duration shows by default and is swapped for the menu on hover;
-           on mobile there's no duration, just the grip. -->
+           on mobile there's no duration and the buttons stay visible. -->
       <div class="qitem__trailing">
         <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
         <div class="qitem__actions">
@@ -103,9 +103,8 @@
           >
             <GripVerticalIcon class="size-4" />
           </button>
-          <!-- context menu button (desktop only; touch uses a long press) -->
+          <!-- context menu button -->
           <Button
-            v-if="!isMobile"
             variant="ghost"
             size="icon-sm"
             class="qitem__menu"
@@ -144,7 +143,7 @@ import {
   InfoIcon,
   TriangleAlertIcon,
 } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, ref } from "vue";
 
 export type QueueItemState = "played" | "playing" | "buffered" | "upcoming";
 
@@ -203,74 +202,16 @@ const artistName = computed(() => {
 // Only up-next items can be reordered; the floating ghost is never a drag source.
 const draggable = computed(() => props.state === "upcoming" && !props.ghost);
 
-// Mobile layout drops the duration, shows only the grip, and reaches the
-// context menu via long-press. Width-based (store.mobileLayout) rather than a
-// hover media query, which isn't reliable in the PWA / device emulation.
+// Mobile layout drops the duration and shows the grip alongside the menu
+// button. Width-based (store.mobileLayout) rather than a hover media query,
+// which isn't reliable in the PWA / device emulation.
 const isMobile = computed(() => store.mobileLayout);
 
-const LONG_PRESS_MS = 450;
-// Pointer travel (px) that turns a long press into a scroll and cancels it.
-const LONG_PRESS_MOVE = 10;
-
-let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-let longPressAbort: AbortController | null = null;
-
-const cancelLongPress = () => {
-  if (longPressTimer !== null) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  longPressAbort?.abort();
-  longPressAbort = null;
-};
-
-// Touch: a long press (no scroll) opens the context menu, since the menu button
-// is hidden on touch. The native long-press menu is suppressed for the duration
-// of the press so it can't fire on top of ours.
-const startLongPress = (event: PointerEvent) => {
-  cancelLongPress();
-  const startX = event.clientX;
-  const startY = event.clientY;
-  longPressAbort = new AbortController();
-  const { signal } = longPressAbort;
-  window.addEventListener(
-    "pointermove",
-    (e: PointerEvent) => {
-      if (
-        Math.hypot(e.clientX - startX, e.clientY - startY) > LONG_PRESS_MOVE
-      ) {
-        cancelLongPress();
-      }
-    },
-    { passive: true, signal },
-  );
-  window.addEventListener("pointerup", cancelLongPress, { signal });
-  window.addEventListener("pointercancel", cancelLongPress, { signal });
-  window.addEventListener(
-    "contextmenu",
-    (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-    },
-    { capture: true, signal },
-  );
-  longPressTimer = setTimeout(() => {
-    longPressTimer = null;
-    emit("menu", event);
-  }, LONG_PRESS_MS);
-};
-
-// Desktop drives a whole-row drag with the mouse; touch arms a long press.
+// Desktop drives a whole-row drag with the mouse; touch reorders via the grip.
 const onRowPointerDown = (event: PointerEvent) => {
-  if (props.ghost) return;
-  if (event.pointerType === "mouse") {
-    if (draggable.value) emit("dragstart", event);
-    return;
-  }
-  startLongPress(event);
+  if (!draggable.value || event.pointerType !== "mouse") return;
+  emit("dragstart", event);
 };
-
-onBeforeUnmount(cancelLongPress);
 </script>
 
 <style scoped>
@@ -285,7 +226,6 @@ onBeforeUnmount(cancelLongPress);
     background-color 0.12s ease,
     opacity 0.12s ease;
   user-select: none;
-  -webkit-touch-callout: none;
 }
 
 .qitem:hover {
