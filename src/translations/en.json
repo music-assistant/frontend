@@ -262,7 +262,11 @@
                 "save": "Save DSP Preset",
                 "name": "Preset Name",
                 "name_placeholder": "My new preset",
-                "remove_confirm": "Are you sure you want to remove this DSP preset?"
+                "remove_confirm": "Are you sure you want to remove this DSP preset?",
+                "selected_preset": {
+                    "clean": "Preset: {0}",
+                    "modified": "Preset: {0} (modified)"
+                },
             }
         },
         "dsp_enabled": "DSP is enabled",
