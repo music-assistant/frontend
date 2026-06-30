@@ -23,10 +23,6 @@ interface QueueDragReorderOptions {
 export function useQueueDragReorder(options: QueueDragReorderOptions) {
   const { scrollEl, getVirtualItems, itemAt, onDragStart } = options;
 
-  // Pointer travel (px) before an armed press turns into a reorder drag, so a
-  // plain click/press on a row doesn't move anything.
-  const DRAG_THRESHOLD = 4;
-
   // Absolute index of the row being dragged (null when idle) and the index the
   // item would be inserted *before* on drop. While dragging, the source row
   // hides in place, a floating ghost follows the pointer, and the rows between
@@ -53,14 +49,6 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
   let autoScrollRaf = 0;
   // Lets cleanup detach every drag listener at once (no per-handler bookkeeping).
   let dragAbort: AbortController | null = null;
-  // An armed-but-not-yet-engaged drag: captured on pointerdown, promoted to a
-  // real drag once the pointer passes DRAG_THRESHOLD.
-  let pendingDrag: {
-    index: number;
-    startX: number;
-    startY: number;
-    target: HTMLElement | null;
-  } | null = null;
 
   const totalItems = () => store.activePlayerQueue?.items ?? 0;
 
@@ -141,14 +129,7 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
   }
 
   const onDragPointerMove = (evt: PointerEvent) => {
-    // Still armed: engage the drag only once the pointer passes the threshold.
-    if (dragSourceIndex.value == null) {
-      if (!pendingDrag) return;
-      const dx = evt.clientX - pendingDrag.startX;
-      const dy = evt.clientY - pendingDrag.startY;
-      if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-      beginActiveDrag(evt.clientY);
-    }
+    if (dragSourceIndex.value == null) return;
     evt.preventDefault();
     updateAutoScroll(evt.clientY);
     updateDragPositions(evt.clientY);
@@ -166,7 +147,6 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     dragRowHeight.value = 0;
     dragGrabOffset = 0;
     dragItemId = null;
-    pendingDrag = null;
   };
 
   const finishDrag = (commit: boolean) => {
@@ -185,78 +165,50 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     api.queueCommandMoveItem(queue.queue_id, itemId, shift);
   };
 
-  // Promote the armed press to a live drag once the threshold is crossed.
-  // Measures the grabbed item so the ghost lines up under the pointer and the
-  // gap the other rows open matches the item's height. Falls back to the
-  // virtualizer's measurement if the element can't be resolved.
-  const beginActiveDrag = (clientY: number) => {
-    const armed = pendingDrag;
-    if (!armed) return;
-    const item = itemAt(armed.index);
-    if (!item) {
-      cleanupDrag();
-      return;
-    }
-
-    const el = scrollEl.value;
-    const qitemEl = armed.target?.closest(".qitem");
-    if (el && qitemEl) {
-      const cRect = el.getBoundingClientRect();
-      const qRect = qitemEl.getBoundingClientRect();
-      const qTop = qRect.top - cRect.top + el.scrollTop;
-      dragRowHeight.value = qRect.height;
-      dragGrabOffset = armed.startY - cRect.top + el.scrollTop - qTop;
-      ghostY.value = qTop;
-    } else {
-      const vItem = getVirtualItems().find((v) => v.index === armed.index);
-      dragRowHeight.value = vItem?.size ?? 60;
-      dragGrabOffset = dragRowHeight.value / 2;
-      ghostY.value = (vItem?.start ?? 0) + dragRowHeight.value / 2;
-    }
-
-    dragSourceIndex.value = armed.index;
-    dragDropIndex.value = armed.index;
-    draggedItem.value = item;
-    dragItemId = item.queue_item_id;
-    dragPointerY = clientY;
-    autoScrollSpeed = 0;
-    onDragStart?.();
-    autoScrollRaf = requestAnimationFrame(autoScrollFrame);
-  };
-
-  const onDragPointerUp = () => {
-    // Released before crossing the threshold → it was a click, not a drag.
-    if (dragSourceIndex.value == null) {
-      cleanupDrag();
-      return;
-    }
-    finishDrag(true);
-  };
-
-  // Arm a drag from a row (whole-row on desktop) or the drag handle (touch).
-  // The reorder only engages once the pointer passes DRAG_THRESHOLD.
+  // Begin dragging an up-next row from its drag handle.
   const startItemDrag = (evt: PointerEvent, index: number) => {
     // Primary mouse button / touch / pen only.
     if (evt.pointerType === "mouse" && evt.button !== 0) return;
     const item = itemAt(index);
     if (!item || index < firstReorderableIndex()) return;
 
-    pendingDrag = {
-      index,
-      startX: evt.clientX,
-      startY: evt.clientY,
-      target: evt.target as HTMLElement | null,
-    };
+    // Measure the grabbed item so the ghost lines up under the finger and the
+    // gap the other rows open matches the item's height. Fall back to the
+    // virtualizer's measurement if the element can't be resolved.
+    const el = scrollEl.value;
+    const qitemEl = (evt.target as HTMLElement | null)?.closest(".qitem");
+    if (el && qitemEl) {
+      const cRect = el.getBoundingClientRect();
+      const qRect = qitemEl.getBoundingClientRect();
+      const qTop = qRect.top - cRect.top + el.scrollTop;
+      dragRowHeight.value = qRect.height;
+      dragGrabOffset = evt.clientY - cRect.top + el.scrollTop - qTop;
+      ghostY.value = qTop;
+    } else {
+      const vItem = getVirtualItems().find((v) => v.index === index);
+      dragRowHeight.value = vItem?.size ?? 60;
+      dragGrabOffset = dragRowHeight.value / 2;
+      ghostY.value = (vItem?.start ?? 0) + dragRowHeight.value / 2;
+    }
+
+    dragSourceIndex.value = index;
+    dragDropIndex.value = index;
+    draggedItem.value = item;
+    dragItemId = item.queue_item_id;
+    dragPointerY = evt.clientY;
+    autoScrollSpeed = 0;
+    onDragStart?.();
     dragAbort = new AbortController();
     const { signal } = dragAbort;
     window.addEventListener("pointermove", onDragPointerMove, {
       passive: false,
       signal,
     });
-    window.addEventListener("pointerup", onDragPointerUp, { signal });
+    window.addEventListener("pointerup", () => finishDrag(true), { signal });
     window.addEventListener("pointercancel", () => finishDrag(false), {
       signal,
     });
+    autoScrollRaf = requestAnimationFrame(autoScrollFrame);
   };
 
   // Index of the row currently being dragged (the hidden source row).

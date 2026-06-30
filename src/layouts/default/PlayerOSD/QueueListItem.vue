@@ -311,7 +311,6 @@ const isMobile = computed(() => store.mobileLayout);
 
 .qitem__duration {
   flex: 0 0 auto;
-  margin-right: 6px;
   white-space: nowrap;
   font-size: var(--queue-subtitle-size, 0.78rem);
   opacity: 0.7;
@@ -371,9 +370,11 @@ const isMobile = computed(() => store.mobileLayout);
   );
 }
 
-/* Non-upcoming rows: the handle is present for alignment but can't reorder. */
+/* Non-upcoming rows: the handle is present for alignment but can't reorder.
+   A solid muted color (not opacity) so it stays legible even on the already
+   dimmed played rows. */
 .qitem__grip:disabled {
-  opacity: 0.4;
+  color: var(--muted-foreground);
   cursor: default;
 }
 
