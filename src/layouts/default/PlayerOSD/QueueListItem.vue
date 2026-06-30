@@ -86,10 +86,9 @@
       <!-- Fixed-width slot so the menu stays aligned whether or not a row has a
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
-        <!-- drag handle to reorder. Shown active on up-next items; shown
-             disabled/grayed on already-played items (can't be reordered). -->
+        <!-- drag handle to reorder. Active on up-next items; disabled/grayed on
+             every other row (now playing, buffered, played can't be reordered). -->
         <button
-          v-if="state === 'upcoming' || state === 'played'"
           type="button"
           class="qitem__grip"
           :disabled="state !== 'upcoming'"
@@ -372,7 +371,7 @@ const isMobile = computed(() => store.mobileLayout);
   );
 }
 
-/* Already-played rows: the handle is present for alignment but can't reorder. */
+/* Non-upcoming rows: the handle is present for alignment but can't reorder. */
 .qitem__grip:disabled {
   opacity: 0.4;
   cursor: default;
