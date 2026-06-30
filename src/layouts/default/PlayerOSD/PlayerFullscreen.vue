@@ -408,11 +408,11 @@
         <!-- player select button (compact, Spotify-style) -->
         <div
           v-if="showExpandedPlayerSelectButton"
-          class="row"
           style="
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100%;
             padding-bottom: 8px;
             padding-top: 4px;
           "
