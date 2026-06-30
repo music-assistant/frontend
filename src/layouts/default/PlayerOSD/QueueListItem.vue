@@ -85,36 +85,34 @@
         v-if="!item.available"
         class="size-4 shrink-0 text-destructive"
       />
-      <!-- Fixed-width slot the duration and the action buttons share: on desktop
-           the duration shows by default and is swapped for the menu on hover;
-           on mobile there's no duration and the buttons stay visible. -->
-      <div class="qitem__trailing">
-        <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
-        <div class="qitem__actions">
-          <!-- drag handle to reorder (touch only; desktop drags the whole row) -->
-          <button
-            v-if="isMobile && state === 'upcoming'"
-            type="button"
-            class="qitem__grip"
-            :aria-label="$t('queue_reorder')"
-            @pointerdown.stop.prevent="emit('dragstart', $event)"
-            @click.stop
-            @contextmenu.prevent
-          >
-            <GripVerticalIcon class="size-4" />
-          </button>
-          <!-- context menu button -->
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            class="qitem__menu"
-            :aria-label="$t('queue_options')"
-            @click.stop="emit('menu', $event)"
-            @pointerdown.stop
-          >
-            <EllipsisVerticalIcon class="size-4" />
-          </Button>
-        </div>
+      <!-- duration sits to the left of the always-visible action buttons -->
+      <span class="qitem__duration">{{ formatDuration(item.duration) }}</span>
+      <!-- Fixed-width slot so the menu stays aligned whether or not a row has a
+           grip (only up-next rows are reorderable). -->
+      <div class="qitem__actions">
+        <!-- drag handle to reorder (up-next items only) -->
+        <button
+          v-if="state === 'upcoming'"
+          type="button"
+          class="qitem__grip"
+          :aria-label="$t('queue_reorder')"
+          @pointerdown.stop.prevent="emit('dragstart', $event)"
+          @click.stop
+          @contextmenu.prevent
+        >
+          <GripVerticalIcon class="size-4" />
+        </button>
+        <!-- context menu button -->
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          class="qitem__menu"
+          :aria-label="$t('queue_options')"
+          @click.stop="emit('menu', $event)"
+          @pointerdown.stop
+        >
+          <EllipsisVerticalIcon class="size-4" />
+        </Button>
       </div>
     </div>
   </div>
@@ -322,49 +320,24 @@ const onRowPointerDown = (event: PointerEvent) => {
   gap: 4px;
 }
 
-/* The duration and the action buttons share this fixed-width slot (2 × 2rem +
-   gap), both pinned to the right edge so nothing shifts when they swap. */
-.qitem__trailing {
-  position: relative;
-  flex: 0 0 auto;
-  width: calc(4rem + 4px);
-  height: 2rem;
-}
-
 .qitem__duration {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex: 0 0 auto;
+  margin-right: 6px;
   white-space: nowrap;
   font-size: var(--queue-subtitle-size, 0.78rem);
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
-  pointer-events: none;
 }
 
+/* Fixed-width (2 × 2rem + gap) and right-aligned, so the menu keeps the same
+   position whether or not a row has a grip. */
 .qitem__actions {
-  position: absolute;
-  inset: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Desktop: swap the duration out for the action buttons on hover/focus. */
-.qitem:hover .qitem__duration,
-.qitem:focus-within .qitem__duration {
-  opacity: 0;
-}
-
-.qitem:hover .qitem__actions,
-.qitem:focus-within .qitem__actions {
-  opacity: 1;
-  pointer-events: auto;
+  width: calc(4rem + 4px);
 }
 
 .qitem__info {
@@ -379,20 +352,14 @@ const onRowPointerDown = (event: PointerEvent) => {
   opacity: 0.85;
 }
 
-/* Mobile layout: no duration, and the grip stays visible (the menu button isn't
-   rendered — the context menu opens on long-press). */
+/* Mobile layout drops the duration; the grip + menu stay visible. */
 .qitem--mobile .qitem__duration {
   display: none;
 }
 
-.qitem--mobile .qitem__actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 /* Drag handle: a plain button (not a shadcn Button) so we fully control the
-   pointer gesture. Sized to match the icon-sm buttons beside it. Rendered only
-   in the mobile layout — desktop drags the whole row instead. */
+   pointer gesture. Sized to match the icon-sm buttons beside it. Shown on
+   up-next rows; the whole row is also draggable on desktop. */
 .qitem__grip {
   display: inline-flex;
   align-items: center;
