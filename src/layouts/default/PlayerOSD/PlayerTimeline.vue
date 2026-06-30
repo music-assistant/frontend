@@ -338,7 +338,6 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   api.playMedia(
     store.curQueueItem.media_item.uri,
     undefined,
-    undefined,
     chapter.position.toString(),
   );
 };

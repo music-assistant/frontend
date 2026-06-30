@@ -751,21 +751,12 @@ export const handlePlayBtnClick = function (
       store.activePlayerQueue
     ) {
       // special case: playing a track from a playlist/album - play from here
-      api.playMedia(
-        parentItem.uri,
-        undefined,
-        false,
-        item.item_id,
-        undefined,
-        sortBy,
-      );
+      api.playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy);
 
       return;
     }
     // else: play the item directly
-    api
-      .playMedia(item, undefined, undefined, undefined, undefined)
-      .then(() => {});
+    api.playMedia(item).then(() => {});
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);

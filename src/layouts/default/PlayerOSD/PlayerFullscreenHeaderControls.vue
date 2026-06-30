@@ -113,33 +113,41 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- radio mode (infinite mix): non-interactive indicator, only shown while
-         radio is actually active. Tooltip explains what the mix is based on. -->
-    <TooltipProvider v-if="radioModeActive" :delay-duration="200">
+    <!-- dynamic mode: autoplay is implicitly on and the queue refills itself
+         from its sources. Non-interactive indicator; the tooltip names the
+         seeds it is based on. -->
+    <TooltipProvider v-if="dynamicModeActive" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
             as="span"
             variant="outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="['cursor-default', pillClass]"
-            :aria-label="$t('radio')"
+            :class="[
+              pillClass,
+              'cursor-default border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90',
+            ]"
+            :aria-label="$t('autoplay')"
           >
-            <RadioTower :size="16" />
-            <span v-if="showLabel">{{ $t("radio") }}</span>
+            <InfinityIcon :size="16" />
+            <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-          <p class="font-medium">{{ $t("radio_active") }}</p>
+          <p class="font-medium">{{ $t("autoplay_dynamic_title") }}</p>
           <p class="mt-1 opacity-80">
-            {{ radioSources.map((source) => source.name).join(", ") }}
+            {{
+              seedNames
+                ? `${$t("autoplay_dynamic_lead")} ${seedNames}`
+                : $t("autoplay_dynamic_desc")
+            }}
           </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
 
-    <!-- autoplay: direct toggle (primary while enabled). Hidden while radio is
-         active or for infinite streams (autoplay is moot there). -->
+    <!-- autoplay: direct toggle (primary while enabled). Hidden while dynamic
+         mode is active or for infinite streams (autoplay is moot there). -->
     <TooltipProvider v-if="autoplayApplicable && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
@@ -257,7 +265,6 @@ import {
   MicVocal,
   Minus,
   Plus,
-  RadioTower,
 } from "@lucide/vue";
 import { computed, ref } from "vue";
 
@@ -279,15 +286,24 @@ const lyricsTooltip = computed(() =>
     : $t("lyrics_unavailable_song"),
 );
 
-// Shared radio/autoplay state (also used by the queue mode banner).
+// Shared dynamic/autoplay state (also used by the queue mode banner).
 const {
   queue,
-  radioSources,
-  radioModeActive,
+  sources,
+  dynamicModeActive,
   autoplayEnabled,
   autoplayApplicable,
   setAutoplay,
 } = useQueueModes();
+
+// Source (seed) names for the dynamic-mode tooltip (plain text — the tooltip
+// can't host links, so the banner is where they're clickable).
+const seedNames = computed(() =>
+  sources.value
+    .map((source) => source.name)
+    .filter(Boolean)
+    .join(", "),
+);
 
 // local open-state so we can render a shared scrim behind whichever popout shows
 const offsetOpen = ref(false);

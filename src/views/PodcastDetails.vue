@@ -118,7 +118,7 @@ const onMenu = function (
 
 const onClick = function (item: MediaItemType, posX: number, posY: number) {
   if (!itemDetails.value || !itemIsAvailable(item)) return;
-  api.playMedia(itemDetails.value.uri, undefined, undefined, item.uri);
+  api.playMedia(itemDetails.value.uri, undefined, item.uri);
 };
 
 const loadPodcastEpisodes = async function (params: LoadDataParams) {

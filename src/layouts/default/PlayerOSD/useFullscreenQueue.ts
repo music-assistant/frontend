@@ -266,12 +266,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   };
 
   const chapterClicked = (item: MediaItemType, chapter: MediaItemChapter) => {
-    api.playMedia(
-      item.uri,
-      QueueOption.PLAY,
-      undefined,
-      chapter.position.toString(),
-    );
+    api.playMedia(item.uri, QueueOption.PLAY, chapter.position.toString());
   };
 
   // ---- drag-to-reorder (up-next items only) --------------------------------

@@ -53,7 +53,6 @@
     "play_now": "Spill nå",
     "play_on": "Spill på: {0}",
     "play_playlist_from": "Spill av Spilleliste herfra",
-    "play_radio": "Start Radio",
     "player_type": {
         "group": "Gruppe",
         "player": "Spiller",
@@ -74,8 +73,6 @@
     "queue_next_items": "Neste elementer",
     "queue_options": "Alternativer for spillekøen",
     "queue_previous_items": "Avspilte elementer",
-    "queue_radio_based_on": "Spillekøen fylles dynamisk med spor basert på {0}:",
-    "queue_radio_enabled": "Radiomodus er aktivert",
     "radios": "Radio",
     "read_more": "Les mer",
     "refresh_item": "Oppdater element",

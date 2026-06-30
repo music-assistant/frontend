@@ -11,16 +11,6 @@ import {
 } from "./interfaces";
 
 /**
- * Returns true when the given queue is currently playing a single dynamic playlist.
- * In that case, shuffle, repeat, radio mode, and don't-stop-the-music should be hidden.
- */
-export const isQueueDynamicPlaylist = function (
-  queue: PlayerQueue | undefined,
-): boolean {
-  return queue?.is_dynamic ?? false;
-};
-
-/**
  * Returns true when the queue's current item is an infinite stream
  * (radio station or AudioSource). Shuffle and repeat don't apply in that case.
  */

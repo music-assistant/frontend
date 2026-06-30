@@ -207,7 +207,12 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
-import { radioModeSupported } from "@/helpers/radio";
+import {
+  gotoRadio,
+  radioActionLabelKey,
+  radioRelevant,
+  radioSupported,
+} from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
 import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -364,22 +369,6 @@ export const showPlayMenuForMediaItem = async function (
     "player_queues",
     enqueueConfigKey,
   )) as QueueOption;
-  // Start Radio
-  if (radioModeSupported(firstItem)) {
-    playMenuItems.push({
-      label: "play_radio",
-      action: () => {
-        api.playMedia(
-          playableItems.map((x) => x.uri),
-          QueueOption.REPLACE,
-          true,
-        );
-      },
-      icon: RadioTower,
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -530,6 +519,22 @@ export const getContextMenuItems = async function (
         });
       },
       icon: Disc3,
+    });
+  }
+
+  // go to <type> radio (a dynamic playlist generated from this item as the
+  // seed); shown for radio-capable types, disabled when one can't be generated
+  if (
+    items.length === 1 &&
+    radioRelevant(firstItem) &&
+    itemIsAvailable(firstItem)
+  ) {
+    contextMenuItems.push({
+      label: radioActionLabelKey(firstItem),
+      labelArgs: [],
+      action: () => gotoRadio(firstItem),
+      icon: RadioTower,
+      disabled: !radioSupported(firstItem),
     });
   }
 
@@ -1069,7 +1074,6 @@ export const getPlaybackContextMenuItems = async function (
           api.playMedia(
             parentItem.uri,
             undefined,
-            false,
             playableItems[0].item_id,
             undefined,
             sortBy,
@@ -1088,7 +1092,6 @@ export const getPlaybackContextMenuItems = async function (
           api.playMedia(
             parentItem.uri,
             undefined,
-            false,
             firstItem.item_id,
             undefined,
             sortBy,
@@ -1104,7 +1107,7 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+          api.playMedia(parentItem.uri, undefined, firstItem.item_id);
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1125,23 +1128,6 @@ export const getPlaybackContextMenuItems = async function (
         );
       },
       icon: PlayCircle,
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
-
-  // Start Radio
-  if (radioModeSupported(firstItem)) {
-    playMenuItems.push({
-      label: "play_radio",
-      action: () => {
-        api.playMedia(
-          items.map((x) => x.uri),
-          QueueOption.REPLACE,
-          true,
-        );
-      },
-      icon: RadioTower,
       labelArgs: [],
       disabled: !store.activePlayer,
     });
