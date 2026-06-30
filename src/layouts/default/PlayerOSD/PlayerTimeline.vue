@@ -4,7 +4,7 @@
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
-        class="relative flex items-center select-none touch-none w-full h-5 mb-2"
+        class="relative flex items-center select-none touch-none w-full h-8"
         :disabled="!canSeek"
         :min="0"
         :max="store.activePlayer?.current_media?.duration ?? 0"
