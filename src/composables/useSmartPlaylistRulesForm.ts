@@ -83,7 +83,6 @@ export function useSmartPlaylistRulesForm(
 ) {
   const mode = ref<SmartPlaylistMode>("library");
   const logic = ref<"AND" | "OR">("AND");
-  const dedupHours = ref<number | undefined>(undefined);
 
   const libraryRules = ref<RuleRow[]>([]);
   const seedRules = ref<RuleRow[]>([]);
@@ -173,7 +172,7 @@ export function useSmartPlaylistRulesForm(
   }, 600);
 
   watch(
-    [libraryRules, seedRules, mode, logic, dedupHours, seedItems.seeds],
+    [libraryRules, seedRules, mode, logic, seedItems.seeds],
     () => {
       _updateTrackCount();
     },
@@ -208,7 +207,6 @@ export function useSmartPlaylistRulesForm(
       const isSeed = seedEntries.length > 0;
       mode.value = isSeed ? "seed" : "library";
       logic.value = initial.logic ?? "AND";
-      dedupHours.value = initial.dedup_hours ?? undefined;
 
       const fresh: RuleRow[] = [];
 
@@ -436,7 +434,6 @@ export function useSmartPlaylistRulesForm(
       limit: DEFAULT_LIMIT,
       year_from: yr?.yearFrom ?? undefined,
       year_to: yr?.yearTo ?? undefined,
-      dedup_hours: dedupHours.value,
       album_types: albumTypeInclude
         .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
         .filter((x): x is string => !!x),
@@ -576,7 +573,6 @@ export function useSmartPlaylistRulesForm(
   return {
     mode,
     logic,
-    dedupHours,
     rules,
     invalidRuleUids,
     seedInvalid,
