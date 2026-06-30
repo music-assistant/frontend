@@ -1575,8 +1575,12 @@ watchEffect(() => {
   max-width: 100%;
 }
 
+/* Equal-width columns (same idiom as .media-controls-bottom) so the play
+   button stays at the true horizontal centre regardless of each control's
+   content width. */
 .media-controls > div {
-  width: calc(100% / 3);
+  flex-basis: 0;
+  flex-grow: 1;
 }
 
 .mediacontrols-right {
