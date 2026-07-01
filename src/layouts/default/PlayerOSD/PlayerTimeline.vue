@@ -362,7 +362,7 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   opacity: 0.6;
   display: flex;
   flex: 1 1 auto;
-  margin-top: -10px;
+  margin-top: -6px;
   margin-bottom: 5px;
 }
 .time-text-row > div {
