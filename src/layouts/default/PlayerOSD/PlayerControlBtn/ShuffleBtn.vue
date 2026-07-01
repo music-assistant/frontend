@@ -11,6 +11,7 @@
     "
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
+    :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="
       api.queueCommandShuffle(
@@ -79,11 +80,22 @@ const shuffleActive = computed(
   () => compProps.playerQueue?.shuffle_enabled === true,
 );
 
-// State-aware tooltip reflecting plain vs smart shuffle.
+// State-aware tooltip. In dynamic mode the button is disabled and shuffle is
+// managed by the queue, so explain that rather than offering a toggle.
 const shuffleTitle = computed(() => {
+  if (isDynamic.value) return $t("shuffle_dynamic_active");
   if (smartShuffleActive.value) return $t("shuffle_smart_active");
   return compProps.playerQueue?.shuffle_enabled
     ? $t("shuffle_disable")
     : $t("shuffle_enable");
 });
 </script>
+
+<style scoped>
+/* Disabled icons drop pointer events (so no tooltip), but in dynamic mode we
+   want the title to explain why shuffle is unavailable. Re-enable hover just for
+   that case; the Icon still guards the click itself. */
+.icon-container--disabled[data-dynamic] {
+  pointer-events: auto;
+}
+</style>

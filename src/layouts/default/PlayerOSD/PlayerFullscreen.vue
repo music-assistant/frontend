@@ -28,10 +28,7 @@
           <PlayerFullscreenHeaderControls
             :lyrics-state="lyricsState"
             :lyrics-active="lyricsActive"
-            :show-lyrics-offset="showLyricsOffset"
-            :lyrics-offset-display="lyricsOffsetDisplay"
             @toggle-lyrics="toggleLyrics"
-            @offset-press="startRepeatingOffset"
           />
 
           <Button
@@ -447,6 +444,7 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
+import { useLyricsOffset } from "@/composables/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
@@ -461,6 +459,7 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
@@ -486,6 +485,7 @@ import { ChevronDownIcon, EllipsisVerticalIcon, Heart } from "@lucide/vue";
 import Color from "color";
 import {
   computed,
+  markRaw,
   onBeforeUnmount,
   onMounted,
   ref,
@@ -589,6 +589,28 @@ watch(lyricsState, (state) => {
   }
 });
 
+// The right column shows either the queue or the lyrics, never both (lyrics
+// render on top of the queue's slot). Keep the two toggles mutually exclusive
+// so each button visibly swaps the panel instead of silently flipping a hidden
+// state. Opening lyrics remembers whether the queue was showing so closing them
+// returns there rather than to the bare artwork.
+let queueVisibleBeforeLyrics = false;
+watch(showLyrics, (active) => {
+  if (active) {
+    queueVisibleBeforeLyrics = store.showQueueItems;
+    store.showQueueItems = false;
+  } else if (queueVisibleBeforeLyrics) {
+    store.showQueueItems = true;
+    queueVisibleBeforeLyrics = false;
+  }
+});
+watch(
+  () => store.showQueueItems,
+  (active) => {
+    if (active) showLyrics.value = false;
+  },
+);
+
 // Whether the right-hand column (queue list or lyrics) is visible. Used to
 // collapse the media details column on small/narrow screens.
 const showRightColumn = computed(
@@ -642,52 +664,9 @@ const showLyricsOffset = computed(() => {
   return !ACCURATE_TIME_PROTOCOLS.includes(domain);
 });
 
-// Lyrics latency offset, in seconds. Adjustable via the lyrics sync pill in
-// the header; persists across tracks within the session.
-const lyricsOffset = ref(0);
-
-const lyricsOffsetDisplay = computed(() => {
-  const val = lyricsOffset.value;
-  const sign = val > 0 ? "+" : "";
-  return `${sign}${val.toFixed(1)}`;
-});
-
-const adjustLyricsOffset = (delta: number) => {
-  const next = Math.round((lyricsOffset.value + delta) * 10) / 10;
-  lyricsOffset.value = Math.max(-9.9, Math.min(9.9, next));
-};
-
-// Press-and-hold: first step on press, then accelerate after a short delay.
-let offsetHoldDelay: number | null = null;
-let offsetHoldInterval: number | null = null;
-
-const stopRepeatingOffset = () => {
-  if (offsetHoldDelay !== null) {
-    clearTimeout(offsetHoldDelay);
-    offsetHoldDelay = null;
-  }
-  if (offsetHoldInterval !== null) {
-    clearInterval(offsetHoldInterval);
-    offsetHoldInterval = null;
-  }
-  window.removeEventListener("mouseup", stopRepeatingOffset);
-  window.removeEventListener("touchend", stopRepeatingOffset);
-  window.removeEventListener("touchcancel", stopRepeatingOffset);
-};
-
-const startRepeatingOffset = (delta: number) => {
-  stopRepeatingOffset();
-  adjustLyricsOffset(delta);
-  offsetHoldDelay = window.setTimeout(() => {
-    offsetHoldInterval = window.setInterval(
-      () => adjustLyricsOffset(delta),
-      80,
-    );
-  }, 400);
-  window.addEventListener("mouseup", stopRepeatingOffset);
-  window.addEventListener("touchend", stopRepeatingOffset);
-  window.addEventListener("touchcancel", stopRepeatingOffset);
-};
+// Shared lyrics sync offset; adjusted from the overflow menu while lyrics are
+// open (see openQueueMenu) and fed to the lyrics viewer.
+const { offset: lyricsOffset } = useLyricsOffset();
 
 // Fetch lyrics for the current track (only when fullscreen player is open)
 let lyricsLoadGeneration = 0;
@@ -1085,11 +1064,26 @@ const onArtistClick = async function () {
 
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
-  eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(store.activePlayer, store.activePlayerQueue, {
+  const menuItems = getPlayerMenuItems(
+    store.activePlayer,
+    store.activePlayerQueue,
+    {
       context: "queue",
       hideShuffleRepeat: mdAndUp.value,
-    }),
+    },
+  );
+  // While lyrics are open, surface the sync-offset stepper at the top of the
+  // overflow menu (only for players that benefit from a latency offset).
+  if (showLyrics.value && showLyricsOffset.value) {
+    menuItems.unshift({
+      label: "lyrics_offset",
+      // markRaw: the menu items land in a reactive array; a bare component
+      // definition there would be needlessly made reactive.
+      component: markRaw(LyricsOffsetMenuControl),
+    });
+  }
+  eventbus.emit("contextmenu", {
+    items: menuItems,
     posX: (evt as PointerEvent).clientX,
     posY: (evt as PointerEvent).clientY,
   });
@@ -1122,7 +1116,6 @@ onMounted(() => {
   window.addEventListener("keydown", onKeydown);
   onBeforeUnmount(() => {
     window.removeEventListener("keydown", onKeydown);
-    stopRepeatingOffset();
   });
 });
 
@@ -1597,6 +1590,14 @@ watchEffect(() => {
 
 .v-toolbar :deep(.v-toolbar-title) {
   text-align: center;
+}
+
+/* Line the trailing menu button up with the per-row menu buttons in the queue
+   list below: those sit 18px from the column's right edge (10px column + 8px
+   row padding) with a 32px button, so this 28px button needs a 20px end margin
+   for the two to share a vertical centre. */
+.v-toolbar :deep(.v-toolbar__append) {
+  margin-inline-end: 20px;
 }
 
 div,
