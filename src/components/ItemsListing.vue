@@ -523,8 +523,8 @@ const toggleExpand = function () {
 const iconAction = function () {
   if (props.onIconClick) {
     props.onIconClick();
+    loadData(undefined, undefined, true);
   }
-  loadData(undefined, undefined, true);
 };
 
 const selectViewMode = function (newMode: string) {
