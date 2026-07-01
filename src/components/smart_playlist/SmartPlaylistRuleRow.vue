@@ -170,21 +170,40 @@
 
       <template v-else-if="rule.field === 'last_played'">
         <NumberField
-          :model-value="rule.lastPlayedBeforeDays"
-          class="w-[90px]"
+          :model-value="rule.lastPlayedBeforeValue"
+          class="w-[70px]"
           :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
-          @update:model-value="(v) => emit('change-last-played', v)"
+          @update:model-value="(v) => handleLastPlayedValueChange(v)"
           @keydown.stop
         >
           <NumberFieldContent>
-            <NumberFieldInput
-              class="h-7 text-xs"
-              :placeholder="$t('smart_playlist.last_played_days')"
-            />
+            <NumberFieldInput class="h-7 text-xs" placeholder="0" />
           </NumberFieldContent>
         </NumberField>
+        <Select
+          :model-value="rule.lastPlayedBeforeUnit || 'days'"
+          @update:model-value="(v) => handleLastPlayedUnitChange(v)"
+        >
+          <SelectTrigger class="h-7 w-[90px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hours" class="text-xs">{{
+              $t("smart_playlist.unit_hours")
+            }}</SelectItem>
+            <SelectItem value="days" class="text-xs">{{
+              $t("smart_playlist.unit_days")
+            }}</SelectItem>
+            <SelectItem value="weeks" class="text-xs">{{
+              $t("smart_playlist.unit_weeks")
+            }}</SelectItem>
+            <SelectItem value="months" class="text-xs">{{
+              $t("smart_playlist.unit_months")
+            }}</SelectItem>
+          </SelectContent>
+        </Select>
         <span class="text-xs text-muted-foreground">{{
-          $t("smart_playlist.last_played_unit")
+          $t("smart_playlist.last_played_ago")
         }}</span>
       </template>
 
@@ -273,7 +292,7 @@ const emit = defineEmits<{
   "change-operator": [op: RuleOperator];
   "change-year": [value: { from?: number; to?: number }];
   "change-duration": [value: { min?: number; max?: number }];
-  "change-last-played": [days?: number];
+  "change-last-played": [value: { value?: number; unit?: string }];
   "add-value": [value: { id: number; name: string }];
   "remove-value": [id: number];
   remove: [];
@@ -352,5 +371,19 @@ function handleDurationBlur(e: Event, field: "min" | "max") {
   }
 
   delete durationInputBuffer[field];
+}
+
+function handleLastPlayedValueChange(value: number | undefined) {
+  emit("change-last-played", {
+    value,
+    unit: props.rule.lastPlayedBeforeUnit || "days",
+  });
+}
+
+function handleLastPlayedUnitChange(unit: string) {
+  emit("change-last-played", {
+    value: props.rule.lastPlayedBeforeValue,
+    unit,
+  });
 }
 </script>

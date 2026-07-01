@@ -185,8 +185,14 @@ function onChangeDuration(rule: RuleRow, v: { min?: number; max?: number }) {
   emit("update-rule", rule.uid, { minDuration: v.min, maxDuration: v.max });
 }
 
-function onChangeLastPlayed(rule: RuleRow, days?: number) {
-  emit("update-rule", rule.uid, { lastPlayedBeforeDays: days });
+function onChangeLastPlayed(
+  rule: RuleRow,
+  v: { value?: number; unit?: string },
+) {
+  emit("update-rule", rule.uid, {
+    lastPlayedBeforeValue: v.value,
+    lastPlayedBeforeUnit: v.unit as "hours" | "days" | "weeks" | "months",
+  });
 }
 
 function onAddValue(rule: RuleRow, v: { id: number; name: string }) {

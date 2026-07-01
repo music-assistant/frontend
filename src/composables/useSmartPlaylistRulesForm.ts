@@ -59,7 +59,8 @@ export interface RuleRow {
   yearTo?: number;
   minDuration?: number;
   maxDuration?: number;
-  lastPlayedBeforeDays?: number;
+  lastPlayedBeforeValue?: number;
+  lastPlayedBeforeUnit?: "hours" | "days" | "weeks" | "months";
 }
 
 export interface SmartPlaylistRulesFormInit {
@@ -131,7 +132,8 @@ export function useSmartPlaylistRulesForm(
       list.push(row);
     } else if (field === "last_played") {
       const row = newRule("last_played", "is");
-      row.lastPlayedBeforeDays = undefined;
+      row.lastPlayedBeforeValue = undefined;
+      row.lastPlayedBeforeUnit = "days";
       list.push(row);
     } else if (field === "favorite") {
       list.push(newRule("favorite", "is"));
@@ -477,8 +479,10 @@ export function useSmartPlaylistRulesForm(
       explicit,
       min_duration: durationRule()?.minDuration ?? undefined,
       max_duration: durationRule()?.maxDuration ?? undefined,
-      last_played_before_days:
-        lastPlayedRule()?.lastPlayedBeforeDays ?? undefined,
+      last_played_before_value:
+        lastPlayedRule()?.lastPlayedBeforeValue ?? undefined,
+      last_played_before_unit:
+        lastPlayedRule()?.lastPlayedBeforeUnit ?? undefined,
     };
 
     if (isSeed) {
@@ -557,7 +561,11 @@ export function useSmartPlaylistRulesForm(
       return r.yearFrom === undefined && r.yearTo === undefined;
     if (r.field === "duration")
       return r.minDuration === undefined && r.maxDuration === undefined;
-    if (r.field === "last_played") return r.lastPlayedBeforeDays === undefined;
+    if (r.field === "last_played")
+      return (
+        r.lastPlayedBeforeValue === undefined ||
+        r.lastPlayedBeforeUnit === undefined
+      );
     if (r.field === "favorite" || r.field === "explicit") return false;
     return r.values.length === 0;
   }
