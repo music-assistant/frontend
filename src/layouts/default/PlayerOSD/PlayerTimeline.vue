@@ -23,7 +23,7 @@
         >
           <SliderRange
             data-slot="slider-range"
-            class="absolute rounded-full h-1.5 top-1/2 -translate-y-1/2"
+            class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
