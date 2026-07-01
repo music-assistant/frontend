@@ -733,6 +733,8 @@
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
     "shuffle_smart_active": "Smart shuffle is on. Click to turn it off.",
+    "shuffle_dynamic_active": "Smart shuffle is active because the queue is playing in dynamic mode.",
+    "repeat_dynamic_unavailable": "Repeat isn't available while the queue is playing in dynamic mode.",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",

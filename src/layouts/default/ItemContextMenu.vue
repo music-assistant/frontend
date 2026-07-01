@@ -48,8 +48,13 @@
       </template>
 
       <template v-for="menuItem of visibleItems" :key="menuItem.label">
+        <!-- custom inline control (e.g. a stepper); renders its own row and
+             manages its own interaction without closing the menu -->
+        <component :is="menuItem.component" v-if="menuItem.component" />
         <!-- item with submenu -->
-        <DropdownMenuSub v-if="menuItem.subItems && menuItem.subItems.length">
+        <DropdownMenuSub
+          v-else-if="menuItem.subItems && menuItem.subItems.length"
+        >
           <DropdownMenuSubTrigger
             :class="[
               'gap-3',
@@ -274,6 +279,10 @@ export interface ContextMenuItem {
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
   color?: string;
+  // Renders a custom control in place of the standard row (label/icon/action
+  // are ignored except for the list key). Used for inline controls like the
+  // lyrics-offset stepper.
+  component?: Component;
 }
 
 export const showContextMenuForMediaItem = async function (
