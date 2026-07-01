@@ -333,7 +333,7 @@ function mmssToSeconds(mmss: string): number | undefined {
   return mins * 60 + secs;
 }
 
-let durationInputBuffer: { min?: string; max?: string } = {};
+const durationInputBuffer: { min?: string; max?: string } = {};
 
 function handleDurationInput(e: Event, field: "min" | "max") {
   const input = e.target as HTMLInputElement;
