@@ -169,7 +169,8 @@ function onChangeField(rule: RuleRow, field: RuleField) {
     yearTo: undefined,
     minDuration: undefined,
     maxDuration: undefined,
-    lastPlayedBeforeDays: undefined,
+    lastPlayedBeforeValue: undefined,
+    lastPlayedBeforeUnit: undefined,
   });
 }
 

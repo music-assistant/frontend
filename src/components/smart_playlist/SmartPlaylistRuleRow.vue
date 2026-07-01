@@ -380,10 +380,13 @@ function handleLastPlayedValueChange(value: number | undefined) {
   });
 }
 
-function handleLastPlayedUnitChange(unit: string) {
+function handleLastPlayedUnitChange(
+  unit: string | number | bigint | boolean | object | null,
+) {
+  const unitStr = typeof unit === "string" ? unit : "days";
   emit("change-last-played", {
     value: props.rule.lastPlayedBeforeValue,
-    unit,
+    unit: unitStr,
   });
 }
 </script>
