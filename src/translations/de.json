@@ -1295,6 +1295,8 @@
         "no_rules_desc": "Die Titel werden zufällig aus deiner gesamten Bibliothek ausgewählt. Füge eine Regel hinzu, um die Auswahl einzugrenzen.",
         "no_rules_title": "Alle Titel der Bibliothek",
         "op_between": "zwischen",
+        "op_greater_than": "größer als",
+        "op_less_than": "kleiner als",
         "picker_empty_no_match": "Kein {label} entspricht deiner Suche.",
         "picker_empty_remote": "Gib einen Suchbegriff ein, um nach einem {label} zu suchen.",
         "picker_empty_search": "Gib mindestens 2 Zeichen ein, um ein {label} zu finden.",

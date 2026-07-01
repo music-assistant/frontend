@@ -44,6 +44,8 @@
         @change-field="(field) => onChangeField(rule, field)"
         @change-operator="(op) => onChangeOperator(rule, op)"
         @change-year="(v) => onChangeYear(rule, v)"
+        @change-duration="(v) => onChangeDuration(rule, v)"
+        @change-last-played="(v) => onChangeLastPlayed(rule, v)"
         @add-value="(v) => onAddValue(rule, v)"
         @remove-value="(id) => onRemoveValue(rule, id)"
         @remove="emit('remove-rule', rule.uid)"
@@ -153,6 +155,8 @@ function fieldLabel(field: RuleField): string {
     .with("favorite", () => $t("smart_playlist.field_favorite"))
     .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
+    .with("duration", () => $t("smart_playlist.field_duration"))
+    .with("last_played", () => $t("smart_playlist.field_last_played"))
     .exhaustive();
 }
 
@@ -163,6 +167,9 @@ function onChangeField(rule: RuleRow, field: RuleField) {
     values: [],
     yearFrom: undefined,
     yearTo: undefined,
+    minDuration: undefined,
+    maxDuration: undefined,
+    lastPlayedBeforeDays: undefined,
   });
 }
 
@@ -172,6 +179,14 @@ function onChangeOperator(rule: RuleRow, op: RuleOperator) {
 
 function onChangeYear(rule: RuleRow, v: { from?: number; to?: number }) {
   emit("update-rule", rule.uid, { yearFrom: v.from, yearTo: v.to });
+}
+
+function onChangeDuration(rule: RuleRow, v: { min?: number; max?: number }) {
+  emit("update-rule", rule.uid, { minDuration: v.min, maxDuration: v.max });
+}
+
+function onChangeLastPlayed(rule: RuleRow, days?: number) {
+  emit("update-rule", rule.uid, { lastPlayedBeforeDays: days });
 }
 
 function onAddValue(rule: RuleRow, v: { id: number; name: string }) {
