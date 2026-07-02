@@ -19,7 +19,7 @@
     :allow-collapse="true"
     :hide-on-empty="false"
     :sort-keys="sortKeys"
-    :limit="500"
+    :limit="50"
     :infinite-scroll="false"
     :load-paged-data="section.load"
   />
