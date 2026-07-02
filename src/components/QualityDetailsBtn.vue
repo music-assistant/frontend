@@ -195,7 +195,11 @@
               </template>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <button type="button" class="streamdetails-info">
+                  <button
+                    type="button"
+                    class="streamdetails-info"
+                    :aria-label="$t('streamdetails.more_info')"
+                  >
                     <Info :size="16" />
                   </button>
                 </TooltipTrigger>
@@ -255,7 +259,11 @@
               {{ loudness }}
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <button type="button" class="streamdetails-info">
+                  <button
+                    type="button"
+                    class="streamdetails-info"
+                    :aria-label="$t('streamdetails.more_info')"
+                  >
                     <Info :size="16" />
                   </button>
                 </TooltipTrigger>
@@ -370,7 +378,11 @@
                 {{ $t("streamdetails.dsp_unsupported") }}
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <button type="button" class="streamdetails-info">
+                    <button
+                      type="button"
+                      class="streamdetails-info"
+                      :aria-label="$t('streamdetails.more_info')"
+                    >
                       <Info :size="16" />
                     </button>
                   </TooltipTrigger>
@@ -395,7 +407,7 @@
               >
                 <SlidersHorizontal :size="22" class="streamdetails-glyph" />
                 {{
-                  $t("streamdetails.output_gain", [dsp.input_gain.toFixed(1)])
+                  $t("streamdetails.output_gain", [dsp.output_gain.toFixed(1)])
                 }}
               </div>
               <!-- Output limiter-->
@@ -404,7 +416,11 @@
                 {{ $t("streamdetails.output_limiter") }}
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <button type="button" class="streamdetails-info">
+                    <button
+                      type="button"
+                      class="streamdetails-info"
+                      :aria-label="$t('streamdetails.more_info')"
+                    >
                       <Info :size="16" />
                     </button>
                   </TooltipTrigger>
@@ -437,7 +453,11 @@
                 {{ streamDetails.dsp[player_id].output_format.bit_depth }} bits
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <button type="button" class="streamdetails-info">
+                    <button
+                      type="button"
+                      class="streamdetails-info"
+                      :aria-label="$t('streamdetails.more_info')"
+                    >
                       <Info :size="16" />
                     </button>
                   </TooltipTrigger>
@@ -548,7 +568,11 @@
                     {{ players.length - 1 }}
                     <Tooltip>
                       <TooltipTrigger as-child>
-                        <button type="button" class="streamdetails-info">
+                        <button
+                          type="button"
+                          class="streamdetails-info"
+                          :aria-label="$t('streamdetails.more_info')"
+                        >
                           <Info :size="16" />
                         </button>
                       </TooltipTrigger>
@@ -1129,11 +1153,27 @@ div.streamdetails-icon {
 }
 
 /* dotted continuation of the block boundary: applied to the first rail
-   segment of a subsequent output block so the transition off the shared
-   source reads as one dotted branch (node dots stay solid) */
+   segment of a subsequent output block. Only the lead-in ABOVE the node dot
+   is dotted; from the node downward the rail is solid so the connector on to
+   the next stage stays solid. The line is painted with backgrounds (top half
+   dotted, bottom half solid) while the 1px border is kept transparent, so the
+   node dot stays pixel-aligned with the solid rows above and below. */
 .line-with-dot.is-dotted,
 .line-straight.is-dotted {
-  border-left-style: dotted;
+  border-left-color: transparent;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      currentColor 0 1px,
+      transparent 1px 2px
+    ),
+    linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 1px 50%;
+  background-position:
+    left top,
+    left bottom;
+  background-origin: border-box;
 }
 
 .quality-tier-dot {
