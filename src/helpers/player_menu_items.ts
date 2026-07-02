@@ -152,8 +152,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // clear queue (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  // clear queue (both menus; only when the queue has items)
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
       labelArgs: [],
