@@ -178,7 +178,7 @@
           title: item.title,
           value: item.value,
           disabled: item.disabled,
-          subtitle: item.disabled ? item.disabled_reason : undefined,
+          subtitle: item.disabled ? item.disabled_reason : item.description,
         })
       "
       :disabled="isFieldDisabled"
@@ -348,6 +348,7 @@ const displayOptions = computed(() => {
       value: orgOption.value,
       disabled: orgOption.disabled,
       disabled_reason: orgOption.disabled_reason,
+      description: orgOption.description,
     };
     if (option.value == props.confEntry.default_value) {
       option.title += ` [${$t("settings.default")}]`;

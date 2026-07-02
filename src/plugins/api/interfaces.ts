@@ -516,6 +516,8 @@ export interface ConfigValueOption {
   disabled?: boolean;
   // disabled_reason: optional explanation of why the option is disabled
   disabled_reason?: string;
+  // description: optional per-option help text shown under the option
+  description?: string;
 }
 
 export interface ConfigEntry {
