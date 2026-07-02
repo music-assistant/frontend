@@ -768,6 +768,7 @@
         "input_header": "Input",
         "output_header": "Output",
         "more_info": "More information",
+        "player_not_found": "Player not found",
         "output_format_info": "Audio is sent in the {0} format",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",

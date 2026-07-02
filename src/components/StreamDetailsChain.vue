@@ -19,7 +19,7 @@
         <!-- Player -->
         <template
           v-for="({ dsp, player_id, players }, index) in dsp_grouped"
-          :key="index"
+          :key="player_id"
         >
           <!-- dotted connector into each subsequent output block
                (linked to the shared source, but a separate output) -->
@@ -285,8 +285,8 @@
         </div>
 
         <template
-          v-for="({ dsp, player_id, players }, index) in dsp_grouped"
-          :key="index"
+          v-for="{ dsp, player_id, players } in dsp_grouped"
+          :key="player_id"
         >
           <!-- Separator -->
           <div class="flex">
@@ -472,11 +472,16 @@
               v-for="(player, i) in players"
               :key="i"
               class="streamdetails-item"
+              role="button"
+              tabindex="0"
+              :aria-expanded="true"
               @click="is_dsp_group_expanded[player_id] = false"
+              @keydown.enter="is_dsp_group_expanded[player_id] = false"
+              @keydown.space.prevent="is_dsp_group_expanded[player_id] = false"
             >
               <template v-if="api.players[player]">
                 <ProviderIcon
-                  :domain="outputProtocolDomain(api.players[player_id])"
+                  :domain="outputProtocolDomain(api.players[player])"
                   :size="22"
                   class="streamdetails-icon"
                   :monochrome="true"
@@ -489,14 +494,19 @@
                   :size="22"
                   class="streamdetails-glyph text-muted-foreground"
                 />
-                Player not found
+                {{ $t("streamdetails.player_not_found") }}
               </template>
             </div>
           </template>
           <div
             v-else
             class="streamdetails-item"
+            role="button"
+            tabindex="0"
+            :aria-expanded="false"
             @click="is_dsp_group_expanded[player_id] = true"
+            @keydown.enter="is_dsp_group_expanded[player_id] = true"
+            @keydown.space.prevent="is_dsp_group_expanded[player_id] = true"
           >
             <template v-if="api.players[player_id]">
               <ProviderIcon
@@ -533,7 +543,7 @@
                 :size="22"
                 class="streamdetails-glyph text-muted-foreground"
               />
-              Player not found
+              {{ $t("streamdetails.player_not_found") }}
             </template>
           </div>
         </template>

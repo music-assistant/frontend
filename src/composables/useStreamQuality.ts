@@ -142,9 +142,11 @@ export function useStreamQuality(
     }
     const inputTier = inputQualityTier.value;
     for (const player_id of Object.keys(sd.dsp)) {
-      // Output quality can never be higher than input quality
+      // Output quality can never be higher than input quality; players whose
+      // output format is unknown/missing are absent from outputQualityTiers,
+      // so fall back to UNKNOWN rather than letting Math.min produce NaN
       tiers[player_id] = Math.min(
-        outputQualityTiers.value[player_id],
+        outputQualityTiers.value[player_id] ?? QualityTier.UNKNOWN,
         inputTier,
       );
     }
@@ -152,11 +154,13 @@ export function useStreamQuality(
   });
 
   const minOutputQualityTier = computed(() => {
-    return Math.min(...Object.values(combinedOutputQualityTiers.value));
+    const tiers = Object.values(combinedOutputQualityTiers.value);
+    return tiers.length ? Math.min(...tiers) : QualityTier.UNKNOWN;
   });
 
   const maxOutputQualityTier = computed(() => {
-    return Math.max(...Object.values(combinedOutputQualityTiers.value));
+    const tiers = Object.values(combinedOutputQualityTiers.value);
+    return tiers.length ? Math.max(...tiers) : QualityTier.UNKNOWN;
   });
 
   return {
