@@ -1372,6 +1372,7 @@
     "autoplay_dynamic_desc": "Your queue is being dynamically filled based on your selection.",
     "genre_content_type": {
         "all": "All",
+        "music": "Music",
         "audiobooks": "Audiobooks",
         "podcasts": "Podcasts"
     },

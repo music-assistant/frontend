@@ -570,14 +570,14 @@ export const getContextMenuItems = async function (
       )) || firstItem;
   }
 
-  // add to library
+  // add to library (genres are excluded: they are managed via the dedicated
+  // add-genre dialog and delete/merge actions, not generic library membership)
   if (
     !isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
       MediaType.AUDIOBOOK,
-      MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
