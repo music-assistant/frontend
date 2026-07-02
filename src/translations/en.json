@@ -570,7 +570,9 @@
         "provider_saved": "Provider settings saved",
         "provider_reloading": "Reloading provider…",
         "provider_removed": "Provider removed",
-        "queue_settings": "Queue settings"
+        "queue_settings": "Queue settings",
+        "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
+        "queue_global_settings_link": "Open global queue settings"
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
