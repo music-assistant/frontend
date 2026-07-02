@@ -1353,6 +1353,10 @@ export interface SmartPlaylistRules {
   excluded_genre_names?: Record<number, string>;
   album_types?: string[];
   excluded_album_types?: string[];
+  min_duration?: number;
+  max_duration?: number;
+  last_played_before_value?: number;
+  last_played_before_unit?: string;
 }
 
 export interface SmartPlaylistTrackStats {
