@@ -1,21 +1,22 @@
 <template>
   <ItemsListing
     itemtype="artists"
-    path="libraryartists"
+    path="libraryauthorsnarrators"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :show-album-artists-only-filter="true"
+    :show-album-artists-only-filter="false"
     :update-available="updateAvailable"
-    :title="$t('artists')"
+    :title="title()"
     :allow-key-hooks="true"
     :show-search-button="true"
     :show-genre-filter="true"
     :sort-keys="sortKeys"
-    :icon="ArtistIcon"
+    :icon="icon()"
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
+    :on-icon-click="onIconClick"
   />
 </template>
 
@@ -23,16 +24,24 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import api from "@/plugins/api";
-import { ArtistType, EventMessage, EventType } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  EventMessage,
+  EventType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { Mic, UserPen } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { $t } from "@/plugins/i18n";
 
 defineOptions({
-  name: "Artists",
+  name: "AuthorsAndNarrators",
 });
 
 const updateAvailable = ref(false);
 const total = ref(store.libraryArtistsCount);
+const showArtistType = ref<ArtistType>(ArtistType.AUTHOR);
 
 const sortKeys = [
   "name",
@@ -47,6 +56,30 @@ const sortKeys = [
   "play_count_desc",
 ];
 
+const onIconClick = function () {
+  if (showArtistType.value === ArtistType.AUTHOR) {
+    showArtistType.value = ArtistType.NARRATOR;
+  } else {
+    showArtistType.value = ArtistType.AUTHOR;
+  }
+};
+
+const icon = function () {
+  if (showArtistType.value === ArtistType.AUTHOR) {
+    return UserPen;
+  } else {
+    return Mic;
+  }
+};
+
+const title = function () {
+  if (showArtistType.value === ArtistType.AUTHOR) {
+    return $t("authors");
+  } else {
+    return $t("narrators");
+  }
+};
+
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
   setTotals(params);
@@ -56,10 +89,10 @@ const loadItems = async function (params: LoadDataParams) {
     params.limit,
     params.offset,
     params.sortBy,
-    params.albumArtistsFilter,
+    undefined,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
-    ArtistType.SINGER,
+    showArtistType.value,
   );
 };
 

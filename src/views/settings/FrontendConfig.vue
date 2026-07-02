@@ -129,6 +129,7 @@ onMounted(() => {
         { title: $t("albums"), value: "albums" },
         { title: $t("tracks"), value: "tracks" },
         { title: $t("playlists"), value: "playlists" },
+        { title: $t("authors_narrators"), value: "authors_narrators" },
         { title: $t("audiobooks"), value: "audiobooks" },
         { title: $t("podcasts"), value: "podcasts" },
         { title: $t("radios"), value: "radios" },

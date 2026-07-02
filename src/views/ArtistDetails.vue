@@ -1,165 +1,232 @@
 <template>
   <section>
     <InfoHeader :item="itemDetails" />
-    <!-- albums in library (library artists only) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && itemDetails.provider == 'library'"
-      itemtype="artistalbums"
-      :path="`artistalbums.${itemId}.${provider}`"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="true"
-      :show-provider-filter="true"
-      :single-provider-filter="true"
-      :provider-filter-options="mappingProviderIds"
-      :show-album-type-filter="true"
-      :show-refresh-button="false"
-      :load-items="loadArtistAlbums"
-      :sort-keys="[
-        'sort_name',
-        'name',
-        'year',
-        'name_desc',
-        'sort_name_desc',
-        'year_desc',
-      ]"
-      :title="$t('albums')"
-      :subtitle="$t('in_library')"
-      :empty-message="$t('artist_no_library_albums')"
-      :allow-collapse="true"
-    />
-    <!-- tracks in library (library artists only) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && itemDetails.provider == 'library'"
-      itemtype="artisttracks"
-      :path="`artisttracks.${itemId}.${provider}`"
-      :parent-item="itemDetails"
-      :show-provider="true"
-      :show-favorites-only-filter="true"
-      :show-provider-filter="mappingProviderIds.length > 1"
-      :single-provider-filter="true"
-      :provider-filter-options="mappingProviderIds"
-      :show-refresh-button="false"
-      :show-track-number="false"
-      :load-items="loadArtistTracks"
-      :sort-keys="[
-        'sort_name',
-        'name',
-        'album',
-        'album_sort_name',
-        'duration',
-        'name_desc',
-        'sort_name_desc',
-        'duration_desc',
-      ]"
-      :title="$t('tracks')"
-      :subtitle="$t('in_library')"
-      :empty-message="$t('artist_no_library_tracks')"
-      :allow-collapse="true"
-    />
-    <!-- all albums (full per-provider listing) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && albumSourceProviderIds.length > 0"
-      itemtype="artistalbums"
-      path="artistallalbums"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :require-provider-selection="true"
-      :provider-filter-options="albumSourceProviderIds"
-      :show-refresh-button="false"
-      :load-items="loadAllAlbums"
-      :sort-keys="[
-        'original',
-        'name',
-        'sort_name',
-        'year',
-        'name_desc',
-        'sort_name_desc',
-        'year_desc',
-      ]"
-      :title="$t('artist_all_albums')"
-      :subtitle="$t('on_provider', [activeAlbumProvider])"
-      :allow-collapse="true"
-    />
-    <!-- all tracks (full per-provider listing) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && trackSourceProviderIds.length > 0"
-      itemtype="artisttracks"
-      path="artistalltracks"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :require-provider-selection="true"
-      :provider-filter-options="trackSourceProviderIds"
-      :show-refresh-button="false"
-      :show-track-number="false"
-      :load-items="loadAllTracks"
-      :sort-keys="[
-        'original',
-        'name',
-        'sort_name',
-        'album',
-        'duration',
-        'name_desc',
-        'sort_name_desc',
-        'duration_desc',
-      ]"
-      :title="$t('artist_all_tracks')"
-      :subtitle="$t('on_provider', [activeTrackProvider])"
-      :allow-collapse="true"
-    />
-    <!-- top albums (per provider) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && hasTopAlbumsProvider"
-      itemtype="artistalbums"
-      path="artisttopalbums"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :require-provider-selection="true"
-      :provider-filter-options="topAlbumProviderIds"
-      :show-refresh-button="false"
-      :load-items="loadArtistTopAlbums"
-      :sort-keys="['original', 'name', 'year', 'year_desc']"
-      :title="$t('artist_topalbums')"
-      :subtitle="$t('on_provider', [activeTopAlbumProvider])"
-      :allow-collapse="true"
-    />
-    <!-- top tracks (per provider) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && hasTopTracksProvider"
-      itemtype="artisttracks"
-      path="artisttoptracks"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :require-provider-selection="true"
-      :provider-filter-options="topTrackProviderIds"
-      :show-refresh-button="false"
-      :show-track-number="false"
-      :load-items="loadArtistTopTracks"
-      :sort-keys="['original', 'name', 'duration', 'duration_desc']"
-      :title="$t('artist_toptracks')"
-      :subtitle="$t('on_provider', [activeTopTrackProvider])"
-      :allow-collapse="true"
-    />
-    <!-- similar artists (per provider) -->
-    <ItemsListing
-      v-if="itemDetails && !loading && hasSimilarArtistsProvider"
-      itemtype="similarartists"
-      path="similarartists"
-      :parent-item="itemDetails"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :require-provider-selection="true"
-      :provider-filter-options="similarArtistsProviderIds"
-      :show-refresh-button="false"
-      :load-items="loadSimilarArtists"
-      :title="$t('similar_artists')"
-      :subtitle="$t('on_provider', [activeSimilarArtistsProvider])"
-      :allow-collapse="true"
-    />
+    <!-- begin artist_type == ArtistType.SINGER -->
+    <div v-if="itemDetails && itemDetails.artist_type == ArtistType.SINGER">
+      <!-- albums in library (library artists only) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && itemDetails.provider == 'library'"
+        itemtype="artistalbums"
+        :path="`artistalbums.${itemId}.${provider}`"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="true"
+        :show-provider-filter="true"
+        :single-provider-filter="true"
+        :provider-filter-options="mappingProviderIds"
+        :show-album-type-filter="true"
+        :show-refresh-button="false"
+        :load-items="loadArtistAlbums"
+        :sort-keys="[
+          'sort_name',
+          'name',
+          'year',
+          'name_desc',
+          'sort_name_desc',
+          'year_desc',
+        ]"
+        :title="$t('albums')"
+        :subtitle="$t('in_library')"
+        :empty-message="$t('artist_no_library_albums')"
+        :allow-collapse="true"
+      />
+      <!-- tracks in library (library artists only) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && itemDetails.provider == 'library'"
+        itemtype="artisttracks"
+        :path="`artisttracks.${itemId}.${provider}`"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="true"
+        :show-provider-filter="mappingProviderIds.length > 1"
+        :single-provider-filter="true"
+        :provider-filter-options="mappingProviderIds"
+        :show-refresh-button="false"
+        :show-track-number="false"
+        :load-items="loadArtistTracks"
+        :sort-keys="[
+          'sort_name',
+          'name',
+          'album',
+          'album_sort_name',
+          'duration',
+          'name_desc',
+          'sort_name_desc',
+          'duration_desc',
+        ]"
+        :title="$t('tracks')"
+        :subtitle="$t('in_library')"
+        :empty-message="$t('artist_no_library_tracks')"
+        :allow-collapse="true"
+      />
+      <!-- all albums (full per-provider listing) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && albumSourceProviderIds.length > 0"
+        itemtype="artistalbums"
+        path="artistallalbums"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="albumSourceProviderIds"
+        :show-refresh-button="false"
+        :load-items="loadAllAlbums"
+        :sort-keys="[
+          'original',
+          'name',
+          'sort_name',
+          'year',
+          'name_desc',
+          'sort_name_desc',
+          'year_desc',
+        ]"
+        :title="$t('artist_all_albums')"
+        :subtitle="$t('on_provider', [activeAlbumProvider])"
+        :allow-collapse="true"
+      />
+      <!-- all tracks (full per-provider listing) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && trackSourceProviderIds.length > 0"
+        itemtype="artisttracks"
+        path="artistalltracks"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="trackSourceProviderIds"
+        :show-refresh-button="false"
+        :show-track-number="false"
+        :load-items="loadAllTracks"
+        :sort-keys="[
+          'original',
+          'name',
+          'sort_name',
+          'album',
+          'duration',
+          'name_desc',
+          'sort_name_desc',
+          'duration_desc',
+        ]"
+        :title="$t('artist_all_tracks')"
+        :subtitle="$t('on_provider', [activeTrackProvider])"
+        :allow-collapse="true"
+      />
+      <!-- top albums (per provider) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && hasTopAlbumsProvider"
+        itemtype="artistalbums"
+        path="artisttopalbums"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="topAlbumProviderIds"
+        :show-refresh-button="false"
+        :load-items="loadArtistTopAlbums"
+        :sort-keys="['original', 'name', 'year', 'year_desc']"
+        :title="$t('artist_topalbums')"
+        :subtitle="$t('on_provider', [activeTopAlbumProvider])"
+        :allow-collapse="true"
+      />
+      <!-- top tracks (per provider) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && hasTopTracksProvider"
+        itemtype="artisttracks"
+        path="artisttoptracks"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="topTrackProviderIds"
+        :show-refresh-button="false"
+        :show-track-number="false"
+        :load-items="loadArtistTopTracks"
+        :sort-keys="['original', 'name', 'duration', 'duration_desc']"
+        :title="$t('artist_toptracks')"
+        :subtitle="$t('on_provider', [activeTopTrackProvider])"
+        :allow-collapse="true"
+      />
+      <!-- similar artists (per provider) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && hasSimilarArtistsProvider"
+        itemtype="similarartists"
+        path="similarartists"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="similarArtistsProviderIds"
+        :show-refresh-button="false"
+        :load-items="loadSimilarArtists"
+        :title="$t('similar_artists')"
+        :subtitle="$t('on_provider', [activeSimilarArtistsProvider])"
+        :allow-collapse="true"
+      />
+    </div>
+    <!-- end artist_type == ArtistType.SINGER -->
+    <!-- begin artist_type == ArtistType.AUTHOR or NARRATOR -->
+    <div
+      v-if="
+        itemDetails &&
+        [ArtistType.AUTHOR, ArtistType.NARRATOR].includes(
+          itemDetails.artist_type,
+        )
+      "
+    >
+      <!-- audiobooks in library (library artists only) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && itemDetails.provider == 'library'"
+        itemtype="artistaudiobooks"
+        :path="`artistaudiobooks.${itemId}.${provider}`"
+        :parent-item="itemDetails"
+        :show-provider="true"
+        :show-favorites-only-filter="true"
+        :show-provider-filter="true"
+        :single-provider-filter="true"
+        :provider-filter-options="mappingProviderIds"
+        :show-album-type-filter="false"
+        :show-refresh-button="false"
+        :load-items="loadArtistAudiobooks"
+        :sort-keys="[
+          'sort_name',
+          'name',
+          'year',
+          'name_desc',
+          'sort_name_desc',
+          'year_desc',
+        ]"
+        :title="$t('audiobooks')"
+        :subtitle="$t('in_library')"
+        :empty-message="$t('artist_no_library_audiobooks')"
+        :allow-collapse="true"
+      />
+      <!-- all audiobooks (full per-provider listing) -->
+      <ItemsListing
+        v-if="itemDetails && !loading && audiobookSourceMappings.length > 0"
+        itemtype="artistaudiobooks"
+        path="artistallaudiobooks"
+        :parent-item="itemDetails"
+        :show-provider="false"
+        :show-favorites-only-filter="false"
+        :require-provider-selection="true"
+        :provider-filter-options="audiobookSourceProviderIds"
+        :show-refresh-button="false"
+        :load-items="loadAllAudiobooks"
+        :sort-keys="[
+          'original',
+          'name',
+          'sort_name',
+          'year',
+          'name_desc',
+          'sort_name_desc',
+          'year_desc',
+        ]"
+        :title="$t('artist_all_audiobooks')"
+        :subtitle="$t('on_provider', [activeAudiobookProvider])"
+        :allow-collapse="true"
+      />
+    </div>
+    <!-- end artist_type == ArtistType.AUTHOR or NARRATOR -->
     <!-- media images -->
     <MediaItemImages
       v-if="
@@ -186,6 +253,7 @@ import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
+  ArtistType,
   EventMessage,
   EventType,
   MediaItemType,
@@ -301,9 +369,18 @@ const albumSourceMappings = sourceMappingsForFeature(
 const trackSourceMappings = sourceMappingsForFeature(
   ProviderFeature.ARTIST_TRACKS,
 );
+const audiobookSourceMappings = (() => {
+  if (itemDetails.value?.artist_type === ArtistType.AUTHOR) {
+    return sourceMappingsForFeature(ProviderFeature.AUTHOR_AUDIOBOOKS);
+  }
+  return sourceMappingsForFeature(ProviderFeature.NARRATOR_AUDIOBOOKS);
+})();
 
 const albumSourceProviderIds = computed(() =>
   albumSourceMappings.value.map((mapping) => mapping.provider_instance),
+);
+const audiobookSourceProviderIds = computed(() =>
+  audiobookSourceMappings.value.map((mapping) => mapping.provider_instance),
 );
 const trackSourceProviderIds = computed(() =>
   trackSourceMappings.value.map((mapping) => mapping.provider_instance),
@@ -317,6 +394,19 @@ const loadAllAlbums = async function (params: LoadDataParams) {
   const source = mappings.find((m) => m.provider_instance === providerId);
   if (!source) return [];
   return await api.getArtistAlbums(source.item_id, source.provider_instance);
+};
+
+const loadAllAudiobooks = async function (params: LoadDataParams) {
+  const mappings = audiobookSourceMappings.value;
+  const providerId = params.provider?.[0] ?? mappings[0]?.provider_instance;
+  const source = mappings.find((m) => m.provider_instance === providerId);
+  if (!source) return [];
+  if (!itemDetails.value) return [];
+  return await api.getArtistAudiobooks(
+    source.item_id,
+    source.provider_instance,
+    itemDetails.value.artist_type,
+  );
 };
 
 const loadAllTracks = async function (params: LoadDataParams) {
@@ -364,6 +454,9 @@ const activeTrackProvider = computed(() =>
     trackSourceProviderIds.value,
     trackListingPrefs.value.providerFilter?.[0],
   ),
+);
+const activeAudiobookProvider = computed(() =>
+  activeProviderName(audiobookSourceProviderIds.value, undefined),
 );
 
 // providers for the backend-aggregated features (top albums/tracks, similar
@@ -468,6 +561,15 @@ const loadArtistAlbums = async function (params: LoadDataParams) {
     itemDetails.value.item_id,
     itemDetails.value.provider,
     params.provider?.[0],
+  );
+};
+
+const loadArtistAudiobooks = async function (params: LoadDataParams) {
+  if (!itemDetails.value) return [];
+  return await api.getArtistAudiobooks(
+    itemDetails.value.item_id,
+    itemDetails.value.provider,
+    itemDetails.value.artist_type,
   );
 };
 

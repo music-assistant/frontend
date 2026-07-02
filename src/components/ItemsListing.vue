@@ -11,6 +11,7 @@
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
       :menu-active="hasActiveFilters"
+      :icon-action="iconAction"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -346,6 +347,7 @@ export interface Props {
   icon?: string | Component;
   restoreState?: boolean;
   onTitleClick?: () => void;
+  onIconClick?: () => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
 }
@@ -386,6 +388,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   restoreState: false,
   onTitleClick: undefined,
+  onIconClick: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
 });
@@ -515,6 +518,13 @@ const toggleExpand = function () {
     "expand",
     expanded.value,
   );
+};
+
+const iconAction = function () {
+  if (props.onIconClick) {
+    props.onIconClick();
+    loadData(undefined, undefined, true);
+  }
 };
 
 const selectViewMode = function (newMode: string) {
