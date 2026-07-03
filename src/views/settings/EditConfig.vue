@@ -9,7 +9,9 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
+        <span class="category-icon">
+          <component :is="getCategoryIcon(panel)" :size="16" />
+        </span>
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -332,7 +334,9 @@
       class="category-section"
     >
       <div class="category-header">
-        <v-icon :icon="getCategoryIcon(panel)" class="mr-3" size="20" />
+        <span class="category-icon">
+          <component :is="getCategoryIcon(panel)" :size="16" />
+        </span>
         <span class="category-title">
           {{ getCategoryTranslation(panel) }}
         </span>
@@ -476,8 +480,23 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { HelpCircle } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import {
+  Airplay,
+  Cast,
+  HelpCircle,
+  Lock,
+  Megaphone,
+  MonitorPlay,
+  Network,
+  PlayCircle,
+  RadioTower,
+  RefreshCw,
+  Settings2,
+  SlidersHorizontal,
+  Speaker,
+  Volume2,
+} from "@lucide/vue";
+import { type Component, computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
@@ -884,32 +903,32 @@ const getCurrentValues = function () {
   }
   return values;
 };
-const getCategoryIcon = function (category: string): string {
-  const iconMap: Record<string, string> = {
-    generic: "mdi-cog",
-    audio: "mdi-volume-high",
-    advanced: "mdi-tune",
-    network: "mdi-lan",
-    playback: "mdi-play-circle",
-    announcements: "mdi-bullhorn",
-    airplay: "mdi-apple",
-    chromecast: "mdi-cast",
-    slimproto: "mdi-speaker-wireless",
-    snapcast: "mdi-speaker-multiple",
-    ugp: "mdi-speaker-multiple",
-    authentication: "mdi-lock",
-    sync: "mdi-sync",
-    web_player: "mdi-play-network",
-    player_controls: "mdi-tune-variant",
+const getCategoryIcon = function (category: string): Component {
+  const iconMap: Record<string, Component> = {
+    generic: Settings2,
+    audio: Volume2,
+    advanced: SlidersHorizontal,
+    network: Network,
+    playback: PlayCircle,
+    announcements: Megaphone,
+    airplay: Airplay,
+    chromecast: Cast,
+    slimproto: RadioTower,
+    snapcast: Speaker,
+    ugp: Speaker,
+    authentication: Lock,
+    sync: RefreshCw,
+    web_player: MonitorPlay,
+    player_controls: SlidersHorizontal,
     // Protocol-specific categories
-    protocol_sonos: "mdi-speaker",
-    protocol_airplay: "mdi-apple",
-    protocol_dlna: "mdi-cast-variant",
-    protocol_chromecast: "mdi-cast",
-    protocol_slimproto: "mdi-speaker-wireless",
-    protocol_snapcast: "mdi-speaker-multiple",
+    protocol_sonos: Speaker,
+    protocol_airplay: Airplay,
+    protocol_dlna: Cast,
+    protocol_chromecast: Cast,
+    protocol_slimproto: RadioTower,
+    protocol_snapcast: Speaker,
   };
-  return iconMap[category] || "mdi-cog-outline";
+  return iconMap[category] || Settings2;
 };
 
 const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
@@ -922,39 +941,45 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 </script>
 
 <style scoped>
-/* Config sections */
-.config-section {
-  margin-bottom: 16px;
-}
-
-/* Category sections (non-collapsible) */
+/* Category sections (modern card, header aligned with fields) */
 .category-section {
-  margin-bottom: 16px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
 .category-header {
   display: flex;
   align-items: center;
-  padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
+  gap: 10px;
+  padding: 11px 16px;
+  background: rgba(var(--v-theme-on-surface), 0.03);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
-.category-header .v-icon {
+.category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(var(--v-theme-primary), 0.12);
   color: rgb(var(--v-theme-primary));
+  flex-shrink: 0;
 }
 
 .category-title {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .category-content {
-  padding: 20px;
-  background: rgba(var(--v-theme-surface), 1);
+  padding: 14px 16px;
 }
 
 /* Config entry row */
