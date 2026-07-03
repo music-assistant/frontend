@@ -620,9 +620,7 @@ export const markdownToHtml = function (text: string): string {
     .replaceAll(/\\n/g, "<br />")
     .replaceAll("\n", "<br />")
     .replaceAll(" \\", "<br />");
-  // Metadata (e.g. track description/copyright) can carry attacker-controlled
-  // HTML that reaches v-html, so sanitize the rendered output. SANITIZE_NAMED_PROPS
-  // guards against DOM clobbering via name/id attributes.
+  // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
   return DOMPurify.sanitize(marked(text) as string, {
     SANITIZE_NAMED_PROPS: true,
   });
