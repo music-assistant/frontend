@@ -15,6 +15,7 @@ import {
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 
 import {
@@ -619,7 +620,10 @@ export const markdownToHtml = function (text: string): string {
     .replaceAll(/\\n/g, "<br />")
     .replaceAll("\n", "<br />")
     .replaceAll(" \\", "<br />");
-  return marked(text) as string;
+  // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
+  return DOMPurify.sanitize(marked(text) as string, {
+    SANITIZE_NAMED_PROPS: true,
+  });
 };
 
 /**
