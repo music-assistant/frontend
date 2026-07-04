@@ -1,6 +1,6 @@
 <template>
-  <v-container class="pa-2">
-    <div class="d-flex flex-wrap justify-end align-center ga-2 pr-2">
+  <v-container fluid class="pa-2">
+    <div class="d-flex flex-wrap justify-end align-center ga-2 pr-2 eq-actions">
       <!-- Multichannel options -->
       <v-btn
         v-if="!showMultiChannelControls"
@@ -481,6 +481,7 @@ interface Viewport {
   min_freq: number;
   max_freq: number;
   padding_lr: number;
+  padding_right: number;
   padding_tb: number;
 }
 
@@ -492,6 +493,9 @@ const viewport = ref<Viewport>({
   min_freq: 20,
   max_freq: 20000,
   padding_lr: 40,
+  // Smaller inset on the right (no axis labels there) so the plot reaches the
+  // right edge, aligning with the action button row above it
+  padding_right: 8,
   padding_tb: 20,
 });
 
@@ -548,7 +552,7 @@ const drawGraph = () => {
 
     for (
       let x = viewport.value.padding_lr;
-      x < width - viewport.value.padding_lr;
+      x < width - viewport.value.padding_right;
       x++
     ) {
       const response = 20 * Math.log10(magResponse[x]);
@@ -591,7 +595,7 @@ const drawGraph = () => {
     ctx.beginPath();
     for (
       let x = viewport.value.padding_lr;
-      x < width - viewport.value.padding_lr;
+      x < width - viewport.value.padding_right;
       x++
     ) {
       const y = gainToY(response[x], viewport.value);
@@ -808,7 +812,8 @@ const freqToX = (freq: number, viewport: Viewport): number => {
   const logFreq = Math.log2(freq / viewport.min_freq);
   const logMax = Math.log2(viewport.max_freq / viewport.min_freq);
   return (
-    (logFreq / logMax) * (viewport.width - viewport.padding_lr * 2) +
+    (logFreq / logMax) *
+      (viewport.width - viewport.padding_lr - viewport.padding_right) +
     viewport.padding_lr
   );
 };
@@ -819,7 +824,8 @@ const xToFreq = (x: number, viewport: Viewport): number => {
     viewport.min_freq *
     Math.pow(
       2,
-      ((x - viewport.padding_lr) / (viewport.width - viewport.padding_lr * 2)) *
+      ((x - viewport.padding_lr) /
+        (viewport.width - viewport.padding_lr - viewport.padding_right)) *
         logMax,
     );
   return Math.min(Math.max(freq, viewport.min_freq), viewport.max_freq);
@@ -891,7 +897,7 @@ const drawGrid = (ctx: CanvasRenderingContext2D, viewport: Viewport) => {
     const y = gainToY(gain, viewport);
     ctx.beginPath();
     ctx.moveTo(viewport.padding_lr, y);
-    ctx.lineTo(width - viewport.padding_lr, y);
+    ctx.lineTo(width - viewport.padding_right, y);
     ctx.stroke();
 
     // Draw gain labels
@@ -918,6 +924,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Give every action the same width so they stay aligned (not staggered)
+   however many wrap per row on narrow displays */
+.eq-actions > .v-btn,
+.eq-actions > .v-select {
+  flex: 0 1 18rem;
+  min-width: 0;
+}
+/* Smaller text and tighter letter-spacing so the longest label fits on one
+   line while the buttons stay narrow enough to share a single row */
+.eq-actions > .v-btn {
+  height: auto;
+  min-height: var(--v-btn-height);
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+.eq-actions :deep(.v-btn__content) {
+  white-space: normal;
+}
+
 .graph-container {
   position: relative;
   aspect-ratio: 7/2;
