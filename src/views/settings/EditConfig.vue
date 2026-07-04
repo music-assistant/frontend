@@ -17,53 +17,19 @@
         </span>
       </div>
       <div class="category-content">
-        <div
+        <ConfigEntryRow
           v-for="conf_entry of entriesForCategory(panel)"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
-        >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            :aria-label="$t('tooltip.help')"
-            @click="
-              conf_entry.description
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          :conf-entry="conf_entry"
+          :show-password-values="showPasswordValues"
+          :disabled="isDisabled(conf_entry)"
+          @update:value="onValueUpdate(conf_entry, $event)"
+          @toggle-password="showPasswordValues = !showPasswordValues"
+          @action="onEntryAction(conf_entry)"
+          @open-dsp="openDspConfig"
+          @open-options="openPlayerOptions"
+          @help="onEntryHelp(conf_entry)"
+        />
       </div>
     </div>
 
@@ -89,53 +55,19 @@
           {{ $t("settings.protocol_multi_info") }}
         </div>
         <!-- General protocol settings, shown before the protocol list -->
-        <div
+        <ConfigEntryRow
           v-for="conf_entry of protocolGeneralEntries"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
-        >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            :aria-label="$t('tooltip.help')"
-            @click="
-              conf_entry.description
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          :conf-entry="conf_entry"
+          :show-password-values="showPasswordValues"
+          :disabled="isDisabled(conf_entry)"
+          @update:value="onValueUpdate(conf_entry, $event)"
+          @toggle-password="showPasswordValues = !showPasswordValues"
+          @action="onEntryAction(conf_entry)"
+          @open-dsp="openDspConfig"
+          @open-options="openPlayerOptions"
+          @help="onEntryHelp(conf_entry)"
+        />
 
         <!-- Enable/disable toggles for the optional output protocols -->
         <template v-if="optionalProtocolPanels.length > 0">
@@ -204,55 +136,19 @@
                 >
                   {{ getProtocolEmptyMessage(panel) }}
                 </div>
-                <div
+                <ConfigEntryRow
                   v-for="conf_entry of entriesForCategory(panel)"
                   :key="conf_entry.key"
-                  class="config-entry"
-                  :class="{ 'config-entry-advanced': conf_entry.advanced }"
-                >
-                  <ConfigEntryField
-                    :conf-entry="conf_entry"
-                    :show-password-values="showPasswordValues"
-                    :disabled="isDisabled(conf_entry)"
-                    @toggle-password="showPasswordValues = !showPasswordValues"
-                    @update:value="onValueUpdate(conf_entry, $event)"
-                    @action="
-                      action(
-                        conf_entry.action || conf_entry.key,
-                        !!conf_entry.immediate_apply,
-                      );
-                      conf_entry.value = conf_entry.action
-                        ? null
-                        : conf_entry.key;
-                    "
-                    @open-dsp="openDspConfig"
-                    @open-options="openPlayerOptions"
-                  />
-                  <v-chip
-                    v-if="conf_entry.advanced"
-                    size="x-small"
-                    color="grey"
-                    variant="outlined"
-                    class="advanced-badge"
-                  >
-                    {{ $t("settings.advanced") }}
-                  </v-chip>
-                  <Button
-                    v-if="hasDescriptionOrHelpLink(conf_entry)"
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    class="help-btn"
-                    :aria-label="$t('tooltip.help')"
-                    @click="
-                      conf_entry.description
-                        ? (showHelpInfo = conf_entry)
-                        : openLink(conf_entry.help_link!)
-                    "
-                  >
-                    <HelpCircle :size="20" />
-                  </Button>
-                </div>
+                  :conf-entry="conf_entry"
+                  :show-password-values="showPasswordValues"
+                  :disabled="isDisabled(conf_entry)"
+                  @update:value="onValueUpdate(conf_entry, $event)"
+                  @toggle-password="showPasswordValues = !showPasswordValues"
+                  @action="onEntryAction(conf_entry)"
+                  @open-dsp="openDspConfig"
+                  @open-options="openPlayerOptions"
+                  @help="onEntryHelp(conf_entry)"
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -277,53 +173,19 @@
         </span>
       </div>
       <div class="category-content">
-        <div
+        <ConfigEntryRow
           v-for="conf_entry of entriesForCategory(panel)"
           :key="conf_entry.key"
-          class="config-entry"
-          :class="{ 'config-entry-advanced': conf_entry.advanced }"
-        >
-          <ConfigEntryField
-            :conf-entry="conf_entry"
-            :show-password-values="showPasswordValues"
-            :disabled="isDisabled(conf_entry)"
-            @toggle-password="showPasswordValues = !showPasswordValues"
-            @update:value="onValueUpdate(conf_entry, $event)"
-            @action="
-              action(
-                conf_entry.action || conf_entry.key,
-                !!conf_entry.immediate_apply,
-              );
-              conf_entry.value = conf_entry.action ? null : conf_entry.key;
-            "
-            @open-dsp="openDspConfig"
-            @open-options="openPlayerOptions"
-          />
-          <v-chip
-            v-if="conf_entry.advanced"
-            size="x-small"
-            color="grey"
-            variant="outlined"
-            class="advanced-badge"
-          >
-            {{ $t("settings.advanced") }}
-          </v-chip>
-          <Button
-            v-if="hasDescriptionOrHelpLink(conf_entry)"
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="help-btn"
-            :aria-label="$t('tooltip.help')"
-            @click="
-              conf_entry.description
-                ? (showHelpInfo = conf_entry)
-                : openLink(conf_entry.help_link!)
-            "
-          >
-            <HelpCircle :size="20" />
-          </Button>
-        </div>
+          :conf-entry="conf_entry"
+          :show-password-values="showPasswordValues"
+          :disabled="isDisabled(conf_entry)"
+          @update:value="onValueUpdate(conf_entry, $event)"
+          @toggle-password="showPasswordValues = !showPasswordValues"
+          @action="onEntryAction(conf_entry)"
+          @open-dsp="openDspConfig"
+          @open-options="openPlayerOptions"
+          @help="onEntryHelp(conf_entry)"
+        />
       </div>
     </div>
 
@@ -412,7 +274,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
@@ -427,7 +288,6 @@ import {
   Airplay,
   Antenna,
   Cast,
-  HelpCircle,
   Lock,
   Megaphone,
   MonitorPlay,
@@ -442,7 +302,7 @@ import {
 } from "@lucide/vue";
 import { type Component, computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
-import ConfigEntryField from "./ConfigEntryField.vue";
+import ConfigEntryRow from "./ConfigEntryRow.vue";
 
 const router = useRouter();
 const showUnsavedDialog = ref(false);
@@ -755,6 +615,16 @@ const openPlayerOptions = function () {
   router.push(`${router.currentRoute.value.path}/options`);
 };
 
+const onEntryAction = function (entry: ConfigEntryUI) {
+  action(entry.action || entry.key, !!entry.immediate_apply);
+  entry.value = entry.action ? null : entry.key;
+};
+
+const onEntryHelp = function (entry: ConfigEntryUI) {
+  if (entry.description) showHelpInfo.value = entry;
+  else openLink(entry.help_link!);
+};
+
 const resetToDefaults = function () {
   if (!entries.value) return;
   for (const entry of entries.value) {
@@ -920,14 +790,6 @@ const getCategoryIcon = function (category: string): Component {
   };
   return iconMap[category] || Settings2;
 };
-
-const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
-  // description is resolved server-side (or set by the frontend for its own settings); the entry
-  // either has one, or a help link
-  return (
-    ((conf_entry.description || conf_entry.help_link || " ")?.length ?? 0) > 1
-  );
-};
 </script>
 
 <style scoped>
@@ -972,53 +834,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   padding: 14px 16px;
 }
 
-/* Config entry row */
-.config-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.config-entry:last-child {
-  margin-bottom: 0;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-select),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
-}
-
-/* Help button */
-.help-btn {
-  flex-shrink: 0;
-  margin-top: 8px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-  height: 36px;
-}
-
-.help-btn:hover {
-  opacity: 1;
-}
-
-@media (min-width: 601px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    margin-top: 0;
-    align-self: center;
-  }
-}
-
-@media (max-width: 600px) {
-  .config-entry:has(.config-slider-wrapper) .help-btn {
-    align-self: flex-start;
-    margin-top: 0;
-  }
-}
-
 /* Action buttons */
 .config-actions {
   display: flex;
@@ -1049,19 +864,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 
 .advanced-settings-switch:hover {
   opacity: 1;
-}
-
-/* Advanced badge */
-.advanced-badge {
-  margin-left: 8px;
-  margin-top: 8px;
-  flex-shrink: 0;
-  height: 20px;
-}
-
-/* Advanced entry styling */
-.config-entry-advanced {
-  opacity: 0.9;
 }
 
 .protocol-empty-message {
