@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 defineProps<{
   column: Column<TData, TValue>;
   title: string;
-  align?: "left" | "right";
+  align?: "left" | "center" | "right";
 }>();
 </script>
 
@@ -32,6 +32,7 @@ defineProps<{
       cn(
         'flex items-center',
         align === 'right' ? 'justify-end' : '',
+        align === 'center' ? 'justify-center' : '',
         $attrs.class ?? '',
       )
     "
@@ -44,7 +45,7 @@ defineProps<{
           :class="
             cn(
               'h-8 data-[state=open]:bg-accent',
-              align === 'right' ? '-mr-3' : '-ml-3',
+              align === 'center' ? '' : align === 'right' ? '-mr-3' : '-ml-3',
             )
           "
         >

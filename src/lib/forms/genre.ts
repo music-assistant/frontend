@@ -10,4 +10,5 @@ export const addGenreSchema = (t: (key: string) => string) =>
     description: z
       .string()
       .max(500, "Description must be at most 500 characters."),
+    contentType: z.enum(["music", "podcast", "audiobook"]),
   });
