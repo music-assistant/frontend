@@ -14,17 +14,30 @@
         <v-icon start>mdi-speaker-multiple</v-icon>
         {{ $t("settings.dsp.parametric_eq.show_multichannel_controls") }}
       </v-btn>
-      <v-select
-        v-else
-        v-model="editedChannel"
-        class="pa-2"
-        :items="channelTypes"
-        :label="$t('settings.dsp.parametric_eq.edited_channel')"
-        variant="outlined"
-        density="comfortable"
-        style="min-width: 250px"
-        hide-details
-      />
+      <!-- Channel selector + collapse button behave as one action-sized unit so
+           they wrap together and stay within the original button's width. -->
+      <div v-else class="eq-channel">
+        <!-- Collapse back to the single-channel button. Only offered while no
+             per-channel data exists; adding any L/R band re-locks the dropdown. -->
+        <v-btn
+          v-if="!isMultiChannel"
+          class="eq-collapse"
+          icon="mdi-close"
+          variant="text"
+          :aria-label="
+            $t('settings.dsp.parametric_eq.disable_multichannel_controls')
+          "
+          @click="disableMultiChannel"
+        />
+        <v-select
+          v-model="editedChannel"
+          :items="channelTypes"
+          :aria-label="$t('settings.dsp.parametric_eq.edited_channel')"
+          variant="outlined"
+          density="compact"
+          hide-details
+        />
+      </div>
 
       <!-- Import/Export Buttons to Load/Save Equalizer APO Settings -->
       <v-btn variant="outlined" @click="openApoFileImport">
@@ -736,6 +749,14 @@ const selectedBandIndex = ref(-1);
 
 const editedChannel = ref(AudioChannel.ALL);
 
+// Collapse the channel dropdown back to the plain button. Safe only when there
+// is no per-channel data (the template gates this on !isMultiChannel), so the
+// auto-enable watchEffect won't immediately re-open it.
+const disableMultiChannel = () => {
+  editedChannel.value = AudioChannel.ALL;
+  showMultiChannelControls.value = false;
+};
+
 // Computed property for the selected band
 const selectedBand = computed(() => peq.value.bands[selectedBandIndex.value]);
 
@@ -927,15 +948,41 @@ onMounted(() => {
 /* Give every action the same width so they stay aligned (not staggered)
    however many wrap per row on narrow displays */
 .eq-actions > .v-btn,
-.eq-actions > .v-select {
+.eq-actions > .eq-channel {
   flex: 0 1 18rem;
   min-width: 0;
+}
+/* Channel selector + collapse button share one action-sized slot: the select
+   flexes to fill, the collapse icon takes a fixed compact footprint. */
+.eq-channel {
+  display: flex;
+  align-items: center;
+  /* Fixed to the button height so toggling button <-> dropdown can't shift the row */
+  height: 40px;
+}
+.eq-channel > .v-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Cap the compact field to the button height (its rendered height can otherwise
+   exceed the 40px control height and push the row down on toggle) */
+.eq-channel :deep(.v-field) {
+  height: 40px;
+}
+.eq-channel > .eq-collapse {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  min-width: 0;
+  margin-inline-end: 3px;
+  transform: translateY(2px);
 }
 /* Smaller text and tighter letter-spacing so the longest label fits on one
    line while the buttons stay narrow enough to share a single row */
 .eq-actions > .v-btn {
   height: auto;
-  min-height: var(--v-btn-height);
+  /* 40px matches the compact channel select so switching between the button
+     and the dropdown doesn't shift the content below */
+  min-height: 40px;
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
 }
