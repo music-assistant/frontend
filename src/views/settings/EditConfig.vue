@@ -69,25 +69,26 @@
 
     <!-- Protocol Configuration Section -->
     <div
-      v-if="
-        protocolGeneralEntries.length > 0 ||
-        protocolPanels.filter(
-          (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
-        ).length > 0
-      "
-      class="protocol-section"
+      v-if="protocolGeneralEntries.length > 0 || protocolPanels.length > 0"
+      class="category-section"
     >
-      <div class="protocol-section-header">
-        <v-icon icon="mdi-swap-horizontal" class="mr-3" size="24" />
-        <span class="protocol-section-title">
+      <div class="category-header">
+        <span class="category-icon">
+          <Antenna :size="16" />
+        </span>
+        <span class="category-title">
           {{ $t("settings.category.protocol_settings") }}
         </span>
       </div>
-      <!-- General protocol settings (shown before accordion) -->
-      <div
-        v-if="protocolGeneralEntries.length > 0"
-        class="protocol-general-settings"
-      >
+      <div class="category-content">
+        <!-- Explain the multi-protocol setup when more than one is available -->
+        <div
+          v-if="protocolPanels.length > 1"
+          class="text-muted-foreground mb-4 rounded-md bg-muted/50 px-3 py-2 text-sm leading-relaxed"
+        >
+          {{ $t("settings.protocol_multi_info") }}
+        </div>
+        <!-- General protocol settings, shown before the protocol list -->
         <div
           v-for="conf_entry of protocolGeneralEntries"
           :key="conf_entry.key"
@@ -135,194 +136,128 @@
             <HelpCircle :size="20" />
           </Button>
         </div>
-      </div>
-      <!-- Single protocol: show directly without expansion -->
-      <div
-        v-if="
-          protocolPanels.filter(
-            (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
-          ).length === 1
-        "
-        class="protocol-single-panel"
-      >
-        <div
-          v-for="panel of protocolPanels.filter(
-            (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
-          )"
-          :key="panel"
-        >
+
+        <!-- Enable/disable toggles for the optional output protocols -->
+        <template v-if="optionalProtocolPanels.length > 0">
+          <p class="text-muted-foreground mt-4 mb-2 border-b pb-1 text-xs">
+            {{ $t("settings.protocol_enable_label") }}
+          </p>
           <div
-            v-if="entriesForCategory(panel).length === 0"
-            class="protocol-disabled-message"
+            v-for="panel of optionalProtocolPanels"
+            :key="'toggle-' + panel"
+            class="flex items-center gap-3 py-2.5"
           >
-            {{ getProtocolEmptyMessage(panel) }}
-          </div>
-          <div
-            v-for="conf_entry of entriesForCategory(panel)"
-            :key="conf_entry.key"
-            class="config-entry"
-            :class="{ 'config-entry-advanced': conf_entry.advanced }"
-          >
-            <ConfigEntryField
-              :conf-entry="conf_entry"
-              :show-password-values="showPasswordValues"
-              :disabled="isDisabled(conf_entry)"
-              @toggle-password="showPasswordValues = !showPasswordValues"
-              @update:value="onValueUpdate(conf_entry, $event)"
-              @action="
-                action(
-                  conf_entry.action || conf_entry.key,
-                  !!conf_entry.immediate_apply,
-                );
-                conf_entry.value = conf_entry.action ? null : conf_entry.key;
-              "
-              @open-dsp="openDspConfig"
-              @open-options="openPlayerOptions"
+            <ProviderIcon
+              v-if="getProtocolDomain(panel)"
+              :domain="getProtocolDomain(panel)!"
+              :size="22"
+              class="shrink-0"
             />
-            <v-chip
-              v-if="conf_entry.advanced"
-              size="x-small"
-              color="grey"
-              variant="outlined"
-              class="advanced-badge"
-            >
-              {{ $t("settings.advanced") }}
-            </v-chip>
-            <Button
-              v-if="hasDescriptionOrHelpLink(conf_entry)"
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="help-btn"
-              @click="
-                conf_entry.description
-                  ? (showHelpInfo = conf_entry)
-                  : openLink(conf_entry.help_link!)
+            <span class="min-w-0 flex-1 text-sm">
+              {{ getCategoryTranslation(panel) }}
+            </span>
+            <Switch
+              :model-value="!!getProtocolEnabledEntry(panel)?.value"
+              :disabled="!isProtocolProviderAvailable(panel)"
+              class="shrink-0"
+              @update:model-value="
+                onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
               "
-            >
-              <HelpCircle :size="20" />
-            </Button>
+            />
           </div>
-        </div>
+        </template>
+
+        <!-- Per-protocol configuration: native (always on) + enabled optional -->
+        <template v-if="configurableProtocolPanels.length > 0">
+          <p class="text-muted-foreground mt-4 mb-2 border-b pb-1 text-xs">
+            {{ $t("settings.protocol_configure_label") }}
+          </p>
+          <Accordion
+            type="multiple"
+            :model-value="openConfigPanels"
+            @update:model-value="openConfigPanels = $event as string[]"
+          >
+            <AccordionItem
+              v-for="panel of configurableProtocolPanels"
+              :key="panel"
+              :value="panel"
+              class="border-b-0"
+            >
+              <AccordionTrigger class="hover:no-underline">
+                <span class="flex items-center gap-2">
+                  <ProviderIcon
+                    v-if="getProtocolDomain(panel)"
+                    :domain="getProtocolDomain(panel)!"
+                    :size="22"
+                  />
+                  <span>{{
+                    $t("settings.protocol_configure_title", {
+                      name: getProtocolName(panel),
+                    })
+                  }}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent class="pt-3">
+                <div
+                  v-if="entriesForCategory(panel).length === 0"
+                  class="protocol-empty-message"
+                >
+                  {{ getProtocolEmptyMessage(panel) }}
+                </div>
+                <div
+                  v-for="conf_entry of entriesForCategory(panel)"
+                  :key="conf_entry.key"
+                  class="config-entry"
+                  :class="{ 'config-entry-advanced': conf_entry.advanced }"
+                >
+                  <ConfigEntryField
+                    :conf-entry="conf_entry"
+                    :show-password-values="showPasswordValues"
+                    :disabled="isDisabled(conf_entry)"
+                    @toggle-password="showPasswordValues = !showPasswordValues"
+                    @update:value="onValueUpdate(conf_entry, $event)"
+                    @action="
+                      action(
+                        conf_entry.action || conf_entry.key,
+                        !!conf_entry.immediate_apply,
+                      );
+                      conf_entry.value = conf_entry.action
+                        ? null
+                        : conf_entry.key;
+                    "
+                    @open-dsp="openDspConfig"
+                    @open-options="openPlayerOptions"
+                  />
+                  <v-chip
+                    v-if="conf_entry.advanced"
+                    size="x-small"
+                    color="grey"
+                    variant="outlined"
+                    class="advanced-badge"
+                  >
+                    {{ $t("settings.advanced") }}
+                  </v-chip>
+                  <Button
+                    v-if="hasDescriptionOrHelpLink(conf_entry)"
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="help-btn"
+                    :aria-label="$t('tooltip.help')"
+                    @click="
+                      conf_entry.description
+                        ? (showHelpInfo = conf_entry)
+                        : openLink(conf_entry.help_link!)
+                    "
+                  >
+                    <HelpCircle :size="20" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </template>
       </div>
-      <!-- Multiple protocols: show as accordion -->
-      <v-expansion-panels
-        v-else
-        v-model="activeProtocolPanel"
-        class="protocol-panels"
-      >
-        <v-expansion-panel
-          v-for="panel of protocolPanels.filter(
-            (p) => entriesForCategory(p).length > 0 || isProtocolCategory(p),
-          )"
-          :key="panel"
-          :value="panel"
-          class="protocol-panel"
-        >
-          <v-expansion-panel-title class="protocol-panel-title">
-            <div class="protocol-title-content">
-              <ProviderIcon
-                v-if="getProtocolDomain(panel)"
-                :domain="getProtocolDomain(panel)!"
-                :size="24"
-              />
-              <span class="panel-title-text">
-                {{ getCategoryTranslation(panel) }}
-              </span>
-            </div>
-            <!-- Show toggle switch for protocol categories -->
-            <template #actions="{ expanded }">
-              <div class="protocol-actions">
-                <v-switch
-                  v-if="getProtocolEnabledEntry(panel)"
-                  :model-value="getProtocolEnabledEntry(panel)?.value"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  @click.stop
-                  @update:model-value="
-                    onValueUpdate(getProtocolEnabledEntry(panel)!, $event)
-                  "
-                />
-                <v-switch
-                  v-else
-                  :model-value="true"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                  class="protocol-toggle"
-                  disabled
-                  @click.stop
-                />
-                <v-icon
-                  :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                  class="protocol-expand-icon"
-                />
-              </div>
-            </template>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <div class="config-panel-content">
-              <div
-                v-if="entriesForCategory(panel).length === 0"
-                class="protocol-disabled-message"
-              >
-                {{ getProtocolEmptyMessage(panel) }}
-              </div>
-              <div
-                v-for="conf_entry of entriesForCategory(panel)"
-                :key="conf_entry.key"
-                class="config-entry"
-                :class="{ 'config-entry-advanced': conf_entry.advanced }"
-              >
-                <ConfigEntryField
-                  :conf-entry="conf_entry"
-                  :show-password-values="showPasswordValues"
-                  :disabled="isDisabled(conf_entry)"
-                  @toggle-password="showPasswordValues = !showPasswordValues"
-                  @update:value="onValueUpdate(conf_entry, $event)"
-                  @action="
-                    action(
-                      conf_entry.action || conf_entry.key,
-                      !!conf_entry.immediate_apply,
-                    );
-                    conf_entry.value = conf_entry.action
-                      ? null
-                      : conf_entry.key;
-                  "
-                  @open-dsp="openDspConfig"
-                  @open-options="openPlayerOptions"
-                />
-                <v-chip
-                  v-if="conf_entry.advanced"
-                  size="x-small"
-                  color="grey"
-                  variant="outlined"
-                  class="advanced-badge"
-                >
-                  {{ $t("settings.advanced") }}
-                </v-chip>
-                <Button
-                  v-if="hasDescriptionOrHelpLink(conf_entry)"
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  class="help-btn"
-                  :aria-label="$t('tooltip.help')"
-                  @click="
-                    conf_entry.description
-                      ? (showHelpInfo = conf_entry)
-                      : openLink(conf_entry.help_link!)
-                  "
-                >
-                  <HelpCircle :size="20" />
-                </Button>
-              </div>
-            </div>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
     </div>
 
     <!-- Other regular settings sections -->
@@ -471,9 +406,17 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { markdownToHtml } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -482,6 +425,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import {
   Airplay,
+  Antenna,
   Cast,
   HelpCircle,
   Lock,
@@ -507,7 +451,6 @@ const allowNavigation = ref(false);
 export interface Props {
   configEntries: ConfigEntryUI[];
   disabled: boolean;
-  defaultExpandedProtocol?: string;
 }
 
 const emit = defineEmits<{
@@ -526,7 +469,7 @@ const entries = ref<ConfigEntryUI[]>();
 const valid = ref(false);
 const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const activePanel = ref<string[]>([]);
-const activeProtocolPanel = ref<string | undefined>(undefined);
+const openConfigPanels = ref<string[]>([]);
 const showPasswordValues = ref(false);
 const showAdvancedSettings = ref(false);
 const showHelpInfo = ref<ConfigEntryUI>();
@@ -570,6 +513,31 @@ const protocolPanels = computed(() => {
 const protocolGeneralEntries = computed(() => {
   return entriesForCategory("protocol_general");
 });
+
+// Optional protocols (those with an enable/disable entry) go in the collapsible
+// accordion. The native protocol has no separate toggleable provider, so its
+// settings live directly in the main form alongside the general protocol entries.
+const optionalProtocolPanels = computed(() =>
+  protocolPanels.value.filter((p) => getProtocolEnabledEntry(p)),
+);
+
+const nativeProtocolPanels = computed(() =>
+  protocolPanels.value.filter((p) => !getProtocolEnabledEntry(p)),
+);
+
+// Only enabled optional protocols get a configuration section.
+const enabledOptionalProtocolPanels = computed(() =>
+  optionalProtocolPanels.value.filter(
+    (p) => getProtocolEnabledEntry(p)?.value !== false,
+  ),
+);
+
+// The native protocol (always on) plus any enabled optional protocols each get a
+// "Configure" section.
+const configurableProtocolPanels = computed(() => [
+  ...nativeProtocolPanels.value,
+  ...enabledOptionalProtocolPanels.value,
+]);
 
 const requiredValuesPresent = computed(() => {
   if (entries.value) {
@@ -661,10 +629,37 @@ const hasHiddenAdvancedSettings = function (category: string): boolean {
   );
 };
 
+// A protocol's backing provider can be disabled/unavailable independently. Only
+// optional protocols (those with an enabled entry) are served by a separate,
+// toggleable provider; native protocols have no separate provider.
+const isProtocolProviderAvailable = function (category: string): boolean {
+  const domain = getProtocolDomain(category);
+  if (!domain) return true;
+  const provider = api.getProvider(domain);
+  // Only treat as unavailable when we resolve a provider that reports unavailable.
+  return provider ? provider.available : true;
+};
+
+// Display name for a protocol — the provider's own name, falling back to the
+// category label with the "Enable … support" scaffolding stripped.
+const getProtocolName = function (category: string): string {
+  const domain = getProtocolDomain(category);
+  const provider = domain ? api.getProvider(domain) : undefined;
+  if (provider?.name) return provider.name;
+  return getCategoryTranslation(category)
+    .replace(/^Enable\s+/i, "")
+    .replace(/\s+support$/i, "");
+};
+
 const getProtocolEmptyMessage = function (category: string): string {
   const enabledEntry = getProtocolEnabledEntry(category);
-  const isEnabled = enabledEntry?.value !== false;
 
+  // Optional protocol whose backing provider is unavailable
+  if (enabledEntry && !isProtocolProviderAvailable(category)) {
+    return $t("settings.protocol_provider_unavailable");
+  }
+
+  const isEnabled = enabledEntry?.value !== false;
   if (!isEnabled) {
     return $t("settings.protocol_disabled_message");
   }
@@ -709,13 +704,8 @@ watch(
     // Expand all panels by default, except protocol categories which stay collapsed
     const expandedPanels = panels.value.filter((p) => !isProtocolCategory(p));
     activePanel.value = expandedPanels;
-    // Auto-expand the native protocol panel if specified
-    if (
-      props.defaultExpandedProtocol &&
-      protocolPanels.value.includes(props.defaultExpandedProtocol)
-    ) {
-      activeProtocolPanel.value = props.defaultExpandedProtocol;
-    }
+    // Protocol config sections stay collapsed by default; the user opens the one
+    // they want to configure.
   },
   { immediate: true },
 );
@@ -1029,47 +1019,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   }
 }
 
-/* Expansion panels */
-.config-panels {
-  margin-top: 16px;
-}
-
-.config-panel {
-  margin-bottom: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.config-panel::before {
-  display: none;
-}
-
-.config-panel-title {
-  min-height: 52px;
-  padding: 14px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.config-panel-title .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.panel-title-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
-
-.config-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
 /* Action buttons */
 .config-actions {
   display: flex;
@@ -1082,42 +1031,6 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
 .config-actions .v-btn--disabled {
   background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
   color: rgba(var(--v-theme-on-surface), 0.38) !important;
-}
-
-/* Protocol panel actions (toggle + chevron) */
-.protocol-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Protocol toggle switch styling */
-.protocol-toggle {
-  flex-shrink: 0;
-}
-
-.protocol-toggle :deep(.v-switch__track) {
-  height: 20px;
-  width: 36px;
-}
-
-.protocol-toggle :deep(.v-switch__thumb) {
-  height: 16px;
-  width: 16px;
-}
-
-.protocol-expand-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  transition: transform 0.2s ease;
-  font-size: 20px;
-}
-
-/* Protocol disabled message */
-.protocol-disabled-message {
-  padding: 16px;
-  text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-style: italic;
 }
 
 /* Advanced settings toggle */
@@ -1151,111 +1064,10 @@ const hasDescriptionOrHelpLink = function (conf_entry: ConfigEntryUI) {
   opacity: 0.9;
 }
 
-/* Protocol section */
-.protocol-section {
-  margin-top: 16px;
-  margin-bottom: 24px;
-}
-
-.protocol-section-header {
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-radius: 8px 8px 0 0;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: none;
-}
-
-/* Protocol general settings (before accordion) */
-.protocol-general-settings {
-  padding: 20px;
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-.protocol-section-header .v-icon {
-  color: rgb(var(--v-theme-primary));
-}
-
-.protocol-section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-}
-
-/* Single protocol (non-collapsible) */
-.protocol-single-panel {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 0 0 8px 8px;
-  background: rgba(var(--v-theme-surface), 1);
-  padding: 20px;
-}
-
-.protocol-panels {
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 0 0 8px 8px;
-}
-
-.protocol-panel {
-  border: none !important;
-  background: rgba(var(--v-theme-surface), 1);
-  box-shadow: none !important;
-}
-
-.protocol-panel::before {
-  display: none !important;
-}
-
-.protocol-panel::after {
-  display: none !important;
-}
-
-.protocol-panel + .protocol-panel {
-  border-top: none !important;
-  margin-top: 0 !important;
-}
-
-.protocol-panel-title {
-  min-height: 56px;
-  padding: 12px 20px;
-  background: rgba(var(--v-theme-surface), 1);
-  border: none !important;
-  display: flex;
-  align-items: center;
-}
-
-.protocol-title-content {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 4px;
-}
-
-.protocol-title-content :deep(> div) {
-  display: flex;
-  align-items: center;
-  margin: 0;
-}
-
-.protocol-panel-title .panel-title-text {
-  font-size: 1rem;
-  font-weight: 400;
-  color: rgba(var(--v-theme-on-surface), 0.87);
-  line-height: 1.5;
-}
-
-.protocol-panel :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.protocol-panel .config-panel-content {
-  padding: 16px 20px 20px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+.protocol-empty-message {
+  padding: 2px 0 6px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-style: italic;
+  font-size: 0.875rem;
 }
 </style>

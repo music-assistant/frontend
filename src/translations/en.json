@@ -452,6 +452,11 @@
         "protocol_disabled_message": "Enable this protocol to configure its settings",
         "protocol_no_settings": "This output protocol does not have any additional configuration",
         "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
+        "protocol_provider_unavailable": "The provider for this output protocol is currently unavailable.",
+        "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
+        "protocol_enable_label": "Enable output protocols",
+        "protocol_configure_title": "Configure {name}",
+        "protocol_configure_label": "Configure output protocols",
         "show_advanced_settings": "Show advanced settings",
         "advanced": "Advanced",
         "mobile_sidebar_side": {
