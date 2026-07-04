@@ -231,7 +231,8 @@
                 "preamp": "Preamp",
                 "add_band_channel": "Add Band ({channel} only)",
                 "band_channel": "Band {index} ({channel} only)",
-                "show_multichannel_controls": "Show Multi-Channel controls",
+                "show_multichannel_controls": "Enable Multi-Channel controls",
+                "disable_multichannel_controls": "Disable Multi-Channel controls",
                 "edited_channel": "Plot the EQs response for this channel(s)",
                 "channel": "This band will be applied to",
                 "per_channel_preamp": "Additional preamp gain for {channel}"
