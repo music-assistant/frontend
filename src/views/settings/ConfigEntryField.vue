@@ -12,26 +12,16 @@
     </div>
 
     <!-- label value -->
-    <v-alert
+    <LabelField
       v-else-if="confEntry.type == ConfigEntryType.LABEL"
-      variant="tonal"
-      type="info"
-      density="comfortable"
-      class="config-alert"
-    >
-      {{ displayLabel() }}
-    </v-alert>
+      :text="displayLabel()"
+    />
 
     <!-- alert value -->
-    <v-alert
+    <AlertField
       v-else-if="confEntry.type == ConfigEntryType.ALERT"
-      density="comfortable"
-      type="warning"
-      variant="tonal"
-      class="config-alert"
-    >
-      {{ displayLabel() }}
-    </v-alert>
+      :text="displayLabel()"
+    />
 
     <!-- action type -->
     <v-btn
@@ -178,7 +168,7 @@
           title: item.title,
           value: item.value,
           disabled: item.disabled,
-          subtitle: item.disabled ? item.disabled_reason : undefined,
+          subtitle: item.disabled ? item.disabled_reason : item.description,
         })
       "
       :disabled="isFieldDisabled"
@@ -289,6 +279,8 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
+import AlertField from "./fields/AlertField.vue";
+import LabelField from "./fields/LabelField.vue";
 import { ConfigEntryUI, isDspLinkEntry } from "@/helpers/config_entry_ui";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -348,6 +340,7 @@ const displayOptions = computed(() => {
       value: orgOption.value,
       disabled: orgOption.disabled,
       disabled_reason: orgOption.disabled_reason,
+      description: orgOption.description,
     };
     if (option.value == props.confEntry.default_value) {
       option.title += ` [${$t("settings.default")}]`;
@@ -373,10 +366,6 @@ const displayOptions = computed(() => {
   margin-top: 12px;
   font-weight: 600;
   font-size: 0.875rem;
-}
-
-.config-alert {
-  margin: 8px 0;
 }
 
 .action-btn {

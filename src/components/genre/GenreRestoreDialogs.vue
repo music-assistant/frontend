@@ -8,6 +8,23 @@
           $t("settings.confirm_restore_defaults")
         }}</DialogDescription>
       </DialogHeader>
+      <div class="grid gap-2 py-2">
+        <Label>{{ $t("tooltip.genre_content_type") }}</Label>
+        <Select v-model="restoreContentType">
+          <SelectTrigger class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="opt in contentTypeOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <DialogFooter>
         <Button variant="outline" @click="showRestoreDialog = false">
           {{ $t("cancel") }}
@@ -74,10 +91,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   restoreInProgress: boolean;
   fullRestoreInProgress: boolean;
+  contentTypeOptions: { value: string; label: string }[];
 }
 
 defineProps<Props>();
@@ -88,6 +114,9 @@ const emit = defineEmits<{
   "full-restore": [];
 }>();
 
+const restoreContentType = defineModel<string>("restoreContentType", {
+  required: true,
+});
 const showRestoreDialog = defineModel<boolean>("showRestoreDialog", {
   required: true,
 });

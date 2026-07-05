@@ -53,7 +53,6 @@
     "play_now": "Odtwarzaj teraz",
     "play_on": "Odtwarzaj na: {0}",
     "play_playlist_from": "Odtwarzaj listę odtwarzania od tego miejsca",
-    "play_radio": "Uruchom Radio",
     "player_type": {
         "group": "Grupa",
         "player": "Odtwarzacz",
@@ -74,8 +73,6 @@
     "queue_next_items": "Kolejne pozycje",
     "queue_options": "Opcje kolejki",
     "queue_previous_items": "Poprzednie utwory",
-    "queue_radio_based_on": "Kolejka jest automatycznie wypełniana utworami na podstawie:",
-    "queue_radio_enabled": "Tryb radiowy aktywny",
     "radios": "Radio",
     "read_more": "czytaj więcej",
     "refresh_item": "Odśwież",

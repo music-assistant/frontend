@@ -22,8 +22,14 @@
 <script setup lang="ts">
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { ArtistType, EventMessage, EventType } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  EventMessage,
+  EventType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
@@ -92,5 +98,11 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+  // per-item add events are suppressed during provider library syncs; also
+  // refresh when a sync covering this media type finishes
+  const unsubSync = onLibrarySyncCompleted(MediaType.ARTIST, () => {
+    updateAvailable.value = true;
+  });
+  onBeforeUnmount(unsubSync);
 });
 </script>

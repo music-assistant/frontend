@@ -1088,6 +1088,7 @@ export class MusicAssistantApi {
       genre?: number | number[];
       hide_empty?: boolean | null;
       media_type?: MediaType;
+      content_type?: MediaType | "music";
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
@@ -1129,19 +1130,14 @@ export class MusicAssistantApi {
     });
   }
 
-  public restoreGenreDefaults(fullRestore = false): Promise<Genre[]> {
+  public restoreGenreDefaults(
+    fullRestore = false,
+    contentType?: "all" | "music" | "podcast" | "audiobook",
+  ): Promise<Genre[]> {
     return this.sendCommand("music/genres/restore_defaults", {
       full_restore: fullRestore,
+      content_type: contentType,
     });
-  }
-
-  public getGenreScannerStatus(): Promise<{
-    running: boolean;
-    last_scan_time: number;
-    last_scan_ago_seconds: number | null;
-    last_scan_mapped: number | null;
-  }> {
-    return this.sendCommand("music/genres/scanner_status");
   }
 
   public triggerGenreScan(): Promise<{
@@ -1249,13 +1245,17 @@ export class MusicAssistantApi {
     });
   }
 
-  public getGenreRadioBaseTracks(
-    item_id: string,
-    provider_instance_id_or_domain: string,
+  public getGenreTracks(
+    item_id: string | number,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
   ): Promise<Track[]> {
-    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+    return this.sendCommand("music/genres/tracks", {
       item_id,
-      provider_instance_id_or_domain,
+      limit,
+      offset,
+      order_by,
     });
   }
 
@@ -1917,7 +1917,6 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
@@ -1935,7 +1934,6 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      radio_mode,
       start_item,
       sort_by,
     });

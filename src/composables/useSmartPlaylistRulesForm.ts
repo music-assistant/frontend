@@ -19,7 +19,9 @@ export type RuleField =
   | "album_type"
   | "favorite"
   | "explicit"
-  | "year";
+  | "year"
+  | "duration"
+  | "last_played";
 
 // Stable numeric id ↔ string value mapping for album types.
 // These ids are UI-only and are never persisted; the API receives the string value.
@@ -35,7 +37,13 @@ const ALBUM_TYPE_VALUE_TO_ID: Record<string, number> = Object.fromEntries(
   Object.entries(ALBUM_TYPE_ID_TO_VALUE).map(([k, v]) => [v, Number(k)]),
 );
 
-export type RuleOperator = "is" | "is_not" | "allowed";
+export type RuleOperator =
+  | "is"
+  | "is_not"
+  | "allowed"
+  | "greater_than"
+  | "less_than"
+  | "between";
 
 export interface RuleValue {
   id: number;
@@ -49,6 +57,10 @@ export interface RuleRow {
   values: RuleValue[];
   yearFrom?: number;
   yearTo?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  lastPlayedBeforeValue?: number;
+  lastPlayedBeforeUnit?: "hours" | "days" | "weeks" | "months";
 }
 
 export interface SmartPlaylistRulesFormInit {
@@ -113,6 +125,16 @@ export function useSmartPlaylistRulesForm(
       row.yearFrom = undefined;
       row.yearTo = undefined;
       list.push(row);
+    } else if (field === "duration") {
+      const row = newRule("duration", "is");
+      row.minDuration = undefined;
+      row.maxDuration = undefined;
+      list.push(row);
+    } else if (field === "last_played") {
+      const row = newRule("last_played", "is");
+      row.lastPlayedBeforeValue = undefined;
+      row.lastPlayedBeforeUnit = "days";
+      list.push(row);
     } else if (field === "favorite") {
       list.push(newRule("favorite", "is"));
     } else if (field === "explicit") {
@@ -127,7 +149,13 @@ export function useSmartPlaylistRulesForm(
   }
 
   function fieldAlreadyUsed(field: RuleField): boolean {
-    if (field === "favorite" || field === "explicit" || field === "year") {
+    if (
+      field === "favorite" ||
+      field === "explicit" ||
+      field === "year" ||
+      field === "duration" ||
+      field === "last_played"
+    ) {
       return rules.value.some((r) => r.field === field);
     }
     return false;
@@ -384,6 +412,14 @@ export function useSmartPlaylistRulesForm(
     return rules.value.find((r) => r.field === "explicit");
   }
 
+  function durationRule(): RuleRow | undefined {
+    return rules.value.find((r) => r.field === "duration");
+  }
+
+  function lastPlayedRule(): RuleRow | undefined {
+    return rules.value.find((r) => r.field === "last_played");
+  }
+
   function buildFinalRules(): SmartPlaylistRules {
     const isSeed = mode.value === "seed";
 
@@ -441,6 +477,12 @@ export function useSmartPlaylistRulesForm(
         .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
         .filter((x): x is string => !!x),
       explicit,
+      min_duration: durationRule()?.minDuration ?? undefined,
+      max_duration: durationRule()?.maxDuration ?? undefined,
+      last_played_before_value:
+        lastPlayedRule()?.lastPlayedBeforeValue ?? undefined,
+      last_played_before_unit:
+        lastPlayedRule()?.lastPlayedBeforeUnit ?? undefined,
     };
 
     if (isSeed) {
@@ -473,7 +515,14 @@ export function useSmartPlaylistRulesForm(
   const availableFields = computed<RuleField[]>(() => {
     if (mode.value === "seed") {
       return (
-        ["genre", "album_type", "explicit", "year"] as RuleField[]
+        [
+          "genre",
+          "album_type",
+          "explicit",
+          "year",
+          "duration",
+          "last_played",
+        ] as RuleField[]
       ).filter((f) => !fieldAlreadyUsed(f));
     }
     return (
@@ -485,6 +534,8 @@ export function useSmartPlaylistRulesForm(
         "favorite",
         "explicit",
         "year",
+        "duration",
+        "last_played",
       ] as RuleField[]
     ).filter((f) => !fieldAlreadyUsed(f));
   });
@@ -508,6 +559,13 @@ export function useSmartPlaylistRulesForm(
   function ruleIsEmpty(r: RuleRow): boolean {
     if (r.field === "year")
       return r.yearFrom === undefined && r.yearTo === undefined;
+    if (r.field === "duration")
+      return r.minDuration === undefined && r.maxDuration === undefined;
+    if (r.field === "last_played")
+      return (
+        r.lastPlayedBeforeValue === undefined ||
+        r.lastPlayedBeforeUnit === undefined
+      );
     if (r.field === "favorite" || r.field === "explicit") return false;
     return r.values.length === 0;
   }

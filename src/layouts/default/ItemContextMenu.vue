@@ -48,8 +48,13 @@
       </template>
 
       <template v-for="menuItem of visibleItems" :key="menuItem.label">
+        <!-- custom inline control (e.g. a stepper); renders its own row and
+             manages its own interaction without closing the menu -->
+        <component :is="menuItem.component" v-if="menuItem.component" />
         <!-- item with submenu -->
-        <DropdownMenuSub v-if="menuItem.subItems && menuItem.subItems.length">
+        <DropdownMenuSub
+          v-else-if="menuItem.subItems && menuItem.subItems.length"
+        >
           <DropdownMenuSubTrigger
             :class="[
               'gap-3',
@@ -207,7 +212,12 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
-import { radioModeSupported } from "@/helpers/radio";
+import {
+  gotoRadio,
+  radioActionLabelKey,
+  radioRelevant,
+  radioSupported,
+} from "@/helpers/radio";
 import { playerVisible } from "@/helpers/utils";
 import { isItemInLibrary, itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -269,6 +279,10 @@ export interface ContextMenuItem {
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
   color?: string;
+  // Renders a custom control in place of the standard row (label/icon/action
+  // are ignored except for the list key). Used for inline controls like the
+  // lyrics-offset stepper.
+  component?: Component;
 }
 
 export const showContextMenuForMediaItem = async function (
@@ -364,22 +378,6 @@ export const showPlayMenuForMediaItem = async function (
     "player_queues",
     enqueueConfigKey,
   )) as QueueOption;
-  // Start Radio
-  if (radioModeSupported(firstItem)) {
-    playMenuItems.push({
-      label: "play_radio",
-      action: () => {
-        api.playMedia(
-          playableItems.map((x) => x.uri),
-          QueueOption.REPLACE,
-          true,
-        );
-      },
-      icon: RadioTower,
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
   for (const option of [
     QueueOption.PLAY,
     QueueOption.NEXT,
@@ -533,6 +531,22 @@ export const getContextMenuItems = async function (
     });
   }
 
+  // go to <type> radio (a dynamic playlist generated from this item as the
+  // seed); shown for radio-capable types, disabled when one can't be generated
+  if (
+    items.length === 1 &&
+    radioRelevant(firstItem) &&
+    itemIsAvailable(firstItem)
+  ) {
+    contextMenuItems.push({
+      label: radioActionLabelKey(firstItem),
+      labelArgs: [],
+      action: () => gotoRadio(firstItem),
+      icon: RadioTower,
+      disabled: !radioSupported(firstItem),
+    });
+  }
+
   let resolvedItem = firstItem;
   if (
     (firstItem.provider != "library" || !("provider_mappings" in firstItem)) &&
@@ -556,14 +570,14 @@ export const getContextMenuItems = async function (
       )) || firstItem;
   }
 
-  // add to library
+  // add to library (genres are excluded: they are managed via the dedicated
+  // add-genre dialog and delete/merge actions, not generic library membership)
   if (
     !isItemInLibrary(resolvedItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
       MediaType.AUDIOBOOK,
-      MediaType.GENRE,
       MediaType.PLAYLIST,
       MediaType.PODCAST,
       MediaType.RADIO,
@@ -1069,7 +1083,6 @@ export const getPlaybackContextMenuItems = async function (
           api.playMedia(
             parentItem.uri,
             undefined,
-            false,
             playableItems[0].item_id,
             undefined,
             sortBy,
@@ -1088,7 +1101,6 @@ export const getPlaybackContextMenuItems = async function (
           api.playMedia(
             parentItem.uri,
             undefined,
-            false,
             firstItem.item_id,
             undefined,
             sortBy,
@@ -1104,7 +1116,7 @@ export const getPlaybackContextMenuItems = async function (
       playMenuItems.push({
         label: "play_from_here",
         action: () => {
-          api.playMedia(parentItem.uri, undefined, false, firstItem.item_id);
+          api.playMedia(parentItem.uri, undefined, firstItem.item_id);
         },
         icon: PlayCircle,
         labelArgs: [],
@@ -1125,23 +1137,6 @@ export const getPlaybackContextMenuItems = async function (
         );
       },
       icon: PlayCircle,
-      labelArgs: [],
-      disabled: !store.activePlayer,
-    });
-  }
-
-  // Start Radio
-  if (radioModeSupported(firstItem)) {
-    playMenuItems.push({
-      label: "play_radio",
-      action: () => {
-        api.playMedia(
-          items.map((x) => x.uri),
-          QueueOption.REPLACE,
-          true,
-        );
-      },
-      icon: RadioTower,
       labelArgs: [],
       disabled: !store.activePlayer,
     });

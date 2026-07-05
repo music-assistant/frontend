@@ -53,7 +53,6 @@
     "play_now": "Atskaņot Tagad",
     "play_on": "Atskaņot uz: {0}",
     "play_playlist_from": "Atskaņot mūzikas sarakstu no šejienes",
-    "play_radio": "Sākt radio",
     "player_type": {
         "group": "Grupa",
         "player": "Atskaņotājs",
@@ -74,8 +73,6 @@
     "queue_next_items": "Nākamie vienumi",
     "queue_options": "Rindas opcijas",
     "queue_previous_items": "Atskaņotie vienumi",
-    "queue_radio_based_on": "Rinda tiek dinamiski aizpildīta ar dziesmām, balstoties uz:",
-    "queue_radio_enabled": "Radio režīms ir ieslēgts",
     "radios": "Radio",
     "read_more": "lasīt vairāk",
     "refresh_item": "Atsvaidzināt vienumu",

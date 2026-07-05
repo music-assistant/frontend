@@ -53,7 +53,6 @@
     "play_now": "Reproduzir agora",
     "play_on": "Reproduzir em: {0}",
     "play_playlist_from": "Reproduzir a lista de reprodução a partir daqui",
-    "play_radio": "Iniciar rádio",
     "player_type": {
         "group": "Grupo",
         "player": "Leitor",
@@ -74,8 +73,6 @@
     "queue_next_items": "Próximos itens",
     "queue_options": "Opções de fila",
     "queue_previous_items": "Itens reproduzidos",
-    "queue_radio_based_on": "A fila de espera é preenchida dinamicamente com faixas com base em:",
-    "queue_radio_enabled": "O modo rádio está ativado",
     "radios": "Rádio",
     "read_more": "ler mais",
     "refresh_item": "Atualizar item",
@@ -1301,9 +1298,6 @@
     "crossfade_active": "O Crossfade está ativado.",
     "crossfade_active_with_smart": "A função Crossfade está ativada com transições inteligentes.",
     "crossfade_smart_active": "O tempo de fade é selecionado automaticamente de forma a adaptar-se a cada faixa.",
-    "radio_explanation": "A função Rádio transforma o conteúdo multimédia que selecionou numa mistura dinâmica e interminável, incorporando continuamente faixas semelhantes para que a música não pare.",
-    "radio_active": "A rádio está ativa, com base em:",
-    "radio_not_active": "O rádio está desligado; a sua lista de reprodução está a tocar exatamente a seleção que escolheu.",
     "lyrics": "Letra",
     "lyrics_unavailable_song": "A letra desta canção ainda não está disponível.",
     "lyrics_unavailable_content": "Não há letras disponíveis para este conteúdo."

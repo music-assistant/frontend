@@ -52,7 +52,6 @@
     "play_now": "Soita nyt",
     "play_on": "Soita kohteessa: {0}",
     "play_playlist_from": "Soita soittolista tästä alkaen",
-    "play_radio": "Käynnistä Radio",
     "player_type": {
         "group": "Ryhmä",
         "player": "Soitin",
@@ -73,8 +72,6 @@
     "queue_next_items": "Seuraavat kohteet",
     "queue_options": "Jonon asetukset",
     "queue_previous_items": "Soitetut kohteet",
-    "queue_radio_based_on": "Jono täytetään dynaamisesti kappaleilla seuraavien perusteella:",
-    "queue_radio_enabled": "Radio-tila on päällä",
     "radios": "Radio",
     "read_more": "lue lisää",
     "refresh_item": "Päivitä kohde",

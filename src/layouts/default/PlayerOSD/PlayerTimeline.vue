@@ -23,7 +23,7 @@
         >
           <SliderRange
             data-slot="slider-range"
-            class="absolute rounded-full h-1.5 top-1/2 -translate-y-1/2"
+            class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
           />
           <!-- pointerdown.stop prevents reka's slider track tap action -->
@@ -338,7 +338,6 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   api.playMedia(
     store.curQueueItem.media_item.uri,
     undefined,
-    undefined,
     chapter.position.toString(),
   );
 };
@@ -363,7 +362,7 @@ const chapterClicked = function (chapter: MediaItemChapter) {
   opacity: 0.6;
   display: flex;
   flex: 1 1 auto;
-  margin-top: -10px;
+  margin-top: -6px;
   margin-bottom: 5px;
 }
 .time-text-row > div {

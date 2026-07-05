@@ -9,7 +9,6 @@ import {
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -71,15 +70,10 @@ export const getPlayerMenuItems = (
     menuItems.push(getSleepTimerMenuItem(player));
   }
 
-  const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
+  const isDynamic = playerQueue?.is_dynamic === true;
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
-  if (
-    isQueue &&
-    playerQueue &&
-    !isSingleDynamicPlaylist &&
-    !hideShuffleRepeat
-  ) {
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -93,12 +87,7 @@ export const getPlayerMenuItems = (
   }
 
   // repeat (queue menu only; hidden when the dedicated control is visible)
-  if (
-    isQueue &&
-    playerQueue &&
-    !isSingleDynamicPlaylist &&
-    !hideShuffleRepeat
-  ) {
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -163,8 +152,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // clear queue (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  // clear queue (both menus; only when the queue has items)
+  if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
       labelArgs: [],
