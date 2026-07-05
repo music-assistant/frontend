@@ -516,6 +516,8 @@ export interface ConfigValueOption {
   disabled?: boolean;
   // disabled_reason: optional explanation of why the option is disabled
   disabled_reason?: string;
+  // description: optional per-option help text shown under the option
+  description?: string;
 }
 
 export interface ConfigEntry {
@@ -760,6 +762,8 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases: string[] | null;
+  // taxonomy this genre belongs to; null/undefined = music/general
+  content_type?: MediaType | null;
 }
 
 export interface BrowseFolder extends MediaItem {
@@ -883,6 +887,10 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
+  // smart_shuffle_active: whether shuffle is currently in "smart" mode (server-derived,
+  // read-only). True when shuffle is on with the per-queue smart-shuffle setting enabled,
+  // or while radio mode is active. Lets clients show a smart-shuffle indicator.
+  smart_shuffle_active: boolean;
   autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
   crossfade_enabled: boolean;
@@ -908,7 +916,10 @@ export interface PlayerQueue {
   state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
-  radio_source: MediaItemType[];
+  // The queue's enqueued parent items (its origin), present regardless of mode.
+  // When one or more sources are dynamic, the queue runs in dynamic mode
+  // (is_dynamic), implicitly enabling autoplay and smart shuffle.
+  sources: ItemMapping[];
   enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
@@ -1344,9 +1355,12 @@ export interface SmartPlaylistRules {
   excluded_artist_names?: Record<number, string>;
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
-  dedup_hours?: number;
   album_types?: string[];
   excluded_album_types?: string[];
+  min_duration?: number;
+  max_duration?: number;
+  last_played_before_value?: number;
+  last_played_before_unit?: string;
 }
 
 export interface SmartPlaylistTrackStats {

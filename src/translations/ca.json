@@ -51,7 +51,6 @@
     "play_now": "Reprodueix ara",
     "play_on": "Reprodueix a: {0}",
     "play_playlist_from": "Reprodueix la llista de reproducció des d'aquí",
-    "play_radio": "Inicia la ràdio",
     "player_type": {
         "group": "Grup",
         "player": "Reproductor",
@@ -72,8 +71,6 @@
     "queue_next_items": "Elements següents",
     "queue_options": "Opcions de la cua",
     "queue_previous_items": "Elements reproduïts",
-    "queue_radio_based_on": "La cua s'omple dinàmicament amb pistes en funció de:",
-    "queue_radio_enabled": "El mode ràdio està activat",
     "radios": "Ràdio",
     "read_more": "llegeix més",
     "refresh_item": "Actualitza l'element",

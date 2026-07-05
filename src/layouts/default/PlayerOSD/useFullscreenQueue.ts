@@ -221,12 +221,26 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     return [items[0].index, items[items.length - 1].index];
   });
 
-  // Drop all cached data (e.g. after a reorder) and refetch what's visible.
-  const invalidate = () => {
+  // Invalidate the loaded window so it refetches. The already-loaded item
+  // objects stay in place and are overwritten as fresh pages arrive, so a queue
+  // change (reorder/add/remove) updates only the rows that actually differ
+  // instead of blanking every row to a skeleton and reloading every thumbnail.
+  // Pass clear=true when switching to a different queue, whose items must not be
+  // shown even briefly.
+  const invalidate = (clear = false) => {
     loadGeneration += 1;
-    loadedItems.value = new Map();
     loadedPages.clear();
     pendingPages.clear();
+    if (clear) {
+      loadedItems.value = new Map();
+    } else {
+      // Drop entries past the queue's (possibly reduced) end; the rest stay
+      // visible until the refetch overwrites them.
+      const total = store.activePlayerQueue?.items ?? 0;
+      for (const index of loadedItems.value.keys()) {
+        if (index >= total) loadedItems.value.delete(index);
+      }
+    }
     const [first, last] = visibleRange.value;
     ensureRangeLoaded(first, last);
   };
@@ -266,12 +280,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   };
 
   const chapterClicked = (item: MediaItemType, chapter: MediaItemChapter) => {
-    api.playMedia(
-      item.uri,
-      QueueOption.PLAY,
-      undefined,
-      chapter.position.toString(),
-    );
+    api.playMedia(item.uri, QueueOption.PLAY, chapter.position.toString());
   };
 
   // ---- drag-to-reorder (up-next items only) --------------------------------
@@ -345,14 +354,21 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   );
 
   // Reload data when the server reports the queue changed (reorder/add/remove).
+  // This runs even while the panel is hidden so an off-screen change isn't
+  // served stale on reopen; while hidden the refetch is a no-op (no rows are
+  // rendered) and the cleared page bookkeeping makes the visibleRange watcher
+  // refetch once the panel is shown again.
   onMounted(() => {
     const unsub = api.subscribe(
       EventType.QUEUE_ITEMS_UPDATED,
       (evt: EventMessage) => {
         if (evt.object_id != store.activePlayerQueue?.queue_id) return;
-        if (!store.showFullscreenPlayer || !store.showQueueItems) return;
         invalidate();
-        if (followCurrent.value) {
+        if (
+          store.showFullscreenPlayer &&
+          store.showQueueItems &&
+          followCurrent.value
+        ) {
           nextTick(() => requestAnimationFrame(() => focusCurrent("auto")));
         }
       },
@@ -364,7 +380,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   watch(
     () => store.activePlayerId,
     () => {
-      invalidate();
+      invalidate(true);
       if (
         store.showFullscreenPlayer &&
         store.showQueueItems &&

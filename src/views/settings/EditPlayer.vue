@@ -186,7 +186,6 @@
       v-if="config"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
-      :default-expanded-protocol="nativeProtocolCategory"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -292,13 +291,6 @@ const unsub = api.subscribe(
   },
 );
 onBeforeUnmount(unsub);
-
-// Compute the native protocol category to auto-expand its accordion panel
-const nativeProtocolCategory = computed(() => {
-  if (!config.value) return undefined;
-  const domain = api.getProviderManifest(config.value.provider)?.domain;
-  return domain ? `protocol_${domain}` : undefined;
-});
 
 // computed properties
 const config_entries = computed(() => {

@@ -56,6 +56,41 @@
             </template>
           </form.Field>
 
+          <form.Field name="contentType">
+            <template #default="{ field }">
+              <Field>
+                <FieldLabel :for="field.name">
+                  {{ $t("tooltip.genre_content_type") }}
+                </FieldLabel>
+                <Select
+                  :model-value="field.state.value"
+                  :disabled="loading"
+                  @update:model-value="
+                    (val: unknown) =>
+                      field.handleChange(
+                        val as 'music' | 'podcast' | 'audiobook',
+                      )
+                  "
+                >
+                  <SelectTrigger :id="field.name" class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="music">
+                      {{ $t("genre_content_type.music") }}
+                    </SelectItem>
+                    <SelectItem value="podcast">
+                      {{ $t("genre_content_type.podcasts") }}
+                    </SelectItem>
+                    <SelectItem value="audiobook">
+                      {{ $t("genre_content_type.audiobooks") }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </template>
+          </form.Field>
+
           <form.Field name="description">
             <template #default="{ field }">
               <Field>
@@ -121,6 +156,13 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { addGenreSchema } from "@/lib/forms/genre";
 import api from "@/plugins/api";
@@ -138,6 +180,7 @@ const form = useForm({
     name: "",
     sortName: "",
     description: "",
+    contentType: "music" as "music" | "podcast" | "audiobook",
   },
   validators: {
     onSubmit: addGenreSchema(t),
@@ -152,6 +195,7 @@ const form = useForm({
       sort_name: value.sortName || value.name,
       provider_mappings: [],
       favorite: false,
+      content_type: value.contentType === "music" ? null : value.contentType,
     };
 
     if (value.description) {
