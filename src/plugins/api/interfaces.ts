@@ -942,6 +942,9 @@ export interface OutputProtocol {
   protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
+  // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
+  // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
+  derived_from?: string | null;
 }
 
 export interface DeviceInfo {

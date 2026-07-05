@@ -186,6 +186,7 @@
       v-if="config"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
+      :output-protocols="api.players[config.player_id]?.output_protocols || []"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"

@@ -39,6 +39,7 @@
       :visible-entries-by-category="visibleEntriesByCategory"
       :show-password-values="showPasswordValues"
       :is-disabled="isDisabled"
+      :output-protocols="outputProtocols"
       @update:value="onValueUpdate"
       @action="onEntryAction"
       @help="onEntryHelp"
@@ -163,6 +164,7 @@ import { markdownToHtml } from "@/helpers/utils";
 import {
   ConfigEntryType,
   ConfigValueType,
+  OutputProtocol,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -193,6 +195,9 @@ const allowNavigation = ref(false);
 export interface Props {
   configEntries: ConfigEntryUI[];
   disabled: boolean;
+  // Output protocols of the player being configured; drives derived-transport labelling
+  // in the protocol section. Omitted for provider/core configs.
+  outputProtocols?: OutputProtocol[];
 }
 
 const emit = defineEmits<{
