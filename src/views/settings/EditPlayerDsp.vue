@@ -51,7 +51,7 @@
       </v-btn>
     </v-toolbar>
 
-    <v-container class="pa-4">
+    <v-container fluid class="pa-4">
       <v-alert v-if="!dsp.enabled" type="info" class="mt-4" color="transparent">
         {{ $t("settings.dsp.disabled_message") }}
       </v-alert>

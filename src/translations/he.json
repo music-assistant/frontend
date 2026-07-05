@@ -51,7 +51,6 @@
     "play_now": "נגן עכשיו",
     "play_on": "נגן ב: {0}",
     "play_playlist_from": "הפעל רשימת השמעה מכאן",
-    "play_radio": "הפעל את הרדיו",
     "player_type": {
         "group": "קבוצה",
         "player": "נגן",
@@ -71,8 +70,6 @@
     "queue_next_items": "הפריטים הבאים",
     "queue_options": "אפשרויות רשימה",
     "queue_previous_items": "פריטים שהושמעו",
-    "queue_radio_based_on": "התור מתמלא באופן דינמי בשירים המבוססות על {0}:",
-    "queue_radio_enabled": "מצב רדיו מופעל",
     "radios": "רדיו",
     "read_more": "קרא עוד",
     "refresh_item": "רענן פריט",

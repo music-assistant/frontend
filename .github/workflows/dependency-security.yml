@@ -99,7 +99,7 @@ jobs:
 
       # 5. Run pnpm audit for known vulnerabilities
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.8.0
 

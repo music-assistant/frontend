@@ -35,6 +35,20 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.UNKNOWN]: "mdi-help-circle-outline",
 };
 
+// Icon marking which taxonomy a genre belongs to (null/undefined = music/general).
+// Shown on each genre in the library list so same-named genres across taxonomies
+// (e.g. a music "Comedy" vs a podcast "Comedy") are visually distinguishable.
+export function genreContentTypeIcon(contentType?: MediaType | null): string {
+  switch (contentType) {
+    case MediaType.AUDIOBOOK:
+      return "mdi-book-music";
+    case MediaType.PODCAST:
+      return "mdi-podcast";
+    default:
+      return "mdi-music";
+  }
+}
+
 // Map recommendation folder item_ids to library route names
 export const folderIdToRoute: Record<string, string> = {
   genre_artist: "artists",

@@ -6,64 +6,6 @@
     <!-- streaming quality details chip (moved up from under the track info) -->
     <QualityDetailsBtn v-if="store.curQueueItem?.streamdetails" pill />
 
-    <!-- lyrics sync offset (only while lyrics are open) -->
-    <Popover
-      v-if="lyricsActive && showLyricsOffset"
-      v-model:open="offsetOpen"
-      modal
-    >
-      <PopoverTrigger as-child>
-        <Button
-          variant="outline"
-          :size="showLabel ? 'xs' : 'icon-xs'"
-          :class="pillClass"
-          :aria-label="$t('lyrics_offset')"
-        >
-          <ChevronsLeftRight :size="16" />
-          <span v-if="showLabel">{{ lyricsOffsetDisplay }}s</span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="end" :side-offset="6" class="w-auto">
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <ChevronsLeftRight :size="18" />
-            <span class="text-[0.95rem] font-semibold">{{
-              $t("lyrics_offset")
-            }}</span>
-          </div>
-          <div class="flex items-center justify-center gap-4">
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              class="rounded-full"
-              :aria-label="$t('tooltip.decrease_offset')"
-              @click.stop
-              @mousedown.stop="emit('offset-press', -0.1)"
-              @touchstart.stop.prevent="emit('offset-press', -0.1)"
-            >
-              <Minus :size="16" />
-            </Button>
-            <span class="min-w-[3.5ch] text-center text-sm tabular-nums">
-              {{ lyricsOffsetDisplay
-              }}<span class="text-muted-foreground">s</span>
-            </span>
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              class="rounded-full"
-              :aria-label="$t('tooltip.increase_offset')"
-              @click.stop
-              @mousedown.stop="emit('offset-press', 0.1)"
-              @touchstart.stop.prevent="emit('offset-press', 0.1)"
-            >
-              <Plus :size="16" />
-            </Button>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-
     <!-- lyrics: available -> clickable toggle (fully primary while the panel is open) -->
     <TooltipProvider v-if="lyricsState === 'available'" :delay-duration="200">
       <Tooltip>
@@ -113,33 +55,41 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- radio mode (infinite mix): non-interactive indicator, only shown while
-         radio is actually active. Tooltip explains what the mix is based on. -->
-    <TooltipProvider v-if="radioModeActive" :delay-duration="200">
+    <!-- dynamic mode: autoplay is implicitly on and the queue refills itself
+         from its sources. Non-interactive indicator; the tooltip names the
+         seeds it is based on. -->
+    <TooltipProvider v-if="dynamicModeActive" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
             as="span"
             variant="outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="['cursor-default', pillClass]"
-            :aria-label="$t('radio')"
+            :class="[
+              pillClass,
+              'cursor-default border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90',
+            ]"
+            :aria-label="$t('autoplay')"
           >
-            <RadioTower :size="16" />
-            <span v-if="showLabel">{{ $t("radio") }}</span>
+            <InfinityIcon :size="16" />
+            <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
-          <p class="font-medium">{{ $t("radio_active") }}</p>
+          <p class="font-medium">{{ $t("autoplay_dynamic_title") }}</p>
           <p class="mt-1 opacity-80">
-            {{ radioSources.map((source) => source.name).join(", ") }}
+            {{
+              seedNames
+                ? `${$t("autoplay_dynamic_lead")} ${seedNames}`
+                : $t("autoplay_dynamic_desc")
+            }}
           </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
 
-    <!-- autoplay: direct toggle (primary while enabled). Hidden while radio is
-         active or for infinite streams (autoplay is moot there). -->
+    <!-- autoplay: direct toggle (primary while enabled). Hidden while dynamic
+         mode is active or for infinite streams (autoplay is moot there). -->
     <TooltipProvider v-if="autoplayApplicable && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
@@ -204,23 +154,18 @@
                 : $t("crossfade_enable")
             }}
           </p>
-          <p v-if="!crossfadeEnabled" class="mt-1 opacity-80">
+          <p
+            v-if="crossfadeEnabled && smartFadesActive"
+            class="mt-1 opacity-80"
+          >
+            {{ $t("crossfade_smart_active") }}
+          </p>
+          <p v-else-if="!crossfadeEnabled" class="mt-1 opacity-80">
             {{ $t("crossfade_explanation") }}
           </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-
-    <!-- subtle scrim/blur behind whichever popout is open -->
-    <Teleport to="body">
-      <Transition name="fs-popover-scrim">
-        <div
-          v-if="offsetOpen"
-          class="fullscreen-popover-scrim"
-          aria-hidden="true"
-        ></div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -228,11 +173,6 @@
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import SleepTimerBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SleepTimerBtn.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -245,25 +185,15 @@ import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  ChevronsLeftRight,
-  InfinityIcon,
-  MicVocal,
-  Minus,
-  Plus,
-  RadioTower,
-} from "@lucide/vue";
-import { computed, ref } from "vue";
+import { InfinityIcon, MicVocal } from "@lucide/vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   lyricsState?: string;
   lyricsActive?: boolean;
-  showLyricsOffset?: boolean;
-  lyricsOffsetDisplay?: string;
 }>();
 const emit = defineEmits<{
   (e: "toggle-lyrics"): void;
-  (e: "offset-press", delta: number): void;
 }>();
 
 // Explanation shown in the tooltip when lyrics can't be opened (yet).
@@ -273,18 +203,24 @@ const lyricsTooltip = computed(() =>
     : $t("lyrics_unavailable_song"),
 );
 
-// Shared radio/autoplay state (also used by the queue mode banner).
+// Shared dynamic/autoplay state (also used by the queue mode banner).
 const {
   queue,
-  radioSources,
-  radioModeActive,
+  sources,
+  dynamicModeActive,
   autoplayEnabled,
   autoplayApplicable,
   setAutoplay,
 } = useQueueModes();
 
-// local open-state so we can render a shared scrim behind whichever popout shows
-const offsetOpen = ref(false);
+// Source (seed) names for the dynamic-mode tooltip (plain text — the tooltip
+// can't host links, so the banner is where they're clickable).
+const seedNames = computed(() =>
+  sources.value
+    .map((source) => source.name)
+    .filter(Boolean)
+    .join(", "),
+);
 
 const showLabel = computed(() => !store.mobileLayout);
 
@@ -326,26 +262,5 @@ const toggleCrossfade = () => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-/* subtle blurred scrim behind an open popout to set it apart from the player */
-.fullscreen-popover-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 9990;
-  background: rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  pointer-events: none;
-}
-
-.fs-popover-scrim-enter-active,
-.fs-popover-scrim-leave-active {
-  transition: opacity 0.18s ease;
-}
-
-.fs-popover-scrim-enter-from,
-.fs-popover-scrim-leave-to {
-  opacity: 0;
 }
 </style>

@@ -53,7 +53,6 @@
     "play_now": "Відтворити зараз",
     "play_on": "Грати на: {0}",
     "play_playlist_from": "Відтворити плейлист звідси",
-    "play_radio": "Запустити радіо",
     "player_type": {
         "group": "Група",
         "player": "Програвач",
@@ -74,8 +73,6 @@
     "queue_next_items": "Наступні елементи",
     "queue_options": "Параметри черги",
     "queue_previous_items": "Програні елементи",
-    "queue_radio_based_on": "Черга динамічно заповнюється треками на основі: {0}",
-    "queue_radio_enabled": "Режим радіо увімкнено",
     "radios": "Радіо",
     "read_more": "читати далі",
     "refresh_item": "Оновити елемент",

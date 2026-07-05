@@ -32,16 +32,20 @@
       </Select>
 
       <Select
-        v-if="rule.field !== 'favorite' && rule.field !== 'explicit'"
+        v-if="
+          rule.field !== 'favorite' &&
+          rule.field !== 'explicit' &&
+          rule.field !== 'last_played'
+        "
         :key="`operator-${rule.field}`"
         :model-value="rule.operator"
-        :disabled="rule.field === 'year'"
+        :disabled="rule.field === 'year' || rule.field === 'duration'"
         @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
         <SelectTrigger
           :class="[
-            'h-7 w-[90px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
-            rule.field === 'year'
+            'h-7 w-[110px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
+            rule.field === 'year' || rule.field === 'duration'
               ? 'cursor-default opacity-70'
               : 'hover:bg-accent',
           ]"
@@ -51,13 +55,13 @@
         <SelectContent>
           <SelectItem value="is" class="text-xs">
             {{
-              rule.field === "year"
+              rule.field === "year" || rule.field === "duration"
                 ? $t("smart_playlist.op_between")
                 : $t("smart_playlist.op_is")
             }}
           </SelectItem>
           <SelectItem
-            v-if="rule.field !== 'year'"
+            v-if="rule.field !== 'year' && rule.field !== 'duration'"
             value="is_not"
             class="text-xs"
           >
@@ -144,6 +148,65 @@
         </NumberField>
       </template>
 
+      <template v-else-if="rule.field === 'duration'">
+        <input
+          type="text"
+          :value="secondsToMMSS(rule.minDuration)"
+          placeholder="MM:SS"
+          class="h-7 w-[65px] rounded-md border border-input bg-transparent px-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          @input="(e) => handleDurationInput(e, 'min')"
+          @blur="(e) => handleDurationBlur(e, 'min')"
+        />
+        <span class="text-xs text-muted-foreground">–</span>
+        <input
+          type="text"
+          :value="secondsToMMSS(rule.maxDuration)"
+          placeholder="MM:SS"
+          class="h-7 w-[65px] rounded-md border border-input bg-transparent px-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          @input="(e) => handleDurationInput(e, 'max')"
+          @blur="(e) => handleDurationBlur(e, 'max')"
+        />
+      </template>
+
+      <template v-else-if="rule.field === 'last_played'">
+        <NumberField
+          :model-value="rule.lastPlayedBeforeValue"
+          class="w-[70px]"
+          :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
+          @update:model-value="(v) => handleLastPlayedValueChange(v)"
+          @keydown.stop
+        >
+          <NumberFieldContent>
+            <NumberFieldInput class="h-7 text-xs" placeholder="0" />
+          </NumberFieldContent>
+        </NumberField>
+        <Select
+          :model-value="rule.lastPlayedBeforeUnit || 'days'"
+          @update:model-value="(v) => handleLastPlayedUnitChange(v)"
+        >
+          <SelectTrigger class="h-7 w-[90px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hours" class="text-xs">{{
+              $t("smart_playlist.unit_hours")
+            }}</SelectItem>
+            <SelectItem value="days" class="text-xs">{{
+              $t("smart_playlist.unit_days")
+            }}</SelectItem>
+            <SelectItem value="weeks" class="text-xs">{{
+              $t("smart_playlist.unit_weeks")
+            }}</SelectItem>
+            <SelectItem value="months" class="text-xs">{{
+              $t("smart_playlist.unit_months")
+            }}</SelectItem>
+          </SelectContent>
+        </Select>
+        <span class="text-xs text-muted-foreground">{{
+          $t("smart_playlist.last_played_ago")
+        }}</span>
+      </template>
+
       <template v-else>
         <Badge
           v-for="v in rule.values"
@@ -228,6 +291,8 @@ const emit = defineEmits<{
   "change-field": [field: RuleField];
   "change-operator": [op: RuleOperator];
   "change-year": [value: { from?: number; to?: number }];
+  "change-duration": [value: { min?: number; max?: number }];
+  "change-last-played": [value: { value?: number; unit?: string }];
   "add-value": [value: { id: number; name: string }];
   "remove-value": [id: number];
   remove: [];
@@ -242,6 +307,8 @@ const fieldOptions = computed(() => {
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
     { value: "explicit", label: $t("smart_playlist.field_explicit") },
     { value: "year", label: $t("smart_playlist.field_year") },
+    { value: "duration", label: $t("smart_playlist.field_duration") },
+    { value: "last_played", label: $t("smart_playlist.field_last_played") },
   ];
   return all.filter(
     (o) =>
@@ -267,4 +334,59 @@ const pickerAddLabel = computed(() => {
       return $t("add");
   }
 });
+
+// Duration MM:SS conversion helpers
+function secondsToMMSS(seconds?: number): string {
+  if (seconds == null || seconds === 0) return "";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function mmssToSeconds(mmss: string): number | undefined {
+  if (!mmss || mmss.trim() === "") return undefined;
+  const parts = mmss.split(":").map((p) => parseInt(p.trim(), 10));
+  if (parts.length !== 2 || parts.some((p) => isNaN(p))) return undefined;
+  const [mins, secs] = parts;
+  if (mins < 0 || secs < 0 || secs >= 60) return undefined;
+  return mins * 60 + secs;
+}
+
+const durationInputBuffer: { min?: string; max?: string } = {};
+
+function handleDurationInput(e: Event, field: "min" | "max") {
+  const input = e.target as HTMLInputElement;
+  durationInputBuffer[field] = input.value;
+}
+
+function handleDurationBlur(e: Event, field: "min" | "max") {
+  const input = e.target as HTMLInputElement;
+  const value = input.value.trim();
+  const seconds = value ? mmssToSeconds(value) : undefined;
+
+  if (field === "min") {
+    emit("change-duration", { min: seconds, max: props.rule.maxDuration });
+  } else {
+    emit("change-duration", { min: props.rule.minDuration, max: seconds });
+  }
+
+  delete durationInputBuffer[field];
+}
+
+function handleLastPlayedValueChange(value: number | undefined) {
+  emit("change-last-played", {
+    value,
+    unit: props.rule.lastPlayedBeforeUnit || "days",
+  });
+}
+
+function handleLastPlayedUnitChange(
+  unit: string | number | bigint | boolean | object | null,
+) {
+  const unitStr = typeof unit === "string" ? unit : "days";
+  emit("change-last-played", {
+    value: props.rule.lastPlayedBeforeValue,
+    unit: unitStr,
+  });
+}
 </script>

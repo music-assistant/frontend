@@ -4,6 +4,7 @@ import {
   formatRelativeTime,
   hexToRgb,
   kebabize,
+  markdownToHtml,
   numberRange,
   paletteFromServer,
   parseBool,
@@ -252,6 +253,29 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(3660)).toBe("1h 1m");
     expect(formatRelativeTime(7200)).toBe("2h");
     expect(formatRelativeTime(7380)).toBe("2h 3m");
+  });
+});
+
+describe("markdownToHtml", () => {
+  it("neutralizes an onerror image payload", () => {
+    const html = markdownToHtml('<img src=x onerror="alert(1)">');
+    expect(html).not.toContain("onerror");
+  });
+
+  it("strips script tags", () => {
+    const html = markdownToHtml("<script>alert(1)</script>");
+    expect(html).not.toContain("<script>");
+  });
+
+  it("renders legitimate markdown", () => {
+    expect(markdownToHtml("**bold**")).toContain("<strong>bold</strong>");
+    expect(markdownToHtml("[link](https://example.com)")).toContain(
+      'href="https://example.com"',
+    );
+  });
+
+  it("converts line breaks", () => {
+    expect(markdownToHtml("line1\nline2")).toContain("<br>");
   });
 });
 
