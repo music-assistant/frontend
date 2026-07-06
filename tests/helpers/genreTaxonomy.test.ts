@@ -33,9 +33,9 @@ describe("genresShareTaxonomy", () => {
   });
 
   it("is true when all genres share the podcast taxonomy", () => {
-    expect(
-      genresShareTaxonomy([MediaType.PODCAST, MediaType.PODCAST]),
-    ).toBe(true);
+    expect(genresShareTaxonomy([MediaType.PODCAST, MediaType.PODCAST])).toBe(
+      true,
+    );
   });
 
   it("is false when music and podcast genres are mixed", () => {
@@ -43,8 +43,8 @@ describe("genresShareTaxonomy", () => {
   });
 
   it("is false when podcast and audiobook genres are mixed", () => {
-    expect(
-      genresShareTaxonomy([MediaType.PODCAST, MediaType.AUDIOBOOK]),
-    ).toBe(false);
+    expect(genresShareTaxonomy([MediaType.PODCAST, MediaType.AUDIOBOOK])).toBe(
+      false,
+    );
   });
 });

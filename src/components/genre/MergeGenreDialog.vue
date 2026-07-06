@@ -173,9 +173,7 @@ onMounted(() => {
     reset();
     genreIds.value = evt.genreIds;
     genreNames.value = evt.genreNames;
-    sourceContentType.value = normalizeGenreTaxonomy(
-      evt.genreContentTypes[0],
-    );
+    sourceContentType.value = normalizeGenreTaxonomy(evt.genreContentTypes[0]);
     allGenres.value = await api.getLibraryGenres({ hide_empty: false });
     open.value = true;
   });
