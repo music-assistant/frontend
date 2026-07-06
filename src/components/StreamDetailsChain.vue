@@ -103,7 +103,7 @@
       </div>
       <div class="w-full">
         <!-- Input header -->
-        <div class="flex">
+        <div class="streamdetails-header">
           <div
             class="streamdetails-separator"
             style="width: 40px; margin-right: 10px"
@@ -289,7 +289,7 @@
           :key="player_id"
         >
           <!-- Separator -->
-          <div class="flex">
+          <div class="streamdetails-header">
             <div
               class="streamdetails-separator"
               style="width: 40px; margin-right: 10px"
@@ -812,16 +812,17 @@ div.streamdetails-icon {
   filter: none;
 }
 
-.streamdetails-separator {
-  height: calc(var(--sd-row) / 4);
+/* header rows must be exactly half a row tall — the rail's *-halve spacers
+   assume it, so a taller header would push every row below out of sync */
+.streamdetails-header {
+  height: calc(var(--sd-row) / 2);
   display: flex;
   align-items: center;
-  margin-top: calc(var(--sd-row) / 4);
-  border-style: dotted;
-  border-width: 1px;
-  border-bottom: none;
-  border-left: none;
-  border-right: none;
+}
+
+.streamdetails-separator {
+  height: 0;
+  border-top: 1px dotted;
 }
 
 .line-space {
