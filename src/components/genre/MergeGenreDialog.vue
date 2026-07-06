@@ -85,8 +85,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { normalizeGenreTaxonomy } from "@/helpers/genreTaxonomy";
 import { api } from "@/plugins/api";
-import type { Genre } from "@/plugins/api/interfaces";
+import type { Genre, MediaType } from "@/plugins/api/interfaces";
 import { eventbus, type MergeGenreDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { Check, ChevronsUpDown } from "@lucide/vue";
@@ -103,11 +104,16 @@ const popoverOpen = ref(false);
 const loading = ref(false);
 const genreIds = ref<string[]>([]);
 const genreNames = ref<string[]>([]);
+const sourceContentType = ref<MediaType | null>(null);
 const allGenres = ref<Genre[]>([]);
 const selectedTargetId = ref<string | null>(null);
 
 const availableGenres = computed(() =>
-  allGenres.value.filter((g) => !genreIds.value.includes(g.item_id)),
+  allGenres.value.filter(
+    (g) =>
+      !genreIds.value.includes(g.item_id) &&
+      normalizeGenreTaxonomy(g.content_type) === sourceContentType.value,
+  ),
 );
 
 const selectedGenreName = computed(() => {
@@ -151,6 +157,7 @@ const handleMerge = async () => {
 const reset = () => {
   genreIds.value = [];
   genreNames.value = [];
+  sourceContentType.value = null;
   allGenres.value = [];
   selectedTargetId.value = null;
   loading.value = false;
@@ -166,6 +173,9 @@ onMounted(() => {
     reset();
     genreIds.value = evt.genreIds;
     genreNames.value = evt.genreNames;
+    sourceContentType.value = normalizeGenreTaxonomy(
+      evt.genreContentTypes[0],
+    );
     allGenres.value = await api.getLibraryGenres({ hide_empty: false });
     open.value = true;
   });

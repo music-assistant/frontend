@@ -673,6 +673,7 @@ const mergeGenre = () => {
   eventbus.emit("mergeGenreDialog", {
     genreIds: [compProps.item.item_id],
     genreNames: [compProps.item.name],
+    genreContentTypes: [(compProps.item as Genre).content_type],
   });
 };
 
