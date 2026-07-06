@@ -457,6 +457,7 @@
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
+        "protocol_configure_title_via": "Configure {name} (over {base})",
         "protocol_configure_label": "Configure output protocols",
         "show_advanced_settings": "Show advanced settings",
         "advanced": "Advanced",
