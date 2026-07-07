@@ -2,12 +2,6 @@
   <div ref="containerEl" class="waveform-track">
     <canvas ref="dimCanvasEl" class="waveform-canvas" />
     <canvas
-      v-show="hoverPercent != null"
-      ref="hoverCanvasEl"
-      class="waveform-canvas"
-      :style="{ clipPath: `inset(0 ${100 - hoverClipEnd}% 0 0)` }"
-    />
-    <canvas
       ref="brightCanvasEl"
       class="waveform-canvas"
       :style="{ clipPath: `inset(0 ${100 - brightClipEnd}% 0 0)` }"
@@ -42,7 +36,6 @@ const DIM_ALPHA = 0.3;
 
 const containerEl = ref<HTMLDivElement>();
 const dimCanvasEl = ref<HTMLCanvasElement>();
-const hoverCanvasEl = ref<HTMLCanvasElement>();
 const brightCanvasEl = ref<HTMLCanvasElement>();
 
 const { width, height } = useElementSize(containerEl);
@@ -55,20 +48,10 @@ const clampedHover = computed(() =>
   Math.min(100, Math.max(0, props.hoverPercent ?? 0)),
 );
 
-// The bright (played) layer ends at the hover point when hovering before the
-// current position, so the would-be rewound stretch shows the preview color
-// instead of the played color.
+// While hovering, the fill previews the seek target: it follows the cursor
+// in both directions instead of the playback position.
 const brightClipEnd = computed(() =>
-  props.hoverPercent == null
-    ? clampedProgress.value
-    : Math.min(clampedProgress.value, clampedHover.value),
-);
-
-// The preview layer covers up to whichever of hover/progress is furthest; the
-// bright layer on top then leaves exactly the hover<->progress stretch in the
-// preview color.
-const hoverClipEnd = computed(() =>
-  Math.max(clampedHover.value, clampedProgress.value),
+  props.hoverPercent == null ? clampedProgress.value : clampedHover.value,
 );
 
 // Max-pool the source bins into one peak per visible bar; max (not average)
@@ -122,7 +105,6 @@ const draw = () => {
   const cssHeight = height.value;
   if (
     !dimCanvasEl.value ||
-    !hoverCanvasEl.value ||
     !brightCanvasEl.value ||
     !props.data.length ||
     cssWidth <= 0 ||
@@ -134,13 +116,6 @@ const draw = () => {
   const barCount = Math.ceil(cssWidth / BAR_PITCH);
   const peaks = computePeaks(props.data, barCount);
 
-  // Seek-preview fill uses the MA brand blue (--primary); canvas fillStyle
-  // cannot resolve CSS vars, so resolve it here.
-  const hoverColor =
-    getComputedStyle(document.documentElement)
-      .getPropertyValue("--primary")
-      .trim() || props.color;
-
   drawBars(
     dimCanvasEl.value,
     peaks,
@@ -150,7 +125,6 @@ const draw = () => {
     props.color,
     DIM_ALPHA,
   );
-  drawBars(hoverCanvasEl.value, peaks, cssWidth, cssHeight, dpr, hoverColor, 1);
   drawBars(
     brightCanvasEl.value,
     peaks,
