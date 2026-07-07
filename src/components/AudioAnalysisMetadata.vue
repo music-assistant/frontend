@@ -1,32 +1,34 @@
 <template>
   <!-- audio analysis details (bpm / musical key), only present on full track details -->
-  <Popover v-if="bpm || musicalKey" v-model:open="open">
+  <Popover v-if="bpm || musicalKey">
     <PopoverTrigger as-child>
       <AudioWaveform
-        :size="24"
+        :size="26"
         class="cursor-pointer"
         :title="$t('audio_analysis')"
-        @mouseenter="scheduleOpen"
-        @mouseleave="scheduleClose"
-        @click="open = !open"
       />
     </PopoverTrigger>
     <PopoverContent
       side="bottom"
       align="center"
       :collision-padding="12"
-      class="w-fit p-3"
+      class="audio-analysis-popover overflow-y-auto p-3"
+      :style="{
+        width: 'fit-content',
+        minWidth: '180px',
+        maxWidth: 'calc(100vw - 25px)',
+      }"
       @open-auto-focus.prevent
-      @mouseenter="scheduleOpen"
-      @mouseleave="scheduleClose"
     >
-      <div class="text-sm font-medium pb-1">{{ $t("audio_analysis") }}</div>
-      <div v-if="bpm" class="d-flex align-center ga-2 text-sm">
-        <v-icon size="18" color="primary" icon="mdi-metronome" />
+      <div class="font-medium audio-analysis-item">
+        {{ $t("audio_analysis") }}
+      </div>
+      <div v-if="bpm" class="audio-analysis-item">
+        <v-icon size="20" color="primary" icon="mdi-metronome" />
         <span :title="$t('tooltip.bpm')">{{ bpm }} {{ $t("bpm") }}</span>
       </div>
-      <div v-if="musicalKey" class="d-flex align-center ga-2 text-sm">
-        <v-icon size="18" color="primary" icon="mdi-music-clef-treble" />
+      <div v-if="musicalKey" class="audio-analysis-item">
+        <v-icon size="20" color="primary" icon="mdi-music-clef-treble" />
         <span :title="$t('tooltip.musical_key')">{{ musicalKey }}</span>
       </div>
     </PopoverContent>
@@ -41,14 +43,11 @@ import {
 } from "@/components/ui/popover";
 import type { AudioMetadata } from "@/plugins/api/interfaces";
 import { AudioWaveform } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   audioMetadata?: AudioMetadata | null;
 }>();
-
-const open = ref(false);
-let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const bpm = computed(() =>
   props.audioMetadata?.bpm ? Math.round(props.audioMetadata.bpm) : undefined,
@@ -56,16 +55,18 @@ const bpm = computed(() =>
 const musicalKey = computed(
   () => props.audioMetadata?.musical_key || undefined,
 );
-
-// hover opens on desktop; the small close delay keeps the popover alive while
-// the pointer travels from trigger to content. Click/tap still toggles (mobile).
-const scheduleOpen = function () {
-  clearTimeout(closeTimer);
-  open.value = true;
-};
-
-const scheduleClose = function () {
-  clearTimeout(closeTimer);
-  closeTimer = setTimeout(() => (open.value = false), 150);
-};
 </script>
+
+<style>
+.audio-analysis-popover {
+  /* match the streamdetails (quality) popover typography and row rhythm */
+  font-size: 0.875rem;
+}
+
+.audio-analysis-item {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+</style>
