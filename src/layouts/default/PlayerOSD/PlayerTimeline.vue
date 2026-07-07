@@ -5,14 +5,21 @@
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
-        :class="hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8'"
+        :class="[
+          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          hasWaveform && canSeek ? 'cursor-pointer' : '',
+        ]"
         :disabled="!canSeek"
         :min="0"
         :max="store.activePlayer?.current_media?.duration ?? 0"
         :step="0.1"
         @value-commit="stopDragging"
         @pointerenter="isThumbHidden = !canSeek"
-        @pointerleave="isThumbHidden = true"
+        @pointermove="onTrackPointerMove"
+        @pointerleave="
+          isThumbHidden = true;
+          hoverPercent = null;
+        "
       >
         <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
@@ -32,6 +39,7 @@
             :data="waveform!"
             :color="color"
             :progress-percent="progressPercent"
+            :hover-percent="hoverPercent"
           />
           <SliderRange
             v-else
@@ -62,7 +70,9 @@
           :class="
             cn(
               'w-2.5 h-2.5 rounded-full shadow-sm',
-              !isThumbHidden || isDragging ? 'block' : 'hidden',
+              !hasWaveform && (!isThumbHidden || isDragging)
+                ? 'block'
+                : 'hidden',
             )
           "
         />
@@ -340,6 +350,16 @@ const progressPercent = computed(() => {
   if (!duration) return 0;
   return (curTimeValue.value / duration) * 100;
 });
+
+// Hover seek-preview position (waveform mode only), as 0-100 percent.
+const hoverPercent = ref<number | null>(null);
+
+const onTrackPointerMove = (evt: PointerEvent) => {
+  if (!hasWaveform.value || !canSeek.value) return;
+  const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+  if (!rect.width) return;
+  hoverPercent.value = ((evt.clientX - rect.left) / rect.width) * 100;
+};
 
 //watch
 watch(computedElapsedTime, (newTime) => {

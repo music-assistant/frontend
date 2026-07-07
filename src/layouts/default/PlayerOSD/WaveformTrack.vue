@@ -2,6 +2,12 @@
   <div ref="containerEl" class="waveform-track">
     <canvas ref="dimCanvasEl" class="waveform-canvas" />
     <canvas
+      v-show="hoverPercent != null"
+      ref="hoverCanvasEl"
+      class="waveform-canvas"
+      :style="{ clipPath: `inset(0 ${100 - clampedHover}% 0 0)` }"
+    />
+    <canvas
       ref="brightCanvasEl"
       class="waveform-canvas"
       :style="{ clipPath: `inset(0 ${100 - clampedProgress}% 0 0)` }"
@@ -19,9 +25,13 @@ export interface Props {
   color: string;
   // Played portion of the track, 0-100.
   progressPercent: number;
+  // Hovered seek-preview position, 0-100; null when not hovering.
+  hoverPercent?: number | null;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  hoverPercent: null,
+});
 
 // 2px bar + 1px gap
 const BAR_PITCH = 3;
@@ -29,15 +39,22 @@ const BAR_WIDTH = 2;
 // Keep silent sections visible as a thin baseline.
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
+// Seek-preview fill; halfway between the unplayed and played bar opacity.
+const HOVER_ALPHA = 0.6;
 
 const containerEl = ref<HTMLDivElement>();
 const dimCanvasEl = ref<HTMLCanvasElement>();
+const hoverCanvasEl = ref<HTMLCanvasElement>();
 const brightCanvasEl = ref<HTMLCanvasElement>();
 
 const { width, height } = useElementSize(containerEl);
 
 const clampedProgress = computed(() =>
   Math.min(100, Math.max(0, props.progressPercent)),
+);
+
+const clampedHover = computed(() =>
+  Math.min(100, Math.max(0, props.hoverPercent ?? 0)),
 );
 
 // Max-pool the source bins into one peak per visible bar; max (not average)
@@ -90,6 +107,7 @@ const draw = () => {
   const cssHeight = height.value;
   if (
     !dimCanvasEl.value ||
+    !hoverCanvasEl.value ||
     !brightCanvasEl.value ||
     !props.data.length ||
     cssWidth <= 0 ||
@@ -102,11 +120,12 @@ const draw = () => {
   const peaks = computePeaks(props.data, barCount);
 
   drawBars(dimCanvasEl.value, peaks, cssWidth, cssHeight, dpr, DIM_ALPHA);
+  drawBars(hoverCanvasEl.value, peaks, cssWidth, cssHeight, dpr, HOVER_ALPHA);
   drawBars(brightCanvasEl.value, peaks, cssWidth, cssHeight, dpr, 1);
 };
 
-// Progress is intentionally excluded: it only moves the bright canvas'
-// clip-path, so playback never triggers a canvas redraw.
+// Progress and hover are intentionally excluded: they only move canvas
+// clip-paths, so pointer movement and playback never trigger a redraw.
 watch([width, height, () => props.data, () => props.color], draw, {
   flush: "post",
 });
