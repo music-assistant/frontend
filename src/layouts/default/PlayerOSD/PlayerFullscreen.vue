@@ -32,9 +32,9 @@
           />
 
           <Button
-            variant="outline"
+            variant="ghost-outline"
             size="icon-xs"
-            class="ml-2 size-7 bg-background/40 backdrop-blur-md hover:bg-background/60"
+            class="ml-2 size-7"
             :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
           >
@@ -417,7 +417,7 @@
           <Button
             variant="outline"
             size="xs"
-            class="bg-background/40 backdrop-blur-md hover:bg-background/60"
+            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -442,11 +442,11 @@
 import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
-import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -454,12 +454,12 @@ import {
   getMediaImageUrl,
   getPlayerName,
 } from "@/helpers/utils";
+import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
@@ -493,7 +493,7 @@ import {
   watchEffect,
 } from "vue";
 import { useDisplay } from "vuetify";
-import { ContextMenuItem } from "../ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 

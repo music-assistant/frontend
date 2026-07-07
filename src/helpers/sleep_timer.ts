@@ -1,7 +1,7 @@
 // shared logic for the player sleep timer
 // provides the quick-pick durations, helpers to read the remaining time and the
 // menu items shown in the player/queue menus and the sleep timer indicator.
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { Player } from "@/plugins/api/interfaces";

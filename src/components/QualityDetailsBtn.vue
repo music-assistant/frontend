@@ -1,16 +1,13 @@
 <template>
   <!-- streaming quality details -->
   <Popover v-if="streamDetails">
-    <!-- quality pill/chip trigger; pill = frosted glass to match the fullscreen
+    <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
     <PopoverTrigger as-child>
       <Button
-        variant="outline"
+        :variant="pill ? 'ghost-outline' : 'outline'"
         size="xs"
-        :class="
-          pill ? 'bg-background/40 backdrop-blur-md hover:bg-background/60' : ''
-        "
         :disabled="triggerDisabled"
         :title="$t('show_audio_chain_details')"
       >

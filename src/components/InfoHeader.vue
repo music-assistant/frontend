@@ -438,10 +438,8 @@ import {
   parseBool,
   truncateString,
 } from "@/helpers/utils";
-import {
-  ContextMenuItem,
-  getContextMenuItems,
-} from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {

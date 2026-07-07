@@ -268,22 +268,10 @@ import {
 } from "@lucide/vue";
 import type { Component } from "vue";
 
-export interface ContextMenuItem {
-  label: string;
-  labelArgs?: Array<string | number>;
-  action?: () => void;
-  icon?: string | Component;
-  disabled?: boolean;
-  hide?: boolean;
-  selected?: boolean;
-  subItems?: ContextMenuItem[];
-  close_on_click?: boolean;
-  color?: string;
-  // Renders a custom control in place of the standard row (label/icon/action
-  // are ignored except for the list key). Used for inline controls like the
-  // lyrics-offset stepper.
-  component?: Component;
-}
+// The item type lives in a plain .ts module (editor-friendly); re-exported
+// here for convenience since most consumers already import from this file.
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
+export type { ContextMenuItem } from "@/helpers/context_menu_item";
 
 export const showContextMenuForMediaItem = async function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
