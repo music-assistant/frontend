@@ -1585,7 +1585,9 @@ watchEffect(() => {
   align-items: center;
   justify-content: center;
   max-width: 100%;
-  padding: 15px;
+  /* Side padding matches the 5% margins of the timeline/volume rows above
+     and below, so the outermost buttons align with the sliders. */
+  padding: 15px 5%;
   height: 100px;
 }
 
