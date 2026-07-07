@@ -303,6 +303,10 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
+        "show_waveform": {
+            "label": "Show waveform",
+            "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
+        },
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",

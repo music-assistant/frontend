@@ -168,6 +168,16 @@ onMounted(() => {
         "true",
     },
     {
+      key: "show_waveform",
+      type: ConfigEntryType.BOOLEAN,
+      label: "show_waveform",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "display_settings",
+      value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
+    },
+    {
       key: "mobile_sidebar_side",
       type: ConfigEntryType.STRING,
       label: "mobile_sidebar_side",

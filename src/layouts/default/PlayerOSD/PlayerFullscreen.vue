@@ -469,6 +469,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -745,6 +746,10 @@ watch(
 // Fetch the waveform for the current track (only when fullscreen player is
 // open); rendered by PlayerTimeline instead of the flat progress bar.
 const waveformData = ref<number[] | null>(null);
+const showWaveformPref = useUserPreferences().getPreference(
+  "show_waveform",
+  true,
+);
 let waveformLoadGeneration = 0;
 const fetchWaveform = async () => {
   const generation = ++waveformLoadGeneration;
@@ -755,6 +760,7 @@ const fetchWaveform = async () => {
   // streaming), so resolve it from streamdetails - not the library item id.
   const streamDetails = store.curQueueItem?.streamdetails;
   if (
+    !showWaveformPref.value ||
     !store.showFullscreenPlayer ||
     mediaItem?.media_type !== MediaType.TRACK ||
     !streamDetails
@@ -788,6 +794,10 @@ watch(
   fetchWaveform,
   { immediate: true },
 );
+
+// Defensive: FrontendConfig reloads the app after saving user preferences,
+// but react to live preference changes anyway (e.g. multi-tab sync).
+watch(showWaveformPref, fetchWaveform);
 
 watch(
   () => store.showFullscreenPlayer,
