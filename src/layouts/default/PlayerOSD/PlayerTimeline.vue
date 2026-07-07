@@ -16,12 +16,24 @@
         <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
-          class="relative grow rounded-full h-1"
-          :style="{
-            'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-          }"
+          class="relative grow rounded-full"
+          :class="hasWaveform ? 'h-6' : 'h-1'"
+          :style="
+            hasWaveform
+              ? undefined
+              : {
+                  'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
+                }
+          "
         >
+          <WaveformTrack
+            v-if="hasWaveform"
+            :data="waveform!"
+            :color="color"
+            :progress-percent="progressPercent"
+          />
           <SliderRange
+            v-else
             data-slot="slider-range"
             class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
@@ -105,16 +117,21 @@ import computeElapsedTime from "@/helpers/elapsed";
 import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
+import WaveformTrack from "./WaveformTrack.vue";
 
 // properties
 export interface Props {
   showLabels?: boolean;
   color?: string;
+  // Precomputed waveform bins (normalized 0.0-1.0); when set, the flat
+  // track is replaced by a waveform-style progress bar.
+  waveform?: number[] | null;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
+  waveform: null,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -314,6 +331,14 @@ const chapterTicks = computed(() =>
     store.activePlayer?.current_media?.duration,
   ),
 );
+
+const hasWaveform = computed(() => !!props.waveform?.length);
+
+const progressPercent = computed(() => {
+  const duration = store.activePlayer?.current_media?.duration;
+  if (!duration) return 0;
+  return (curTimeValue.value / duration) * 100;
+});
 
 //watch
 watch(computedElapsedTime, (newTime) => {

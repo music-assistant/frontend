@@ -324,7 +324,11 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline :show-labels="true" :color="sliderColor" />
+          <PlayerTimeline
+            :show-labels="true"
+            :color="sliderColor"
+            :waveform="waveformData"
+          />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -735,6 +739,49 @@ watch(
     if (isOpen) {
       fetchLyrics();
     }
+  },
+);
+
+// Fetch the waveform for the current track (only when fullscreen player is
+// open); rendered by PlayerTimeline instead of the flat progress bar.
+const waveformData = ref<number[] | null>(null);
+let waveformLoadGeneration = 0;
+const fetchWaveform = async () => {
+  const generation = ++waveformLoadGeneration;
+  waveformData.value = null;
+
+  const mediaItem = store.curQueueItem?.media_item;
+  if (
+    !store.showFullscreenPlayer ||
+    mediaItem?.media_type !== MediaType.TRACK
+  ) {
+    return;
+  }
+
+  try {
+    const waveform = await api.getWaveForm(
+      mediaItem.item_id,
+      mediaItem.provider,
+    );
+    // a newer track change started while awaiting; this result is stale
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = waveform?.length ? waveform : null;
+  } catch {
+    // No analysis available or server without audio_analysis support;
+    // PlayerTimeline falls back to the flat progress bar.
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = null;
+  }
+};
+
+watch(() => store.curQueueItem?.media_item?.item_id, fetchWaveform, {
+  immediate: true,
+});
+
+watch(
+  () => store.showFullscreenPlayer,
+  (isOpen) => {
+    if (isOpen) fetchWaveform();
   },
 );
 
