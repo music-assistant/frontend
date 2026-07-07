@@ -116,6 +116,13 @@ const draw = () => {
   const barCount = Math.ceil(cssWidth / BAR_PITCH);
   const peaks = computePeaks(props.data, barCount);
 
+  // The active fill uses the MA brand blue (--primary); canvas fillStyle
+  // cannot resolve CSS vars, so resolve it here.
+  const activeColor =
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || props.color;
+
   drawBars(
     dimCanvasEl.value,
     peaks,
@@ -131,7 +138,7 @@ const draw = () => {
     cssWidth,
     cssHeight,
     dpr,
-    props.color,
+    activeColor,
     1,
   );
 };
