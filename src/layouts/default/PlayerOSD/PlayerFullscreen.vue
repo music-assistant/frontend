@@ -751,17 +751,21 @@ const fetchWaveform = async () => {
   waveformData.value = null;
 
   const mediaItem = store.curQueueItem?.media_item;
+  // Analysis data is keyed by the provider-native item id (the one used for
+  // streaming), so resolve it from streamdetails - not the library item id.
+  const streamDetails = store.curQueueItem?.streamdetails;
   if (
     !store.showFullscreenPlayer ||
-    mediaItem?.media_type !== MediaType.TRACK
+    mediaItem?.media_type !== MediaType.TRACK ||
+    !streamDetails
   ) {
     return;
   }
 
   try {
     const waveform = await api.getWaveForm(
-      mediaItem.item_id,
-      mediaItem.provider,
+      streamDetails.item_id,
+      streamDetails.provider,
     );
     // a newer track change started while awaiting; this result is stale
     if (generation !== waveformLoadGeneration) return;
@@ -774,9 +778,16 @@ const fetchWaveform = async () => {
   }
 };
 
-watch(() => store.curQueueItem?.media_item?.item_id, fetchWaveform, {
-  immediate: true,
-});
+// Streamdetails can arrive after the queue item switches, so key the watch on
+// the streamdetails item id (with the queue item id as fallback trigger).
+watch(
+  () => [
+    store.curQueueItem?.queue_item_id,
+    store.curQueueItem?.streamdetails?.item_id,
+  ],
+  fetchWaveform,
+  { immediate: true },
+);
 
 watch(
   () => store.showFullscreenPlayer,
