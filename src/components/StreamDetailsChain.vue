@@ -103,7 +103,7 @@
       </div>
       <div class="w-full">
         <!-- Input header -->
-        <div class="flex">
+        <div class="streamdetails-header">
           <div
             class="streamdetails-separator"
             style="width: 40px; margin-right: 10px"
@@ -289,7 +289,7 @@
           :key="player_id"
         >
           <!-- Separator -->
-          <div class="flex">
+          <div class="streamdetails-header">
             <div
               class="streamdetails-separator"
               style="width: 40px; margin-right: 10px"
@@ -812,16 +812,15 @@ div.streamdetails-icon {
   filter: none;
 }
 
-.streamdetails-separator {
-  height: calc(var(--sd-row) / 4);
+/* fixed half-row height: sizing from the label's line-height would drift the rail */
+.streamdetails-header {
+  height: calc(var(--sd-row) / 2);
   display: flex;
   align-items: center;
-  margin-top: calc(var(--sd-row) / 4);
-  border-style: dotted;
-  border-width: 1px;
-  border-bottom: none;
-  border-left: none;
-  border-right: none;
+}
+
+.streamdetails-separator {
+  border-top: 1px dotted;
 }
 
 .line-space {
@@ -908,8 +907,9 @@ div.streamdetails-icon {
 .line-with-dot::before {
   content: "";
   position: absolute;
+  top: 50%;
+  left: 0;
   transform: translate(-50%, -50%);
-  margin-top: calc(var(--sd-row) / 2);
   height: 14px;
   width: 14px;
   background-color: var(--foreground);
@@ -919,8 +919,9 @@ div.streamdetails-icon {
 .line-with-dot::after {
   content: "";
   position: absolute;
+  top: 50%;
+  left: 0;
   transform: translate(-50%, -50%);
-  margin-top: calc(var(--sd-row) / 2);
   height: 10px;
   width: 10px;
   background-color: var(--primary);
