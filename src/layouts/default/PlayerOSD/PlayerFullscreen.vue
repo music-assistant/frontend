@@ -324,7 +324,11 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline :show-labels="true" :color="sliderColor" />
+          <PlayerTimeline
+            :show-labels="true"
+            :color="sliderColor"
+            :waveform="waveformData"
+          />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -465,6 +469,7 @@ import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -735,6 +740,64 @@ watch(
     if (isOpen) {
       fetchLyrics();
     }
+  },
+);
+
+// Waveform for the current track, rendered by PlayerTimeline instead of the flat bar.
+const waveformData = ref<number[] | null>(null);
+const showWaveformPref = useUserPreferences().getPreference(
+  "show_waveform",
+  true,
+);
+let waveformLoadGeneration = 0;
+const fetchWaveform = async () => {
+  const generation = ++waveformLoadGeneration;
+  waveformData.value = null;
+
+  const mediaItem = store.curQueueItem?.media_item;
+  // Analysis is keyed by the provider-native (streaming) item id, not the library id.
+  const streamDetails = store.curQueueItem?.streamdetails;
+  if (
+    !showWaveformPref.value ||
+    !store.showFullscreenPlayer ||
+    mediaItem?.media_type !== MediaType.TRACK ||
+    !streamDetails
+  ) {
+    return;
+  }
+
+  try {
+    const waveform = await api.getWaveForm(
+      streamDetails.item_id,
+      streamDetails.provider,
+    );
+    // a newer track change started while awaiting; this result is stale
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = waveform?.length ? waveform : null;
+  } catch {
+    // No analysis available; PlayerTimeline falls back to the flat progress bar.
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = null;
+  }
+};
+
+// Streamdetails can arrive after the queue item switches, so watch both ids.
+watch(
+  () => [
+    store.curQueueItem?.queue_item_id,
+    store.curQueueItem?.streamdetails?.item_id,
+  ],
+  fetchWaveform,
+  { immediate: true },
+);
+
+// FrontendConfig reloads the app on save, but react to live changes anyway (multi-tab sync).
+watch(showWaveformPref, fetchWaveform);
+
+watch(
+  () => store.showFullscreenPlayer,
+  (isOpen) => {
+    if (isOpen) fetchWaveform();
   },
 );
 
@@ -1518,6 +1581,8 @@ watchEffect(() => {
   justify-content: center;
   max-width: 100%;
   padding: 15px;
+  /* match the visual gap between the controls and the volume bar below */
+  margin-top: 10px;
   height: 100px;
 }
 
