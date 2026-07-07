@@ -1,11 +1,11 @@
 <template>
-  <div class="w-auto" :class="hasWaveform ? 'h-12' : 'h-6'">
+  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
-        :class="hasWaveform ? 'h-14' : 'h-8'"
+        :class="hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8'"
         :disabled="!canSeek"
         :min="0"
         :max="store.activePlayer?.current_media?.duration ?? 0"
@@ -18,7 +18,7 @@
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
-          :class="hasWaveform ? 'h-12' : 'h-1'"
+          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
           :style="
             hasWaveform
               ? undefined
