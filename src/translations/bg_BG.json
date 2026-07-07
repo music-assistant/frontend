@@ -415,7 +415,12 @@
         "abort_setup": "Прекратяване на настройката",
         "provider_saved": "Настройките на доставчика са запазени",
         "provider_reloading": "Презареждане на доставчика…",
-        "provider_removed": "Доставчикът е премахнат"
+        "provider_removed": "Доставчикът е премахнат",
+        "audio_analysis_failures": {
+            "col_item": "Елемент",
+            "col_reason": "Причина",
+            "clear_all": "Изчистване на всички"
+        }
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -466,7 +471,14 @@
         "filter_genre": "Филтриране по жанр",
         "show_only_default_genres": "Показване само на жанрове по подразбиране",
         "show_all_genres": "Показване на всички жанрове",
-        "select_provider": "Изберете доставчик"
+        "select_provider": "Изберете доставчик",
+        "genre_content_type": "Тип на медията",
+        "previous_page": "Предишна страница",
+        "next_page": "Следваща страница",
+        "more_options": "Повече опции",
+        "user_options": "Потребителски опции",
+        "help": "Помощ",
+        "import_file": "Импортиране на файл"
     },
     "topresult": "Най-добър резултат",
     "track": "Песен",
@@ -964,6 +976,10 @@
     "edit_track": "Редактиране на песен",
     "uri_read_only": "URI (само за четене)",
     "similar_tracks": "Подобни песни",
+    "shortcut": {
+        "add_to": "Добавяне към преките пътища",
+        "remove_from": "Премахване от преките пътища"
+    },
     "smart_playlist": {
         "creating": "Създаване…",
         "desc": "Генериране на плейлист от вашата библиотека въз основа на правила.",
@@ -994,6 +1010,7 @@
         "op_is": "е",
         "op_is_not": "не е",
         "type_library": "От моята библиотека",
+        "type_seed": "Откриване",
         "seed_album_pick": "Изберете албум",
         "seed_playlist_pick": "Изберете плейлист",
         "name_label": "Име",
@@ -1001,7 +1018,16 @@
         "results_library": "Резултати от библиотеката",
         "results_other": "Други резултати",
         "explicit_allowed": "Разрешено",
-        "explicit_not_allowed": "Не е разрешено"
+        "explicit_not_allowed": "Не е разрешено",
+        "field_duration": "Продължителност",
+        "field_last_played": "Последно възпроизвеждане",
+        "duration_min": "Мин",
+        "duration_max": "Макс",
+        "unit_hours": "часа",
+        "unit_days": "дни",
+        "unit_weeks": "седмици",
+        "unit_months": "месеца",
+        "last_played_ago": "преди"
     },
     "explore": "Разгледайте",
     "shortcuts": "Преки пътища",
@@ -1015,5 +1041,24 @@
     "artist_topalbums": "Най-популярни албуми",
     "in_library": "Във вашата библиотека",
     "artist_all_albums": "Всички албуми",
-    "artist_all_tracks": "Всички песни"
+    "artist_all_tracks": "Всички песни",
+    "genre_content_type": {
+        "all": "Всички",
+        "audiobooks": "Аудиокниги",
+        "podcasts": "Подкасти"
+    },
+    "show_less": "Покажи по-малко",
+    "show_more": "Покажи още",
+    "autoplay_on_title": "Автоматичното възпроизвеждане е активирано",
+    "autoplay_off_title": "Автоматичното възпроизвеждане е деактивирано",
+    "open_player_settings": "Отваряне на настройките на плейъра",
+    "sleep_timer_preset": {
+        "15": "15 минути",
+        "30": "30 минути",
+        "45": "45 минути",
+        "60": "1 час",
+        "120": "2 часа"
+    },
+    "shuffle_smart_active": "Интелигентното разбъркване е включено. Кликнете, за да го изключите.",
+    "autoplay_dynamic_title": "Автоматичното възпроизвеждане е активно"
 }
