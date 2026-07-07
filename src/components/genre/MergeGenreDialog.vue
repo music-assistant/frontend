@@ -85,7 +85,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { normalizeGenreTaxonomy } from "@/helpers/genreTaxonomy";
 import { api } from "@/plugins/api";
 import type { Genre, MediaType } from "@/plugins/api/interfaces";
 import { eventbus, type MergeGenreDialogEvent } from "@/plugins/eventbus";
@@ -112,7 +111,7 @@ const availableGenres = computed(() =>
   allGenres.value.filter(
     (g) =>
       !genreIds.value.includes(g.item_id) &&
-      normalizeGenreTaxonomy(g.content_type) === sourceContentType.value,
+      (g.content_type ?? null) === sourceContentType.value,
   ),
 );
 
@@ -173,7 +172,7 @@ onMounted(() => {
     reset();
     genreIds.value = evt.genreIds;
     genreNames.value = evt.genreNames;
-    sourceContentType.value = normalizeGenreTaxonomy(evt.genreContentTypes[0]);
+    sourceContentType.value = evt.genreContentTypes[0] ?? null;
     allGenres.value = await api.getLibraryGenres({ hide_empty: false });
     open.value = true;
   });
