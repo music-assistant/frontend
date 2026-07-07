@@ -5,12 +5,12 @@
       v-show="hoverPercent != null"
       ref="hoverCanvasEl"
       class="waveform-canvas"
-      :style="{ clipPath: `inset(0 ${100 - clampedHover}% 0 0)` }"
+      :style="{ clipPath: `inset(0 ${100 - hoverClipEnd}% 0 0)` }"
     />
     <canvas
       ref="brightCanvasEl"
       class="waveform-canvas"
-      :style="{ clipPath: `inset(0 ${100 - clampedProgress}% 0 0)` }"
+      :style="{ clipPath: `inset(0 ${100 - brightClipEnd}% 0 0)` }"
     />
   </div>
 </template>
@@ -39,8 +39,6 @@ const BAR_WIDTH = 2;
 // Keep silent sections visible as a thin baseline.
 const MIN_BAR_HEIGHT = 2;
 const DIM_ALPHA = 0.3;
-// Seek-preview fill; halfway between the unplayed and played bar opacity.
-const HOVER_ALPHA = 0.6;
 
 const containerEl = ref<HTMLDivElement>();
 const dimCanvasEl = ref<HTMLCanvasElement>();
@@ -55,6 +53,22 @@ const clampedProgress = computed(() =>
 
 const clampedHover = computed(() =>
   Math.min(100, Math.max(0, props.hoverPercent ?? 0)),
+);
+
+// The bright (played) layer ends at the hover point when hovering before the
+// current position, so the would-be rewound stretch shows the preview color
+// instead of the played color.
+const brightClipEnd = computed(() =>
+  props.hoverPercent == null
+    ? clampedProgress.value
+    : Math.min(clampedProgress.value, clampedHover.value),
+);
+
+// The preview layer covers up to whichever of hover/progress is furthest; the
+// bright layer on top then leaves exactly the hover<->progress stretch in the
+// preview color.
+const hoverClipEnd = computed(() =>
+  Math.max(clampedHover.value, clampedProgress.value),
 );
 
 // Max-pool the source bins into one peak per visible bar; max (not average)
@@ -82,6 +96,7 @@ const drawBars = (
   cssWidth: number,
   cssHeight: number,
   dpr: number,
+  color: string,
   alpha: number,
 ) => {
   canvas.width = Math.round(cssWidth * dpr);
@@ -90,7 +105,7 @@ const drawBars = (
   if (!ctx) return;
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, cssWidth, cssHeight);
-  ctx.fillStyle = props.color;
+  ctx.fillStyle = color;
   ctx.globalAlpha = alpha;
   for (let i = 0; i < peaks.length; i++) {
     const barHeight = Math.max(MIN_BAR_HEIGHT, peaks[i] * cssHeight);
@@ -119,9 +134,32 @@ const draw = () => {
   const barCount = Math.ceil(cssWidth / BAR_PITCH);
   const peaks = computePeaks(props.data, barCount);
 
-  drawBars(dimCanvasEl.value, peaks, cssWidth, cssHeight, dpr, DIM_ALPHA);
-  drawBars(hoverCanvasEl.value, peaks, cssWidth, cssHeight, dpr, HOVER_ALPHA);
-  drawBars(brightCanvasEl.value, peaks, cssWidth, cssHeight, dpr, 1);
+  // Seek-preview fill uses the MA brand blue (--primary); canvas fillStyle
+  // cannot resolve CSS vars, so resolve it here.
+  const hoverColor =
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || props.color;
+
+  drawBars(
+    dimCanvasEl.value,
+    peaks,
+    cssWidth,
+    cssHeight,
+    dpr,
+    props.color,
+    DIM_ALPHA,
+  );
+  drawBars(hoverCanvasEl.value, peaks, cssWidth, cssHeight, dpr, hoverColor, 1);
+  drawBars(
+    brightCanvasEl.value,
+    peaks,
+    cssWidth,
+    cssHeight,
+    dpr,
+    props.color,
+    1,
+  );
 };
 
 // Progress and hover are intentionally excluded: they only move canvas
