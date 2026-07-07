@@ -1309,7 +1309,7 @@ export class MusicAssistantApi {
     item_id: string,
     provider_instance_id_or_domain: string,
   ): Promise<number[] | null> {
-    // Get the waveform (RMS energy bins, normalized 0.0-1.0) for a track.
+    // Returns RMS energy bins normalized 0.0-1.0, or null when no analysis exists.
     return this.sendCommand("audio_analysis/wave_form", {
       item_id,
       provider_instance_id_or_domain,

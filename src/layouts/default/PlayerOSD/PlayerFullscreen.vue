@@ -743,8 +743,7 @@ watch(
   },
 );
 
-// Fetch the waveform for the current track (only when fullscreen player is
-// open); rendered by PlayerTimeline instead of the flat progress bar.
+// Waveform for the current track, rendered by PlayerTimeline instead of the flat bar.
 const waveformData = ref<number[] | null>(null);
 const showWaveformPref = useUserPreferences().getPreference(
   "show_waveform",
@@ -756,8 +755,7 @@ const fetchWaveform = async () => {
   waveformData.value = null;
 
   const mediaItem = store.curQueueItem?.media_item;
-  // Analysis data is keyed by the provider-native item id (the one used for
-  // streaming), so resolve it from streamdetails - not the library item id.
+  // Analysis is keyed by the provider-native (streaming) item id, not the library id.
   const streamDetails = store.curQueueItem?.streamdetails;
   if (
     !showWaveformPref.value ||
@@ -777,15 +775,13 @@ const fetchWaveform = async () => {
     if (generation !== waveformLoadGeneration) return;
     waveformData.value = waveform?.length ? waveform : null;
   } catch {
-    // No analysis available or server without audio_analysis support;
-    // PlayerTimeline falls back to the flat progress bar.
+    // No analysis available; PlayerTimeline falls back to the flat progress bar.
     if (generation !== waveformLoadGeneration) return;
     waveformData.value = null;
   }
 };
 
-// Streamdetails can arrive after the queue item switches, so key the watch on
-// the streamdetails item id (with the queue item id as fallback trigger).
+// Streamdetails can arrive after the queue item switches, so watch both ids.
 watch(
   () => [
     store.curQueueItem?.queue_item_id,
@@ -795,8 +791,7 @@ watch(
   { immediate: true },
 );
 
-// Defensive: FrontendConfig reloads the app after saving user preferences,
-// but react to live preference changes anyway (e.g. multi-tab sync).
+// FrontendConfig reloads the app on save, but react to live changes anyway (multi-tab sync).
 watch(showWaveformPref, fetchWaveform);
 
 watch(
@@ -1586,8 +1581,7 @@ watchEffect(() => {
   justify-content: center;
   max-width: 100%;
   padding: 15px;
-  /* Breathing room below the timeline, matching the visual gap between the
-     controls and the volume bar underneath. */
+  /* match the visual gap between the controls and the volume bar below */
   margin-top: 10px;
   height: 100px;
 }

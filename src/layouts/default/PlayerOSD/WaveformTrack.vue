@@ -48,14 +48,12 @@ const clampedHover = computed(() =>
   Math.min(100, Math.max(0, props.hoverPercent ?? 0)),
 );
 
-// While hovering, the fill previews the seek target: it follows the cursor
-// in both directions instead of the playback position.
+// While hovering, the fill previews the seek target instead of the playback position.
 const brightClipEnd = computed(() =>
   props.hoverPercent == null ? clampedProgress.value : clampedHover.value,
 );
 
-// Max-pool the source bins into one peak per visible bar; max (not average)
-// preserves the visual transients that make the waveform recognizable.
+// Max-pool bins into one peak per bar; max (not average) preserves the transients.
 const computePeaks = (bins: number[], barCount: number): number[] => {
   const peaks = Array.from({ length: barCount }, () => 0);
   for (let i = 0; i < barCount; i++) {
@@ -136,8 +134,7 @@ const draw = () => {
   );
 };
 
-// Progress and hover are intentionally excluded: they only move canvas
-// clip-paths, so pointer movement and playback never trigger a redraw.
+// Progress/hover only move clip-paths, so playback and pointer movement never redraw.
 watch([width, height, () => props.data, () => props.color], draw, {
   flush: "post",
 });

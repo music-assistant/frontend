@@ -134,8 +134,7 @@ import WaveformTrack from "./WaveformTrack.vue";
 export interface Props {
   showLabels?: boolean;
   color?: string;
-  // Precomputed waveform bins (normalized 0.0-1.0); when set, the flat
-  // track is replaced by a waveform-style progress bar.
+  // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
 }
 
