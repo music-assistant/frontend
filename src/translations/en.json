@@ -623,10 +623,12 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "bpm": "Tempo (beats per minute)",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
+        "musical_key": "Musical key",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
         "search": "Show\/hide search input",
@@ -1424,5 +1426,6 @@
         "45": "45 minutes",
         "60": "1 hour",
         "120": "2 hours"
-    }
+    },
+    "bpm": "BPM"
 }
