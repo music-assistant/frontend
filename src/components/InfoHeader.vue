@@ -270,39 +270,6 @@
                 ></MarqueeText
               >
             </v-card-subtitle>
-
-            <!-- track bpm / musical key (only present on full track details) -->
-            <v-card-subtitle
-              v-if="trackBpm || trackMusicalKey"
-              class="title d-flex"
-            >
-              <template v-if="trackBpm">
-                <v-icon
-                  style="margin-left: -3px; margin-right: 3px"
-                  small
-                  color="primary"
-                  icon="mdi-metronome"
-                />
-                <span :title="$t('tooltip.bpm')"
-                  >{{ trackBpm }} {{ $t("bpm") }}</span
-                >
-              </template>
-              <template v-if="trackMusicalKey">
-                <v-icon
-                  small
-                  color="primary"
-                  icon="mdi-music-clef-treble"
-                  :style="
-                    trackBpm
-                      ? 'margin-left: 12px; margin-right: 3px'
-                      : 'margin-left: -3px; margin-right: 3px'
-                  "
-                />
-                <span :title="$t('tooltip.musical_key')">{{
-                  trackMusicalKey
-                }}</span>
-              </template>
-            </v-card-subtitle>
           </div>
 
           <!-- play/info buttons -->
@@ -350,6 +317,11 @@
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <!-- audio analysis details (full track details only) -->
+              <AudioAnalysisMetadata
+                v-if="item.media_type == MediaType.TRACK"
+                :audio-metadata="(item as Track).audio_metadata"
+              />
               <!-- slot for extra action icons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
@@ -453,6 +425,7 @@
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -520,17 +493,6 @@ const { getPreference } = useUserPreferences();
 const headerTitle = computed(() => {
   if (!compProps.item) return "";
   return compProps.item.name;
-});
-
-const trackBpm = computed(() => {
-  if (compProps.item?.media_type !== MediaType.TRACK) return undefined;
-  const bpm = (compProps.item as Track).audio_metadata?.bpm;
-  return bpm ? Math.round(bpm) : undefined;
-});
-
-const trackMusicalKey = computed(() => {
-  if (compProps.item?.media_type !== MediaType.TRACK) return undefined;
-  return (compProps.item as Track).audio_metadata?.musical_key || undefined;
 });
 
 watch(
