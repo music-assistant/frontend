@@ -1517,7 +1517,8 @@ watchEffect(() => {
   align-items: center;
   justify-content: center;
   max-width: 100%;
-  padding: 15px;
+  /* 5% side padding aligns the outer icons with the volume bar below */
+  padding: 15px 5%;
   height: 100px;
 }
 
