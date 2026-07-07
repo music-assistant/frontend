@@ -136,39 +136,6 @@
               {{ new Date(item.metadata.release_date).getFullYear() }}
             </v-card-subtitle>
 
-            <!-- track bpm / musical key (only present on full track details) -->
-            <v-card-subtitle
-              v-if="trackBpm || trackMusicalKey"
-              class="title d-flex"
-            >
-              <template v-if="trackBpm">
-                <v-icon
-                  style="margin-left: -3px; margin-right: 3px"
-                  small
-                  color="primary"
-                  icon="mdi-metronome"
-                />
-                <span :title="$t('tooltip.bpm')"
-                  >{{ trackBpm }} {{ $t("bpm") }}</span
-                >
-              </template>
-              <template v-if="trackMusicalKey">
-                <v-icon
-                  small
-                  color="primary"
-                  icon="mdi-music-clef-treble"
-                  :style="
-                    trackBpm
-                      ? 'margin-left: 12px; margin-right: 3px'
-                      : 'margin-left: -3px; margin-right: 3px'
-                  "
-                />
-                <span :title="$t('tooltip.musical_key')">{{
-                  trackMusicalKey
-                }}</span>
-              </template>
-            </v-card-subtitle>
-
             <!-- item artists -->
             <v-card-subtitle
               v-if="'artists' in item && item.artists"
@@ -302,6 +269,39 @@
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
+            </v-card-subtitle>
+
+            <!-- track bpm / musical key (only present on full track details) -->
+            <v-card-subtitle
+              v-if="trackBpm || trackMusicalKey"
+              class="title d-flex"
+            >
+              <template v-if="trackBpm">
+                <v-icon
+                  style="margin-left: -3px; margin-right: 3px"
+                  small
+                  color="primary"
+                  icon="mdi-metronome"
+                />
+                <span :title="$t('tooltip.bpm')"
+                  >{{ trackBpm }} {{ $t("bpm") }}</span
+                >
+              </template>
+              <template v-if="trackMusicalKey">
+                <v-icon
+                  small
+                  color="primary"
+                  icon="mdi-music-clef-treble"
+                  :style="
+                    trackBpm
+                      ? 'margin-left: 12px; margin-right: 3px'
+                      : 'margin-left: -3px; margin-right: 3px'
+                  "
+                />
+                <span :title="$t('tooltip.musical_key')">{{
+                  trackMusicalKey
+                }}</span>
+              </template>
             </v-card-subtitle>
           </div>
 
