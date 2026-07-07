@@ -1584,6 +1584,10 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
+    // always leave selection mode: the selection belongs to the previous
+    // folder, and the target may not offer the toggle to turn it off
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
