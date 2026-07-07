@@ -5,6 +5,7 @@ import mitt, { Emitter } from "mitt";
 import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
+  MediaType,
   Playlist,
   Radio,
   Track,
@@ -30,6 +31,7 @@ export type CreatePlaylistEvent = {
 export type MergeGenreDialogEvent = {
   genreIds: string[];
   genreNames: string[];
+  genreContentTypes: (MediaType | null | undefined)[];
 };
 
 export type DeleteGenreDialogEvent = {

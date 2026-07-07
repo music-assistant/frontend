@@ -212,6 +212,7 @@ import {
   pinShortcutStandalone,
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
+import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -224,6 +225,7 @@ import {
   Album,
   BrowseFolder,
   EventType,
+  Genre,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -985,11 +987,12 @@ export const getContextMenuItems = async function (
       icon: GenreIcon,
     });
   }
-  // merge genres (admin only, all items must be library genres)
+  // merge genres (admin only, all items must be library genres of the same taxonomy)
   if (
     items.every(
       (i) => i.media_type === MediaType.GENRE && i.provider === "library",
     ) &&
+    genresShareTaxonomy(items.map((i) => (i as Genre).content_type)) &&
     authManager.isAdmin()
   ) {
     contextMenuItems.push({
@@ -999,6 +1002,7 @@ export const getContextMenuItems = async function (
         eventbus.emit("mergeGenreDialog", {
           genreIds: items.map((i) => i.item_id),
           genreNames: items.map((i) => i.name),
+          genreContentTypes: items.map((i) => (i as Genre).content_type),
         });
         eventbus.emit("clearSelection");
       },
