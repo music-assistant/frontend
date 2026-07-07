@@ -225,10 +225,11 @@
                 "preamp": "Förförstärkare",
                 "add_band_channel": "Lägg till band ({channel} bara)",
                 "band_channel": "Band {index} ({channel} bara)",
-                "show_multichannel_controls": "Visa flerkanalskontroller",
+                "show_multichannel_controls": "Aktivera flerkanalskontroller",
                 "edited_channel": "Rita ut EQ svaret för den\/denna kanal (er)",
                 "channel": "Detta band kommer att tillämpas på",
-                "per_channel_preamp": "Ytterligare förförstärkning för {channel}"
+                "per_channel_preamp": "Ytterligare förförstärkning för {channel}",
+                "disable_multichannel_controls": "Inaktivera flerkanalskontroller"
             },
             "tone_control": {
                 "bass_level": "Basnivå",
@@ -564,7 +565,15 @@
             "cleared_many": "Rensade {0} misslyckanden.",
             "clear_error": "Det gick inte att rensa felen. Försök igen.",
             "load_error": "Kunde inte läsa in fel från servern."
-        }
+        },
+        "queue_global_settings_hint": "Dessa inställningar gäller endast för den här kön. Du kan också konfigurera standardinställningarna som gäller för alla spelar köer.",
+        "queue_global_settings_link": "Öppna globala kö inställningar",
+        "protocol_provider_unavailable": "Leverantören för detta utdataprotokoll är för närvarande inte tillgänglig.",
+        "protocol_multi_info": "Den här spelaren stöder flera utdataprotokoll. Music Assistant länkar dem automatiskt så att de fungerar som en enda spelare – aktivera de du vill använda.",
+        "protocol_enable_label": "Aktivera utdataprotokoll",
+        "protocol_configure_title": "Konfigurera {name}",
+        "protocol_configure_label": "Konfigurera utdataprotokoll",
+        "protocol_configure_title_via": "Konfigurera {name} (över {base})"
     },
     "show_info": "Visa info",
     "show_select_boxes": "Visa markeringsrutor",
@@ -787,7 +796,9 @@
             }
         },
         "click_to_expand": "Klicka för att visa alla spelare",
-        "output_format_pcm_info": "Ljud skickas som PCM till spelarleverantören. Spelleverantören kan sedan konvertera ljudet till ett annat format innan det skickas till spelaren."
+        "output_format_pcm_info": "Ljud skickas som PCM till spelarleverantören. Spelleverantören kan sedan konvertera ljudet till ett annat format innan det skickas till spelaren.",
+        "more_info": "Mer information",
+        "player_not_found": "Spelaren hittades inte"
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Välj källa",
@@ -1322,7 +1333,18 @@
         "field_explicit": "Tydlig",
         "explicit_allowed": "Tillåten",
         "explicit_only": "Endast tydlig",
-        "explicit_not_allowed": "Inte tillåtet"
+        "explicit_not_allowed": "Inte tillåtet",
+        "field_duration": "Varaktighet",
+        "field_last_played": "Senast spelade",
+        "duration_min": "Min",
+        "duration_max": "Max",
+        "unit_hours": "timmar",
+        "unit_days": "dagar",
+        "unit_weeks": "veckor",
+        "unit_months": "månader",
+        "last_played_ago": "sedan",
+        "op_greater_than": "större än",
+        "op_less_than": "mindre än"
     },
     "explore": "Utforska",
     "shortcuts": "Genvägar",
@@ -1361,7 +1383,8 @@
     "genre_content_type": {
         "all": "Alla",
         "audiobooks": "Ljudböcker",
-        "podcasts": "Poddsändningar"
+        "podcasts": "Poddsändningar",
+        "music": "Musik"
     },
     "up_next": "Härnäst",
     "queue_buffered_explanation": "Det här spåret är redan buffrat av spelaren för att spelas härnäst.",
@@ -1388,5 +1411,18 @@
         "60": "1 timme",
         "120": "2 timmar"
     },
-    "shuffle_smart_active": "Smart blandning är på. Klicka för att stänga av den."
+    "shuffle_smart_active": "Smart blandning är på. Klicka för att stänga av den.",
+    "goto_album_radio": "Gå till Album Radion",
+    "goto_artist_radio": "Gå till Artist Radion",
+    "goto_genre_radio": "Gå till Genre Radion",
+    "goto_playlist_radio": "Gå till spellistan för Radion",
+    "goto_radio": "Gå till radion",
+    "goto_track_radio": "Gå till Radio Spår",
+    "autoplay_dynamic_title": "Automatisk uppspelning är aktiv",
+    "autoplay_dynamic_lead": "Din kö fylls dynamiskt baserat på ditt val:",
+    "autoplay_dynamic_desc": "Din kö fylls dynamiskt baserat på ditt val.",
+    "autoplay_on_desc_sources": "Din kö spelas upp {0}. När det når slutet fortsätter den automatiska uppspelningen av musiken genom att lägga till mer innehåll baserat på dina preferenser.",
+    "autoplay_off_desc_sources": "Din kö spelas upp {0} och stoppar när den är klar. Aktivera Automatisk spelning för att fortsätta spela musiken automatiskt med mer innehåll.",
+    "shuffle_dynamic_active": "Smart blandning är aktiv eftersom kön spelas i dynamiskt läge.",
+    "repeat_dynamic_unavailable": "Upprepa är inte tillgängligt medan kön spelas upp i dynamiskt läge."
 }
