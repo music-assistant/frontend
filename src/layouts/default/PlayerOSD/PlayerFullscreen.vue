@@ -1585,9 +1585,10 @@ watchEffect(() => {
   align-items: center;
   justify-content: center;
   max-width: 100%;
-  /* Side padding matches the 5% margins of the timeline/volume rows above
-     and below, so the outermost buttons align with the sliders. */
-  padding: 15px 5%;
+  padding: 15px;
+  /* Breathing room below the timeline, matching the visual gap between the
+     controls and the volume bar underneath. */
+  margin-top: 10px;
   height: 100px;
 }
 
