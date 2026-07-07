@@ -93,7 +93,11 @@ const drawBars = (
     const x = i * BAR_PITCH;
     const y = (cssHeight - barHeight) / 2;
     ctx.beginPath();
-    ctx.roundRect(x, y, BAR_WIDTH, barHeight, BAR_WIDTH / 2);
+    if (typeof (ctx as CanvasRenderingContext2D).roundRect === "function") {
+      ctx.roundRect(x, y, BAR_WIDTH, barHeight, BAR_WIDTH / 2);
+    } else {
+      ctx.rect(x, y, BAR_WIDTH, barHeight);
+    }
     ctx.fill();
   }
 };
