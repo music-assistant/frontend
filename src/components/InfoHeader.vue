@@ -317,6 +317,11 @@
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <!-- audio analysis details (full track details only) -->
+              <AudioAnalysisMetadata
+                v-if="item.media_type == MediaType.TRACK"
+                :audio-metadata="(item as Track).audio_metadata"
+              />
               <!-- slot for extra action icons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
@@ -423,6 +428,7 @@
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
