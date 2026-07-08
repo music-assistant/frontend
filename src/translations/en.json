@@ -1428,5 +1428,6 @@
         "60": "1 hour",
         "120": "2 hours"
     },
-    "bpm": "BPM"
+    "bpm": "BPM",
+    "musical_key": "Key"
 }

@@ -12,24 +12,37 @@
       side="bottom"
       align="center"
       :collision-padding="12"
-      class="audio-analysis-popover overflow-y-auto p-3"
-      :style="{
-        width: 'fit-content',
-        minWidth: '180px',
-        maxWidth: 'calc(100vw - 25px)',
-      }"
+      class="w-auto min-w-[210px] p-3"
       @open-auto-focus.prevent
     >
-      <div class="font-medium audio-analysis-item">
-        {{ $t("audio_analysis") }}
-      </div>
-      <div v-if="bpm" class="audio-analysis-item">
-        <v-icon size="20" color="primary" icon="mdi-metronome" />
-        <span :title="$t('tooltip.bpm')">{{ bpm }} {{ $t("bpm") }}</span>
-      </div>
-      <div v-if="musicalKey" class="audio-analysis-item">
-        <v-icon size="20" color="primary" icon="mdi-music-clef-treble" />
-        <span :title="$t('tooltip.musical_key')">{{ musicalKey }}</span>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-2">
+          <AudioWaveform :size="18" />
+          <span class="text-[0.95rem] font-semibold">
+            {{ $t("audio_analysis") }}
+          </span>
+        </div>
+
+        <div class="grid auto-cols-fr grid-flow-col gap-2">
+          <div
+            v-if="bpm"
+            class="bg-accent/50 rounded-md px-3 py-2 text-center"
+            :title="$t('tooltip.bpm')"
+          >
+            <div class="text-base font-semibold tabular-nums">{{ bpm }}</div>
+            <div class="text-muted-foreground text-xs">{{ $t("bpm") }}</div>
+          </div>
+          <div
+            v-if="musicalKey"
+            class="bg-accent/50 rounded-md px-3 py-2 text-center"
+            :title="$t('tooltip.musical_key')"
+          >
+            <div class="text-base font-semibold">{{ musicalKey }}</div>
+            <div class="text-muted-foreground text-xs">
+              {{ $t("musical_key") }}
+            </div>
+          </div>
+        </div>
       </div>
     </PopoverContent>
   </Popover>
@@ -56,17 +69,3 @@ const musicalKey = computed(
   () => props.audioMetadata?.musical_key || undefined,
 );
 </script>
-
-<style>
-.audio-analysis-popover {
-  /* match the streamdetails (quality) popover typography and row rhythm */
-  font-size: 0.875rem;
-}
-
-.audio-analysis-item {
-  height: 34px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-</style>
