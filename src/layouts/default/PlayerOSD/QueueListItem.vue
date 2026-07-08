@@ -8,6 +8,7 @@
 -->
 <template>
   <div
+    v-hold="onHold"
     class="qitem"
     :class="{
       'qitem--played': state === 'played',
@@ -22,10 +23,12 @@
     role="button"
     tabindex="0"
     @click="emit('click', $event)"
+    @click.capture="swallowClickAfterHold"
     @contextmenu.prevent="emit('menu', $event)"
     @keydown.enter.prevent="emit('click', $event)"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
+    @touchstart.passive="onTouchStart"
   >
     <!-- thumbnail (with now-playing equalizer overlay) -->
     <div class="qitem__thumb">
@@ -127,6 +130,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { formatDuration } from "@/helpers/utils";
 import { QueueItem } from "@/plugins/api/interfaces";
@@ -173,6 +177,10 @@ const emit = defineEmits<{
 }>();
 
 const hovered = ref(false);
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  (evt: Event) => emit("menu", evt),
+);
 
 // Only animate the title/album marquee for the now-playing track, or while a
 // row is hovered — keeps the list calm and avoids dozens of scrolling rows.

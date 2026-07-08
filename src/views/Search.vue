@@ -1,19 +1,15 @@
 <template>
   <section>
     <Container variant="default" style="padding-top: 20px">
-      <v-text-field
+      <SearchInput
         id="searchInput"
         v-model="store.globalSearchTerm"
         clearable
-        prepend-inner-icon="mdi-magnify"
-        :label="$t('search')"
-        hide-details
-        variant="outlined"
+        :aria-label="$t('search')"
+        :placeholder="$t('type_to_search')"
         @focus="searchHasFocus = true"
         @blur="searchHasFocus = false"
-      >
-        <template #label>{{ $t("type_to_search") }}</template>
-      </v-text-field>
+      />
 
       <v-chip-group
         v-model="selectedSearchType"
@@ -96,6 +92,7 @@ import Container from "@/components/Container.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
+import { SearchInput } from "@/components/ui/search-input";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";

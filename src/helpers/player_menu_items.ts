@@ -1,6 +1,6 @@
 // shared logic to show player menu items
 // this menu is shown in the full screen player and in the player list
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,

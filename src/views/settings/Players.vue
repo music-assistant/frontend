@@ -183,7 +183,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import {
   EventType,

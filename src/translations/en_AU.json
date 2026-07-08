@@ -31,5 +31,8 @@
                 "fixed_gain": "Volume normalisation is active based on fixed gain correction."
             }
         }
+    },
+    "smart_playlist": {
+        "field_favorite": "Favourite"
     }
 }

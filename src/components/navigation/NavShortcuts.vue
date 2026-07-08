@@ -26,6 +26,10 @@ import {
   SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
 import { getImageThumbForItem } from "@/helpers/utils";
@@ -97,18 +101,22 @@ const pinnedItemsWithUrls = computed(() =>
   pinnedItems.value.map((item) => ({ item, url: getItemUrl(item) })),
 );
 
-const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
+const openContextMenu = async (event: Event, item: ShortcutItem) => {
+  const pos = getEventPosition(event);
   await showContextMenuForMediaItem(
     item,
     undefined,
-    event.clientX,
-    event.clientY,
+    pos.x,
+    pos.y,
     true,
     true,
     undefined,
     { shortcutContext: true },
   );
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(openContextMenu);
 
 const { navEl } = useSidebarScrollbarGutter(pinnedItems);
 </script>
@@ -130,7 +138,10 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
           <SidebarMenuItem
             v-for="{ item, url } in pinnedItemsWithUrls"
             :key="item.uri"
+            v-hold="(e: Event) => onHold(e, item)"
             class="mr-1.5"
+            @click.capture="swallowClickAfterHold"
+            @touchstart.passive="onTouchStart"
           >
             <SidebarMenuButton
               :as="RouterLinkComponent"

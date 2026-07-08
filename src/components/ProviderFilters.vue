@@ -1,11 +1,6 @@
 <template>
   <div class="filters-container">
-    <InputGroup class="search-field">
-      <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
-      <InputGroupAddon>
-        <Search />
-      </InputGroupAddon>
-    </InputGroup>
+    <SearchInput v-model="searchQuery" :placeholder="$t('search')" />
     <div v-if="showStageFilter" class="filter-buttons">
       <FacetedFilter
         v-model="selectedProviderStages"
@@ -18,14 +13,9 @@
 
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { SearchInput } from "@/components/ui/search-input";
 import { ProviderStage } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Search } from "@lucide/vue";
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -129,7 +119,7 @@ initializeFromUrl();
   flex-wrap: wrap;
 }
 
-.search-field {
+:deep(.search-field) {
   flex: 1 1 auto;
   min-width: 250px;
   max-width: 400px;
@@ -149,7 +139,7 @@ initializeFromUrl();
     align-items: stretch;
   }
 
-  .search-field {
+  :deep(.search-field) {
     width: 100%;
     min-width: 100%;
   }

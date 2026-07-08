@@ -90,7 +90,7 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :show-actions="
                 [
                   'tracks',
@@ -122,7 +122,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -156,7 +156,7 @@
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
@@ -642,6 +642,12 @@ const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
 };
 
+const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
+  // the parent directory ("..") link injected in browse listings
+  // must never be selectable as it breaks the action/context menu
+  return item.media_type == MediaType.FOLDER && item.name == "..";
+};
+
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
@@ -691,6 +697,7 @@ const onSelect = function (
   selected: boolean,
 ) {
   if (selected) {
+    if (isParentDirItem(item)) return;
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
     for (let i = 0; i < selectedItems.value.length; i++) {
@@ -1577,6 +1584,10 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
+    // always leave selection mode: the selection belongs to the previous
+    // folder, and the target may not offer the toggle to turn it off
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
@@ -1955,7 +1966,7 @@ const selectAll = async function () {
 
   if (confirmed) {
     await loadAllItems();
-    selectedItems.value = pagedItems.value;
+    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
     showCheckboxes.value = true;
   }
 };

@@ -2,6 +2,7 @@
 // items, bidirectional paging, now-playing focus handling, the per-item context
 // menu and audiobook chapter playback. Extracted from PlayerFullscreen.vue to
 // keep that component focused on layout.
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
@@ -272,10 +273,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   const openQueueItemMenu = (evt: Event, index: number) => {
     const item = itemAt(index);
     if (!item) return;
+    const pos = getEventPosition(evt);
     eventbus.emit("contextmenu", {
       items: getQueueItemMenuItems(item, index),
-      posX: (evt as PointerEvent).clientX,
-      posY: (evt as PointerEvent).clientY,
+      posX: pos.x,
+      posY: pos.y,
     });
   };
 

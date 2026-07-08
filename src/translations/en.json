@@ -303,6 +303,10 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
+        "show_waveform": {
+            "label": "Show waveform as progress bar",
+            "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
+        },
         "providers_description": "Manage your music sources, player providers and plugins",
         "players_description": "Configure and manage your audio output devices",
         "frontend_description": "Customize the user interface theme and appearance",
@@ -457,6 +461,7 @@
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant links them automatically so they act as a single player — enable the ones you want to use.",
         "protocol_enable_label": "Enable output protocols",
         "protocol_configure_title": "Configure {name}",
+        "protocol_configure_title_via": "Configure {name} (over {base})",
         "protocol_configure_label": "Configure output protocols",
         "show_advanced_settings": "Show advanced settings",
         "advanced": "Advanced",
@@ -622,10 +627,12 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "bpm": "Tempo (beats per minute)",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
         "linked": "This provideritem is linked to the current itemdetails",
+        "musical_key": "Musical key",
         "refresh": "Refresh the items listing",
         "refresh_new_content": "New content is available, click to refresh the listing",
         "search": "Show\/hide search input",
@@ -746,6 +753,7 @@
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
+    "audio_analysis": "Audio analysis",
     "chapter": "Chapter",
     "chapters": "Chapters",
     "podcast": "Podcast",
@@ -1423,5 +1431,7 @@
         "45": "45 minutes",
         "60": "1 hour",
         "120": "2 hours"
-    }
+    },
+    "bpm": "BPM",
+    "musical_key": "Key"
 }

@@ -712,6 +712,12 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AudioMetadata {
+  // Audio analysis details (e.g. bpm, musical key).
+  bpm?: number | null;
+  musical_key?: string | null;
+}
+
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
@@ -719,6 +725,8 @@ export interface Track extends MediaItem {
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
+  // only populated when the full track is requested (get_track), never on listings
+  audio_metadata?: AudioMetadata | null;
 }
 
 export interface Playlist extends MediaItem {
@@ -942,6 +950,9 @@ export interface OutputProtocol {
   protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
+  // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
+  // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
+  derived_from?: string | null;
 }
 
 export interface DeviceInfo {
