@@ -63,8 +63,8 @@ import {
 import api from "@/plugins/api";
 import type { Album, Artist, Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { Loader2, Plus } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
-import { Loader2, Plus } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 
 interface Option {

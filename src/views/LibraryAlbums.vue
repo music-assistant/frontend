@@ -21,10 +21,11 @@
 
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
-import { EventMessage, EventType } from "@/plugins/api/interfaces";
+import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Disc3 } from "lucide-vue-next";
+import { Disc3 } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -57,12 +58,18 @@ onMounted(() => {
     EventType.MEDIA_ITEM_ADDED,
     (evt: EventMessage) => {
       // signal user that there might be updated info available for this item
-      if (evt.object_id?.startsWith("library://artist")) {
+      if (evt.object_id?.startsWith("library://album")) {
         updateAvailable.value = true;
       }
     },
   );
   onBeforeUnmount(unsub);
+  // per-item add events are suppressed during provider library syncs; also
+  // refresh when a sync covering this media type finishes
+  const unsubSync = onLibrarySyncCompleted(MediaType.ALBUM, () => {
+    updateAvailable.value = true;
+  });
+  onBeforeUnmount(unsubSync);
 });
 
 const loadItems = async function (params: LoadDataParams) {

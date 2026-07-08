@@ -43,6 +43,7 @@
                   variant="outline"
                   size="icon"
                   class="absolute bottom-0 right-0 size-8 rounded-full border-2 border-background bg-background shadow-md hover:bg-accent"
+                  :aria-label="$t('tooltip.change_avatar')"
                   @click="showAvatarDialog = true"
                 >
                   <Camera :size="14" />
@@ -191,9 +192,9 @@
 </template>
 
 <script setup lang="ts">
+import { Camera, User } from "@lucide/vue";
 import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
-import { Camera, User } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";

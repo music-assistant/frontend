@@ -42,6 +42,7 @@
             variant="ghost"
             size="icon"
             class="text-destructive hover:text-destructive hover:bg-destructive/10"
+            :aria-label="$t('tooltip.revoke_session')"
             @click.stop="emit('revoke', token)"
           >
             <Trash2 :size="16" />
@@ -62,7 +63,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { AuthToken } from "@/plugins/api/interfaces";
-import { Monitor, MonitorOff, Trash2 } from "lucide-vue-next";
+import { Monitor, MonitorOff, Trash2 } from "@lucide/vue";
 
 defineProps<{
   tokens: AuthToken[];

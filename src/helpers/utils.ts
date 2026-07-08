@@ -8,7 +8,6 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
-  PlaybackState,
   Player,
   PlayerConfig,
   PlayerType,
@@ -16,6 +15,7 @@ import {
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 
 import {
@@ -23,11 +23,11 @@ import {
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { itemIsAvailable } from "@/plugins/api/helpers";
+import type { MediaItemPalette } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Volume, Volume1, Volume2, VolumeX } from "lucide-vue-next";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
 export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
@@ -620,7 +620,10 @@ export const markdownToHtml = function (text: string): string {
     .replaceAll(/\\n/g, "<br />")
     .replaceAll("\n", "<br />")
     .replaceAll(" \\", "<br />");
-  return marked(text) as string;
+  // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
+  return DOMPurify.sanitize(marked(text) as string, {
+    SANITIZE_NAMED_PROPS: true,
+  });
 };
 
 /**
@@ -752,21 +755,12 @@ export const handlePlayBtnClick = function (
       store.activePlayerQueue
     ) {
       // special case: playing a track from a playlist/album - play from here
-      api.playMedia(
-        parentItem.uri,
-        undefined,
-        false,
-        item.item_id,
-        undefined,
-        sortBy,
-      );
+      api.playMedia(parentItem.uri, undefined, item.item_id, undefined, sortBy);
 
       return;
     }
     // else: play the item directly
-    api
-      .playMedia(item, undefined, undefined, undefined, undefined)
-      .then(() => {});
+    api.playMedia(item).then(() => {});
     return;
   }
   showPlayMenuForMediaItem(item, parentItem, posX, posY);

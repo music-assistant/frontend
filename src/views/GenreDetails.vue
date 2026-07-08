@@ -60,6 +60,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('artists') })"
             @click.stop="navigateTo('artists')"
           />
         </template>
@@ -78,6 +79,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('albums') })"
             @click.stop="navigateTo('albums')"
           />
         </template>
@@ -97,6 +99,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('tracks') })"
             @click.stop="navigateTo('tracks')"
           />
         </template>
@@ -115,6 +118,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('playlists') })"
             @click.stop="navigateTo('playlists')"
           />
         </template>
@@ -133,6 +137,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('podcasts') })"
             @click.stop="navigateTo('podcasts')"
           />
         </template>
@@ -151,6 +156,7 @@
           <SquareArrowRightEnter
             :size="18"
             class="navigate-icon"
+            :aria-label="$t('tooltip.view_all', { name: $t('audiobooks') })"
             @click.stop="navigateTo('audiobooks')"
           />
         </template>
@@ -189,7 +195,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { SquareArrowRightEnter } from "lucide-vue-next";
+import { SquareArrowRightEnter } from "@lucide/vue";
 import {
   computed,
   onBeforeUnmount,
@@ -351,13 +357,10 @@ const loadOverviewRows = async () => {
     overviewRows.value = [];
   }
 
-  // Fallback: if no overview rows returned, try loading radio base tracks
+  // Fallback: if no overview rows returned, try loading the genre's tracks
   if (overviewRows.value.length === 0) {
     try {
-      const tracks = await api.getGenreRadioBaseTracks(
-        itemDetails.value.item_id,
-        itemDetails.value.provider,
-      );
+      const tracks = await api.getGenreTracks(itemDetails.value.item_id);
       overviewRows.value = [
         {
           title: t("tracks"),
@@ -366,7 +369,7 @@ const loadOverviewRows = async () => {
         },
       ];
     } catch (error) {
-      console.error("Failed to load genre radio base tracks:", error);
+      console.error("Failed to load genre tracks:", error);
       overviewRows.value = [];
     }
   }

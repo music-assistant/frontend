@@ -313,6 +313,7 @@ export enum EventType {
   PLAYER_UPDATED = "player_updated",
   PLAYER_REMOVED = "player_removed",
   PLAYER_SETTINGS_UPDATED = "player_settings_updated",
+  PLAYER_SLEEP_TIMER_UPDATED = "player_sleep_timer_updated",
   QUEUE_ADDED = "queue_added",
   QUEUE_UPDATED = "queue_updated",
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
@@ -511,6 +512,12 @@ export interface ConfigValueOption {
   // Model for a value with separated name/value.
   title: string;
   value: ConfigValueType;
+  // disabled: when true the option is shown but not selectable (currently unavailable)
+  disabled?: boolean;
+  // disabled_reason: optional explanation of why the option is disabled
+  disabled_reason?: string;
+  // description: optional per-option help text shown under the option
+  description?: string;
 }
 
 export interface ConfigEntry {
@@ -601,6 +608,11 @@ export interface CoreConfig extends Config {
   domain: string;
   manifest: ProviderManifest; // copied here for the UI only
   last_error?: string;
+}
+
+export interface PlayerQueueConfig extends Config {
+  // PlayerQueue Configuration.
+  queue_id: string;
 }
 
 //// media_items
@@ -700,6 +712,12 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AudioMetadata {
+  // Audio analysis details (e.g. bpm, musical key).
+  bpm?: number | null;
+  musical_key?: string | null;
+}
+
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
@@ -707,6 +725,8 @@ export interface Track extends MediaItem {
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
+  // only populated when the full track is requested (get_track), never on listings
+  audio_metadata?: AudioMetadata | null;
 }
 
 export interface Playlist extends MediaItem {
@@ -750,6 +770,8 @@ export interface PodcastEpisode extends MediaItem {
 
 export interface Genre extends MediaItem {
   genre_aliases: string[] | null;
+  // taxonomy this genre belongs to; null/undefined = music/general
+  content_type?: MediaType | null;
 }
 
 export interface BrowseFolder extends MediaItem {
@@ -873,8 +895,16 @@ export interface PlayerQueue {
   available: boolean;
   items: number;
   shuffle_enabled: boolean;
-  dont_stop_the_music_enabled: boolean;
+  // smart_shuffle_active: whether shuffle is currently in "smart" mode (server-derived,
+  // read-only). True when shuffle is on with the per-queue smart-shuffle setting enabled,
+  // or while radio mode is active. Lets clients show a smart-shuffle indicator.
+  smart_shuffle_active: boolean;
+  autoplay_enabled: boolean;
   repeat_mode: RepeatMode;
+  crossfade_enabled: boolean;
+  // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
+  // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
+  smart_fades_active: boolean;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -894,7 +924,10 @@ export interface PlayerQueue {
   state: PlaybackState;
   current_item?: QueueItem;
   next_item?: QueueItem;
-  radio_source: MediaItemType[];
+  // The queue's enqueued parent items (its origin), present regardless of mode.
+  // When one or more sources are dynamic, the queue runs in dynamic mode
+  // (is_dynamic), implicitly enabling autoplay and smart shuffle.
+  sources: ItemMapping[];
   enqueued_media_items: MediaItemType[];
   is_dynamic: boolean;
   // extra_attributes: additional attributes for this player_queue to store/forward
@@ -917,6 +950,9 @@ export interface OutputProtocol {
   protocol_domain: string | null; // e.g., "airplay", "dlna" (null for native)
   priority: number; // Lower = more preferred (native = 0 if supported)
   available: boolean; // Whether this output protocol is currently available
+  // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
+  // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
+  derived_from?: string | null;
 }
 
 export interface DeviceInfo {
@@ -1040,6 +1076,10 @@ export interface Player {
   // Can be "native" or a protocol player_id
   // null means no playback in progress or native playback without explicit selection
   active_output_protocol: string | null;
+
+  // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
+  // will stop playback, or null when no sleep timer is set.
+  sleep_timer_expires_at?: number | null;
 }
 
 // provider
@@ -1326,9 +1366,12 @@ export interface SmartPlaylistRules {
   excluded_artist_names?: Record<number, string>;
   excluded_album_names?: Record<number, string>;
   excluded_genre_names?: Record<number, string>;
-  dedup_hours?: number;
   album_types?: string[];
   excluded_album_types?: string[];
+  min_duration?: number;
+  max_duration?: number;
+  last_played_before_value?: number;
+  last_played_before_unit?: string;
 }
 
 export interface SmartPlaylistTrackStats {

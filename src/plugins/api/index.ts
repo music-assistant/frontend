@@ -1,5 +1,5 @@
 import { store } from "../store";
-/* eslint-disable no-constant-condition */
+
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { $t, i18n } from "../i18n";
@@ -43,6 +43,7 @@ import {
   MediaType,
   PlayableMediaItemType,
   PlayerConfig,
+  PlayerQueueConfig,
   Podcast,
   PodcastEpisode,
   ProviderConfig,
@@ -1068,6 +1069,7 @@ export class MusicAssistantApi {
       genre?: number | number[];
       hide_empty?: boolean | null;
       media_type?: MediaType;
+      content_type?: MediaType | "music";
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
@@ -1109,19 +1111,14 @@ export class MusicAssistantApi {
     });
   }
 
-  public restoreGenreDefaults(fullRestore = false): Promise<Genre[]> {
+  public restoreGenreDefaults(
+    fullRestore = false,
+    contentType?: "all" | "music" | "podcast" | "audiobook",
+  ): Promise<Genre[]> {
     return this.sendCommand("music/genres/restore_defaults", {
       full_restore: fullRestore,
+      content_type: contentType,
     });
-  }
-
-  public getGenreScannerStatus(): Promise<{
-    running: boolean;
-    last_scan_time: number;
-    last_scan_ago_seconds: number | null;
-    last_scan_mapped: number | null;
-  }> {
-    return this.sendCommand("music/genres/scanner_status");
   }
 
   public triggerGenreScan(): Promise<{
@@ -1229,13 +1226,17 @@ export class MusicAssistantApi {
     });
   }
 
-  public getGenreRadioBaseTracks(
-    item_id: string,
-    provider_instance_id_or_domain: string,
+  public getGenreTracks(
+    item_id: string | number,
+    limit?: number,
+    offset?: number,
+    order_by?: string,
   ): Promise<Track[]> {
-    return this.sendCommand("music/genres/radio_mode_base_tracks", {
+    return this.sendCommand("music/genres/tracks", {
       item_id,
-      provider_instance_id_or_domain,
+      limit,
+      offset,
+      order_by,
     });
   }
 
@@ -1301,6 +1302,17 @@ export class MusicAssistantApi {
     // Returns a tuple of (lyrics, lrc_lyrics) - plain text and synced lyrics.
     return this.sendCommand("metadata/get_track_lyrics", {
       track,
+    });
+  }
+
+  public getWaveForm(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<number[] | null> {
+    // Returns RMS energy bins normalized 0.0-1.0, or null when no analysis exists.
+    return this.sendCommand("audio_analysis/wave_form", {
+      item_id,
+      provider_instance_id_or_domain,
     });
   }
 
@@ -1555,21 +1567,26 @@ export class MusicAssistantApi {
       this.queueCommandRepeat(queueId, RepeatMode.OFF);
     }
   }
-  public queueCommandDontStopTheMusic(
-    queueId: string,
-    dont_stop_the_music_enabled: boolean,
-  ) {
-    // Configure dont_stop_the_music setting on the the queue.
-    this.playerQueueCommand(queueId, "dont_stop_the_music", {
-      dont_stop_the_music_enabled,
+  public queueCommandCrossfade(queueId: string, crossfade_enabled: boolean) {
+    // Enable or disable crossfade on the queue.
+    this.playerQueueCommand(queueId, "crossfade", { crossfade_enabled });
+  }
+  public queueCommandCrossfadeToggle(queueId: string) {
+    // Toggle crossfade on/off for a queue
+    this.queueCommandCrossfade(
+      queueId,
+      !this.queues[queueId].crossfade_enabled,
+    );
+  }
+  public queueCommandAutoplay(queueId: string, autoplay_enabled: boolean) {
+    // Configure autoplay setting on the the queue.
+    this.playerQueueCommand(queueId, "autoplay", {
+      autoplay_enabled,
     });
   }
-  public queueCommandDontStopTheMusicToggle(queueId: string) {
-    // Toggle dont_stop_the_music mode of a queue
-    this.queueCommandDontStopTheMusic(
-      queueId,
-      !this.queues[queueId].dont_stop_the_music_enabled,
-    );
+  public queueCommandAutoplayToggle(queueId: string) {
+    // Toggle autoplay mode of a queue
+    this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
   }
   public queueCommandSetPlaybackSpeed(
     queue_id: string,
@@ -1799,6 +1816,37 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  // Sleep timer related functions/commands
+
+  public getSleepTimer(playerId: string): Promise<number | null> {
+    /*
+      Return the active sleep timer expiry (unix utc timestamp) or null.
+    */
+    return this.sendCommand("players/sleep_timer/get", {
+      player_id: playerId,
+    });
+  }
+
+  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+    /*
+      Set a sleep timer that stops playback after the given number of seconds.
+      Returns the expiry (unix utc timestamp).
+    */
+    return this.sendCommand("players/sleep_timer/set", {
+      player_id: playerId,
+      seconds,
+    });
+  }
+
+  public clearSleepTimer(playerId: string): Promise<void> {
+    /*
+      Clear the active sleep timer for the given player.
+    */
+    return this.sendCommand("players/sleep_timer/clear", {
+      player_id: playerId,
+    });
+  }
+
   // PlayerGroup related functions/commands
 
   public playerCommandGroupVolume(playerId: string, newVolume: number) {
@@ -1861,7 +1909,6 @@ export class MusicAssistantApi {
       | string
       | string[],
     option?: QueueOption,
-    radio_mode?: boolean,
     start_item?: PlayableMediaItemType | string,
     queue_id?: string,
     sort_by?: string,
@@ -1879,7 +1926,6 @@ export class MusicAssistantApi {
       queue_id,
       media,
       option,
-      radio_mode,
       start_item,
       sort_by,
     });
@@ -2014,6 +2060,39 @@ export class MusicAssistantApi {
     // remove the configuration of a player
     return this.sendCommand("config/players/remove", {
       player_id,
+    });
+  }
+
+  // PlayerQueue Config related functions
+
+  public async getPlayerQueueConfig(
+    queue_id: string,
+  ): Promise<PlayerQueueConfig> {
+    // Return configuration for a single queue.
+    return this.sendCommand("config/player_queues/get", { queue_id });
+  }
+
+  public async getPlayerQueueConfigEntries(
+    queue_id: string,
+    action?: string,
+    values?: Record<string, ConfigValueType>,
+  ): Promise<ConfigEntry[]> {
+    // Return Config entries to configure a queue.
+    return this.sendCommand("config/player_queues/get_entries", {
+      queue_id,
+      action,
+      values,
+    });
+  }
+
+  public async savePlayerQueueConfig(
+    queue_id: string,
+    values: Record<string, ConfigValueType>,
+  ): Promise<PlayerQueueConfig> {
+    // Save/update PlayerQueueConfig.
+    return this.sendCommand("config/player_queues/save", {
+      queue_id,
+      values,
     });
   }
 

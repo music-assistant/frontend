@@ -1,6 +1,6 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TData">
+import { Settings2 } from "@lucide/vue";
 import type { Table } from "@tanstack/vue-table";
-import { Settings2 } from "lucide-vue-next";
 import { computed } from "vue";
 
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const props = defineProps<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  table: Table<any>;
+  table: Table<TData>;
 }>();
 
 const columns = computed(() =>

@@ -36,16 +36,16 @@
 
 <script setup lang="ts">
 import Container from "@/components/Container.vue";
+import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { api } from "@/plugins/api";
 import { Genre, MediaType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
+import { ChevronDown, ChevronUp } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { ChevronUp, ChevronDown } from "lucide-vue-next";
 
 interface Props {
   mediaType: MediaType;

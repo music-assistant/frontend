@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /// <reference types="vite/client" />
 
 declare module "virtual:pwa-register/vue" {

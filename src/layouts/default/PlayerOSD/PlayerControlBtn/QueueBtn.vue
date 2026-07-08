@@ -1,11 +1,12 @@
 <template>
   <Button
-    v-if="isVisible && store.activePlayerQueue"
     variant="icon"
     :ripple="false"
     icon
+    :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
     :disabled="
+      !store.activePlayerQueue ||
       !store.activePlayerId ||
       (store.showFullscreenPlayer &&
         !store.curQueueItem &&
@@ -22,16 +23,14 @@
 defineOptions({ inheritAttrs: false });
 import Button from "@/components/Button.vue";
 import { store } from "@/plugins/store";
-import { ListVideo } from "lucide-vue-next";
+import { ListVideo } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
-  isVisible?: boolean;
   size?: number;
 }
 
 withDefaults(defineProps<Props>(), {
-  isVisible: true,
   size: 20,
 });
 

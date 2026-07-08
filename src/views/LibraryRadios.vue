@@ -37,10 +37,11 @@
 <script setup lang="ts">
 import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
+import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
 import api from "@/plugins/api";
 import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { Radio } from "lucide-vue-next";
+import { Radio } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineOptions({
@@ -77,6 +78,12 @@ onMounted(() => {
     },
   );
   onBeforeUnmount(unsub);
+  // per-item add events are suppressed during provider library syncs; also
+  // refresh when a sync covering this media type finishes
+  const unsubSync = onLibrarySyncCompleted(MediaType.RADIO, () => {
+    updateAvailable.value = true;
+  });
+  onBeforeUnmount(unsubSync);
 });
 
 const loadItems = async function (params: LoadDataParams) {

@@ -4,9 +4,9 @@ export default {
 };
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="TData, TValue">
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "@lucide/vue";
 import type { Column } from "@tanstack/vue-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +19,9 @@ import {
 import { cn } from "@/lib/utils";
 
 defineProps<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  column: Column<any, unknown>;
+  column: Column<TData, TValue>;
   title: string;
-  align?: "left" | "right";
+  align?: "left" | "center" | "right";
 }>();
 </script>
 
@@ -33,6 +32,7 @@ defineProps<{
       cn(
         'flex items-center',
         align === 'right' ? 'justify-end' : '',
+        align === 'center' ? 'justify-center' : '',
         $attrs.class ?? '',
       )
     "
@@ -45,7 +45,7 @@ defineProps<{
           :class="
             cn(
               'h-8 data-[state=open]:bg-accent',
-              align === 'right' ? '-mr-3' : '-ml-3',
+              align === 'center' ? '' : align === 'right' ? '-mr-3' : '-ml-3',
             )
           "
         >

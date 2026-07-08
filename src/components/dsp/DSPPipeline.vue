@@ -25,11 +25,14 @@
     <v-timeline-item
       v-for="(filter, index) in dsp.filters"
       :key="index"
+      v-hold="(e: Event) => onHold(e, index)"
       :dot-color="isDotActive(index)"
       size="x-small"
       :hide-dot="isDisabled(index)"
       @click="handleSelect(index)"
+      @click.capture="swallowClickAfterHold"
       @contextmenu.prevent="(e: MouseEvent) => openFilterContextMenu(e, index)"
+      @touchstart.passive="onTouchStart"
     >
       <v-btn
         flat
@@ -84,6 +87,10 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { DSPConfig } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { useTheme } from "vuetify";
@@ -167,12 +174,17 @@ const openFilterContextMenu = function (evt: Event, index: number) {
       icon: "mdi-delete",
     },
   ];
+  const pos = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    posX: pos.x,
+    posY: pos.y,
   });
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  openFilterContextMenu,
+);
 </script>
 
 <style scoped>

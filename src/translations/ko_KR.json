@@ -51,7 +51,6 @@
     "play_now": "지금 재생",
     "play_on": "재생: {0}",
     "play_playlist_from": "여기에서 재생 목록 재생",
-    "play_radio": "라디오 시작",
     "player_type": {
         "group": "그룹",
         "player": "플레이어",
@@ -72,8 +71,6 @@
     "queue_next_items": "다음 항목",
     "queue_options": "대기열 옵션",
     "queue_previous_items": "재생된 항목",
-    "queue_radio_based_on": "대기열은 다음을 기준으로 트랙으로 동적으로 채워집니다:",
-    "queue_radio_enabled": "라디오 모드가 활성화됨",
     "radios": "라디오",
     "read_more": "자세히 보기",
     "refresh_item": "항목 새로 고침",
@@ -141,7 +138,6 @@
         "group_members": "그룹 구성원",
         "default": "기본값",
         "provider_depends_on_confirm": "{0} 설정하기 전에 {1} 공급자를 구성해야 합니다. 지금 구성하시겠습니까?",
-        "category": {},
         "theme": {
             "label": "테마",
             "options": {
@@ -300,7 +296,6 @@
     "power_off_player": "전원 끄기",
     "powered_off_players": "꺼져 있는 플레이어",
     "sync_player_with": "다른 플레이어와 동기화",
-    "open_player_settings": "설정 열기",
     "select_repeat_mode": "반복 모드 선택",
     "repeat_mode": {
         "all": "전체 대기열 반복",
@@ -309,7 +304,5 @@
     },
     "shuffle_disable": "셔플 비활성화",
     "shuffle_enable": "셔플 활성화",
-    "dont_stop_the_music_enable": "'음악을 멈추지 마세요!'를 활성화합니다",
-    "dont_stop_the_music_disable": "'음악 멈추지 마세요!' 비활성화하기",
     "edit": "수정"
 }

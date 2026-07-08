@@ -53,7 +53,6 @@
     "play_now": "Jouer maintenant",
     "play_on": "Jouer sur : {0}",
     "play_playlist_from": "Lire la liste de lecture à partir d'ici",
-    "play_radio": "Démarrer la radio",
     "player_type": {
         "group": "Groupe",
         "player": "Lecteur",
@@ -74,8 +73,6 @@
     "queue_next_items": "Éléments suivant",
     "queue_options": "Option de la file d'attente",
     "queue_previous_items": "Éléments joués",
-    "queue_radio_based_on": "La file d'attente est remplie dynamiquement avec des pistes en fonction de :",
-    "queue_radio_enabled": "Le mode radio est activé",
     "radios": "Radio",
     "read_more": "en savoir plus",
     "refresh_item": "Rafraichir l'élément",
@@ -143,10 +140,6 @@
         "group_members": "Membres du groupe",
         "default": "par défaut",
         "provider_depends_on_confirm": "Avant de pouvoir configurer {0}, vous devez avoir configuré le fournisseur {1}. Voulez-vous le faire maintenant ?",
-        "category": {
-            "web_player": "Lecteur Web",
-            "protocol_settings": "Protocole(s) de sortie"
-        },
         "theme": {
             "label": "Thème",
             "options": {
@@ -413,6 +406,13 @@
         "no_group_providers": "Vous ne disposez actuellement d'aucun fournisseur prenant en charge la création de groupes.",
         "provider_codeowners": "Ce fournisseur est fourni\/maintenu par",
         "provider_credits": "Rendu possible par",
+        "category": {
+            "web_player": "Lecteur Web",
+            "protocol_settings": "Protocole(s) de sortie",
+            "preferences": "Préférences",
+            "display_settings": "Affichage",
+            "dsp": "DSP"
+        },
         "onboarding_subtitle": "Pour commencer, connectez vos sources musicales et vos appareils audio.",
         "onboarding_music_title": "Musique",
         "onboarding_music_desc": "Connectez vos services de streaming comme Spotify, Tidal ou votre bibliothèque musicale locale.",
@@ -473,7 +473,24 @@
             "unavailable": "indisponible",
             "none": "—"
         },
-        "audio_analysis_description": "Suivi de la couverture de l'analyse audio pour l'ensemble de vos fournisseurs"
+        "audio_analysis_description": "Suivi de la couverture de l'analyse audio pour l'ensemble de vos fournisseurs",
+        "audio_analysis_concurrency": {
+            "title": "Concurrence dans l'analyse en arrière-plan",
+            "description": "Contrôle le nombre de pistes analysées simultanément pendant l'analyse de fond nocturne. Ce réglage fait partie de la configuration de base des flux.",
+            "open_settings": "Ouvrir les paramètres de flux"
+        },
+        "provider_status_auth_required": "Authentification requise",
+        "provider_status_incompatible": "Non pris en charge par ce système",
+        "provider_status_error": "Échec de la configuration",
+        "remove_provider": "Supprimer ce fournisseur",
+        "remove_provider_confirm": "Supprimer ce fournisseur? Cette action est irréversible.",
+        "save_failed": "Impossible d'enregistrer les paramètres du fournisseur",
+        "retry": "Réessayer",
+        "abort_setup": "Annuler la configuration",
+        "provider_saved": "Paramètres du fournisseur enregistrés avec succès",
+        "provider_reloading": "Rechargement du fournisseur...",
+        "provider_removed": "Fournisseur retiré",
+        "queue_settings": "Paramètres de la liste de lecture"
     },
     "show_info": "Afficher les informations",
     "show_select_boxes": "Afficher les cases de sélection",
@@ -542,7 +559,9 @@
         "select_all": "Sélectionner tous les éléments",
         "filter_provider": "Filtrer par fournisseur de musique",
         "in_provider_library": "Cet élément se trouve dans la bibliothèque du fournisseur",
-        "filter_hide_fully_played": "Masquer les épisodes entièrement écoutés"
+        "filter_hide_fully_played": "Masquer les épisodes entièrement écoutés",
+        "select_provider": "Choisir le fournisseur",
+        "genre_content_type": "Type de média"
     },
     "topresult": "Meilleurs résultats",
     "track": "Piste",
@@ -589,7 +608,6 @@
     "power_off_player": "Éteindre",
     "powered_off_players": "Lecteurs éteints",
     "sync_player_with": "Synchroniser avec un autre lecteur",
-    "open_player_settings": "Ouvrir les paramètres",
     "select_repeat_mode": "Sélectionner le mode de répétition",
     "repeat_mode": {
         "all": "Répéter toute la file d'attente",
@@ -598,8 +616,6 @@
     },
     "shuffle_disable": "Désactiver la lecture aléatoire",
     "shuffle_enable": "Activer la lecture aléatoire",
-    "dont_stop_the_music_enable": "Activer « N'arrêtez pas la musique ! »",
-    "dont_stop_the_music_disable": "Désactiver « N'arrêtez pas la musique ! »",
     "open_dsp_settings": "Ouvrir les paramètres DSP",
     "audiobook": "Livre audio",
     "audiobooks": "Livres audio",
@@ -885,33 +901,13 @@
             "log_load_failed": "Échec du chargement de l'historique pour {0}.",
             "log_copied": "Journal des tâches copié dans le presse-papiers.",
             "log_copy_failed": "Échec de la copie du journal des tâches.",
-            "log_download_started": "Téléchargement du journal des tâches démarré."
+            "log_download_started": "Téléchargement du journal des tâches démarré.",
+            "log_download_failed": "Pas de journal des tâches disponible au téléchargement"
         }
     },
     "not_found_headline": "Oups, cette page web ne figure pas dans la setlist.",
     "restore_genre": "Restaurer",
     "genre_name": "Nom du genre",
-    "player_options": {
-        "enhancer": "Améliorateur",
-        "equalizer_high": "Égaliseur aigus",
-        "equalizer_low": "Égaliseur graves",
-        "equalizer_mid": "Égaliseur médiums",
-        "equalizer_mode": "Mode égaliseur",
-        "extra_bass": "Basses renforcées",
-        "link_audio_delay": "Délai audio du lien",
-        "link_control": "Contrôle du lien",
-        "link_audio_quality": "Qualité audio du lien",
-        "party_mode": "Mode fête",
-        "pure_direct": "Direct pur",
-        "sleep": "Minuterie de mise en veille",
-        "speaker_a": "Haut-parleur A",
-        "speaker_b": "Haut-parleur B",
-        "subwoofer_volume": "Volume du subwoofer",
-        "surround_3d": "Surround 3D",
-        "surround_decoder_type": "Type de décodeur surround",
-        "tone_control_mode": "Mode de contrôle de tonalité",
-        "treble": "Aigus"
-    },
     "providers": {
         "party": {
             "guest_page": {
@@ -932,5 +928,83 @@
     "shortcut": {
         "add_to": "Ajouter aux raccourcis",
         "remove_from": "Supprimer des raccourcis"
+    },
+    "smart_playlist": {
+        "type_seed": "Découvrir",
+        "type_seed_desc": "Découvrir de la musique via vos services de diffusion en continu.",
+        "add_seed": "Ajouter une valeur d'amorçage",
+        "seed_label": "Valeur d'amorçage",
+        "seed_album_pick": "Choisir un album",
+        "seed_full": "Limite de valeurs d'amorçage atteinte",
+        "seed_playlist_pick": "Choisir une liste de lecture",
+        "name_label": "Nom",
+        "name_required": "Veuillez entrer un nom.",
+        "results_library": "Résultats de la bibliothèque",
+        "results_other": "Autres résultats",
+        "field_album_type_is": "Le type d'album est",
+        "field_album_type_is_not": "Le type d'album n'est pas",
+        "field_explicit": "Explicite",
+        "explicit_allowed": "Autorisé",
+        "explicit_only": "Explicite seulement",
+        "explicit_not_allowed": "Interdit"
+    },
+    "browse_by_genre": "Parcourir par style",
+    "top_picks_for_you": "Meilleurs sélections pour vous",
+    "with_artists": "avec {artists}",
+    "disc": "Disque {number}",
+    "album_type_label": "Type d'album",
+    "now_playing": "En cours de lecture",
+    "artist_topalbums": "Meilleurs albums",
+    "in_library": "Dans votre bibliothèque",
+    "artist_no_library_albums": "Vous n'avez aucun album de cet artiste dans votre bibliothèque.",
+    "artist_no_library_tracks": "Vous n'avez aucun titre de cet artiste dans votre bibliothèque.",
+    "artist_all_albums": "Tous les albums",
+    "artist_all_tracks": "Toutes les pistes",
+    "on_provider": "Activé {0}",
+    "open_queue_settings": "Ouvrir les paramètres de la liste de lecture",
+    "crossfade_enable": "Activer le fondu enchaîné",
+    "crossfade_disable": "Désactiver le fondu enchaîné",
+    "crossfade": "Fondu enchaîné",
+    "crossfade_explanation": "Assure un fondu fluide entre la fin du morceau en cours et le début du suivant, éliminant les silences entre les chansons.",
+    "crossfade_active": "Le fondu enchaînée est activé.",
+    "crossfade_active_with_smart": "Le fondu enchaîné est activé avec les fondus intelligents.",
+    "crossfade_smart_active": "La durée du fondu est automatiquement ajusté à chaque morceau.",
+    "lyrics": "Paroles",
+    "lyrics_unavailable_song": "Il n'y a pas (encore) de paroles disponibles pour ce morceaux.",
+    "lyrics_unavailable_content": "Les paroles ne sont pas disponible pour ce type de média.",
+    "autoplay_enable": "Activer la lecture automatique",
+    "autoplay_disable": "Désactiver la lecture automatique",
+    "autoplay": "Lecture automatique",
+    "autoplay_explanation": "Lorsque votre file d'attente est épuisée, des morceaux supplémentaires sont automatiquement ajoutés afin que la musique n'arrête pas.",
+    "autoplay_active": "La lecture automatique est activée.",
+    "genre_content_type": {
+        "all": "Tous",
+        "audiobooks": "Livres audio",
+        "podcasts": "Balados"
+    },
+    "up_next": "À venir",
+    "queue_buffered_explanation": "Ce morceau est déjà en mémoire tampon pour être lue ensuite.",
+    "queue_reorder": "Faites glisser pour réorganiser",
+    "lyrics_show": "Afficher les paroles pour ce morceau",
+    "lyrics_hide": "Masquer les paroles pour ce morceau",
+    "lyrics_loading": "Les paroles sont en cours de récupération...",
+    "show_audio_chain_details": "Afficher les détails de la chaîne audio",
+    "show_less": "Afficher moins",
+    "show_more": "Afficher d'avantage",
+    "autoplay_on_title": "La lecture automatique est activée",
+    "autoplay_on_desc": "Après la lecture de votre sélection, la lecture automatique continuera avec du contenu supplémentaire choisi selon vos préférences.",
+    "autoplay_off_title": "La lecture automatique est désactivée",
+    "autoplay_off_desc": "Votre musique s'arrêtera à la fin de la liste de lecture. Activez la lecture automatique pour qu'elle continue avec du contenu supplémentaire choisi selon vos préférences.",
+    "open_player_settings": "Paramètres des lecteurs",
+    "sleep_timer": "Minuterie de mise en veille",
+    "sleep_timer_active": "Minuterie de mise en veille {0}",
+    "sleep_timer_remaining": "Arrête dans {0}",
+    "sleep_timer_cancel": "Annuler la minuterie de mise en veille",
+    "sleep_timer_preset": {
+        "15": "15 minutes",
+        "30": "30 minutes",
+        "45": "45 minutes",
+        "60": "1 heure",
+        "120": "2 heures"
     }
 }

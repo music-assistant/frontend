@@ -53,7 +53,6 @@
     "play_now": "Riproduci ora",
     "play_on": "Riproduci su: {0}",
     "play_playlist_from": "Riproduci playlist da qui",
-    "play_radio": "Avvia Radio",
     "player_type": {
         "group": "Gruppo",
         "player": "Lettore",
@@ -74,8 +73,6 @@
     "queue_next_items": "Prossimi elementi",
     "queue_options": "Opzioni di coda",
     "queue_previous_items": "Elementi riprodotti",
-    "queue_radio_based_on": "La coda viene riempita dinamicamente con tracce basate su {0}:",
-    "queue_radio_enabled": "La modalità radio è abilitata",
     "radios": "Radio",
     "read_more": "Leggi di più",
     "refresh_item": "Aggiorna elemento",
@@ -143,7 +140,6 @@
         "group_members": "Membri del gruppo",
         "default": "Predefinito",
         "provider_depends_on_confirm": "Prima di poter impostare {0}, devi aver configurato il {1} provider. Vuoi farlo ora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -414,7 +410,6 @@
     "power_off_player": "Spento",
     "powered_off_players": "Lettori disattivati",
     "sync_player_with": "Sincronizza con un altro lettore",
-    "open_player_settings": "Apri impostazioni",
     "select_repeat_mode": "Seleziona la modalità di ripetizione",
     "repeat_mode": {
         "all": "Ripeti l'intera coda",
@@ -423,8 +418,6 @@
     },
     "shuffle_disable": "Disabilita riproduzione casuale",
     "shuffle_enable": "Abilita riproduzione casuale",
-    "dont_stop_the_music_enable": "Abilita \"Non fermare la musica!\"",
-    "dont_stop_the_music_disable": "Disabilita \"Non fermare la musica!\"",
     "open_dsp_settings": "Apri impostazioni DSP",
     "audiobook": "Audiolibro",
     "audiobooks": "Audiolibri",

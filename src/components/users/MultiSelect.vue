@@ -31,6 +31,7 @@
             size="icon-sm"
             variant="ghost"
             class="ml-auto shrink-0"
+            :aria-label="$t('tooltip.open_options')"
             @click.prevent
           >
             <ChevronsUpDown :size="16" class="opacity-50" />
@@ -100,7 +101,7 @@ import {
   TagsInputItemDelete,
 } from "@/components/ui/tags-input";
 import { cn } from "@/lib/utils";
-import { CheckIcon, ChevronsUpDown, X } from "lucide-vue-next";
+import { CheckIcon, ChevronsUpDown, X } from "@lucide/vue";
 import { TagsInputRoot } from "reka-ui";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";

@@ -1,17 +1,15 @@
 // shared logic to show player menu items
 // this menu is shown in the full screen player and in the player list
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import {
   Player,
   PlayerQueue,
-  PlayerFeature,
   PlayerType,
   RepeatMode,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { groupMemberPickerVisible } from "@/helpers/utils";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
+import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -19,11 +17,25 @@ import { store } from "@/plugins/store";
 
 export const getPlayerMenuItems = (
   player: Player,
-  playerQueue?: PlayerQueue,
+  playerQueue: PlayerQueue | undefined,
+  options: {
+    // which surface this menu is rendered on:
+    // - "queue": the fullscreen player (now-playing/queue) overflow menu
+    // - "player": the player list/select card menu
+    context: "queue" | "player";
+    // queue context only: when true, omit shuffle/repeat because dedicated
+    // controls for them are currently visible (they are responsive and hidden
+    // on small screens, so the overflow menu remains the fallback on mobile).
+    hideShuffleRepeat?: boolean;
+  },
 ): ContextMenuItem[] => {
   const menuItems: ContextMenuItem[] = [];
-  // power off/on
-  if (player?.power_control != PLAYER_CONTROL_NONE) {
+  const isQueue = options.context === "queue";
+  const isPlayer = options.context === "player";
+  const hideShuffleRepeat = options.hideShuffleRepeat === true;
+
+  // power off/on (player menu only)
+  if (isPlayer && player?.power_control != PLAYER_CONTROL_NONE) {
     menuItems.push({
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],
@@ -33,7 +45,8 @@ export const getPlayerMenuItems = (
       icon: "mdi-power",
     });
   }
-  // add stop playback menu item
+
+  // stop playback (both menus)
   if (
     player?.playback_state == "playing" ||
     player?.playback_state == "paused"
@@ -48,48 +61,19 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add 'synchronize with' menu item
-  const playersToSyncWith = Object.values(api.players).filter(
-    (p) =>
-      p.player_id != player.player_id &&
-      p.available &&
-      p.enabled &&
-      groupMemberPickerVisible(p) &&
-      (p.can_group_with.includes(player.provider) ||
-        p.can_group_with.includes(player.player_id)) &&
-      p.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
-      !p.synced_to,
-  );
+  // sleep timer (both menus); available while playing/paused or already running
   if (
-    player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
-    !player.synced_to &&
-    player.type == PlayerType.PLAYER &&
-    player.group_members.length == 0 &&
-    playersToSyncWith.length > 0
+    player?.playback_state == "playing" ||
+    player?.playback_state == "paused" ||
+    sleepTimerActive(player)
   ) {
-    menuItems.push({
-      label: "sync_player_with",
-      labelArgs: [],
-      icon: "mdi-link-variant",
-      subItems: playersToSyncWith
-        .map((p) => {
-          return {
-            label: p.name,
-            labelArgs: [],
-            action: () => {
-              api.playerCommandGroup(player.player_id, p.player_id);
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    });
+    menuItems.push(getSleepTimerMenuItem(player));
   }
-  const isSingleDynamicPlaylist = isQueueDynamicPlaylist(playerQueue);
 
-  // add enable/disable shuffle menu item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  const isDynamic = playerQueue?.is_dynamic === true;
+
+  // shuffle (queue menu only; hidden when the dedicated control is visible)
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: playerQueue.shuffle_enabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
@@ -102,8 +86,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add repeat mode item
-  if (playerQueue && !isSingleDynamicPlaylist) {
+  // repeat (queue menu only; hidden when the dedicated control is visible)
+  if (isQueue && playerQueue && !isDynamic && !hideShuffleRepeat) {
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -137,8 +121,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add 'transfer queue' menu item
-  if (playerQueue?.items && playerQueue.items > 0) {
+  // transfer queue (both menus; only when the queue is the active source)
+  if (playerQueue?.active && playerQueue.items > 0) {
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
@@ -167,7 +151,8 @@ export const getPlayerMenuItems = (
         ),
     });
   }
-  // add 'clear queue' menu item
+
+  // clear queue (both menus; only when the queue has items)
   if (playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "queue_clear",
@@ -178,8 +163,9 @@ export const getPlayerMenuItems = (
       icon: "mdi-cancel",
     });
   }
-  // add 'save queue as playlist' menu item
-  if (playerQueue?.items && playerQueue.items > 0) {
+
+  // save queue as playlist (queue menu only)
+  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
     menuItems.push({
       label: "save_queue_as_playlist",
       labelArgs: [],
@@ -190,11 +176,11 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add 'select source' menu item
+  // select source (both menus; only when more than one source is selectable)
   const selectableSources = player.source_list.filter(
     (s) => !s.passive || s.id == player.active_source,
   );
-  if (!player.synced_to && selectableSources.length > 0) {
+  if (!player.synced_to && selectableSources.length > 1) {
     menuItems.push({
       label: "select_source",
       labelArgs: [],
@@ -217,11 +203,11 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add 'select sound mode' menu item
+  // select sound mode (player menu only; only when more than one is selectable)
   const selectableSoundModes = player.sound_mode_list.filter(
     (s) => !s.passive || s.id == player.active_sound_mode,
   );
-  if (selectableSoundModes.length > 0) {
+  if (isPlayer && selectableSoundModes.length > 1) {
     menuItems.push({
       label: "select_sound_mode",
       labelArgs: [],
@@ -244,38 +230,40 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // add 'don't stop the music' menu item
-  if (
-    playerQueue &&
-    !isSingleDynamicPlaylist &&
-    "dont_stop_the_music_enabled" in playerQueue
-  ) {
-    menuItems.push({
-      label: playerQueue.dont_stop_the_music_enabled
-        ? "dont_stop_the_music_disable"
-        : "dont_stop_the_music_enable",
-      labelArgs: [],
-      action: () => {
-        api.queueCommandDontStopTheMusicToggle(playerQueue.queue_id);
-      },
-      icon: "mdi-all-inclusive",
-    });
-  }
-  // add player settings (admin only)
+  // settings shortcuts (admin only)
   if (authManager.isAdmin()) {
-    menuItems.push({
-      label: "open_player_settings",
-      labelArgs: [],
-      action: () => {
-        store.showFullscreenPlayer = false;
-        store.showPlayersMenu = false;
-        router.push(`/settings/editplayer/${player.player_id}`);
-      },
-      icon: "mdi-cog-outline",
-    });
+    // open queue settings (queue menu only)
+    if (isQueue) {
+      menuItems.push({
+        label: "open_queue_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(
+            `/settings/editqueue/${playerQueue?.queue_id ?? player.player_id}`,
+          );
+        },
+        icon: "mdi-cog-outline",
+      });
+    }
 
-    // add shortcut to dsp settings
-    if (player.type !== PlayerType.GROUP) {
+    // open player settings (player menu only)
+    if (isPlayer) {
+      menuItems.push({
+        label: "open_player_settings",
+        labelArgs: [],
+        action: () => {
+          store.showFullscreenPlayer = false;
+          store.showPlayersMenu = false;
+          router.push(`/settings/editplayer/${player.player_id}`);
+        },
+        icon: "mdi-cog-outline",
+      });
+    }
+
+    // open dsp settings (player menu only)
+    if (isPlayer && player.type !== PlayerType.GROUP) {
       menuItems.push({
         label: "open_dsp_settings",
         labelArgs: [],
@@ -288,7 +276,7 @@ export const getPlayerMenuItems = (
       });
     }
 
-    // add shortcut to player options
+    // open player options (both menus)
     if (player.options.length > 0) {
       menuItems.push({
         label: "player_options.open",

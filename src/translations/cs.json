@@ -53,7 +53,6 @@
     "play_now": "Přehrát nyní",
     "play_on": "Přehrát na: {0}",
     "play_playlist_from": "Přehrát Playlist odtud",
-    "play_radio": "Spustit rádio",
     "player_type": {
         "group": "Skupina",
         "player": "Přehrávač",
@@ -74,8 +73,6 @@
     "queue_next_items": "Další položky",
     "queue_options": "Možnosti fronty",
     "queue_previous_items": "Přehrané položky",
-    "queue_radio_based_on": "Fronta se dynamicky plní skladbami na základě {0} :",
-    "queue_radio_enabled": "Režim rádia je povolen",
     "radios": "Rádio",
     "read_more": "Přečíst víc",
     "refresh_item": "Obnovit položku",
@@ -143,11 +140,6 @@
         "group_members": "Členové skupiny",
         "default": "výchozí",
         "provider_depends_on_confirm": "Než budete moci nastavit {0}, musíte mít nakonfigurovaného poskytovatele {1}, chcete to udělat nyní?",
-        "category": {
-            "web_player": "Webový přehrávač",
-            "protocol_settings": "Výstupní protokol(y)",
-            "options": "Možnosti přehrávače"
-        },
         "theme": {
             "label": "Téma",
             "options": {
@@ -413,6 +405,11 @@
         "no_group_providers": "Momentálně nemáte žádné poskytovatele, kteří by podporovali vytváření skupin.",
         "provider_codeowners": "Na tomto poskytovateli se podílí\/spravuje jej",
         "provider_credits": "Umožněno díky",
+        "category": {
+            "web_player": "Webový přehrávač",
+            "protocol_settings": "Výstupní protokol(y)",
+            "options": "Možnosti přehrávače"
+        },
         "onboarding_subtitle": "Začněme připojením zdrojů hudby a audio zařízení.",
         "onboarding_music_title": "Hudba",
         "onboarding_music_desc": "Připojte své streamovací služby, jako je Spotify, Tidal nebo místní hudební knihovnu.",
@@ -604,7 +601,6 @@
     "power_off_player": "Vypnout",
     "powered_off_players": "Vypnuté přehrávače",
     "sync_player_with": "Propojit s jiným přehrávačem",
-    "open_player_settings": "Nastavení",
     "select_repeat_mode": "Vyběr režimu opakování",
     "repeat_mode": {
         "all": "Opakovat celou frontu",
@@ -613,8 +609,6 @@
     },
     "shuffle_disable": "Zakázat promíchání",
     "shuffle_enable": "Povolit promíchání",
-    "dont_stop_the_music_enable": "Povolit \"Nevypínej hudbu!\"",
-    "dont_stop_the_music_disable": "Zakázat \"Nevypínej hudbu!\"",
     "open_dsp_settings": "Otevřít nastavení DSP",
     "audiobook": "Audiokniha",
     "audiobooks": "Audioknihy",

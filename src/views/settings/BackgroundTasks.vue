@@ -107,7 +107,8 @@ import {
   isScheduledTask,
 } from "@/composables/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
-import { type ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import { copyToClipboard } from "@/helpers/utils";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import {
   type BackgroundTask,
@@ -118,8 +119,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { copyToClipboard } from "@/helpers/utils";
-import { Trash2 } from "lucide-vue-next";
+import { Trash2 } from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";

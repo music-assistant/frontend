@@ -9,9 +9,9 @@
       :style="player.powered == false ? 'opacity: 0.6' : 'opacity: 1'"
     >
       <template #prepend>
-        <v-icon
-          :size="25"
+        <PlayerIcon
           :icon="player.icon"
+          :size="25"
           style="margin-left: 6px; opacity: 0.6"
         />
       </template>
@@ -24,6 +24,7 @@
           v-if="player.power_control != PLAYER_CONTROL_NONE"
           class="powerbtn"
           variant="icon"
+          :aria-label="$t('tooltip.toggle_power')"
           @click.stop="api.playerCommandPowerToggle(player.player_id)"
         >
           <v-icon :size="25" icon="mdi-power" />
@@ -50,6 +51,7 @@
         variant="plain"
         :icon="showSubPlayers ? 'mdi-chevron-up' : 'mdi-chevron-down'"
         class="expandbtn"
+        :aria-label="$t('tooltip.toggle_subplayers')"
         @click.stop="$emit('toggle-expand', player)"
       />
     </div>
@@ -95,9 +97,8 @@
               v-if="showSyncControls"
               :ripple="false"
               :disabled="
-                childPlayer.player_id == player.player_id ||
-                (player.static_group_members.includes(childPlayer.player_id) &&
-                  player.group_members.includes(childPlayer.player_id))
+                player.static_group_members.includes(childPlayer.player_id) &&
+                player.group_members.includes(childPlayer.player_id)
               "
               :model-value="
                 player.group_members.includes(childPlayer.player_id) ||
@@ -143,6 +144,7 @@ import {
   groupMemberPickerVisible,
   truncateString,
 } from "@/helpers/utils";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {

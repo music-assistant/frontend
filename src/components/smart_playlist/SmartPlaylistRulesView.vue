@@ -87,19 +87,6 @@
         </span>
       </div>
     </div>
-
-    <div
-      v-if="rules.dedup_hours"
-      class="text-xs text-muted-foreground flex items-center gap-1.5 pt-1"
-    >
-      <Timer class="h-3.5 w-3.5" />
-      <span>
-        {{ $t("smart_playlist.dedup_hours") }}
-        <span class="font-medium text-foreground ml-1">
-          {{ rules.dedup_hours }}h
-        </span>
-      </span>
-    </div>
   </div>
 </template>
 
@@ -107,9 +94,9 @@
 import { Badge } from "@/components/ui/badge";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { fieldIcon } from "./fieldIcon";
-import { Ban, Library, Sparkles, Timer } from "lucide-vue-next";
+import { Ban, Library, Sparkles } from "@lucide/vue";
 import { computed, type Component } from "vue";
+import { fieldIcon } from "./fieldIcon";
 
 interface RuleViewRow {
   key: string;

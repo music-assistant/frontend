@@ -44,29 +44,21 @@
         @remove-rule="form.removeRule"
         @update-rule="onUpdateRule"
       />
-
-      <Separator />
-
-      <SmartPlaylistDedupField
-        :model-value="form.dedupHours.value"
-        @update:model-value="(v) => (form.dedupHours.value = v)"
-      />
     </div>
   </TooltipProvider>
 </template>
 
 <script setup lang="ts">
-import { Library, Sparkles } from "lucide-vue-next";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { $t } from "@/plugins/i18n";
-import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import {
   useSmartPlaylistRulesForm,
   type RuleRow,
   type SmartPlaylistRulesFormInit,
 } from "@/composables/useSmartPlaylistRulesForm";
-import SmartPlaylistDedupField from "./SmartPlaylistDedupField.vue";
+import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { Library, Sparkles } from "@lucide/vue";
 import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
 import SmartPlaylistSeedSection from "./SmartPlaylistSeedSection.vue";
 import SmartPlaylistTypeSelector from "./SmartPlaylistTypeSelector.vue";

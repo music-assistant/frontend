@@ -38,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { Palette } from "@lucide/vue";
 import { useColorMode } from "@vueuse/core";
-import { Palette } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -50,6 +50,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useUserPreferences } from "@/composables/userPreferences";
 import { DEFAULT_MENU_ITEMS, DEVICE_SETTING_KEYS } from "@/constants";
 import {
   ConfigEntry,
@@ -57,10 +58,9 @@ import {
   ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { companionMode } from "@/plugins/companion";
-import { store } from "@/plugins/store";
 import { $t, i18n } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import EditConfig from "./EditConfig.vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 
 // global refs
 const router = useRouter();
@@ -166,6 +166,16 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
+    },
+    {
+      key: "show_waveform",
+      type: ConfigEntryType.BOOLEAN,
+      label: "show_waveform",
+      default_value: true,
+      required: false,
+      multi_value: false,
+      category: "display_settings",
+      value: (store.currentUser?.preferences?.show_waveform as boolean) ?? true,
     },
     {
       key: "mobile_sidebar_side",

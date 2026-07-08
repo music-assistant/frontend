@@ -78,11 +78,11 @@ watch(
       playerName.value = player.name;
 
       // sort for more consistency in UI experience
-      let arrBool: PlayerOption[] = [];
-      let arrNumber: PlayerOption[] = [];
-      let arrString: PlayerOption[] = [];
-      let arrSelect: PlayerOption[] = [];
-      let arrSensor: PlayerOption[] = [];
+      const arrBool: PlayerOption[] = [];
+      const arrNumber: PlayerOption[] = [];
+      const arrString: PlayerOption[] = [];
+      const arrSelect: PlayerOption[] = [];
+      const arrSensor: PlayerOption[] = [];
 
       player.options.forEach((option) => {
         if (option.read_only) {

@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";

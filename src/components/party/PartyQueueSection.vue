@@ -77,7 +77,7 @@ import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner/Spinner.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Clock, ListMusic, SkipForward } from "lucide-vue-next";
+import { Clock, ListMusic, SkipForward } from "@lucide/vue";
 import { ref } from "vue";
 import PartyQueueItem from "./PartyQueueItem.vue";
 

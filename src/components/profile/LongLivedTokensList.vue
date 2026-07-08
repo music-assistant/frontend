@@ -57,6 +57,7 @@
             variant="ghost"
             size="icon"
             class="text-destructive hover:text-destructive hover:bg-destructive/10"
+            :aria-label="$t('tooltip.revoke_token')"
             @click.stop="emit('revoke', token)"
           >
             <Trash2 :size="16" />
@@ -82,7 +83,7 @@ import {
 } from "@/components/ui/card";
 import CreateTokenDialog from "@/components/users/CreateTokenDialog.vue";
 import type { AuthToken } from "@/plugins/api/interfaces";
-import { Key, Plus, Trash2 } from "lucide-vue-next";
+import { Key, Plus, Trash2 } from "@lucide/vue";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 

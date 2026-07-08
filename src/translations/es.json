@@ -51,7 +51,6 @@
     "play_now": "Reproducir Ahora",
     "play_on": "Reproducir en: {0}",
     "play_playlist_from": "Reproducir lista de reproducción desde aquí",
-    "play_radio": "Comenzar Radio",
     "player_type": {
         "group": "Grupo",
         "player": "Reproductor",
@@ -72,8 +71,6 @@
     "queue_next_items": "Siguientes elementos",
     "queue_options": "Opciones de cola",
     "queue_previous_items": "Elementos reproducidos",
-    "queue_radio_based_on": "La cola se genera dinámicamente en pistas basadas en {0}:",
-    "queue_radio_enabled": "El modo de radio está habilitado",
     "radios": "Radio",
     "read_more": "leer más",
     "refresh_item": "Refrescar elemento",
@@ -141,7 +138,6 @@
         "group_members": "Miembros del grupo",
         "default": "predeterminado",
         "provider_depends_on_confirm": "Antes de poder configurar {0}, necesita tener configurado el proveedor {1}, ¿quiere hacerlo ahora?",
-        "category": {},
         "theme": {
             "label": "Tema",
             "options": {
@@ -311,7 +307,6 @@
     "power_off_player": "Apagar",
     "powered_off_players": "Reproductores apagados",
     "sync_player_with": "Sincronizar con otro reproductor",
-    "open_player_settings": "Abrir ajustes del reproductor",
     "select_repeat_mode": "Selecciona el modo de repetición",
     "repeat_mode": {
         "all": "Repetir la cola entera",
@@ -320,8 +315,6 @@
     },
     "shuffle_disable": "Deshabilitar reproducción aleatoria",
     "shuffle_enable": "Activar reproducción aleatoria",
-    "dont_stop_the_music_enable": "Habilita '¡No pares la música!",
-    "dont_stop_the_music_disable": "Desactivar '¡No pares la música!'",
     "uri_copied": "URI copiado en el portapapeles",
     "uri_copy_failed": "Error al copiar URI al portapapeles",
     "remove_provider_mapping_confirm": "¿Está seguro de que desea eliminar esta asignación de proveedor? Esto desvinculará el elemento de los detalles del elemento actual. Es posible que vuelva a aparecer si vuelve a buscar todas las coincidencias de proveedores.",

@@ -23,9 +23,9 @@
         <Info class="size-4" />
         {{ $t("show_info") }}
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="radioModeSupported" @click="onStartRadio">
+      <DropdownMenuItem v-if="radioAvailable" @click="onStartRadio">
         <RadioTower class="size-4" />
-        {{ $t("play_radio") }}
+        {{ $t(radioLabel) }}
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="playbackSpeedSupported"
@@ -82,12 +82,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
+import {
+  gotoRadio,
+  radioActionLabelKey,
+  radioSupported,
+} from "@/helpers/radio";
 import api from "@/plugins/api";
-import { isQueueDynamicPlaylist } from "@/plugins/api/helpers";
 import {
   MediaType,
-  ProviderFeature,
-  QueueOption,
   type Audiobook,
   type PodcastEpisode,
   type Radio,
@@ -103,7 +105,7 @@ import {
   Info,
   PlusCircle,
   RadioTower,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 const PLAYBACK_SPEED_OPTIONS = [1, 1.25, 1.5, 2, 3] as const;
@@ -171,31 +173,12 @@ watch(
   { immediate: true },
 );
 
-const radioModeSupported = computed(() => {
-  const item = currentTrack.value;
-  if (!item) return false;
-  // hide radio mode for dynamic playlists
-  const queue = store.activePlayer
-    ? api.queues[store.activePlayer.player_id]
-    : undefined;
-  if (isQueueDynamicPlaylist(queue)) return false;
-  for (const provId of item.provider_mappings) {
-    if (
-      api.providers[provId.provider_instance]?.supported_features.includes(
-        ProviderFeature.SIMILAR_TRACKS,
-      )
-    )
-      return true;
-  }
-  // generic radio mode: any provider supports SIMILAR_TRACKS and track is in library
-  if (item.provider === "library") {
-    for (const prov of Object.values(api.providers)) {
-      if (prov.supported_features.includes(ProviderFeature.SIMILAR_TRACKS))
-        return true;
-    }
-  }
-  return false;
-});
+const radioAvailable = computed(
+  () => !!currentTrack.value && radioSupported(currentTrack.value),
+);
+const radioLabel = computed(() =>
+  currentTrack.value ? radioActionLabelKey(currentTrack.value) : "goto_radio",
+);
 
 const onAddToPlaylist = () => {
   if (!currentItem.value) return;
@@ -221,8 +204,7 @@ const onToggleFavorite = () => {
 };
 
 const onStartRadio = () => {
-  if (!currentTrack.value) return;
-  api.playMedia([currentTrack.value.uri], QueueOption.REPLACE, true);
+  if (currentTrack.value) gotoRadio(currentTrack.value);
 };
 
 const onOpenPlaybackSpeed = () => {

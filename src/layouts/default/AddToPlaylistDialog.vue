@@ -100,7 +100,7 @@ import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { eventbus, PlaylistDialogEvent } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ListPlus } from "lucide-vue-next";
+import { ListPlus } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const show = ref<boolean>(false);
@@ -158,7 +158,7 @@ const fetchPlaylists = async function () {
       playlist.item_id === parentItem.value.item_id
     )
       continue;
-    let _supported_mediatypes = playlist.supported_mediatypes;
+    const _supported_mediatypes = playlist.supported_mediatypes;
     if (_supported_mediatypes.includes(MediaType.TRACK))
       // backend unwraps albums to individual tracks
       _supported_mediatypes.push(MediaType.ALBUM);
@@ -243,9 +243,11 @@ const addToPlaylist = async function (value: MediaItemType) {
   close();
 };
 const newPlaylist = async function (provId: string) {
-  let refItem = selectedItems.value.length ? selectedItems.value[0] : undefined;
+  const refItem = selectedItems.value.length
+    ? selectedItems.value[0]
+    : undefined;
   if (!refItem) return;
-  let provider = api.getProvider(provId);
+  const provider = api.getProvider(provId);
   if (!provider) return;
   const name = prompt($t("new_playlist_name"));
   if (!name) return;

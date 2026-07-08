@@ -53,7 +53,6 @@
     "play_now": "Play Now",
     "play_on": "Play on: {0}",
     "play_playlist_from": "Play Playlist from here",
-    "play_radio": "Start Radio",
     "player_type": {
         "group": "Group",
         "player": "Player",
@@ -74,8 +73,6 @@
     "queue_next_items": "Next items",
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
-    "queue_radio_based_on": "The queue is dynamically filled with tracks based on:",
-    "queue_radio_enabled": "Radio mode is enabled",
     "radios": "Radio",
     "read_more": "read more",
     "refresh_item": "Refresh item",
@@ -143,9 +140,6 @@
         "group_members": "Group members",
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have the {1} provider configured, do you want to do that now?",
-        "category": {
-            "web_player": "Web Player"
-        },
         "theme": {
             "label": "Theme",
             "options": {
@@ -410,6 +404,9 @@
         "no_group_providers": "You currently do not have any providers that support creating groups",
         "provider_codeowners": "This provider is contributed\/maintained by",
         "provider_credits": "Made possible by",
+        "category": {
+            "web_player": "Web Player"
+        },
         "onboarding_subtitle": "Let's get you started by connecting your music sources and audio devices.",
         "onboarding_music_title": "Music",
         "onboarding_music_desc": "Connect your streaming services like Spotify, Tidal, or your local music library.",
@@ -429,7 +426,8 @@
         "provider_requires_attention": "This provider requires attention",
         "provider_requires_attention_detail": "One or more providers require attention. Please check the provider settings.",
         "reconfigure": "Reconfigure",
-        "fix_now": "Fix now"
+        "fix_now": "Fix now",
+        "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronised."
     },
     "show_info": "Show info",
     "show_select_boxes": "Show selection boxes",
@@ -543,7 +541,6 @@
     "power_off_player": "Power off",
     "powered_off_players": "Unpowered players",
     "sync_player_with": "Synchronise with another player",
-    "open_player_settings": "Open settings",
     "select_repeat_mode": "Select repeat mode",
     "repeat_mode": {
         "all": "Repeat entire queue",
@@ -552,8 +549,6 @@
     },
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
-    "dont_stop_the_music_enable": "Enable 'Don't stop the music!'",
-    "dont_stop_the_music_disable": "Disable 'Don't stop the music!'",
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
@@ -801,5 +796,9 @@
         "click_to_change": "Click below to change output device"
     },
     "more_options": "More options",
-    "edit": "Edit"
+    "edit": "Edit",
+    "smart_playlist": {
+        "favorites_yes": "Yes",
+        "field_favorite": "Favourite"
+    }
 }

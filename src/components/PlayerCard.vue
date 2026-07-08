@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-hold="onHold"
     flat
     class="panel-item"
     :class="{
@@ -10,7 +11,9 @@
     :ripple="false"
     :disabled="!player.available"
     @click="$emit('click', player)"
+    @click.capture="swallowClickAfterHold"
     @contextmenu.prevent="openPlayerMenu"
+    @touchstart.passive="onTouchStart"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -25,18 +28,19 @@
               class="media-thumb"
               size="44"
               :src="getMediaImageUrl(player.current_media.image_url)"
+              :alt="$t('tooltip.artwork')"
             />
           </div>
           <!-- fallback: display player icon -->
           <div v-else class="icon-thumb">
-            <v-icon
-              size="24"
-              :icon="
-                player.type == PlayerType.PLAYER && player.group_members.length
-                  ? 'mdi-speaker-multiple'
-                  : player.icon
+            <PlayerIcon
+              :icon="player.icon"
+              :grouped="
+                player.type == PlayerType.PLAYER &&
+                !!player.group_members.length
               "
-              style="display: table-cell; opacity: 0.8"
+              :size="24"
+              style="opacity: 0.8"
             />
           </div>
         </div>
@@ -134,6 +138,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn"
+          :aria-label="$t('tooltip.toggle_power')"
           @click.stop="
             api.playerCommandPowerToggle(player.player_id);
             store.activePlayerId = player.player_id;
@@ -154,6 +159,7 @@
           variant="ghost-icon"
           size="icon"
           class="player-command-btn group-expand-btn"
+          :aria-label="$t('tooltip.group_members')"
           @click.stop="$emit('toggle-expand', player)"
         >
           <v-badge
@@ -211,6 +217,7 @@
           size="icon"
           class="player-command-btn"
           style="margin-right: -5px"
+          :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
           <MoreVertical
@@ -236,6 +243,10 @@
 import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getMediaImageUrl,
@@ -249,14 +260,13 @@ import {
   PlaybackState,
   Player,
   PLAYER_CONTROL_NONE,
-  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
-import { MoreVertical, Pause, Play, Power, Speaker } from "lucide-vue-next";
+import { MoreVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { computed, toRef } from "vue";
 
 // properties
@@ -297,12 +307,18 @@ const playerQueue = computed(() => {
 });
 
 const openPlayerMenu = function (evt: Event) {
+  const pos = getEventPosition(evt);
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(compProps.player, playerQueue.value),
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    items: getPlayerMenuItems(compProps.player, playerQueue.value, {
+      context: "player",
+    }),
+    posX: pos.x,
+    posY: pos.y,
   });
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(openPlayerMenu);
 
 const canPlayPause = computed(() => {
   if (activeSource.value) {
@@ -402,7 +418,9 @@ const coverImageColorPalette = computed<ImageColorPalette>(() =>
   margin-top: 4px;
   border-radius: 4px;
   background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: inline-table;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel-item {

@@ -5,6 +5,7 @@
     :width="size || '100%'"
     aspect-ratio="1"
     :src="imgData"
+    :alt="item?.name ?? ''"
     :class="{ rounded: rounded }"
     contain
     :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"

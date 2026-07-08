@@ -47,8 +47,8 @@
         >
           <template #prepend>
             <div class="player-icon-wrapper">
-              <v-icon
-                :icon="api.players[item.player_id]?.icon || 'mdi-speaker'"
+              <PlayerIcon
+                :icon="api.players[item.player_id]?.icon"
                 :size="20"
                 style="left: 3px"
               />
@@ -179,10 +179,11 @@ import Container from "@/components/Container.vue";
 import ListItem from "@/components/ListItem.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -191,7 +192,7 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";

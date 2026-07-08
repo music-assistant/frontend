@@ -55,6 +55,7 @@
                       variant="ghost"
                       size="icon"
                       class="size-8 shrink-0"
+                      :aria-label="$t('tooltip.user_options')"
                       @click.stop
                     >
                       <MoreVertical :size="16" />
@@ -150,11 +151,11 @@ import {
   Search,
   Trash2,
   User as UserIcon,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { toast } from "vue-sonner";
 import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

@@ -90,11 +90,15 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :show-actions="
-                ['tracks', 'albums', 'albumtracks', 'artists'].includes(
-                  itemtype,
-                )
+                [
+                  'tracks',
+                  'albums',
+                  'albumtracks',
+                  'artists',
+                  'genres',
+                ].includes(itemtype)
               "
               :show-track-number="showTrackNumber"
               :is-available="itemIsAvailable(item)"
@@ -118,7 +122,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -152,7 +156,7 @@
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
@@ -221,11 +225,14 @@
 </template>
 
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-unused-vars,vue/no-setup-props-destructure */
 import type { Component } from "vue";
 
 import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
+import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
+import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
+import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -233,10 +240,6 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty";
-import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "lucide-vue-next";
-import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
-import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
-import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   handleMenuBtnClick,
@@ -261,9 +264,9 @@ import {
   type MediaItemType,
   type Track,
 } from "@/plugins/api/interfaces";
-import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { Eye, EyeClosed, FilterX, Layers, ListMusic } from "@lucide/vue";
 import {
   computed,
   nextTick,
@@ -639,6 +642,12 @@ const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
 };
 
+const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
+  // the parent directory ("..") link injected in browse listings
+  // must never be selectable as it breaks the action/context menu
+  return item.media_type == MediaType.FOLDER && item.name == "..";
+};
+
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
@@ -688,6 +697,7 @@ const onSelect = function (
   selected: boolean,
 ) {
   if (selected) {
+    if (isParentDirItem(item)) return;
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
     for (let i = 0; i < selectedItems.value.length; i++) {
@@ -840,7 +850,7 @@ const loadAllItems = async function () {
 
 // computed properties
 const isSearchActive = computed(() => {
-  var searchActive = false;
+  let searchActive = false;
   if (params.value.search && params.value.search.length !== 0) {
     searchActive = true;
   }
@@ -1224,6 +1234,7 @@ const menuItems = computed(() => {
       action: onRefreshClicked,
       active: newContentAvailable.value,
       disabled: loading.value,
+      overflowAllowed: !["playlisttracks"].includes(props.itemtype),
     });
   }
 
@@ -1394,10 +1405,13 @@ const loadData = async function (
   tempHide.value = false;
 };
 
-// Get preferences as a computed ref that updates automatically
-const savedPrefs = getItemsListingPreferences(
-  props.path || props.itemtype,
-  props.itemtype,
+// Re-derive from the current props.path: browse reuses one ItemsListing
+// instance across folders, so a ref bound to the mount-time path would read
+// and reset the wrong folder's saved sort/view settings.
+const savedPrefs = computed(
+  () =>
+    getItemsListingPreferences(props.path || props.itemtype, props.itemtype)
+      .value,
 );
 
 const restoreSettings = async function () {
@@ -1503,6 +1517,18 @@ const keyListener = function (e: KeyboardEvent) {
   // Let searchInput handle this.
   if (searchHasFocus.value) return;
 
+  // ignore keystrokes typed into another editable element (e.g. the search box
+  // in the player drawer) so we don't steal focus to our own search input.
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable)
+  ) {
+    return;
+  }
+
   if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAll();
@@ -1558,6 +1584,10 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
+    // always leave selection mode: the selection belongs to the previous
+    // folder, and the target may not offer the toggle to turn it off
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
@@ -1936,7 +1966,7 @@ const selectAll = async function () {
 
   if (confirmed) {
     await loadAllItems();
-    selectedItems.value = pagedItems.value;
+    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
     showCheckboxes.value = true;
   }
 };

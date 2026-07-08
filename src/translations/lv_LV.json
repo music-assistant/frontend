@@ -53,7 +53,6 @@
     "play_now": "Atskaņot Tagad",
     "play_on": "Atskaņot uz: {0}",
     "play_playlist_from": "Atskaņot mūzikas sarakstu no šejienes",
-    "play_radio": "Sākt radio",
     "player_type": {
         "group": "Grupa",
         "player": "Atskaņotājs",
@@ -74,8 +73,6 @@
     "queue_next_items": "Nākamie vienumi",
     "queue_options": "Rindas opcijas",
     "queue_previous_items": "Atskaņotie vienumi",
-    "queue_radio_based_on": "Rinda tiek dinamiski aizpildīta ar dziesmām, balstoties uz:",
-    "queue_radio_enabled": "Radio režīms ir ieslēgts",
     "radios": "Radio",
     "read_more": "lasīt vairāk",
     "refresh_item": "Atsvaidzināt vienumu",
@@ -143,11 +140,6 @@
         "group_members": "Grupas dalībnieki",
         "default": "noklusējuma",
         "provider_depends_on_confirm": "Pirms vari uzstādīt {0}, ir jākonfigurē {1} sniedzējs, vai vēlies to izdarīt tagad?",
-        "category": {
-            "web_player": "Web Atskaņotājs",
-            "protocol_settings": "Protokola iestatījumi",
-            "options": "Atskaņotāja opcijas"
-        },
         "theme": {
             "label": "Tēma",
             "options": {
@@ -413,6 +405,11 @@
         "no_group_providers": "Tev pašlaik nav neviena sniedzēja, kas atbalsta grupu izveidi.",
         "provider_codeowners": "Šo sniedzēju nodrošina\/uztur",
         "provider_credits": "Iespējams ar",
+        "category": {
+            "web_player": "Web Atskaņotājs",
+            "protocol_settings": "Protokola iestatījumi",
+            "options": "Atskaņotāja opcijas"
+        },
         "onboarding_subtitle": "Sāksim darbu, pievienojot tavus mūzikas avotus un audio ierīces.",
         "onboarding_music_title": "Mūzika",
         "onboarding_music_desc": "Savieno savus straumēšanas servisus kā Spotify, Tidal, vai savu vietējo mūzikas bibliotēku.",
@@ -604,7 +601,6 @@
     "power_off_player": "Izslēgt",
     "powered_off_players": "Izslēgti atskaņotāji",
     "sync_player_with": "Sinhronizēt ar citu atskaņotāju",
-    "open_player_settings": "Atvērt iestatījumus",
     "select_repeat_mode": "Izvēlieties atkārtošanas režīmu",
     "repeat_mode": {
         "all": "Atkārtot visu rindu",
@@ -613,8 +609,6 @@
     },
     "shuffle_disable": "Atspējot jaukšanu",
     "shuffle_enable": "Iespējot jaukšanu",
-    "dont_stop_the_music_enable": "Ieslēgt \"Nepārtrauciet mūziku!",
-    "dont_stop_the_music_disable": "Izslēgt \"Nepārtrauciet mūziku!",
     "open_dsp_settings": "Atvērt DSP iestatījumus",
     "audiobook": "Audiogrāmata",
     "audiobooks": "Audiogrāmatas",

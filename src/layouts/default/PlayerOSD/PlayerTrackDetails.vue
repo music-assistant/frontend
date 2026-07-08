@@ -21,24 +21,25 @@
             store.activePlayer?.powered != false &&
             store.activePlayer?.current_media?.image_url
           "
+          class="w-full h-full"
         >
           <v-img
             class="media-thumb"
             style="border-radius: 4px"
             size="60"
             :src="getMediaImageUrl(store.activePlayer.current_media.image_url)"
+            :alt="$t('tooltip.artwork')"
           />
         </div>
         <!-- fallback: display player icon -->
         <div v-else class="icon-thumb">
-          <v-icon
-            size="32"
-            :icon="
+          <PlayerIcon
+            :icon="store.activePlayer?.icon"
+            :grouped="
               store.activePlayer?.type == PlayerType.PLAYER &&
-              store.activePlayer?.group_members.length
-                ? 'mdi-speaker-multiple'
-                : store.activePlayer?.icon || 'mdi-speaker'
+              !!store.activePlayer?.group_members.length
             "
+            :size="32"
           />
         </div>
       </div>
@@ -175,6 +176,7 @@ import MarqueeText from "@/components/MarqueeText.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import {
   ImageColorPalette,
   getMediaImageUrl,

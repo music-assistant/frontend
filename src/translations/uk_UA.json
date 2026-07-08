@@ -53,7 +53,6 @@
     "play_now": "Відтворити зараз",
     "play_on": "Грати на: {0}",
     "play_playlist_from": "Відтворити плейлист звідси",
-    "play_radio": "Запустити радіо",
     "player_type": {
         "group": "Група",
         "player": "Програвач",
@@ -74,8 +73,6 @@
     "queue_next_items": "Наступні елементи",
     "queue_options": "Параметри черги",
     "queue_previous_items": "Програні елементи",
-    "queue_radio_based_on": "Черга динамічно заповнюється треками на основі: {0}",
-    "queue_radio_enabled": "Режим радіо увімкнено",
     "radios": "Радіо",
     "read_more": "читати далі",
     "refresh_item": "Оновити елемент",
@@ -143,11 +140,6 @@
         "group_members": "Члени групи",
         "default": "за замовчуванням",
         "provider_depends_on_confirm": "Перш ніж налаштувати {0}, потрібно налаштувати провайдер {1}. Ви хочете зробити це зараз?",
-        "category": {
-            "web_player": "Вебплеєр",
-            "protocol_settings": "Налаштування протоколу",
-            "options": "Параметри плеєра"
-        },
         "theme": {
             "label": "Тема",
             "options": {
@@ -412,6 +404,11 @@
         "no_group_providers": "Наразі у вас немає провайдерів, які підтримують створення груп",
         "provider_codeowners": "Цей провайдер надається\/підтримується",
         "provider_credits": "Це стало можливим завдяки",
+        "category": {
+            "web_player": "Вебплеєр",
+            "protocol_settings": "Налаштування протоколу",
+            "options": "Параметри плеєра"
+        },
         "onboarding_subtitle": "Почнімо з підключення джерел музики та аудіопристроїв.",
         "onboarding_music_title": "Музика",
         "onboarding_music_desc": "Підключіть потокові сервіси, такі як Spotify, Tidal або локальну музичну бібліотеку.",
@@ -569,7 +566,6 @@
     "power_off_player": "Вимкнути живлення",
     "powered_off_players": "Вимкнені плеєри",
     "sync_player_with": "Синхронізація з іншим плеєром",
-    "open_player_settings": "Відкрити налаштування",
     "select_repeat_mode": "Виберіть режим повтору",
     "repeat_mode": {
         "all": "Повторити всю чергу",
@@ -578,8 +574,6 @@
     },
     "shuffle_disable": "Вимкнути перемішування",
     "shuffle_enable": "Увімкнути перемішування",
-    "dont_stop_the_music_enable": "Увімкнути \"Не зупиняти музику!",
-    "dont_stop_the_music_disable": "Вимкнути \"Не зупиняти музику!",
     "open_dsp_settings": "Відкрити налаштування DSP",
     "audiobook": "Аудіокнига",
     "audiobooks": "Аудіокниги",

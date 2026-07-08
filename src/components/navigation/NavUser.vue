@@ -17,7 +17,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Pencil, Settings } from "lucide-vue-next";
+import { LogOut, MoreVertical, Pencil, Settings } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
