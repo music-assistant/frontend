@@ -4,6 +4,7 @@ import {
   BookAudio,
   Disc3,
   EllipsisVertical,
+  GripVertical,
   ListMusic,
   Mic2,
   Music,
@@ -143,115 +144,126 @@ const {
   <template v-if="pinnedItems.length > 0 || isLoading">
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
-      <SidebarGroupContent
-        ref="shortcutsScrollEl"
-        class="flex flex-col gap-0.5"
-        style="position: relative"
-      >
-        <SidebarMenu>
-          <!-- Skeletons while the API calls are in flight -->
-          <template v-if="isLoading">
-            <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
-              <SidebarMenuSkeleton :show-icon="true" />
-            </SidebarMenuItem>
-          </template>
-          <!-- Pinned shortcuts -->
-          <SidebarMenuItem
-            v-for="({ item, url }, index) in pinnedItemsWithUrls"
-            :key="item.uri"
-            v-hold="(e: Event) => onHold(e, item)"
-            :data-shortcut-index="index"
-            :class="[
-              'mr-1.5',
-              'shortcut-item',
-              { 'shortcut-dragging': draggingIndex === index },
-            ]"
-            :style="{
-              transform: `translateY(${rowOffset(index)}px)`,
-              transition:
-                isDragging && draggingIndex !== index
-                  ? 'transform 200ms ease-out'
-                  : 'none',
-            }"
-            @click.capture="swallowClickAfterHold"
-            @touchstart.passive="onTouchStart"
-            @pointerdown="!isCollapsed && startItemDrag($event, index)"
-          >
-            <SidebarMenuButton
-              :as="RouterLinkComponent"
-              :to="url"
-              :is-active="isActive(url)"
-              :tooltip="getDisplayName(item)"
+      <SidebarGroupContent class="flex flex-col gap-0.5">
+        <div ref="shortcutsScrollEl" style="position: relative">
+          <SidebarMenu>
+            <!-- Skeletons while the API calls are in flight -->
+            <template v-if="isLoading">
+              <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
+                <SidebarMenuSkeleton :show-icon="true" />
+              </SidebarMenuItem>
+            </template>
+            <!-- Pinned shortcuts -->
+            <SidebarMenuItem
+              v-for="({ item, url }, index) in pinnedItemsWithUrls"
+              :key="item.uri"
+              v-hold="(e: Event) => onHold(e, item)"
+              :data-shortcut-index="index"
               :class="[
-                isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
-                isActive(url)
-                  ? 'no-underline font-bold'
-                  : 'no-underline font-medium',
+                'mr-1.5',
+                'shortcut-item',
+                { 'shortcut-dragging': draggingIndex === index },
               ]"
-              @click="handleClick"
-              @contextmenu.prevent="openContextMenu($event, item)"
+              :style="{
+                transform: `translateY(${rowOffset(index)}px)`,
+                transition:
+                  isDragging && draggingIndex !== index
+                    ? 'transform 200ms ease-out'
+                    : 'none',
+              }"
+              @click.capture="swallowClickAfterHold"
+              @touchstart.passive="onTouchStart"
             >
-              <img
-                v-if="thumbMap[item.uri]"
-                :src="thumbMap[item.uri]"
+              <SidebarMenuButton
+                :as="RouterLinkComponent"
+                :to="url"
+                :is-active="isActive(url)"
+                :tooltip="getDisplayName(item)"
                 :class="[
-                  'shortcut-thumb',
-                  isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                  isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
+                  isActive(url)
+                    ? 'no-underline font-bold'
+                    : 'no-underline font-medium',
                 ]"
-                :alt="getDisplayName(item)"
+                @click="handleClick"
+                @contextmenu.prevent="openContextMenu($event, item)"
+              >
+                <img
+                  v-if="thumbMap[item.uri]"
+                  :src="thumbMap[item.uri]"
+                  :class="[
+                    'shortcut-thumb',
+                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                  ]"
+                  :alt="getDisplayName(item)"
+                />
+                <component
+                  :is="getFallbackIcon(item)"
+                  v-else
+                  :class="[
+                    'shortcut-thumb',
+                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                  ]"
+                />
+                <span v-if="!isCollapsed" class="shortcut-label">
+                  <span class="shortcut-name">{{ getDisplayName(item) }}</span>
+                  <span class="shortcut-type">{{ t(item.media_type) }}</span>
+                </span>
+              </SidebarMenuButton>
+              <div v-if="!isCollapsed" class="shortcut-actions">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="shortcut-drag-handle opacity-0 group-hover/menu-item:opacity-100 h-6 w-6"
+                  :title="t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, index)"
+                  @click.stop
+                  @contextmenu.prevent
+                >
+                  <GripVertical class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="shortcut-action-btn opacity-0 group-hover/menu-item:opacity-100 h-6 w-6"
+                  :title="t('more_options')"
+                  @click.stop="openContextMenu($event, item)"
+                >
+                  <EllipsisVertical class="h-4 w-4" />
+                </Button>
+              </div>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <!-- Drag ghost -->
+          <div
+            v-if="isDragging && draggedItem"
+            class="shortcut-drag-ghost"
+            :style="{
+              top: `${ghostY}px`,
+              width: '100%',
+            }"
+          >
+            <div class="shortcut-ghost-content">
+              <img
+                v-if="thumbMap[draggedItem.uri]"
+                :src="thumbMap[draggedItem.uri]"
+                class="shortcut-thumb"
+                :alt="getDisplayName(draggedItem)"
               />
               <component
-                :is="getFallbackIcon(item)"
+                :is="getFallbackIcon(draggedItem)"
                 v-else
-                :class="[
-                  'shortcut-thumb',
-                  isCollapsed ? 'shortcut-thumb--collapsed' : '',
-                ]"
+                class="shortcut-thumb"
               />
-              <span v-if="!isCollapsed" class="shortcut-label">
-                <span class="shortcut-name">{{ getDisplayName(item) }}</span>
-                <span class="shortcut-type">{{ t(item.media_type) }}</span>
+              <span class="shortcut-label">
+                <span class="shortcut-name">{{
+                  getDisplayName(draggedItem)
+                }}</span>
+                <span class="shortcut-type">{{
+                  t(draggedItem.media_type)
+                }}</span>
               </span>
-            </SidebarMenuButton>
-            <Button
-              v-if="!isCollapsed"
-              variant="ghost"
-              size="icon"
-              class="shortcut-action-btn opacity-0 group-hover/menu-item:opacity-100 absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              :title="t('more_options')"
-              @click.stop="openContextMenu($event, item)"
-            >
-              <EllipsisVertical class="h-4 w-4" />
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <!-- Drag ghost -->
-        <div
-          v-if="isDragging && draggedItem"
-          class="shortcut-drag-ghost"
-          :style="{
-            top: `${ghostY}px`,
-            width: '100%',
-          }"
-        >
-          <div class="shortcut-ghost-content">
-            <img
-              v-if="thumbMap[draggedItem.uri]"
-              :src="thumbMap[draggedItem.uri]"
-              class="shortcut-thumb"
-              :alt="getDisplayName(draggedItem)"
-            />
-            <component
-              :is="getFallbackIcon(draggedItem)"
-              v-else
-              class="shortcut-thumb"
-            />
-            <span class="shortcut-label">
-              <span class="shortcut-name">{{
-                getDisplayName(draggedItem)
-              }}</span>
-              <span class="shortcut-type">{{ t(draggedItem.media_type) }}</span>
-            </span>
+            </div>
           </div>
         </div>
       </SidebarGroupContent>
@@ -279,7 +291,7 @@ const {
 :deep([data-sidebar="menu-button"].shortcut-button) {
   /* explicit height (not auto) so transition-[height] can animate */
   height: 3rem !important;
-  padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
+  padding: 0.3rem 3.5rem 0.3rem 0.5rem !important;
   align-items: center !important;
 }
 
@@ -359,6 +371,25 @@ const {
   z-index: 1;
 }
 
+/* Action buttons container (drag handle + menu) */
+.shortcut-actions {
+  display: flex;
+  gap: 0;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.shortcut-drag-handle {
+  cursor: grab;
+}
+
+.shortcut-drag-handle:active {
+  cursor: grabbing;
+}
+
 /* Clip the absolute-positioned action btn without forcing overflow-y to auto.
    `overflow-x: hidden` would silently flip overflow-y to auto and create a
    spurious vertical scrollbar inside the sidebar; `clip` is the only value
@@ -371,7 +402,6 @@ const {
 .shortcut-item {
   position: relative;
   user-select: none;
-  touch-action: none;
 }
 
 .shortcut-dragging {
@@ -390,9 +420,10 @@ const {
   display: flex;
   align-items: center;
   height: 3rem;
-  padding: 0.3rem 2.25rem 0.3rem 0.5rem;
-  background: rgb(var(--v-theme-surface-variant));
+  padding: 0.3rem 0.5rem;
+  background: var(--primary);
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  cursor: grabbing;
 }
 </style>
