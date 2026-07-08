@@ -1,6 +1,6 @@
 import { MediaType } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 
 // Mock the useShortcuts module to avoid Vuetify dependencies
 vi.mock("@/composables/useShortcuts", () => ({
@@ -9,15 +9,7 @@ vi.mock("@/composables/useShortcuts", () => ({
 }));
 
 import { useShortcutDragReorder } from "@/composables/useShortcutDragReorder";
-
-// Simple mock for shortcut item
-interface ShortcutItem {
-  uri: string;
-  provider: string;
-  item_id: string;
-  media_type: MediaType;
-  name: string;
-}
+import type { ShortcutItem } from "@/composables/useShortcuts";
 
 const createMockShortcut = (index: number): ShortcutItem => ({
   uri: `library://playlist/${index}`,
@@ -25,7 +17,7 @@ const createMockShortcut = (index: number): ShortcutItem => ({
   item_id: `playlist-${index}`,
   media_type: MediaType.PLAYLIST,
   name: `Playlist ${index}`,
-});
+} as ShortcutItem);
 
 const createPointerEvent = (x: number, y: number, button = 0): PointerEvent =>
   ({
@@ -46,8 +38,8 @@ const createPointerEvent = (x: number, y: number, button = 0): PointerEvent =>
   }) as unknown as PointerEvent;
 
 describe("useShortcutDragReorder", () => {
-  let scrollEl: ReturnType<typeof ref<HTMLElement | null>>;
-  let shortcuts: ReturnType<typeof createMockShortcut>[];
+  let scrollEl: Ref<HTMLElement | null>;
+  let shortcuts: ShortcutItem[];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +52,7 @@ describe("useShortcutDragReorder", () => {
     ];
 
     // Mock scroll element
-    scrollEl = ref({
+    scrollEl = ref<HTMLElement | null>({
       getBoundingClientRect: () => ({
         top: 100,
         bottom: 500,
