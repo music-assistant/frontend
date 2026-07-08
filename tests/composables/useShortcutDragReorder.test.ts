@@ -1,6 +1,5 @@
-import { MediaType } from "@/plugins/api/interfaces";
+import { type Ref, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ref, type Ref } from "vue";
 
 // Mock the useShortcuts module to avoid Vuetify dependencies
 vi.mock("@/composables/useShortcuts", () => ({
@@ -8,16 +7,18 @@ vi.mock("@/composables/useShortcuts", () => ({
   getShortcutUri: (item: { uri: string }) => item.uri,
 }));
 
-import { useShortcutDragReorder } from "@/composables/useShortcutDragReorder";
 import type { ShortcutItem } from "@/composables/useShortcuts";
+import { useShortcutDragReorder } from "@/composables/useShortcutDragReorder";
+import { MediaType } from "@/plugins/api/interfaces";
 
-const createMockShortcut = (index: number): ShortcutItem => ({
-  uri: `library://playlist/${index}`,
-  provider: "library",
-  item_id: `playlist-${index}`,
-  media_type: MediaType.PLAYLIST,
-  name: `Playlist ${index}`,
-} as ShortcutItem);
+const createMockShortcut = (index: number): ShortcutItem =>
+  ({
+    uri: `library://playlist/${index}`,
+    provider: "library",
+    item_id: `playlist-${index}`,
+    media_type: MediaType.PLAYLIST,
+    name: `Playlist ${index}`,
+  }) as ShortcutItem;
 
 const createPointerEvent = (x: number, y: number, button = 0): PointerEvent =>
   ({
