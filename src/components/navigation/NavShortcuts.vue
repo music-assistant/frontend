@@ -31,6 +31,8 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
+import { useShortcutDragReorder } from "@/composables/useShortcutDragReorder";
+import { ref } from "vue";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
@@ -119,6 +121,21 @@ const { onHold, onTouchStart, swallowClickAfterHold } =
   useHoldToOpenMenu(openContextMenu);
 
 const { navEl } = useSidebarScrollbarGutter(pinnedItems);
+
+// Drag&drop reordering
+const shortcutsScrollEl = ref<HTMLElement | null>(null);
+const {
+  startItemDrag,
+  draggingIndex,
+  isDragging,
+  draggedItem,
+  ghostY,
+  rowOffset,
+} = useShortcutDragReorder({
+  scrollEl: shortcutsScrollEl,
+  itemAt: (index: number) => pinnedItems.value[index],
+  totalCount: () => pinnedItems.value.length,
+});
 </script>
 
 <template>
@@ -126,7 +143,11 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   <template v-if="pinnedItems.length > 0 || isLoading">
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
-      <SidebarGroupContent class="flex flex-col gap-0.5">
+      <SidebarGroupContent
+        ref="shortcutsScrollEl"
+        class="flex flex-col gap-0.5"
+        style="position: relative"
+      >
         <SidebarMenu>
           <!-- Skeletons while the API calls are in flight -->
           <template v-if="isLoading">
@@ -136,12 +157,25 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
           </template>
           <!-- Pinned shortcuts -->
           <SidebarMenuItem
-            v-for="{ item, url } in pinnedItemsWithUrls"
+            v-for="({ item, url }, index) in pinnedItemsWithUrls"
             :key="item.uri"
             v-hold="(e: Event) => onHold(e, item)"
-            class="mr-1.5"
+            :data-shortcut-index="index"
+            :class="[
+              'mr-1.5',
+              'shortcut-item',
+              { 'shortcut-dragging': draggingIndex === index },
+            ]"
+            :style="{
+              transform: `translateY(${rowOffset(index)}px)`,
+              transition:
+                isDragging && draggingIndex !== index
+                  ? 'transform 200ms ease-out'
+                  : 'none',
+            }"
             @click.capture="swallowClickAfterHold"
             @touchstart.passive="onTouchStart"
+            @pointerdown="!isCollapsed && startItemDrag($event, index)"
           >
             <SidebarMenuButton
               :as="RouterLinkComponent"
@@ -191,6 +225,35 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>
+        <!-- Drag ghost -->
+        <div
+          v-if="isDragging && draggedItem"
+          class="shortcut-drag-ghost"
+          :style="{
+            top: `${ghostY}px`,
+            width: '100%',
+          }"
+        >
+          <div class="shortcut-ghost-content">
+            <img
+              v-if="thumbMap[draggedItem.uri]"
+              :src="thumbMap[draggedItem.uri]"
+              class="shortcut-thumb"
+              :alt="getDisplayName(draggedItem)"
+            />
+            <component
+              :is="getFallbackIcon(draggedItem)"
+              v-else
+              class="shortcut-thumb"
+            />
+            <span class="shortcut-label">
+              <span class="shortcut-name">{{
+                getDisplayName(draggedItem)
+              }}</span>
+              <span class="shortcut-type">{{ t(draggedItem.media_type) }}</span>
+            </span>
+          </div>
+        </div>
       </SidebarGroupContent>
     </SidebarGroup>
   </template>
@@ -302,5 +365,34 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
    that does not trigger that side-effect. */
 :deep([data-sidebar="group-content"]) {
   overflow-x: clip;
+}
+
+/* Drag&drop styling */
+.shortcut-item {
+  position: relative;
+  user-select: none;
+  touch-action: none;
+}
+
+.shortcut-dragging {
+  opacity: 0.4;
+}
+
+.shortcut-drag-ghost {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.95;
+}
+
+.shortcut-ghost-content {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0.3rem 2.25rem 0.3rem 0.5rem;
+  background: rgb(var(--v-theme-surface-variant));
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>
