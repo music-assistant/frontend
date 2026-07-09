@@ -145,7 +145,7 @@ const {
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
       <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
       <SidebarGroupContent class="flex flex-col gap-0.5">
-        <div ref="shortcutsScrollEl" style="position: relative">
+        <div ref="shortcutsScrollEl" class="relative">
           <SidebarMenu>
             <!-- Skeletons while the API calls are in flight -->
             <template v-if="isLoading">
@@ -237,13 +237,12 @@ const {
           <!-- Drag ghost -->
           <div
             v-if="isDragging && draggedItem"
-            class="shortcut-drag-ghost"
-            :style="{
-              top: `${ghostY}px`,
-              width: '100%',
-            }"
+            class="absolute left-0 w-full pointer-events-none z-[1000] opacity-95"
+            :style="{ top: `${ghostY}px` }"
           >
-            <div class="shortcut-ghost-content">
+            <div
+              class="shortcut-ghost-content flex items-center h-12 rounded cursor-grabbing"
+            >
               <img
                 v-if="thumbMap[draggedItem.uri]"
                 :src="thumbMap[draggedItem.uri]"
@@ -384,6 +383,7 @@ const {
 
 .shortcut-drag-handle {
   cursor: grab;
+  touch-action: none;
 }
 
 .shortcut-drag-handle:active {
@@ -408,22 +408,9 @@ const {
   opacity: 0.4;
 }
 
-.shortcut-drag-ghost {
-  position: absolute;
-  left: 0;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0.95;
-}
-
 .shortcut-ghost-content {
-  display: flex;
-  align-items: center;
-  height: 3rem;
   padding: 0.3rem 0.5rem;
   background: var(--primary);
-  border-radius: 4px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  cursor: grabbing;
 }
 </style>
