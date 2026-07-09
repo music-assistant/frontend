@@ -59,6 +59,10 @@ export type CreateSmartPlaylistEvent = {
   providerId?: string;
 };
 
+export type AudioOverlayDialogEvent = {
+  queueId: string;
+};
+
 export type Events = {
   contextmenu: ContextMenuDialogEvent;
   playlistdialog: PlaylistDialogEvent;
@@ -69,6 +73,7 @@ export type Events = {
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
+  audioOverlayDialog: AudioOverlayDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;

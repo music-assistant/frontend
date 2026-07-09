@@ -149,6 +149,29 @@
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+
+    <!-- audio overlay: shown only while an overlay sound is active. Clicking it
+         reopens the overlay dialog to adjust the sound or volume. -->
+    <TooltipProvider v-if="overlayActive && queue" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="ghost-outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="[pillClass, activePillClass]"
+            :aria-label="$t('audio_overlay')"
+            @click="openOverlay"
+          >
+            <AudioLines :size="16" />
+            <span v-if="showLabel">{{ $t("audio_overlay") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          <p class="font-medium">{{ $t("audio_overlay") }}</p>
+          <p v-if="overlayName" class="mt-1 opacity-80">{{ overlayName }}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   </div>
 </template>
 
@@ -165,11 +188,12 @@ import {
 import AutoplayIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/AutoplayIcon.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { MicVocal } from "@lucide/vue";
+import { AudioLines, MicVocal } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -239,6 +263,17 @@ const toggleCrossfade = () => {
   const q = queue.value;
   if (!q) return;
   api.queueCommandCrossfade(q.queue_id, !q.crossfade_enabled);
+};
+
+// --- audio overlay ---
+const { openOverlayDialog } = useAudioOverlay();
+
+const overlayActive = computed(() => queue.value?.overlay_enabled === true);
+const overlayName = computed(() => queue.value?.overlay_source?.name);
+
+const openOverlay = () => {
+  const q = queue.value;
+  if (q) openOverlayDialog(q.queue_id);
 };
 </script>
 
