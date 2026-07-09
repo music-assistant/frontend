@@ -23,6 +23,17 @@
               <Download class="size-4" />
               {{ $t("settings.download_log") }}
             </Button>
+            <Button
+              v-if="diagnosticsSupported"
+              variant="outline"
+              size="sm"
+              :disabled="downloadingDiagnostics"
+              @click="downloadDiagnostics"
+            >
+              <Spinner v-if="downloadingDiagnostics" class="size-4" />
+              <Stethoscope v-else class="size-4" />
+              {{ $t("settings.download_diagnostics") }}
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -62,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, Download, RefreshCw } from "@lucide/vue";
+import { AlertCircle, Download, RefreshCw, Stethoscope } from "@lucide/vue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import { Button } from "@/components/ui/button";
@@ -71,15 +82,19 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
+import { requireServerVersion } from "@/plugins/api/helpers";
 
 const logContent = ref("");
 const loading = ref(true);
 const refreshing = ref(false);
 const error = ref("");
 const autoRefresh = ref(true);
+const downloadingDiagnostics = ref(false);
 const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+const diagnosticsSupported = computed(() => requireServerVersion("2.10.0"));
 
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");
@@ -132,21 +147,46 @@ const refreshLog = () => {
   fetchLogs(true);
 };
 
+const saveFile = (blob: Blob, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
 const downloadLog = async () => {
   try {
     const text = await api.sendCommand<string>("logging/get");
-    const url = window.URL.createObjectURL(
-      new Blob([text], { type: "text/plain" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "music-assistant.log";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    saveFile(new Blob([text], { type: "text/plain" }), "music-assistant.log");
   } catch (e) {
     console.error("Error downloading log:", e);
+  }
+};
+
+const downloadDiagnostics = async () => {
+  downloadingDiagnostics.value = true;
+  try {
+    const report = await api.sendCommand<Record<string, unknown>>(
+      "diagnostics/get",
+      { include_log_tail: true },
+    );
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", "-")
+      .replaceAll(":", "");
+    saveFile(
+      new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }),
+      `music-assistant-diagnostics-${timestamp}.json`,
+    );
+  } catch (e) {
+    console.error("Error downloading diagnostics:", e);
+  } finally {
+    downloadingDiagnostics.value = false;
   }
 };
 
