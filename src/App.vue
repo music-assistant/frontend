@@ -264,10 +264,12 @@ const completeInitialization = async () => {
     webPlayer.setBaseUrl(api.baseUrl);
   }
 
+  const isGuestAccessSession = authManager.isGuestAccessSession();
   const isPartyGuest = authManager.isPartyGuest();
+  const isMusicQuizGuest = authManager.isMusicQuizGuest();
 
-  if (!isPartyGuest) {
-    // Full initialization for regular and non-party guest users
+  if (!isGuestAccessSession) {
+    // Full initialization for regular users
     await api.fetchState();
     // Drop persisted filters for providers that are no longer installed.
     await pruneStaleProviderFilters();
@@ -280,7 +282,7 @@ const completeInitialization = async () => {
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
   } else {
-    console.debug("[App] Party guest - skipping full state fetch");
+    console.debug("[App] Guest user - skipping full state fetch");
   }
 
   // Check if party plugin is enabled
@@ -299,6 +301,22 @@ const completeInitialization = async () => {
     store.enabledPlugins.delete("party");
   }
 
+  // Check if music_quiz plugin is enabled
+  try {
+    const musicQuizProviders = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "music_quiz",
+    );
+    if (musicQuizProviders.length > 0 && musicQuizProviders[0].enabled) {
+      store.enabledPlugins.add("music_quiz");
+    } else {
+      store.enabledPlugins.delete("music_quiz");
+    }
+  } catch (error) {
+    console.error("[App] Failed to check music_quiz status:", error);
+    store.enabledPlugins.delete("music_quiz");
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   if (
     (urlParams.get("onboard") === "true" ||
@@ -310,6 +328,9 @@ const completeInitialization = async () => {
   } else if (isPartyGuest) {
     // Party guests should always be redirected to the guest view
     router.push("/guest");
+  } else if (isMusicQuizGuest) {
+    // Music Quiz guests should always be redirected to the quiz play view
+    router.push("/music-quiz/play");
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"

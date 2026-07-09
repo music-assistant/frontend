@@ -151,13 +151,22 @@ function resolvePreferredMode(): WebPlayerMode {
     (record) => record.meta.disableWebPlayer === true,
   );
 
-  // Hard-disable conditions always win over user preferences.
+  // Hard-disable conditions:
+  // - Party guests (explicitly disabled via meta)
+  // - Companion mode
+  // - Route explicitly disables web player
+  // Music Quiz guests NEED the web player for listen-in audio!
   if (
     authManager.isPartyGuest() ||
     companionMode.value ||
     routeDisablesWebPlayer
   ) {
     return WebPlayerMode.DISABLED;
+  }
+
+  // Force sendspin mode for music quiz guests (listen-in audio support)
+  if (authManager.isMusicQuizGuest()) {
+    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
   }
 
   const webPlayerEnabledPref =

@@ -1,8 +1,10 @@
 import { getMediaImageUrl } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaType, PlayerMedia } from "@/plugins/api/interfaces";
+import authManager from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { computed, watch } from "vue";
+import { useRouter } from "vue-router";
 
 function playerMediaToMetadata(item: PlayerMedia) {
   const artwork = [
@@ -18,8 +20,20 @@ function playerMediaToMetadata(item: PlayerMedia) {
     artwork,
   });
 }
+
+function genericQuizMetadata() {
+  return new MediaMetadata({
+    title: "Music Quiz",
+    artist: "",
+    album: "",
+    artwork: [],
+  });
+}
+
 // If no player_id is passed, the currently selected player is shown
 export function useMediaBrowserMetaData(player_id?: string) {
+  const router = useRouter();
+
   let player;
   if (player_id === undefined) {
     player = computed(() => {
@@ -36,6 +50,16 @@ export function useMediaBrowserMetaData(player_id?: string) {
       return undefined;
     });
   }
+
+  const shouldSuppressMetadata = computed(() => {
+    // Suppress track metadata for music quiz guests during an active round
+    // to prevent answer leaks via OS media controls.
+    return (
+      authManager.isMusicQuizGuest() &&
+      router.currentRoute.value.path.startsWith("/music-quiz/play") &&
+      !!player.value?.current_media
+    );
+  });
 
   const playerQueue = computed(() => {
     if (
@@ -56,6 +80,9 @@ export function useMediaBrowserMetaData(player_id?: string) {
   });
 
   const mediaMetadata = computed(() => {
+    if (shouldSuppressMetadata.value) {
+      return genericQuizMetadata();
+    }
     return player.value?.current_media
       ? playerMediaToMetadata(player.value?.current_media)
       : undefined;

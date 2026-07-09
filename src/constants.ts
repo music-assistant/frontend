@@ -3,6 +3,7 @@ export const DEFAULT_MENU_ITEMS = [
   "search",
   "browse",
   "party",
+  "music_quiz",
   "artists",
   "albums",
   "tracks",

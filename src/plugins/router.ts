@@ -28,6 +28,22 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  // Music Quiz guest view - uses minimal layout
+  // Music Quiz guests NEED the web player for listen-in audio (do NOT disable it)
+  {
+    path: "/music-quiz/play",
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "music-quiz-play",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"
+          ),
+      },
+    ],
+  },
   // Party display uses minimal layout (fullscreen for wall-mounted tablets)
   // Placed at top level so it renders without navigation/player controls
   {
@@ -301,6 +317,14 @@ const routes: RouteRecordRaw[] = [
             props: true,
           },
         ],
+      },
+      {
+        path: "/music-quiz",
+        name: "music-quiz",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardView.vue"
+          ),
       },
       {
         path: "/settings",
