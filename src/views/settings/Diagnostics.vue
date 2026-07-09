@@ -94,7 +94,7 @@ const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-const diagnosticsSupported = computed(() => requireServerVersion("2.10.0"));
+const diagnosticsSupported = computed(() => requireServerVersion("2.9.6"));
 
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");
