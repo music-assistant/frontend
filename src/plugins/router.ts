@@ -399,11 +399,11 @@ const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
-            path: "serverlogs",
-            name: "serverlogs",
+            path: "diagnostics",
+            name: "diagnostics",
             component: () =>
               import(
-                /* webpackChunkName: "serverlogs" */ "@/views/settings/ServerLogs.vue"
+                /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },
