@@ -22,52 +22,30 @@
 
     <div class="flex min-h-0 flex-1 flex-col gap-4">
       <template v-if="state.phase === 'answering' && currentRound">
-        <div class="flex flex-col items-center gap-2">
-          <MusicQuizCountdown
-            :size="160"
-            :fraction="answerRemainingFraction"
-            :label="answerRemainingLabel || '…'"
-          />
-        </div>
-        <div
-          class="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
+        <component
+          :is="gameComponent"
+          :state="state"
+          :current-round="currentRound"
+        />
+        <component
+          :is="answerComponent"
+          :state="state"
+          :current-round="currentRound"
         >
-          <MusicQuizAnswerGrid
-            :suggestions="currentRound.suggestions"
-            :disabled="true"
-            :selected-suggestion-id="null"
-            @select="noop"
-          />
-          <div class="flex flex-col gap-4">
-            <MusicQuizAnswerStatus
-              :statuses="state.players"
-              :answered-count="answeredCount"
-            />
+          <template #leaderboard>
             <MusicQuizLeaderboard :rows="leaderboardRows" />
-          </div>
-        </div>
+          </template>
+        </component>
       </template>
 
       <template v-else-if="state.phase === 'reveal' && currentRound">
         <div
           class="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
         >
-          <MusicQuizReveal
-            :round="currentRound"
-            :busy="true"
-            :is-ready="true"
-            :ready-label="$t('providers.music_quiz.ready')"
-            :image-url="currentRoundImageUrl"
-            :show-lyrics="false"
-            :has-lyrics="false"
-            :lyrics="''"
-            :lrc-lyrics="''"
-            :lyrics-position="0"
-            lyrics-text-color="var(--foreground)"
-            :show-ready-button="false"
-            :show-copy-button="false"
-            @ready="noop"
-            @copy-title="noop"
+          <component
+            :is="gameComponent"
+            :state="state"
+            :current-round="currentRound"
           />
           <MusicQuizLeaderboard :rows="leaderboardRows" />
         </div>
@@ -131,17 +109,13 @@
 </template>
 
 <script setup lang="ts">
-import MusicQuizAnswerGrid from "@/components/music-quiz/MusicQuizAnswerGrid.vue";
-import MusicQuizAnswerStatus from "@/components/music-quiz/MusicQuizAnswerStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
-import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue";
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
-import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
 import { Button } from "@/components/ui/button";
 import type {
   MusicQuizCurrentRound,
@@ -150,21 +124,19 @@ import type {
 import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
 import { $t } from "@/plugins/i18n";
 import { Minimize2 } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed, watch, type Component } from "vue";
 
 const props = defineProps<{
   state: MusicQuizSupportedHostState;
   currentRound: MusicQuizCurrentRound | null;
   leaderboardRows: MusicQuizLeaderboardRow[];
-  answeredCount: number;
-  answerRemainingLabel: string;
-  answerRemainingFraction: number | null;
   winnerText: string;
   phaseLabel: string;
   roundLabel: string;
   joinLink: string;
-  currentRoundImageUrl: string;
   isConnectionDegraded: boolean;
+  gameComponent: Component;
+  answerComponent: Component;
 }>();
 const emit = defineEmits<{ exit: [] }>();
 
@@ -173,10 +145,6 @@ const { celebrate } = useMusicQuizCelebration();
 const sortedPlayers = computed(() =>
   [...props.state.players].sort((a, b) => a.name.localeCompare(b.name)),
 );
-
-function noop() {
-  // Read-only interactions on the present stage.
-}
 
 watch(
   () => props.state.phase,

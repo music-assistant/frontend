@@ -3,8 +3,23 @@ import api from "@/plugins/api";
 export type MusicQuizPhase = "lobby" | "answering" | "reveal" | "finished";
 export type MusicQuizMode = "venue" | "remote";
 export type MusicQuizDifficulty = "easy" | "normal" | "hard";
-export type MusicQuizType = "guess_the_song";
-export type MusicQuizAnswerType = "multiple_choice";
+
+export type MusicQuizAnswerSubmissionMap = {
+  multiple_choice: {
+    answer_type: "multiple_choice";
+    suggestion_id: string;
+  };
+};
+
+export type MusicQuizAnswerType = keyof MusicQuizAnswerSubmissionMap;
+export type MusicQuizAnswerSubmission =
+  MusicQuizAnswerSubmissionMap[MusicQuizAnswerType];
+
+export type MusicQuizGameAnswerTypeMap = {
+  guess_the_song: "multiple_choice";
+};
+
+export type MusicQuizType = keyof MusicQuizGameAnswerTypeMap;
 
 declare const unsupportedMusicQuizType: unique symbol;
 export type MusicQuizUnsupportedType = string & {
@@ -29,7 +44,7 @@ interface MusicQuizStateIdentity<
   name: string | null;
 }
 
-interface MusicQuizSupportedStateBase extends MusicQuizStateIdentity {
+interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
   quiz_type: "guess_the_song";
   answer_type: "multiple_choice";
   round_count: number;
@@ -37,24 +52,41 @@ interface MusicQuizSupportedStateBase extends MusicQuizStateIdentity {
   answer_duration: number;
   mode: MusicQuizMode;
   players: MusicQuizPlayer[];
-  current_round?: MusicQuizCurrentRound | null;
+  current_round?: MusicQuizGuessTheSongRound | null;
 }
 
-export type MusicQuizSupportedPublicState = MusicQuizSupportedStateBase;
+export type MusicQuizGuessTheSongPublicState = MusicQuizGuessTheSongStateBase;
 
-type MusicQuizUnsupportedStateIdentity =
+export type MusicQuizSupportedPublicState = MusicQuizGuessTheSongPublicState;
+
+type MusicQuizMismatchedStateIdentity = {
+  [TGame in MusicQuizType]: [
+    Exclude<MusicQuizAnswerType, MusicQuizGameAnswerTypeMap[TGame]>,
+  ] extends [never]
+    ? never
+    : MusicQuizStateIdentity<
+        TGame,
+        Exclude<MusicQuizAnswerType, MusicQuizGameAnswerTypeMap[TGame]>
+      >;
+}[MusicQuizType];
+
+type MusicQuizFallbackState =
   | MusicQuizStateIdentity<MusicQuizUnsupportedType, MusicQuizRuntimeAnswerType>
-  | MusicQuizStateIdentity<MusicQuizType, MusicQuizUnsupportedAnswerType>;
+  | MusicQuizStateIdentity<MusicQuizType, MusicQuizUnsupportedAnswerType>
+  | MusicQuizMismatchedStateIdentity;
 
-export type MusicQuizUnsupportedPublicState = MusicQuizUnsupportedStateIdentity;
+export type MusicQuizUnsupportedPublicState = MusicQuizFallbackState;
 
 export type MusicQuizPublicState =
   | MusicQuizSupportedPublicState
   | MusicQuizUnsupportedPublicState;
 
-export interface MusicQuizSupportedPersonalizedState extends MusicQuizSupportedStateBase {
+export interface MusicQuizGuessTheSongPersonalizedState extends MusicQuizGuessTheSongStateBase {
   you: MusicQuizYou;
 }
+
+export type MusicQuizSupportedPersonalizedState =
+  MusicQuizGuessTheSongPersonalizedState;
 
 export type MusicQuizUnsupportedPersonalizedState =
   MusicQuizUnsupportedPublicState;
@@ -63,12 +95,14 @@ export type MusicQuizPersonalizedState =
   | MusicQuizSupportedPersonalizedState
   | MusicQuizUnsupportedPersonalizedState;
 
-export interface MusicQuizSupportedHostState extends MusicQuizSupportedStateBase {
+export interface MusicQuizGuessTheSongHostState extends MusicQuizGuessTheSongStateBase {
   created_at: number;
   sources: MusicQuizSource[];
   join_url: string;
-  rounds: MusicQuizRound[];
+  rounds: MusicQuizGuessTheSongRound[];
 }
+
+export type MusicQuizSupportedHostState = MusicQuizGuessTheSongHostState;
 
 export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState;
 
@@ -76,7 +110,7 @@ export type MusicQuizHostState =
   | MusicQuizSupportedHostState
   | MusicQuizUnsupportedHostState;
 
-export interface MusicQuizSupportedInfo extends MusicQuizStateIdentity {
+export interface MusicQuizGuessTheSongInfo extends MusicQuizStateIdentity {
   quiz_type: "guess_the_song";
   answer_type: "multiple_choice";
   player_count: number;
@@ -84,7 +118,9 @@ export interface MusicQuizSupportedInfo extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
 }
 
-export type MusicQuizUnsupportedInfo = MusicQuizUnsupportedStateIdentity;
+export type MusicQuizSupportedInfo = MusicQuizGuessTheSongInfo;
+
+export type MusicQuizUnsupportedInfo = MusicQuizFallbackState;
 
 export type MusicQuizInfo = MusicQuizSupportedInfo | MusicQuizUnsupportedInfo;
 
@@ -118,22 +154,29 @@ export interface MusicQuizYourAnswer {
   points?: number;
 }
 
-export interface MusicQuizCurrentRound {
-  question: string | null;
+export interface MusicQuizRoundBase {
   round_index: number;
   started_at: number;
   deadline: number;
+  ended_at?: number;
+}
+
+export interface MusicQuizMultipleChoiceRound extends MusicQuizRoundBase {
   suggestions: MusicQuizSuggestion[];
-  // post-reveal fields:
   correct_suggestion_id?: string;
+}
+
+export interface MusicQuizGuessTheSongRound extends MusicQuizMultipleChoiceRound {
+  question: string | null;
   answer_label?: string;
   track_uri?: string | null;
   image_url?: string | null;
   duration?: number | null;
-  ended_at?: number;
 }
 
-export type MusicQuizRound = MusicQuizCurrentRound;
+export type MusicQuizSupportedRound = MusicQuizGuessTheSongRound;
+export type MusicQuizCurrentRound = MusicQuizGuessTheSongRound;
+export type MusicQuizRound = MusicQuizGuessTheSongRound;
 
 export interface MusicQuizSuggestion {
   suggestion_id: string;

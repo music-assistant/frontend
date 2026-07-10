@@ -6,6 +6,7 @@ import {
   isMusicQuizProviderEvent,
   joinMusicQuiz,
   readyMusicQuiz,
+  type MusicQuizAnswerSubmission,
   type MusicQuizCurrentRound,
   type MusicQuizInfo,
   type MusicQuizPersonalizedState,
@@ -151,7 +152,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     }
   }
 
-  async function answer(suggestionId: string) {
+  async function submitAnswer(submission: MusicQuizAnswerSubmission) {
     const currentPlayerId = playerId.value;
     if (!currentPlayerId) {
       notifyError($t("providers.music_quiz.error_not_joined"));
@@ -159,7 +160,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     }
     busy.value = true;
     try {
-      const nextState = await answerMusicQuiz(currentPlayerId, suggestionId);
+      const nextState = await answerMusicQuiz(
+        currentPlayerId,
+        submission.suggestion_id,
+      );
       state.value = nextState;
       return true;
     } catch (err) {
@@ -247,7 +251,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     fetchInfo,
     fetchState,
     join,
-    answer,
+    submitAnswer,
     ready,
     leave,
   };

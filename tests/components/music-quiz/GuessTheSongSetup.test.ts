@@ -1,4 +1,4 @@
-import MusicQuizGuessTheSongConfig from "@/components/music-quiz/MusicQuizGuessTheSongConfig.vue";
+import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -59,7 +59,7 @@ async function flushPromises() {
 }
 
 function mountConfig() {
-  return mount(MusicQuizGuessTheSongConfig, {
+  return mount(GuessTheSongSetup, {
     props: { busy: false },
     global: {
       stubs: {
@@ -69,7 +69,7 @@ function mountConfig() {
   });
 }
 
-describe("MusicQuizGuessTheSongConfig", () => {
+describe("GuessTheSongSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSearch.mockReset();
