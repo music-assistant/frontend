@@ -58,6 +58,16 @@ vi.mock("@/helpers/music_quiz", () => ({
   getStoredMusicQuizPlayerId: mockGetStoredPlayerId,
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
+  isNoActiveGameError: (err: unknown) => {
+    const message = (
+      err instanceof Error ? err.message : typeof err === "string" ? err : ""
+    ).toLowerCase();
+    return (
+      message.includes("no active game") ||
+      message.includes("no active music quiz game") ||
+      (message.includes("no active") && message.includes("music quiz"))
+    );
+  },
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -128,6 +138,24 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toBeNull();
     expect(player.info.value).toEqual(QUIZ_INFO);
     expect(player.gameRemoved.value).toBe(false);
+    expect(storedPlayerId.value).toBeNull();
+  });
+
+  it("recovers from a no-active-game error (string rejection) without a toast", async () => {
+    storedPlayerId.value = "some-player";
+    mockGetMusicQuizState.mockRejectedValue(
+      "There is no active Music Quiz game",
+    );
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const notifyError = vi.fn();
+
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+
+    expect(notifyError).not.toHaveBeenCalled();
+    expect(player.playerId.value).toBeNull();
+    expect(player.state.value).toBeNull();
+    expect(player.info.value).toEqual(QUIZ_INFO);
     expect(storedPlayerId.value).toBeNull();
   });
 
