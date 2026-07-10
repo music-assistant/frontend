@@ -204,7 +204,7 @@ export function isMusicQuizProviderEvent(
   value: unknown,
 ): value is MusicQuizProviderEvent {
   if (!value || typeof value !== "object" || !("event" in value)) return false;
-  if (value.event === "game_removed") return true;
+  if (value.event === "game_removed") return !("state" in value);
   return value.event === "game_updated" && "state" in value;
 }
 
