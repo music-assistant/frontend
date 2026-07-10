@@ -23,7 +23,7 @@ export function createMusicQuizPlayerHeartbeat(
     stop();
     activePlayerId = playerId;
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", refresh);
+    window.addEventListener("focus", handleFocus);
     timer = setInterval(() => void refresh(), HEARTBEAT_INTERVAL_MS);
     return refresh();
   }
@@ -37,7 +37,7 @@ export function createMusicQuizPlayerHeartbeat(
     requestQueued = false;
     notifiedErrorPlayerId = null;
     document.removeEventListener("visibilitychange", handleVisibilityChange);
-    window.removeEventListener("focus", refresh);
+    window.removeEventListener("focus", handleFocus);
   }
 
   function refresh() {
@@ -90,6 +90,10 @@ export function createMusicQuizPlayerHeartbeat(
 
   function handleVisibilityChange() {
     if (document.visibilityState === "visible") void refresh();
+  }
+
+  function handleFocus() {
+    void refresh();
   }
 
   function reportError(playerId: string, error: unknown) {
