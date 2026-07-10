@@ -9,7 +9,10 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-import { isNoActiveMusicQuizError } from "@/helpers/music_quiz";
+import {
+  isMusicQuizPlayerNotFoundError,
+  isNoActiveMusicQuizError,
+} from "@/helpers/music_quiz";
 
 describe("music quiz error helpers", () => {
   it("matches the no-active-game server message", () => {
@@ -22,5 +25,17 @@ describe("music quiz error helpers", () => {
     expect(isNoActiveMusicQuizError(new Error("temporary network error"))).toBe(
       false,
     );
+  });
+
+  it("does not match generic non-quiz 'no active' errors", () => {
+    expect(
+      isNoActiveMusicQuizError(new Error("No active output device selected")),
+    ).toBe(false);
+  });
+
+  it("matches player-not-found errors", () => {
+    expect(
+      isMusicQuizPlayerNotFoundError(new Error("Music Quiz player not found")),
+    ).toBe(true);
   });
 });
