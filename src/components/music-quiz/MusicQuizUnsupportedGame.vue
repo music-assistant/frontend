@@ -18,7 +18,7 @@
         :disabled="busy"
         @click="emit('endGame')"
       >
-        <Trash2 class="size-4" />
+        <Square class="size-4" />
         {{ $t("providers.music_quiz.end_game") }}
       </Button>
     </CardFooter>
@@ -35,7 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { $t } from "@/plugins/i18n";
-import { Trash2, TriangleAlert } from "@lucide/vue";
+import { Square, TriangleAlert } from "@lucide/vue";
 
 withDefaults(defineProps<{ canEndGame?: boolean; busy?: boolean }>(), {
   canEndGame: false,
