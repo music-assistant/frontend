@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-hold="onHold"
     flat
     class="panel-item"
     :class="{
@@ -10,7 +11,9 @@
     :ripple="false"
     :disabled="!player.available"
     @click="$emit('click', player)"
+    @click.capture="swallowClickAfterHold"
     @contextmenu.prevent="openPlayerMenu"
+    @touchstart.passive="onTouchStart"
   >
     <!-- now playing media -->
     <v-list-item class="panel-item-details" flat :ripple="false">
@@ -240,6 +243,10 @@
 import { Button } from "@/components/ui/button";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { useActiveSource } from "@/composables/activeSource";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getMediaImageUrl,
@@ -300,14 +307,18 @@ const playerQueue = computed(() => {
 });
 
 const openPlayerMenu = function (evt: Event) {
+  const pos = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: getPlayerMenuItems(compProps.player, playerQueue.value, {
       context: "player",
     }),
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    posX: pos.x,
+    posY: pos.y,
   });
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(openPlayerMenu);
 
 const canPlayPause = computed(() => {
   if (activeSource.value) {

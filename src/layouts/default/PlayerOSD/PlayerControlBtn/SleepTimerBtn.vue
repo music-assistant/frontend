@@ -8,14 +8,14 @@
     <Tooltip>
       <TooltipTrigger as-child>
         <Button
-          variant="outline"
+          :variant="pill ? 'ghost-outline' : 'outline'"
           size="xs"
           :class="['gap-1 tabular-nums', pill ? pillClass : '']"
           :aria-label="$t('sleep_timer')"
           v-bind="$attrs"
           @click.stop="openMenu"
         >
-          <Moon :size="16" />
+          <Moon :size="16" class="moon-rocking" />
           <span>{{ remaining }}</span>
         </Button>
       </TooltipTrigger>
@@ -57,9 +57,9 @@ withDefaults(
   { pill: false },
 );
 
-// Frosted pill styling, matching the other fullscreen header controls.
-const pillClass =
-  "relative bg-background/40 backdrop-blur-md hover:bg-background/60";
+// The ghost-outline variant provides the pill look, matching the other
+// fullscreen header controls.
+const pillClass = "relative";
 
 // Reactive clock that ticks every second while a timer is active, driving the
 // countdown and the auto-hide when it reaches zero.
@@ -105,3 +105,26 @@ const openMenu = function (evt: MouseEvent) {
   });
 };
 </script>
+
+<style scoped>
+.moon-rocking {
+  transform-origin: 50% 50%;
+  animation: moon-rock 3.2s ease-in-out infinite;
+}
+
+@keyframes moon-rock {
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moon-rocking {
+    animation: none;
+  }
+}
+</style>

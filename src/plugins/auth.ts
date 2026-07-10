@@ -129,6 +129,23 @@ export class AuthManager {
   }
 
   /**
+   * Check if this is a music quiz guest session.
+   * Music Quiz guests authenticate via QR code/join code and have
+   * restricted UI access (only the quiz play view).
+   */
+  isMusicQuizGuest(): boolean {
+    return this.claims?.username === "music_quiz_guest";
+  }
+
+  /**
+   * Check if this is any guest access session (party or music quiz).
+   * Guest sessions have restricted UI access.
+   */
+  isGuestAccessSession(): boolean {
+    return this.isPartyGuest() || this.isMusicQuizGuest();
+  }
+
+  /**
    * Set current user
    */
   setCurrentUser(user: User): void {

@@ -16,8 +16,6 @@ const routes: RouteRecordRaw[] = [
   // which exchanges the short join code for a JWT before navigating here
   {
     path: "/guest",
-    // Guest users don't have access to the player.
-    meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {
@@ -25,6 +23,22 @@ const routes: RouteRecordRaw[] = [
         name: "guest",
         component: () =>
           import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
+      },
+    ],
+  },
+  // Music Quiz guest view - uses minimal layout
+  // Music Quiz guests NEED the web player for listen-in audio (do NOT disable it)
+  {
+    path: "/music-quiz/play",
+    component: () => import("@/layouts/PartyGuestLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "music-quiz-play",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"
+          ),
       },
     ],
   },
@@ -326,6 +340,14 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: "/music-quiz",
+        name: "music-quiz",
+        component: () =>
+          import(
+            /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizDashboardView.vue"
+          ),
+      },
+      {
         path: "/settings",
         name: "settings",
         component: () =>
@@ -422,11 +444,11 @@ const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
-            path: "serverlogs",
-            name: "serverlogs",
+            path: "diagnostics",
+            name: "diagnostics",
             component: () =>
               import(
-                /* webpackChunkName: "serverlogs" */ "@/views/settings/ServerLogs.vue"
+                /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
               ),
             props: true,
             meta: { requiresAdmin: true },

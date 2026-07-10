@@ -321,6 +321,11 @@
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
               <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <!-- audio analysis details (full track details only) -->
+              <AudioAnalysisMetadata
+                v-if="item.media_type == MediaType.TRACK"
+                :audio-metadata="(item as Track).audio_metadata"
+              />
               <!-- slot for extra action icons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
               <!-- merge genre button (admin only) -->
@@ -380,15 +385,18 @@
                 $vuetify.display.mobile ? 15 : 25,
               )"
               :key="genre.item_id"
+              v-hold="(e: Event) => onHold(e, genre)"
               color="blue-grey lighten-1"
               style="margin-right: 5px; margin-bottom: 5px"
               small
               outlined
               class="cursor-pointer"
               @click="handleMediaItemClick(genre, 0, 0)"
+              @click.capture="swallowClickAfterHold"
               @contextmenu.prevent="
                 (e: MouseEvent) => showGenreChipContextMenu(e, genre)
               "
+              @touchstart.passive="onTouchStart"
             >
               {{ genre.name }}
             </v-chip>
@@ -424,6 +432,7 @@
 
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar.vue";
+import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -432,6 +441,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import {
@@ -443,10 +456,8 @@ import {
   parseBool,
   truncateString,
 } from "@/helpers/utils";
-import {
-  ContextMenuItem,
-  getContextMenuItems,
-} from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
@@ -537,7 +548,7 @@ watch(shortcutsPreference, async () => {
   }
 });
 
-const showGenreChipContextMenu = (evt: MouseEvent, genre: Genre) => {
+const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (
     !compProps.item ||
     !isAdmin.value ||
@@ -562,12 +573,17 @@ const showGenreChipContextMenu = (evt: MouseEvent, genre: Genre) => {
       },
     },
   ];
+  const pos = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: evt.clientX,
-    posY: evt.clientY,
+    posX: pos.x,
+    posY: pos.y,
   });
 };
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  showGenreChipContextMenu,
+);
 
 const albumClick = function (item: Album | ItemMapping) {
   // album entry clicked
@@ -678,6 +694,7 @@ const mergeGenre = () => {
   eventbus.emit("mergeGenreDialog", {
     genreIds: [compProps.item.item_id],
     genreNames: [compProps.item.name],
+    genreContentTypes: [(compProps.item as Genre).content_type],
   });
 };
 

@@ -5,6 +5,9 @@
       <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
     </div>
 
+    <!-- Listen in (shared audio) -->
+    <PartyListenIn />
+
     <!-- Search Section -->
     <PartySearchBar
       ref="searchBarRef"
@@ -203,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import PartyListenIn from "@/components/party/PartyListenIn.vue";
 import PartyQueueSection from "@/components/party/PartyQueueSection.vue";
 import PartyResultItem from "@/components/party/PartyResultItem.vue";
 import PartySearchBar from "@/components/party/PartySearchBar.vue";

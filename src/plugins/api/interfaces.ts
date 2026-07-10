@@ -339,6 +339,7 @@ export enum EventType {
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
+  PROVIDER_EVENT = "provider_event",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -723,6 +724,12 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AudioMetadata {
+  // Audio analysis details (e.g. bpm, musical key).
+  bpm?: number | null;
+  musical_key?: string | null;
+}
+
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
@@ -730,6 +737,8 @@ export interface Track extends MediaItem {
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
+  // only populated when the full track is requested (get_track), never on listings
+  audio_metadata?: AudioMetadata | null;
 }
 
 export interface Playlist extends MediaItem {
@@ -1341,6 +1350,8 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+  // Shared-audio experience for guests: "venue" (opt-in) or "remote" (silent disco).
+  mode?: "venue" | "remote";
 }
 
 export interface SmartPlaylistRules {

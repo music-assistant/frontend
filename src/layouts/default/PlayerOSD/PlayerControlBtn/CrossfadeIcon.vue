@@ -1,13 +1,7 @@
 <template>
-  <!--
-    Crossfade ("blend") icon.
-    Inlined version of the lucide "blend" icon (two overlapping circles) so that,
-    when smart fades are active, we can animate a small "twinkle" that travels
-    along the stroke of each circle.
-  -->
   <svg
     class="crossfade-icon"
-    :class="{ 'is-smart': smart }"
+    :class="{ 'is-smart': smart, 'is-active': active && !smart }"
     :width="size"
     :height="size"
     viewBox="0 0 24 24"
@@ -18,8 +12,8 @@
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <circle cx="9" cy="9" r="7" />
-    <circle cx="15" cy="15" r="7" />
+    <circle class="crossfade-ring crossfade-ring--a" cx="9" cy="9" r="7" />
+    <circle class="crossfade-ring crossfade-ring--b" cx="15" cy="15" r="7" />
     <template v-if="smart">
       <circle class="crossfade-spark" cx="9" cy="9" r="7" />
       <circle
@@ -36,10 +30,12 @@
 withDefaults(
   defineProps<{
     size?: number | string;
+    active?: boolean;
     smart?: boolean;
   }>(),
   {
     size: 24,
+    active: false,
     smart: false,
   },
 );
@@ -49,31 +45,25 @@ withDefaults(
 .crossfade-icon {
   display: inline-block;
   vertical-align: middle;
-  /* allow the spark glow to extend slightly beyond the icon box */
   overflow: visible;
 }
 
-/* whole-icon "breathing" glow so the smart state is noticeable at a glance */
+.crossfade-icon.is-active .crossfade-ring {
+  animation: crossfade-ring-fade 2.4s ease-in-out infinite;
+}
+
+.crossfade-icon.is-active .crossfade-ring--b {
+  animation-delay: -1.2s;
+}
+
 .crossfade-icon.is-smart {
   animation: crossfade-smart-pulse 2.4s ease-in-out infinite;
 }
 
-/*
-  In smart mode fade the two base rings a touch so the bright travelling spark
-  clearly stands out. This matters most when the icon sits on the solid
-  primary-coloured (blue) button: there the stroke is white, and an equally
-  white spark would otherwise be invisible against the (white) rings.
-*/
-.crossfade-icon.is-smart > circle:not(.crossfade-spark) {
+.crossfade-icon.is-smart .crossfade-ring {
   opacity: 0.4;
 }
 
-/*
-  A short bright dash that travels around each circle.
-  The circumference of a circle with r=7 is 2 * PI * 7 ≈ 43.98, so we use a
-  dash of length 4 with a gap that fills the rest, then animate the offset by
-  the full circumference for a seamless loop.
-*/
 .crossfade-spark {
   stroke: color-mix(in srgb, currentColor 20%, #ffffff);
   stroke-linecap: round;
@@ -84,8 +74,17 @@ withDefaults(
 }
 
 .crossfade-spark--delayed {
-  /* offset the second circle's spark so both twinkles are out of phase */
   animation-delay: -1.2s;
+}
+
+@keyframes crossfade-ring-fade {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 @keyframes crossfade-spark-travel {
@@ -116,7 +115,8 @@ withDefaults(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crossfade-icon.is-smart {
+  .crossfade-icon.is-smart,
+  .crossfade-icon.is-active .crossfade-ring {
     animation: none;
   }
   .crossfade-spark {

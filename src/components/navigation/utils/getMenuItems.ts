@@ -1,6 +1,11 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import { DEFAULT_MENU_ITEMS } from "@/constants";
+import MusicQuizIcon from "@/components/icons/MusicQuizIcon.vue";
+import {
+  DEFAULT_MENU_ITEMS,
+  MENU_ITEMS_SEEN_PREFERENCE_KEY,
+  PLUGIN_MENU_ITEMS,
+} from "@/constants";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
@@ -29,20 +34,54 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
+const MENU_ITEMS_STORAGE_KEY = "frontend.settings.menu_items";
+const MENU_ITEMS_SEEN_STORAGE_KEY = "frontend.settings.menu_items_seen";
+const pluginMenuItems = new Set(PLUGIN_MENU_ITEMS);
+
+function parseMenuItemsPreference(value?: string | string[]): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : value.split(",");
+}
+
+function getSeenMenuItems(enabledItems: string[]): Set<string> {
+  const userSeenMenuItems = parseMenuItemsPreference(
+    store.currentUser?.preferences?.[MENU_ITEMS_SEEN_PREFERENCE_KEY] as
+      | string
+      | string[]
+      | undefined,
+  );
+  if (userSeenMenuItems.length > 0) {
+    return new Set(userSeenMenuItems);
+  }
+
+  const storedSeenMenuItems = parseMenuItemsPreference(
+    localStorage.getItem(MENU_ITEMS_SEEN_STORAGE_KEY) ?? undefined,
+  );
+  if (storedSeenMenuItems.length > 0) {
+    return new Set(storedSeenMenuItems);
+  }
+
+  const seededSeenItems = new Set(enabledItems);
+  for (const menuItem of DEFAULT_MENU_ITEMS) {
+    if (!pluginMenuItems.has(menuItem)) {
+      seededSeenItems.add(menuItem);
+    }
+  }
+  return seededSeenItems;
+}
+
 export const getMenuItems = function () {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   const userMenuItems = store.currentUser?.preferences?.menu_items as
     | string
     | string[]
     | undefined;
-  const storedMenuConf = localStorage.getItem("frontend.settings.menu_items");
+  const storedMenuConf = localStorage.getItem(MENU_ITEMS_STORAGE_KEY);
 
   let enabledItems: string[];
-  if (userMenuItems) {
+  if (userMenuItems !== undefined) {
     // If user preferences has menu_items, use it (it could be array or comma-separated string)
-    enabledItems = Array.isArray(userMenuItems)
-      ? userMenuItems
-      : userMenuItems.split(",");
+    enabledItems = parseMenuItemsPreference(userMenuItems);
   } else if (storedMenuConf) {
     // Fallback to localStorage during migration
     enabledItems = storedMenuConf.split(",");
@@ -50,12 +89,17 @@ export const getMenuItems = function () {
     // Final fallback to defaults
     enabledItems = DEFAULT_MENU_ITEMS;
   }
+
+  const enabledItemsSet = new Set(enabledItems);
+  const seenMenuItems = getSeenMenuItems(enabledItems);
   const items: MenuItem[] = [];
-  // we loop through DEFAULT_MENU_ITEMS to respect default order;
-  // new items added to DEFAULT_MENU_ITEMS automatically appear unless explicitly disabled
+
+  // Loop through defaults to keep menu order stable.
   for (const enabledMenuItemStr of DEFAULT_MENU_ITEMS) {
-    // Check if item is enabled (user preferences or localStorage migration fallback)
-    if (!enabledItems.includes(enabledMenuItemStr)) continue;
+    const explicitlyEnabled = enabledItemsSet.has(enabledMenuItemStr);
+    const isNewDefaultItem = !seenMenuItems.has(enabledMenuItemStr);
+    if (!explicitlyEnabled && !isNewDefaultItem) continue;
+
     if (enabledMenuItemStr === "discover") {
       items.push({
         label: "discover",
@@ -90,6 +134,16 @@ export const getMenuItems = function () {
         path: "/party",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("party"),
+        group: "explore",
+      });
+    }
+    if (enabledMenuItemStr === "music_quiz") {
+      items.push({
+        label: "providers.music_quiz.title",
+        icon: MusicQuizIcon,
+        path: "/music-quiz",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("music_quiz"),
         group: "explore",
       });
     }

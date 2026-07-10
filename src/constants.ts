@@ -3,6 +3,7 @@ export const DEFAULT_MENU_ITEMS = [
   "search",
   "browse",
   "party",
+  "music_quiz",
   "artists",
   "albums",
   "tracks",
@@ -14,6 +15,9 @@ export const DEFAULT_MENU_ITEMS = [
   "genres",
   "settings",
 ];
+
+export const PLUGIN_MENU_ITEMS = ["party", "music_quiz"];
+export const MENU_ITEMS_SEEN_PREFERENCE_KEY = "menu_items_seen";
 
 export const SYNCGROUP_PREFIX = "syncgroup_";
 

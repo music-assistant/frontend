@@ -1,27 +1,48 @@
 <template>
-  <div class="w-auto h-6">
+  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
-        class="relative flex items-center select-none touch-none w-full h-8"
+        class="relative flex items-center select-none touch-none w-full"
+        :class="[
+          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          hasWaveform && canSeek ? 'cursor-pointer' : '',
+        ]"
         :disabled="!canSeek"
         :min="0"
         :max="store.activePlayer?.current_media?.duration ?? 0"
         :step="0.1"
         @value-commit="stopDragging"
         @pointerenter="isThumbHidden = !canSeek"
-        @pointerleave="isThumbHidden = true"
+        @pointermove="onTrackPointerMove"
+        @pointerleave="
+          isThumbHidden = true;
+          hoverPercent = null;
+        "
       >
         <!-- color-mix is the same logic as tailwind's bg-color/30 -->
         <SliderTrack
           data-slot="slider-track"
-          class="relative grow rounded-full h-1"
-          :style="{
-            'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
-          }"
+          class="relative grow rounded-full"
+          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
+          :style="
+            hasWaveform
+              ? undefined
+              : {
+                  'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
+                }
+          "
         >
+          <WaveformTrack
+            v-if="hasWaveform"
+            :data="waveform!"
+            :color="color"
+            :progress-percent="progressPercent"
+            :hover-percent="hoverPercent"
+          />
           <SliderRange
+            v-else
             data-slot="slider-range"
             class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
@@ -49,7 +70,9 @@
           :class="
             cn(
               'w-2.5 h-2.5 rounded-full shadow-sm',
-              !isThumbHidden || isDragging ? 'block' : 'hidden',
+              !hasWaveform && (!isThumbHidden || isDragging)
+                ? 'block'
+                : 'hidden',
             )
           "
         />
@@ -105,16 +128,20 @@ import computeElapsedTime from "@/helpers/elapsed";
 import { computeChapterTicks } from "@/helpers/chapters";
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from "reka-ui";
 import { cn } from "@/lib/utils";
+import WaveformTrack from "./WaveformTrack.vue";
 
 // properties
 export interface Props {
   showLabels?: boolean;
   color?: string;
+  // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
+  waveform?: number[] | null;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
+  waveform: null,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -314,6 +341,24 @@ const chapterTicks = computed(() =>
     store.activePlayer?.current_media?.duration,
   ),
 );
+
+const hasWaveform = computed(() => !!props.waveform?.length);
+
+const progressPercent = computed(() => {
+  const duration = store.activePlayer?.current_media?.duration;
+  if (!duration) return 0;
+  return (curTimeValue.value / duration) * 100;
+});
+
+// Hover seek-preview position (waveform mode only), as 0-100 percent.
+const hoverPercent = ref<number | null>(null);
+
+const onTrackPointerMove = (evt: PointerEvent) => {
+  if (!hasWaveform.value || !canSeek.value) return;
+  const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+  if (!rect.width) return;
+  hoverPercent.value = ((evt.clientX - rect.left) / rect.width) * 100;
+};
 
 //watch
 watch(computedElapsedTime, (newTime) => {

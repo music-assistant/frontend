@@ -108,7 +108,7 @@ import {
 } from "@/composables/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
 import { copyToClipboard } from "@/helpers/utils";
-import { type ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import {
   type BackgroundTask,

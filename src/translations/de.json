@@ -225,10 +225,11 @@
                 "preamp": "Vorverstärker",
                 "add_band_channel": "Band hinzufügen (nur {channel})",
                 "band_channel": "Band {index} (nur {channel})",
-                "show_multichannel_controls": "Multi-Channel-Steuerung anzeigen",
+                "show_multichannel_controls": "Mehrkanalsteuerung aktivieren",
                 "edited_channel": "EQ-Antwort für diesen Kanal\/diese Kanäle aufzeichnen",
                 "channel": "Das Band wird angewendet auf",
-                "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}"
+                "per_channel_preamp": "Zusätzlicher Pegel für Vorverstärker für {channel}",
+                "disable_multichannel_controls": "Mehrkanalsteuerung deaktivieren"
             },
             "tone_control": {
                 "bass_level": "Basspegel",
@@ -514,7 +515,7 @@
         "audio_analysis": "Audioanalyse",
         "sendspin_static_delay": {
             "label": "Statische Wiedergabeverzögerung (ms)",
-            "description": "Offset in Millisekunden, um dieses Wiedergabegerät mit anderen Playern zu synchronisieren. Erhöhe den Wert, wenn die Audiowiedergabe zu verzögert ist, beispielsweise um Latenzen von einem Verstärker, Aktivlautsprechern oder dem Betriebssystem auszugleichen."
+            "description": "Offset in Millisekunden, um dieses Wiedergabegerät mit anderen Wiedergabegeräten zu synchronisieren. Erhöhe den Wert, wenn die Audiowiedergabe zu verzögert ist, beispielsweise um Latenzen von einem Verstärker, Aktivlautsprechern oder dem Betriebssystem auszugleichen."
         },
         "audio_analysis_coverage": {
             "title": "Abdeckung der Audioanalyse",
@@ -547,7 +548,7 @@
         "audio_analysis_failures": {
             "title": "Audioanalysefehler",
             "description": "Titel, deren Analyse fehlgeschlagen ist, werden bei zukünftigen Scans übersprungen. Lösche einen Eintrag, um den Fehler zu beheben und eine erneute Analyse zu ermöglichen.",
-            "col_item": "Artikel",
+            "col_item": "Element",
             "col_reason": "Grund",
             "col_retry": "Nächster Versuch",
             "col_actions": "Aktionen",
@@ -564,7 +565,15 @@
             "cleared_many": "{0} Fehler wurden behoben.",
             "clear_error": "Fehler konnten nicht behoben werden. Bitte versuche es erneut.",
             "load_error": "Fehler konnten nicht vom Server geladen werden."
-        }
+        },
+        "queue_global_settings_hint": "Diese Einstellungen gelten nur für diese Warteschlange. Du kannst auch die Standardeinstellungen konfigurieren, die für alle Wiedergabegeräte-Warteschlangen gelten.",
+        "queue_global_settings_link": "Globale Warteschlangeneinstellungen öffnen",
+        "protocol_provider_unavailable": "Der Anbieter für dieses Ausgabeprotokoll ist derzeit nicht verfügbar.",
+        "protocol_multi_info": "Dieses Wiedergabegerät unterstützt mehrere Ausgabeprotokolle. Music Assistant verbindet diese automatisch miteinander, sodass sie wie ein einziger Player funktionieren – aktiviere einfach die Protokolle, die du verwenden möchtest.",
+        "protocol_enable_label": "Ausgabeprotokolle aktivieren",
+        "protocol_configure_title": "Konfigurieren {name}",
+        "protocol_configure_label": "Ausgabeprotokolle konfigurieren",
+        "protocol_configure_title_via": "{name} konfigurieren (unter {base})"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -632,7 +641,7 @@
         "copy_uri": "URI in die Zwischenablage kopieren",
         "select_all": "Alle Einträge auswählen",
         "filter_provider": "Filter nach Musikanbieter",
-        "in_provider_library": "Dieser Artikel befindet sich in der Bibliothek des Anbieters.",
+        "in_provider_library": "Dieses Element befindet sich in der Bibliothek des Anbieters.",
         "hide_empty_genres": "Leere Genres ausblenden",
         "show_empty_genres": "Leere Genres anzeigen",
         "filter_genre": "Nach Genre filtern",
@@ -787,7 +796,9 @@
             }
         },
         "click_to_expand": "Zur Anzeige aller Wiedergabegeräte klicken",
-        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabegeräte-Anbieter übergeben. Der Wiedergabegeräte-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird."
+        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabegeräte-Anbieter übergeben. Der Wiedergabegeräte-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird.",
+        "more_info": "Weitere Informationen",
+        "player_not_found": "Wiedergabegerät nicht gefunden"
     },
     "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Quelle auswählen",
@@ -966,7 +977,7 @@
     "search_all_providers": "Suche bei allen Anbietern nach Übereinstimmungen",
     "search_all_providers_confirm": "Möchtest du wirklich bei allen Anbietern nach passenden Ergebnissen suchen? Dieser Vorgang kann einige Zeit dauern und wird im Hintergrund ausgeführt.",
     "remove_provider_mapping": "Anbieterzuordnung entfernen",
-    "remove_provider_mapping_confirm": "Möchtest du diese Anbieterzuordnung wirklich entfernen? Dadurch wird die Verknüpfung des Artikels mit den aktuellen Artikeldetails aufgehoben. Sie kann wiederhergestellt werden, wenn du erneut nach allen Anbieterübereinstimmungen suchst.",
+    "remove_provider_mapping_confirm": "Möchtest du diese Anbieterzuordnung wirklich entfernen? Dadurch wird die Verknüpfung des Elements mit den aktuellen Elementdetails aufgehoben. Sie kann wiederhergestellt werden, wenn du erneut nach allen Anbieterübereinstimmungen suchst.",
     "map_provider_mapping": "Diesen Anbietereintrag dem aktuellen Eintrag zuordnen",
     "player_tip": {
         "selected_player": "Ausgewähltes Wiedergabegerät",
@@ -1295,8 +1306,6 @@
         "no_rules_desc": "Die Titel werden zufällig aus deiner gesamten Bibliothek ausgewählt. Füge eine Regel hinzu, um die Auswahl einzugrenzen.",
         "no_rules_title": "Alle Titel der Bibliothek",
         "op_between": "zwischen",
-        "op_greater_than": "größer als",
-        "op_less_than": "kleiner als",
         "picker_empty_no_match": "Kein {label} entspricht deiner Suche.",
         "picker_empty_remote": "Gib einen Suchbegriff ein, um nach einem {label} zu suchen.",
         "picker_empty_search": "Gib mindestens 2 Zeichen ein, um ein {label} zu finden.",
@@ -1324,12 +1333,23 @@
         "field_explicit": "Explizit",
         "explicit_allowed": "Erlaubt",
         "explicit_only": "Nur explizit",
-        "explicit_not_allowed": "Nicht erlaubt"
+        "explicit_not_allowed": "Nicht erlaubt",
+        "field_duration": "Dauer",
+        "field_last_played": "Zuletzt gespielt",
+        "duration_min": "Min",
+        "duration_max": "Max",
+        "unit_hours": "Stunden",
+        "unit_days": "Tage",
+        "unit_weeks": "Wochen",
+        "unit_months": "Monate",
+        "last_played_ago": "vor",
+        "op_greater_than": "größer als",
+        "op_less_than": "weniger als"
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
     "system": "System",
-    "add_url_item_failed": "Fehler beim Hinzufügen des Artikels",
+    "add_url_item_failed": "Fehler beim Hinzufügen des Elements",
     "added_to_library": "\"{0}\"zur Bibliothek hinzugefügt",
     "browse_by_genre": "Nach Genre durchsuchen",
     "top_picks_for_you": "Top-Auswahl für dich",
@@ -1363,10 +1383,11 @@
     "genre_content_type": {
         "all": "Alle",
         "audiobooks": "Hörbücher",
-        "podcasts": "Podcasts"
+        "podcasts": "Podcasts",
+        "music": "Musik"
     },
     "up_next": "Als Nächstes",
-    "queue_buffered_explanation": "Dieser Titel wurde vom Player bereits für die nächste Wiedergabe in den Puffer geladen.",
+    "queue_buffered_explanation": "Dieser Titel wurde vom Wiedergabegerät bereits für die nächste Wiedergabe in den Puffer geladen.",
     "queue_reorder": "Zum Neuanordnen ziehen",
     "lyrics_show": "Zeige den Liedtext für diesen Titel an",
     "lyrics_hide": "Liedtext für diesen Titel ausblenden",
@@ -1390,5 +1411,18 @@
         "60": "1 Stunde",
         "120": "2 Stunden"
     },
-    "shuffle_smart_active": "Die automatische Zufallswiedergabe ist aktiviert. Klicke hier, um sie auszuschalten."
+    "shuffle_smart_active": "Die automatische Zufallswiedergabe ist aktiviert. Klicke hier, um sie auszuschalten.",
+    "goto_album_radio": "Zum Album-Radio",
+    "goto_artist_radio": "Zum Interpreten-Radio",
+    "goto_genre_radio": "Zum Genre-Radio",
+    "goto_playlist_radio": "Zum Wiedergabelisten-Radio-Seite",
+    "goto_radio": "Zum Radio",
+    "goto_track_radio": "Zum Lieder-Radio",
+    "autoplay_dynamic_title": "Die automatische Wiedergabe ist aktiviert.",
+    "autoplay_dynamic_lead": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt:",
+    "autoplay_dynamic_desc": "Deine Warteschlange wird entsprechend deiner Auswahl dynamisch gefüllt.",
+    "autoplay_on_desc_sources": "In deiner Wiedergabeliste läuft gerade „{0}“. Wenn das Lied zu Ende ist, sorgt die Autoplay-Funktion dafür, dass die Musik weiterläuft, indem sie weitere Titel entsprechend deiner Vorlieben hinzufügt.",
+    "autoplay_off_desc_sources": "In deiner Wiedergabeliste läuft gerade „{0}“ und die Wiedergabe endet, sobald der Titel zu Ende ist. Aktiviere die automatische Wiedergabe, damit die Musik automatisch mit weiteren Titeln weiterläuft.",
+    "shuffle_dynamic_active": "Die intelligente Zufallswiedergabe ist aktiviert, da die Wiedergabeliste im dynamischen Modus abgespielt wird.",
+    "repeat_dynamic_unavailable": "Die Wiederholungsfunktion ist nicht verfügbar, während die Wiedergabeliste im dynamischen Modus läuft."
 }
