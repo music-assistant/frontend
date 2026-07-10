@@ -93,6 +93,16 @@ export const getMenuItems = function () {
         group: "explore",
       });
     }
+    if (enabledMenuItemStr === "music_quiz") {
+      items.push({
+        label: "music_quiz.title",
+        icon: () => import("@/components/icons/MusicQuizIcon.vue"),
+        path: "/music-quiz",
+        isLibraryNode: false,
+        hidden: !store.enabledPlugins.has("music_quiz"),
+        group: "explore",
+      });
+    }
     if (enabledMenuItemStr === "artists") {
       items.push({
         label: "artists",

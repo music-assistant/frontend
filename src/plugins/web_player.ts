@@ -173,6 +173,11 @@ function resolvePreferredMode(): WebPlayerMode {
     return WebPlayerMode.DISABLED;
   }
 
+  // Force sendspin mode for music quiz guests (listen-in audio support)
+  if (authManager.isMusicQuizGuest()) {
+    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+  }
+
   const webPlayerEnabledPref =
     window.localStorage.getItem("frontend.settings.web_player_enabled") ||
     "true";
