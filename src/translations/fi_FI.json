@@ -145,10 +145,6 @@
                 "dark": "Tumma"
             }
         },
-        "menu_items": {
-            "label": "Käytössä olevat valikkokohdat",
-            "description": "Määritä, mitkä kohteet näytetään valikossa. \n\nHuomaa, että jos poistat asetukset näkyvistä, saatat lukita itsesi ulos. \n \nSaadaksesi taas hallinnan, sinun on syötettävä asetuksiisi johtava polku manuaalisesti tai tyhjennettävä selaimesi evästeet. Käytä omalla vastuulla!"
-        },
         "language": {
             "label": "Kieli",
             "options": {

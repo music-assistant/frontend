@@ -148,10 +148,6 @@
                 "dark": "Sötét"
             }
         },
-        "menu_items": {
-            "label": "Engedélyezett menüelemek",
-            "description": "Állítsa be, hogy mely elemek jelenjenek meg a menüben.\n\nVegye figyelembe, hogy ha letiltja a beállításokat, kizárhatja magát.\n\nEbben az esetben manuálisan kell megadnia a beállítások elérési útját, vagy törölnie kell a böngésző sütiket, hogy ismét hozzáférjen. Saját felelősségére használja!"
-        },
         "language": {
             "label": "Nyelv",
             "options": {

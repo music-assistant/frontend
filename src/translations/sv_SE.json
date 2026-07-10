@@ -148,10 +148,6 @@
                 "dark": "Mörk"
             }
         },
-        "menu_items": {
-            "label": "Aktiverade menyalternativ",
-            "description": "Konfigurera vilka objekt som ska visas i menyn.\n\nObservera att om du inaktiverar inställningarna kan du låsa dig ute.\n\nFör att få åtkomst igen måste du manuellt ange sökvägen till inställningarna eller rensa webbläsarens cookies. Använd på egen risk!"
-        },
         "language": {
             "label": "Språk",
             "options": {

@@ -17,11 +17,12 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Pencil, Settings } from "@lucide/vue";
+import { LogOut, MoreVertical, Pencil, Settings, SquarePen } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 const isEditMode = computed(() => store.homescreenEditMode);
+const isMenuEditMode = computed(() => store.navMenuEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
@@ -40,6 +41,11 @@ const handleEditHomescreen = () => {
   setOpenMobile(false);
   router.push("/");
   eventbus.emit("homescreen-edit-toggle");
+};
+
+const handleEditMenu = () => {
+  // Keep the sidebar (sheet on mobile) open: the menu itself is being edited.
+  store.navMenuEditMode = !store.navMenuEditMode;
 };
 
 const handleLogout = () => {
@@ -126,6 +132,10 @@ const handleLogout = () => {
                   : "homescreen_edit_enable",
               )
             }}
+          </DropdownMenuItem>
+          <DropdownMenuItem @click="handleEditMenu">
+            <SquarePen class="size-4" />
+            {{ $t(isMenuEditMode ? "menu_edit_disable" : "menu_edit_enable") }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"

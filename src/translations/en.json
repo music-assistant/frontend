@@ -161,9 +161,9 @@
                 "dark": "Dark"
             }
         },
-        "menu_items": {
-            "label": "Enabled menu items",
-            "description": "Configure which items to show in the menu.\n\nNote that if you disable the settings you may lock yourself out.\n\nTo gain access again, you will need to manually enter the path to the settings or clear the browser cookies. Use at your own risk!"
+        "customize_menu": {
+            "label": "Customize menu",
+            "description": "Put the navigation menu in edit mode to show, hide, reorder and rename its items."
         },
         "language": {
             "label": "Language",
@@ -833,6 +833,13 @@
     "this_device": "This device",
     "homescreen_edit_enable": "Edit Home screen",
     "homescreen_edit_disable": "Leave edit mode",
+    "menu_edit_enable": "Edit menu",
+    "menu_edit_disable": "Leave edit mode",
+    "menu_item_hide": "Hide menu item",
+    "menu_item_show": "Show menu item",
+    "menu_section_rename": "Rename section",
+    "menu_section_hide_label": "Hide section label",
+    "menu_section_show_label": "Show section label",
     "lyrics_will_appear_soon": "Lyrics will appear when the song begins...",
     "optional": "Optional",
     "created": "Created",

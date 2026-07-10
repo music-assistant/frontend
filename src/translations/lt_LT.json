@@ -148,10 +148,6 @@
                 "dark": "Tamsu"
             }
         },
-        "menu_items": {
-            "label": "Įjungti meniu elementai",
-            "description": "Konfigūruokite, kuriuos elementus rodyti meniu. \n \n Atminkite, kad išjungę nustatymus galite užsiblokuoti. \n \n Norėdami vėl gauti prieigą, turėsite rankiniu būdu įvesti kelią į nustatymus arba išvalyti naršyklės slapukus. Naudokite savo pačių rizika!"
-        },
         "language": {
             "label": "Kalba",
             "options": {

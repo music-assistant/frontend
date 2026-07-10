@@ -148,10 +148,6 @@
                 "dark": "Escuro"
             }
         },
-        "menu_items": {
-            "label": "Itens de menu ativados",
-            "description": "Configure os itens a mostrar no menu.\n\nNote que, se desativar as definições, poderá ficar sem acesso.\n\nPara voltar a ter acesso, terá de introduzir manualmente o caminho para as definições ou limpar os cookies do browser. Utilize por sua conta e risco!"
-        },
         "language": {
             "label": "Idioma",
             "options": {
