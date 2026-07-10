@@ -144,6 +144,7 @@
         "radio_in_library": "Radio in library",
         "server_logging": "Server logging",
         "download_log": "Download logfile",
+        "download_diagnostics": "Download diagnostics",
         "edit_group_members": "Edit group members",
         "add_new_provider_button": "Add {0} provider",
         "add_group_player": "Add group player",
