@@ -41,9 +41,9 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.875rem;
 }
 
@@ -77,21 +77,21 @@ defineProps<{
 }
 
 .quiz-leaderboard li.is-current-player {
-  background: hsl(var(--primary) / 0.12);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .quiz-leaderboard li.is-current-player .quiz-leaderboard__name {
-  color: hsl(var(--primary));
+  color: var(--primary);
   font-weight: 800;
 }
 
 .quiz-leaderboard li.is-current-player small {
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 .quiz-leaderboard small {
   margin-right: 0.5rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-leaderboard__score {
@@ -103,7 +103,7 @@ defineProps<{
 }
 
 .quiz-leaderboard__score span {
-  color: hsl(var(--primary));
+  color: var(--primary);
   font-size: 0.8rem;
 }
 </style>

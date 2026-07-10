@@ -13,8 +13,7 @@ const props = withDefaults(
 );
 </script>
 
-<!-- a microphone with a question mark: the sidebar twin of the provider
-     manifest's mdi-microphone-question, drawn in the lucide stroke style -->
+<!-- sidebar Music Quiz icon, drawn in a lucide-like microphone stroke style -->
 <template>
   <svg
     class="music-quiz-icon"
@@ -25,35 +24,28 @@ const props = withDefaults(
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d="M10 3a2.5 2.5 0 0 0-2.5 2.5v6a2.5 2.5 0 0 0 5 0v-6A2.5 2.5 0 0 0 10 3Z"
+      d="M12 12a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3Z"
       stroke="currentColor"
       :stroke-width="props.strokeWidth"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
-      d="M16 10.5v1a6 6 0 0 1-12 0v-1"
+      d="M19 10v1a7 7 0 0 1-14 0v-1"
       stroke="currentColor"
       :stroke-width="props.strokeWidth"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
-      d="M10 17.5V21"
+      d="M12 18v3"
       stroke="currentColor"
       :stroke-width="props.strokeWidth"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
-      d="M17.5 5.5a2.25 2.25 0 1 1 3.2 2.05c-.6.28-.95.65-.95 1.25v.7"
-      stroke="currentColor"
-      :stroke-width="props.strokeWidth"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M19.75 12.75v.01"
+      d="M8 21h8"
       stroke="currentColor"
       :stroke-width="props.strokeWidth"
       stroke-linecap="round"

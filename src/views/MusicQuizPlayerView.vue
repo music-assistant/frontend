@@ -379,9 +379,9 @@ onBeforeUnmount(() => {
 
 .quiz-shell--join,
 .quiz-shell--game {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.9rem;
 }
 
@@ -392,7 +392,7 @@ onBeforeUnmount(() => {
 
 .quiz-shell__intro p {
   margin: 0.3rem 0 0;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-shell__stats {
@@ -403,9 +403,9 @@ onBeforeUnmount(() => {
 }
 
 .quiz-shell__stats span {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: hsl(var(--muted));
+  background: var(--muted);
   padding: 0.2rem 0.6rem;
   font-size: 0.82rem;
 }
@@ -424,7 +424,7 @@ onBeforeUnmount(() => {
 
 .quiz-shell__hint {
   margin: 0;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   text-align: center;
 }
 

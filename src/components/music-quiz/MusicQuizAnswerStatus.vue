@@ -34,9 +34,9 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.875rem;
 }
 
@@ -49,7 +49,7 @@ defineProps<{
 }
 
 .quiz-answer-status small {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-answer-status ul {
@@ -66,15 +66,15 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0.55rem 0.65rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-answer-status li.is-answered {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .quiz-answer-status svg {
@@ -82,7 +82,7 @@ defineProps<{
 }
 
 .quiz-answer-status li.is-answered svg {
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 .quiz-answer-status li span {

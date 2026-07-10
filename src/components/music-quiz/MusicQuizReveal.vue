@@ -90,9 +90,9 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.875rem;
 }
 
@@ -121,9 +121,9 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   height: clamp(220px, 34dvh, 360px);
   min-height: 220px;
   overflow: hidden;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0.25rem;
 }
 
@@ -133,7 +133,7 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-weight: 600;
 }
 
@@ -172,7 +172,7 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   align-self: center;
   border-radius: 8px;
   object-fit: cover;
-  background: hsl(var(--muted));
+  background: var(--muted);
 }
 
 /* this component only renders during the reveal phase, so the wide layout

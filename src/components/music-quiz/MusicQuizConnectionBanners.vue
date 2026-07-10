@@ -16,11 +16,11 @@ defineProps<{ degraded: boolean }>();
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 </style>
