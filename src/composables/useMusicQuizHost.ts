@@ -23,8 +23,8 @@ export interface UseMusicQuizHostOptions {
 /**
  * Host-side Music Quiz management: single game per provider instance,
  * PROVIDER_EVENT driven (no polling). Fetches music_quiz/get on mount,
- * subscribes to PROVIDER_EVENT (game_updated -> re-fetch, game_removed -> clear),
- * and wraps all host actions.
+ * subscribes to PROVIDER_EVENT for the active provider instance
+ * (game_updated -> re-fetch, game_removed -> clear), and wraps all host actions.
  */
 export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const { notifyError } = options;
@@ -33,6 +33,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
+  const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
 
@@ -91,20 +92,31 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
-    // object_id is the provider instance_id; we don't filter on it here
-    // because there's only one music_quiz provider instance per server
     if (!event.data || typeof event.data !== "object") return;
     const payload = event.data as {
       event?: string;
       state?: MusicQuizHostState;
     };
+    if (payload.event !== "game_updated" && payload.event !== "game_removed") {
+      return;
+    }
+    if (!isScopedProviderEvent(event.object_id)) return;
     if (payload.event === "game_updated") {
       // Re-fetch on game_updated to get the latest host state
-      fetchState();
+      void fetchState();
     } else if (payload.event === "game_removed") {
       state.value = null;
       gameRemoved.value = true;
     }
+  }
+
+  function isScopedProviderEvent(objectId?: string) {
+    if (!objectId) return false;
+    if (!providerInstanceId.value) {
+      providerInstanceId.value = objectId;
+      return true;
+    }
+    return providerInstanceId.value === objectId;
   }
 
   async function create(

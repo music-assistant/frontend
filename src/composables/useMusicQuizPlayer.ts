@@ -37,6 +37,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
+  const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
 
@@ -53,9 +54,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       loading.value = true;
       const nextInfo = await getMusicQuizInfo();
       info.value = nextInfo;
-      if (!nextInfo) {
-        gameRemoved.value = true;
-      }
+      gameRemoved.value = !nextInfo;
     } catch (err) {
       notifyError(
         getMusicQuizErrorMessage(
@@ -71,7 +70,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   async function fetchState() {
     const storedPlayerId = playerId.value ?? getStoredMusicQuizPlayerId();
     if (!storedPlayerId) {
-      // No stored player_id, can't fetch state
+      await fetchInfo();
       return;
     }
     try {
@@ -89,10 +88,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         (err.message.toLowerCase().includes("no active game") ||
           err.message.toLowerCase().includes("player not found"))
       ) {
-        state.value = null;
-        playerId.value = null;
-        clearStoredMusicQuizPlayerId();
-        gameRemoved.value = true;
+        await resetToJoinInfo();
       } else {
         notifyError(
           getMusicQuizErrorMessage(
@@ -112,9 +108,16 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       event?: string;
       state?: MusicQuizPersonalizedState;
     };
+    if (payload.event !== "game_updated" && payload.event !== "game_removed") {
+      return;
+    }
+    if (!isScopedProviderEvent(event.object_id)) return;
     if (payload.event === "game_updated") {
-      // Re-fetch personalized state on game_updated
-      fetchState();
+      if (playerId.value || getStoredMusicQuizPlayerId()) {
+        void fetchState();
+      } else {
+        void fetchInfo();
+      }
     } else if (payload.event === "game_removed") {
       state.value = null;
       playerId.value = null;
@@ -188,6 +191,22 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     playerId.value = null;
     state.value = null;
     clearStoredMusicQuizPlayerId();
+  }
+
+  async function resetToJoinInfo() {
+    state.value = null;
+    playerId.value = null;
+    clearStoredMusicQuizPlayerId();
+    await fetchInfo();
+  }
+
+  function isScopedProviderEvent(objectId?: string) {
+    if (!objectId) return false;
+    if (!providerInstanceId.value) {
+      providerInstanceId.value = objectId;
+      return true;
+    }
+    return providerInstanceId.value === objectId;
   }
 
   onMounted(() => {
