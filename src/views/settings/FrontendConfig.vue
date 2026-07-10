@@ -51,7 +51,11 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { DEFAULT_MENU_ITEMS, DEVICE_SETTING_KEYS } from "@/constants";
+import {
+  DEFAULT_MENU_ITEMS,
+  DEVICE_SETTING_KEYS,
+  MENU_ITEMS_SEEN_PREFERENCE_KEY,
+} from "@/constants";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -124,6 +128,9 @@ onMounted(() => {
         { title: $t("search"), value: "search" },
         ...(store.enabledPlugins.has("party")
           ? [{ title: $t("party_mode"), value: "party" }]
+          : []),
+        ...(store.enabledPlugins.has("music_quiz")
+          ? [{ title: $t("music_quiz.title"), value: "music_quiz" }]
           : []),
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },
@@ -260,6 +267,12 @@ const saveValues = async function (values: Record<string, ConfigValueType>) {
       } else {
         // Save to backend via user preferences
         await setPreference(key, values[key]);
+        if (key === "menu_items") {
+          await setPreference(
+            MENU_ITEMS_SEEN_PREFERENCE_KEY,
+            DEFAULT_MENU_ITEMS,
+          );
+        }
         hasPerUserChanges = true;
       }
     }

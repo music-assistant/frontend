@@ -15,6 +15,9 @@ export const DEFAULT_MENU_ITEMS = [
   "settings",
 ];
 
+export const PLUGIN_MENU_ITEMS = ["party", "music_quiz"];
+export const MENU_ITEMS_SEEN_PREFERENCE_KEY = "menu_items_seen";
+
 export const SYNCGROUP_PREFIX = "syncgroup_";
 
 // Frontend setting keys that are persisted per-device in localStorage.
