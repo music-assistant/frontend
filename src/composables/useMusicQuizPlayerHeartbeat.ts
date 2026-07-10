@@ -32,6 +32,8 @@ export function createMusicQuizPlayerHeartbeat(
     activePlayerId = null;
     if (timer !== undefined) clearInterval(timer);
     timer = undefined;
+    request = undefined;
+    requestTask = undefined;
     requestQueued = false;
     notifiedErrorPlayerId = null;
     document.removeEventListener("visibilitychange", handleVisibilityChange);

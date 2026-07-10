@@ -660,7 +660,9 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
 
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(1);
-    unmountHandlers[0]();
+    const unmount = unmountHandlers.shift();
+    if (!unmount) throw new Error("Expected an unmount handler");
+    unmount();
     await vi.advanceTimersByTimeAsync(15_000);
     document.dispatchEvent(new Event("visibilitychange"));
     window.dispatchEvent(new Event("focus"));
@@ -691,14 +693,13 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
     await player.join("Player");
     await flushPromises();
-    expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(1);
-
-    firstHeartbeat.resolve(false);
-    await flushPromises();
     expect(mockHeartbeatMusicQuiz).toHaveBeenNthCalledWith(2, "second-player");
 
     await vi.advanceTimersByTimeAsync(15_000);
     expect(mockHeartbeatMusicQuiz).toHaveBeenNthCalledWith(3, "second-player");
+
+    firstHeartbeat.resolve(false);
+    await flushPromises();
     expect(player.playerId.value).toBe("second-player");
     expect(storedPlayerId.value).toBe("second-player");
   });
