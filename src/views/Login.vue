@@ -1062,8 +1062,11 @@ const autoConnect = async () => {
         emit("connected", transport);
 
         if (await waitForApiConnection(15000)) {
-          if (await tryGuestCodeAuth(hasPendingGuestCode)) {
-            clearPendingGuestAuth();
+          const pendingGuestAuthResult = await tryPendingGuestAuth();
+          if (pendingGuestAuthResult === "authenticated") {
+            return;
+          }
+          if (pendingGuestAuthResult === "failed") {
             return;
           }
         }

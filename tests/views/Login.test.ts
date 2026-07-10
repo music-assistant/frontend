@@ -1,6 +1,6 @@
 import Login from "@/views/Login.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   authenticateWithToken: vi.fn(),
@@ -177,14 +177,8 @@ function mockSuccessfulGuest(username = "party_guest") {
 }
 
 beforeEach(() => {
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: new StorageMock(),
-  });
-  Object.defineProperty(globalThis, "sessionStorage", {
-    configurable: true,
-    value: new StorageMock(),
-  });
+  vi.stubGlobal("localStorage", new StorageMock());
+  vi.stubGlobal("sessionStorage", new StorageMock());
   setLocation("");
   vi.clearAllMocks();
   vi.stubGlobal("WebSocket", WebSocketMock);
@@ -194,6 +188,10 @@ beforeEach(() => {
   mocks.getStoredRemoteId.mockReturnValue(null);
   mocks.connectRemote.mockResolvedValue({ id: "transport" });
   mockSuccessfulGuest();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("guest join login", () => {
