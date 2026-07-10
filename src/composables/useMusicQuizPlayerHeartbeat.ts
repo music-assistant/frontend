@@ -54,13 +54,18 @@ export function createMusicQuizPlayerHeartbeat(
       );
     const pendingTask = outcome.then(async (result) => {
       if ("error" in result) {
-        if (activePlayerId === playerId && notifiedErrorPlayerId !== playerId) {
-          notifiedErrorPlayerId = playerId;
-          onError(playerId, result.error);
-        }
+        reportError(playerId, result.error);
       } else if (activePlayerId === playerId) {
         notifiedErrorPlayerId = null;
-        await onResult(playerId, result.active);
+        try {
+          await onResult(playerId, result.active);
+        } catch (error) {
+          if (activePlayerId === playerId) {
+            reportError(playerId, error);
+          } else {
+            console.error("[Music Quiz] Heartbeat callback failed", error);
+          }
+        }
       }
     });
     const trackedTask = pendingTask.finally(() => {
@@ -83,5 +88,19 @@ export function createMusicQuizPlayerHeartbeat(
 
   function handleVisibilityChange() {
     if (document.visibilityState === "visible") void refresh();
+  }
+
+  function reportError(playerId: string, error: unknown) {
+    if (activePlayerId !== playerId || notifiedErrorPlayerId === playerId)
+      return;
+    notifiedErrorPlayerId = playerId;
+    try {
+      onError(playerId, error);
+    } catch (handlerError) {
+      console.error(
+        "[Music Quiz] Heartbeat error handler failed",
+        handlerError,
+      );
+    }
   }
 }

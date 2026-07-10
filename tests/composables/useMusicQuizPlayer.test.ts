@@ -384,6 +384,27 @@ describe("useMusicQuizPlayer", () => {
     expect(player.playerId.value).toBe("stored-player");
   });
 
+  it("contains heartbeat callback failures", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockRejectedValue(new Error("State failed"));
+    const notifyError = vi.fn(() => {
+      throw new Error("Toast failed");
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+
+    expect(player.playerId.value).toBe("stored-player");
+    expect(consoleError).toHaveBeenCalledWith(
+      "[Music Quiz] Heartbeat error handler failed",
+      expect.objectContaining({ message: "Toast failed" }),
+    );
+    consoleError.mockRestore();
+  });
+
   it("recovers from a stale player token by returning to the join/info state", async () => {
     storedPlayerId.value = "stale-player";
     mockGetMusicQuizState.mockRejectedValue(new Error("player not found"));
