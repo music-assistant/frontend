@@ -75,23 +75,58 @@ export function useListDragReorder(options: ListDragReorderOptions) {
     return y;
   };
 
+  // The pointer must cross a slot boundary by this margin before the drop
+  // target flips, so the gap doesn't flap when the pointer rests near one.
+  const DROP_HYSTERESIS = 12;
+
   // Resolve the insertion index (drop *before* this index) for a pointer Y.
+  //
+  // Rows below the source are evaluated at their *collapsed* positions —
+  // where they would sit once the dragged row is lifted out. For tall rows
+  // this roughly halves the drag distance per slot: without it the pointer
+  // would have to travel past the rest of the source row AND the next row's
+  // real midpoint to move a single position down.
   const computeDropIndex = (clientY: number): number => {
     const el = listEl.value;
-    if (!el) return dragDropIndex.value ?? 0;
+    const source = dragSourceIndex.value;
+    const current = dragDropIndex.value ?? source ?? 0;
+    if (!el || source == null) return current;
     const listTop = el.getBoundingClientRect().top;
-    const rows = el.querySelectorAll<HTMLElement>("[data-drag-index]");
-    let dropIndex = count();
-    for (const row of rows) {
+
+    const rows = new Map<number, { top: number; height: number }>();
+    for (const row of el.querySelectorAll<HTMLElement>("[data-drag-index]")) {
       const index = Number(row.dataset.dragIndex);
       if (Number.isNaN(index)) continue;
-      const rowTop = listTop + rowTopWithinList(row);
-      if (clientY < rowTop + row.offsetHeight / 2) {
-        dropIndex = index;
-        break;
-      }
+      rows.set(index, { top: rowTopWithinList(row), height: row.offsetHeight });
     }
-    return Math.min(Math.max(dropIndex, 0), count());
+    const sourceRow = rows.get(source);
+    if (!sourceRow) return current;
+    // Full span the source occupies, inter-row gap included (rows below
+    // shift up by this much once it is lifted out).
+    const nextRow = rows.get(source + 1);
+    const sourceSpan = nextRow ? nextRow.top - sourceRow.top : sourceRow.height;
+
+    const scan = (y: number): number => {
+      for (let index = 0; index < count(); index++) {
+        const row = rows.get(index);
+        if (!row) continue;
+        const top = index > source ? row.top - sourceSpan : row.top;
+        if (y < listTop + top + row.height / 2) return index;
+      }
+      return count();
+    };
+
+    const candidate = scan(clientY);
+    if (candidate === current) return current;
+    // Only accept the new target when the boundary was crossed by the
+    // hysteresis margin (re-scan with the pointer biased back toward the
+    // current target).
+    const biased = scan(
+      candidate > current
+        ? clientY - DROP_HYSTERESIS
+        : clientY + DROP_HYSTERESIS,
+    );
+    return biased === candidate ? candidate : current;
   };
 
   // Set the auto-scroll velocity from how close the pointer is to an edge.

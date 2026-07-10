@@ -77,7 +77,6 @@ export type Events = {
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
   genreExcluded: void;
-  "homescreen-edit-toggle": void;
   "mobile-sidebar-open": void;
 };
 
