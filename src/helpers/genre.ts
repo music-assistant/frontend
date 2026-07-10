@@ -26,6 +26,7 @@ export const genreMediaTypeIconMap: Record<MediaType, string | Component> = {
   [MediaType.PLAYLIST]: "mdi-playlist-music",
   [MediaType.RADIO]: "mdi-radio",
   [MediaType.AUDIO_SOURCE]: "mdi-audio-input-rca",
+  [MediaType.SOUND_EFFECT]: "mdi-waveform",
   [MediaType.AUDIOBOOK]: "mdi-book-music",
   [MediaType.PODCAST]: "mdi-podcast",
   [MediaType.GENRE]: GenreIcon,

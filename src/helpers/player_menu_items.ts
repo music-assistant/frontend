@@ -10,6 +10,7 @@ import {
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
+import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -118,6 +119,22 @@ export const getPlayerMenuItems = (
         },
       ],
       icon: "mdi-repeat",
+    });
+  }
+
+  // audio overlay (queue menu only; when a provider offering sound effects is
+  // available). Opens the overlay dialog to pick a sound and set the volume;
+  // a check marks it as active.
+  const { overlayAvailable, openOverlayDialog } = useAudioOverlay();
+  if (isQueue && playerQueue && overlayAvailable.value) {
+    menuItems.push({
+      label: "audio_overlay",
+      labelArgs: [],
+      action: () => {
+        openOverlayDialog(playerQueue.queue_id);
+      },
+      icon: "mdi-waveform",
+      selected: playerQueue.overlay_enabled,
     });
   }
 

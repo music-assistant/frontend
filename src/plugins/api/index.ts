@@ -55,6 +55,7 @@ import {
   RepeatMode,
   SearchResults,
   SmartPlaylistRules,
+  SoundEffect,
   UserRole,
 } from "./interfaces";
 
@@ -1438,6 +1439,11 @@ export class MusicAssistantApi {
     return this.sendCommand("music/recommendations");
   }
 
+  public async getSoundEffects(): Promise<SoundEffect[]> {
+    // Fetch all sound effect items from providers that offer them.
+    return this.sendCommand("music/sound_effects");
+  }
+
   public markItemPlayed(
     media_item: MediaItemTypeOrItemMapping,
     fully_played?: boolean,
@@ -1587,6 +1593,15 @@ export class MusicAssistantApi {
   public queueCommandAutoplayToggle(queueId: string) {
     // Toggle autoplay mode of a queue
     this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
+  }
+  public queueCommandOverlay(
+    queueId: string,
+    args: { enabled?: boolean; source?: string; volume?: number },
+  ) {
+    // Configure the audio overlay (a looping sound effect mixed into playback) on the queue.
+    // source is the uri of a sound effect item; volume is the overlay loudness
+    // relative to the music in percent (0-200). Omitted args are left unchanged.
+    this.playerQueueCommand(queueId, "overlay", args);
   }
   public queueCommandSetPlaybackSpeed(
     queue_id: string,
