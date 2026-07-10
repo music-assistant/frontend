@@ -33,20 +33,13 @@
         :phase-label="phaseText"
       />
 
-      <section
-        v-if="listenIn.shouldShowListenInToggle.value"
-        class="quiz-shell__listen-in"
-      >
-        <div class="quiz-shell__listen-in-copy">
-          <strong>{{ $t("music_quiz.listen_in") }}</strong>
-          <small>{{ listenInDescription }}</small>
-        </div>
-        <Switch
-          :model-value="listenIn.isListeningIn.value"
-          :disabled="listenIn.busy.value"
-          @update:model-value="handleListenInToggle"
-        />
-      </section>
+      <ListenIn
+        domain="music_quiz"
+        :mode="mode"
+        :labels="listenInLabels"
+        :recheck-events="listenInRecheckEvents"
+        :get-error-message="getMusicQuizErrorMessage"
+      />
 
       <section v-if="state.phase === 'lobby'" class="quiz-shell__section">
         <p class="quiz-shell__hint">{{ $t("music_quiz.waiting_for_start") }}</p>
@@ -144,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import MusicQuizAnswerGrid from "@/components/music-quiz/MusicQuizAnswerGrid.vue";
 import MusicQuizAnswerStatus from "@/components/music-quiz/MusicQuizAnswerStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
@@ -153,18 +147,17 @@ import MusicQuizLeaderboard, {
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
-import { Switch } from "@/components/ui/switch";
-import { useMusicQuizListenIn } from "@/composables/useMusicQuizListenIn";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
 import { useMusicQuizRoundClocks } from "@/composables/useMusicQuizRoundClocks";
 import {
+  getMusicQuizErrorMessage,
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import api, { ConnectionState } from "@/plugins/api";
-import { MediaType, type Track } from "@/plugins/api/interfaces";
+import { EventType, MediaType, type Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { toast } from "vue-sonner";
@@ -189,14 +182,19 @@ const modeLabel = computed(() =>
     : $t("music_quiz.mode_venue"),
 );
 
-const listenIn = useMusicQuizListenIn({
-  mode: () => mode.value,
-  notifyError: (message) => toast.error(message),
-});
-const listenInDescription = computed(() => {
-  if (mode.value === "remote") return $t("music_quiz.listen_in_remote");
-  return $t("music_quiz.listen_in_venue");
-});
+const listenInRecheckEvents = [EventType.PROVIDER_EVENT];
+const listenInLabels = computed<ListenInLabels>(() => ({
+  title: $t("music_quiz.listen_in"),
+  titleActive: $t("music_quiz.listen_in_active"),
+  descriptionVenue: $t("music_quiz.listen_in_venue"),
+  descriptionRemote: $t("music_quiz.listen_in_remote"),
+  tap: $t("music_quiz.listen_in_tap"),
+  stop: $t("music_quiz.listen_in_stop"),
+  poweredBy: $t("music_quiz.listen_in_powered_by"),
+  errorNoWebPlayer: $t("music_quiz.error_no_web_player"),
+  errorListenIn: $t("music_quiz.error_listen_in"),
+  errorStopListenIn: $t("music_quiz.error_stop_listen_in"),
+}));
 
 const rankedPlayers = computed(() => {
   if (!state.value) return [];
@@ -305,16 +303,6 @@ watch(
   { immediate: true },
 );
 
-watch(
-  () => listenIn.shouldPromptListenIn.value,
-  (shouldPrompt) => {
-    if (shouldPrompt && !listenIn.busy.value) {
-      void listenIn.enableListenIn();
-    }
-  },
-  { immediate: true },
-);
-
 async function copyCurrentRoundTitle() {
   if (!currentRound.value?.answer_label) return;
   const copied = await copyToClipboard(currentRound.value.answer_label);
@@ -333,14 +321,6 @@ async function handleAnswer(suggestionId: string) {
 
 async function handleReady() {
   await player.ready();
-}
-
-async function handleListenInToggle(enabled: boolean) {
-  if (enabled) {
-    await listenIn.enableListenIn();
-  } else {
-    await listenIn.disableListenIn();
-  }
 }
 
 onBeforeUnmount(() => {
@@ -399,29 +379,6 @@ onBeforeUnmount(() => {
   background: hsl(var(--muted));
   padding: 0.2rem 0.6rem;
   font-size: 0.82rem;
-}
-
-.quiz-shell__listen-in {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  background: hsl(var(--muted));
-  padding: 0.6rem 0.75rem;
-}
-
-.quiz-shell__listen-in-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.quiz-shell__listen-in-copy small {
-  color: hsl(var(--muted-foreground));
-  font-size: 0.78rem;
 }
 
 .quiz-shell__section {
