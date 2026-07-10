@@ -29,8 +29,10 @@ jobs:
       - name: Check for new commits
         id: check_commits
         run: |
-          # Get the latest PUBLISHED release (exclude drafts)
-          LATEST_RELEASE=$(gh release list --exclude-drafts --limit 1 --json createdAt,tagName --jq '.[0]' 2>/dev/null || echo "")
+          # Get the latest PUBLISHED release (exclude drafts). Only consider plain X.Y.Z
+          # releases so stable patch builds (e.g. 2.17.186.post1) are ignored when
+          # computing the next main-line version.
+          LATEST_RELEASE=$(gh release list --exclude-drafts --limit 30 --json createdAt,tagName --jq 'map(select(.tagName | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))) | .[0] // empty' 2>/dev/null || echo "")
 
           if [ -z "$LATEST_RELEASE" ]; then
             echo "No previous releases found"
