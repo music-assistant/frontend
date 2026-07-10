@@ -8,6 +8,11 @@ const { mockSendCommand, mockSubscribe, mockToastError } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
 }));
 
+vi.mock("@/components/music-quiz/game_types", () => ({
+  MUSIC_QUIZ_GAME_TYPES: [],
+  resolveMusicQuizDefinition: vi.fn(),
+}));
+
 vi.mock("@/plugins/api", () => ({
   default: {
     sendCommand: mockSendCommand,
@@ -28,10 +33,6 @@ vi.mock("@/plugins/auth", () => ({
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
-}));
-
-vi.mock("@/plugins/router", () => ({
-  default: {},
 }));
 
 vi.mock("vue-sonner", () => ({
