@@ -520,6 +520,42 @@ describe("useMusicQuizPlayer", () => {
     expect(notifyError).not.toHaveBeenCalled();
   });
 
+  it("keeps loading until removal recovery finishes", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValueOnce(PLAYER_STATE);
+    const staleState = deferred<typeof PLAYER_STATE>();
+    const refreshedInfo = deferred<typeof QUIZ_INFO>();
+    mockGetMusicQuizState.mockReturnValueOnce(staleState.promise);
+    mockGetMusicQuizInfo.mockReturnValueOnce(refreshedInfo.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_updated", state: PUBLIC_STATE },
+    });
+    await flushPromises();
+    expect(player.loading.value).toBe(true);
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: {
+        event: "game_updated",
+        state: { ...PUBLIC_STATE, players: [] },
+      },
+    });
+    await flushPromises();
+
+    staleState.resolve(PLAYER_STATE);
+    await flushPromises();
+    expect(player.loading.value).toBe(true);
+
+    refreshedInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+    expect(player.loading.value).toBe(false);
+    expect(player.playerId.value).toBeNull();
+  });
+
   it("keeps game identity across info, join, and provider refresh", async () => {
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
     mockJoinMusicQuiz.mockResolvedValue({
@@ -573,6 +609,27 @@ describe("useMusicQuizPlayer", () => {
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(1);
     expect(player.playerId.value).toBeNull();
     expect(storedPlayerId.value).toBeNull();
+  });
+
+  it("clears loading when leaving during a state fetch", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValueOnce(PLAYER_STATE);
+    const pendingState = deferred<typeof PLAYER_STATE>();
+    mockGetMusicQuizState.mockReturnValueOnce(pendingState.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    void player.fetchState();
+    await flushPromises();
+    expect(player.loading.value).toBe(true);
+
+    await player.leave();
+    expect(player.loading.value).toBe(false);
+
+    pendingState.resolve(PLAYER_STATE);
+    await flushPromises();
+    expect(player.loading.value).toBe(false);
+    expect(player.state.value).toBeNull();
   });
 
   it("stops heartbeat when unmounted", async () => {

@@ -49,6 +49,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
   let unsubscribeProviderEvent: (() => void) | undefined;
   let reconnectPlayerId: string | null = null;
+  let loadingRequestId = 0;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -72,6 +73,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   });
 
   async function fetchInfo() {
+    const requestId = ++loadingRequestId;
     try {
       loading.value = true;
       const nextInfo = await getMusicQuizInfo();
@@ -85,7 +87,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         ),
       );
     } finally {
-      loading.value = false;
+      if (loadingRequestId === requestId) loading.value = false;
     }
   }
 
@@ -208,6 +210,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   };
 
   async function fetchPlayerState(currentPlayerId: string) {
+    const requestId = ++loadingRequestId;
     try {
       loading.value = true;
       const nextState = await getMusicQuizState(currentPlayerId);
@@ -230,7 +233,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         );
       }
     } finally {
-      loading.value = false;
+      if (loadingRequestId === requestId) loading.value = false;
     }
   }
 
@@ -322,6 +325,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   function clearActivePlayer() {
     playerId.value = null;
     state.value = null;
+    loadingRequestId += 1;
+    loading.value = false;
     stopHeartbeat();
     clearStoredMusicQuizPlayerId();
   }
