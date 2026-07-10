@@ -427,6 +427,7 @@ const STORAGE_KEY_REMOTE_ID = "mass_remote_id";
 const STORAGE_KEY_TOKEN = "ma_access_token";
 // Session storage key for pending guest code (survives SW reload but not browser close)
 const SESSION_KEY_PENDING_JOIN_CODE = "ma_pending_join_code";
+const SESSION_KEY_PENDING_JOIN_TYPE = "ma_pending_join_type";
 
 // Props and emits
 const emit = defineEmits<{
@@ -720,6 +721,41 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
   }
 };
 
+type PendingGuestAuthResult = "none" | "authenticated" | "failed";
+
+const clearPendingGuestAuth = () => {
+  sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+  sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_TYPE);
+};
+
+const setPendingGuestAuth = (code: string, type: "local" | "remote") => {
+  authManager.clearAuth();
+  sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, code);
+  sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_TYPE, type);
+};
+
+const tryPendingGuestAuth = async (): Promise<PendingGuestAuthResult> => {
+  const code = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_CODE);
+  if (!code) {
+    return "none";
+  }
+
+  authManager.clearAuth();
+  if (await tryGuestCodeAuth(code)) {
+    clearPendingGuestAuth();
+    return "authenticated";
+  }
+
+  clearPendingGuestAuth();
+  authManager.clearAuth();
+  connectionError.value = t(
+    "login.error_party_auth_failed",
+    "Failed to join party. The code may have expired.",
+  );
+  step.value = "error";
+  return "failed";
+};
+
 /**
  * Try to authenticate in ingress mode (no credentials needed)
  */
@@ -762,6 +798,7 @@ const autoConnect = async () => {
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
   const pendingJoinCode = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_CODE);
+  const pendingJoinType = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_TYPE);
   const storedRemoteIdForPending = localStorage.getItem(STORAGE_KEY_REMOTE_ID);
 
   // Determine the effective guest code and remote ID
@@ -771,7 +808,12 @@ const autoConnect = async () => {
 
   // If no guest code in URL but we have a pending one in sessionStorage, use that
   // This handles the case where SW reload cleared the URL but code was stored
-  if (!effectiveJoinCode && pendingJoinCode && storedRemoteIdForPending) {
+  if (
+    !effectiveJoinCode &&
+    pendingJoinCode &&
+    pendingJoinType !== "local" &&
+    storedRemoteIdForPending
+  ) {
     effectiveJoinCode = pendingJoinCode;
     effectiveRemoteId = storedRemoteIdForPending;
   }
@@ -782,14 +824,8 @@ const autoConnect = async () => {
       .replace(/[^A-Z0-9]/g, "");
 
     if (cleanRemoteId.length === 26) {
-      // Clear any stale token before guest code auth
-      if (localStorage.getItem(STORAGE_KEY_TOKEN)) {
-        localStorage.removeItem(STORAGE_KEY_TOKEN);
-      }
-
       localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
-      // Store guest code in sessionStorage for SW reload recovery
-      sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, effectiveJoinCode);
+      setPendingGuestAuth(effectiveJoinCode, "remote");
 
       connectionStatusMessage.value = t(
         "login.connecting_remote_party",
@@ -814,8 +850,7 @@ const autoConnect = async () => {
           const guestAuthResult = await tryGuestCodeAuth(effectiveJoinCode);
 
           if (guestAuthResult) {
-            // Clear the pending guest code - it's been successfully used
-            sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+            clearPendingGuestAuth();
             // Clean up URL
             const successUrlParams = new URLSearchParams(
               window.location.search,
@@ -838,7 +873,7 @@ const autoConnect = async () => {
         }
 
         // Code exchange failed
-        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        clearPendingGuestAuth();
         connectionError.value = t(
           "login.error_party_auth_failed",
           "Failed to join party. The code may have expired.",
@@ -846,7 +881,7 @@ const autoConnect = async () => {
         step.value = "error";
         return;
       } catch (error) {
-        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        clearPendingGuestAuth();
         console.error("[Login] Remote party connection failed:", error);
         connectionError.value =
           error instanceof Error
@@ -871,7 +906,7 @@ const autoConnect = async () => {
       // Store the join code in sessionStorage so the remote-only auto-connect
       // path can pick it up after establishing the WebRTC connection.
       if (urlJoinCode) {
-        sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, urlJoinCode);
+        setPendingGuestAuth(urlJoinCode, "remote");
         localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
       }
       // Clean up the URL
@@ -903,6 +938,8 @@ const autoConnect = async () => {
 
   // Handle local guest code (no remote_id, just the join code)
   if (urlJoinCode && !urlRemoteId) {
+    setPendingGuestAuth(urlJoinCode, "local");
+
     // Clean up URL - remove join param
     urlParams.delete("join");
     const queryString = urlParams.toString();
@@ -930,11 +967,16 @@ const autoConnect = async () => {
         localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
 
         if (await waitForApiConnection()) {
-          if (await tryGuestCodeAuth(urlJoinCode)) {
+          const pendingGuestAuthResult = await tryPendingGuestAuth();
+          if (pendingGuestAuthResult === "authenticated") {
             return; // Success - App.vue will take over
+          }
+          if (pendingGuestAuthResult === "failed") {
+            return;
           }
         }
 
+        clearPendingGuestAuth();
         connectionError.value = t(
           "login.error_party_auth_failed",
           "Failed to join party. The code may have expired.",
@@ -1021,12 +1063,12 @@ const autoConnect = async () => {
 
         if (await waitForApiConnection(15000)) {
           if (await tryGuestCodeAuth(hasPendingGuestCode)) {
-            sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+            clearPendingGuestAuth();
             return;
           }
         }
 
-        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        clearPendingGuestAuth();
         connectionError.value = t(
           "login.error_party_auth_failed",
           "Failed to join party. The code may have expired.",
@@ -1035,11 +1077,11 @@ const autoConnect = async () => {
         return;
       } catch (error) {
         console.error("[Login] Pending guest code recovery error:", error);
-        sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+        clearPendingGuestAuth();
         // Fall through to show login form
       }
     } else if (hasPendingGuestCode) {
-      sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
+      clearPendingGuestAuth();
     }
 
     // Use stored token for auto-login (only if no pending guest code)
@@ -1117,6 +1159,11 @@ const autoConnect = async () => {
       localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
 
       if (await waitForApiConnection()) {
+        const pendingGuestAuthResult = await tryPendingGuestAuth();
+        if (pendingGuestAuthResult !== "none") {
+          return;
+        }
+
         if (storedToken && (await tryStoredTokenAuth())) {
           return; // Success - App.vue will take over
         }
@@ -1153,6 +1200,11 @@ const autoConnect = async () => {
       localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, storedAddress);
 
       if (await waitForApiConnection()) {
+        const pendingGuestAuthResult = await tryPendingGuestAuth();
+        if (pendingGuestAuthResult !== "none") {
+          return;
+        }
+
         if (await tryStoredTokenAuth()) {
           return; // Success - App.vue will take over
         }
@@ -1414,6 +1466,11 @@ const performLocalConnect = async (address: string) => {
     const connected = await waitForApiConnection();
     if (!connected) {
       throw new Error("Connection timeout - server not responding");
+    }
+
+    const pendingGuestAuthResult = await tryPendingGuestAuth();
+    if (pendingGuestAuthResult !== "none") {
+      return;
     }
 
     // Try to fetch auth providers (may fail if server requires auth first)
