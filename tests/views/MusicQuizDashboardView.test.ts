@@ -13,17 +13,21 @@ vi.mock("@/components/music-quiz/game_types", () => ({
   resolveMusicQuizDefinition: vi.fn(),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     sendCommand: mockSendCommand,
     subscribe: mockSubscribe,
     state: { value: "connected" },
-  },
-  ConnectionState: {
-    RECONNECTING: "reconnecting",
-    DISCONNECTED: "disconnected",
-  },
-}));
+  };
+  return {
+    api,
+    default: api,
+    ConnectionState: {
+      RECONNECTING: "reconnecting",
+      DISCONNECTED: "disconnected",
+    },
+  };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
