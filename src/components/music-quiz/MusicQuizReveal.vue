@@ -142,7 +142,7 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   height: 100%;
   align-items: center;
   justify-content: center;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-weight: 600;
 }
 

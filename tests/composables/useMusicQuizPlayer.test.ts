@@ -12,6 +12,7 @@ const {
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
   mockIsNoActiveGameError,
+  mockIsMusicQuizPlayerNotFoundError,
   storedPlayerId,
   providerHandlers,
 } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ const {
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
   mockIsNoActiveGameError: vi.fn(),
+  mockIsMusicQuizPlayerNotFoundError: vi.fn(),
   storedPlayerId: { value: null as string | null },
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
@@ -61,6 +63,7 @@ vi.mock("@/helpers/music_quiz", () => ({
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
   isNoActiveGameError: mockIsNoActiveGameError,
+  isMusicQuizPlayerNotFoundError: mockIsMusicQuizPlayerNotFoundError,
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -98,6 +101,7 @@ describe("useMusicQuizPlayer", () => {
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
     mockIsNoActiveGameError.mockReset();
+    mockIsMusicQuizPlayerNotFoundError.mockReset();
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockStorePlayerId.mockImplementation((playerId: string) => {
       storedPlayerId.value = playerId;
@@ -117,6 +121,12 @@ describe("useMusicQuizPlayer", () => {
         ? error.toLowerCase().includes("no active")
         : error instanceof Error &&
           error.message.toLowerCase().includes("no active"),
+    );
+    mockIsMusicQuizPlayerNotFoundError.mockImplementation((error: unknown) =>
+      typeof error === "string"
+        ? error.toLowerCase().includes("player not found")
+        : error instanceof Error &&
+          error.message.toLowerCase().includes("player not found"),
     );
     mockSubscribe.mockImplementation(
       (

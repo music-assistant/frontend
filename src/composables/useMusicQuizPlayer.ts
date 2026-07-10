@@ -82,10 +82,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       playerId.value = storedPlayerId;
       gameRemoved.value = false;
     } catch (err) {
-      if (
-        isNoActiveGameError(err) ||
-        isMusicQuizPlayerNotFoundError(err)
-      ) {
+      if (isNoActiveGameError(err) || isMusicQuizPlayerNotFoundError(err)) {
         await resetToJoinInfo();
       } else {
         notifyError(
