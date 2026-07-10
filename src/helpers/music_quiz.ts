@@ -106,3 +106,33 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   }
   return fallback;
 }
+
+// Detects the backend "no active Music Quiz game" error across its possible
+// shapes (plain string / Error / structured payload), since WS command
+// failures can arrive as strings rather than Error instances.
+export function isNoActiveGameError(err: unknown): boolean {
+  const message = getMusicQuizErrorMessage(err).toLowerCase();
+  if (
+    message.includes("no active music quiz game") ||
+    (message.includes("no active") && message.includes("music quiz"))
+  ) {
+    return true;
+  }
+  if (err && typeof err === "object") {
+    const errorCode =
+      "error_code" in err && typeof err.error_code === "string"
+        ? err.error_code.toLowerCase()
+        : "";
+    const errorType =
+      "type" in err && typeof err.type === "string"
+        ? err.type.toLowerCase()
+        : "";
+    return (
+      errorCode === "musicquiznogameerror" ||
+      errorCode === "music_quiz_no_game" ||
+      errorType === "musicquiznogameerror" ||
+      errorType === "music_quiz_no_game"
+    );
+  }
+  return false;
+}
