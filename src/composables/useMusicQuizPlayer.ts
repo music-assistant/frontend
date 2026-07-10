@@ -2,6 +2,8 @@ import {
   answerMusicQuiz,
   getMusicQuizInfo,
   getMusicQuizState,
+  isSupportedMusicQuiz,
+  isMusicQuizProviderEvent,
   joinMusicQuiz,
   readyMusicQuiz,
   type MusicQuizCurrentRound,
@@ -43,12 +45,25 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   let unsubscribeProviderEvent: (() => void) | undefined;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
-    return state.value?.current_round ?? null;
+    const currentState = state.value;
+    return currentState && isSupportedMusicQuiz(currentState)
+      ? (currentState.current_round ?? null)
+      : null;
   });
 
-  const yourName = computed(() => state.value?.you.name ?? "");
+  const yourName = computed(() => {
+    const currentState = state.value;
+    return currentState && isSupportedMusicQuiz(currentState)
+      ? currentState.you.name
+      : "";
+  });
 
-  const players = computed(() => state.value?.players ?? []);
+  const players = computed(() => {
+    const currentState = state.value;
+    return currentState && isSupportedMusicQuiz(currentState)
+      ? currentState.players
+      : [];
+  });
 
   async function fetchInfo() {
     try {
@@ -100,14 +115,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
-    if (!event.data || typeof event.data !== "object") return;
-    const payload = event.data as {
-      event?: string;
-      state?: MusicQuizPersonalizedState;
-    };
-    if (payload.event !== "game_updated" && payload.event !== "game_removed") {
-      return;
-    }
+    if (!isMusicQuizProviderEvent(event.data)) return;
+    const payload = event.data;
     if (!isScopedProviderEvent(event.object_id)) return;
     if (payload.event === "game_updated") {
       if (playerId.value || getStoredMusicQuizPlayerId()) {

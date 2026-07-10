@@ -1,6 +1,6 @@
 import type {
   MusicQuizCurrentRound,
-  MusicQuizPublicState,
+  MusicQuizSupportedPublicState,
 } from "@/composables/useMusicQuiz";
 import { computed, ref, watch, type Ref } from "vue";
 
@@ -10,7 +10,7 @@ import { computed, ref, watch, type Ref } from "vue";
  * Timestamps are epoch SECONDS as float on the SERVER clock.
  */
 export function useMusicQuizRoundClocks(
-  state: Ref<MusicQuizPublicState | null>,
+  state: Ref<MusicQuizSupportedPublicState | null>,
   currentRound: Ref<MusicQuizCurrentRound | null>,
 ) {
   const answerRemainingSeconds = ref<number | null>(null);

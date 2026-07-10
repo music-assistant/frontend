@@ -105,10 +105,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type {
-  MusicQuizCreateArgs,
-  MusicQuizGuessTheSongConfig,
-} from "@/composables/useMusicQuiz";
+import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft, PartyPopper, Sparkles } from "@lucide/vue";
 import { ref } from "vue";
@@ -116,7 +113,7 @@ import { ref } from "vue";
 const TOTAL_STEPS = 3;
 
 defineProps<{ busy: boolean }>();
-const emit = defineEmits<{ create: [args: MusicQuizCreateArgs] }>();
+const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
 
 const gameTypes = MUSIC_QUIZ_GAME_TYPES;
 const step = ref<1 | 2 | 3>(1);
@@ -136,8 +133,7 @@ function back() {
   }
 }
 
-function onConfigCreate(config: MusicQuizGuessTheSongConfig) {
-  if (!selectedType.value) return;
-  emit("create", { ...config, quiz_type: selectedType.value.id });
+function onConfigCreate(request: MusicQuizCreateRequest) {
+  emit("create", request);
 }
 </script>

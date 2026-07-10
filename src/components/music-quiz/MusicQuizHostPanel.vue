@@ -134,7 +134,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type {
-  MusicQuizHostState,
+  MusicQuizSupportedHostState,
   MusicQuizRound,
 } from "@/composables/useMusicQuiz";
 import {
@@ -148,7 +148,7 @@ import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    state: MusicQuizHostState;
+    state: MusicQuizSupportedHostState;
     busy: boolean;
     joinLink: string;
     currentRound: MusicQuizRound | null;

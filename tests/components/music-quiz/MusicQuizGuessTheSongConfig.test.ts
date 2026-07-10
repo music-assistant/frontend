@@ -132,4 +132,44 @@ describe("MusicQuizGuessTheSongConfig", () => {
     expect(wrapper.text()).toContain("Newest result");
     expect(wrapper.text()).not.toContain("Older result");
   });
+
+  it("emits a discriminated create request", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [
+        {
+          uri: "track:test",
+          name: "Test track",
+          media_type: MediaType.TRACK,
+        },
+      ],
+      playlists: [],
+    });
+    const wrapper = mountConfig();
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(250);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test track"))
+      ?.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"))
+      ?.trigger("click");
+
+    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "normal",
+        source_uris: ["track:test"],
+      },
+    });
+  });
 });

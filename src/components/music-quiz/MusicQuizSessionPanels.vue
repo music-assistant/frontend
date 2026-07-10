@@ -26,7 +26,7 @@ import MusicQuizAnswerStatus from "@/components/music-quiz/MusicQuizAnswerStatus
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
-import type { MusicQuizHostState } from "@/composables/useMusicQuiz";
+import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
 import {
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
@@ -35,7 +35,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
-const props = defineProps<{ state: MusicQuizHostState }>();
+const props = defineProps<{ state: MusicQuizSupportedHostState }>();
 
 const currentRound = computed(() => props.state.current_round ?? null);
 

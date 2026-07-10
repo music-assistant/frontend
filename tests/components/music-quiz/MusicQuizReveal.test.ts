@@ -8,6 +8,7 @@ vi.mock("@/plugins/i18n", () => ({
 
 const baseProps = {
   round: {
+    question: "Which song is playing?",
     round_index: 0,
     started_at: 0,
     deadline: 0,

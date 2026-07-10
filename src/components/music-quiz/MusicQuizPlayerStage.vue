@@ -118,7 +118,7 @@ import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
 import type {
   MusicQuizCurrentRound,
-  MusicQuizPersonalizedState,
+  MusicQuizSupportedPersonalizedState,
 } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
@@ -127,7 +127,7 @@ import { CircleCheck, CircleX, Trophy } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
-  state: MusicQuizPersonalizedState;
+  state: MusicQuizSupportedPersonalizedState;
   currentRound: MusicQuizCurrentRound | null;
   busy: boolean;
   leaderboardRows: MusicQuizLeaderboardRow[];

@@ -45,6 +45,17 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   joinMusicQuiz: mockJoinMusicQuiz,
   readyMusicQuiz: mockReadyMusicQuiz,
   answerMusicQuiz: mockAnswerMusicQuiz,
+  isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
+    value.quiz_type === "guess_the_song" &&
+    value.answer_type === "multiple_choice",
+  isMusicQuizProviderEvent: (value: unknown) => {
+    if (!value || typeof value !== "object" || !("event" in value))
+      return false;
+    return (
+      value.event === "game_removed" ||
+      (value.event === "game_updated" && "state" in value)
+    );
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -78,11 +89,32 @@ import { EventType } from "@/plugins/api/interfaces";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
 
 const QUIZ_INFO = {
+  quiz_type: "guess_the_song",
+  answer_type: "multiple_choice",
   name: "Quiz",
   phase: "lobby",
   player_count: 2,
   round_count: 5,
   mode: "venue",
+} as const;
+
+const PLAYER_STATE = {
+  quiz_type: "guess_the_song",
+  answer_type: "multiple_choice",
+  phase: "lobby",
+  name: "Quiz",
+  round_count: 5,
+  suggestion_count: 4,
+  answer_duration: 30,
+  mode: "venue",
+  players: [],
+  current_round: null,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
 } as const;
 
 async function flushPromises() {
@@ -172,7 +204,7 @@ describe("useMusicQuizPlayer", () => {
     expect(handler).toBeTypeOf("function");
     handler({
       object_id: "quiz-instance",
-      data: { event: "game_updated" },
+      data: { event: "game_updated", state: QUIZ_INFO },
     });
     await flushPromises();
 
@@ -191,16 +223,93 @@ describe("useMusicQuizPlayer", () => {
 
     handler({
       object_id: "quiz-instance",
-      data: { event: "game_updated" },
+      data: { event: "game_updated", state: QUIZ_INFO },
     });
     await flushPromises();
     expect(mockGetMusicQuizInfo).toHaveBeenCalledTimes(2);
 
     handler({
       object_id: "other-instance",
-      data: { event: "game_updated" },
+      data: { event: "game_updated", state: QUIZ_INFO },
     });
     await flushPromises();
     expect(mockGetMusicQuizInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps game identity across info, join, and provider refresh", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    mockJoinMusicQuiz.mockResolvedValue({
+      player_id: "player-id",
+      state: PLAYER_STATE,
+    });
+    mockGetMusicQuizState.mockResolvedValue({
+      ...PLAYER_STATE,
+      phase: "answering",
+    });
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    expect(player.info.value?.quiz_type).toBe("guess_the_song");
+    expect(player.info.value?.answer_type).toBe("multiple_choice");
+
+    await player.join("Player");
+    expect(player.state.value?.quiz_type).toBe("guess_the_song");
+    expect(player.state.value?.answer_type).toBe("multiple_choice");
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_updated", state: PLAYER_STATE },
+    });
+    await flushPromises();
+
+    expect(mockGetMusicQuizState).toHaveBeenCalledWith("player-id");
+    expect(player.state.value?.quiz_type).toBe("guess_the_song");
+    expect(player.state.value?.answer_type).toBe("multiple_choice");
+    expect(player.state.value?.phase).toBe("answering");
+  });
+
+  it("preserves game identity when reconnecting with a stored player", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.playerId.value).toBe("stored-player");
+    expect(player.state.value?.quiz_type).toBe("guess_the_song");
+    expect(player.state.value?.answer_type).toBe("multiple_choice");
+  });
+
+  it("does not expose guess-the-song fields for an unknown game type", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue({
+      quiz_type: "future_game",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Future Quiz",
+    });
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.info.value?.quiz_type).toBe("future_game");
+    expect(player.currentRound.value).toBeNull();
+    expect(player.players.value).toEqual([]);
+    expect(player.yourName.value).toBe("");
+  });
+
+  it("does not expose gameplay for an unknown answer type", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue({
+      quiz_type: "guess_the_song",
+      answer_type: "timeline",
+      phase: "lobby",
+      name: "Future Quiz",
+    });
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.info.value?.answer_type).toBe("timeline");
+    expect(player.currentRound.value).toBeNull();
+    expect(player.players.value).toEqual([]);
   });
 });

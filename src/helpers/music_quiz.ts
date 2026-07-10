@@ -1,7 +1,7 @@
 import type {
   MusicQuizPhase,
   MusicQuizPlayer,
-  MusicQuizPublicState,
+  MusicQuizSupportedPublicState,
 } from "@/composables/useMusicQuiz";
 import { $t, i18n } from "@/plugins/i18n";
 
@@ -76,7 +76,7 @@ export function isMusicQuizWinner(
 }
 
 export function getMusicQuizRoundScoreLabel(
-  state: MusicQuizPublicState,
+  state: MusicQuizSupportedPublicState,
   playerName: string,
 ) {
   if (state.phase !== "reveal" || !state.current_round) return "";
