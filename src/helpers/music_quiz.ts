@@ -106,3 +106,42 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   }
   return fallback;
 }
+
+export function isNoActiveGameError(err: unknown) {
+  const normalizedMessage = getMusicQuizErrorMessage(err).toLowerCase();
+  if (normalizedMessage.includes("no active")) return true;
+
+  if (err && typeof err === "object") {
+    const errorCode =
+      "error_code" in err && typeof err.error_code === "string"
+        ? err.error_code.toLowerCase()
+        : "";
+    const errorType =
+      "type" in err && typeof err.type === "string"
+        ? err.type.toLowerCase()
+        : "";
+    return (
+      errorCode.includes("musicquiznogame") ||
+      errorCode.includes("music_quiz_no_game") ||
+      errorType.includes("musicquiznogame") ||
+      errorType.includes("music_quiz_no_game")
+    );
+  }
+  return false;
+}
+
+export function isMusicQuizPlayerNotFoundError(err: unknown) {
+  const normalizedMessage = getMusicQuizErrorMessage(err).toLowerCase();
+  if (normalizedMessage.includes("player not found")) return true;
+
+  if (err && typeof err === "object") {
+    const errorCode =
+      "error_code" in err && typeof err.error_code === "string"
+        ? err.error_code.toLowerCase()
+        : "";
+    return (
+      errorCode.includes("player_not_found") && errorCode.includes("music_quiz")
+    );
+  }
+  return false;
+}
