@@ -228,7 +228,7 @@ onBeforeUnmount(() => {
 .quiz-host__qr-error {
   margin: 0;
   max-width: 220px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 0.875rem;
 }
 
@@ -245,9 +245,9 @@ onBeforeUnmount(() => {
 .quiz-host__session-sources {
   flex: 1 1 320px;
   min-width: min(100%, 280px);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--background));
+  background: var(--background);
   overflow: hidden;
 }
 
@@ -261,8 +261,8 @@ onBeforeUnmount(() => {
   font-weight: 600;
   list-style: none;
   padding: 0.75rem 0.9rem;
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
+  background: var(--muted);
+  color: var(--foreground);
   user-select: none;
 }
 
@@ -274,7 +274,7 @@ onBeforeUnmount(() => {
 .quiz-host__now-playing-details summary strong,
 .quiz-host__session-sources summary strong {
   margin-left: auto;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -282,7 +282,7 @@ onBeforeUnmount(() => {
 .quiz-host__now-playing-details summary svg,
 .quiz-host__session-sources summary svg {
   flex: 0 0 auto;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   transition: transform 0.15s ease;
 }
 
@@ -304,7 +304,7 @@ onBeforeUnmount(() => {
   aspect-ratio: 1;
   border-radius: 8px;
   object-fit: cover;
-  background: hsl(var(--muted));
+  background: var(--muted);
 }
 
 .quiz-host__now-playing div {
@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
 }
 
 .quiz-host__now-playing span {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 0.875rem;
 }
 
@@ -337,9 +337,9 @@ onBeforeUnmount(() => {
 
 .quiz-host__session-source {
   min-width: 0;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.6rem 0.75rem;
 }
 
@@ -352,7 +352,7 @@ onBeforeUnmount(() => {
 }
 
 .quiz-host__session-source small {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-host__actions {

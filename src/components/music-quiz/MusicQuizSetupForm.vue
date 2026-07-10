@@ -255,7 +255,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .quiz-setup {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 210px));
+  justify-content: start;
   gap: 0.75rem;
 }
 
@@ -269,12 +270,13 @@ onBeforeUnmount(() => {
 .quiz-setup input,
 .quiz-setup select {
   min-height: 2.5rem;
-  border: 1px solid hsl(var(--foreground) / 0.35);
+  border: 1px solid color-mix(in srgb, var(--foreground) 35%, transparent);
   border-radius: 6px;
-  background: hsl(var(--muted));
-  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.06);
+  background: var(--muted);
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--foreground) 6%, transparent);
   padding: 0.5rem;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   outline: none;
   transition:
     border-color 0.15s ease,
@@ -283,10 +285,10 @@ onBeforeUnmount(() => {
 
 .quiz-setup input:focus,
 .quiz-setup select:focus {
-  border-color: hsl(var(--primary));
+  border-color: var(--primary);
   box-shadow:
-    inset 0 1px 0 hsl(var(--foreground) / 0.06),
-    0 0 0 3px hsl(var(--primary) / 0.2);
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .quiz-setup__wide {
@@ -312,9 +314,9 @@ onBeforeUnmount(() => {
   max-height: 18rem;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0.35rem;
 }
 
@@ -333,9 +335,9 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 0.75rem;
   min-height: 2.5rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
 }
@@ -354,7 +356,7 @@ onBeforeUnmount(() => {
 }
 
 .quiz-setup__source-row:hover {
-  background: hsl(var(--muted));
+  background: var(--muted);
 }
 
 .quiz-setup__source-row span {
@@ -372,7 +374,7 @@ onBeforeUnmount(() => {
 
 .quiz-setup__source-row small,
 .quiz-setup__muted {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-setup__source-chip {
@@ -381,9 +383,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--muted));
+  background: var(--muted);
   padding: 0.6rem 0.75rem;
   text-align: left;
 }

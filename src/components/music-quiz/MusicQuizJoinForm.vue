@@ -45,9 +45,9 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 0.875rem;
 }
 
@@ -61,12 +61,13 @@ onMounted(async () => {
   min-height: 2.75rem;
   width: 100%;
   appearance: none;
-  border: 2px solid hsl(var(--foreground) / 0.58);
+  border: 2px solid color-mix(in srgb, var(--foreground) 58%, transparent);
   border-radius: 6px;
-  background: hsl(var(--background));
-  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.06);
+  background: var(--background);
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--foreground) 6%, transparent);
   padding: 0.5rem 0.625rem;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   outline: none;
   transition:
     border-color 0.15s ease,
@@ -74,9 +75,9 @@ onMounted(async () => {
 }
 
 .quiz-join input:focus {
-  border-color: hsl(var(--primary));
+  border-color: var(--primary);
   box-shadow:
-    0 0 0 3px hsl(var(--primary) / 0.22),
-    inset 0 1px 0 hsl(var(--foreground) / 0.06);
+    0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent);
 }
 </style>

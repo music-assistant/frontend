@@ -13,6 +13,7 @@ import {
   getStoredMusicQuizPlayerId,
   storeMusicQuizPlayerId,
   getMusicQuizErrorMessage,
+  isNoActiveMusicQuizError,
 } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
@@ -81,14 +82,13 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       playerId.value = storedPlayerId;
       gameRemoved.value = false;
     } catch (err) {
-      if (
+      const isPlayerNotFound =
         err &&
         typeof err === "object" &&
         "message" in err &&
         typeof err.message === "string" &&
-        (err.message.toLowerCase().includes("no active game") ||
-          err.message.toLowerCase().includes("player not found"))
-      ) {
+        err.message.toLowerCase().includes("player not found");
+      if (isNoActiveMusicQuizError(err) || isPlayerNotFound) {
         state.value = null;
         playerId.value = null;
         clearStoredMusicQuizPlayerId();

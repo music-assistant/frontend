@@ -14,7 +14,10 @@ import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { getMusicQuizErrorMessage } from "@/helpers/music_quiz";
+import {
+  getMusicQuizErrorMessage,
+  isNoActiveMusicQuizError,
+} from "@/helpers/music_quiz";
 
 export interface UseMusicQuizHostOptions {
   notifyError: (message: string) => void;
@@ -68,13 +71,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       state.value = nextState;
       gameRemoved.value = false;
     } catch (err) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "message" in err &&
-        typeof err.message === "string" &&
-        err.message.toLowerCase().includes("no active game")
-      ) {
+      if (isNoActiveMusicQuizError(err)) {
         state.value = null;
         gameRemoved.value = false;
       } else {

@@ -106,3 +106,27 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
   }
   return fallback;
 }
+
+export function isNoActiveMusicQuizError(err: unknown) {
+  const normalizedMessage = getMusicQuizErrorMessage(err).toLowerCase();
+  if (normalizedMessage.includes("no active")) return true;
+
+  if (err && typeof err === "object") {
+    const errorCode =
+      "error_code" in err && typeof err.error_code === "string"
+        ? err.error_code.toLowerCase()
+        : "";
+    const errorType =
+      "type" in err && typeof err.type === "string"
+        ? err.type.toLowerCase()
+        : "";
+    if (
+      errorCode.includes("no_active") ||
+      errorCode.includes("musicquiznogame") ||
+      errorType.includes("musicquiznogame")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}

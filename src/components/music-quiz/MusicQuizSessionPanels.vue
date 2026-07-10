@@ -103,9 +103,9 @@ const answeredPlayerCount = computed(
 }
 
 .quiz-panels__panel {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 1rem;
 }
 
@@ -125,7 +125,7 @@ const answeredPlayerCount = computed(
 }
 
 .quiz-panels__answer-status small {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-panels__answer-status ul {
@@ -142,15 +142,15 @@ const answeredPlayerCount = computed(
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0.55rem 0.65rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .quiz-panels__answer-status li.is-answered {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .quiz-panels__answer-status svg {
@@ -158,7 +158,7 @@ const answeredPlayerCount = computed(
 }
 
 .quiz-panels__answer-status li.is-answered svg {
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 .quiz-panels__answer-status li span {
@@ -188,7 +188,7 @@ const answeredPlayerCount = computed(
 
 .quiz-panels__leaderboard small {
   margin-right: 0.5rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 800px) {

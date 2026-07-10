@@ -59,7 +59,7 @@
             :lyrics="''"
             :lrc-lyrics="''"
             :lyrics-position="0"
-            :lyrics-text-color="'hsl(var(--foreground))'"
+            :lyrics-text-color="'var(--foreground)'"
             :show-ready-button="false"
             :show-copy-button="false"
             @ready="noop"
@@ -172,7 +172,7 @@
             :lyrics="''"
             :lrc-lyrics="''"
             :lyrics-position="0"
-            :lyrics-text-color="'hsl(var(--foreground))'"
+            :lyrics-text-color="'var(--foreground)'"
             :show-ready-button="false"
             @ready="noop"
             @copy-title="copyCurrentRoundTitle"
@@ -373,9 +373,9 @@ onBeforeUnmount(() => {
 
 .dashboard-shell__header,
 .dashboard-shell__card {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: hsl(var(--card));
+  background: var(--card);
   padding: 1rem;
 }
 
@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
 .dashboard-shell__header p,
 .dashboard-shell__card p {
   margin: 0.35rem 0 0;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .dashboard-shell__content {
@@ -415,7 +415,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 1.2rem;
 }
 
@@ -434,7 +434,7 @@ onBeforeUnmount(() => {
 .present-mode__heading p {
   margin: 0.35rem 0 0;
   font-size: clamp(1rem, 1.8vw, 1.5rem);
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .present-mode__body {
