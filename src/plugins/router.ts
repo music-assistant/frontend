@@ -16,8 +16,6 @@ const routes: RouteRecordRaw[] = [
   // which exchanges the short join code for a JWT before navigating here
   {
     path: "/guest",
-    // Guest users don't have access to the player.
-    meta: { disableWebPlayer: true },
     component: () => import("@/layouts/PartyGuestLayout.vue"),
     children: [
       {

@@ -1,4 +1,4 @@
-import { reactive, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import authManager from "./auth";
 import api from "./api";
 import { EventType } from "./api/interfaces";
@@ -12,6 +12,11 @@ export enum WebPlayerMode {
   SENDSPIN_ONLY = "sendspin_only",
   SENDSPIN_WITH_CONTROLS = "sendspin_with_controls",
 }
+
+// Party guests are normally kept off the web player, but when a party has
+// listen-in enabled they need a receive-only player to stream the party audio.
+// The party guest view drives this flag from party/config.
+export const partyListenInEnabled = ref(false);
 
 // Helper to check if a mode is a playback mode (handles actual audio)
 export const isPlaybackMode = (mode: WebPlayerMode) =>
@@ -151,16 +156,20 @@ function resolvePreferredMode(): WebPlayerMode {
     (record) => record.meta.disableWebPlayer === true,
   );
 
-  // Hard-disable conditions:
-  // - Party guests (explicitly disabled via meta)
-  // - Companion mode
-  // - Route explicitly disables web player
-  // Music Quiz guests NEED the web player for listen-in audio!
-  if (
-    authManager.isPartyGuest() ||
-    companionMode.value ||
-    routeDisablesWebPlayer
-  ) {
+  // Companion mode handles audio natively, so it always wins.
+  if (companionMode.value) {
+    return WebPlayerMode.DISABLED;
+  }
+
+  // Party guests get a receive-only player (no browser media controls) when the
+  // party has listen-in enabled; otherwise they stay off the web player.
+  if (authManager.isPartyGuest()) {
+    return partyListenInEnabled.value
+      ? WebPlayerMode.SENDSPIN_ONLY
+      : WebPlayerMode.DISABLED;
+  }
+
+  if (routeDisablesWebPlayer) {
     return WebPlayerMode.DISABLED;
   }
 
@@ -230,6 +239,10 @@ export async function initializeWebPlayerModeSync(): Promise<void> {
     });
 
     watch(companionMode, () => {
+      void queueModeApplication();
+    });
+
+    watch(partyListenInEnabled, () => {
       void queueModeApplication();
     });
 
