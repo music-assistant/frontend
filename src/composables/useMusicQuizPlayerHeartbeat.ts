@@ -16,7 +16,6 @@ export function createMusicQuizPlayerHeartbeat(
   let timer: ReturnType<typeof setInterval> | undefined;
   let request: Promise<void> | undefined;
   let requestTask: Promise<void> | undefined;
-  let requestPlayerId: string | undefined;
   let requestQueued = false;
   let notifiedErrorPlayerId: string | null = null;
 
@@ -43,11 +42,10 @@ export function createMusicQuizPlayerHeartbeat(
     const playerId = activePlayerId;
     if (!playerId) return Promise.resolve();
     if (request) {
-      if (requestPlayerId !== playerId) requestQueued = true;
+      requestQueued = true;
       return requestTask ?? request;
     }
 
-    requestPlayerId = playerId;
     const outcome = Promise.resolve()
       .then(() => sendHeartbeat(playerId))
       .then(
@@ -61,6 +59,7 @@ export function createMusicQuizPlayerHeartbeat(
           onError(playerId, result.error);
         }
       } else if (activePlayerId === playerId) {
+        notifiedErrorPlayerId = null;
         await onResult(playerId, result.active);
       }
     });
@@ -71,7 +70,6 @@ export function createMusicQuizPlayerHeartbeat(
     const trackedRequest = pendingRequest.finally(() => {
       if (request !== trackedRequest) return;
       request = undefined;
-      requestPlayerId = undefined;
       const shouldRetry = requestQueued;
       requestQueued = false;
       if (shouldRetry && activePlayerId) void refresh();

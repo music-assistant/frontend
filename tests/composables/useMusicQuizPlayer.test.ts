@@ -280,8 +280,10 @@ describe("useMusicQuizPlayer", () => {
 
     pendingHeartbeat.resolve(true);
     await flushPromises();
-    await vi.advanceTimersByTimeAsync(15_000);
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(3);
   });
 
   it("refreshes heartbeat when visibility or focus is restored", async () => {
@@ -338,6 +340,8 @@ describe("useMusicQuizPlayer", () => {
     mockHeartbeatMusicQuiz
       .mockRejectedValueOnce(new Error("Connection lost"))
       .mockRejectedValueOnce(new Error("Connection lost"))
+      .mockResolvedValueOnce(true)
+      .mockRejectedValueOnce(new Error("Connection lost"))
       .mockResolvedValue(true);
     mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
     const notifyError = vi.fn();
@@ -359,6 +363,11 @@ describe("useMusicQuizPlayer", () => {
     expect(mockGetMusicQuizState).toHaveBeenCalledWith("stored-player");
     expect(player.state.value).toEqual(PLAYER_STATE);
     expect(storedPlayerId.value).toBe("stored-player");
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(4);
+    expect(notifyError).toHaveBeenCalledTimes(2);
+    expect(player.playerId.value).toBe("stored-player");
   });
 
   it("recovers from a stale player token by returning to the join/info state", async () => {
