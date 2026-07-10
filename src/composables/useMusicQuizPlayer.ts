@@ -260,7 +260,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     if (
       !currentState ||
       !isSupportedMusicQuiz(currentState) ||
-      !isSupportedMusicQuiz(publicState)
+      !isSupportedMusicQuiz(publicState) ||
+      !Array.isArray(publicState.players)
     ) {
       return false;
     }

@@ -541,6 +541,24 @@ describe("useMusicQuizPlayer", () => {
     expect(notifyError).not.toHaveBeenCalled();
   });
 
+  it("refreshes safely when a public update has no player list", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(() =>
+      providerHandlers[0]({
+        object_id: "quiz-instance",
+        data: { event: "game_updated", state: QUIZ_INFO },
+      }),
+    ).not.toThrow();
+    await flushPromises();
+
+    expect(mockGetMusicQuizState).toHaveBeenCalledTimes(2);
+    expect(player.playerId.value).toBe("stored-player");
+  });
+
   it("keeps loading until removal recovery finishes", async () => {
     storedPlayerId.value = "stored-player";
     mockGetMusicQuizState.mockResolvedValueOnce(PLAYER_STATE);
