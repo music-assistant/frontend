@@ -2,6 +2,7 @@ import api from "@/plugins/api";
 
 export type MusicQuizPhase = "lobby" | "answering" | "reveal" | "finished";
 export type MusicQuizMode = "venue" | "remote";
+export type MusicQuizDifficulty = "easy" | "normal" | "hard";
 
 /**
  * Public state shape (guest-safe): exposed in game_updated events,
@@ -117,6 +118,7 @@ export interface MusicQuizCreateArgs {
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
+  difficulty: MusicQuizDifficulty;
   source_uris: string[];
   name: string;
 }
@@ -127,6 +129,7 @@ export function createMusicQuiz(
   round_count: number,
   suggestion_count: number,
   answer_duration: number,
+  difficulty: MusicQuizDifficulty,
   source_uris: string[],
   name?: string,
 ) {
@@ -135,6 +138,7 @@ export function createMusicQuiz(
     round_count,
     suggestion_count,
     answer_duration,
+    difficulty,
     source_uris,
     name,
   });

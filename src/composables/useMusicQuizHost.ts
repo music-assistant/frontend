@@ -2,6 +2,7 @@ import {
   createMusicQuiz,
   deleteMusicQuiz,
   getMusicQuiz,
+  type MusicQuizDifficulty,
   nextMusicQuiz,
   resetMusicQuiz,
   revealMusicQuiz,
@@ -111,6 +112,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     round_count: number,
     suggestion_count: number,
     answer_duration: number,
+    difficulty: MusicQuizDifficulty,
     source_uris: string[],
     name?: string,
   ) {
@@ -121,6 +123,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
         round_count,
         suggestion_count,
         answer_duration,
+        difficulty,
         source_uris,
         name,
       );
