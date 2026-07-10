@@ -1,5 +1,6 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
+import MusicQuizIcon from "@/components/icons/MusicQuizIcon.vue";
 import {
   DEFAULT_MENU_ITEMS,
   MENU_ITEMS_SEEN_PREFERENCE_KEY,
@@ -138,8 +139,8 @@ export const getMenuItems = function () {
     }
     if (enabledMenuItemStr === "music_quiz") {
       items.push({
-        label: "music_quiz.title",
-        icon: () => import("@/components/icons/MusicQuizIcon.vue"),
+        label: "providers.music_quiz.title",
+        icon: MusicQuizIcon,
         path: "/music-quiz",
         isLibraryNode: false,
         hidden: !store.enabledPlugins.has("music_quiz"),
