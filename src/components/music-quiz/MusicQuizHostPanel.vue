@@ -19,10 +19,7 @@
         }}
       </Button>
     </div>
-    <details
-      v-if="state.phase !== 'finished' && currentRound"
-      class="quiz-host__now-playing-details"
-    >
+    <details v-if="nowPlayingRound" class="quiz-host__now-playing-details">
       <summary>
         <span>{{ $t("providers.music_quiz.now_playing") }}</span>
         <ChevronDown class="size-4" />
@@ -31,11 +28,11 @@
         <img
           v-if="currentRoundImageUrl"
           :src="currentRoundImageUrl"
-          :alt="currentRound.answer_label"
+          :alt="nowPlayingRound.answer_label"
         />
         <div>
           <span>{{ $t("providers.music_quiz.current_music") }}</span>
-          <strong>{{ currentRound.answer_label }}</strong>
+          <strong>{{ nowPlayingRound.answer_label }}</strong>
         </div>
       </div>
     </details>
@@ -164,6 +161,11 @@ let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 const currentRoundImageUrl = computed(() =>
   getMediaImageUrl(props.currentRound?.image_url ?? ""),
 );
+const nowPlayingRound = computed(() => {
+  const round = props.currentRound;
+  if (props.state.phase === "finished" || !round?.answer_label) return null;
+  return round;
+});
 const sessionSourcesSummary = computed(() =>
   getMusicQuizSourceSummary(props.state.sources ?? []),
 );

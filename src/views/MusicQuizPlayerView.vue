@@ -94,8 +94,9 @@
           :is-ready="state.you.ready"
           :ready-label="readyLabel"
           :image-url="currentRoundImageUrl"
-          :show-lyrics="true"
+          :show-lyrics="showRevealLyrics"
           :has-lyrics="hasRevealLyrics"
+          :lyrics-loading="isRevealLyricsLoading"
           :lyrics="revealLyrics || ''"
           :lrc-lyrics="revealLrcLyrics || ''"
           :lyrics-position="lyricsPosition"
@@ -280,26 +281,38 @@ const isConnectionDegraded = computed(
 
 const revealLyrics = ref<string | null>(null);
 const revealLrcLyrics = ref<string | null>(null);
-const hasRevealLyrics = computed(
-  () => !!(revealLyrics.value || revealLrcLyrics.value),
+const revealLyricsStatus = ref<
+  "idle" | "loading" | "ready" | "empty" | "error"
+>("idle");
+const hasRevealLyrics = computed(() => revealLyricsStatus.value === "ready");
+const isRevealLyricsLoading = computed(
+  () => revealLyricsStatus.value === "loading",
 );
+const showRevealLyrics = computed(() => revealLyricsStatus.value !== "error");
 let lyricsRequestCounter = 0;
 
 async function loadRevealLyrics(trackUri: string) {
   const requestId = ++lyricsRequestCounter;
+  revealLyricsStatus.value = "loading";
   revealLyrics.value = null;
   revealLrcLyrics.value = null;
   try {
     const item = await api.getItemByUri(trackUri);
     if (requestId !== lyricsRequestCounter) return;
-    if (item.media_type !== MediaType.TRACK) return;
+    if (item.media_type !== MediaType.TRACK) {
+      revealLyricsStatus.value = "empty";
+      return;
+    }
     const [lyrics, lrcLyrics] = await api.getTrackLyrics(item as Track);
     if (requestId !== lyricsRequestCounter) return;
     revealLyrics.value = lyrics;
     revealLrcLyrics.value = lrcLyrics;
+    revealLyricsStatus.value =
+      (lyrics ?? "").trim() || (lrcLyrics ?? "").trim() ? "ready" : "empty";
   } catch (error) {
     if (requestId === lyricsRequestCounter) {
       console.warn("Failed to load quiz lyrics:", error);
+      revealLyricsStatus.value = "error";
     }
   }
 }
@@ -311,6 +324,7 @@ watch(
       lyricsRequestCounter += 1;
       revealLyrics.value = null;
       revealLrcLyrics.value = null;
+      revealLyricsStatus.value = "idle";
       return;
     }
     void loadRevealLyrics(trackUri);

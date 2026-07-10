@@ -42,9 +42,12 @@
         :text-color="lyricsTextColor"
         :anticipation="0"
       />
-      <div v-else class="quiz-reveal__lyrics-loading">
+      <div v-else-if="lyricsLoading" class="quiz-reveal__lyrics-loading">
         <Loader2 class="size-5 animate-spin" />
         <span>{{ $t("providers.music_quiz.loading_lyrics") }}</span>
+      </div>
+      <div v-else class="quiz-reveal__lyrics-empty">
+        <span>{{ $t("no_lyrics_available") }}</span>
       </div>
     </div>
   </section>
@@ -65,6 +68,7 @@ withDefaults(
     imageUrl: string;
     showLyrics: boolean;
     hasLyrics: boolean;
+    lyricsLoading?: boolean;
     lyrics: string;
     lrcLyrics: string;
     lyricsPosition: number;
@@ -75,6 +79,7 @@ withDefaults(
   {
     showReadyButton: true,
     showCopyButton: true,
+    lyricsLoading: false,
   },
 );
 const emit = defineEmits<{ ready: []; "copy-title": [] }>();
@@ -128,6 +133,15 @@ const emit = defineEmits<{ ready: []; "copy-title": [] }>();
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 600;
+}
+
+.quiz-reveal__lyrics-empty {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
   color: hsl(var(--muted-foreground));
   font-weight: 600;
 }

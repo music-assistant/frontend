@@ -153,6 +153,7 @@ const sourceResults = ref<SourceItem[]>([]);
 const selectedSources = ref<SourceItem[]>([]);
 const sourceSearching = ref(false);
 let sourceSearchTimer: ReturnType<typeof setTimeout> | undefined;
+let sourceSearchRequestId = 0;
 
 const sourceUris = computed(() =>
   selectedSources.value.map((item) => item.uri),
@@ -193,6 +194,7 @@ function scheduleSourceSearch() {
 }
 
 async function searchSources() {
+  const requestId = ++sourceSearchRequestId;
   const query = sourceSearchQuery.value.trim();
   if (query.length < 2) {
     sourceResults.value = [];
@@ -206,18 +208,22 @@ async function searchSources() {
       [MediaType.TRACK, MediaType.PLAYLIST],
       8,
     );
+    if (requestId !== sourceSearchRequestId) return;
     const selected = new Set(selectedSources.value.map((item) => item.uri));
     sourceResults.value = [...result.tracks, ...result.playlists].filter(
       (item) => !selected.has(item.uri),
     );
   } catch (err) {
+    if (requestId !== sourceSearchRequestId) return;
     toast.error(
       err instanceof Error
         ? err.message
         : $t("providers.music_quiz.source_search_failed"),
     );
   } finally {
-    sourceSearching.value = false;
+    if (requestId === sourceSearchRequestId) {
+      sourceSearching.value = false;
+    }
   }
 }
 
