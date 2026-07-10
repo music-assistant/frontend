@@ -371,6 +371,7 @@ onBeforeUnmount(() => {
 }
 
 .quiz-setup__source-row:focus-visible {
+  outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
 }

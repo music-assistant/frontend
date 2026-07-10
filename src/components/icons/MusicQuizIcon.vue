@@ -13,8 +13,7 @@ const props = withDefaults(
 );
 </script>
 
-<!-- a microphone with a question mark: the sidebar twin of the provider
-     manifest's mdi-microphone-question, drawn in the lucide stroke style -->
+<!-- sidebar Music Quiz icon, drawn in a lucide-like microphone stroke style -->
 <template>
   <svg
     class="music-quiz-icon"
