@@ -4,13 +4,13 @@
     :class="{ 'quiz-panels--finished': state.phase === 'finished' }"
   >
     <div v-if="state.phase !== 'finished'" class="quiz-panels__panel">
-      <h2>{{ $t("music_quiz.round") }}</h2>
+      <h2>{{ $t("providers.music_quiz.round") }}</h2>
       <p v-if="currentRound">
         {{ currentRound.round_index + 1 }} / {{ state.round_count }}
       </p>
       <div v-if="showRoundPlayerStatus" class="quiz-panels__answer-status">
         <header>
-          <span>{{ $t("music_quiz.answers") }}</span>
+          <span>{{ $t("providers.music_quiz.answers") }}</span>
           <small>
             {{ answeredPlayerCount }} / {{ roundPlayerStatuses.length }}
           </small>
@@ -33,7 +33,7 @@
       <h2>
         {{
           state.phase === "finished"
-            ? $t("music_quiz.final_leaderboard")
+            ? $t("providers.music_quiz.final_leaderboard")
             : $t("players")
         }}
       </h2>

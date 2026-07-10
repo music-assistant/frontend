@@ -52,12 +52,12 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const phaseLabel = computed(() => {
     if (!state.value) return "";
     if (state.value.phase === "lobby")
-      return $t("music_quiz.phase_waiting_for_players");
+      return $t("providers.music_quiz.phase_waiting_for_players");
     if (state.value.phase === "answering")
-      return $t("music_quiz.phase_answers_open");
+      return $t("providers.music_quiz.phase_answers_open");
     if (state.value.phase === "reveal")
-      return $t("music_quiz.phase_enjoy_track");
-    return $t("music_quiz.phase_finished");
+      return $t("providers.music_quiz.phase_enjoy_track");
+    return $t("providers.music_quiz.phase_finished");
   });
 
   async function fetchState() {
@@ -78,7 +78,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
         gameRemoved.value = false;
       } else {
         notifyError(
-          getMusicQuizErrorMessage(err, $t("music_quiz.error_load_state")),
+          getMusicQuizErrorMessage(
+            err,
+            $t("providers.music_quiz.error_load_state"),
+          ),
         );
       }
     } finally {
@@ -125,7 +128,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       gameRemoved.value = false;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_create")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_create")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -139,7 +144,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_start")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_start")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -153,7 +160,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_reveal")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_reveal")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -167,7 +176,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_next")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_next")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -181,7 +192,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_reset")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_reset")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -196,7 +209,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       gameRemoved.value = false;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_delete")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_delete")),
+      );
       return false;
     } finally {
       busy.value = false;

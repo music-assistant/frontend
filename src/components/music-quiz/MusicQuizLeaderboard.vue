@@ -1,6 +1,6 @@
 <template>
   <section class="quiz-leaderboard">
-    <h2>{{ $t("music_quiz.leaderboard") }}</h2>
+    <h2>{{ $t("providers.music_quiz.leaderboard") }}</h2>
     <ol>
       <li
         v-for="player in rows"

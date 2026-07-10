@@ -20,8 +20,8 @@ export function getMusicQuizSourceSummary(sources: SourceLike[]) {
     parts.push(
       $t(
         counts.tracks === 1
-          ? "music_quiz.track_count"
-          : "music_quiz.tracks_count",
+          ? "providers.music_quiz.track_count"
+          : "providers.music_quiz.tracks_count",
         [counts.tracks],
       ),
     );
@@ -30,23 +30,23 @@ export function getMusicQuizSourceSummary(sources: SourceLike[]) {
     parts.push(
       $t(
         counts.playlists === 1
-          ? "music_quiz.playlist_count"
-          : "music_quiz.playlists_count",
+          ? "providers.music_quiz.playlist_count"
+          : "providers.music_quiz.playlists_count",
         [counts.playlists],
       ),
     );
   }
-  return parts.join(", ") || $t("music_quiz.tracks_count", [0]);
+  return parts.join(", ") || $t("providers.music_quiz.tracks_count", [0]);
 }
 
 export function musicQuizSourceTypeLabel(mediaType?: string | null) {
   if (mediaType === MediaType.PLAYLIST || mediaType === "playlist") {
-    return $t("music_quiz.playlist");
+    return $t("providers.music_quiz.playlist");
   }
   if (mediaType === MediaType.TRACK || mediaType === "track") {
-    return $t("music_quiz.track");
+    return $t("providers.music_quiz.track");
   }
-  return $t("music_quiz.source_music");
+  return $t("providers.music_quiz.source_music");
 }
 
 function isPlaylistSource(source: SourceLike) {

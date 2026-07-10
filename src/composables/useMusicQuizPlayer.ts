@@ -58,7 +58,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       }
     } catch (err) {
       notifyError(
-        getMusicQuizErrorMessage(err, $t("music_quiz.error_load_info")),
+        getMusicQuizErrorMessage(
+          err,
+          $t("providers.music_quiz.error_load_info"),
+        ),
       );
     } finally {
       loading.value = false;
@@ -92,7 +95,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         gameRemoved.value = true;
       } else {
         notifyError(
-          getMusicQuizErrorMessage(err, $t("music_quiz.error_load_state")),
+          getMusicQuizErrorMessage(
+            err,
+            $t("providers.music_quiz.error_load_state"),
+          ),
         );
       }
     } finally {
@@ -127,7 +133,9 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       gameRemoved.value = false;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_join")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_join")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -137,7 +145,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   async function answer(suggestionId: string) {
     const currentPlayerId = playerId.value;
     if (!currentPlayerId) {
-      notifyError($t("music_quiz.error_not_joined"));
+      notifyError($t("providers.music_quiz.error_not_joined"));
       return false;
     }
     busy.value = true;
@@ -146,7 +154,9 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_answer")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_answer")),
+      );
       return false;
     } finally {
       busy.value = false;
@@ -156,7 +166,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   async function ready() {
     const currentPlayerId = playerId.value;
     if (!currentPlayerId) {
-      notifyError($t("music_quiz.error_not_joined"));
+      notifyError($t("providers.music_quiz.error_not_joined"));
       return false;
     }
     busy.value = true;
@@ -165,7 +175,9 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       state.value = nextState;
       return true;
     } catch (err) {
-      notifyError(getMusicQuizErrorMessage(err, $t("music_quiz.error_ready")));
+      notifyError(
+        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_ready")),
+      );
       return false;
     } finally {
       busy.value = false;

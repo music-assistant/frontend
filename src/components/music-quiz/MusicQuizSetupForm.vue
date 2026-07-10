@@ -1,29 +1,29 @@
 <template>
   <div class="quiz-setup">
     <label>
-      {{ $t("music_quiz.session_name") }}
+      {{ $t("providers.music_quiz.session_name") }}
       <input v-model="name" type="text" />
     </label>
     <label>
-      {{ $t("music_quiz.rounds") }}
+      {{ $t("providers.music_quiz.rounds") }}
       <input v-model.number="roundCount" min="2" type="number" />
     </label>
     <label>
-      {{ $t("music_quiz.suggestions") }}
+      {{ $t("providers.music_quiz.suggestions") }}
       <input v-model.number="suggestionCount" min="2" type="number" />
     </label>
     <label>
-      {{ $t("music_quiz.answer_seconds") }}
+      {{ $t("providers.music_quiz.answer_seconds") }}
       <input v-model.number="answerDuration" min="1" type="number" />
     </label>
     <div class="quiz-setup__wide quiz-setup__sources">
       <div class="quiz-setup__source-search">
         <label>
-          {{ $t("music_quiz.add_tracks_or_playlists") }}
+          {{ $t("providers.music_quiz.add_tracks_or_playlists") }}
           <input
             v-model="sourceSearchQuery"
             type="search"
-            :placeholder="$t('music_quiz.search_music')"
+            :placeholder="$t('providers.music_quiz.search_music')"
           />
         </label>
         <div
@@ -31,7 +31,7 @@
           class="quiz-setup__source-results"
         >
           <p v-if="sourceSearching" class="quiz-setup__muted">
-            {{ $t("music_quiz.searching") }}
+            {{ $t("providers.music_quiz.searching") }}
           </p>
           <button
             v-for="item in sourceResults"
@@ -51,14 +51,14 @@
             v-if="!sourceSearching && sourceResults.length === 0"
             class="quiz-setup__muted"
           >
-            {{ $t("music_quiz.no_sources_found") }}
+            {{ $t("providers.music_quiz.no_sources_found") }}
           </p>
         </div>
       </div>
 
       <div class="quiz-setup__selected">
         <div class="quiz-setup__selected-header">
-          <span>{{ $t("music_quiz.selected_music") }}</span>
+          <span>{{ $t("providers.music_quiz.selected_music") }}</span>
           <strong>{{ selectedSourcesSummary }}</strong>
         </div>
         <div
@@ -80,7 +80,7 @@
           </button>
         </div>
         <p v-else class="quiz-setup__muted">
-          {{ $t("music_quiz.pick_at_least_one_source") }}
+          {{ $t("providers.music_quiz.pick_at_least_one_source") }}
         </p>
       </div>
     </div>
@@ -198,7 +198,7 @@ async function searchSources() {
     toast.error(
       err instanceof Error
         ? err.message
-        : $t("music_quiz.source_search_failed"),
+        : $t("providers.music_quiz.source_search_failed"),
     );
   } finally {
     sourceSearching.value = false;
@@ -221,11 +221,12 @@ function removeSource(uri: string) {
 }
 
 function sourceSubtitle(item: SourceItem) {
-  if (item.media_type === MediaType.PLAYLIST) return $t("music_quiz.playlist");
+  if (item.media_type === MediaType.PLAYLIST)
+    return $t("providers.music_quiz.playlist");
   const artist = (item as Track).artists?.[0]?.name;
   return artist
-    ? $t("music_quiz.track_with_artist", [artist])
-    : $t("music_quiz.track");
+    ? $t("providers.music_quiz.track_with_artist", [artist])
+    : $t("providers.music_quiz.track");
 }
 
 watch(sourceSearchQuery, () => scheduleSourceSearch());

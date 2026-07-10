@@ -1,21 +1,25 @@
 <template>
   <div class="music-quiz-player">
     <div v-if="gameRemoved" class="quiz-shell">
-      <p>{{ $t("music_quiz.game_no_longer_available") }}</p>
+      <p>{{ $t("providers.music_quiz.game_no_longer_available") }}</p>
     </div>
 
     <div v-else-if="!playerId && !loading" class="quiz-shell quiz-shell--join">
       <header class="quiz-shell__intro">
-        <h1>{{ $t("music_quiz.title") }}</h1>
+        <h1>{{ $t("providers.music_quiz.title") }}</h1>
         <p v-if="info?.name">{{ info.name }}</p>
         <div v-if="info" class="quiz-shell__stats">
-          <span>{{ $t("music_quiz.players_count", [info.player_count]) }}</span>
-          <span>{{ $t("music_quiz.rounds_count", [info.round_count]) }}</span>
+          <span>{{
+            $t("providers.music_quiz.players_count", [info.player_count])
+          }}</span>
+          <span>{{
+            $t("providers.music_quiz.rounds_count", [info.round_count])
+          }}</span>
           <span>{{ modeLabel }}</span>
         </div>
       </header>
       <MusicQuizJoinForm
-        :session-name="info?.name || $t('music_quiz.title')"
+        :session-name="info?.name || $t('providers.music_quiz.title')"
         :busy="busy"
         @join="handleJoin"
       />
@@ -42,7 +46,9 @@
       />
 
       <section v-if="state.phase === 'lobby'" class="quiz-shell__section">
-        <p class="quiz-shell__hint">{{ $t("music_quiz.waiting_for_start") }}</p>
+        <p class="quiz-shell__hint">
+          {{ $t("providers.music_quiz.waiting_for_start") }}
+        </p>
         <MusicQuizLeaderboard
           :rows="leaderboardRows"
           :current-player-name="state.you.name"
@@ -53,9 +59,14 @@
         v-else-if="state.phase === 'answering' && currentRound"
         class="quiz-shell__section"
       >
-        <p class="quiz-shell__title">{{ $t("music_quiz.choose_answer") }}</p>
+        <p class="quiz-shell__title">
+          {{ $t("providers.music_quiz.choose_answer") }}
+        </p>
         <p class="quiz-shell__countdown">
-          {{ answerRemainingLabel || $t("music_quiz.waiting_for_answers") }}
+          {{
+            answerRemainingLabel ||
+            $t("providers.music_quiz.waiting_for_answers")
+          }}
         </p>
         <MusicQuizAnswerGrid
           class="quiz-shell__answers"
@@ -65,7 +76,7 @@
           @select="handleAnswer"
         />
         <p v-if="state.you.answer" class="quiz-shell__hint">
-          {{ $t("music_quiz.answered") }}
+          {{ $t("providers.music_quiz.answered") }}
         </p>
         <MusicQuizAnswerStatus
           :statuses="state.players"
@@ -97,7 +108,7 @@
           v-if="state.you.answer?.correct"
           class="quiz-shell__answer-result quiz-shell__answer-result--correct"
         >
-          {{ $t("music_quiz.correct") }}
+          {{ $t("providers.music_quiz.correct") }}
           <span>+{{ state.you.answer.points ?? 0 }}</span>
         </p>
         <p
@@ -106,8 +117,8 @@
         >
           {{
             state.you.answer
-              ? $t("music_quiz.incorrect")
-              : $t("music_quiz.no_answer_submitted")
+              ? $t("providers.music_quiz.incorrect")
+              : $t("providers.music_quiz.no_answer_submitted")
           }}
         </p>
 
@@ -121,7 +132,9 @@
         v-else-if="state.phase === 'finished'"
         class="quiz-shell__section"
       >
-        <h2 class="quiz-shell__title">{{ $t("music_quiz.game_over") }}</h2>
+        <h2 class="quiz-shell__title">
+          {{ $t("providers.music_quiz.game_over") }}
+        </h2>
         <p class="quiz-shell__hint">{{ winnerText }}</p>
         <MusicQuizLeaderboard
           :rows="leaderboardRows"
@@ -131,7 +144,7 @@
     </div>
 
     <div v-else class="quiz-shell">
-      <p>{{ $t("music_quiz.loading") }}</p>
+      <p>{{ $t("providers.music_quiz.loading") }}</p>
     </div>
   </div>
 </template>
@@ -178,22 +191,22 @@ const { answerRemainingLabel, lyricsPosition } = clocks;
 const mode = computed(() => state.value?.mode ?? info.value?.mode);
 const modeLabel = computed(() =>
   mode.value === "remote"
-    ? $t("music_quiz.mode_remote")
-    : $t("music_quiz.mode_venue"),
+    ? $t("providers.music_quiz.mode_remote")
+    : $t("providers.music_quiz.mode_venue"),
 );
 
 const listenInRecheckEvents = [EventType.PROVIDER_EVENT];
 const listenInLabels = computed<ListenInLabels>(() => ({
-  title: $t("music_quiz.listen_in"),
-  titleActive: $t("music_quiz.listen_in_active"),
-  descriptionVenue: $t("music_quiz.listen_in_venue"),
-  descriptionRemote: $t("music_quiz.listen_in_remote"),
-  tap: $t("music_quiz.listen_in_tap"),
-  stop: $t("music_quiz.listen_in_stop"),
-  poweredBy: $t("music_quiz.listen_in_powered_by"),
-  errorNoWebPlayer: $t("music_quiz.error_no_web_player"),
-  errorListenIn: $t("music_quiz.error_listen_in"),
-  errorStopListenIn: $t("music_quiz.error_stop_listen_in"),
+  title: $t("providers.music_quiz.listen_in"),
+  titleActive: $t("providers.music_quiz.listen_in_active"),
+  descriptionVenue: $t("providers.music_quiz.listen_in_venue"),
+  descriptionRemote: $t("providers.music_quiz.listen_in_remote"),
+  tap: $t("providers.music_quiz.listen_in_tap"),
+  stop: $t("providers.music_quiz.listen_in_stop"),
+  poweredBy: $t("providers.music_quiz.listen_in_powered_by"),
+  errorNoWebPlayer: $t("providers.music_quiz.error_no_web_player"),
+  errorListenIn: $t("providers.music_quiz.error_listen_in"),
+  errorStopListenIn: $t("providers.music_quiz.error_stop_listen_in"),
 }));
 
 const rankedPlayers = computed(() => {
@@ -228,9 +241,9 @@ const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 const roundProgress = computed(() => {
   if (!state.value) return "";
   if (!currentRound.value) {
-    return `${$t("music_quiz.round_label")} ${state.value.round_count}/${state.value.round_count}`;
+    return `${$t("providers.music_quiz.round_label")} ${state.value.round_count}/${state.value.round_count}`;
   }
-  return `${$t("music_quiz.round_label")} ${currentRound.value.round_index + 1}/${state.value.round_count}`;
+  return `${$t("providers.music_quiz.round_label")} ${currentRound.value.round_index + 1}/${state.value.round_count}`;
 });
 
 const playerRoundScoreLabel = computed(() => {
@@ -239,18 +252,20 @@ const playerRoundScoreLabel = computed(() => {
 });
 
 const readyLabel = computed(() => {
-  if (state.value?.you.ready) return $t("music_quiz.waiting_for_next");
-  return $t("music_quiz.ready");
+  if (state.value?.you.ready)
+    return $t("providers.music_quiz.waiting_for_next");
+  return $t("providers.music_quiz.ready");
 });
 
 const phaseText = computed(() => {
   if (!state.value) return "";
   if (state.value.phase === "lobby")
-    return $t("music_quiz.phase_waiting_for_players");
+    return $t("providers.music_quiz.phase_waiting_for_players");
   if (state.value.phase === "answering")
-    return $t("music_quiz.phase_answers_open");
-  if (state.value.phase === "reveal") return $t("music_quiz.phase_enjoy_track");
-  return $t("music_quiz.phase_finished");
+    return $t("providers.music_quiz.phase_answers_open");
+  if (state.value.phase === "reveal")
+    return $t("providers.music_quiz.phase_enjoy_track");
+  return $t("providers.music_quiz.phase_finished");
 });
 
 const currentRoundImageUrl = computed(() =>
@@ -307,7 +322,7 @@ async function copyCurrentRoundTitle() {
   if (!currentRound.value?.answer_label) return;
   const copied = await copyToClipboard(currentRound.value.answer_label);
   if (!copied) {
-    toast.error($t("music_quiz.copy_music_name_failed"));
+    toast.error($t("providers.music_quiz.copy_music_name_failed"));
   }
 }
 

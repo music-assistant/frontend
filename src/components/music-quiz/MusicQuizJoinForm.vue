@@ -2,7 +2,7 @@
   <form class="quiz-join" @submit.prevent="submit">
     <h1>{{ sessionName }}</h1>
     <label>
-      {{ $t("music_quiz.player_name") }}
+      {{ $t("providers.music_quiz.player_name") }}
       <input
         ref="nameInput"
         v-model="playerName"
@@ -14,7 +14,7 @@
       />
     </label>
     <Button :disabled="busy || !playerName.trim()" type="submit">{{
-      $t("music_quiz.join")
+      $t("providers.music_quiz.join")
     }}</Button>
   </form>
 </template>

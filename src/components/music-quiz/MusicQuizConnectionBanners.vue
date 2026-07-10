@@ -1,7 +1,7 @@
 <template>
   <div v-if="degraded" class="quiz-banner" role="status">
     <Loader2 class="size-4 animate-spin" />
-    {{ $t("music_quiz.connection_lost") }}
+    {{ $t("providers.music_quiz.connection_lost") }}
   </div>
 </template>
 
