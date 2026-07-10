@@ -138,6 +138,9 @@ describe("useMusicQuiz commands", () => {
     expect(isMusicQuizProviderEvent(event)).toBe(true);
     expect(isMusicQuizProviderEvent({ event: "game_updated" })).toBe(false);
     expect(
+      isMusicQuizProviderEvent({ event: "game_updated", state: null }),
+    ).toBe(false);
+    expect(
       isMusicQuizProviderEvent({
         event: "game_removed",
         state: event.state,
