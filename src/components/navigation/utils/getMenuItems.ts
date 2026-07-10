@@ -46,9 +46,9 @@ function parseMenuItemsPreference(value?: string | string[]): string[] {
 function getSeenMenuItems(enabledItems: string[]): Set<string> {
   const userSeenMenuItems = parseMenuItemsPreference(
     store.currentUser?.preferences?.[MENU_ITEMS_SEEN_PREFERENCE_KEY] as
-    | string
-    | string[]
-    | undefined,
+      | string
+      | string[]
+      | undefined,
   );
   if (userSeenMenuItems.length > 0) {
     return new Set(userSeenMenuItems);
@@ -70,7 +70,7 @@ function getSeenMenuItems(enabledItems: string[]): Set<string> {
   return seededSeenItems;
 }
 
-export const getMenuItems = function() {
+export const getMenuItems = function () {
   // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
   const userMenuItems = store.currentUser?.preferences?.menu_items as
     | string
