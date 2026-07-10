@@ -49,8 +49,10 @@ import type { MusicQuizPlayer } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Clock } from "@lucide/vue";
 
-defineProps<{
+interface MultipleChoiceProgressProps {
   statuses: MusicQuizPlayer[];
   answeredCount: number;
-}>();
+}
+
+defineProps<MultipleChoiceProgressProps>();
 </script>

@@ -29,7 +29,7 @@
 import { Button } from "@/components/ui/button";
 import type { MusicQuizSuggestion } from "@/composables/useMusicQuiz";
 
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 defineProps<{
   suggestions: MusicQuizSuggestion[];
@@ -39,6 +39,6 @@ defineProps<{
 const emit = defineEmits<{ select: [suggestionId: string] }>();
 
 function optionLetter(index: number): string {
-  return LETTERS[index] ?? String(index + 1);
+  return OPTION_LETTERS[index] ?? String(index + 1);
 }
 </script>

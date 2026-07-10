@@ -40,11 +40,15 @@ vi.mock("@/components/music-quiz/game_types", async () => {
     MUSIC_QUIZ_GAME_TYPES: [
       {
         id: "guess_the_song",
+        answerType: "multiple_choice",
         labelKey: "game_type",
         descriptionKey: "game_type_description",
         icon: { template: "<span />" },
         available: true,
-        configComponent,
+        supportsListenIn: true,
+        adapters: {
+          setup: configComponent,
+        },
       },
     ],
   };

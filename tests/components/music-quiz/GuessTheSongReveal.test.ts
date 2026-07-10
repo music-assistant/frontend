@@ -1,4 +1,4 @@
-import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
+import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongReveal.vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,7 +29,7 @@ const baseProps = {
 };
 
 function mountReveal(lyricsLoading: boolean) {
-  return mount(MusicQuizReveal, {
+  return mount(GuessTheSongReveal, {
     props: { ...baseProps, lyricsLoading },
     global: {
       stubs: {
@@ -40,7 +40,7 @@ function mountReveal(lyricsLoading: boolean) {
   });
 }
 
-describe("MusicQuizReveal", () => {
+describe("GuessTheSongReveal", () => {
   it("shows a loading state while lyrics are still being fetched", () => {
     const wrapper = mountReveal(true);
     expect(wrapper.text()).toContain("providers.music_quiz.loading_lyrics");

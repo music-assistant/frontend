@@ -18,24 +18,19 @@
           <PartyPopper class="size-7" />
         </span>
         <CardTitle class="text-2xl">
-          {{ guessTheSongInfo?.name || $t("providers.music_quiz.title") }}
+          {{ activeInfo?.name || $t("providers.music_quiz.title") }}
         </CardTitle>
-        <div
-          v-if="guessTheSongInfo"
-          class="flex flex-wrap justify-center gap-2 pt-1"
-        >
+        <div v-if="activeInfo" class="flex flex-wrap justify-center gap-2 pt-1">
           <Badge variant="secondary">
             {{
               $t("providers.music_quiz.players_count", [
-                guessTheSongInfo.player_count,
+                activeInfo.player_count,
               ])
             }}
           </Badge>
           <Badge variant="secondary">
             {{
-              $t("providers.music_quiz.rounds_count", [
-                guessTheSongInfo.round_count,
-              ])
+              $t("providers.music_quiz.rounds_count", [activeInfo.round_count])
             }}
           </Badge>
           <Badge variant="secondary">{{ modeLabel }}</Badge>
@@ -43,29 +38,28 @@
       </CardHeader>
       <CardContent>
         <MusicQuizJoinForm
-          :session-name="
-            guessTheSongInfo?.name || $t('providers.music_quiz.title')
-          "
+          :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
           :busy="busy"
           @join="handleJoin"
         />
       </CardContent>
     </Card>
 
-    <template v-else-if="guessTheSongState">
+    <template v-else-if="activeState && resolvedDefinition">
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
       <MusicQuizPlayerHeader
-        :player-name="guessTheSongState.you.name"
+        :player-name="activeState.you.name"
         :rank="playerRank"
         :round-progress="roundProgress"
         :round-fraction="roundFraction"
-        :score="guessTheSongState.you.score"
+        :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
         :phase-label="phaseText"
       />
 
       <ListenIn
+        v-if="resolvedDefinition.game.supportsListenIn"
         domain="music_quiz"
         :mode="mode"
         :labels="listenInLabels"
@@ -74,20 +68,15 @@
       />
 
       <MusicQuizPlayerStage
-        :state="guessTheSongState"
+        :state="activeState"
         :current-round="currentRound"
         :busy="busy"
         :leaderboard-rows="leaderboardRows"
-        :answered-count="answeredCount"
-        :answer-remaining-label="answerRemainingLabel"
-        :answer-remaining-fraction="answerRemainingFraction"
         :winner-text="winnerText"
-        :ready-label="readyLabel"
-        :current-round-image-url="currentRoundImageUrl"
-        :lyrics-position="lyricsPosition"
-        @answer="handleAnswer"
+        :game-component="resolvedDefinition.game.adapters.player"
+        :answer-component="resolvedDefinition.answer.adapters.player"
+        @submit-answer="handleSubmitAnswer"
         @ready="handleReady"
-        @copy-title="copyCurrentRoundTitle"
       />
     </template>
 
@@ -104,6 +93,7 @@
 <script setup lang="ts">
 import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import { resolveMusicQuizDefinition } from "@/components/music-quiz/game_types";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
@@ -113,20 +103,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
-import { useMusicQuizRoundClocks } from "@/composables/useMusicQuizRoundClocks";
-import { isSupportedMusicQuiz } from "@/composables/useMusicQuiz";
+import {
+  isSupportedMusicQuiz,
+  type MusicQuizAnswerSubmission,
+} from "@/composables/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
-import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { PartyPopper } from "@lucide/vue";
-import { computed, onBeforeUnmount, watch } from "vue";
+import { computed, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const player = useMusicQuizPlayer({
@@ -136,33 +127,38 @@ const player = useMusicQuizPlayer({
 const { info, state, playerId, gameRemoved, busy, loading, currentRound } =
   player;
 
-const guessTheSongState = computed(() => {
+const resolvedDefinition = computed(() => {
+  const activeGame = state.value ?? info.value;
+  return activeGame
+    ? resolveMusicQuizDefinition(activeGame.quiz_type, activeGame.answer_type)
+    : undefined;
+});
+const activeState = computed(() => {
   const currentState = state.value;
-  return currentState && isSupportedMusicQuiz(currentState)
+  return currentState &&
+    resolvedDefinition.value &&
+    isSupportedMusicQuiz(currentState)
     ? currentState
     : null;
 });
-const guessTheSongInfo = computed(() => {
+const activeInfo = computed(() => {
   const currentInfo = info.value;
-  return currentInfo && isSupportedMusicQuiz(currentInfo) ? currentInfo : null;
+  return currentInfo &&
+    resolvedDefinition.value &&
+    isSupportedMusicQuiz(currentInfo)
+    ? currentInfo
+    : null;
 });
 const unsupportedGame = computed(() => {
   const activeGame = state.value ?? info.value;
-  return !!activeGame && !isSupportedMusicQuiz(activeGame);
+  return !!activeGame && !resolvedDefinition.value;
 });
-
-const clocks = useMusicQuizRoundClocks(
-  guessTheSongState,
-  computed(() => currentRound.value),
-);
-const { answerRemainingLabel, answerRemainingFraction, lyricsPosition } =
-  clocks;
 
 const { celebrate } = useMusicQuizCelebration();
 
 const mode = computed(() => {
-  if (guessTheSongState.value) return guessTheSongState.value.mode;
-  return guessTheSongInfo.value?.mode;
+  if (activeState.value) return activeState.value.mode;
+  return activeInfo.value?.mode;
 });
 const modeLabel = computed(() =>
   mode.value === "remote"
@@ -185,13 +181,11 @@ const listenInLabels = computed<ListenInLabels>(() => ({
 }));
 
 const rankedPlayers = computed(() =>
-  guessTheSongState.value
-    ? rankMusicQuizPlayers(guessTheSongState.value.players)
-    : [],
+  activeState.value ? rankMusicQuizPlayers(activeState.value.players) : [],
 );
 
 const playerRank = computed(() => {
-  const currentState = guessTheSongState.value;
+  const currentState = activeState.value;
   if (!currentState) return null;
   return (
     rankedPlayers.value.find((row) => row.name === currentState.you.name)
@@ -200,7 +194,7 @@ const playerRank = computed(() => {
 });
 
 const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
-  const currentState = guessTheSongState.value;
+  const currentState = activeState.value;
   if (!currentState) return [];
   return rankedPlayers.value.map((playerRow) => ({
     ...playerRow,
@@ -208,24 +202,19 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
   }));
 });
 
-const answeredCount = computed(
-  () =>
-    guessTheSongState.value?.players.filter((playerRow) => playerRow.answered)
-      .length ?? 0,
-);
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 
 const roundProgress = computed(() => {
-  if (!guessTheSongState.value) return "";
+  if (!activeState.value) return "";
   const label = $t("providers.music_quiz.round_label");
   if (!currentRound.value) {
-    return `${label} ${guessTheSongState.value.round_count}/${guessTheSongState.value.round_count}`;
+    return `${label} ${activeState.value.round_count}/${activeState.value.round_count}`;
   }
-  return `${label} ${currentRound.value.round_index + 1}/${guessTheSongState.value.round_count}`;
+  return `${label} ${currentRound.value.round_index + 1}/${activeState.value.round_count}`;
 });
 
 const roundFraction = computed(() => {
-  const currentState = guessTheSongState.value;
+  const currentState = activeState.value;
   if (!currentState || currentState.round_count <= 0) return 0;
   if (!currentRound.value) return 100;
   return (
@@ -234,34 +223,21 @@ const roundFraction = computed(() => {
 });
 
 const playerRoundScoreLabel = computed(() =>
-  guessTheSongState.value
-    ? getMusicQuizRoundScoreLabel(
-        guessTheSongState.value,
-        guessTheSongState.value.you.name,
-      )
+  activeState.value
+    ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
     : "",
 );
 
-const readyLabel = computed(() =>
-  guessTheSongState.value?.you.ready
-    ? $t("providers.music_quiz.waiting_for_next")
-    : $t("providers.music_quiz.ready"),
-);
-
 const phaseText = computed(() => {
-  if (!guessTheSongState.value) return "";
-  if (guessTheSongState.value.phase === "lobby")
+  if (!activeState.value) return "";
+  if (activeState.value.phase === "lobby")
     return $t("providers.music_quiz.phase_waiting_for_players");
-  if (guessTheSongState.value.phase === "answering")
+  if (activeState.value.phase === "answering")
     return $t("providers.music_quiz.phase_answers_open");
-  if (guessTheSongState.value.phase === "reveal")
+  if (activeState.value.phase === "reveal")
     return $t("providers.music_quiz.phase_enjoy_track");
   return $t("providers.music_quiz.phase_finished");
 });
-
-const currentRoundImageUrl = computed(() =>
-  getMediaImageUrl(currentRound.value?.image_url ?? ""),
-);
 
 const isConnectionDegraded = computed(
   () =>
@@ -270,35 +246,23 @@ const isConnectionDegraded = computed(
 );
 
 watch(
-  () => guessTheSongState.value?.phase,
+  () => activeState.value?.phase,
   (phase) => {
     if (phase === "finished") void celebrate();
   },
 );
 
-async function copyCurrentRoundTitle() {
-  if (!currentRound.value?.answer_label) return;
-  const copied = await copyToClipboard(currentRound.value.answer_label);
-  if (!copied) {
-    toast.error($t("providers.music_quiz.copy_music_name_failed"));
-  }
-}
-
 async function handleJoin(name: string) {
   await player.join(name);
 }
 
-async function handleAnswer(suggestionId: string) {
-  await player.answer(suggestionId);
+async function handleSubmitAnswer(submission: MusicQuizAnswerSubmission) {
+  await player.submitAnswer(submission);
 }
 
 async function handleReady() {
   await player.ready();
 }
-
-onBeforeUnmount(() => {
-  clocks.teardown();
-});
 </script>
 
 <style scoped>

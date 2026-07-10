@@ -280,6 +280,36 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value?.answer_type).toBe("multiple_choice");
   });
 
+  it("submits a discriminated answer through the legacy command", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+    const answeredState = {
+      ...PLAYER_STATE,
+      phase: "answering",
+      you: {
+        ...PLAYER_STATE.you,
+        answer: {
+          suggestion_id: "suggestion-1",
+          answered_at: 10,
+        },
+      },
+    } as const;
+    mockAnswerMusicQuiz.mockResolvedValue(answeredState);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    await player.submitAnswer({
+      answer_type: "multiple_choice",
+      suggestion_id: "suggestion-1",
+    });
+
+    expect(mockAnswerMusicQuiz).toHaveBeenCalledWith(
+      "stored-player",
+      "suggestion-1",
+    );
+    expect(player.state.value).toEqual(answeredState);
+  });
+
   it("does not expose guess-the-song fields for an unknown game type", async () => {
     mockGetMusicQuizInfo.mockResolvedValue({
       quiz_type: "future_game",

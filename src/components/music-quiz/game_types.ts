@@ -1,39 +1,62 @@
-import MusicQuizGuessTheSongConfig from "@/components/music-quiz/MusicQuizGuessTheSongConfig.vue";
-import type { MusicQuizType } from "@/composables/useMusicQuiz";
+import {
+  getMusicQuizAnswerType,
+  type MusicQuizAnswerTypeDefinition,
+} from "@/components/music-quiz/answer_types";
+import GuessTheSongHostPanel from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongHostPanel.vue";
+import GuessTheSongHostRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongHostRound.vue";
+import GuessTheSongPlayerRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPlayerRound.vue";
+import GuessTheSongPresentRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPresentRound.vue";
+import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
+import type {
+  MusicQuizGameAnswerTypeMap,
+  MusicQuizType,
+} from "@/composables/useMusicQuiz";
 import { Disc3 } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
 
-export interface MusicQuizGameTypeOption {
-  /** Value sent to the server as `quiz_type`. */
-  id: MusicQuizType;
+export interface MusicQuizGameDefinition<
+  TGame extends MusicQuizType = MusicQuizType,
+> {
+  id: TGame;
+  answerType: MusicQuizGameAnswerTypeMap[TGame];
   labelKey: string;
   descriptionKey: string;
   icon: Component;
-  /** Selectable now, or shown as a disabled "coming soon" teaser. */
   available: boolean;
-  /** Config step rendered for this type in the setup wizard. */
-  configComponent: Component;
+  supportsListenIn: boolean;
+  adapters: {
+    setup: Component;
+    player: Component;
+    hostPanel: Component;
+    host: Component;
+    present: Component;
+  };
 }
 
-/**
- * Registry of Music Quiz game types. Adding a type here (with its config step)
- * makes it appear in the setup wizard without touching the wizard itself.
- */
-const MUSIC_QUIZ_GAME_TYPE_REGISTRY: Record<
-  MusicQuizType,
-  MusicQuizGameTypeOption
-> = {
+type MusicQuizGameRegistry = {
+  [TGame in MusicQuizType]: MusicQuizGameDefinition<TGame>;
+};
+
+const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
   guess_the_song: {
     id: "guess_the_song",
+    answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
     icon: markRaw(Disc3),
     available: true,
-    configComponent: markRaw(MusicQuizGuessTheSongConfig),
+    supportsListenIn: true,
+    adapters: {
+      setup: markRaw(GuessTheSongSetup),
+      player: markRaw(GuessTheSongPlayerRound),
+      hostPanel: markRaw(GuessTheSongHostPanel),
+      host: markRaw(GuessTheSongHostRound),
+      present: markRaw(GuessTheSongPresentRound),
+    },
   },
-};
+} satisfies MusicQuizGameRegistry;
 
 export const MUSIC_QUIZ_GAME_TYPES = Object.values(
   MUSIC_QUIZ_GAME_TYPE_REGISTRY,
@@ -41,6 +64,22 @@ export const MUSIC_QUIZ_GAME_TYPES = Object.values(
 
 export function getMusicQuizGameType(
   id: string,
-): MusicQuizGameTypeOption | undefined {
+): MusicQuizGameDefinition | undefined {
   return MUSIC_QUIZ_GAME_TYPES.find((type) => type.id === id);
+}
+
+export interface ResolvedMusicQuizDefinition {
+  game: MusicQuizGameDefinition;
+  answer: MusicQuizAnswerTypeDefinition;
+}
+
+export function resolveMusicQuizDefinition(
+  quizType: string,
+  answerType: string,
+): ResolvedMusicQuizDefinition | undefined {
+  const game = getMusicQuizGameType(quizType);
+  if (!game || game.answerType !== answerType) return undefined;
+
+  const answer = getMusicQuizAnswerType(answerType);
+  return answer ? { game, answer } : undefined;
 }

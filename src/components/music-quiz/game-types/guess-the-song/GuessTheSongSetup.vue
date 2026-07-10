@@ -171,6 +171,10 @@
 
 <script setup lang="ts">
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import type {
+  MusicQuizSetupAdapterEmits,
+  MusicQuizSetupAdapterProps,
+} from "@/components/music-quiz/adapter_contracts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -184,10 +188,7 @@ import {
   NumberFieldInput,
 } from "@/components/ui/number-field";
 import { SearchInput } from "@/components/ui/search-input";
-import type {
-  MusicQuizDifficulty,
-  MusicQuizGuessTheSongCreateRequest,
-} from "@/composables/useMusicQuiz";
+import type { MusicQuizDifficulty } from "@/composables/useMusicQuiz";
 import {
   useMusicQuizSourceSearch,
   type MusicQuizSourceItem,
@@ -205,10 +206,8 @@ const MAX_CHOICES = 8;
 const MIN_SECONDS = 5;
 const MAX_SECONDS = 120;
 
-defineProps<{ busy: boolean }>();
-const emit = defineEmits<{
-  create: [request: MusicQuizGuessTheSongCreateRequest];
-}>();
+defineProps<MusicQuizSetupAdapterProps>();
+const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const name = ref(generateMusicQuizSessionName());
 const roundCount = ref(5);
@@ -248,9 +247,13 @@ function create() {
 function sourceSubtitle(item: MusicQuizSourceItem) {
   if (item.media_type === MediaType.PLAYLIST)
     return $t("providers.music_quiz.playlist");
-  const artist = (item as Track).artists?.[0]?.name;
+  const artist = isTrack(item) ? item.artists?.[0]?.name : undefined;
   return artist
     ? $t("providers.music_quiz.track_with_artist", [artist])
     : $t("providers.music_quiz.track");
+}
+
+function isTrack(item: MusicQuizSourceItem): item is Track {
+  return item.media_type === MediaType.TRACK;
 }
 </script>

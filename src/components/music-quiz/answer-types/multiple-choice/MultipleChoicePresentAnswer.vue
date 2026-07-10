@@ -1,0 +1,64 @@
+<template>
+  <template v-if="state.phase === 'answering'">
+    <div class="flex flex-col items-center gap-2">
+      <MusicQuizCountdown
+        :size="160"
+        :fraction="remainingFraction"
+        :label="remainingLabel || '…'"
+      />
+    </div>
+    <div class="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      <MultipleChoiceGrid
+        :suggestions="currentRound.suggestions"
+        :disabled="true"
+        :selected-suggestion-id="null"
+        @select="noop"
+      />
+      <div class="flex flex-col gap-4">
+        <MultipleChoiceProgress
+          :statuses="state.players"
+          :answered-count="answeredCount"
+        />
+        <slot name="leaderboard" />
+      </div>
+    </div>
+  </template>
+</template>
+
+<script setup lang="ts">
+import type {
+  MusicQuizAnswerAdapterSlots,
+  MusicQuizPresentAnswerAdapterProps,
+} from "@/components/music-quiz/adapter_contracts";
+import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
+import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
+import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
+import type {
+  MusicQuizGuessTheSongHostState,
+  MusicQuizMultipleChoiceRound,
+} from "@/composables/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { computed } from "vue";
+
+const props =
+  defineProps<
+    MusicQuizPresentAnswerAdapterProps<
+      MusicQuizGuessTheSongHostState,
+      MusicQuizMultipleChoiceRound
+    >
+  >();
+defineSlots<MusicQuizAnswerAdapterSlots>();
+
+const answeredCount = computed(
+  () => props.state.players.filter((player) => player.answered).length,
+);
+const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
+  active: () => props.state.phase === "answering",
+  deadline: () => props.currentRound.deadline,
+  duration: () => props.state.answer_duration,
+});
+
+function noop() {
+  // Read-only interaction.
+}
+</script>

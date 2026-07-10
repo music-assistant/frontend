@@ -88,7 +88,7 @@
         </h2>
       </div>
       <component
-        :is="selectedType.configComponent"
+        :is="selectedType.adapters.setup"
         v-if="selectedType"
         :busy="busy"
         @create="onConfigCreate"
@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import {
   MUSIC_QUIZ_GAME_TYPES,
-  type MusicQuizGameTypeOption,
+  type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,9 +117,9 @@ const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
 
 const gameTypes = MUSIC_QUIZ_GAME_TYPES;
 const step = ref<1 | 2 | 3>(1);
-const selectedType = ref<MusicQuizGameTypeOption | null>(null);
+const selectedType = ref<MusicQuizGameDefinition | null>(null);
 
-function selectType(type: MusicQuizGameTypeOption) {
+function selectType(type: MusicQuizGameDefinition) {
   if (!type.available) return;
   selectedType.value = type;
   step.value = 3;

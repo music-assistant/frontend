@@ -11,6 +11,7 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 import {
+  answerMusicQuiz,
   createMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -64,6 +65,15 @@ describe("useMusicQuiz commands", () => {
       difficulty: "hard",
       source_uris: ["library://track/1"],
       name: "Test Quiz",
+    });
+  });
+
+  it("keeps the legacy multiple-choice answer payload", async () => {
+    await answerMusicQuiz("player-id", "suggestion-id");
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/answer", {
+      player_id: "player-id",
+      suggestion_id: "suggestion-id",
     });
   });
 
