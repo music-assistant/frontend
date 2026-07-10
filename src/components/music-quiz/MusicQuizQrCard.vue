@@ -7,6 +7,7 @@
       <div class="rounded-xl bg-white p-3">
         <canvas
           ref="qrCanvas"
+          role="img"
           :aria-label="$t('providers.music_quiz.invite_players')"
         ></canvas>
       </div>

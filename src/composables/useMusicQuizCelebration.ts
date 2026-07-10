@@ -20,23 +20,32 @@ export function useMusicQuizCelebration() {
 
   async function celebrate() {
     if (prefersReducedMotion.value) return;
-    const { default: confetti } = await import("canvas-confetti");
-    const options = { colors: CELEBRATION_COLORS, zIndex: 100 } as const;
-    confetti({ ...options, particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    confetti({
-      ...options,
-      particleCount: 60,
-      angle: 60,
-      spread: 55,
-      origin: { x: 0 },
-    });
-    confetti({
-      ...options,
-      particleCount: 60,
-      angle: 120,
-      spread: 55,
-      origin: { x: 1 },
-    });
+    try {
+      const { default: confetti } = await import("canvas-confetti");
+      const options = { colors: CELEBRATION_COLORS, zIndex: 100 } as const;
+      confetti({
+        ...options,
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      confetti({
+        ...options,
+        particleCount: 60,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+      });
+      confetti({
+        ...options,
+        particleCount: 60,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+      });
+    } catch (error) {
+      console.warn("Music Quiz celebration could not load:", error);
+    }
   }
 
   return { celebrate };

@@ -87,12 +87,12 @@
         </FieldLabel>
         <SearchInput
           id="quiz-source-search"
-          v-model="sourceSearchQuery"
+          v-model="sourceQuery"
           clearable
           :placeholder="$t('providers.music_quiz.search_music')"
         />
         <div
-          v-if="sourceSearchQuery.trim().length >= MIN_SEARCH_LENGTH"
+          v-if="sourceQuery.trim().length >= minSearchLength"
           class="bg-background max-h-72 overflow-y-auto overscroll-contain rounded-md border p-1"
         >
           <p
@@ -134,7 +134,7 @@
           <span class="text-muted-foreground">
             {{ $t("providers.music_quiz.selected_music") }}
           </span>
-          <Badge variant="secondary">{{ selectedSourcesSummary }}</Badge>
+          <Badge variant="secondary">{{ selectedSummary }}</Badge>
         </div>
         <div
           v-if="selectedSources.length > 0"
@@ -188,16 +188,15 @@ import type {
   MusicQuizDifficulty,
   MusicQuizGuessTheSongConfig,
 } from "@/composables/useMusicQuiz";
+import {
+  useMusicQuizSourceSearch,
+  type MusicQuizSourceItem,
+} from "@/composables/useMusicQuizSourceSearch";
 import { generateMusicQuizSessionName } from "@/helpers/music_quiz_naming";
-import { getMusicQuizSourceSummary } from "@/helpers/music_quiz_sources";
-import api from "@/plugins/api";
-import { MediaType, type Playlist, type Track } from "@/plugins/api/interfaces";
+import { MediaType, type Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { PartyPopper, X } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { toast } from "vue-sonner";
-
-type SourceItem = Track | Playlist;
+import { ref } from "vue";
 
 const MIN_ROUNDS = 2;
 const MAX_ROUNDS = 50;
@@ -205,9 +204,6 @@ const MIN_CHOICES = 2;
 const MAX_CHOICES = 8;
 const MIN_SECONDS = 5;
 const MAX_SECONDS = 120;
-const MIN_SEARCH_LENGTH = 2;
-const SEARCH_DEBOUNCE_MS = 250;
-const SEARCH_RESULT_LIMIT = 8;
 
 defineProps<{ busy: boolean }>();
 const emit = defineEmits<{ create: [config: MusicQuizGuessTheSongConfig] }>();
@@ -217,20 +213,19 @@ const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
 const difficulty = ref<MusicQuizDifficulty>("normal");
-const sourceSearchQuery = ref("");
-const sourceResults = ref<SourceItem[]>([]);
-const selectedSources = ref<SourceItem[]>([]);
-const sourceSearching = ref(false);
-let sourceSearchTimer: ReturnType<typeof setTimeout> | undefined;
-let sourceSearchRequestId = 0;
 
-const sourceUris = computed(() =>
-  selectedSources.value.map((item) => item.uri),
-);
-const canCreate = computed(() => sourceUris.value.length > 0);
-const selectedSourcesSummary = computed(() =>
-  getMusicQuizSourceSummary(selectedSources.value),
-);
+const {
+  query: sourceQuery,
+  results: sourceResults,
+  selected: selectedSources,
+  searching: sourceSearching,
+  sourceUris,
+  summary: selectedSummary,
+  canCreate,
+  minSearchLength,
+  add: addSource,
+  remove: removeSource,
+} = useMusicQuizSourceSearch();
 
 function create() {
   if (!canCreate.value) return;
@@ -244,22 +239,7 @@ function create() {
   });
 }
 
-function addSource(item: SourceItem) {
-  if (selectedSources.value.some((source) => source.uri === item.uri)) return;
-  selectedSources.value.push(item);
-  sourceResults.value = sourceResults.value.filter(
-    (result) => result.uri !== item.uri,
-  );
-}
-
-function removeSource(uri: string) {
-  selectedSources.value = selectedSources.value.filter(
-    (source) => source.uri !== uri,
-  );
-  scheduleSourceSearch();
-}
-
-function sourceSubtitle(item: SourceItem) {
+function sourceSubtitle(item: MusicQuizSourceItem) {
   if (item.media_type === MediaType.PLAYLIST)
     return $t("providers.music_quiz.playlist");
   const artist = (item as Track).artists?.[0]?.name;
@@ -267,49 +247,4 @@ function sourceSubtitle(item: SourceItem) {
     ? $t("providers.music_quiz.track_with_artist", [artist])
     : $t("providers.music_quiz.track");
 }
-
-function scheduleSourceSearch() {
-  if (sourceSearchTimer) clearTimeout(sourceSearchTimer);
-  sourceSearchTimer = setTimeout(searchSources, SEARCH_DEBOUNCE_MS);
-}
-
-async function searchSources() {
-  const requestId = ++sourceSearchRequestId;
-  const query = sourceSearchQuery.value.trim();
-  if (query.length < MIN_SEARCH_LENGTH) {
-    sourceResults.value = [];
-    sourceSearching.value = false;
-    return;
-  }
-  sourceSearching.value = true;
-  try {
-    const result = await api.search(
-      query,
-      [MediaType.TRACK, MediaType.PLAYLIST],
-      SEARCH_RESULT_LIMIT,
-    );
-    if (requestId !== sourceSearchRequestId) return;
-    const selected = new Set(selectedSources.value.map((item) => item.uri));
-    sourceResults.value = [...result.tracks, ...result.playlists].filter(
-      (item) => !selected.has(item.uri),
-    );
-  } catch (err) {
-    if (requestId !== sourceSearchRequestId) return;
-    toast.error(
-      err instanceof Error
-        ? err.message
-        : $t("providers.music_quiz.source_search_failed"),
-    );
-  } finally {
-    if (requestId === sourceSearchRequestId) {
-      sourceSearching.value = false;
-    }
-  }
-}
-
-watch(sourceSearchQuery, () => scheduleSourceSearch());
-
-onBeforeUnmount(() => {
-  if (sourceSearchTimer) clearTimeout(sourceSearchTimer);
-});
 </script>
