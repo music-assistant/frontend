@@ -129,13 +129,49 @@ describe("useMusicQuizHost", () => {
     expect(host.gameRemoved.value).toBe(true);
   });
 
-  it("treats a no-active-game error as an empty state without a toast", async () => {
+  it("treats a null response as setup state without a toast", async () => {
+    mockGetMusicQuiz.mockResolvedValue(null);
+    const notifyError = vi.fn();
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(notifyError).not.toHaveBeenCalled();
+    expect(host.state.value).toBeNull();
+    expect(host.gameRemoved.value).toBe(false);
+  });
+
+  it("treats a no-active-game string as an empty state without a toast", async () => {
     mockGetMusicQuiz.mockRejectedValue("There is no active Music Quiz game");
     const notifyError = vi.fn();
     const host = useMusicQuizHost({ notifyError });
     await flushPromises();
 
     expect(notifyError).not.toHaveBeenCalled();
+    expect(host.state.value).toBeNull();
+    expect(host.gameRemoved.value).toBe(false);
+  });
+
+  it("treats a no-active-game Error as an empty state without a toast", async () => {
+    mockGetMusicQuiz.mockRejectedValue(
+      new Error("There is no active Music Quiz game"),
+    );
+    const notifyError = vi.fn();
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(notifyError).not.toHaveBeenCalled();
+    expect(host.state.value).toBeNull();
+    expect(host.gameRemoved.value).toBe(false);
+  });
+
+  it("notifies when loading fails for another reason", async () => {
+    mockGetMusicQuiz.mockRejectedValue(new Error("Server unavailable"));
+    const notifyError = vi.fn();
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(notifyError).toHaveBeenCalledOnce();
+    expect(notifyError).toHaveBeenCalledWith("Server unavailable");
     expect(host.state.value).toBeNull();
     expect(host.gameRemoved.value).toBe(false);
   });

@@ -266,7 +266,7 @@ export function createMusicQuiz(request: MusicQuizCreateRequest) {
 }
 
 export function getMusicQuiz() {
-  return api.sendCommand<MusicQuizHostState>("music_quiz/get");
+  return api.sendCommand<MusicQuizHostState | null>("music_quiz/get");
 }
 
 export function startMusicQuiz() {
