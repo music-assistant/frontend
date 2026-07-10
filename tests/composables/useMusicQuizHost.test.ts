@@ -115,4 +115,18 @@ describe("useMusicQuizHost", () => {
     expect(host.state.value).toBeNull();
     expect(host.gameRemoved.value).toBe(true);
   });
+
+  it("treats no active game errors as an empty state without a toast", async () => {
+    const notifyError = vi.fn();
+    mockGetMusicQuiz.mockRejectedValue(
+      new Error("There is no active Music Quiz game"),
+    );
+
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(host.state.value).toBeNull();
+    expect(host.gameRemoved.value).toBe(false);
+    expect(notifyError).not.toHaveBeenCalled();
+  });
 });

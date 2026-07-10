@@ -108,26 +108,31 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
 }
 
 export function isNoActiveGameError(err: unknown) {
-  const normalizedMessage = getMusicQuizErrorMessage(err).toLowerCase();
-  if (normalizedMessage.includes("no active")) return true;
-
-  if (err && typeof err === "object") {
-    const errorCode =
-      "error_code" in err && typeof err.error_code === "string"
-        ? err.error_code.toLowerCase()
-        : "";
-    const errorType =
-      "type" in err && typeof err.type === "string"
-        ? err.type.toLowerCase()
-        : "";
-    return (
-      errorCode.includes("musicquiznogame") ||
-      errorCode.includes("music_quiz_no_game") ||
-      errorType.includes("musicquiznogame") ||
-      errorType.includes("music_quiz_no_game")
-    );
+  if (typeof err === "string") {
+    return err.toLowerCase().includes("no active");
   }
-  return false;
+  if (err instanceof Error) {
+    return err.message.toLowerCase().includes("no active");
+  }
+  if (!err || typeof err !== "object") return false;
+  const message =
+    "message" in err && typeof err.message === "string" ? err.message : "";
+  const details =
+    "details" in err && typeof err.details === "string" ? err.details : "";
+  if (`${message} ${details}`.toLowerCase().includes("no active")) return true;
+
+  const errorCode =
+    "error_code" in err && typeof err.error_code === "string"
+      ? err.error_code.toLowerCase()
+      : "";
+  const errorType =
+    "type" in err && typeof err.type === "string" ? err.type.toLowerCase() : "";
+  return (
+    errorCode === "musicquiznogameerror" ||
+    errorCode === "music_quiz_no_game" ||
+    errorType === "musicquiznogameerror" ||
+    errorType === "music_quiz_no_game"
+  );
 }
 
 export function isMusicQuizPlayerNotFoundError(err: unknown) {

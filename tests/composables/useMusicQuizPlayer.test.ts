@@ -11,6 +11,7 @@ const {
   mockGetStoredPlayerId,
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
+  mockIsNoActiveGameError,
   storedPlayerId,
   providerHandlers,
 } = vi.hoisted(() => ({
@@ -24,6 +25,7 @@ const {
   mockGetStoredPlayerId: vi.fn(),
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
+  mockIsNoActiveGameError: vi.fn(),
   storedPlayerId: { value: null as string | null },
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
@@ -58,6 +60,7 @@ vi.mock("@/helpers/music_quiz", () => ({
   getStoredMusicQuizPlayerId: mockGetStoredPlayerId,
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
+  isNoActiveGameError: mockIsNoActiveGameError,
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -94,6 +97,7 @@ describe("useMusicQuizPlayer", () => {
     mockGetStoredPlayerId.mockReset();
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
+    mockIsNoActiveGameError.mockReset();
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockStorePlayerId.mockImplementation((playerId: string) => {
       storedPlayerId.value = playerId;
@@ -104,6 +108,11 @@ describe("useMusicQuizPlayer", () => {
     mockGetMusicQuizErrorMessage.mockImplementation(
       (error: unknown, fallback = "") =>
         error instanceof Error ? error.message : fallback,
+    );
+    mockIsNoActiveGameError.mockImplementation(
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.toLowerCase().includes("no active"),
     );
     mockSubscribe.mockImplementation(
       (
@@ -129,6 +138,24 @@ describe("useMusicQuizPlayer", () => {
     expect(player.info.value).toEqual(QUIZ_INFO);
     expect(player.gameRemoved.value).toBe(false);
     expect(storedPlayerId.value).toBeNull();
+  });
+
+  it("treats no active game errors as empty state without a toast", async () => {
+    const notifyError = vi.fn();
+    storedPlayerId.value = "stale-player";
+    mockGetMusicQuizState.mockRejectedValue(
+      new Error("There is no active Music Quiz game"),
+    );
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+
+    expect(player.playerId.value).toBeNull();
+    expect(player.state.value).toBeNull();
+    expect(player.info.value).toEqual(QUIZ_INFO);
+    expect(player.gameRemoved.value).toBe(false);
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it("returns from game-removed state when a new game update arrives", async () => {
