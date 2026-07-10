@@ -27,6 +27,7 @@
       v-else
       :model-value="isListeningIn"
       :disabled="busy"
+      :aria-label="title"
       class="listen-in__action"
       @update:model-value="onToggle"
     />
