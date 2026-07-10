@@ -2,11 +2,6 @@ import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import MusicQuizIcon from "@/components/icons/MusicQuizIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
-import {
-  DEFAULT_MENU_ITEMS,
-  MENU_ITEMS_SEEN_PREFERENCE_KEY,
-  PLUGIN_MENU_ITEMS,
-} from "@/constants";
 import { store } from "@/plugins/store";
 import {
   BookAudio,
@@ -65,10 +60,6 @@ export interface ResolvedMenuConfig {
 
 export const MENU_PREFERENCE_KEY = "sidebar.menu";
 
-const MENU_ITEMS_STORAGE_KEY = "frontend.settings.menu_items";
-const MENU_ITEMS_SEEN_STORAGE_KEY = "frontend.settings.menu_items_seen";
-const pluginMenuItems = new Set(PLUGIN_MENU_ITEMS);
-
 interface MenuItemDefinition {
   id: string;
   label: string;
@@ -82,7 +73,7 @@ interface MenuItemDefinition {
   disabled?: () => boolean;
 }
 
-// Registry order is the default menu order (matches DEFAULT_MENU_ITEMS).
+// Registry order is the default menu order.
 const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
   {
     id: "discover",
@@ -202,6 +193,8 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
   },
 ];
 
+export const DEFAULT_MENU_ITEMS = MENU_ITEM_REGISTRY.map((def) => def.id);
+
 /**
  * All menu items in the user's order, with per-item state resolved.
  * Runtime-unavailable items (plugin not enabled) are excluded entirely;
@@ -231,13 +224,12 @@ export const getMenuItems = function (): MenuItem[] {
 };
 
 /**
- * The effective menu configuration for the current user.
- * Reads the `sidebar.menu` preference; when absent, derives the hidden list
- * from the legacy whitelist preferences (menu_items / menu_items_seen)
- * without writing anything — the first edit materializes the new format.
+ * The effective menu configuration for the current user, read from the
+ * `sidebar.menu` preference; everything visible in the default order when
+ * the user never customized the menu.
  */
 export function resolveMenuConfig(): ResolvedMenuConfig {
-  const knownIds = MENU_ITEM_REGISTRY.map((def) => def.id);
+  const knownIds = DEFAULT_MENU_ITEMS;
   const pref = store.currentUser?.preferences?.[MENU_PREFERENCE_KEY] as
     | MenuConfig
     | undefined;
@@ -256,7 +248,7 @@ export function resolveMenuConfig(): ResolvedMenuConfig {
       pref.sections && typeof pref.sections === "object" ? pref.sections : {};
     return { hidden, order, sections };
   }
-  return { hidden: legacyHiddenItems(), order: [...knownIds], sections: {} };
+  return { hidden: new Set(), order: [...knownIds], sections: {} };
 }
 
 /** Resolved config for a single section. */
@@ -347,85 +339,4 @@ function mergeOrder(userOrder: string[], knownIds: string[]): string[] {
     order.splice(insertAt, 0, id);
   }
   return order;
-}
-
-function parseMenuItemsPreference(value?: string | string[]): string[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : value.split(",");
-}
-
-/**
- * Derive the opt-out list from the legacy whitelist model: an item is hidden
- * when it was not in the enabled list but had been seen by the user (the old
- * "seen" mechanism kept newly added defaults visible despite the whitelist).
- */
-function legacyHiddenItems(): Set<string> {
-  // TODO: Remove localStorage fallback once migration period is over (menu_items moved to user preferences)
-  const userMenuItems = store.currentUser?.preferences?.menu_items as
-    | string
-    | string[]
-    | undefined;
-  const storedMenuConf = localStorage.getItem(MENU_ITEMS_STORAGE_KEY);
-
-  let enabledItems: string[];
-  if (userMenuItems !== undefined && userMenuItems !== null) {
-    enabledItems = parseMenuItemsPreference(userMenuItems);
-  } else if (storedMenuConf) {
-    enabledItems = storedMenuConf.split(",");
-  } else {
-    // No legacy customization at all: everything visible.
-    return new Set();
-  }
-
-  const enabled = new Set(enabledItems);
-  // Foolproof guard: a whitelist that matches none of the standard items is
-  // stale or malformed (empty value, ids from another frontend version,
-  // double-encoded json, ...). Deriving from it would hide the entire menu,
-  // so ignore it and show the defaults instead — with the opt-out model the
-  // safe failure is showing too much, never locking the user out.
-  if (
-    !DEFAULT_MENU_ITEMS.some(
-      (id) => !pluginMenuItems.has(id) && enabled.has(id),
-    )
-  ) {
-    console.warn(
-      "Ignoring legacy menu_items preference (no recognized menu items):",
-      JSON.stringify(userMenuItems ?? storedMenuConf),
-    );
-    return new Set();
-  }
-
-  const seen = getSeenMenuItems(enabledItems);
-  const hidden = new Set<string>();
-  for (const id of DEFAULT_MENU_ITEMS) {
-    if (!enabled.has(id) && seen.has(id)) hidden.add(id);
-  }
-  return hidden;
-}
-
-function getSeenMenuItems(enabledItems: string[]): Set<string> {
-  const userSeenMenuItems = parseMenuItemsPreference(
-    store.currentUser?.preferences?.[MENU_ITEMS_SEEN_PREFERENCE_KEY] as
-      | string
-      | string[]
-      | undefined,
-  );
-  if (userSeenMenuItems.length > 0) {
-    return new Set(userSeenMenuItems);
-  }
-
-  const storedSeenMenuItems = parseMenuItemsPreference(
-    localStorage.getItem(MENU_ITEMS_SEEN_STORAGE_KEY) ?? undefined,
-  );
-  if (storedSeenMenuItems.length > 0) {
-    return new Set(storedSeenMenuItems);
-  }
-
-  const seededSeenItems = new Set(enabledItems);
-  for (const menuItem of DEFAULT_MENU_ITEMS) {
-    if (!pluginMenuItems.has(menuItem)) {
-      seededSeenItems.add(menuItem);
-    }
-  }
-  return seededSeenItems;
 }
