@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetMusicQuiz, mockSubscribe, providerHandlers } = vi.hoisted(
-  () => ({
-    mockGetMusicQuiz: vi.fn(),
-    mockSubscribe: vi.fn(),
-    providerHandlers: [] as Array<
-      (event: { object_id?: string; data?: unknown }) => void
-    >,
-  }),
-);
+const {
+  mockDeleteMusicQuiz,
+  mockGetMusicQuiz,
+  mockSubscribe,
+  providerHandlers,
+} = vi.hoisted(() => ({
+  mockDeleteMusicQuiz: vi.fn(),
+  mockGetMusicQuiz: vi.fn(),
+  mockSubscribe: vi.fn(),
+  providerHandlers: [] as Array<
+    (event: { object_id?: string; data?: unknown }) => void
+  >,
+}));
 
 vi.mock("vue", async () => {
   const actual = await vi.importActual<typeof import("vue")>("vue");
@@ -26,7 +30,7 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   revealMusicQuiz: vi.fn(),
   nextMusicQuiz: vi.fn(),
   resetMusicQuiz: vi.fn(),
-  deleteMusicQuiz: vi.fn(),
+  deleteMusicQuiz: mockDeleteMusicQuiz,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     value.quiz_type === "guess_the_song" &&
     value.answer_type === "multiple_choice",
@@ -78,8 +82,10 @@ async function flushPromises() {
 describe("useMusicQuizHost", () => {
   beforeEach(() => {
     providerHandlers.length = 0;
+    mockDeleteMusicQuiz.mockReset();
     mockGetMusicQuiz.mockReset();
     mockSubscribe.mockReset();
+    mockDeleteMusicQuiz.mockResolvedValue(undefined);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockSubscribe.mockImplementation(
       (
@@ -119,14 +125,12 @@ describe("useMusicQuizHost", () => {
       data: { event: "game_removed" },
     });
     expect(host.state.value).not.toBeNull();
-    expect(host.gameRemoved.value).toBe(false);
 
     handler({
       object_id: "quiz-instance",
       data: { event: "game_removed" },
     });
     expect(host.state.value).toBeNull();
-    expect(host.gameRemoved.value).toBe(true);
   });
 
   it("treats a null response as setup state without a toast", async () => {
@@ -137,7 +141,6 @@ describe("useMusicQuizHost", () => {
 
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
-    expect(host.gameRemoved.value).toBe(false);
   });
 
   it("treats a no-active-game string as an empty state without a toast", async () => {
@@ -148,7 +151,57 @@ describe("useMusicQuizHost", () => {
 
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
-    expect(host.gameRemoved.value).toBe(false);
+  });
+
+  it("keeps the setup state when a stale update finishes after game removal", async () => {
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    let resolveUpdate: (state: typeof HOST_STATE) => void = () => {};
+    mockGetMusicQuiz.mockReturnValueOnce(
+      new Promise<typeof HOST_STATE>((resolve) => {
+        resolveUpdate = resolve;
+      }),
+    );
+
+    const handler = providerHandlers[0];
+    handler({
+      object_id: "quiz-instance",
+      data: { event: "game_updated", state: HOST_STATE },
+    });
+    handler({
+      object_id: "quiz-instance",
+      data: { event: "game_removed" },
+    });
+    resolveUpdate(HOST_STATE);
+    await flushPromises();
+
+    expect(host.state.value).toBeNull();
+    expect(host.loading.value).toBe(false);
+  });
+
+  it("returns to setup when the delete event arrives before the command completes", async () => {
+    let resolveDelete: () => void = () => {};
+    mockDeleteMusicQuiz.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveDelete = resolve;
+      }),
+    );
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const deleting = host.deleteGame();
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_removed" },
+    });
+
+    expect(host.state.value).toBeNull();
+    expect("gameRemoved" in host).toBe(false);
+
+    resolveDelete();
+    await expect(deleting).resolves.toBe(true);
+    expect(host.state.value).toBeNull();
   });
 
   it("treats a no-active-game Error as an empty state without a toast", async () => {
@@ -161,7 +214,6 @@ describe("useMusicQuizHost", () => {
 
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
-    expect(host.gameRemoved.value).toBe(false);
   });
 
   it("notifies when loading fails for another reason", async () => {
@@ -173,7 +225,6 @@ describe("useMusicQuizHost", () => {
     expect(notifyError).toHaveBeenCalledOnce();
     expect(notifyError).toHaveBeenCalledWith("Server unavailable");
     expect(host.state.value).toBeNull();
-    expect(host.gameRemoved.value).toBe(false);
   });
 
   it("does not expose guess-the-song state for an unknown game type", async () => {

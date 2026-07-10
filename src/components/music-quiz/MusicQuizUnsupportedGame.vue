@@ -19,7 +19,7 @@
         @click="emit('delete')"
       >
         <Trash2 class="size-4" />
-        {{ $t("delete") }}
+        {{ $t("providers.music_quiz.end_game") }}
       </Button>
     </CardFooter>
   </Card>
