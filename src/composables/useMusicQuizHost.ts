@@ -50,10 +50,11 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   });
 
   const isLastRound = computed(() => {
-    if (!state.value || !isSupportedMusicQuiz(state.value)) return false;
+    const currentState = state.value;
+    if (!currentState || !isSupportedMusicQuiz(currentState)) return false;
     return (
-      state.value.current_round &&
-      state.value.current_round.round_index >= state.value.round_count - 1
+      currentState.current_round &&
+      currentState.current_round.round_index >= currentState.round_count - 1
     );
   });
 
