@@ -186,7 +186,7 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import type {
   MusicQuizDifficulty,
-  MusicQuizGuessTheSongConfig,
+  MusicQuizGuessTheSongCreateRequest,
 } from "@/composables/useMusicQuiz";
 import {
   useMusicQuizSourceSearch,
@@ -206,7 +206,9 @@ const MIN_SECONDS = 5;
 const MAX_SECONDS = 120;
 
 defineProps<{ busy: boolean }>();
-const emit = defineEmits<{ create: [config: MusicQuizGuessTheSongConfig] }>();
+const emit = defineEmits<{
+  create: [request: MusicQuizGuessTheSongCreateRequest];
+}>();
 
 const name = ref(generateMusicQuizSessionName());
 const roundCount = ref(5);
@@ -230,12 +232,16 @@ const {
 function create() {
   if (!canCreate.value) return;
   emit("create", {
-    round_count: roundCount.value,
-    suggestion_count: suggestionCount.value,
-    answer_duration: answerDuration.value,
-    difficulty: difficulty.value,
-    source_uris: sourceUris.value,
-    name: name.value.trim() || generateMusicQuizSessionName(),
+    quiz_type: "guess_the_song",
+    answer_type: "multiple_choice",
+    config: {
+      round_count: roundCount.value,
+      suggestion_count: suggestionCount.value,
+      answer_duration: answerDuration.value,
+      difficulty: difficulty.value,
+      source_uris: sourceUris.value,
+      name: name.value.trim() || generateMusicQuizSessionName(),
+    },
   });
 }
 

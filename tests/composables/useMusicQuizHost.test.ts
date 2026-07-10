@@ -27,6 +27,17 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   nextMusicQuiz: vi.fn(),
   resetMusicQuiz: vi.fn(),
   deleteMusicQuiz: vi.fn(),
+  isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
+    value.quiz_type === "guess_the_song" &&
+    value.answer_type === "multiple_choice",
+  isMusicQuizProviderEvent: (value: unknown) => {
+    if (!value || typeof value !== "object" || !("event" in value))
+      return false;
+    return (
+      value.event === "game_removed" ||
+      (value.event === "game_updated" && "state" in value)
+    );
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -43,6 +54,8 @@ import { EventType } from "@/plugins/api/interfaces";
 import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
 
 const HOST_STATE = {
+  quiz_type: "guess_the_song",
+  answer_type: "multiple_choice",
   phase: "lobby",
   name: "Quiz",
   round_count: 5,
@@ -89,14 +102,14 @@ describe("useMusicQuizHost", () => {
 
     handler({
       object_id: "quiz-instance",
-      data: { event: "game_updated" },
+      data: { event: "game_updated", state: HOST_STATE },
     });
     await flushPromises();
     expect(mockGetMusicQuiz).toHaveBeenCalledTimes(2);
 
     handler({
       object_id: "other-instance",
-      data: { event: "game_updated" },
+      data: { event: "game_updated", state: HOST_STATE },
     });
     await flushPromises();
     expect(mockGetMusicQuiz).toHaveBeenCalledTimes(2);
@@ -125,5 +138,38 @@ describe("useMusicQuizHost", () => {
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
     expect(host.gameRemoved.value).toBe(false);
+  });
+
+  it("does not expose guess-the-song state for an unknown game type", async () => {
+    mockGetMusicQuiz.mockResolvedValue({
+      quiz_type: "future_game",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Future Quiz",
+    });
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.state.value?.quiz_type).toBe("future_game");
+    expect(host.currentRound.value).toBeNull();
+    expect(host.joinLink.value).toBe("");
+    expect(host.isLastRound.value).toBe(false);
+  });
+
+  it("does not expose gameplay for an unknown answer type", async () => {
+    mockGetMusicQuiz.mockResolvedValue({
+      quiz_type: "guess_the_song",
+      answer_type: "timeline",
+      phase: "lobby",
+      name: "Future Quiz",
+    });
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.state.value?.answer_type).toBe("timeline");
+    expect(host.currentRound.value).toBeNull();
+    expect(host.joinLink.value).toBe("");
   });
 });

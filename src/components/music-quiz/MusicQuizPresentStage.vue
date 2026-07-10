@@ -145,7 +145,7 @@ import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
 import { Button } from "@/components/ui/button";
 import type {
   MusicQuizCurrentRound,
-  MusicQuizHostState,
+  MusicQuizSupportedHostState,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
 import { $t } from "@/plugins/i18n";
@@ -153,7 +153,7 @@ import { Minimize2 } from "@lucide/vue";
 import { computed, watch } from "vue";
 
 const props = defineProps<{
-  state: MusicQuizHostState;
+  state: MusicQuizSupportedHostState;
   currentRound: MusicQuizCurrentRound | null;
   leaderboardRows: MusicQuizLeaderboardRow[];
   answeredCount: number;

@@ -8,6 +8,8 @@
       </CardContent>
     </Card>
 
+    <MusicQuizUnsupportedGame v-else-if="unsupportedGame" />
+
     <Card v-else-if="!playerId && !loading">
       <CardHeader class="items-center text-center">
         <span
@@ -16,36 +18,49 @@
           <PartyPopper class="size-7" />
         </span>
         <CardTitle class="text-2xl">
-          {{ info?.name || $t("providers.music_quiz.title") }}
+          {{ guessTheSongInfo?.name || $t("providers.music_quiz.title") }}
         </CardTitle>
-        <div v-if="info" class="flex flex-wrap justify-center gap-2 pt-1">
+        <div
+          v-if="guessTheSongInfo"
+          class="flex flex-wrap justify-center gap-2 pt-1"
+        >
           <Badge variant="secondary">
-            {{ $t("providers.music_quiz.players_count", [info.player_count]) }}
+            {{
+              $t("providers.music_quiz.players_count", [
+                guessTheSongInfo.player_count,
+              ])
+            }}
           </Badge>
           <Badge variant="secondary">
-            {{ $t("providers.music_quiz.rounds_count", [info.round_count]) }}
+            {{
+              $t("providers.music_quiz.rounds_count", [
+                guessTheSongInfo.round_count,
+              ])
+            }}
           </Badge>
           <Badge variant="secondary">{{ modeLabel }}</Badge>
         </div>
       </CardHeader>
       <CardContent>
         <MusicQuizJoinForm
-          :session-name="info?.name || $t('providers.music_quiz.title')"
+          :session-name="
+            guessTheSongInfo?.name || $t('providers.music_quiz.title')
+          "
           :busy="busy"
           @join="handleJoin"
         />
       </CardContent>
     </Card>
 
-    <template v-else-if="state">
+    <template v-else-if="guessTheSongState">
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
       <MusicQuizPlayerHeader
-        :player-name="state.you.name"
+        :player-name="guessTheSongState.you.name"
         :rank="playerRank"
         :round-progress="roundProgress"
         :round-fraction="roundFraction"
-        :score="state.you.score"
+        :score="guessTheSongState.you.score"
         :score-delta="playerRoundScoreLabel"
         :phase-label="phaseText"
       />
@@ -59,7 +74,7 @@
       />
 
       <MusicQuizPlayerStage
-        :state="state"
+        :state="guessTheSongState"
         :current-round="currentRound"
         :busy="busy"
         :leaderboard-rows="leaderboardRows"
@@ -93,11 +108,13 @@ import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
+import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
 import { useMusicQuizRoundClocks } from "@/composables/useMusicQuizRoundClocks";
+import { isSupportedMusicQuiz } from "@/composables/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
   getMusicQuizRoundScoreLabel,
@@ -119,8 +136,23 @@ const player = useMusicQuizPlayer({
 const { info, state, playerId, gameRemoved, busy, loading, currentRound } =
   player;
 
+const guessTheSongState = computed(() => {
+  const currentState = state.value;
+  return currentState && isSupportedMusicQuiz(currentState)
+    ? currentState
+    : null;
+});
+const guessTheSongInfo = computed(() => {
+  const currentInfo = info.value;
+  return currentInfo && isSupportedMusicQuiz(currentInfo) ? currentInfo : null;
+});
+const unsupportedGame = computed(() => {
+  const activeGame = state.value ?? info.value;
+  return !!activeGame && !isSupportedMusicQuiz(activeGame);
+});
+
 const clocks = useMusicQuizRoundClocks(
-  computed(() => state.value),
+  guessTheSongState,
   computed(() => currentRound.value),
 );
 const { answerRemainingLabel, answerRemainingFraction, lyricsPosition } =
@@ -128,7 +160,10 @@ const { answerRemainingLabel, answerRemainingFraction, lyricsPosition } =
 
 const { celebrate } = useMusicQuizCelebration();
 
-const mode = computed(() => state.value?.mode ?? info.value?.mode);
+const mode = computed(() => {
+  if (guessTheSongState.value) return guessTheSongState.value.mode;
+  return guessTheSongInfo.value?.mode;
+});
 const modeLabel = computed(() =>
   mode.value === "remote"
     ? $t("providers.music_quiz.mode_remote")
@@ -150,11 +185,13 @@ const listenInLabels = computed<ListenInLabels>(() => ({
 }));
 
 const rankedPlayers = computed(() =>
-  state.value ? rankMusicQuizPlayers(state.value.players) : [],
+  guessTheSongState.value
+    ? rankMusicQuizPlayers(guessTheSongState.value.players)
+    : [],
 );
 
 const playerRank = computed(() => {
-  const currentState = state.value;
+  const currentState = guessTheSongState.value;
   if (!currentState) return null;
   return (
     rankedPlayers.value.find((row) => row.name === currentState.you.name)
@@ -163,7 +200,7 @@ const playerRank = computed(() => {
 });
 
 const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
-  const currentState = state.value;
+  const currentState = guessTheSongState.value;
   if (!currentState) return [];
   return rankedPlayers.value.map((playerRow) => ({
     ...playerRow,
@@ -173,21 +210,22 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 
 const answeredCount = computed(
   () =>
-    state.value?.players.filter((playerRow) => playerRow.answered).length ?? 0,
+    guessTheSongState.value?.players.filter((playerRow) => playerRow.answered)
+      .length ?? 0,
 );
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 
 const roundProgress = computed(() => {
-  if (!state.value) return "";
+  if (!guessTheSongState.value) return "";
   const label = $t("providers.music_quiz.round_label");
   if (!currentRound.value) {
-    return `${label} ${state.value.round_count}/${state.value.round_count}`;
+    return `${label} ${guessTheSongState.value.round_count}/${guessTheSongState.value.round_count}`;
   }
-  return `${label} ${currentRound.value.round_index + 1}/${state.value.round_count}`;
+  return `${label} ${currentRound.value.round_index + 1}/${guessTheSongState.value.round_count}`;
 });
 
 const roundFraction = computed(() => {
-  const currentState = state.value;
+  const currentState = guessTheSongState.value;
   if (!currentState || currentState.round_count <= 0) return 0;
   if (!currentRound.value) return 100;
   return (
@@ -196,24 +234,27 @@ const roundFraction = computed(() => {
 });
 
 const playerRoundScoreLabel = computed(() =>
-  state.value
-    ? getMusicQuizRoundScoreLabel(state.value, state.value.you.name)
+  guessTheSongState.value
+    ? getMusicQuizRoundScoreLabel(
+        guessTheSongState.value,
+        guessTheSongState.value.you.name,
+      )
     : "",
 );
 
 const readyLabel = computed(() =>
-  state.value?.you.ready
+  guessTheSongState.value?.you.ready
     ? $t("providers.music_quiz.waiting_for_next")
     : $t("providers.music_quiz.ready"),
 );
 
 const phaseText = computed(() => {
-  if (!state.value) return "";
-  if (state.value.phase === "lobby")
+  if (!guessTheSongState.value) return "";
+  if (guessTheSongState.value.phase === "lobby")
     return $t("providers.music_quiz.phase_waiting_for_players");
-  if (state.value.phase === "answering")
+  if (guessTheSongState.value.phase === "answering")
     return $t("providers.music_quiz.phase_answers_open");
-  if (state.value.phase === "reveal")
+  if (guessTheSongState.value.phase === "reveal")
     return $t("providers.music_quiz.phase_enjoy_track");
   return $t("providers.music_quiz.phase_finished");
 });
@@ -229,7 +270,7 @@ const isConnectionDegraded = computed(
 );
 
 watch(
-  () => state.value?.phase,
+  () => guessTheSongState.value?.phase,
   (phase) => {
     if (phase === "finished") void celebrate();
   },

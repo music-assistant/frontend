@@ -10,7 +10,31 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-import { createMusicQuiz } from "@/composables/useMusicQuiz";
+import {
+  createMusicQuiz,
+  isMusicQuizProviderEvent,
+  isSupportedMusicQuiz,
+  parseMusicQuizAnswerType,
+  parseMusicQuizType,
+  type MusicQuizProviderEvent,
+  type MusicQuizPublicState,
+} from "@/composables/useMusicQuiz";
+
+function unsupportedQuizType(value: string) {
+  const quizType = parseMusicQuizType(value);
+  if (quizType === "guess_the_song") {
+    throw new Error("Expected an unsupported quiz type");
+  }
+  return quizType;
+}
+
+function unsupportedAnswerType(value: string) {
+  const answerType = parseMusicQuizAnswerType(value);
+  if (answerType === "multiple_choice") {
+    throw new Error("Expected an unsupported answer type");
+  }
+  return answerType;
+}
 
 describe("useMusicQuiz commands", () => {
   beforeEach(() => {
@@ -19,15 +43,18 @@ describe("useMusicQuiz commands", () => {
   });
 
   it("sends difficulty in the create payload", async () => {
-    await createMusicQuiz(
-      "guess_the_song",
-      5,
-      4,
-      30,
-      "hard",
-      ["library://track/1"],
-      "Test Quiz",
-    );
+    await createMusicQuiz({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "hard",
+        source_uris: ["library://track/1"],
+        name: "Test Quiz",
+      },
+    });
 
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
       quiz_type: "guess_the_song",
@@ -38,5 +65,51 @@ describe("useMusicQuiz commands", () => {
       source_uris: ["library://track/1"],
       name: "Test Quiz",
     });
+  });
+
+  it("only narrows the supported quiz and answer pair", () => {
+    const known = {
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+    } satisfies MusicQuizPublicState;
+    const unsupported = {
+      quiz_type: unsupportedQuizType("future_game"),
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Future Quiz",
+    } satisfies MusicQuizPublicState;
+    const unsupportedAnswer = {
+      quiz_type: "guess_the_song",
+      answer_type: unsupportedAnswerType("timeline"),
+      phase: "lobby",
+      name: "Future Quiz",
+    } satisfies MusicQuizPublicState;
+
+    expect(isSupportedMusicQuiz(known)).toBe(true);
+    expect(isSupportedMusicQuiz(unsupported)).toBe(false);
+    expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
+  });
+
+  it("accepts public provider events as invalidation payloads", () => {
+    const event = {
+      event: "game_updated",
+      state: {
+        quiz_type: unsupportedQuizType("future_game"),
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Future Quiz",
+      },
+    } satisfies MusicQuizProviderEvent;
+
+    expect(isMusicQuizProviderEvent(event)).toBe(true);
+    expect(isMusicQuizProviderEvent({ event: "game_updated" })).toBe(false);
+    expect(isMusicQuizProviderEvent({ event: "other" })).toBe(false);
   });
 });
