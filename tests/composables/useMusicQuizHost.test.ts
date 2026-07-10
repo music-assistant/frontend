@@ -118,9 +118,7 @@ describe("useMusicQuizHost", () => {
 
   it("treats no active game errors as an empty state without a toast", async () => {
     const notifyError = vi.fn();
-    mockGetMusicQuiz.mockRejectedValue(
-      new Error("There is no active Music Quiz game"),
-    );
+    mockGetMusicQuiz.mockRejectedValue("There is no active Music Quiz game");
 
     const host = useMusicQuizHost({ notifyError });
     await flushPromises();

@@ -106,13 +106,17 @@ describe("useMusicQuizPlayer", () => {
       storedPlayerId.value = null;
     });
     mockGetMusicQuizErrorMessage.mockImplementation(
-      (error: unknown, fallback = "") =>
-        error instanceof Error ? error.message : fallback,
+      (error: unknown, fallback = "") => {
+        if (typeof error === "string") return error;
+        if (error instanceof Error) return error.message;
+        return fallback;
+      },
     );
-    mockIsNoActiveGameError.mockImplementation(
-      (error: unknown) =>
-        error instanceof Error &&
-        error.message.toLowerCase().includes("no active"),
+    mockIsNoActiveGameError.mockImplementation((error: unknown) =>
+      typeof error === "string"
+        ? error.toLowerCase().includes("no active")
+        : error instanceof Error &&
+          error.message.toLowerCase().includes("no active"),
     );
     mockSubscribe.mockImplementation(
       (
@@ -144,7 +148,7 @@ describe("useMusicQuizPlayer", () => {
     const notifyError = vi.fn();
     storedPlayerId.value = "stale-player";
     mockGetMusicQuizState.mockRejectedValue(
-      new Error("There is no active Music Quiz game"),
+      "There is no active Music Quiz game",
     );
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
 
