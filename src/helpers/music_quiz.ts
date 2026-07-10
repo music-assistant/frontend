@@ -113,6 +113,7 @@ export function getMusicQuizErrorMessage(err: unknown, fallback = "") {
 export function isNoActiveGameError(err: unknown): boolean {
   const message = getMusicQuizErrorMessage(err).toLowerCase();
   if (
+    message.includes("no active game") ||
     message.includes("no active music quiz game") ||
     (message.includes("no active") && message.includes("music quiz"))
   ) {

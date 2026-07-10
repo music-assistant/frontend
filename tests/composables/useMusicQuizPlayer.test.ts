@@ -59,9 +59,14 @@ vi.mock("@/helpers/music_quiz", () => ({
   clearStoredMusicQuizPlayerId: mockClearStoredPlayerId,
   getMusicQuizErrorMessage: mockGetMusicQuizErrorMessage,
   isNoActiveGameError: (err: unknown) => {
-    const message =
-      err instanceof Error ? err.message : typeof err === "string" ? err : "";
-    return message.toLowerCase().includes("no active");
+    const message = (
+      err instanceof Error ? err.message : typeof err === "string" ? err : ""
+    ).toLowerCase();
+    return (
+      message.includes("no active game") ||
+      message.includes("no active music quiz game") ||
+      (message.includes("no active") && message.includes("music quiz"))
+    );
   },
 }));
 
