@@ -93,6 +93,11 @@ vi.mock("@/plugins/i18n", () => ({
 import { EventType } from "@/plugins/api/interfaces";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
 
+const originalVisibilityStateDescriptor = Object.getOwnPropertyDescriptor(
+  document,
+  "visibilityState",
+);
+
 const QUIZ_INFO = {
   quiz_type: "guess_the_song",
   answer_type: "multiple_choice",
@@ -203,6 +208,15 @@ describe("useMusicQuizPlayer", () => {
 
   afterEach(() => {
     for (const unmount of unmountHandlers.splice(0)) unmount();
+    if (originalVisibilityStateDescriptor) {
+      Object.defineProperty(
+        document,
+        "visibilityState",
+        originalVisibilityStateDescriptor,
+      );
+    } else {
+      Reflect.deleteProperty(document, "visibilityState");
+    }
     vi.clearAllTimers();
     vi.useRealTimers();
   });
