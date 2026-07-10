@@ -161,9 +161,9 @@ function mountDashboard() {
         },
         MusicQuizConnectionBanners: true,
         MusicQuizHostPanel: {
-          emits: ["delete"],
+          emits: ["endGame"],
           template:
-            '<button data-testid="open-end-dialog" @click="$emit(\'delete\')" />',
+            '<button data-testid="open-end-dialog" @click="$emit(\'endGame\')" />',
         },
         MusicQuizPresentStage: true,
         MusicQuizSessionPanels: true,

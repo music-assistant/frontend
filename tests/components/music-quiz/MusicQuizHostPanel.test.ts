@@ -55,6 +55,6 @@ describe("MusicQuizHostPanel", () => {
     expect(wrapper.text()).not.toContain("Delete");
 
     await endGameButton?.trigger("click");
-    expect(wrapper.emitted("delete")).toHaveLength(1);
+    expect(wrapper.emitted("endGame")).toHaveLength(1);
   });
 });

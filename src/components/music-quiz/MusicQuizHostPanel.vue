@@ -14,7 +14,7 @@
           :disabled="busy"
           type="button"
           variant="outline"
-          @click="emit('delete')"
+          @click="emit('endGame')"
         >
           <Trash2 class="size-4" />
           {{ $t("providers.music_quiz.end_game") }}
@@ -82,7 +82,7 @@ withDefaults(
 );
 defineSlots<{ game: () => VNode[] }>();
 const emit = defineEmits<{
-  delete: [];
+  endGame: [];
   start: [];
   reveal: [];
   next: [];

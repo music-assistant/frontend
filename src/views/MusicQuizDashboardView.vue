@@ -53,8 +53,8 @@
       <MusicQuizUnsupportedGame
         v-else-if="state && !activeState"
         :busy="busy"
-        :can-delete="true"
-        @delete="showDeleteDialog = true"
+        :can-end-game="true"
+        @end-game="showEndGameDialog = true"
       />
 
       <div
@@ -66,7 +66,7 @@
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
-          @delete="showDeleteDialog = true"
+          @end-game="showEndGameDialog = true"
           @start="host.start"
           @reveal="host.reveal"
           @next="host.next"
@@ -105,7 +105,7 @@
       </div>
     </section>
 
-    <AlertDialog v-model:open="showDeleteDialog">
+    <AlertDialog v-model:open="showEndGameDialog">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
@@ -117,7 +117,7 @@
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
-          <AlertDialogAction :disabled="busy" @click="confirmDelete">
+          <AlertDialogAction :disabled="busy" @click="confirmEndGame">
             {{ $t("providers.music_quiz.end_game") }}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -239,7 +239,7 @@ const isConnectionDegraded = computed(
 
 const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
-const showDeleteDialog = ref(false);
+const showEndGameDialog = ref(false);
 
 async function handleCreate(request: MusicQuizCreateRequest) {
   await host.create(request);
@@ -280,8 +280,8 @@ watch(state, (nextState) => {
   }
 });
 
-async function confirmDelete() {
-  showDeleteDialog.value = false;
+async function confirmEndGame() {
+  showEndGameDialog.value = false;
   await host.deleteGame();
 }
 

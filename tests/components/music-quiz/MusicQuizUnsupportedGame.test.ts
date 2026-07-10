@@ -19,13 +19,13 @@ describe("MusicQuizUnsupportedGame", () => {
 
   it("lets the host end an unsupported game", async () => {
     const wrapper = mount(MusicQuizUnsupportedGame, {
-      props: { canDelete: true },
+      props: { canEndGame: true },
     });
 
     expect(wrapper.get("button").text()).toContain("End game");
     expect(wrapper.text()).not.toContain("Delete");
     await wrapper.get("button").trigger("click");
 
-    expect(wrapper.emitted("delete")).toHaveLength(1);
+    expect(wrapper.emitted("endGame")).toHaveLength(1);
   });
 });
