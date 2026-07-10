@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { EventType } from "@/plugins/api/interfaces";
 
-const { mockSendCommand, mockSubscribeMulti } = vi.hoisted(() => ({
-  mockSendCommand: vi.fn(),
-  mockSubscribeMulti: vi.fn(() => () => {}),
-}));
+const { mockSendCommand, mockSubscribeMulti, mockPrimeAudio } = vi.hoisted(
+  () => ({
+    mockSendCommand: vi.fn(),
+    mockSubscribeMulti: vi.fn(() => () => {}),
+    mockPrimeAudio: vi.fn(),
+  }),
+);
 
 // Run lifecycle hooks eagerly so the composable can be exercised without a
 // host component (mirrors the pattern used by other composable tests).
@@ -27,7 +30,12 @@ vi.mock("@/plugins/api", () => ({
 
 vi.mock("@/plugins/web_player", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
-  return { webPlayer: reactive({ player_id: "wp-1" as string | null }) };
+  return {
+    webPlayer: reactive({
+      player_id: "wp-1" as string | null,
+      primeAudio: mockPrimeAudio,
+    }),
+  };
 });
 
 import { webPlayer } from "@/plugins/web_player";
@@ -56,6 +64,7 @@ describe("useListenIn", () => {
     mockSendCommand.mockReset();
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockReturnValue(() => {});
+    mockPrimeAudio.mockReset();
     webPlayer.player_id = "wp-1";
   });
 
@@ -170,6 +179,30 @@ describe("useListenIn", () => {
       expect(notifyError).toHaveBeenCalledWith("no-web-player");
       expect(mockSendCommand).not.toHaveBeenCalled();
       expect(isListeningIn.value).toBe(false);
+    });
+
+    it("primes the audio output before sending the command", async () => {
+      const { enableListenIn } = create();
+      mockPrimeAudio.mockClear();
+      let primedBeforeCommand = false;
+      mockSendCommand.mockImplementation(async () => {
+        primedBeforeCommand = mockPrimeAudio.mock.calls.length > 0;
+        return undefined;
+      });
+
+      await enableListenIn();
+
+      expect(mockPrimeAudio).toHaveBeenCalledTimes(1);
+      expect(primedBeforeCommand).toBe(true);
+    });
+
+    it("does not prime the audio output without a web player", async () => {
+      webPlayer.player_id = null;
+      const { enableListenIn } = create();
+
+      await enableListenIn();
+
+      expect(mockPrimeAudio).not.toHaveBeenCalled();
     });
 
     it("reports the failure message and does not mark listening on error", async () => {

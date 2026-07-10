@@ -86,6 +86,9 @@ export function useListenIn(options: UseListenInOptions) {
       notifyError(errorMessages.noWebPlayer);
       return false;
     }
+    // Unlock this browser's audio output within the user gesture; listen-in
+    // audio starts asynchronously and would otherwise be blocked on iOS.
+    webPlayer.primeAudio();
     busy.value = true;
     try {
       await api.sendCommand<void>(`${domain}/listen_in`, {
