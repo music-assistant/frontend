@@ -296,6 +296,7 @@ async function handleCreate(args: MusicQuizCreateArgs) {
     args.round_count,
     args.suggestion_count,
     args.answer_duration,
+    args.difficulty,
     args.source_uris,
     args.name,
   );

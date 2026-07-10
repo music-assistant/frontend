@@ -16,6 +16,20 @@
       {{ $t("providers.music_quiz.answer_seconds") }}
       <input v-model.number="answerDuration" min="1" type="number" />
     </label>
+    <label>
+      {{ $t("providers.music_quiz.difficulty") }}
+      <select v-model="difficulty">
+        <option value="easy">
+          {{ $t("providers.music_quiz.difficulty_easy") }}
+        </option>
+        <option value="normal">
+          {{ $t("providers.music_quiz.difficulty_normal") }}
+        </option>
+        <option value="hard">
+          {{ $t("providers.music_quiz.difficulty_hard") }}
+        </option>
+      </select>
+    </label>
     <div class="quiz-setup__wide quiz-setup__sources">
       <div class="quiz-setup__source-search">
         <label>
@@ -133,6 +147,7 @@ const name = ref(generateSessionName());
 const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
+const difficulty = ref<MusicQuizCreateArgs["difficulty"]>("normal");
 const sourceSearchQuery = ref("");
 const sourceResults = ref<SourceItem[]>([]);
 const selectedSources = ref<SourceItem[]>([]);
@@ -165,6 +180,7 @@ function create() {
     round_count: roundCount.value,
     suggestion_count: suggestionCount.value,
     answer_duration: answerDuration.value,
+    difficulty: difficulty.value,
     source_uris: sourceUris.value,
     name: name.value.trim() || generateSessionName(),
   });
@@ -250,7 +266,8 @@ onBeforeUnmount(() => {
   font-size: 0.875rem;
 }
 
-.quiz-setup input {
+.quiz-setup input,
+.quiz-setup select {
   min-height: 2.5rem;
   border: 1px solid hsl(var(--foreground) / 0.35);
   border-radius: 6px;
@@ -264,7 +281,8 @@ onBeforeUnmount(() => {
     box-shadow 0.15s ease;
 }
 
-.quiz-setup input:focus {
+.quiz-setup input:focus,
+.quiz-setup select:focus {
   border-color: hsl(var(--primary));
   box-shadow:
     inset 0 1px 0 hsl(var(--foreground) / 0.06),
