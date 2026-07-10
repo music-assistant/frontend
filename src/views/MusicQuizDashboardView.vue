@@ -15,7 +15,7 @@
         </div>
         <Button variant="ghost-outline" size="lg" @click="exitPresentMode">
           <Minimize2 class="size-5" />
-          {{ $t("music_quiz.exit_present_mode") }}
+          {{ $t("providers.music_quiz.exit_present_mode") }}
         </Button>
       </header>
 
@@ -24,7 +24,10 @@
       <section class="present-mode__body">
         <template v-if="state.phase === 'answering' && currentRound">
           <p class="present-mode__countdown">
-            {{ answerRemainingLabel || $t("music_quiz.waiting_for_answers") }}
+            {{
+              answerRemainingLabel ||
+              $t("providers.music_quiz.waiting_for_answers")
+            }}
           </p>
           <MusicQuizAnswerGrid
             class="present-mode__answers"
@@ -49,7 +52,7 @@
             :round="currentRound"
             :busy="true"
             :is-ready="true"
-            :ready-label="$t('music_quiz.ready')"
+            :ready-label="$t('providers.music_quiz.ready')"
             :image-url="currentRoundImageUrl"
             :show-lyrics="false"
             :has-lyrics="false"
@@ -70,7 +73,7 @@
 
         <template v-else-if="state.phase === 'finished'">
           <section class="present-mode__finished">
-            <h2>{{ $t("music_quiz.final_leaderboard") }}</h2>
+            <h2>{{ $t("providers.music_quiz.final_leaderboard") }}</h2>
             <p>{{ winnerText }}</p>
           </section>
           <MusicQuizLeaderboard
@@ -98,7 +101,7 @@
     <section v-else class="dashboard-shell">
       <header class="dashboard-shell__header">
         <div>
-          <h1>{{ $t("music_quiz.title") }}</h1>
+          <h1>{{ $t("providers.music_quiz.title") }}</h1>
           <p>{{ statusText }}</p>
         </div>
         <Button
@@ -109,19 +112,19 @@
           @click="enterPresentMode"
         >
           <Maximize2 class="size-4" />
-          {{ $t("music_quiz.enter_present_mode") }}
+          {{ $t("providers.music_quiz.enter_present_mode") }}
         </Button>
       </header>
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
       <div v-if="gameRemoved" class="dashboard-shell__card">
-        <h2>{{ $t("music_quiz.game_ended") }}</h2>
-        <p>{{ $t("music_quiz.game_ended_detail") }}</p>
+        <h2>{{ $t("providers.music_quiz.game_ended") }}</h2>
+        <p>{{ $t("providers.music_quiz.game_ended_detail") }}</p>
       </div>
 
       <div v-else-if="!state && !loading" class="dashboard-shell__card">
-        <p>{{ $t("music_quiz.create_intro") }}</p>
+        <p>{{ $t("providers.music_quiz.create_intro") }}</p>
         <MusicQuizSetupForm :busy="busy" @create="handleCreate" />
       </div>
 
@@ -144,7 +147,10 @@
           class="dashboard-shell__card"
         >
           <p class="dashboard-shell__countdown">
-            {{ answerRemainingLabel || $t("music_quiz.waiting_for_answers") }}
+            {{
+              answerRemainingLabel ||
+              $t("providers.music_quiz.waiting_for_answers")
+            }}
           </p>
           <MusicQuizAnswerGrid
             :suggestions="currentRound.suggestions"
@@ -159,7 +165,7 @@
             :round="currentRound"
             :busy="true"
             :is-ready="true"
-            :ready-label="$t('music_quiz.ready')"
+            :ready-label="$t('providers.music_quiz.ready')"
             :image-url="currentRoundImageUrl"
             :show-lyrics="false"
             :has-lyrics="false"
@@ -249,14 +255,14 @@ const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 
 const roundLabel = computed(() => {
   if (!state.value || !currentRound.value) return "";
-  return `${$t("music_quiz.round_label")} ${currentRound.value.round_index + 1} / ${state.value.round_count}`;
+  return `${$t("providers.music_quiz.round_label")} ${currentRound.value.round_index + 1} / ${state.value.round_count}`;
 });
 
 const statusText = computed(() => {
-  if (loading.value) return $t("music_quiz.loading");
-  if (gameRemoved.value) return $t("music_quiz.game_removed");
+  if (loading.value) return $t("providers.music_quiz.loading");
+  if (gameRemoved.value) return $t("providers.music_quiz.game_removed");
   if (state.value) return phaseLabel.value;
-  return $t("music_quiz.no_active_game");
+  return $t("providers.music_quiz.no_active_game");
 });
 
 const currentRoundImageUrl = computed(() =>
@@ -280,7 +286,7 @@ async function copyCurrentRoundTitle() {
   if (!currentRound.value?.answer_label) return;
   const copied = await copyToClipboard(currentRound.value.answer_label);
   if (!copied) {
-    toast.error($t("music_quiz.copy_music_name_failed"));
+    toast.error($t("providers.music_quiz.copy_music_name_failed"));
   }
 }
 
@@ -331,7 +337,7 @@ watch(state, (nextState) => {
 });
 
 async function deleteGame() {
-  if (!window.confirm($t("music_quiz.delete_confirm"))) return;
+  if (!window.confirm($t("providers.music_quiz.delete_confirm"))) return;
   await host.deleteGame();
 }
 

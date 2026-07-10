@@ -1,7 +1,7 @@
 <template>
   <section class="quiz-answer-status">
     <header>
-      <span>{{ $t("music_quiz.answers") }}</span>
+      <span>{{ $t("providers.music_quiz.answers") }}</span>
       <small>{{ answeredCount }} / {{ statuses.length }}</small>
     </header>
     <ul>

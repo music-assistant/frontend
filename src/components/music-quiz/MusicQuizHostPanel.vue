@@ -3,7 +3,7 @@
     <div class="quiz-host__qr">
       <canvas ref="qrCanvas"></canvas>
       <p v-if="qrError" class="quiz-host__qr-error" role="alert">
-        {{ $t("music_quiz.qr_unavailable") }}
+        {{ $t("providers.music_quiz.qr_unavailable") }}
       </p>
       <Button
         class="quiz-host__copy"
@@ -12,7 +12,11 @@
         @click="copyLink"
       >
         <Copy class="size-4" />
-        {{ copied ? $t("music_quiz.copied") : $t("music_quiz.copy_link") }}
+        {{
+          copied
+            ? $t("providers.music_quiz.copied")
+            : $t("providers.music_quiz.copy_link")
+        }}
       </Button>
     </div>
     <details
@@ -20,7 +24,7 @@
       class="quiz-host__now-playing-details"
     >
       <summary>
-        <span>{{ $t("music_quiz.now_playing") }}</span>
+        <span>{{ $t("providers.music_quiz.now_playing") }}</span>
         <ChevronDown class="size-4" />
       </summary>
       <div class="quiz-host__now-playing">
@@ -30,7 +34,7 @@
           :alt="currentRound.answer_label"
         />
         <div>
-          <span>{{ $t("music_quiz.current_music") }}</span>
+          <span>{{ $t("providers.music_quiz.current_music") }}</span>
           <strong>{{ currentRound.answer_label }}</strong>
         </div>
       </div>
@@ -41,7 +45,7 @@
       open
     >
       <summary>
-        <span>{{ $t("music_quiz.selected_music") }}</span>
+        <span>{{ $t("providers.music_quiz.selected_music") }}</span>
         <strong>{{ sessionSourcesSummary }}</strong>
         <ChevronDown class="size-4" />
       </summary>
@@ -72,7 +76,7 @@
         @click="emit('start')"
       >
         <Play class="size-4" />
-        {{ $t("music_quiz.start") }}
+        {{ $t("providers.music_quiz.start") }}
       </Button>
       <Button
         v-if="state.phase === 'answering'"
@@ -80,7 +84,7 @@
         @click="emit('reveal')"
       >
         <Eye class="size-4" />
-        {{ $t("music_quiz.phase_reveal") }}
+        {{ $t("providers.music_quiz.phase_reveal") }}
       </Button>
       <Button
         v-if="state.phase === 'reveal'"
@@ -88,7 +92,11 @@
         @click="emit('next')"
       >
         <SkipForward class="size-4" />
-        {{ isLastRound ? $t("music_quiz.finish") : $t("music_quiz.next") }}
+        {{
+          isLastRound
+            ? $t("providers.music_quiz.finish")
+            : $t("providers.music_quiz.next")
+        }}
       </Button>
       <Button
         v-if="state.phase === 'finished'"
@@ -96,7 +104,7 @@
         @click="emit('reset')"
       >
         <RotateCcw class="size-4" />
-        {{ $t("music_quiz.new_game") }}
+        {{ $t("providers.music_quiz.new_game") }}
       </Button>
     </div>
   </div>
@@ -175,7 +183,7 @@ async function copyLink() {
   if (!props.joinLink) return;
   copied.value = await copyToClipboard(props.joinLink);
   if (!copied.value) {
-    toast.error($t("music_quiz.copy_join_link_failed"));
+    toast.error($t("providers.music_quiz.copy_join_link_failed"));
   }
   if (copiedTimeout) clearTimeout(copiedTimeout);
   copiedTimeout = setTimeout(() => {

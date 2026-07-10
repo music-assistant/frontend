@@ -26,7 +26,7 @@
           size="icon"
           type="button"
           variant="outline"
-          :title="$t('music_quiz.copy_music_name')"
+          :title="$t('providers.music_quiz.copy_music_name')"
           @click="emit('copy-title')"
         >
           <Copy class="size-4" />
@@ -44,7 +44,7 @@
       />
       <div v-else class="quiz-reveal__lyrics-loading">
         <Loader2 class="size-5 animate-spin" />
-        <span>{{ $t("music_quiz.loading_lyrics") }}</span>
+        <span>{{ $t("providers.music_quiz.loading_lyrics") }}</span>
       </div>
     </div>
   </section>

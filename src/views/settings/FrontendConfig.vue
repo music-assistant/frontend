@@ -130,7 +130,7 @@ onMounted(() => {
           ? [{ title: $t("party_mode"), value: "party" }]
           : []),
         ...(store.enabledPlugins.has("music_quiz")
-          ? [{ title: $t("music_quiz.title"), value: "music_quiz" }]
+          ? [{ title: $t("providers.music_quiz.title"), value: "music_quiz" }]
           : []),
         { title: $t("artists"), value: "artists" },
         { title: $t("albums"), value: "albums" },

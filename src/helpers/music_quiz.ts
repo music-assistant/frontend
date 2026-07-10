@@ -55,12 +55,12 @@ export function formatNameList(names: string[]) {
 
 export function getMusicQuizWinnerText(players: RankedMusicQuizPlayer[]) {
   const topScore = players[0]?.score ?? 0;
-  if (topScore <= 0) return $t("music_quiz.no_winner");
+  if (topScore <= 0) return $t("providers.music_quiz.no_winner");
   const winners = players.filter((player) => player.rank === 1);
   const names = formatNameList(winners.map((player) => player.name));
   return winners.length === 1
-    ? $t("music_quiz.winner_single", [names, topScore])
-    : $t("music_quiz.winner_multiple", [names, topScore]);
+    ? $t("providers.music_quiz.winner_single", [names, topScore])
+    : $t("providers.music_quiz.winner_multiple", [names, topScore]);
 }
 
 export function isMusicQuizWinner(
