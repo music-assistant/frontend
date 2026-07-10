@@ -147,29 +147,6 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       {
-        path: "/authors_narrators",
-        children: [
-          {
-            path: "",
-            name: "authors_narrators",
-            component: () =>
-              import(
-                /* webpackChunkName: "authors_narrators" */ "@/views/LibraryAuthorsNarrators.vue"
-              ),
-            props: true,
-          },
-          {
-            path: ":provider/:itemId",
-            name: "artist",
-            component: () =>
-              import(
-                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
-              ),
-            props: true,
-          },
-        ],
-      },
-      {
         path: "/albums",
         children: [
           {

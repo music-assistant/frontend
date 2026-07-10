@@ -11,7 +11,8 @@
       :menu-items="menuItems"
       :enforce-overflow-menu="true"
       :menu-active="hasActiveFilters"
-      :icon-action="iconAction"
+      :title-drop-down-action="titleDropDownAction"
+      :title-drop-down-items="titleDropDownItems"
       @title-clicked="toggleExpand"
     >
       <template #title>
@@ -350,8 +351,11 @@ export interface Props {
   restoreState?: boolean;
   onTitleClick?: () => void;
   onIconClick?: () => void;
+  titleDropDownItems?: string[];
+  titleDropDownAction?: (item: string) => void;
   refreshOnParentUpdate?: boolean;
   forcedViewMode?: "list" | "panel" | "panel_compact";
+  reloadData?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   sortKeys: () => ["name", "sort_name"],
@@ -390,8 +394,11 @@ const props = withDefaults(defineProps<Props>(), {
   restoreState: false,
   onTitleClick: undefined,
   onIconClick: undefined,
+  titleDropDownItems: undefined,
+  titleDropDownAction: undefined,
   refreshOnParentUpdate: false,
   forcedViewMode: undefined,
+  reloadData: undefined,
 });
 
 // global refs
@@ -519,13 +526,6 @@ const toggleExpand = function () {
     "expand",
     expanded.value,
   );
-};
-
-const iconAction = function () {
-  if (props.onIconClick) {
-    props.onIconClick();
-    loadData(undefined, undefined, true);
-  }
 };
 
 const selectViewMode = function (newMode: string) {
@@ -1577,6 +1577,12 @@ if (props.restoreState) {
 
 // watchers
 watch(
+  () => props.reloadData,
+  () => {
+    loadData(true);
+  },
+);
+watch(
   () => params.value.search,
   (newVal) => {
     if (newVal) showSearch.value = true;
@@ -1611,6 +1617,7 @@ watch(
     if (loading.value == true) return;
     if (props.refreshOnParentUpdate) {
       loadData(true);
+      console.error("fooooooo");
     } else {
       allItems.value = [];
       newContentAvailable.value = true;
