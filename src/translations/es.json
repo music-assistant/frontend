@@ -146,10 +146,6 @@
                 "dark": "Oscuro"
             }
         },
-        "menu_items": {
-            "label": "Elementos de menú habilitados",
-            "description": "Configure qué elementos mostrar en el menú.\n\nTen en cuenta que si desactivas los ajustes puedes bloquearte.\n\nEn ese caso, tendrá que introducir manualmente la ruta a la configuración o borrar las cookies del navegador para acceder de nuevo a la configuración."
-        },
         "language": {
             "label": "Idioma",
             "options": {

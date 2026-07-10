@@ -148,10 +148,6 @@
                 "dark": "Tumšs"
             }
         },
-        "menu_items": {
-            "label": "Iespējotie izvēlnes vienumi",
-            "description": "Konfigurē, kurus vienumus attēlot izvēlnē.\n\nŅem vērā, ka atspējojot iestatījumus tu vari sevi nobloķēt.\n\nLai atkal iegūtu piekļuvi, tev būs manuāli jāievada ceļš (URL) uz iestatījumu paneli, vai jānotīra pārlūkprogrammas sīkfaili. Izmanto uz savu risku!"
-        },
         "language": {
             "label": "Valoda",
             "options": {

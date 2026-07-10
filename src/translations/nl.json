@@ -148,10 +148,6 @@
                 "dark": "Donker"
             }
         },
-        "menu_items": {
-            "label": "Ingeschakelde menu-items",
-            "description": "Configureer welke items in het menu moeten worden weergegeven.\n\nLet op: als je de instellingen uitschakelt, kunt je jezelf buitensluiten.\n\nOm opnieuw toegang te krijgen, moet je handmatig het pad naar de instellingen invoeren of de browsercookies wissen. Gebruik op eigen risico!"
-        },
         "language": {
             "label": "Taal",
             "options": {

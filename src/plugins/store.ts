@@ -62,6 +62,7 @@ interface Store {
   isPartyGuest: boolean;
   companionPlayerId?: string;
   homescreenEditMode: boolean;
+  navMenuEditMode: boolean;
 }
 
 export const store: Store = reactive({
@@ -135,4 +136,5 @@ export const store: Store = reactive({
   enabledPlugins: new Set(),
   isPartyGuest: false,
   homescreenEditMode: false,
+  navMenuEditMode: false,
 });
