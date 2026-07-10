@@ -23,6 +23,20 @@ export const isPlaybackMode = (mode: WebPlayerMode) =>
   mode === WebPlayerMode.SENDSPIN_ONLY ||
   mode === WebPlayerMode.SENDSPIN_WITH_CONTROLS;
 
+// The active SendspinPlayer registers a handler that unlocks this browser's
+// audio output from within a user gesture. Listen-in audio starts
+// asynchronously, so iOS would otherwise block it; priming during the gesture
+// keeps playback reliable. See SendspinPlayer.vue and useListenIn.
+let audioUnlockHandler: (() => void) | null = null;
+
+export function registerWebPlayerAudioUnlock(handler: () => void): void {
+  audioUnlockHandler = handler;
+}
+
+export function clearWebPlayerAudioUnlock(handler: () => void): void {
+  if (audioUnlockHandler === handler) audioUnlockHandler = null;
+}
+
 let unsubSubscriptions: (() => void)[] = [];
 
 // We use a channel to communicate with all other tabs of MA open.
@@ -398,6 +412,11 @@ export const webPlayer = reactive({
   async setInteracted() {
     if (this.interacted) return;
     this.interacted = true;
+  },
+  // Unlock this browser's audio output from within a user gesture so
+  // asynchronously-started listen-in audio can play (notably on iOS).
+  primeAudio() {
+    audioUnlockHandler?.();
   },
   timedOutDueToThrottling() {
     return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;
