@@ -5,7 +5,7 @@
     <header class="flex items-start justify-between gap-4">
       <div class="min-w-0">
         <h1 class="truncate text-3xl font-black sm:text-4xl lg:text-5xl">
-          {{ state.name }}
+          {{ state.name || $t("providers.music_quiz.title") }}
         </h1>
         <p class="text-muted-foreground text-base sm:text-lg lg:text-xl">
           {{ phaseLabel }}

@@ -97,6 +97,33 @@ describe("useMusicQuiz commands", () => {
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
   });
 
+  it("preserves nullable server fields in supported state", () => {
+    const state = {
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "reveal",
+      name: null,
+      round_count: 1,
+      suggestion_count: 2,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+      current_round: {
+        question: null,
+        round_index: 0,
+        started_at: 1,
+        deadline: 2,
+        suggestions: [],
+        track_uri: null,
+      },
+    } satisfies MusicQuizPublicState;
+
+    expect(isSupportedMusicQuiz(state)).toBe(true);
+    expect(state.name).toBeNull();
+    expect(state.current_round.question).toBeNull();
+    expect(state.current_round.track_uri).toBeNull();
+  });
+
   it("accepts public provider events as invalidation payloads", () => {
     const event = {
       event: "game_updated",

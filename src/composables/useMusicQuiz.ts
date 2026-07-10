@@ -26,7 +26,7 @@ interface MusicQuizStateIdentity<
   quiz_type: TQuizType;
   answer_type: TAnswerType;
   phase: MusicQuizPhase;
-  name: string;
+  name: string | null;
 }
 
 interface MusicQuizSupportedStateBase extends MusicQuizStateIdentity {
@@ -119,7 +119,7 @@ export interface MusicQuizYourAnswer {
 }
 
 export interface MusicQuizCurrentRound {
-  question: string;
+  question: string | null;
   round_index: number;
   started_at: number;
   deadline: number;
@@ -127,7 +127,7 @@ export interface MusicQuizCurrentRound {
   // post-reveal fields:
   correct_suggestion_id?: string;
   answer_label?: string;
-  track_uri?: string;
+  track_uri?: string | null;
   image_url?: string | null;
   duration?: number | null;
   ended_at?: number;
