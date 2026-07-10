@@ -13,6 +13,7 @@ vi.mock("@/plugins/api", () => ({
 import {
   answerMusicQuiz,
   createMusicQuiz,
+  heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
   parseMusicQuizAnswerType,
@@ -74,6 +75,15 @@ describe("useMusicQuiz commands", () => {
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/answer", {
       player_id: "player-id",
       suggestion_id: "suggestion-id",
+    });
+  });
+
+  it("sends a typed player heartbeat", async () => {
+    mockSendCommand.mockResolvedValue(true);
+
+    await expect(heartbeatMusicQuiz("player-id")).resolves.toBe(true);
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/heartbeat", {
+      player_id: "player-id",
     });
   });
 
