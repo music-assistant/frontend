@@ -16,7 +16,6 @@
     :restore-state="true"
     :total="total"
     :show-provider-filter="true"
-    :on-icon-click="onIconClick"
   />
 </template>
 
@@ -55,14 +54,6 @@ const sortKeys = [
   "play_count",
   "play_count_desc",
 ];
-
-const onIconClick = function () {
-  if (showArtistType.value === ArtistType.AUTHOR) {
-    showArtistType.value = ArtistType.NARRATOR;
-  } else {
-    showArtistType.value = ArtistType.AUTHOR;
-  }
-};
 
 const icon = function () {
   if (showArtistType.value === ArtistType.AUTHOR) {

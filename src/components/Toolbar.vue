@@ -14,7 +14,28 @@
 
     <template #title>
       <div :class="{ 'toolbar-title-wrapper': subtitle }">
-        <slot name="title">
+        <DropdownMenu v-if="titleDropDownItems && titleDropDownAction">
+          <DropdownMenuTrigger>
+            <slot name="title">
+              <button
+                v-if="title || (store.mobileLayout && isDiscoverPage)"
+                @click="emit('titleClicked')"
+              >
+                {{ title || (isDiscoverPage ? $t("discover") : "") }}
+              </button>
+            </slot></DropdownMenuTrigger
+          >
+          <span v-if="subtitle" class="toolbar-subtitle">{{ subtitle }}</span>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              v-for="item in titleDropDownItems"
+              :key="item"
+              @click="titleDropDownAction?.(item)"
+              >{{ $t(item) }}</DropdownMenuItem
+            >
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <slot v-else name="title">
           <button
             v-if="title || (store.mobileLayout && isDiscoverPage)"
             @click="emit('titleClicked')"
@@ -22,7 +43,6 @@
             {{ title || (isDiscoverPage ? $t("discover") : "") }}
           </button>
         </slot>
-        <span v-if="subtitle" class="toolbar-subtitle">{{ subtitle }}</span>
       </div>
     </template>
 
@@ -141,6 +161,15 @@ import { getBreakpointValue } from "../plugins/breakpoint";
 
 import type { Component } from "vue";
 import { ref } from "vue";
+import Select from "./ui/select/Select.vue";
+import SelectContent from "./ui/select/SelectContent.vue";
+import SelectTrigger from "./ui/select/SelectTrigger.vue";
+import SelectItem from "./ui/select/SelectItem.vue";
+import SelectValue from "./ui/select/SelectValue.vue";
+import DropdownMenu from "./ui/dropdown-menu/DropdownMenu.vue";
+import DropdownMenuContent from "./ui/dropdown-menu/DropdownMenuContent.vue";
+import DropdownMenuItem from "./ui/dropdown-menu/DropdownMenuItem.vue";
+import DropdownMenuTrigger from "./ui/dropdown-menu/DropdownMenuTrigger.vue";
 
 const overflowMenuOpen = ref(false);
 
@@ -181,6 +210,8 @@ interface Props {
   title?: string;
   subtitle?: string;
   menuItems?: ToolBarMenuItem[];
+  titleDropDownItems?: string[];
+  titleDropDownAction?: (item: string) => void;
   enforceOverflowMenu?: boolean;
   // shows an "active" dot on the overflow (3-dots) button, e.g. when filters apply
   menuActive?: boolean;
@@ -194,6 +225,8 @@ withDefaults(defineProps<Props>(), {
   subtitle: undefined,
   count: undefined,
   menuItems: undefined,
+  titleDropDownItems: undefined,
+  titleDropDownAction: undefined,
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,

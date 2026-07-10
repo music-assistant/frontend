@@ -8,7 +8,6 @@ export const DEFAULT_MENU_ITEMS = [
   "albums",
   "tracks",
   "playlists",
-  "authors_narrators",
   "audiobooks",
   "podcasts",
   "radios",

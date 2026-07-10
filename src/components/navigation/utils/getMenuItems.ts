@@ -230,16 +230,6 @@ export const getMenuItems = function () {
         group: "system",
       });
     }
-
-    if (enabledMenuItemStr === "authors_narrators") {
-      items.push({
-        label: "authors_narrators",
-        icon: ArtistIcon,
-        path: "/authors_narrators",
-        isLibraryNode: true,
-        group: "library",
-      });
-    }
   }
   return items;
 };
