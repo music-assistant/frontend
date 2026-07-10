@@ -1,24 +1,50 @@
 <template>
-  <section class="quiz-answer-status">
-    <header>
-      <span>{{ $t("providers.music_quiz.answers") }}</span>
-      <small>{{ answeredCount }} / {{ statuses.length }}</small>
-    </header>
-    <ul>
-      <li
-        v-for="player in statuses"
-        :key="player.name"
-        :class="{ 'is-answered': player.answered }"
-      >
-        <Check v-if="player.answered" class="size-4" />
-        <Clock v-else class="size-4" />
-        <span>{{ player.name }}</span>
-      </li>
-    </ul>
-  </section>
+  <Card class="gap-4 py-4">
+    <CardHeader class="px-4">
+      <CardTitle class="text-base">
+        {{ $t("providers.music_quiz.answers") }}
+      </CardTitle>
+      <CardAction>
+        <Badge variant="secondary"
+          >{{ answeredCount }} / {{ statuses.length }}</Badge
+        >
+      </CardAction>
+    </CardHeader>
+    <CardContent class="px-4">
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
+        <li v-for="player in statuses" :key="player.name">
+          <MusicQuizPlayerTile :name="player.name">
+            <template #trailing>
+              <Check
+                v-if="player.answered"
+                class="text-primary size-4 shrink-0"
+              />
+              <Clock v-else class="text-muted-foreground size-4 shrink-0" />
+              <span class="sr-only">
+                {{
+                  player.answered
+                    ? $t("providers.music_quiz.answered")
+                    : $t("providers.music_quiz.waiting_for_answer")
+                }}
+              </span>
+            </template>
+          </MusicQuizPlayerTile>
+        </li>
+      </ul>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { MusicQuizPlayer } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Clock } from "@lucide/vue";
@@ -28,65 +54,3 @@ defineProps<{
   answeredCount: number;
 }>();
 </script>
-
-<style scoped>
-.quiz-answer-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card);
-  padding: 0.875rem;
-}
-
-.quiz-answer-status header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.625rem;
-  font-weight: 600;
-}
-
-.quiz-answer-status small {
-  color: var(--muted-foreground);
-}
-
-.quiz-answer-status ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.quiz-answer-status li {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--background);
-  padding: 0.55rem 0.65rem;
-  color: var(--muted-foreground);
-}
-
-.quiz-answer-status li.is-answered {
-  color: var(--foreground);
-}
-
-.quiz-answer-status svg {
-  flex: 0 0 auto;
-}
-
-.quiz-answer-status li.is-answered svg {
-  color: var(--primary);
-}
-
-.quiz-answer-status li span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-</style>

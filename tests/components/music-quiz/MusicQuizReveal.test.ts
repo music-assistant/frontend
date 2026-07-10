@@ -1,6 +1,10 @@
 import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
 
 const baseProps = {
   round: {
@@ -23,49 +27,27 @@ const baseProps = {
   showReadyButton: false,
 };
 
+function mountReveal(lyricsLoading: boolean) {
+  return mount(MusicQuizReveal, {
+    props: { ...baseProps, lyricsLoading },
+    global: {
+      stubs: {
+        LyricsViewer: true,
+        Button: { template: "<button><slot /></button>" },
+      },
+    },
+  });
+}
+
 describe("MusicQuizReveal", () => {
   it("shows a loading state while lyrics are still being fetched", () => {
-    const wrapper = mount(MusicQuizReveal, {
-      props: {
-        ...baseProps,
-        lyricsLoading: true,
-      },
-      global: {
-        stubs: {
-          LyricsViewer: true,
-          Button: {
-            template: "<button><slot /></button>",
-          },
-        },
-        mocks: {
-          $t: (key: string) => key,
-        },
-      },
-    });
-
+    const wrapper = mountReveal(true);
     expect(wrapper.text()).toContain("providers.music_quiz.loading_lyrics");
     expect(wrapper.text()).not.toContain("no_lyrics_available");
   });
 
   it("shows a no-lyrics terminal state after loading completes without lyrics", () => {
-    const wrapper = mount(MusicQuizReveal, {
-      props: {
-        ...baseProps,
-        lyricsLoading: false,
-      },
-      global: {
-        stubs: {
-          LyricsViewer: true,
-          Button: {
-            template: "<button><slot /></button>",
-          },
-        },
-        mocks: {
-          $t: (key: string) => key,
-        },
-      },
-    });
-
+    const wrapper = mountReveal(false);
     expect(wrapper.text()).toContain("no_lyrics_available");
     expect(wrapper.text()).not.toContain("providers.music_quiz.loading_lyrics");
   });

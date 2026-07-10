@@ -1,108 +1,36 @@
 <template>
-  <div
-    ref="presentRootRef"
-    class="music-quiz-dashboard"
-    :class="{ 'music-quiz-dashboard--present': presentMode && !!state }"
-  >
-    <section v-if="presentMode && state" class="present-mode">
-      <header class="present-mode__header">
-        <div class="present-mode__heading">
-          <h1>{{ state.name }}</h1>
-          <p>
-            {{ phaseLabel }}
-            <span v-if="roundLabel"> • {{ roundLabel }}</span>
+  <div ref="presentRootRef" class="mx-auto w-full max-w-6xl p-4 sm:p-5">
+    <MusicQuizPresentStage
+      v-if="presentMode && state"
+      :state="state"
+      :current-round="currentRound"
+      :leaderboard-rows="leaderboardRows"
+      :answered-count="answeredCount"
+      :answer-remaining-label="answerRemainingLabel"
+      :answer-remaining-fraction="answerRemainingFraction"
+      :winner-text="winnerText"
+      :phase-label="phaseLabel"
+      :round-label="roundLabel"
+      :join-link="joinLink"
+      :current-round-image-url="currentRoundImageUrl"
+      :is-connection-degraded="isConnectionDegraded"
+      @exit="exitPresentMode"
+    />
+
+    <section v-else class="flex flex-col gap-4">
+      <header class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h1 class="text-2xl font-bold">
+            {{ $t("providers.music_quiz.title") }}
+          </h1>
+          <p
+            class="text-muted-foreground mt-1 flex flex-wrap items-center gap-2"
+          >
+            <span>{{ statusText }}</span>
+            <Badge v-if="state && roundLabel" variant="secondary">
+              {{ roundLabel }}
+            </Badge>
           </p>
-        </div>
-        <Button variant="ghost-outline" size="lg" @click="exitPresentMode">
-          <Minimize2 class="size-5" />
-          {{ $t("providers.music_quiz.exit_present_mode") }}
-        </Button>
-      </header>
-
-      <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
-
-      <section class="present-mode__body">
-        <template v-if="state.phase === 'answering' && currentRound">
-          <p class="present-mode__countdown">
-            {{
-              answerRemainingLabel ||
-              $t("providers.music_quiz.waiting_for_answers")
-            }}
-          </p>
-          <MusicQuizAnswerGrid
-            class="present-mode__answers"
-            :suggestions="currentRound.suggestions"
-            :disabled="true"
-            :selected-suggestion-id="null"
-            @select="noop"
-          />
-          <MusicQuizAnswerStatus
-            class="present-mode__status"
-            :statuses="state.players"
-            :answered-count="answeredCount"
-          />
-          <MusicQuizLeaderboard
-            class="present-mode__leaderboard"
-            :rows="leaderboardRows"
-          />
-        </template>
-
-        <template v-else-if="state.phase === 'reveal' && currentRound">
-          <MusicQuizReveal
-            :round="currentRound"
-            :busy="true"
-            :is-ready="true"
-            :ready-label="$t('providers.music_quiz.ready')"
-            :image-url="currentRoundImageUrl"
-            :show-lyrics="false"
-            :has-lyrics="false"
-            :lyrics="''"
-            :lrc-lyrics="''"
-            :lyrics-position="0"
-            :lyrics-text-color="'hsl(var(--foreground))'"
-            :show-ready-button="false"
-            :show-copy-button="false"
-            @ready="noop"
-            @copy-title="noop"
-          />
-          <MusicQuizLeaderboard
-            class="present-mode__leaderboard"
-            :rows="leaderboardRows"
-          />
-        </template>
-
-        <template v-else-if="state.phase === 'finished'">
-          <section class="present-mode__finished">
-            <h2>{{ $t("providers.music_quiz.final_leaderboard") }}</h2>
-            <p>{{ winnerText }}</p>
-          </section>
-          <MusicQuizLeaderboard
-            class="present-mode__leaderboard"
-            :rows="leaderboardRows"
-          />
-        </template>
-
-        <template v-else>
-          <section class="present-mode__lobby">
-            <MusicQuizHostPanel
-              :state="state"
-              :busy="true"
-              :join-link="joinLink"
-              :current-round="currentRound"
-              :is-last-round="!!isLastRound"
-              :show-actions="false"
-            />
-            <MusicQuizSessionPanels :state="state" />
-          </section>
-        </template>
-      </section>
-    </section>
-
-    <section v-else class="dashboard-shell">
-      <header class="dashboard-shell__header">
-        <div>
-          <h1>{{ $t("providers.music_quiz.title") }}</h1>
-          <p>{{ statusText }}</p>
         </div>
         <Button
           v-if="state"
@@ -118,85 +46,122 @@
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
-      <div v-if="gameRemoved" class="dashboard-shell__card">
-        <h2>{{ $t("providers.music_quiz.game_ended") }}</h2>
-        <p>{{ $t("providers.music_quiz.game_ended_detail") }}</p>
-      </div>
+      <Card v-if="gameRemoved">
+        <CardHeader>
+          <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
+          <CardDescription>
+            {{ $t("providers.music_quiz.game_ended_detail") }}
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-      <div v-else-if="!state && !loading" class="dashboard-shell__card">
-        <p>{{ $t("providers.music_quiz.create_intro") }}</p>
-        <MusicQuizSetupForm :busy="busy" @create="handleCreate" />
-      </div>
+      <Card v-else-if="!state && !loading">
+        <CardContent>
+          <MusicQuizSetupWizard :busy="busy" @create="handleCreate" />
+        </CardContent>
+      </Card>
 
-      <div v-else-if="state" class="dashboard-shell__content">
+      <div v-else-if="state" class="flex flex-col gap-4">
         <MusicQuizHostPanel
           :state="state"
           :busy="busy"
           :join-link="joinLink"
           :current-round="currentRound"
           :is-last-round="!!isLastRound"
-          @delete="deleteGame"
+          @delete="showDeleteDialog = true"
           @start="host.start"
           @reveal="host.reveal"
           @next="host.next"
           @reset="host.reset"
         />
 
-        <section
-          v-if="state.phase === 'answering' && currentRound"
-          class="dashboard-shell__card"
-        >
-          <p class="dashboard-shell__countdown">
-            {{
-              answerRemainingLabel ||
-              $t("providers.music_quiz.waiting_for_answers")
-            }}
-          </p>
-          <MusicQuizAnswerGrid
-            :suggestions="currentRound.suggestions"
-            :disabled="true"
-            :selected-suggestion-id="null"
-            @select="noop"
-          />
-        </section>
+        <Card v-if="state.phase === 'answering' && currentRound">
+          <CardContent class="flex flex-col items-center gap-4">
+            <MusicQuizCountdown
+              :size="120"
+              :fraction="answerRemainingFraction"
+              :label="answerRemainingLabel || '…'"
+            />
+            <MusicQuizAnswerGrid
+              class="w-full"
+              :suggestions="currentRound.suggestions"
+              :disabled="true"
+              :selected-suggestion-id="null"
+              @select="noop"
+            />
+          </CardContent>
+        </Card>
 
-        <section v-else-if="state.phase === 'reveal' && currentRound">
-          <MusicQuizReveal
-            :round="currentRound"
-            :busy="true"
-            :is-ready="true"
-            :ready-label="$t('providers.music_quiz.ready')"
-            :image-url="currentRoundImageUrl"
-            :show-lyrics="false"
-            :has-lyrics="false"
-            :lyrics="''"
-            :lrc-lyrics="''"
-            :lyrics-position="0"
-            :lyrics-text-color="'hsl(var(--foreground))'"
-            :show-ready-button="false"
-            @ready="noop"
-            @copy-title="copyCurrentRoundTitle"
-          />
-        </section>
+        <MusicQuizReveal
+          v-else-if="state.phase === 'reveal' && currentRound"
+          :round="currentRound"
+          :busy="true"
+          :is-ready="true"
+          :ready-label="$t('providers.music_quiz.ready')"
+          :image-url="currentRoundImageUrl"
+          :show-lyrics="false"
+          :has-lyrics="false"
+          :lyrics="''"
+          :lrc-lyrics="''"
+          :lyrics-position="0"
+          lyrics-text-color="var(--foreground)"
+          :show-ready-button="false"
+          @ready="noop"
+          @copy-title="copyCurrentRoundTitle"
+        />
 
         <MusicQuizSessionPanels :state="state" />
       </div>
     </section>
+
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ $t("delete") }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{ $t("providers.music_quiz.delete_confirm") }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
+          <AlertDialogAction :disabled="busy" @click="confirmDelete">
+            {{ $t("delete") }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import MusicQuizAnswerGrid from "@/components/music-quiz/MusicQuizAnswerGrid.vue";
-import MusicQuizAnswerStatus from "@/components/music-quiz/MusicQuizAnswerStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
-import MusicQuizLeaderboard, {
-  type MusicQuizLeaderboardRow,
-} from "@/components/music-quiz/MusicQuizLeaderboard.vue";
+import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
+import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
 import MusicQuizReveal from "@/components/music-quiz/MusicQuizReveal.vue";
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
-import MusicQuizSetupForm from "@/components/music-quiz/MusicQuizSetupForm.vue";
+import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { MusicQuizCreateArgs } from "@/composables/useMusicQuiz";
 import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
 import { useMusicQuizRoundClocks } from "@/composables/useMusicQuizRoundClocks";
@@ -208,7 +173,7 @@ import {
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import api, { ConnectionState } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
-import { Maximize2, Minimize2 } from "@lucide/vue";
+import { Maximize2 } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -231,13 +196,11 @@ const clocks = useMusicQuizRoundClocks(
   computed(() => state.value),
   computed(() => currentRound.value),
 );
+const { answerRemainingLabel, answerRemainingFraction } = clocks;
 
-const { answerRemainingLabel } = clocks;
-
-const rankedPlayers = computed(() => {
-  if (!state.value) return [];
-  return rankMusicQuizPlayers(state.value.players);
-});
+const rankedPlayers = computed(() =>
+  state.value ? rankMusicQuizPlayers(state.value.players) : [],
+);
 
 const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
   const currentState = state.value;
@@ -277,9 +240,10 @@ const isConnectionDegraded = computed(
 
 const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
+const showDeleteDialog = ref(false);
 
 function noop() {
-  // Intentionally empty for read-only interactions.
+  // Read-only interactions on the host dashboard.
 }
 
 async function copyCurrentRoundTitle() {
@@ -292,7 +256,7 @@ async function copyCurrentRoundTitle() {
 
 async function handleCreate(args: MusicQuizCreateArgs) {
   await host.create(
-    "guess_the_song",
+    args.quiz_type,
     args.round_count,
     args.suggestion_count,
     args.answer_duration,
@@ -337,8 +301,8 @@ watch(state, (nextState) => {
   }
 });
 
-async function deleteGame() {
-  if (!window.confirm($t("providers.music_quiz.delete_confirm"))) return;
+async function confirmDelete() {
+  showDeleteDialog.value = false;
   await host.deleteGame();
 }
 
@@ -351,167 +315,3 @@ onBeforeUnmount(() => {
   clocks.teardown();
 });
 </script>
-
-<style scoped>
-.music-quiz-dashboard {
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 1.25rem;
-}
-
-.music-quiz-dashboard--present {
-  max-width: none;
-  padding: 0;
-}
-
-.dashboard-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.dashboard-shell__header,
-.dashboard-shell__card {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--card);
-  padding: 1rem;
-}
-
-.dashboard-shell__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.dashboard-shell__header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.dashboard-shell__header p,
-.dashboard-shell__card p {
-  margin: 0.35rem 0 0;
-  color: var(--muted-foreground);
-}
-
-.dashboard-shell__content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.dashboard-shell__countdown {
-  margin: 0 0 0.65rem;
-  text-align: center;
-  font-size: 1.45rem;
-  font-weight: 700;
-}
-
-.present-mode {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background: var(--background);
-  padding: 1.2rem;
-}
-
-.present-mode__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.present-mode__heading h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 3.4vw, 3.1rem);
-}
-
-.present-mode__heading p {
-  margin: 0.35rem 0 0;
-  font-size: clamp(1rem, 1.8vw, 1.5rem);
-  color: var(--muted-foreground);
-}
-
-.present-mode__body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.present-mode__countdown {
-  margin: 0;
-  text-align: center;
-  font-size: clamp(2.1rem, 5.8vw, 5.8rem);
-  font-weight: 800;
-}
-
-.present-mode__answers :deep(.quiz-answers) {
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-.present-mode__answers :deep(.quiz-answers__button) {
-  min-height: clamp(4.2rem, 8.5vh, 7rem);
-  font-size: clamp(1rem, 1.9vw, 1.9rem);
-  font-weight: 700;
-}
-
-.present-mode__status :deep(li),
-.present-mode__leaderboard :deep(li) {
-  min-height: 2.8rem;
-  font-size: clamp(0.95rem, 1.4vw, 1.35rem);
-}
-
-.present-mode__lobby {
-  display: grid;
-  grid-template-columns: minmax(280px, 520px) minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.present-mode__finished {
-  text-align: center;
-}
-
-.present-mode__finished h2 {
-  margin: 0;
-  font-size: clamp(1.5rem, 3vw, 2.7rem);
-}
-
-.present-mode__finished p {
-  margin: 0.7rem 0 0;
-  font-size: clamp(1rem, 2vw, 1.8rem);
-}
-
-@media (max-width: 980px) {
-  .present-mode__lobby {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .music-quiz-dashboard {
-    padding: 0.75rem;
-  }
-
-  .dashboard-shell__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .present-mode {
-    padding: 0.8rem;
-  }
-
-  .present-mode__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-</style>

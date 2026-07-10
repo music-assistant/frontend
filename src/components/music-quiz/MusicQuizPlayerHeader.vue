@@ -1,94 +1,54 @@
 <template>
-  <header class="quiz-header">
-    <div>
-      <h1>
-        {{ playerName }}
-        <span v-if="rank" class="quiz-header__rank">(#{{ rank }})</span>
-      </h1>
-      <small class="quiz-header__round-progress">{{ roundProgress }}</small>
-    </div>
-    <strong class="quiz-header__score">
-      {{ score }}
-      <span v-if="scoreDelta">{{ scoreDelta }}</span>
-    </strong>
-  </header>
-  <div v-if="phaseLabel" class="quiz-header__phase" role="status">
-    {{ phaseLabel }}
-  </div>
+  <Card class="gap-3 py-4">
+    <CardContent class="flex flex-col gap-3 px-4">
+      <div class="flex items-center gap-3">
+        <MusicQuizAvatar
+          :name="playerName"
+          class="size-11 shrink-0 text-base"
+        />
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <h1 class="truncate text-lg font-bold">{{ playerName }}</h1>
+            <Badge v-if="rank" variant="secondary" class="shrink-0">
+              #{{ rank }}
+            </Badge>
+          </div>
+          <p class="text-muted-foreground text-sm">{{ roundProgress }}</p>
+        </div>
+        <span
+          class="flex shrink-0 items-baseline gap-1 text-xl font-bold tabular-nums"
+        >
+          {{ score }}
+          <span v-if="scoreDelta" class="text-primary text-sm">
+            {{ scoreDelta }}
+          </span>
+        </span>
+      </div>
+      <Progress :model-value="roundFraction" />
+      <p
+        v-if="phaseLabel"
+        class="bg-primary/10 text-foreground rounded-md px-3 py-1.5 text-center text-sm font-bold"
+        role="status"
+      >
+        {{ phaseLabel }}
+      </p>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+
 defineProps<{
   playerName: string;
   rank: number | null;
   roundProgress: string;
+  roundFraction?: number;
   score: number;
   scoreDelta: string;
   phaseLabel: string;
 }>();
 </script>
-
-<style scoped>
-.quiz-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card);
-  padding: 0.875rem;
-}
-
-.quiz-header > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.quiz-header h1 {
-  margin: 0;
-}
-
-.quiz-header__rank {
-  color: var(--muted-foreground);
-  font-size: 0.85em;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.quiz-header__round-progress {
-  color: var(--muted-foreground);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.quiz-header__score {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  gap: 0.35rem;
-  white-space: nowrap;
-}
-
-.quiz-header__score span {
-  color: var(--primary);
-  font-size: 0.85rem;
-}
-
-.quiz-header__phase {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.4rem;
-  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  padding: 0.5rem 0.75rem;
-  color: var(--foreground);
-  font-size: 0.95rem;
-  font-weight: 800;
-  text-align: center;
-}
-</style>

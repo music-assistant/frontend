@@ -112,15 +112,23 @@ export interface MusicQuizJoinResult {
 }
 
 /**
- * Host setup-form arguments for creating a game (quiz_type is added by the host view).
+ * Host setup arguments for a specific game type (everything except which game
+ * type is being created).
  */
-export interface MusicQuizCreateArgs {
+export interface MusicQuizGuessTheSongConfig {
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
   difficulty: MusicQuizDifficulty;
   source_uris: string[];
   name: string;
+}
+
+/**
+ * Host setup-form arguments for creating a game, including the selected game type.
+ */
+export interface MusicQuizCreateArgs extends MusicQuizGuessTheSongConfig {
+  quiz_type: string;
 }
 
 // Host commands (Scope.USERS_INVITE)

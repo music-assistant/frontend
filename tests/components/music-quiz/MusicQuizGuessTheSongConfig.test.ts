@@ -1,4 +1,4 @@
-import MusicQuizSetupForm from "@/components/music-quiz/MusicQuizSetupForm.vue";
+import MusicQuizGuessTheSongConfig from "@/components/music-quiz/MusicQuizGuessTheSongConfig.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -58,7 +58,18 @@ async function flushPromises() {
   await nextTick();
 }
 
-describe("MusicQuizSetupForm", () => {
+function mountConfig() {
+  return mount(MusicQuizGuessTheSongConfig, {
+    props: { busy: false },
+    global: {
+      stubs: {
+        Button: { template: "<button><slot /></button>" },
+      },
+    },
+  });
+}
+
+describe("MusicQuizGuessTheSongConfig", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSearch.mockReset();
@@ -76,20 +87,11 @@ describe("MusicQuizSetupForm", () => {
       query === "old" ? oldSearch.promise : newSearch.promise,
     );
 
-    const wrapper = mount(MusicQuizSetupForm, {
-      props: {
-        busy: false,
-      },
-      global: {
-        stubs: {
-          Button: {
-            template: "<button><slot /></button>",
-          },
-        },
-      },
-    });
+    const wrapper = mountConfig();
 
-    const searchInput = wrapper.find('input[type="search"]');
+    const searchInput = wrapper.find(
+      'input[placeholder="providers.music_quiz.search_music"]',
+    );
     await searchInput.setValue("old");
     await vi.advanceTimersByTimeAsync(250);
     expect(mockSearch).toHaveBeenCalledWith(
@@ -121,11 +123,7 @@ describe("MusicQuizSetupForm", () => {
 
     oldSearch.resolve({
       tracks: [
-        {
-          uri: "track:old",
-          name: "Older result",
-          media_type: MediaType.TRACK,
-        },
+        { uri: "track:old", name: "Older result", media_type: MediaType.TRACK },
       ],
       playlists: [],
     });

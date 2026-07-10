@@ -1,9 +1,9 @@
 <template>
-  <section class="quiz-answers">
+  <div class="grid gap-3 sm:grid-cols-2">
     <Button
-      v-for="suggestion in suggestions"
+      v-for="(suggestion, index) in suggestions"
       :key="suggestion.suggestion_id"
-      class="quiz-answers__button"
+      class="h-auto min-h-16 justify-start gap-3 whitespace-normal py-3 text-left text-base font-semibold"
       :disabled="disabled"
       :variant="
         selectedSuggestionId === suggestion.suggestion_id
@@ -12,14 +12,24 @@
       "
       @click="emit('select', suggestion.suggestion_id)"
     >
-      <span>{{ suggestion.label }}</span>
+      <span
+        class="bg-background/20 flex size-8 shrink-0 items-center justify-center rounded-md text-sm font-bold"
+        aria-hidden="true"
+      >
+        {{ optionLetter(index) }}
+      </span>
+      <span class="min-w-0 flex-1 leading-snug break-words">
+        {{ suggestion.label }}
+      </span>
     </Button>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import type { MusicQuizSuggestion } from "@/composables/useMusicQuiz";
+
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 defineProps<{
   suggestions: MusicQuizSuggestion[];
@@ -27,35 +37,8 @@ defineProps<{
   selectedSuggestionId: string | null;
 }>();
 const emit = defineEmits<{ select: [suggestionId: string] }>();
+
+function optionLetter(index: number): string {
+  return LETTERS[index] ?? String(index + 1);
+}
 </script>
-
-<style scoped>
-.quiz-answers {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card);
-  padding: 0.875rem;
-}
-
-.quiz-answers__button {
-  min-height: 3.5rem;
-  height: auto;
-  align-items: center;
-  justify-content: flex-start;
-  padding-block: 0.55rem;
-  text-align: left;
-  line-height: 1.35;
-  white-space: normal;
-}
-
-.quiz-answers__button span {
-  display: block;
-  min-width: 0;
-  overflow: visible;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-</style>
