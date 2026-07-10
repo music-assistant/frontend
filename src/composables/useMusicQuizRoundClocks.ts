@@ -14,6 +14,7 @@ export function useMusicQuizRoundClocks(
   currentRound: Ref<MusicQuizCurrentRound | null>,
 ) {
   const answerRemainingSeconds = ref<number | null>(null);
+  const answerRemainingFraction = ref<number | null>(null);
   const lyricsPosition = ref(0);
 
   let answerCountdownTimer: ReturnType<typeof setInterval> | undefined;
@@ -35,12 +36,16 @@ export function useMusicQuizRoundClocks(
     const round = currentRound.value;
     if (state.value?.phase !== "answering" || !round?.deadline) {
       answerRemainingSeconds.value = null;
+      answerRemainingFraction.value = null;
       return;
     }
     const nowSeconds = Date.now() / 1000;
     const remaining = round.deadline - nowSeconds;
     // Clamp negative remainders to 0 (tolerate client/server clock skew)
     answerRemainingSeconds.value = Math.max(0, Math.ceil(remaining));
+    const duration = state.value.answer_duration;
+    answerRemainingFraction.value =
+      duration > 0 ? Math.min(1, Math.max(0, remaining / duration)) : 0;
   }
 
   function startAnswerCountdown() {
@@ -53,6 +58,7 @@ export function useMusicQuizRoundClocks(
     if (answerCountdownTimer) clearInterval(answerCountdownTimer);
     answerCountdownTimer = undefined;
     answerRemainingSeconds.value = null;
+    answerRemainingFraction.value = null;
   }
 
   function updateLyricsPosition() {
@@ -128,6 +134,8 @@ export function useMusicQuizRoundClocks(
 
   return {
     answerRemainingLabel,
+    answerRemainingSeconds,
+    answerRemainingFraction,
     lyricsPosition,
     teardown,
   };

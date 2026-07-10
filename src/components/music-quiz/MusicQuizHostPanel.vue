@@ -1,136 +1,150 @@
 <template>
-  <div class="quiz-host">
-    <div class="quiz-host__qr">
-      <canvas ref="qrCanvas"></canvas>
-      <p v-if="qrError" class="quiz-host__qr-error" role="alert">
-        {{ $t("providers.music_quiz.qr_unavailable") }}
-      </p>
-      <Button
-        class="quiz-host__copy"
-        type="button"
-        variant="outline"
-        @click="copyLink"
-      >
-        <Copy class="size-4" />
-        {{
-          copied
-            ? $t("providers.music_quiz.copied")
-            : $t("providers.music_quiz.copy_link")
-        }}
-      </Button>
-    </div>
-    <details v-if="nowPlayingRound" class="quiz-host__now-playing-details">
-      <summary>
-        <span>{{ $t("providers.music_quiz.now_playing") }}</span>
-        <ChevronDown class="size-4" />
-      </summary>
-      <div class="quiz-host__now-playing">
-        <img
-          v-if="currentRoundImageUrl"
-          :src="currentRoundImageUrl"
-          :alt="nowPlayingRound.answer_label"
-        />
-        <div>
-          <span>{{ $t("providers.music_quiz.current_music") }}</span>
-          <strong>{{ nowPlayingRound.answer_label }}</strong>
-        </div>
-      </div>
-    </details>
-    <details
-      v-if="(state.sources?.length ?? 0) > 0"
-      class="quiz-host__session-sources"
-      open
-    >
-      <summary>
-        <span>{{ $t("providers.music_quiz.selected_music") }}</span>
-        <strong>{{ sessionSourcesSummary }}</strong>
-        <ChevronDown class="size-4" />
-      </summary>
-      <div class="quiz-host__session-source-list">
-        <div
-          v-for="source in state.sources ?? []"
-          :key="source.uri"
-          class="quiz-host__session-source"
+  <div class="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)]">
+    <MusicQuizQrCard
+      class="lg:w-72"
+      :join-link="joinLink"
+      :caption="$t('providers.music_quiz.invite_players')"
+    />
+
+    <div class="flex flex-col gap-4">
+      <Card v-if="showNowPlaying || showSources" class="gap-0 py-2">
+        <Accordion type="multiple" :default-value="defaultOpenPanels">
+          <AccordionItem
+            v-if="showNowPlaying"
+            value="now-playing"
+            class="border-b-0 px-4"
+          >
+            <AccordionTrigger>
+              {{ $t("providers.music_quiz.now_playing") }}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div
+                class="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4"
+              >
+                <img
+                  v-if="currentRoundImageUrl"
+                  :src="currentRoundImageUrl"
+                  :alt="currentRound?.answer_label"
+                  class="bg-muted aspect-square w-full rounded-lg object-cover"
+                />
+                <div class="flex min-w-0 flex-col gap-1">
+                  <span class="text-muted-foreground text-sm">
+                    {{ $t("providers.music_quiz.current_music") }}
+                  </span>
+                  <strong class="text-xl leading-tight break-words">
+                    {{ currentRound?.answer_label }}
+                  </strong>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem
+            v-if="showSources"
+            value="sources"
+            class="border-b-0 px-4"
+          >
+            <AccordionTrigger>
+              <span class="flex w-full items-center justify-between gap-3 pr-2">
+                {{ $t("providers.music_quiz.selected_music") }}
+                <span class="text-muted-foreground text-sm font-normal">
+                  {{ sessionSourcesSummary }}
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div
+                class="flex max-h-48 flex-col gap-2 overflow-y-auto overscroll-contain"
+              >
+                <div
+                  v-for="source in state.sources ?? []"
+                  :key="source.uri"
+                  class="bg-background min-w-0 rounded-md border px-3 py-2"
+                >
+                  <strong class="block truncate">{{ source.name }}</strong>
+                  <small class="text-muted-foreground block truncate">
+                    {{ musicQuizSourceTypeLabel(source.media_type) }}
+                  </small>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Card>
+
+      <div v-if="showActions" class="flex flex-wrap justify-end gap-2">
+        <Button
+          :disabled="busy"
+          type="button"
+          variant="outline"
+          @click="emit('delete')"
         >
-          <strong>{{ source.name }}</strong>
-          <small>{{ musicQuizSourceTypeLabel(source.media_type) }}</small>
-        </div>
+          <Trash2 class="size-4" />
+          {{ $t("delete") }}
+        </Button>
+        <Button
+          v-if="state.phase === 'lobby'"
+          :disabled="busy"
+          @click="emit('start')"
+        >
+          <Play class="size-4" />
+          {{ $t("providers.music_quiz.start") }}
+        </Button>
+        <Button
+          v-if="state.phase === 'answering'"
+          :disabled="busy"
+          @click="emit('reveal')"
+        >
+          <Eye class="size-4" />
+          {{ $t("providers.music_quiz.phase_reveal") }}
+        </Button>
+        <Button
+          v-if="state.phase === 'reveal'"
+          :disabled="busy"
+          @click="emit('next')"
+        >
+          <SkipForward class="size-4" />
+          {{
+            isLastRound
+              ? $t("providers.music_quiz.finish")
+              : $t("providers.music_quiz.next")
+          }}
+        </Button>
+        <Button
+          v-if="state.phase === 'finished'"
+          :disabled="busy"
+          @click="emit('reset')"
+        >
+          <RotateCcw class="size-4" />
+          {{ $t("providers.music_quiz.new_game") }}
+        </Button>
       </div>
-    </details>
-    <div v-if="showActions" class="quiz-host__actions">
-      <Button
-        :disabled="busy"
-        type="button"
-        variant="outline"
-        @click="emit('delete')"
-      >
-        <Trash2 class="size-4" />
-        {{ $t("delete") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'lobby'"
-        :disabled="busy"
-        @click="emit('start')"
-      >
-        <Play class="size-4" />
-        {{ $t("providers.music_quiz.start") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'answering'"
-        :disabled="busy"
-        @click="emit('reveal')"
-      >
-        <Eye class="size-4" />
-        {{ $t("providers.music_quiz.phase_reveal") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'reveal'"
-        :disabled="busy"
-        @click="emit('next')"
-      >
-        <SkipForward class="size-4" />
-        {{
-          isLastRound
-            ? $t("providers.music_quiz.finish")
-            : $t("providers.music_quiz.next")
-        }}
-      </Button>
-      <Button
-        v-if="state.phase === 'finished'"
-        :disabled="busy"
-        @click="emit('reset')"
-      >
-        <RotateCcw class="size-4" />
-        {{ $t("providers.music_quiz.new_game") }}
-      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type {
   MusicQuizHostState,
   MusicQuizRound,
 } from "@/composables/useMusicQuiz";
-import { renderMusicAssistantQr } from "@/helpers/branded_qr";
 import {
   getMusicQuizSourceSummary,
   musicQuizSourceTypeLabel,
 } from "@/helpers/music_quiz_sources";
-import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
+import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
-import {
-  ChevronDown,
-  Copy,
-  Eye,
-  Play,
-  RotateCcw,
-  SkipForward,
-  Trash2,
-} from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { toast } from "vue-sonner";
+import { Eye, Play, RotateCcw, SkipForward, Trash2 } from "@lucide/vue";
+import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -153,225 +167,17 @@ const emit = defineEmits<{
   reset: [];
 }>();
 
-const qrCanvas = ref<HTMLCanvasElement | null>(null);
-const copied = ref(false);
-const qrError = ref(false);
-let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
-
 const currentRoundImageUrl = computed(() =>
   getMediaImageUrl(props.currentRound?.image_url ?? ""),
 );
-const nowPlayingRound = computed(() => {
-  const round = props.currentRound;
-  if (props.state.phase === "finished" || !round?.answer_label) return null;
-  return round;
-});
 const sessionSourcesSummary = computed(() =>
   getMusicQuizSourceSummary(props.state.sources ?? []),
 );
-
-async function renderQr() {
-  if (!qrCanvas.value || !props.joinLink) return;
-  try {
-    await renderMusicAssistantQr(qrCanvas.value, props.joinLink);
-    qrError.value = false;
-  } catch (err) {
-    console.error("Could not render Music Quiz join QR", err);
-    qrError.value = true;
-  }
-}
-
-async function copyLink() {
-  if (!props.joinLink) return;
-  copied.value = await copyToClipboard(props.joinLink);
-  if (!copied.value) {
-    toast.error($t("providers.music_quiz.copy_join_link_failed"));
-  }
-  if (copiedTimeout) clearTimeout(copiedTimeout);
-  copiedTimeout = setTimeout(() => {
-    copied.value = false;
-  }, 1600);
-}
-
-watch(qrCanvas, () => renderQr());
-watch(
-  () => props.joinLink,
-  () => renderQr(),
-  { immediate: true },
+const showNowPlaying = computed(
+  () => props.state.phase !== "finished" && !!props.currentRound,
 );
-
-onBeforeUnmount(() => {
-  if (copiedTimeout) clearTimeout(copiedTimeout);
-});
+const showSources = computed(() => (props.state.sources?.length ?? 0) > 0);
+const defaultOpenPanels = computed(() =>
+  showSources.value ? ["sources"] : [],
+);
 </script>
-
-<style scoped>
-.quiz-host {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.quiz-host__qr {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.quiz-host__qr canvas {
-  width: 220px;
-  height: 220px;
-  border-radius: 12px;
-  background: transparent;
-}
-
-.quiz-host__qr-error {
-  margin: 0;
-  max-width: 220px;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.quiz-host__copy {
-  height: auto;
-  min-height: 2.5rem;
-  align-items: center;
-  padding: 0.6rem 1rem;
-  line-height: 1.25;
-  white-space: normal;
-}
-
-.quiz-host__now-playing-details,
-.quiz-host__session-sources {
-  flex: 1 1 320px;
-  min-width: min(100%, 280px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--background);
-  overflow: hidden;
-}
-
-.quiz-host__now-playing-details summary,
-.quiz-host__session-sources summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-weight: 600;
-  list-style: none;
-  padding: 0.75rem 0.9rem;
-  background: var(--muted);
-  color: var(--foreground);
-  user-select: none;
-}
-
-.quiz-host__now-playing-details summary::-webkit-details-marker,
-.quiz-host__session-sources summary::-webkit-details-marker {
-  display: none;
-}
-
-.quiz-host__now-playing-details summary strong,
-.quiz-host__session-sources summary strong {
-  margin-left: auto;
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.quiz-host__now-playing-details summary svg,
-.quiz-host__session-sources summary svg {
-  flex: 0 0 auto;
-  color: var(--muted-foreground);
-  transition: transform 0.15s ease;
-}
-
-.quiz-host__now-playing-details[open] summary svg,
-.quiz-host__session-sources[open] summary svg {
-  transform: rotate(180deg);
-}
-
-.quiz-host__now-playing {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 0.9rem;
-}
-
-.quiz-host__now-playing img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  object-fit: cover;
-  background: var(--muted);
-}
-
-.quiz-host__now-playing div {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.quiz-host__now-playing span {
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.quiz-host__now-playing strong {
-  overflow-wrap: anywhere;
-  font-size: 1.4rem;
-  line-height: 1.2;
-}
-
-.quiz-host__session-source-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 12rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0.75rem;
-}
-
-.quiz-host__session-source {
-  min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  padding: 0.6rem 0.75rem;
-}
-
-.quiz-host__session-source strong,
-.quiz-host__session-source small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.quiz-host__session-source small {
-  color: var(--muted-foreground);
-}
-
-.quiz-host__actions {
-  flex: 1 1 240px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-@media (max-width: 800px) {
-  .quiz-host__actions {
-    justify-content: flex-start;
-  }
-
-  .quiz-host__now-playing {
-    grid-template-columns: 96px minmax(0, 1fr);
-  }
-}
-</style>
