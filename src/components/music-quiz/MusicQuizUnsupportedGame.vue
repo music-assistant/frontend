@@ -11,15 +11,15 @@
         {{ $t("providers.music_quiz.unsupported_description") }}
       </CardDescription>
     </CardHeader>
-    <CardFooter v-if="canDelete" class="justify-center">
+    <CardFooter v-if="canEndGame" class="justify-center">
       <Button
         type="button"
         variant="outline"
         :disabled="busy"
-        @click="emit('delete')"
+        @click="emit('endGame')"
       >
-        <Trash2 class="size-4" />
-        {{ $t("delete") }}
+        <Square class="size-4" />
+        {{ $t("providers.music_quiz.end_game") }}
       </Button>
     </CardFooter>
   </Card>
@@ -35,11 +35,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { $t } from "@/plugins/i18n";
-import { Trash2, TriangleAlert } from "@lucide/vue";
+import { Square, TriangleAlert } from "@lucide/vue";
 
-withDefaults(defineProps<{ canDelete?: boolean; busy?: boolean }>(), {
-  canDelete: false,
+withDefaults(defineProps<{ canEndGame?: boolean; busy?: boolean }>(), {
+  canEndGame: false,
   busy: false,
 });
-const emit = defineEmits<{ delete: [] }>();
+const emit = defineEmits<{ endGame: [] }>();
 </script>

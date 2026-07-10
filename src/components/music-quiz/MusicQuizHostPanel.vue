@@ -14,10 +14,10 @@
           :disabled="busy"
           type="button"
           variant="outline"
-          @click="emit('delete')"
+          @click="emit('endGame')"
         >
-          <Trash2 class="size-4" />
-          {{ $t("delete") }}
+          <Square class="size-4" />
+          {{ $t("providers.music_quiz.end_game") }}
         </Button>
         <Button
           v-if="state.phase === 'lobby'"
@@ -65,7 +65,7 @@ import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
 import { Button } from "@/components/ui/button";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { Eye, Play, RotateCcw, SkipForward, Trash2 } from "@lucide/vue";
+import { Eye, Play, RotateCcw, SkipForward, Square } from "@lucide/vue";
 import type { VNode } from "vue";
 
 withDefaults(
@@ -82,7 +82,7 @@ withDefaults(
 );
 defineSlots<{ game: () => VNode[] }>();
 const emit = defineEmits<{
-  delete: [];
+  endGame: [];
   start: [];
   reveal: [];
   next: [];

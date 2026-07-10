@@ -249,6 +249,10 @@ const completeInitialization = async () => {
   store.currentUser = userInfo;
   store.serverInfo = serverInfo;
 
+  const isGuestAccessSession = authManager.isGuestAccessSession();
+  const isPartyGuest = authManager.isPartyGuest();
+  const isMusicQuizGuest = authManager.isMusicQuizGuest();
+
   // Enable kiosk mode when running in Home Assistant ingress
   // COMMENTED OUT - HA INTEGRATION DISABLED
   // if (store.isIngressSession && serverInfo.homeassistant_addon) {
@@ -258,15 +262,13 @@ const completeInitialization = async () => {
 
   // TODO: Remove this migration code in v2.9 release
   // Migrate localStorage settings to user preferences (one-time migration)
-  await migrateLocalStorageToUserPreferences();
+  if (!isGuestAccessSession) {
+    await migrateLocalStorageToUserPreferences();
+  }
 
   if (api.baseUrl) {
     webPlayer.setBaseUrl(api.baseUrl);
   }
-
-  const isGuestAccessSession = authManager.isGuestAccessSession();
-  const isPartyGuest = authManager.isPartyGuest();
-  const isMusicQuizGuest = authManager.isMusicQuizGuest();
 
   if (!isGuestAccessSession) {
     // Full initialization for regular users
@@ -281,40 +283,40 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
-  } else {
-    console.debug("[App] Guest user - skipping full state fetch");
-  }
 
-  // Check if party plugin is enabled
-  try {
-    const partyProviders = await api.getProviderConfigs(
-      ProviderType.PLUGIN,
-      "party",
-    );
-    if (partyProviders.length > 0 && partyProviders[0].enabled) {
-      store.enabledPlugins.add("party");
-    } else {
+    // Check if party plugin is enabled
+    try {
+      const partyProviders = await api.getProviderConfigs(
+        ProviderType.PLUGIN,
+        "party",
+      );
+      if (partyProviders.length > 0 && partyProviders[0].enabled) {
+        store.enabledPlugins.add("party");
+      } else {
+        store.enabledPlugins.delete("party");
+      }
+    } catch (error) {
+      console.error("[App] Failed to check party status:", error);
       store.enabledPlugins.delete("party");
     }
-  } catch (error) {
-    console.error("[App] Failed to check party status:", error);
-    store.enabledPlugins.delete("party");
-  }
 
-  // Check if music_quiz plugin is enabled
-  try {
-    const musicQuizProviders = await api.getProviderConfigs(
-      ProviderType.PLUGIN,
-      "music_quiz",
-    );
-    if (musicQuizProviders.length > 0 && musicQuizProviders[0].enabled) {
-      store.enabledPlugins.add("music_quiz");
-    } else {
+    // Check if music_quiz plugin is enabled
+    try {
+      const musicQuizProviders = await api.getProviderConfigs(
+        ProviderType.PLUGIN,
+        "music_quiz",
+      );
+      if (musicQuizProviders.length > 0 && musicQuizProviders[0].enabled) {
+        store.enabledPlugins.add("music_quiz");
+      } else {
+        store.enabledPlugins.delete("music_quiz");
+      }
+    } catch (error) {
+      console.error("[App] Failed to check music_quiz status:", error);
       store.enabledPlugins.delete("music_quiz");
     }
-  } catch (error) {
-    console.error("[App] Failed to check music_quiz status:", error);
-    store.enabledPlugins.delete("music_quiz");
+  } else {
+    console.debug("[App] Guest user - skipping regular user initialization");
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -435,7 +437,10 @@ onMounted(async () => {
       if (!api.supportsServerSideTranslations) return;
       try {
         await api.setLocale(locale as string);
-        if (api.state.value === ConnectionState.AUTHENTICATED) {
+        if (
+          api.state.value === ConnectionState.AUTHENTICATED &&
+          !authManager.isGuestAccessSession()
+        ) {
           await api.fetchState();
         }
       } catch {
@@ -517,6 +522,8 @@ onMounted(async () => {
 
   // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
+    if (authManager.isGuestAccessSession()) return;
+
     try {
       const partyProviders = await api.getProviderConfigs(
         ProviderType.PLUGIN,
@@ -534,7 +541,9 @@ onMounted(async () => {
 
   // Re-prune when the provider set changes at runtime.
   api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-    pruneStaleProviderFilters();
+    if (!authManager.isGuestAccessSession()) {
+      void pruneStaleProviderFilters();
+    }
   });
 });
 

@@ -1,6 +1,5 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import MusicQuizIcon from "@/components/icons/MusicQuizIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
 import { store } from "@/plugins/store";
 import {
@@ -9,6 +8,7 @@ import {
   Disc3,
   Folder,
   ListMusic,
+  MicVocal,
   Music2,
   PartyPopper,
   Podcast,
@@ -111,7 +111,7 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
   {
     id: "music_quiz",
     label: "providers.music_quiz.title",
-    icon: MusicQuizIcon,
+    icon: MicVocal,
     path: "/music-quiz",
     isLibraryNode: false,
     group: "explore",

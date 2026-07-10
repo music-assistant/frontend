@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MicVocal } from "@lucide/vue";
 
 const { storeMock, mockSetUserPreference } = vi.hoisted(() => ({
   storeMock: {
@@ -74,6 +75,9 @@ describe("getMenuItems (sidebar.menu preference)", () => {
 
     expect(getIds()).toEqual(DEFAULT_MENU_ITEMS);
     expect(getMenuItems().filter((item) => item.hidden)).toEqual([]);
+    expect(getMenuItems().find((item) => item.id === "music_quiz")?.icon).toBe(
+      MicVocal,
+    );
   });
 
   it("ignores the retired menu_items whitelist preferences", () => {

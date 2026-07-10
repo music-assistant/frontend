@@ -44,16 +44,7 @@
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
-      <Card v-if="gameRemoved">
-        <CardHeader>
-          <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
-          <CardDescription>
-            {{ $t("providers.music_quiz.game_ended_detail") }}
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card v-else-if="!state && !loading">
+      <Card v-if="!state && !loading">
         <CardContent>
           <MusicQuizSetupWizard :busy="busy" @create="handleCreate" />
         </CardContent>
@@ -62,8 +53,8 @@
       <MusicQuizUnsupportedGame
         v-else-if="state && !activeState"
         :busy="busy"
-        :can-delete="true"
-        @delete="showDeleteDialog = true"
+        :can-end-game="true"
+        @end-game="showEndGameDialog = true"
       />
 
       <div
@@ -75,7 +66,7 @@
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
-          @delete="showDeleteDialog = true"
+          @end-game="showEndGameDialog = true"
           @start="host.start"
           @reveal="host.reveal"
           @next="host.next"
@@ -114,18 +105,20 @@
       </div>
     </section>
 
-    <AlertDialog v-model:open="showDeleteDialog">
+    <AlertDialog v-model:open="showEndGameDialog">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{{ $t("delete") }}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {{ $t("providers.music_quiz.end_game") }}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            {{ $t("providers.music_quiz.delete_confirm") }}
+            {{ $t("providers.music_quiz.end_game_confirm") }}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
-          <AlertDialogAction :disabled="busy" @click="confirmDelete">
-            {{ $t("delete") }}
+          <AlertDialogAction :disabled="busy" @click="confirmEndGame">
+            {{ $t("providers.music_quiz.end_game") }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -156,13 +149,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
@@ -185,7 +172,6 @@ const host = useMusicQuizHost({
 
 const {
   state,
-  gameRemoved,
   busy,
   loading,
   currentRound,
@@ -234,7 +220,6 @@ const roundLabel = computed(() => {
 
 const statusText = computed(() => {
   if (loading.value) return $t("providers.music_quiz.loading");
-  if (gameRemoved.value) return $t("providers.music_quiz.game_removed");
   if (activeState.value) return phaseLabel.value;
   if (state.value) return $t("providers.music_quiz.unsupported_title");
   return $t("providers.music_quiz.no_active_game");
@@ -254,7 +239,7 @@ const isConnectionDegraded = computed(
 
 const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
-const showDeleteDialog = ref(false);
+const showEndGameDialog = ref(false);
 
 async function handleCreate(request: MusicQuizCreateRequest) {
   await host.create(request);
@@ -295,8 +280,8 @@ watch(state, (nextState) => {
   }
 });
 
-async function confirmDelete() {
-  showDeleteDialog.value = false;
+async function confirmEndGame() {
+  showEndGameDialog.value = false;
   await host.deleteGame();
 }
 

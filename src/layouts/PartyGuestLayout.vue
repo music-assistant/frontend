@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="h-dvh overflow-y-auto">
     <router-view />
   </div>
 </template>

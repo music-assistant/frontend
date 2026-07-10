@@ -35,12 +35,12 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const { notifyError } = options;
 
   const state = ref<MusicQuizHostState | null>(null);
-  const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
   const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
+  let stateRequestId = 0;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -77,15 +77,16 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   });
 
   async function fetchState() {
+    const requestId = ++stateRequestId;
     try {
       loading.value = true;
       const nextState = await getMusicQuiz();
+      if (requestId !== stateRequestId) return;
       state.value = nextState;
-      gameRemoved.value = false;
     } catch (err) {
+      if (requestId !== stateRequestId) return;
       if (isNoActiveGameError(err)) {
         state.value = null;
-        gameRemoved.value = false;
       } else {
         notifyError(
           getMusicQuizErrorMessage(
@@ -95,38 +96,17 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
         );
       }
     } finally {
-      loading.value = false;
+      if (requestId === stateRequestId) {
+        loading.value = false;
+      }
     }
-  }
-
-  function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
-    if (!isMusicQuizProviderEvent(event.data)) return;
-    const payload = event.data;
-    if (!isScopedProviderEvent(event.object_id)) return;
-    if (payload.event === "game_updated") {
-      // Re-fetch on game_updated to get the latest host state
-      void fetchState();
-    } else if (payload.event === "game_removed") {
-      state.value = null;
-      gameRemoved.value = true;
-    }
-  }
-
-  function isScopedProviderEvent(objectId?: string) {
-    if (!objectId) return false;
-    if (!providerInstanceId.value) {
-      providerInstanceId.value = objectId;
-      return true;
-    }
-    return providerInstanceId.value === objectId;
   }
 
   async function create(request: MusicQuizCreateRequest) {
     busy.value = true;
     try {
       const nextState = await createMusicQuiz(request);
-      state.value = nextState;
-      gameRemoved.value = false;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -142,7 +122,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy.value = true;
     try {
       const nextState = await startMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -158,7 +138,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy.value = true;
     try {
       const nextState = await revealMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -174,7 +154,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy.value = true;
     try {
       const nextState = await nextMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -190,7 +170,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy.value = true;
     try {
       const nextState = await resetMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -206,8 +186,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy.value = true;
     try {
       await deleteMusicQuiz();
-      state.value = null;
-      gameRemoved.value = false;
+      clearState();
       return true;
     } catch (err) {
       notifyError(
@@ -217,6 +196,39 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     } finally {
       busy.value = false;
     }
+  }
+
+  function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
+    if (!isMusicQuizProviderEvent(event.data)) return;
+    const payload = event.data;
+    if (!isScopedProviderEvent(event.object_id)) return;
+    if (payload.event === "game_updated") {
+      // Re-fetch on game_updated to get the latest host state
+      void fetchState();
+    } else if (payload.event === "game_removed") {
+      clearState();
+    }
+  }
+
+  function isScopedProviderEvent(objectId?: string) {
+    if (!objectId) return false;
+    if (!providerInstanceId.value) {
+      providerInstanceId.value = objectId;
+      return true;
+    }
+    return providerInstanceId.value === objectId;
+  }
+
+  function applyState(nextState: MusicQuizHostState) {
+    stateRequestId++;
+    state.value = nextState;
+    loading.value = false;
+  }
+
+  function clearState() {
+    stateRequestId++;
+    state.value = null;
+    loading.value = false;
   }
 
   onMounted(() => {
@@ -233,7 +245,6 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   return {
     state,
-    gameRemoved,
     busy,
     loading,
     currentRound,
