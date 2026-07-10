@@ -1106,6 +1106,7 @@
                 "listen_in_remote": "Shared listening — listen on your own device",
                 "listen_in_tap": "Tap to listen",
                 "listen_in_stop": "Stop listening",
+                "listen_in_powered_by": "Powered by Sendspin",
                 "listen_in_error_no_web_player": "Audio isn't available on this device.",
                 "listen_in_error_start": "Couldn't start listening. Please try again.",
                 "listen_in_error_stop": "Couldn't stop listening. Please try again.",

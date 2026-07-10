@@ -4,33 +4,38 @@
     class="listen-in"
     :class="{ 'listen-in--active': isListeningIn }"
   >
-    <Headphones :size="20" class="listen-in__icon" />
-    <div class="listen-in__text">
-      <span class="listen-in__title">{{ title }}</span>
-      <span class="listen-in__desc">{{ description }}</span>
+    <div class="listen-in__row">
+      <Headphones :size="20" class="listen-in__icon" />
+      <div class="listen-in__text">
+        <span class="listen-in__title">{{ title }}</span>
+        <span class="listen-in__desc">{{ description }}</span>
+      </div>
+      <Button
+        v-if="mode === 'remote'"
+        :variant="isListeningIn ? 'secondary' : 'default'"
+        size="sm"
+        :disabled="busy"
+        class="listen-in__action"
+        @click="isListeningIn ? disableListenIn() : enableListenIn()"
+      >
+        {{
+          isListeningIn
+            ? $t("providers.party.guest_page.listen_in_stop")
+            : $t("providers.party.guest_page.listen_in_tap")
+        }}
+      </Button>
+      <Switch
+        v-else
+        :model-value="isListeningIn"
+        :disabled="busy"
+        :aria-label="title"
+        class="listen-in__action"
+        @update:model-value="onToggle"
+      />
     </div>
-    <Button
-      v-if="mode === 'remote'"
-      :variant="isListeningIn ? 'secondary' : 'default'"
-      size="sm"
-      :disabled="busy"
-      class="listen-in__action"
-      @click="isListeningIn ? disableListenIn() : enableListenIn()"
-    >
-      {{
-        isListeningIn
-          ? $t("providers.party.guest_page.listen_in_stop")
-          : $t("providers.party.guest_page.listen_in_tap")
-      }}
-    </Button>
-    <Switch
-      v-else
-      :model-value="isListeningIn"
-      :disabled="busy"
-      :aria-label="title"
-      class="listen-in__action"
-      @update:model-value="onToggle"
-    />
+    <span class="listen-in__attribution">
+      {{ $t("providers.party.guest_page.listen_in_powered_by") }}
+    </span>
   </div>
 </template>
 
@@ -107,14 +112,20 @@ function onToggle(enabled: boolean) {
 <style scoped>
 .listen-in {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.4rem;
   padding: 0.6rem 0.9rem;
   margin-bottom: 1rem;
   border-radius: 12px;
   background: rgba(var(--v-theme-primary), 0.08);
   border: 1px solid rgba(var(--v-theme-primary), 0.2);
   flex-shrink: 0;
+}
+
+.listen-in__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .listen-in--active {
@@ -146,5 +157,11 @@ function onToggle(enabled: boolean) {
 
 .listen-in__action {
   flex-shrink: 0;
+}
+
+.listen-in__attribution {
+  font-size: 0.68rem;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  text-align: center;
 }
 </style>
