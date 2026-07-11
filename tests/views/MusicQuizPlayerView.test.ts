@@ -99,6 +99,33 @@ const playerState = {
     active_from_round: 0,
   },
 };
+const timelineRound = {
+  round_index: 0,
+  started_at: 1,
+  deadline: 31,
+  question: null,
+  timeline: [],
+  bonus_definitions: [],
+};
+const hitsterPlayerState = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "answering",
+  name: "Timeline Quiz",
+  round_count: 1,
+  answer_duration: 30,
+  artist_bonus_mode: "off",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [],
+  current_round: timelineRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+};
 
 describe("MusicQuizPlayerView routing", () => {
   beforeEach(() => {
@@ -142,6 +169,79 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("keeps ListenIn enabled for Hitster without loading lyrics", () => {
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(hitsterPlayerState),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(timelineRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("uses Hitster reveal wording from the game definition", () => {
+    const revealedEntry = {
+      entry_id: "revealed",
+      release_year: 1990,
+      title: "Revealed",
+      artist: "Artist",
+      track_uri: "library://track/revealed",
+      image_url: null,
+      is_anchor: false,
+    };
+    const revealedRound = {
+      ...timelineRound,
+      timeline: [revealedEntry],
+      revealed_entry: revealedEntry,
+      answer_label: "Artist - Revealed",
+      track_uri: revealedEntry.track_uri,
+      image_url: null,
+      duration: 180,
+      ended_at: 20,
+    };
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...hitsterPlayerState,
+        phase: "reveal",
+        current_round: revealedRound,
+      }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(revealedRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(true, "providers.music_quiz.timeline_reveal_phase"),
+    );
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper
+        .getComponent({ name: "MusicQuizPlayerHeader" })
+        .props("phaseLabel"),
+    ).toBe("providers.music_quiz.timeline_reveal_phase");
+    wrapper.unmount();
+  });
+
   it("uses the update-required state when pair resolution fails", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(undefined);
 
@@ -156,7 +256,10 @@ describe("MusicQuizPlayerView routing", () => {
   });
 });
 
-function createDefinition(supportsListenIn: boolean) {
+function createDefinition(
+  supportsListenIn: boolean,
+  revealPhaseKey = "providers.music_quiz.phase_enjoy_track",
+) {
   const gameAdapter = {
     name: "TestGameAdapter",
     props: {
@@ -183,6 +286,8 @@ function createDefinition(supportsListenIn: boolean) {
   return {
     game: {
       supportsListenIn,
+      revealActionKey: "providers.music_quiz.phase_reveal",
+      revealPhaseKey,
       adapters: {
         player: gameAdapter,
       },

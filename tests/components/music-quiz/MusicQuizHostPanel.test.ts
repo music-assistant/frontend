@@ -57,4 +57,33 @@ describe("MusicQuizHostPanel", () => {
     await endGameButton?.trigger("click");
     expect(wrapper.emitted("endGame")).toHaveLength(1);
   });
+
+  it("uses the active game reveal wording", () => {
+    const state: MusicQuizSupportedHostState = {
+      ...HOST_STATE,
+      phase: "answering",
+      current_round: {
+        round_index: 0,
+        started_at: 1,
+        deadline: 31,
+        question: "Which song is playing?",
+        suggestions: [],
+      },
+    };
+    const wrapper = mount(MusicQuizHostPanel, {
+      props: {
+        state,
+        busy: false,
+        joinLink: state.join_url,
+        isLastRound: false,
+        revealLabelKey: "providers.music_quiz.timeline_reveal_action",
+      },
+      slots: { game: "<div />" },
+      global: { stubs: { MusicQuizQrCard: true } },
+    });
+
+    expect(wrapper.text()).toContain(
+      "providers.music_quiz.timeline_reveal_action",
+    );
+  });
 });

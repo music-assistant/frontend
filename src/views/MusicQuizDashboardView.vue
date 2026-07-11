@@ -66,6 +66,10 @@
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
+          :reveal-label-key="
+            resolvedDefinition.game.revealActionKey ||
+            'providers.music_quiz.phase_reveal'
+          "
           @end-game="showEndGameDialog = true"
           @start="host.start"
           @reveal="host.reveal"
@@ -177,7 +181,7 @@ const {
   currentRound,
   isLastRound,
   joinLink,
-  phaseLabel,
+  phaseLabel: defaultPhaseLabel,
 } = host;
 
 const resolvedDefinition = computed(() => {
@@ -212,6 +216,14 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 });
 
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
+
+const phaseLabel = computed(() => {
+  if (activeState.value?.phase !== "reveal") return defaultPhaseLabel.value;
+  return $t(
+    resolvedDefinition.value?.game.revealPhaseKey ??
+      "providers.music_quiz.phase_reveal",
+  );
+});
 
 const roundLabel = computed(() => {
   if (!activeState.value || !currentRound.value) return "";

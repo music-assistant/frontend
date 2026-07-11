@@ -7,6 +7,7 @@ const {
   mockJoinMusicQuiz,
   mockReadyMusicQuiz,
   mockAnswerMusicQuiz,
+  mockSubmitMusicQuizAnswer,
   mockSubscribe,
   mockStorePlayerId,
   mockGetStoredPlayerId,
@@ -22,6 +23,7 @@ const {
   mockJoinMusicQuiz: vi.fn(),
   mockReadyMusicQuiz: vi.fn(),
   mockAnswerMusicQuiz: vi.fn(),
+  mockSubmitMusicQuizAnswer: vi.fn(),
   mockSubscribe: vi.fn(),
   mockStorePlayerId: vi.fn(),
   mockGetStoredPlayerId: vi.fn(),
@@ -50,9 +52,11 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   joinMusicQuiz: mockJoinMusicQuiz,
   readyMusicQuiz: mockReadyMusicQuiz,
   answerMusicQuiz: mockAnswerMusicQuiz,
+  submitMusicQuizAnswer: mockSubmitMusicQuizAnswer,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
-    value.quiz_type === "guess_the_song" &&
-    value.answer_type === "multiple_choice",
+    (value.quiz_type === "guess_the_song" &&
+      value.answer_type === "multiple_choice") ||
+    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -148,6 +152,62 @@ const PUBLIC_STATE = {
   current_round: null,
 } as const;
 
+const TIMELINE_ROUND = {
+  round_index: 0,
+  started_at: 1,
+  deadline: 31,
+  question: null,
+  timeline: [
+    {
+      entry_id: "anchor",
+      release_year: 1980,
+      title: "Anchor",
+      artist: "Artist",
+      track_uri: "library://track/anchor",
+      image_url: null,
+      is_anchor: true,
+    },
+  ],
+  bonus_definitions: [{ bonus_type: "artist", mode: "free_text" }],
+} as const;
+
+const HITSTER_PLAYER_STATE = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "answering",
+  name: "Timeline Quiz",
+  round_count: 5,
+  answer_duration: 30,
+  artist_bonus_mode: "free_text",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [
+    {
+      name: "Player",
+      score: 0,
+      ready: false,
+      answered: false,
+      placed: true,
+      artist_bonus_answered: false,
+      title_bonus_answered: false,
+    },
+  ],
+  current_round: TIMELINE_ROUND,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+    answer: {
+      previous_entry_id: "anchor",
+      next_entry_id: null,
+      answered_at: 10,
+      bonuses: [],
+      finished: false,
+    },
+  },
+} as const;
+
 async function flushPromises() {
   for (let index = 0; index < 8; index += 1) {
     await Promise.resolve();
@@ -176,6 +236,7 @@ describe("useMusicQuizPlayer", () => {
     mockJoinMusicQuiz.mockReset();
     mockReadyMusicQuiz.mockReset();
     mockAnswerMusicQuiz.mockReset();
+    mockSubmitMusicQuizAnswer.mockReset();
     mockSubscribe.mockReset();
     mockStorePlayerId.mockReset();
     mockGetStoredPlayerId.mockReset();
@@ -843,6 +904,47 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toEqual(answeredState);
   });
 
+  it("routes timeline actions through the nested generic command", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(HITSTER_PLAYER_STATE);
+    const finishedState = {
+      ...HITSTER_PLAYER_STATE,
+      you: {
+        ...HITSTER_PLAYER_STATE.you,
+        answer: {
+          ...HITSTER_PLAYER_STATE.you.answer,
+          finished: true,
+        },
+      },
+    } as const;
+    mockSubmitMusicQuizAnswer.mockResolvedValue(finishedState);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    const submission = { answer_type: "timeline", action: "finish" } as const;
+    await player.submitAnswer(submission);
+
+    expect(mockSubmitMusicQuizAnswer).toHaveBeenCalledWith(
+      "stored-player",
+      submission,
+    );
+    expect(mockAnswerMusicQuiz).not.toHaveBeenCalled();
+    expect(player.state.value).toEqual(finishedState);
+  });
+
+  it("restores personalized Hitster placement state after reconnect", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(HITSTER_PLAYER_STATE);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.state.value).toEqual(HITSTER_PLAYER_STATE);
+    expect(player.currentRound.value).toEqual(TIMELINE_ROUND);
+    expect(player.players.value[0]).not.toHaveProperty("active_from_round");
+    expect(player.yourName.value).toBe("Player");
+  });
+
   it("does not expose guess-the-song fields for an unknown game type", async () => {
     mockGetMusicQuizInfo.mockResolvedValue({
       quiz_type: "future_game",
@@ -860,7 +962,7 @@ describe("useMusicQuizPlayer", () => {
     expect(player.yourName.value).toBe("");
   });
 
-  it("does not expose gameplay for an unknown answer type", async () => {
+  it("does not expose gameplay for a mismatched answer type", async () => {
     mockGetMusicQuizInfo.mockResolvedValue({
       quiz_type: "guess_the_song",
       answer_type: "timeline",
@@ -872,6 +974,22 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
 
     expect(player.info.value?.answer_type).toBe("timeline");
+    expect(player.currentRound.value).toBeNull();
+    expect(player.players.value).toEqual([]);
+  });
+
+  it("does not expose gameplay for an unknown future answer type", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue({
+      quiz_type: "hitster",
+      answer_type: "future_answer",
+      phase: "lobby",
+      name: "Future Quiz",
+    });
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(player.info.value?.answer_type).toBe("future_answer");
     expect(player.currentRound.value).toBeNull();
     expect(player.players.value).toEqual([]);
   });

@@ -7,11 +7,16 @@ import GuessTheSongHostRound from "@/components/music-quiz/game-types/guess-the-
 import GuessTheSongPlayerRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPlayerRound.vue";
 import GuessTheSongPresentRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPresentRound.vue";
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
+import HitsterHostPanel from "@/components/music-quiz/game-types/hitster/HitsterHostPanel.vue";
+import HitsterHostRound from "@/components/music-quiz/game-types/hitster/HitsterHostRound.vue";
+import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
+import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
+import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
 import type {
   MusicQuizGameAnswerTypeMap,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
-import { Disc3 } from "@lucide/vue";
+import { Disc3, History } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -23,6 +28,8 @@ export interface MusicQuizGameDefinition<
   answerType: MusicQuizGameAnswerTypeMap[TGame];
   labelKey: string;
   descriptionKey: string;
+  revealActionKey: string;
+  revealPhaseKey: string;
   icon: Component;
   available: boolean;
   supportsListenIn: boolean;
@@ -45,6 +52,8 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     answerType: "multiple_choice",
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
+    revealActionKey: "providers.music_quiz.phase_reveal",
+    revealPhaseKey: "providers.music_quiz.phase_enjoy_track",
     icon: markRaw(Disc3),
     available: true,
     supportsListenIn: true,
@@ -56,9 +65,27 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       present: markRaw(GuessTheSongPresentRound),
     },
   },
+  hitster: {
+    id: "hitster",
+    answerType: "timeline",
+    labelKey: "providers.music_quiz.game_type_hitster",
+    descriptionKey: "providers.music_quiz.game_type_hitster_description",
+    revealActionKey: "providers.music_quiz.timeline_reveal_action",
+    revealPhaseKey: "providers.music_quiz.timeline_reveal_phase",
+    icon: markRaw(History),
+    available: true,
+    supportsListenIn: true,
+    adapters: {
+      setup: markRaw(HitsterSetup),
+      player: markRaw(HitsterPlayerRound),
+      hostPanel: markRaw(HitsterHostPanel),
+      host: markRaw(HitsterHostRound),
+      present: markRaw(HitsterPresentRound),
+    },
+  },
 } satisfies MusicQuizGameRegistry;
 
-export const MUSIC_QUIZ_GAME_TYPES = Object.values(
+export const MUSIC_QUIZ_GAME_TYPES: MusicQuizGameDefinition[] = Object.values(
   MUSIC_QUIZ_GAME_TYPE_REGISTRY,
 );
 

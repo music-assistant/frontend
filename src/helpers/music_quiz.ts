@@ -83,14 +83,21 @@ export function getMusicQuizRoundScoreLabel(
   const player = state.players.find((p) => p.name === playerName);
   if (!player) return "";
   if (
+    "active_from_round" in player &&
     player.active_from_round !== undefined &&
     player.active_from_round > state.current_round.round_index
   ) {
     return "";
   }
-  if (player.last_answer && player.last_answer.points !== undefined) {
-    return `(+${player.last_answer.points})`;
-  }
+  const lastAnswer = player.last_answer;
+  if (!lastAnswer) return "";
+  const points =
+    "placement" in lastAnswer
+      ? lastAnswer.placement.points +
+        (lastAnswer.artist?.points ?? 0) +
+        (lastAnswer.title?.points ?? 0)
+      : lastAnswer.points;
+  if (points !== undefined) return `(+${points})`;
   return "";
 }
 

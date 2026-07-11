@@ -32,8 +32,9 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   resetMusicQuiz: vi.fn(),
   deleteMusicQuiz: mockDeleteMusicQuiz,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
-    value.quiz_type === "guess_the_song" &&
-    value.answer_type === "multiple_choice",
+    (value.quiz_type === "guess_the_song" &&
+      value.answer_type === "multiple_choice") ||
+    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -247,7 +248,7 @@ describe("useMusicQuizHost", () => {
   it("does not expose gameplay for an unknown answer type", async () => {
     mockGetMusicQuiz.mockResolvedValue({
       quiz_type: "guess_the_song",
-      answer_type: "timeline",
+      answer_type: "future_answer",
       phase: "lobby",
       name: "Future Quiz",
     });
@@ -255,8 +256,43 @@ describe("useMusicQuizHost", () => {
     const host = useMusicQuizHost({ notifyError: vi.fn() });
     await flushPromises();
 
-    expect(host.state.value?.answer_type).toBe("timeline");
+    expect(host.state.value?.answer_type).toBe("future_answer");
     expect(host.currentRound.value).toBeNull();
     expect(host.joinLink.value).toBe("");
+  });
+
+  it("exposes the supported Hitster round and join link", async () => {
+    const timelineRound = {
+      round_index: 0,
+      started_at: 1,
+      deadline: 31,
+      question: null,
+      timeline: [],
+      bonus_definitions: [],
+    };
+    mockGetMusicQuiz.mockResolvedValue({
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      phase: "answering",
+      name: "Timeline Quiz",
+      round_count: 5,
+      answer_duration: 30,
+      artist_bonus_mode: "off",
+      title_bonus_mode: "off",
+      mode: "venue",
+      players: [],
+      current_round: timelineRound,
+      created_at: 1,
+      sources: [],
+      join_url: "http://timeline-join",
+      rounds: [],
+    });
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.currentRound.value).toEqual(timelineRound);
+    expect(host.joinLink.value).toBe("http://timeline-join");
+    expect(host.isLastRound.value).toBe(false);
   });
 });

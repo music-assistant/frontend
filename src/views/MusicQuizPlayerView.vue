@@ -235,7 +235,10 @@ const phaseText = computed(() => {
   if (activeState.value.phase === "answering")
     return $t("providers.music_quiz.phase_answers_open");
   if (activeState.value.phase === "reveal")
-    return $t("providers.music_quiz.phase_enjoy_track");
+    return $t(
+      resolvedDefinition.value?.game.revealPhaseKey ??
+        "providers.music_quiz.phase_reveal",
+    );
   return $t("providers.music_quiz.phase_finished");
 });
 

@@ -33,7 +33,7 @@
           @click="emit('reveal')"
         >
           <Eye class="size-4" />
-          {{ $t("providers.music_quiz.phase_reveal") }}
+          {{ $t(revealLabelKey) }}
         </Button>
         <Button
           v-if="state.phase === 'reveal'"
@@ -75,9 +75,11 @@ withDefaults(
     joinLink: string;
     isLastRound: boolean;
     showActions?: boolean;
+    revealLabelKey?: string;
   }>(),
   {
     showActions: true,
+    revealLabelKey: "providers.music_quiz.phase_reveal",
   },
 );
 defineSlots<{ game: () => VNode[] }>();

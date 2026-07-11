@@ -3,12 +3,42 @@ import api from "@/plugins/api";
 export type MusicQuizPhase = "lobby" | "answering" | "reveal" | "finished";
 export type MusicQuizMode = "venue" | "remote";
 export type MusicQuizDifficulty = "easy" | "normal" | "hard";
+export type MusicQuizTimelineBonusMode =
+  | "off"
+  | "free_text"
+  | "multiple_choice";
+export type MusicQuizTimelineBonusType = "artist" | "title";
+
+export type MusicQuizTimelineSubmission =
+  | {
+      answer_type: "timeline";
+      action: "place";
+      previous_entry_id: string | null;
+      next_entry_id: string | null;
+    }
+  | {
+      answer_type: "timeline";
+      action: "bonus_text";
+      bonus_type: MusicQuizTimelineBonusType;
+      value: string;
+    }
+  | {
+      answer_type: "timeline";
+      action: "bonus_choice";
+      bonus_type: MusicQuizTimelineBonusType;
+      option_id: string;
+    }
+  | {
+      answer_type: "timeline";
+      action: "finish";
+    };
 
 export type MusicQuizAnswerSubmissionMap = {
   multiple_choice: {
     answer_type: "multiple_choice";
     suggestion_id: string;
   };
+  timeline: MusicQuizTimelineSubmission;
 };
 
 export type MusicQuizAnswerType = keyof MusicQuizAnswerSubmissionMap;
@@ -17,6 +47,7 @@ export type MusicQuizAnswerSubmission =
 
 export type MusicQuizGameAnswerTypeMap = {
   guess_the_song: "multiple_choice";
+  hitster: "timeline";
 };
 
 export type MusicQuizType = keyof MusicQuizGameAnswerTypeMap;
@@ -44,20 +75,44 @@ interface MusicQuizStateIdentity<
   name: string | null;
 }
 
-interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
-  quiz_type: "guess_the_song";
-  answer_type: "multiple_choice";
+interface MusicQuizStateBase<
+  TQuizType extends MusicQuizType,
+  TAnswerType extends MusicQuizAnswerType,
+  TPlayer extends MusicQuizPlayer,
+  TRound extends MusicQuizSupportedRound,
+> extends MusicQuizStateIdentity<TQuizType, TAnswerType> {
   round_count: number;
-  suggestion_count: number;
   answer_duration: number;
   mode: MusicQuizMode;
-  players: MusicQuizPlayer[];
-  current_round?: MusicQuizGuessTheSongRound | null;
+  players: TPlayer[];
+  current_round: TRound | null;
+}
+
+interface MusicQuizGuessTheSongStateBase extends MusicQuizStateBase<
+  "guess_the_song",
+  "multiple_choice",
+  MusicQuizGuessTheSongPlayer,
+  MusicQuizGuessTheSongRound
+> {
+  suggestion_count: number;
+}
+
+interface MusicQuizHitsterStateBase extends MusicQuizStateBase<
+  "hitster",
+  "timeline",
+  MusicQuizTimelinePlayer,
+  MusicQuizTimelineRound
+> {
+  artist_bonus_mode: MusicQuizTimelineBonusMode;
+  title_bonus_mode: MusicQuizTimelineBonusMode;
 }
 
 export type MusicQuizGuessTheSongPublicState = MusicQuizGuessTheSongStateBase;
+export type MusicQuizHitsterPublicState = MusicQuizHitsterStateBase;
 
-export type MusicQuizSupportedPublicState = MusicQuizGuessTheSongPublicState;
+export type MusicQuizSupportedPublicState =
+  | MusicQuizGuessTheSongPublicState
+  | MusicQuizHitsterPublicState;
 
 type MusicQuizMismatchedStateIdentity = {
   [TGame in MusicQuizType]: [
@@ -82,11 +137,16 @@ export type MusicQuizPublicState =
   | MusicQuizUnsupportedPublicState;
 
 export interface MusicQuizGuessTheSongPersonalizedState extends MusicQuizGuessTheSongStateBase {
-  you: MusicQuizYou;
+  you: MusicQuizGuessTheSongYou;
+}
+
+export interface MusicQuizHitsterPersonalizedState extends MusicQuizHitsterStateBase {
+  you: MusicQuizTimelineYou;
 }
 
 export type MusicQuizSupportedPersonalizedState =
-  MusicQuizGuessTheSongPersonalizedState;
+  | MusicQuizGuessTheSongPersonalizedState
+  | MusicQuizHitsterPersonalizedState;
 
 export type MusicQuizUnsupportedPersonalizedState =
   MusicQuizUnsupportedPublicState;
@@ -102,7 +162,16 @@ export interface MusicQuizGuessTheSongHostState extends MusicQuizGuessTheSongSta
   rounds: MusicQuizGuessTheSongRound[];
 }
 
-export type MusicQuizSupportedHostState = MusicQuizGuessTheSongHostState;
+export interface MusicQuizHitsterHostState extends MusicQuizHitsterStateBase {
+  created_at: number;
+  sources: MusicQuizSource[];
+  join_url: string;
+  rounds: MusicQuizTimelineHostRound[];
+}
+
+export type MusicQuizSupportedHostState =
+  | MusicQuizGuessTheSongHostState
+  | MusicQuizHitsterHostState;
 
 export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState;
 
@@ -118,47 +187,121 @@ export interface MusicQuizGuessTheSongInfo extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
 }
 
-export type MusicQuizSupportedInfo = MusicQuizGuessTheSongInfo;
+export interface MusicQuizHitsterInfo extends MusicQuizStateIdentity {
+  quiz_type: "hitster";
+  answer_type: "timeline";
+  player_count: number;
+  round_count: number;
+  mode: MusicQuizMode;
+}
+
+export type MusicQuizSupportedInfo =
+  | MusicQuizGuessTheSongInfo
+  | MusicQuizHitsterInfo;
 
 export type MusicQuizUnsupportedInfo = MusicQuizFallbackState;
 
 export type MusicQuizInfo = MusicQuizSupportedInfo | MusicQuizUnsupportedInfo;
 
-export interface MusicQuizPlayer {
+export interface MusicQuizPlayerBase {
   name: string;
   score: number;
   ready: boolean;
-  answered: boolean;
-  active_from_round?: number;
-  last_answer?: MusicQuizPlayerLastAnswer;
 }
 
-export interface MusicQuizPlayerLastAnswer {
+export interface MusicQuizGuessTheSongPlayer extends MusicQuizPlayerBase {
+  answered: boolean;
+  active_from_round?: number;
+  last_answer?: MusicQuizGuessTheSongPlayerLastAnswer;
+}
+
+export interface MusicQuizGuessTheSongPlayerLastAnswer {
   suggestion_id: string;
   correct?: boolean;
   points?: number;
 }
 
-export interface MusicQuizYou {
-  name: string;
-  score: number;
-  ready: boolean;
-  active_from_round: number;
-  answer?: MusicQuizYourAnswer;
+export interface MusicQuizTimelinePlayer extends MusicQuizPlayerBase {
+  answered: boolean;
+  placed: boolean;
+  artist_bonus_answered: boolean;
+  title_bonus_answered: boolean;
+  last_answer?: MusicQuizTimelinePlayerLastAnswer;
 }
 
-export interface MusicQuizYourAnswer {
+export type MusicQuizPlayer =
+  | MusicQuizGuessTheSongPlayer
+  | MusicQuizTimelinePlayer;
+
+export interface MusicQuizGuessTheSongYou extends MusicQuizPlayerBase {
+  active_from_round: number;
+  answer?: MusicQuizGuessTheSongYourAnswer;
+}
+
+export interface MusicQuizTimelineYou extends MusicQuizPlayerBase {
+  active_from_round: number;
+  answer?: MusicQuizTimelineYourAnswer;
+}
+
+export interface MusicQuizGuessTheSongYourAnswer {
   suggestion_id: string;
   answered_at: number;
   correct?: boolean;
   points?: number;
 }
 
+export interface MusicQuizTimelinePlayerLastAnswer {
+  placement: MusicQuizTimelinePlacementResult;
+  artist?: MusicQuizTimelineBonusResult;
+  title?: MusicQuizTimelineBonusResult;
+}
+
+export interface MusicQuizTimelinePlacementResult {
+  previous_entry_id: string | null;
+  next_entry_id: string | null;
+  correct: boolean;
+  points: number;
+}
+
+export interface MusicQuizTimelineBonusResult {
+  correct: boolean;
+  points: number;
+}
+
+export interface MusicQuizTimelineYourAnswer {
+  previous_entry_id: string | null;
+  next_entry_id: string | null;
+  answered_at: number;
+  bonuses: MusicQuizTimelinePersonalBonusAnswer[];
+  finished: boolean;
+  correct?: boolean;
+  points?: number;
+  bonus_results?: MusicQuizTimelinePersonalBonusResult[];
+}
+
+export type MusicQuizTimelinePersonalBonusAnswer =
+  | {
+      action: "bonus_text";
+      bonus_type: MusicQuizTimelineBonusType;
+      value: string;
+    }
+  | {
+      action: "bonus_choice";
+      bonus_type: MusicQuizTimelineBonusType;
+      option_id: string;
+    };
+
+export interface MusicQuizTimelinePersonalBonusResult {
+  bonus_type: MusicQuizTimelineBonusType;
+  correct: boolean;
+  points: number;
+}
+
 export interface MusicQuizRoundBase {
   round_index: number;
   started_at: number;
   deadline: number;
-  ended_at?: number;
+  question: string | null;
 }
 
 export interface MusicQuizMultipleChoiceRound extends MusicQuizRoundBase {
@@ -167,16 +310,131 @@ export interface MusicQuizMultipleChoiceRound extends MusicQuizRoundBase {
 }
 
 export interface MusicQuizGuessTheSongRound extends MusicQuizMultipleChoiceRound {
-  question: string | null;
   answer_label?: string;
   track_uri?: string | null;
   image_url?: string | null;
   duration?: number | null;
+  ended_at?: number;
 }
 
-export type MusicQuizSupportedRound = MusicQuizGuessTheSongRound;
-export type MusicQuizCurrentRound = MusicQuizGuessTheSongRound;
-export type MusicQuizRound = MusicQuizGuessTheSongRound;
+export interface MusicQuizTimelineEntry {
+  entry_id: string;
+  release_year: number;
+  title: string;
+  artist: string;
+  track_uri: string;
+  image_url: string | null;
+  is_anchor: boolean;
+}
+
+export interface MusicQuizTimelineBonusOption {
+  option_id: string;
+  label: string;
+}
+
+export type MusicQuizTimelineBonusDefinition =
+  | {
+      bonus_type: MusicQuizTimelineBonusType;
+      mode: "free_text";
+    }
+  | {
+      bonus_type: MusicQuizTimelineBonusType;
+      mode: "multiple_choice";
+      options: MusicQuizTimelineBonusOption[];
+    };
+
+interface MusicQuizTimelineRoundBase extends MusicQuizRoundBase {
+  timeline: MusicQuizTimelineEntry[];
+  bonus_definitions: MusicQuizTimelineBonusDefinition[];
+}
+
+export interface MusicQuizTimelineAnsweringRound extends MusicQuizTimelineRoundBase {
+  revealed_entry?: never;
+}
+
+export interface MusicQuizTimelineRevealRound extends MusicQuizTimelineRoundBase {
+  revealed_entry: MusicQuizTimelineEntry;
+  answer_label: string;
+  track_uri: string | null;
+  image_url: string | null;
+  duration: number | null;
+  ended_at: number;
+}
+
+export type MusicQuizTimelineRound =
+  | MusicQuizTimelineAnsweringRound
+  | MusicQuizTimelineRevealRound;
+
+export type MusicQuizSupportedRound =
+  | MusicQuizGuessTheSongRound
+  | MusicQuizTimelineRound;
+export type MusicQuizCurrentRound = MusicQuizSupportedRound;
+export type MusicQuizRound = MusicQuizSupportedRound;
+
+export interface MusicQuizTimelineHostPlacement {
+  previous_entry_id: string | null;
+  next_entry_id: string | null;
+  answered_at: number;
+}
+
+export type MusicQuizTimelineHostBonusDefinition =
+  | Extract<MusicQuizTimelineBonusDefinition, { mode: "free_text" }>
+  | {
+      bonus_type: MusicQuizTimelineBonusType;
+      mode: "multiple_choice";
+      options: Array<MusicQuizTimelineBonusOption & { is_correct: boolean }>;
+    };
+
+export type MusicQuizTimelineHostBonusAnswer =
+  | {
+      action: "bonus_text";
+      bonus_type: MusicQuizTimelineBonusType;
+      submitted_at: number;
+      value: string;
+    }
+  | {
+      action: "bonus_choice";
+      bonus_type: MusicQuizTimelineBonusType;
+      submitted_at: number;
+      option_id: string;
+    };
+
+export interface MusicQuizTimelineHostResult {
+  placement: {
+    previous_entry_id: string | null;
+    next_entry_id: string | null;
+    is_correct: boolean;
+    points: number;
+  };
+  bonuses: Array<{
+    bonus_type: MusicQuizTimelineBonusType;
+    is_correct: boolean;
+    points: number;
+  }>;
+}
+
+export interface MusicQuizTimelineHostRound {
+  round_index: number;
+  answer_label: string;
+  placement_snapshot: MusicQuizTimelineEntry[];
+  candidate: {
+    entry: MusicQuizTimelineEntry;
+    artist_answers: string[];
+    title_answers: string[];
+  };
+  bonus_definitions: MusicQuizTimelineHostBonusDefinition[];
+  placements: Record<string, MusicQuizTimelineHostPlacement>;
+  bonus_answers: Record<string, MusicQuizTimelineHostBonusAnswer[]>;
+  finished_at: Record<string, number>;
+  results: Record<string, MusicQuizTimelineHostResult>;
+  revealed: boolean;
+  track_uri: string | null;
+  question: string | null;
+  image_url: string | null;
+  duration: number | null;
+  started_at: number | null;
+  ended_at: number | null;
+}
 
 export interface MusicQuizSuggestion {
   suggestion_id: string;
@@ -203,34 +461,51 @@ export interface MusicQuizGuessTheSongConfig {
   name: string;
 }
 
+export interface MusicQuizHitsterConfig {
+  round_count: number;
+  answer_duration: number;
+  source_uris: string[];
+  name?: string;
+  artist_bonus_mode: MusicQuizTimelineBonusMode;
+  title_bonus_mode: MusicQuizTimelineBonusMode;
+}
+
 export interface MusicQuizGuessTheSongCreateRequest {
   quiz_type: "guess_the_song";
   answer_type: "multiple_choice";
   config: MusicQuizGuessTheSongConfig;
 }
 
-export type MusicQuizCreateRequest = MusicQuizGuessTheSongCreateRequest;
+export interface MusicQuizHitsterCreateRequest {
+  quiz_type: "hitster";
+  answer_type: "timeline";
+  config: MusicQuizHitsterConfig;
+}
+
+export type MusicQuizCreateRequest =
+  | MusicQuizGuessTheSongCreateRequest
+  | MusicQuizHitsterCreateRequest;
 
 export type MusicQuizProviderEvent =
   | { event: "game_updated"; state: MusicQuizPublicState }
   | { event: "game_removed"; state?: never };
 
+type MusicQuizSupportedIdentity =
+  | { quiz_type: "guess_the_song"; answer_type: "multiple_choice" }
+  | { quiz_type: "hitster"; answer_type: "timeline" };
+
 export function isSupportedMusicQuiz<
   T extends MusicQuizInfo | MusicQuizPublicState,
->(
-  value: T,
-): value is Extract<
-  T,
-  { quiz_type: "guess_the_song"; answer_type: "multiple_choice" }
-> {
+>(value: T): value is Extract<T, MusicQuizSupportedIdentity> {
   return (
-    value.quiz_type === "guess_the_song" &&
-    value.answer_type === "multiple_choice"
+    (value.quiz_type === "guess_the_song" &&
+      value.answer_type === "multiple_choice") ||
+    (value.quiz_type === "hitster" && value.answer_type === "timeline")
   );
 }
 
 export function parseMusicQuizType(value: string): MusicQuizRuntimeType {
-  return value === "guess_the_song"
+  return value === "guess_the_song" || value === "hitster"
     ? value
     : (value as MusicQuizUnsupportedType);
 }
@@ -238,7 +513,7 @@ export function parseMusicQuizType(value: string): MusicQuizRuntimeType {
 export function parseMusicQuizAnswerType(
   value: string,
 ): MusicQuizRuntimeAnswerType {
-  return value === "multiple_choice"
+  return value === "multiple_choice" || value === "timeline"
     ? value
     : (value as MusicQuizUnsupportedAnswerType);
 }
@@ -313,6 +588,19 @@ export function answerMusicQuiz(player_id: string, suggestion_id: string) {
     player_id,
     suggestion_id,
   });
+}
+
+export function submitMusicQuizAnswer(
+  player_id: string,
+  submission: MusicQuizAnswerSubmissionMap["timeline"],
+) {
+  return api.sendCommand<MusicQuizPersonalizedState>(
+    "music_quiz/submit_answer",
+    {
+      player_id,
+      submission,
+    },
+  );
 }
 
 export function readyMusicQuiz(player_id: string) {

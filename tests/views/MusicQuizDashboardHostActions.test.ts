@@ -81,7 +81,11 @@ describe("MusicQuizDashboardView host actions", () => {
     mockResolveMusicQuizDefinition.mockReset();
     mockResolveMusicQuizDefinition.mockReturnValue({
       answer: { adapters: {} },
-      game: { adapters: {} },
+      game: {
+        adapters: {},
+        revealActionKey: "providers.music_quiz.phase_reveal",
+        revealPhaseKey: "providers.music_quiz.phase_enjoy_track",
+      },
     });
     mockUseMusicQuizHost.mockReset();
     mockUseMusicQuizHost.mockReturnValue({

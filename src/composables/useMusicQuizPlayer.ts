@@ -7,6 +7,7 @@ import {
   isMusicQuizProviderEvent,
   joinMusicQuiz,
   readyMusicQuiz,
+  submitMusicQuizAnswer,
   type MusicQuizAnswerSubmission,
   type MusicQuizCurrentRound,
   type MusicQuizInfo,
@@ -143,10 +144,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     }
     busy.value = true;
     try {
-      const nextState = await answerMusicQuiz(
-        currentPlayerId,
-        submission.suggestion_id,
-      );
+      const nextState =
+        submission.answer_type === "multiple_choice"
+          ? await answerMusicQuiz(currentPlayerId, submission.suggestion_id)
+          : await submitMusicQuizAnswer(currentPlayerId, submission);
       state.value = nextState;
       return true;
     } catch (err) {
