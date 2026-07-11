@@ -74,7 +74,7 @@ describe("HitsterSetup", () => {
     });
     expect(wrapper.text()).not.toContain("providers.music_quiz.difficulty");
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
-    expect(wrapper.get("#hitster-name").element).toHaveProperty("value", "");
+    expect(wrapper.find("#hitster-name").exists()).toBe(false);
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
@@ -103,7 +103,7 @@ describe("HitsterSetup", () => {
     });
   });
 
-  it("keeps the name optional and bonus modes independent", async () => {
+  it("keeps bonus modes independent without adding a name", async () => {
     const wrapper = mount(HitsterSetup, {
       props: { busy: false },
       global: {
@@ -113,7 +113,6 @@ describe("HitsterSetup", () => {
       },
     });
 
-    await wrapper.get("#hitster-name").setValue("  Friday Hitster  ");
     await wrapper.get("#hitster-artist-bonus").setValue("free_text");
     await wrapper.get("#hitster-title-bonus").setValue("multiple_choice");
     await wrapper
@@ -130,13 +129,14 @@ describe("HitsterSetup", () => {
       .find((button) => button.text().includes("create"))
       ?.trigger("click");
 
-    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+    const request = wrapper.emitted("create")?.[0]?.[0];
+    expect(request).toMatchObject({
       config: {
-        name: "Friday Hitster",
         artist_bonus_mode: "free_text",
         title_bonus_mode: "multiple_choice",
       },
     });
+    expect(request).not.toHaveProperty("config.name");
   });
 
   it("labels removable sources for keyboard and screen-reader users", async () => {

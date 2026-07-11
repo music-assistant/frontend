@@ -149,7 +149,7 @@ describe("GuessTheSongSetup", () => {
     expect(wrapper.text()).not.toContain("Older result");
   });
 
-  it("emits a discriminated create request", async () => {
+  it("emits a name-free discriminated create request", async () => {
     mockSearch.mockResolvedValue({
       tracks: [],
       playlists: [
@@ -161,7 +161,7 @@ describe("GuessTheSongSetup", () => {
       ],
     });
     const wrapper = mountConfig();
-    expect(wrapper.get("#quiz-name").element).toHaveProperty("value", "");
+    expect(wrapper.find("#quiz-name").exists()).toBe(false);
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')

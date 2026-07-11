@@ -34,7 +34,7 @@ function game(
 }
 
 describe("MusicQuizSessionHeader", () => {
-  it("shows the game identity, session, phase, round, and audio mode", () => {
+  it("uses a custom session name as the heading for named games", () => {
     const wrapper = mount(MusicQuizSessionHeader, {
       props: {
         game: game("guess_the_song", true),
@@ -55,7 +55,7 @@ describe("MusicQuizSessionHeader", () => {
         .attributes("aria-label"),
     ).toBeUndefined();
     expect(wrapper.text()).toContain("game.guess_the_song");
-    expect(wrapper.text()).toContain("Friday Quiz");
+    expect(wrapper.get("h2").text()).toBe("Friday Quiz");
     expect(wrapper.text()).toContain("Answers open");
     expect(wrapper.text()).toContain("Round 2 / 5");
     expect(wrapper.text()).toContain("providers.music_quiz.mode_remote");
@@ -64,7 +64,7 @@ describe("MusicQuizSessionHeader", () => {
     );
   });
 
-  it("never exposes playback mode for Trivia", () => {
+  it("uses the game label for unnamed games without playback mode", () => {
     const wrapper = mount(MusicQuizSessionHeader, {
       props: {
         game: game("trivia", false),
@@ -73,7 +73,7 @@ describe("MusicQuizSessionHeader", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("game.trivia");
+    expect(wrapper.get("h2").text()).toBe("game.trivia");
     expect(wrapper.find('[data-testid="music-quiz-mode"]').exists()).toBe(
       false,
     );
