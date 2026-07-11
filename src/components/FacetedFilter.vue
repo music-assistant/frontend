@@ -91,7 +91,7 @@
   </Popover>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="TValue extends string">
 import { PlusCircle, X } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
 import { computed, ref } from "vue";
@@ -109,7 +109,7 @@ import { Separator } from "@/components/ui/separator";
 
 interface FacetedOption {
   label: string;
-  value: string;
+  value: TValue;
   // locked options render as permanently checked and cannot be toggled;
   // they are not part of the model value (e.g. an always-active entry)
   locked?: boolean;
@@ -118,12 +118,12 @@ interface FacetedOption {
 const props = defineProps<{
   title: string;
   options: FacetedOption[];
-  modelValue: string[];
+  modelValue: TValue[];
   class?: HTMLAttributes["class"];
 }>();
 
 const emit = defineEmits<{
-  (e: "update:modelValue", value: string[]): void;
+  (e: "update:modelValue", value: TValue[]): void;
 }>();
 
 const search = ref("");
@@ -153,7 +153,7 @@ const toggle = (option: FacetedOption) => {
   emit("update:modelValue", Array.from(next));
 };
 
-const removeFilter = (value: string) => {
+const removeFilter = (value: TValue) => {
   const next = new Set(selectedSet.value);
   next.delete(value);
   emit("update:modelValue", Array.from(next));

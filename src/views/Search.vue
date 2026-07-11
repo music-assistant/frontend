@@ -156,10 +156,10 @@ const loading = computed(() => pendingTargets.value.size > 0);
 // Responsive tile sizing, shared curve with the rest of the app.
 const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 
-const selectedMediaTypes = computed<string[]>({
+const selectedMediaTypes = computed<MediaType[]>({
   get: () => store.globalSearchMediaTypes,
   set: (val) => {
-    store.globalSearchMediaTypes = val as MediaType[];
+    store.globalSearchMediaTypes = val;
   },
 });
 
