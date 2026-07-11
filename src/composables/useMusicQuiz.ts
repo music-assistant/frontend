@@ -304,6 +304,10 @@ export function getMusicQuizState(player_id: string) {
   });
 }
 
+export function heartbeatMusicQuiz(player_id: string) {
+  return api.sendCommand<boolean>("music_quiz/heartbeat", { player_id });
+}
+
 export function answerMusicQuiz(player_id: string, suggestion_id: string) {
   return api.sendCommand<MusicQuizPersonalizedState>("music_quiz/answer", {
     player_id,
