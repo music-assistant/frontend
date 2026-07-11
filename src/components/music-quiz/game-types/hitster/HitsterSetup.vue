@@ -86,16 +86,12 @@
     <div class="grid gap-4 lg:grid-cols-2">
       <Field>
         <FieldLabel for="hitster-source-search">
-          {{ $t("providers.music_quiz.add_tracks_or_playlists") }}
+          {{ $t("providers.music_quiz.add_music_sources") }}
         </FieldLabel>
         <MediaSearch
           input-id="hitster-source-search"
-          :allowed-media-types="[
-            MediaType.TRACK,
-            MediaType.PLAYLIST,
-            MediaType.GENRE,
-          ]"
-          :default-selected-media-types="[MediaType.PLAYLIST, MediaType.GENRE]"
+          :allowed-media-types="MUSIC_QUIZ_SOURCE_MEDIA_TYPES"
+          :default-selected-media-types="MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES"
           :exclude-uris="sourceUris"
           :placeholder="$t('providers.music_quiz.search_music')"
           @select="onSourceSelect"
@@ -171,9 +167,13 @@ import type {
   MusicQuizTimelineBonusMode,
 } from "@/composables/useMusicQuiz";
 import {
+  isMusicQuizSourceItem,
+  MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES,
+  MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
   useMusicQuizSources,
   type MusicQuizSourceItem,
 } from "@/composables/useMusicQuizSources";
+import { musicQuizSourceTypeLabel } from "@/helpers/music_quiz_sources";
 import {
   MediaType,
   type MediaItemTypeOrItemMapping,
@@ -221,15 +221,8 @@ const {
 } = useMusicQuizSources();
 
 function onSourceSelect(item: MediaItemTypeOrItemMapping) {
-  // the search is restricted to the media types the quiz accepts as source
-  if (
-    item.media_type !== MediaType.TRACK &&
-    item.media_type !== MediaType.PLAYLIST &&
-    item.media_type !== MediaType.GENRE
-  ) {
-    return;
-  }
-  addSource(item as MusicQuizSourceItem);
+  if (!isMusicQuizSourceItem(item)) return;
+  addSource(item);
 }
 
 function create() {
@@ -251,13 +244,10 @@ function create() {
 }
 
 function sourceSubtitle(item: MusicQuizSourceItem) {
-  if (item.media_type === MediaType.PLAYLIST)
-    return $t("providers.music_quiz.playlist");
-  if (item.media_type === MediaType.GENRE) return $t("genre");
-  const artist = isTrack(item) ? item.artists?.[0]?.name : undefined;
-  return artist
-    ? $t("providers.music_quiz.track_with_artist", [artist])
-    : $t("providers.music_quiz.track");
+  if (isTrack(item) && item.artists?.[0]?.name) {
+    return $t("providers.music_quiz.track_with_artist", [item.artists[0].name]);
+  }
+  return musicQuizSourceTypeLabel(item.media_type);
 }
 
 function isTrack(item: MusicQuizSourceItem): item is Track {

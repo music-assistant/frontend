@@ -36,9 +36,14 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
   },
 }));
 
+type ResultItem = { uri: string; name: string; media_type: MediaType };
+
 type SearchResult = {
-  tracks: Array<{ uri: string; name: string; media_type: MediaType }>;
-  playlists: Array<{ uri: string; name: string; media_type: MediaType }>;
+  tracks: ResultItem[];
+  playlists: ResultItem[];
+  albums?: ResultItem[];
+  artists?: ResultItem[];
+  genres?: ResultItem[];
 };
 
 type DeferredSearch = {
@@ -214,5 +219,80 @@ describe("GuessTheSongSetup", () => {
       .filter((button) => button.text().includes("Test playlist"));
     expect(resultButtons).toHaveLength(0);
     expect(wrapper.text()).toContain("Test playlist");
+  });
+
+  it("emits source uris for a playlist and a genre together", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [],
+      playlists: [
+        {
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
+        },
+      ],
+      genres: [
+        { uri: "genre:rock", name: "Rock", media_type: MediaType.GENRE },
+      ],
+    });
+    const wrapper = mountConfig();
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test playlist"))
+      ?.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Rock"))
+      ?.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"))
+      ?.trigger("click");
+
+    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+      config: { source_uris: ["playlist:test", "genre:rock"] },
+    });
+  });
+
+  it("removes a selected source when its chip is clicked", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [],
+      playlists: [
+        {
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
+        },
+      ],
+    });
+    const wrapper = mountConfig();
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test playlist"))
+      ?.trigger("click");
+    await flushPromises();
+
+    // remove via the selected-source chip (not the search-result entry)
+    await wrapper
+      .findAll("button.bg-muted")
+      .find((button) => button.text().includes("Test playlist"))
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      "providers.music_quiz.pick_at_least_one_source",
+    );
   });
 });
