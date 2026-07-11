@@ -1205,6 +1205,8 @@
             "finish": "Finish Quiz",
             "reset": "Reset Quiz",
             "new_game": "New Game",
+            "play_again": "Play again",
+            "set_up_new_game": "Set up new game…",
             "phase_waiting_for_players": "Waiting for players to join",
             "phase_answers_open": "Answers are open!",
             "phase_enjoy_track": "Enjoy the track!",

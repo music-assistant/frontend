@@ -60,14 +60,41 @@
               : $t("providers.music_quiz.next")
           }}
         </Button>
-        <Button
-          v-if="state.phase === 'finished'"
-          :disabled="busy"
-          @click="emit('reset')"
-        >
-          <RotateCcw class="size-4" />
-          {{ $t("providers.music_quiz.new_game") }}
-        </Button>
+        <ButtonGroup v-if="state.phase === 'finished'" class="w-full sm:w-fit">
+          <Button
+            class="grow sm:grow-0"
+            data-testid="play-again"
+            :disabled="busy"
+            type="button"
+            @click="emit('reset')"
+          >
+            <RotateCcw class="size-4" />
+            {{ $t("providers.music_quiz.play_again") }}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                size="icon"
+                data-testid="play-again-menu"
+                :aria-label="$t('providers.music_quiz.set_up_new_game')"
+                :disabled="busy"
+                type="button"
+              >
+                <ChevronDown class="size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                data-testid="set-up-new-game"
+                :disabled="busy"
+                @click="emit('setUpNewGame')"
+              >
+                <Plus class="size-4" />
+                {{ $t("providers.music_quiz.set_up_new_game") }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
     </div>
   </div>
@@ -76,12 +103,21 @@
 <script setup lang="ts">
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import {
+  ChevronDown,
   Eye,
   Maximize2,
   Play,
+  Plus,
   RotateCcw,
   SkipForward,
   Square,
@@ -108,5 +144,6 @@ const emit = defineEmits<{
   reveal: [];
   next: [];
   reset: [];
+  setUpNewGame: [];
 }>();
 </script>

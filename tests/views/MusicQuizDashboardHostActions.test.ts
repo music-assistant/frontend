@@ -1,14 +1,19 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockDeleteGame, mockResolveMusicQuizDefinition, mockUseMusicQuizHost } =
-  vi.hoisted(() => ({
-    mockDeleteGame: vi.fn(),
-    mockResolveMusicQuizDefinition: vi.fn(),
-    mockUseMusicQuizHost: vi.fn(),
-  }));
+const {
+  mockDeleteGame,
+  mockReset,
+  mockResolveMusicQuizDefinition,
+  mockUseMusicQuizHost,
+} = vi.hoisted(() => ({
+  mockDeleteGame: vi.fn(),
+  mockReset: vi.fn(),
+  mockResolveMusicQuizDefinition: vi.fn(),
+  mockUseMusicQuizHost: vi.fn(),
+}));
 
 vi.mock("@/composables/useMusicQuizHost", () => ({
   useMusicQuizHost: mockUseMusicQuizHost,
@@ -59,7 +64,7 @@ vi.mock("vue-sonner", () => ({
 const HOST_STATE = {
   quiz_type: "guess_the_song",
   answer_type: "multiple_choice",
-  phase: "lobby",
+  phase: "finished",
   name: "Quiz",
   round_count: 5,
   suggestion_count: 4,
@@ -74,12 +79,16 @@ const HOST_STATE = {
 } as const;
 
 let state: Ref<typeof HOST_STATE | null>;
+let busy: Ref<boolean>;
 
 describe("MusicQuizDashboardView host actions", () => {
   beforeEach(() => {
     state = ref({ ...HOST_STATE });
+    busy = ref(false);
     mockDeleteGame.mockReset();
     mockDeleteGame.mockResolvedValue(true);
+    mockReset.mockReset();
+    mockReset.mockResolvedValue(true);
     mockResolveMusicQuizDefinition.mockReset();
     mockResolveMusicQuizDefinition.mockReturnValue({
       answer: { adapters: {} },
@@ -87,7 +96,7 @@ describe("MusicQuizDashboardView host actions", () => {
     });
     mockUseMusicQuizHost.mockReset();
     mockUseMusicQuizHost.mockReturnValue({
-      busy: ref(false),
+      busy,
       availableQuizTypes: ref(["guess_the_song", "hitster"]),
       create: vi.fn(),
       currentRound: ref(null),
@@ -96,7 +105,7 @@ describe("MusicQuizDashboardView host actions", () => {
       joinLink: ref(HOST_STATE.join_url),
       loading: ref(false),
       next: vi.fn(),
-      reset: vi.fn(),
+      reset: mockReset,
       reveal: vi.fn(),
       start: vi.fn(),
       state,
@@ -124,6 +133,77 @@ describe("MusicQuizDashboardView host actions", () => {
 
     await confirmButton.trigger("click");
     expect(mockDeleteGame).toHaveBeenCalledOnce();
+  });
+
+  it("replays through reset without deleting or opening setup", async () => {
+    const wrapper = mountDashboard();
+
+    await wrapper.get('[data-testid="play-again"]').trigger("click");
+    await flushPromises();
+
+    expect(mockReset).toHaveBeenCalledOnce();
+    expect(mockDeleteGame).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+  });
+
+  it("deletes the finished game before opening fresh setup", async () => {
+    let finishDelete!: () => void;
+    mockDeleteGame.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishDelete = () => {
+            state.value = null;
+            resolve(true);
+          };
+        }),
+    );
+    const wrapper = mountDashboard();
+
+    await wrapper.get('[data-testid="set-up-new-game"]').trigger("click");
+    expect(mockDeleteGame).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+
+    finishDelete();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+  });
+
+  it("retains the finished game when fresh setup deletion fails", async () => {
+    mockDeleteGame.mockResolvedValue(false);
+    const wrapper = mountDashboard();
+
+    await wrapper.get('[data-testid="set-up-new-game"]').trigger("click");
+    await flushPromises();
+
+    expect(mockDeleteGame).toHaveBeenCalledOnce();
+    expect(state.value).toEqual(HOST_STATE);
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="play-again"]').exists()).toBe(true);
+  });
+
+  it("prevents overlapping replay and fresh setup actions", async () => {
+    mockReset.mockImplementation(() => {
+      busy.value = true;
+      return Promise.resolve(true);
+    });
+    const wrapper = mountDashboard();
+
+    const replayClick = wrapper
+      .get('[data-testid="play-again"]')
+      .trigger("click");
+    await wrapper.get('[data-testid="set-up-new-game"]').trigger("click");
+    await replayClick;
+
+    expect(mockReset).toHaveBeenCalledOnce();
+    expect(mockDeleteGame).not.toHaveBeenCalled();
+  });
+
+  it("keeps Present mode available", async () => {
+    const wrapper = mountDashboard();
+
+    await wrapper.get('[data-testid="enter-present"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="present-stage"]').exists()).toBe(true);
   });
 
   it("returns to the compact empty state when the host state is cleared", async () => {
@@ -179,11 +259,14 @@ function mountDashboard() {
         MusicQuizConnectionBanners: true,
         MusicQuizSessionHeader: true,
         MusicQuizHostPanel: {
-          emits: ["endGame"],
+          props: ["busy"],
+          emits: ["endGame", "present", "reset", "setUpNewGame"],
           template:
-            '<button data-testid="open-end-dialog" @click="$emit(\'endGame\')" />',
+            '<div><button data-testid="open-end-dialog" @click="$emit(\'endGame\')" /><button data-testid="enter-present" :disabled="busy" @click="$emit(\'present\')" /><button data-testid="play-again" :disabled="busy" @click="$emit(\'reset\')" /><button data-testid="set-up-new-game" :disabled="busy" @click="$emit(\'setUpNewGame\')" /></div>',
         },
-        MusicQuizPresentStage: true,
+        MusicQuizPresentStage: {
+          template: '<div data-testid="present-stage" />',
+        },
         MusicQuizSessionPanels: true,
         MusicQuizSetupWizard: {
           template: '<div data-testid="setup-wizard" />',

@@ -98,7 +98,8 @@
           @start="host.start"
           @reveal="host.reveal"
           @next="host.next"
-          @reset="host.reset"
+          @reset="handleReplay"
+          @set-up-new-game="handleSetUpNewGame"
         >
           <template #game>
             <component
@@ -314,6 +315,16 @@ const showSetupDialog = ref(false);
 
 async function handleCreate(request: MusicQuizCreateRequest) {
   if (await host.create(request)) showSetupDialog.value = false;
+}
+
+async function handleReplay() {
+  if (busy.value) return;
+  await host.reset();
+}
+
+async function handleSetUpNewGame() {
+  if (busy.value) return;
+  if (await host.deleteGame()) showSetupDialog.value = true;
 }
 
 async function enterPresentMode() {
