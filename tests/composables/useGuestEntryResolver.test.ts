@@ -217,6 +217,33 @@ describe("guest entry transitions", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(3);
   });
 
+  it("preserves an ended game while the guest route is still loading", async () => {
+    setProviders("music_quiz");
+    routeMock.path = "/guest/quiz";
+    let resolveInitialRequest!: (value: null) => void;
+    apiMock.sendCommand
+      .mockImplementationOnce(
+        () =>
+          new Promise<null>((resolve) => {
+            resolveInitialRequest = resolve;
+          }),
+      )
+      .mockResolvedValue(null);
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await vi.waitFor(() => expect(apiMock.sendCommand).toHaveBeenCalledOnce());
+    expect(resolverState.value).toBe("loading");
+
+    markMusicQuizJoinedGameEnded();
+    signalProviderEvent({ event: "game_removed" });
+    resolveInitialRequest(null);
+    await expectState("quiz-ended");
+
+    expect(routeMock.path).toBe("/guest/quiz");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
+  });
+
   it("ignores a provider event from an unrelated instance once scoped", async () => {
     setProviders("party", "music_quiz");
     wrapper = mountResolver((state) => {

@@ -117,10 +117,10 @@ export function useGuestEntryResolver() {
   function handleProviderEvent(event: EventMessage) {
     if (!isMusicQuizProviderEvent(event.data)) return;
     if (!isScopedQuizProviderEvent(event.object_id)) return;
-    if (event.data.event === "game_removed" && state.value === "quiz") {
+    if (event.data.event === "game_removed") {
       queueMicrotask(() => {
         if (!active) return;
-        if (consumeMusicQuizJoinedGameEnded()) {
+        if (consumeMusicQuizJoinedGameEnded() && route.path === "/guest/quiz") {
           void requestEndedResolution();
           return;
         }
