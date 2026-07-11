@@ -77,9 +77,11 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       loading.value = true;
       const nextInfo = await getMusicQuizInfo();
+      if (loadingRequestId !== requestId) return;
       info.value = nextInfo;
       gameRemoved.value = !nextInfo;
     } catch (err) {
+      if (loadingRequestId !== requestId) return;
       notifyError(
         getMusicQuizErrorMessage(
           err,

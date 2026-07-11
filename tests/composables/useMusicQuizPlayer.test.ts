@@ -156,10 +156,12 @@ async function flushPromises() {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((promiseResolve) => {
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
     resolve = promiseResolve;
+    reject = promiseReject;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 describe("useMusicQuizPlayer", () => {
@@ -462,6 +464,83 @@ describe("useMusicQuizPlayer", () => {
 
     expect(player.gameRemoved.value).toBe(false);
     expect(player.info.value).toEqual(QUIZ_INFO);
+  });
+
+  it("ignores pending info after the game is removed", async () => {
+    const pendingInfo = deferred<typeof QUIZ_INFO>();
+    mockGetMusicQuizInfo.mockReturnValueOnce(pendingInfo.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_removed" },
+    });
+    pendingInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+
+    expect(player.gameRemoved.value).toBe(true);
+    expect(player.info.value).toBeNull();
+    expect(player.playerId.value).toBeNull();
+    expect(player.state.value).toBeNull();
+    expect(player.loading.value).toBe(false);
+  });
+
+  it("ignores pending info after resetting to join", async () => {
+    const staleInfo = deferred<typeof QUIZ_INFO>();
+    const refreshedInfo = deferred<typeof QUIZ_INFO>();
+    mockGetMusicQuizInfo
+      .mockReturnValueOnce(staleInfo.promise)
+      .mockReturnValueOnce(refreshedInfo.promise);
+    mockJoinMusicQuiz.mockResolvedValue({
+      player_id: "player-id",
+      state: PLAYER_STATE,
+    });
+    const notifyError = vi.fn();
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+    await player.join("Player");
+    await flushPromises();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: {
+        event: "game_updated",
+        state: { ...PUBLIC_STATE, players: [] },
+      },
+    });
+    await flushPromises();
+
+    staleInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+    expect(player.info.value).toBeNull();
+    expect(player.loading.value).toBe(true);
+
+    refreshedInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+    expect(player.info.value).toEqual(QUIZ_INFO);
+    expect(player.playerId.value).toBeNull();
+    expect(player.state.value).toBeNull();
+    expect(player.loading.value).toBe(false);
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
+  it("ignores pending info errors after leaving", async () => {
+    const pendingInfo = deferred<typeof QUIZ_INFO>();
+    mockGetMusicQuizInfo.mockReturnValueOnce(pendingInfo.promise);
+    const notifyError = vi.fn();
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+
+    await player.leave();
+    pendingInfo.reject(new Error("Late info failure"));
+    await flushPromises();
+
+    expect(player.info.value).toBeNull();
+    expect(player.playerId.value).toBeNull();
+    expect(player.state.value).toBeNull();
+    expect(player.loading.value).toBe(false);
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it("stops heartbeat when the game is removed", async () => {
