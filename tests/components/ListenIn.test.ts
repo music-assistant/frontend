@@ -1,9 +1,9 @@
 import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import { Switch } from "@/components/ui/switch";
-import { $t } from "@/plugins/i18n";
+import { $t, i18n } from "@/plugins/i18n";
 import { mount } from "@vue/test-utils";
 import type { Ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 interface MockListenInState {
   isListeningIn: Ref<boolean>;
@@ -37,6 +37,12 @@ vi.mock("@/composables/useListenIn", async () => {
 vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn() },
 }));
+
+const initialLocale = i18n.global.locale.value;
+i18n.global.locale.value = "en";
+afterAll(() => {
+  i18n.global.locale.value = initialLocale;
+});
 
 const surfaces = [
   {
