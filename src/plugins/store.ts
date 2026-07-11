@@ -38,7 +38,8 @@ interface Store {
   activePlayerQueue?: PlayerQueue;
   curQueueItem?: QueueItem;
   globalSearchTerm?: string;
-  globalSearchType?: MediaType;
+  // media type filter for the global search; empty means all media types
+  globalSearchMediaTypes: MediaType[];
   prevState?: StoredState;
   prevRoute?: string;
   libraryArtistsCount?: number;
@@ -103,7 +104,7 @@ export const store: Store = reactive({
     return undefined;
   }),
   globalSearchTerm: undefined,
-  globalSearchType: undefined,
+  globalSearchMediaTypes: [],
   prevState: undefined,
   prevRoute: undefined,
   libraryArtistsCount: undefined,
