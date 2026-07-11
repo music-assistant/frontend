@@ -4,24 +4,29 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSearch } = vi.hoisted(() => ({
+const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn(),
+  mockGetLibraryGenres: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
-  default: {
+  api: {
+    providers: {},
+    providerManifests: {},
     search: mockSearch,
-  },
-}));
-
-vi.mock("vue-sonner", () => ({
-  toast: {
-    error: vi.fn(),
+    getLibraryGenres: mockGetLibraryGenres,
   },
 }));
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
+}));
+
+// helpers/utils transitively imports router/auth, which need a real browser
+// environment; MediaSearch only needs getArtistsString from it
+vi.mock("@/helpers/utils", () => ({
+  getArtistsString: (artists?: Array<{ name: string }>) =>
+    artists?.map((artist) => artist.name).join(" / ") || "",
 }));
 
 vi.mock("@/components/MediaItemThumb.vue", () => ({
@@ -40,6 +45,8 @@ describe("HitsterSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSearch.mockReset();
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
     mockSearch.mockResolvedValue({
       tracks: [
         {
@@ -71,7 +78,7 @@ describe("HitsterSetup", () => {
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     await wrapper
       .findAll("button")
@@ -111,7 +118,7 @@ describe("HitsterSetup", () => {
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     await wrapper
       .findAll("button")
@@ -137,7 +144,7 @@ describe("HitsterSetup", () => {
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     await wrapper
       .findAll("button")

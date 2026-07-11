@@ -88,45 +88,13 @@
         <FieldLabel for="hitster-source-search">
           {{ $t("providers.music_quiz.add_tracks_or_playlists") }}
         </FieldLabel>
-        <SearchInput
-          id="hitster-source-search"
-          v-model="sourceQuery"
-          clearable
+        <MediaSearch
+          input-id="hitster-source-search"
+          :allowed-media-types="[MediaType.TRACK, MediaType.PLAYLIST]"
+          :exclude-uris="sourceUris"
           :placeholder="$t('providers.music_quiz.search_music')"
+          @select="onSourceSelect"
         />
-        <div
-          v-if="sourceQuery.trim().length >= minSearchLength"
-          class="bg-background max-h-72 overflow-y-auto overscroll-contain rounded-md border p-1"
-        >
-          <p
-            v-if="sourceSearching"
-            class="text-muted-foreground px-2 py-3 text-sm"
-          >
-            {{ $t("providers.music_quiz.searching") }}
-          </p>
-          <button
-            v-for="item in sourceResults"
-            v-else
-            :key="item.uri"
-            type="button"
-            class="hover:bg-accent focus-visible:ring-ring grid w-full grid-cols-[44px_minmax(0,1fr)] items-center gap-3 rounded-md p-2 text-left focus-visible:ring-2 focus-visible:outline-none"
-            @click="addSource(item)"
-          >
-            <MediaItemThumb :item="item" :size="44" />
-            <span class="flex min-w-0 flex-col">
-              <strong class="truncate">{{ item.name }}</strong>
-              <small class="text-muted-foreground truncate">
-                {{ sourceSubtitle(item) }}
-              </small>
-            </span>
-          </button>
-          <p
-            v-if="!sourceSearching && sourceResults.length === 0"
-            class="text-muted-foreground px-2 py-3 text-sm"
-          >
-            {{ $t("providers.music_quiz.no_sources_found") }}
-          </p>
-        </div>
       </Field>
 
       <Field>
@@ -176,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import MediaSearch from "@/components/MediaSearch.vue";
 import type {
   MusicQuizSetupAdapterEmits,
   MusicQuizSetupAdapterProps,
@@ -193,16 +161,19 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import { SearchInput } from "@/components/ui/search-input";
 import type {
   MusicQuizHitsterConfig,
   MusicQuizTimelineBonusMode,
 } from "@/composables/useMusicQuiz";
 import {
-  useMusicQuizSourceSearch,
+  useMusicQuizSources,
   type MusicQuizSourceItem,
-} from "@/composables/useMusicQuizSourceSearch";
-import { MediaType, type Track } from "@/plugins/api/interfaces";
+} from "@/composables/useMusicQuizSources";
+import {
+  MediaType,
+  type MediaItemTypeOrItemMapping,
+  type Track,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ListPlus, X } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -236,17 +207,18 @@ const bonusModeOptions = computed(() => [
 ]);
 
 const {
-  query: sourceQuery,
-  results: sourceResults,
   selected: selectedSources,
-  searching: sourceSearching,
   sourceUris,
   summary: selectedSummary,
   canCreate,
-  minSearchLength,
   add: addSource,
   remove: removeSource,
-} = useMusicQuizSourceSearch();
+} = useMusicQuizSources();
+
+function onSourceSelect(item: MediaItemTypeOrItemMapping) {
+  // the search is restricted to tracks and playlists
+  addSource(item as MusicQuizSourceItem);
+}
 
 function create() {
   if (!canCreate.value) return;

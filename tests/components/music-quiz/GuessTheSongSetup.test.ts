@@ -4,25 +4,29 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSearch, mockToastError } = vi.hoisted(() => ({
+const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
   mockSearch: vi.fn(),
-  mockToastError: vi.fn(),
+  mockGetLibraryGenres: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
-  default: {
+  api: {
+    providers: {},
+    providerManifests: {},
     search: mockSearch,
-  },
-}));
-
-vi.mock("vue-sonner", () => ({
-  toast: {
-    error: mockToastError,
+    getLibraryGenres: mockGetLibraryGenres,
   },
 }));
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
+}));
+
+// helpers/utils transitively imports router/auth, which need a real browser
+// environment; MediaSearch only needs getArtistsString from it
+vi.mock("@/helpers/utils", () => ({
+  getArtistsString: (artists?: Array<{ name: string }>) =>
+    artists?.map((artist) => artist.name).join(" / ") || "",
 }));
 
 vi.mock("@/components/MediaItemThumb.vue", () => ({
@@ -73,7 +77,8 @@ describe("GuessTheSongSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSearch.mockReset();
-    mockToastError.mockReset();
+    mockGetLibraryGenres.mockReset();
+    mockGetLibraryGenres.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -93,19 +98,21 @@ describe("GuessTheSongSetup", () => {
       'input[placeholder="providers.music_quiz.search_music"]',
     );
     await searchInput.setValue("old");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     expect(mockSearch).toHaveBeenCalledWith(
       "old",
       [MediaType.TRACK, MediaType.PLAYLIST],
       8,
+      ["library"],
     );
 
     await searchInput.setValue("new");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     expect(mockSearch).toHaveBeenCalledWith(
       "new",
       [MediaType.TRACK, MediaType.PLAYLIST],
       8,
+      ["library"],
     );
 
     newSearch.resolve({
@@ -149,7 +156,7 @@ describe("GuessTheSongSetup", () => {
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     await wrapper
       .findAll("button")
@@ -171,5 +178,37 @@ describe("GuessTheSongSetup", () => {
         source_uris: ["track:test"],
       },
     });
+  });
+
+  it("hides already selected items from the search results", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [
+        {
+          uri: "track:test",
+          name: "Test track",
+          media_type: MediaType.TRACK,
+        },
+      ],
+      playlists: [],
+    });
+    const wrapper = mountConfig();
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test track"))
+      ?.trigger("click");
+    await flushPromises();
+
+    // still selected (removable) but no longer offered as a search result
+    const resultButtons = wrapper
+      .findAll(".media-search-result")
+      .filter((button) => button.text().includes("Test track"));
+    expect(resultButtons).toHaveLength(0);
+    expect(wrapper.text()).toContain("Test track");
   });
 });
