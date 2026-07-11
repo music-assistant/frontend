@@ -60,8 +60,7 @@ export interface ProgressiveSearchOptions {
  * `mediaTypes`/`providers` refs re-search automatically.
  */
 export function useProgressiveSearch(options: ProgressiveSearchOptions) {
-  const selectedMediaTypes = options.mediaTypes;
-  const selectedProvidersInput = options.providers ?? ref([]);
+  const selectedProvidersInput = options.providers ?? ref<string[]>([]);
   const allowedMediaTypes = options.allowedMediaTypes ?? SEARCHABLE_MEDIA_TYPES;
   const limits = options.limits ?? { single: 50, multi: 8 };
 
@@ -75,6 +74,13 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   let currentSearchId = 0;
 
   const loading = computed(() => pendingTargets.value.size > 0);
+
+  // the media type selection clamped to the allowed set
+  const selectedMediaTypes = computed(() =>
+    options.mediaTypes.value.filter((mediaType) =>
+      allowedMediaTypes.includes(mediaType),
+    ),
+  );
 
   // exactly one selected media type: consumers typically show a single flat
   // listing for this and a per-type split otherwise
@@ -167,6 +173,8 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
   });
 
   const search = async function (searchTerm?: string) {
+    // a whitespace-only term is a reset, same as an empty one
+    const trimmedTerm = searchTerm?.trim() || "";
     currentSearchId += 1;
     const searchId = currentSearchId;
     for (const timer of retryTimers.values()) clearTimeout(timer);
@@ -174,15 +182,15 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     providerResults.value = {};
     pendingTargets.value = new Set();
     libraryGenresFallback.value = [];
-    activeSearchTerm.value = searchTerm || "";
-    if (!searchTerm) return;
+    activeSearchTerm.value = trimmedTerm;
+    if (!trimmedTerm) return;
 
     if (genreOnly.value) {
       // Genre-only search: use library search directly
       pendingTargets.value.add(LIBRARY_SEARCH_TARGET);
       try {
         const genres = await api.getLibraryGenres({
-          search: searchTerm,
+          search: trimmedTerm,
           limit: limits.single,
           offset: 0,
           order_by: "name",
@@ -206,7 +214,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
       // supplement the results with (library) genre results
       api
         .getLibraryGenres({
-          search: searchTerm,
+          search: trimmedTerm,
           limit: limits.multi,
           offset: 0,
           order_by: "name",
