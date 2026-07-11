@@ -156,8 +156,7 @@ const selectedSearchProviders = computed<string[]>({
 });
 
 const providerOptions = computed(() => [
-  // the library is always searched, shown as a locked entry
-  { label: $t("library"), value: LIBRARY_SEARCH_TARGET, locked: true },
+  { label: $t("library"), value: LIBRARY_SEARCH_TARGET },
   ...providerTargets.value.map((target) => ({
     label: target.name,
     value: target.id,
