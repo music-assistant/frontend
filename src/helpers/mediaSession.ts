@@ -9,12 +9,15 @@ const actions: MediaSessionAction[] = [
 ];
 
 export function resetMediaSession(): void {
-  navigator.mediaSession.metadata = null;
-  navigator.mediaSession.setPositionState();
-  navigator.mediaSession.playbackState = "none";
+  const session = navigator.mediaSession;
+  if (!session) return;
+
+  session.metadata = null;
+  session.setPositionState();
+  session.playbackState = "none";
   for (const action of actions) {
     try {
-      navigator.mediaSession.setActionHandler(action, null);
+      session.setActionHandler(action, null);
     } catch (error) {
       if (
         !(error instanceof DOMException) ||

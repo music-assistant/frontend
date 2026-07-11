@@ -206,6 +206,26 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
+  it.each(["party", "music_quiz"] as const)(
+    "does not require MediaSession for %s guests",
+    async (guest) => {
+      authState.guest = guest;
+      Object.defineProperty(navigator, "mediaSession", {
+        configurable: true,
+        value: undefined,
+      });
+
+      const wrapper = mount(SendspinPlayer, {
+        props: { playerId: "web-player" },
+      });
+      webPlayer.tabMode = WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+      await nextTick();
+
+      wrapper.unmount();
+      expectPlayerCommandsNotCalled();
+    },
+  );
+
   it("registers existing controls for normal users", () => {
     vi.useFakeTimers();
     const wrapper = mount(SendspinPlayer, {

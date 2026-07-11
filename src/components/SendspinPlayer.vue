@@ -217,7 +217,7 @@ watch(
   ],
   ([, pState, , metaPlayerId, interacted]) => {
     if (isReceiveOnlyGuest()) {
-      navigator.mediaSession.playbackState = "none";
+      resetMediaSession();
       return;
     }
     if (!interacted) return;
