@@ -301,7 +301,7 @@ describe("useProgressiveSearch", () => {
     expect(searchResult.value).toBeUndefined();
   });
 
-  it("drops stale provider ids from the selection and the fan-out", async () => {
+  it("searches exactly the selected targets and drops stale provider ids", async () => {
     const providers = ref(["spotify", "removed-provider"]);
     const { search, selectedProviders } = setup({ providers });
 
@@ -312,7 +312,21 @@ describe("useProgressiveSearch", () => {
     const requestedTargets = mockSearch.mock.calls
       .map((call) => (call[3] as string[])[0])
       .sort();
-    expect(requestedTargets).toEqual([LIBRARY_SEARCH_TARGET, "spotify"]);
+    expect(requestedTargets).toEqual(["spotify"]);
+  });
+
+  it("searches only the library when just the library is selected", async () => {
+    const providers = ref([LIBRARY_SEARCH_TARGET]);
+    const { search, selectedProviders } = setup({ providers });
+
+    expect(selectedProviders.value).toEqual([LIBRARY_SEARCH_TARGET]);
+    await search("query");
+    await flush();
+
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(mockSearch).toHaveBeenCalledWith("query", undefined, 8, [
+      LIBRARY_SEARCH_TARGET,
+    ]);
   });
 
   it("searches a newly selected provider for the active query", async () => {
@@ -321,13 +335,13 @@ describe("useProgressiveSearch", () => {
 
     await search("query");
     await flush();
-    expect(mockSearch).toHaveBeenCalledTimes(2); // library + fs1
+    expect(mockSearch).toHaveBeenCalledTimes(1); // fs1 only
 
     providers.value = ["fs1", "spotify"];
     await nextTick();
     await flush();
 
-    expect(mockSearch).toHaveBeenCalledTimes(3);
+    expect(mockSearch).toHaveBeenCalledTimes(2);
     expect(mockSearch).toHaveBeenLastCalledWith("query", undefined, 8, [
       "spotify",
     ]);

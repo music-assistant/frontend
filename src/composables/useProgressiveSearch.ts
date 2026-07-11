@@ -40,7 +40,8 @@ export interface SearchTarget {
 export interface ProgressiveSearchOptions {
   // selected media types; an empty selection searches all allowed types
   mediaTypes: Ref<MediaType[]>;
-  // selected provider target ids; an empty selection searches all targets
+  // selected search targets ("library" and/or provider target ids); an
+  // empty selection searches all targets
   providers?: Ref<string[]>;
   // media types this consumer can search at all (default: all searchable)
   allowedMediaTypes?: MediaType[];
@@ -131,22 +132,26 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     return targets.sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  // the provider selection with stale ids of removed providers dropped
+  // the target selection with stale ids of removed providers dropped
   const selectedProviders = computed(() =>
-    selectedProvidersInput.value.filter((id) =>
-      providerTargets.value.some((target) => target.id === id),
+    selectedProvidersInput.value.filter(
+      (id) =>
+        id === LIBRARY_SEARCH_TARGET ||
+        providerTargets.value.some((target) => target.id === id),
     ),
   );
 
-  // The library is always searched; an empty provider selection means all.
+  // An empty selection searches everything: the library plus all providers.
+  // A non-empty selection searches exactly the selected targets, so a
+  // library-only search is possible too.
   const enabledTargetIds = computed(() => {
-    const selected = selectedProviders.value;
-    return [
+    const allTargetIds = [
       LIBRARY_SEARCH_TARGET,
-      ...providerTargets.value
-        .filter((target) => !selected.length || selected.includes(target.id))
-        .map((target) => target.id),
+      ...providerTargets.value.map((target) => target.id),
     ];
+    const selected = selectedProviders.value;
+    if (!selected.length) return allTargetIds;
+    return allTargetIds.filter((id) => selected.includes(id));
   });
 
   // Merge the per-target results in a stable order (library first, then
