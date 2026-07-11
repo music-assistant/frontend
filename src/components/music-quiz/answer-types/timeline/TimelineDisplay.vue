@@ -10,13 +10,12 @@
       <template v-for="boundary in boundaries" :key="boundary.key">
         <li
           v-if="selectable && entries.length"
-          class="relative z-10 -my-1 flex justify-center"
+          class="relative z-10 flex justify-center py-2"
         >
           <Button
             type="button"
             size="sm"
-            class="bg-background min-h-11 min-w-44 rounded-full"
-            :variant="boundary.selected ? 'default' : 'outline'"
+            class="min-h-11 min-w-44 rounded-full"
             :disabled="disabled"
             :aria-label="boundary.label"
             :aria-pressed="boundary.selected"

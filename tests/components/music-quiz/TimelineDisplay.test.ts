@@ -64,6 +64,29 @@ describe("TimelineDisplay", () => {
     ]);
   });
 
+  it("styles every available boundary as a spaced primary action", () => {
+    const wrapper = mount(TimelineDisplay, {
+      props: {
+        entries,
+        selectable: true,
+      },
+    });
+    const boundaryItems = wrapper
+      .findAll("li")
+      .filter((item) => item.find("button").exists());
+
+    expect(boundaryItems).toHaveLength(4);
+    for (const item of boundaryItems) {
+      expect(item.classes()).toContain("py-2");
+      expect(item.classes()).not.toContain("-my-1");
+
+      const button = item.get("button");
+      expect(button.classes()).toContain("bg-primary");
+      expect(button.classes()).not.toContain("bg-background");
+      expect(button.attributes("aria-pressed")).toBe("false");
+    }
+  });
+
   it("keeps equal-year entries distinct and labels their exact boundary", () => {
     const wrapper = mount(TimelineDisplay, {
       props: {
@@ -92,11 +115,19 @@ describe("TimelineDisplay", () => {
         selectedNextEntryId: "same-b",
       },
     });
-    const selected = wrapper.findAll("button")[2];
+    const buttons = wrapper.findAll("button");
+    const selected = buttons[2];
 
     expect(selected.attributes("aria-pressed")).toBe("true");
-    expect(selected.attributes()).toHaveProperty("disabled");
+    expect(buttons.every((button) => "disabled" in button.attributes())).toBe(
+      true,
+    );
     expect(selected.classes()).toContain("min-h-11");
+    expect(selected.classes()).toContain("bg-primary");
+    expect(selected.text()).toContain(
+      "providers.music_quiz.timeline_placed_here",
+    );
+    expect(selected.find("svg").exists()).toBe(true);
   });
 
   it("renders a read-only timeline without placement controls", () => {
