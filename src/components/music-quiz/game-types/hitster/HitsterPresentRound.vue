@@ -1,5 +1,9 @@
 <template>
-  <HitsterRound :phase="state.phase" :round="currentRound" />
+  <HitsterRound
+    :phase="state.phase"
+    :round="currentRound"
+    :is-final-round="currentRound.round_index + 1 >= state.round_count"
+  />
 </template>
 
 <script setup lang="ts">

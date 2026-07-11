@@ -51,11 +51,11 @@ describe("Timeline player bonus flow", () => {
     expect(wrapper.text()).toContain("providers.music_quiz.answered");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.text()).not.toContain(
-      "providers.music_quiz.timeline_skip_and_finish",
+      "providers.music_quiz.timeline_skip_remaining_bonuses",
     );
   });
 
-  it("runs text and choice bonuses in order before explicit finish", async () => {
+  it("runs bonuses in order and accepts final server completion", async () => {
     const wrapper = mount(TimelinePlayerAnswer, {
       props: {
         state: stateWithAnswer(),
@@ -109,20 +109,40 @@ describe("Timeline player bonus flow", () => {
       option_id: "title-b",
     } as const;
     await wrapper.setProps({
-      state: stateWithAnswer([artistAnswer, titleAnswer]),
+      state: stateWithAnswer([artistAnswer, titleAnswer], true),
     });
-    await wrapper
-      .findAll("button")
-      .find((button) =>
-        button.text().includes("providers.music_quiz.timeline_finish_answer"),
-      )
-      ?.trigger("click");
-    expect(wrapper.emitted("submit")?.[2]).toEqual([
-      {
-        answer_type: "timeline",
-        action: "finish",
+
+    expect(wrapper.text()).toContain("providers.music_quiz.answered");
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.timeline_skip_remaining_bonuses",
+    );
+    expect(wrapper.emitted("submit")).toHaveLength(2);
+  });
+
+  it("suppresses bonuses after a wrong placement is server-finished", () => {
+    const wrapper = mount(TimelinePlayerAnswer, {
+      props: {
+        state: stateWithAnswer([], true),
+        currentRound: bonusRound,
+        busy: false,
       },
-    ]);
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineDisplay: true,
+          TimelineProgress: true,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("providers.music_quiz.answered");
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.timeline_artist_bonus",
+    );
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.timeline_skip_remaining_bonuses",
+    );
   });
 
   it("allows finishing immediately to skip configured bonuses", async () => {
@@ -141,12 +161,15 @@ describe("Timeline player bonus flow", () => {
       },
     });
 
-    await wrapper
+    const skipButton = wrapper
       .findAll("button")
       .find((button) =>
-        button.text().includes("providers.music_quiz.timeline_skip_and_finish"),
-      )
-      ?.trigger("click");
+        button
+          .text()
+          .includes("providers.music_quiz.timeline_skip_remaining_bonuses"),
+      );
+    expect(skipButton).toBeDefined();
+    await skipButton?.trigger("click");
 
     expect(wrapper.emitted("submit")).toEqual([
       [

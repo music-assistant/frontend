@@ -31,6 +31,7 @@ const currentRound = {
   round_index: 0,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   question: null,
   timeline: [anchor],
   bonus_definitions: [
@@ -67,6 +68,7 @@ const protectedHostRound = {
   duration: 180,
   started_at: 1,
   ended_at: null,
+  auto_advance_at: null,
 } satisfies MusicQuizHitsterHostRound;
 
 const hostState = {

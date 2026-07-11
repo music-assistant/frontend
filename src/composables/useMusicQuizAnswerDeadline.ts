@@ -66,7 +66,7 @@ export function useMusicQuizAnswerDeadline(
 
   function update() {
     const deadline = toValue(options.deadline);
-    if (!toValue(options.active) || !deadline) {
+    if (!toValue(options.active) || deadline == null) {
       stop();
       return;
     }

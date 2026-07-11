@@ -60,6 +60,7 @@ const currentRound = {
   round_index: 0,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   suggestions: [
     { suggestion_id: "one", label: "One" },
     { suggestion_id: "two", label: "Two" },
@@ -107,6 +108,7 @@ const hitsterRound = {
   round_index: 0,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   timeline: [
     {
       entry_id: "anchor",
@@ -164,6 +166,7 @@ const triviaRound = {
   round_index: 0,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   suggestions: [
     { suggestion_id: "one", label: "Artist One" },
     { suggestion_id: "two", label: "Artist Two" },
