@@ -4,7 +4,7 @@
     class="listen-in"
     :class="{ 'listen-in--active': isListeningIn }"
   >
-    <div class="listen-in__row">
+    <div class="listen-in__row w-full min-w-0">
       <Headphones :size="20" class="listen-in__icon" />
       <div class="listen-in__text">
         <span class="listen-in__title-row">

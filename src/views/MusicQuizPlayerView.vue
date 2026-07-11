@@ -216,12 +216,13 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
 
 const roundProgress = computed(() => {
-  if (!activeState.value) return "";
+  const currentState = activeState.value;
+  if (!currentState || currentState.phase === "lobby") return "";
   const label = $t("providers.music_quiz.round_label");
   if (!currentRound.value) {
-    return `${label} ${activeState.value.round_count}/${activeState.value.round_count}`;
+    return `${label} ${currentState.round_count}/${currentState.round_count}`;
   }
-  return `${label} ${currentRound.value.round_index + 1}/${activeState.value.round_count}`;
+  return `${label} ${currentRound.value.round_index + 1}/${currentState.round_count}`;
 });
 
 const playerRoundScoreLabel = computed(() =>

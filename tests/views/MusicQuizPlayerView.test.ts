@@ -217,6 +217,48 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("hides round progress for a joined player in the lobby", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...playerState,
+        phase: "lobby",
+        current_round: null,
+      }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper
+        .get('[data-testid="music-quiz-session-header"]')
+        .attributes("data-round-label"),
+    ).toBe("");
+    wrapper.unmount();
+  });
+
+  it("keeps round progress for an active joined player", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper
+        .get('[data-testid="music-quiz-session-header"]')
+        .attributes("data-round-label"),
+    ).toBe("providers.music_quiz.round_label 1/1");
+    wrapper.unmount();
+  });
+
   it("enables Hitster ListenIn without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -406,9 +448,9 @@ function mountView() {
         MusicQuizLeaderboard: true,
         MusicQuizPlayerHeader: true,
         MusicQuizSessionHeader: {
-          props: ["game", "mode"],
+          props: ["game", "mode", "roundLabel"],
           template:
-            '<div><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
+            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
         },
         MusicQuizPodium: true,
         MusicQuizUnsupportedGame: {

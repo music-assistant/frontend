@@ -46,5 +46,8 @@ describe("ListenIn", () => {
     expect(wrapper.get(".listen-in__attribution").classes()).toContain(
       "listen-in__attribution",
     );
+    expect(wrapper.get(".listen-in__row").classes()).toEqual(
+      expect.arrayContaining(["w-full", "min-w-0"]),
+    );
   });
 });
