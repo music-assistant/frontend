@@ -381,7 +381,7 @@ onMounted(async () => {
   if (langPref !== "auto") {
     i18n.global.locale.value = resolveLocale(
       langPref,
-      i18n.global.availableLocales as string[],
+      Array.from(i18n.global.availableLocales),
     );
   }
   store.forceMobileLayout =
@@ -402,7 +402,7 @@ onMounted(async () => {
         if (userLangPref !== "auto") {
           i18n.global.locale.value = resolveLocale(
             userLangPref,
-            i18n.global.availableLocales as string[],
+            Array.from(i18n.global.availableLocales),
           );
         }
       }

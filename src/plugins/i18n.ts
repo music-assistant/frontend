@@ -17,7 +17,7 @@ import messages from "@intlify/unplugin-vue-i18n/messages";
  */
 export function resolveLocale(
   requestedLocale: string,
-  availableLocales: string[],
+  availableLocales: readonly string[],
 ): string {
   // Collapse separator + casing so BCP-47 and POSIX compare equal: "en_AU"/"en-AU" → "en-au"
   const toComparableKey = (locale: string) =>
