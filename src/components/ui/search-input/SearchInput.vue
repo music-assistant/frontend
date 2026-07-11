@@ -64,5 +64,7 @@ defineExpose({
     >
       <X class="size-4" />
     </InputGroupButton>
+    <!-- trailing controls rendered inside the input, e.g. an inline filter -->
+    <slot name="append" />
   </InputGroup>
 </template>

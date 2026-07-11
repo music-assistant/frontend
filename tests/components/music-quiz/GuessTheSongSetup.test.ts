@@ -237,15 +237,20 @@ describe("GuessTheSongSetup", () => {
     });
     const wrapper = mountConfig();
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
+    const searchInput = wrapper.find(
+      'input[placeholder="providers.music_quiz.search_music"]',
+    );
+    await searchInput.setValue("test");
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
+    // picking a result clears the search, so search again for the next pick
+    await searchInput.setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("Rock"))

@@ -6,20 +6,39 @@
       clearable
       :placeholder="placeholder || $t('type_to_search')"
       :aria-label="$t('search')"
-    />
+    >
+      <!-- media type filter inlined in the search box -->
+      <template v-if="showMediaTypeFilter" #append>
+        <FacetedFilter
+          v-model="selectedMediaTypes"
+          :title="$t('media_type')"
+          :options="mediaTypeOptions"
+        >
+          <template #trigger>
+            <InputGroupButton
+              type="button"
+              class="media-search-type-trigger"
+              :title="$t('media_type')"
+              :aria-label="$t('media_type')"
+            >
+              <ListFilter class="size-4" />
+              <span
+                v-if="selectedMediaTypes.length"
+                class="media-search-type-count"
+              >
+                {{ selectedMediaTypes.length }}
+              </span>
+            </InputGroupButton>
+          </template>
+        </FacetedFilter>
+      </template>
+    </SearchInput>
 
     <div
-      v-if="showMediaTypeFilter || showProviderFilter"
+      v-if="showProviderFilter && providerTargets.length"
       class="media-search-filters"
     >
       <FacetedFilter
-        v-if="showMediaTypeFilter"
-        v-model="selectedMediaTypes"
-        :title="$t('media_type')"
-        :options="mediaTypeOptions"
-      />
-      <FacetedFilter
-        v-if="showProviderFilter && providerTargets.length"
         v-model="selectedProviders"
         :title="$t('settings.providers')"
         :options="providerOptions"
@@ -33,7 +52,7 @@
         :key="item.uri"
         type="button"
         class="media-search-result"
-        @click="emit('select', item)"
+        @click="onResultClick(item)"
       >
         <MediaItemThumb :item="item" :size="44" />
         <span class="media-search-result-text">
@@ -54,6 +73,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import { InputGroupButton } from "@/components/ui/input-group";
 import { SearchInput } from "@/components/ui/search-input";
 import {
   LIBRARY_SEARCH_TARGET,
@@ -66,6 +86,7 @@ import {
   type MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { ListFilter } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 export interface Props {
@@ -168,6 +189,13 @@ const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
   return artists ? `${label} • ${artists}` : label;
 };
 
+const onResultClick = function (item: MediaItemTypeOrItemMapping) {
+  emit("select", item);
+  // picking a result completes the search: clear the query, which also
+  // closes the results panel (ready for the next search)
+  query.value = "";
+};
+
 watch(query, () => {
   clearTimeout(debounceTimer);
   const trimmed = query.value.trim();
@@ -195,6 +223,21 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.media-search-type-trigger {
+  gap: 4px;
+}
+
+.media-search-type-count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  line-height: 16px;
+  text-align: center;
+  background: rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .media-search-results {
