@@ -1,4 +1,12 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const { authState, routerAfterEach } = vi.hoisted(() => {
   vi.stubGlobal(
@@ -100,6 +108,11 @@ describe("web player preferred mode", () => {
       webPlayer.mode = mode;
       webPlayer.tabMode = mode;
     });
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
