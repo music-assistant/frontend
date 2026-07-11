@@ -2,7 +2,7 @@
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
     <Card v-if="gameRemoved" role="status">
       <CardHeader class="items-center text-center">
-        <CircleStop class="text-muted-foreground size-10" />
+        <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
         <CardDescription>
           {{ $t("providers.music_quiz.game_ended_detail") }}
@@ -34,6 +34,7 @@
           <MusicQuizJoinForm
             :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
             :busy="busy"
+            :initial-name="rememberedName"
             @join="handleJoin"
           />
         </CardContent>
@@ -90,7 +91,7 @@
 
     <Card v-else role="status">
       <CardHeader class="items-center text-center">
-        <Clock3 class="text-muted-foreground size-10" />
+        <Clock3 class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("guest.no_quiz_title") }}</CardTitle>
         <CardDescription>{{ $t("guest.no_quiz_description") }}</CardDescription>
       </CardHeader>
@@ -141,8 +142,16 @@ const player = useMusicQuizPlayer({
   notifyError: (message) => toast.error(message),
 });
 
-const { info, state, playerId, gameRemoved, busy, loading, currentRound } =
-  player;
+const {
+  info,
+  state,
+  playerId,
+  rememberedName,
+  gameRemoved,
+  busy,
+  loading,
+  currentRound,
+} = player;
 
 const resolvedDefinition = computed(() => {
   const activeGame = state.value ?? info.value;

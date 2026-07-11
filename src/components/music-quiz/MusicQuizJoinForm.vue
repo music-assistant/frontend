@@ -33,10 +33,14 @@ import { $t } from "@/plugins/i18n";
 import { LogIn } from "@lucide/vue";
 import { nextTick, onMounted, ref } from "vue";
 
-defineProps<{ sessionName: string; busy: boolean }>();
+const props = defineProps<{
+  sessionName: string;
+  busy: boolean;
+  initialName?: string;
+}>();
 const emit = defineEmits<{ join: [name: string] }>();
 
-const playerName = ref("");
+const playerName = ref(props.initialName ?? "");
 const nameInput = ref<InstanceType<typeof Input> | null>(null);
 
 function submit() {

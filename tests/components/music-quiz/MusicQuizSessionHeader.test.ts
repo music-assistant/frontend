@@ -46,6 +46,9 @@ describe("MusicQuizSessionHeader", () => {
     });
 
     expect(wrapper.find('[data-testid="game-icon"]').exists()).toBe(true);
+    expect(
+      wrapper.get('[data-testid="game-icon"]').attributes("aria-hidden"),
+    ).toBe("true");
     expect(wrapper.text()).toContain("game.guess_the_song");
     expect(wrapper.text()).toContain("Friday Quiz");
     expect(wrapper.text()).toContain("Answers open");

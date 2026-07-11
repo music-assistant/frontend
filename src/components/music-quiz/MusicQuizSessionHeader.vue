@@ -10,7 +10,11 @@
         class="bg-primary/10 text-primary grid shrink-0 place-items-center rounded-lg"
         :class="present ? 'size-14' : 'size-11'"
       >
-        <component :is="game.icon" :class="present ? 'size-7' : 'size-5'" />
+        <component
+          :is="game.icon"
+          :class="present ? 'size-7' : 'size-5'"
+          aria-hidden="true"
+        />
       </span>
       <div class="min-w-0">
         <p
