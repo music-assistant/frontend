@@ -1,49 +1,52 @@
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <Button variant="outline" class="border-dashed">
-        <PlusCircle class="h-4 w-4" />
-        {{ title }}
-        <template v-if="selectedCount > 0">
-          <Separator orientation="vertical" class="mx-2 h-4" />
-          <Badge
-            class="lg:hidden font-medium rounded-[6px]"
-            :aria-label="`${selectedCount} selected`"
-          >
-            {{ selectedCount }}
-          </Badge>
-          <div class="hidden space-x-1 lg:flex">
-            <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
-              {{ selectedCount }} selected
-              <button
-                type="button"
-                :aria-label="`Clear all ${title} filters`"
-                class="flex items-center justify-center cursor-pointer hover:opacity-70"
-                @click.stop="clear"
-              >
-                <X class="size-2.5" />
-              </button>
+      <!-- custom trigger (e.g. a compact icon button inside an input) -->
+      <slot name="trigger">
+        <Button variant="outline" class="border-dashed">
+          <PlusCircle class="h-4 w-4" />
+          {{ title }}
+          <template v-if="selectedCount > 0">
+            <Separator orientation="vertical" class="mx-2 h-4" />
+            <Badge
+              class="lg:hidden font-medium rounded-[6px]"
+              :aria-label="`${selectedCount} selected`"
+            >
+              {{ selectedCount }}
             </Badge>
-            <template v-else>
-              <Badge
-                v-for="opt in selectedOptionLabels"
-                :key="opt.value"
-                class="font-medium rounded-[6px] gap-2"
-              >
-                {{ opt.label }}
+            <div class="hidden space-x-1 lg:flex">
+              <Badge v-if="selectedCount > 2" class="rounded-[6px] gap-2">
+                {{ selectedCount }} selected
                 <button
                   type="button"
-                  :aria-label="`Remove ${opt.label} filter`"
+                  :aria-label="`Clear all ${title} filters`"
                   class="flex items-center justify-center cursor-pointer hover:opacity-70"
-                  @click.stop="removeFilter(opt.value)"
+                  @click.stop="clear"
                 >
                   <X class="size-2.5" />
                 </button>
               </Badge>
-            </template>
-          </div>
-        </template>
-      </Button>
+              <template v-else>
+                <Badge
+                  v-for="opt in selectedOptionLabels"
+                  :key="opt.value"
+                  class="font-medium rounded-[6px] gap-2"
+                >
+                  {{ opt.label }}
+                  <button
+                    type="button"
+                    :aria-label="`Remove ${opt.label} filter`"
+                    class="flex items-center justify-center cursor-pointer hover:opacity-70"
+                    @click.stop="removeFilter(opt.value)"
+                  >
+                    <X class="size-2.5" />
+                  </button>
+                </Badge>
+              </template>
+            </div>
+          </template>
+        </Button>
+      </slot>
     </PopoverTrigger>
     <PopoverContent class="w-[220px] p-0" align="start">
       <div class="faceted-filter-content">
@@ -58,15 +61,17 @@
             v-for="option in filteredOptions"
             :key="option.value"
             class="faceted-filter-item"
+            :class="{ 'faceted-filter-item--locked': option.locked }"
             role="checkbox"
-            :aria-checked="selectedSet.has(option.value)"
-            tabindex="0"
-            @click="toggle(option.value)"
-            @keydown.space.prevent="toggle(option.value)"
-            @keydown.enter.prevent="toggle(option.value)"
+            :aria-checked="option.locked || selectedSet.has(option.value)"
+            :aria-disabled="option.locked"
+            :tabindex="option.locked ? -1 : 0"
+            @click="toggle(option)"
+            @keydown.space.prevent="toggle(option)"
+            @keydown.enter.prevent="toggle(option)"
           >
             <Checkbox
-              :model-value="selectedSet.has(option.value)"
+              :model-value="option.locked || selectedSet.has(option.value)"
               class="mr-2 pointer-events-none"
               tabindex="-1"
               aria-hidden="true"
@@ -109,6 +114,9 @@ import { Separator } from "@/components/ui/separator";
 interface FacetedOption {
   label: string;
   value: TValue;
+  // locked options render as permanently checked and cannot be toggled;
+  // they are not part of the model value (e.g. an always-active entry)
+  locked?: boolean;
 }
 
 const props = defineProps<{
@@ -138,12 +146,13 @@ const filteredOptions = computed(() => {
   return props.options.filter((opt) => opt.label.toLowerCase().includes(term));
 });
 
-const toggle = (value: TValue) => {
+const toggle = (option: FacetedOption) => {
+  if (option.locked) return;
   const next = new Set(selectedSet.value);
-  if (next.has(value)) {
-    next.delete(value);
+  if (next.has(option.value)) {
+    next.delete(option.value);
   } else {
-    next.add(value);
+    next.add(option.value);
   }
   emit("update:modelValue", Array.from(next));
 };
@@ -190,6 +199,15 @@ const clear = () => {
 
 .faceted-filter-item:hover {
   background-color: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.faceted-filter-item--locked {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.faceted-filter-item--locked:hover {
+  background-color: transparent;
 }
 
 .faceted-filter-clear {

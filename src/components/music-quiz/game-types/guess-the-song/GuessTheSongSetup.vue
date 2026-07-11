@@ -83,47 +83,16 @@
     <div class="grid gap-4 lg:grid-cols-2">
       <Field>
         <FieldLabel for="quiz-source-search">
-          {{ $t("providers.music_quiz.add_tracks_or_playlists") }}
+          {{ $t("providers.music_quiz.add_music_sources") }}
         </FieldLabel>
-        <SearchInput
-          id="quiz-source-search"
-          v-model="sourceQuery"
-          clearable
+        <MediaSearch
+          input-id="quiz-source-search"
+          :allowed-media-types="MUSIC_QUIZ_SOURCE_MEDIA_TYPES"
+          :default-selected-media-types="MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES"
+          :exclude-uris="sourceUris"
           :placeholder="$t('providers.music_quiz.search_music')"
+          @select="onSourceSelect"
         />
-        <div
-          v-if="sourceQuery.trim().length >= minSearchLength"
-          class="bg-background max-h-72 overflow-y-auto overscroll-contain rounded-md border p-1"
-        >
-          <p
-            v-if="sourceSearching"
-            class="text-muted-foreground px-2 py-3 text-sm"
-          >
-            {{ $t("providers.music_quiz.searching") }}
-          </p>
-          <button
-            v-for="item in sourceResults"
-            v-else
-            :key="item.uri"
-            type="button"
-            class="hover:bg-accent focus-visible:ring-ring grid w-full grid-cols-[44px_minmax(0,1fr)] items-center gap-3 rounded-md p-2 text-left focus-visible:ring-2 focus-visible:outline-none"
-            @click="addSource(item)"
-          >
-            <MediaItemThumb :item="item" :size="44" />
-            <span class="flex min-w-0 flex-col">
-              <strong class="truncate">{{ item.name }}</strong>
-              <small class="text-muted-foreground truncate">
-                {{ sourceSubtitle(item) }}
-              </small>
-            </span>
-          </button>
-          <p
-            v-if="!sourceSearching && sourceResults.length === 0"
-            class="text-muted-foreground px-2 py-3 text-sm"
-          >
-            {{ $t("providers.music_quiz.no_sources_found") }}
-          </p>
-        </div>
       </Field>
 
       <Field>
@@ -170,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import MediaSearch from "@/components/MediaSearch.vue";
 import type {
   MusicQuizSetupAdapterEmits,
   MusicQuizSetupAdapterProps,
@@ -187,14 +156,21 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import { SearchInput } from "@/components/ui/search-input";
 import type { MusicQuizDifficulty } from "@/composables/useMusicQuiz";
 import {
-  useMusicQuizSourceSearch,
+  isMusicQuizSourceItem,
+  MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES,
+  MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
+  useMusicQuizSources,
   type MusicQuizSourceItem,
-} from "@/composables/useMusicQuizSourceSearch";
+} from "@/composables/useMusicQuizSources";
 import { generateMusicQuizSessionName } from "@/helpers/music_quiz_naming";
-import { MediaType, type Track } from "@/plugins/api/interfaces";
+import { musicQuizSourceTypeLabel } from "@/helpers/music_quiz_sources";
+import {
+  MediaType,
+  type MediaItemTypeOrItemMapping,
+  type Track,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { PartyPopper, X } from "@lucide/vue";
 import { ref } from "vue";
@@ -216,17 +192,18 @@ const answerDuration = ref(30);
 const difficulty = ref<MusicQuizDifficulty>("normal");
 
 const {
-  query: sourceQuery,
-  results: sourceResults,
   selected: selectedSources,
-  searching: sourceSearching,
   sourceUris,
   summary: selectedSummary,
   canCreate,
-  minSearchLength,
   add: addSource,
   remove: removeSource,
-} = useMusicQuizSourceSearch();
+} = useMusicQuizSources();
+
+function onSourceSelect(item: MediaItemTypeOrItemMapping) {
+  if (!isMusicQuizSourceItem(item)) return;
+  addSource(item);
+}
 
 function create() {
   if (!canCreate.value) return;
@@ -245,12 +222,10 @@ function create() {
 }
 
 function sourceSubtitle(item: MusicQuizSourceItem) {
-  if (item.media_type === MediaType.PLAYLIST)
-    return $t("providers.music_quiz.playlist");
-  const artist = isTrack(item) ? item.artists?.[0]?.name : undefined;
-  return artist
-    ? $t("providers.music_quiz.track_with_artist", [artist])
-    : $t("providers.music_quiz.track");
+  if (isTrack(item) && item.artists?.[0]?.name) {
+    return $t("providers.music_quiz.track_with_artist", [item.artists[0].name]);
+  }
+  return musicQuizSourceTypeLabel(item.media_type);
 }
 
 function isTrack(item: MusicQuizSourceItem): item is Track {
