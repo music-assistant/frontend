@@ -1,8 +1,8 @@
 import { getMusicQuizSourceSummary } from "@/helpers/music_quiz_sources";
-import type { Playlist, Track } from "@/plugins/api/interfaces";
+import type { Genre, Playlist, Track } from "@/plugins/api/interfaces";
 import { computed, ref } from "vue";
 
-export type MusicQuizSourceItem = Track | Playlist;
+export type MusicQuizSourceItem = Track | Playlist | Genre;
 
 /**
  * Selection management for the tracks/playlists a Music Quiz is played from.

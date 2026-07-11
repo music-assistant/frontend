@@ -8,12 +8,14 @@ export function getMusicQuizSourceSummary(sources: SourceLike[]) {
     (acc, source) => {
       if (isPlaylistSource(source)) {
         acc.playlists += 1;
+      } else if (isGenreSource(source)) {
+        acc.genres += 1;
       } else {
         acc.tracks += 1;
       }
       return acc;
     },
-    { tracks: 0, playlists: 0 },
+    { tracks: 0, playlists: 0, genres: 0 },
   );
   const parts: string[] = [];
   if (counts.tracks > 0) {
@@ -36,12 +38,25 @@ export function getMusicQuizSourceSummary(sources: SourceLike[]) {
       ),
     );
   }
+  if (counts.genres > 0) {
+    parts.push(
+      $t(
+        counts.genres === 1
+          ? "providers.music_quiz.genre_count"
+          : "providers.music_quiz.genres_count",
+        [counts.genres],
+      ),
+    );
+  }
   return parts.join(", ") || $t("providers.music_quiz.tracks_count", [0]);
 }
 
 export function musicQuizSourceTypeLabel(mediaType?: string | null) {
   if (mediaType === MediaType.PLAYLIST || mediaType === "playlist") {
     return $t("providers.music_quiz.playlist");
+  }
+  if (mediaType === MediaType.GENRE || mediaType === "genre") {
+    return $t("genre");
   }
   if (mediaType === MediaType.TRACK || mediaType === "track") {
     return $t("providers.music_quiz.track");
@@ -53,4 +68,8 @@ function isPlaylistSource(source: SourceLike) {
   return (
     source.media_type === MediaType.PLAYLIST || source.media_type === "playlist"
   );
+}
+
+function isGenreSource(source: SourceLike) {
+  return source.media_type === MediaType.GENRE || source.media_type === "genre";
 }

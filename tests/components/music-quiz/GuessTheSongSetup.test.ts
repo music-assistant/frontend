@@ -99,15 +99,21 @@ describe("GuessTheSongSetup", () => {
     );
     await searchInput.setValue("old");
     await vi.advanceTimersByTimeAsync(300);
-    expect(mockSearch).toHaveBeenCalledWith("old", [MediaType.PLAYLIST], 8, [
-      "library",
-    ]);
+    expect(mockSearch).toHaveBeenCalledWith(
+      "old",
+      [MediaType.PLAYLIST, MediaType.GENRE],
+      8,
+      ["library"],
+    );
 
     await searchInput.setValue("new");
     await vi.advanceTimersByTimeAsync(300);
-    expect(mockSearch).toHaveBeenCalledWith("new", [MediaType.PLAYLIST], 8, [
-      "library",
-    ]);
+    expect(mockSearch).toHaveBeenCalledWith(
+      "new",
+      [MediaType.PLAYLIST, MediaType.GENRE],
+      8,
+      ["library"],
+    );
 
     newSearch.resolve({
       tracks: [],

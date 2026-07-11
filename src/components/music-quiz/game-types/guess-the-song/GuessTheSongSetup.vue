@@ -87,8 +87,12 @@
         </FieldLabel>
         <MediaSearch
           input-id="quiz-source-search"
-          :allowed-media-types="[MediaType.TRACK, MediaType.PLAYLIST]"
-          :default-selected-media-types="[MediaType.PLAYLIST]"
+          :allowed-media-types="[
+            MediaType.TRACK,
+            MediaType.PLAYLIST,
+            MediaType.GENRE,
+          ]"
+          :default-selected-media-types="[MediaType.PLAYLIST, MediaType.GENRE]"
           :exclude-uris="sourceUris"
           :placeholder="$t('providers.music_quiz.search_music')"
           @select="onSourceSelect"
@@ -197,10 +201,11 @@ const {
 } = useMusicQuizSources();
 
 function onSourceSelect(item: MediaItemTypeOrItemMapping) {
-  // the search is restricted to tracks and playlists
+  // the search is restricted to the media types the quiz accepts as source
   if (
     item.media_type !== MediaType.TRACK &&
-    item.media_type !== MediaType.PLAYLIST
+    item.media_type !== MediaType.PLAYLIST &&
+    item.media_type !== MediaType.GENRE
   ) {
     return;
   }
@@ -226,6 +231,7 @@ function create() {
 function sourceSubtitle(item: MusicQuizSourceItem) {
   if (item.media_type === MediaType.PLAYLIST)
     return $t("providers.music_quiz.playlist");
+  if (item.media_type === MediaType.GENRE) return $t("genre");
   const artist = isTrack(item) ? item.artists?.[0]?.name : undefined;
   return artist
     ? $t("providers.music_quiz.track_with_artist", [artist])
