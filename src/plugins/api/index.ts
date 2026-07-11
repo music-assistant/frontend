@@ -3007,10 +3007,14 @@ export class MusicAssistantApi {
       this.providerManifests[prov.domain] = prov;
     }
 
-    for (const prov of await this.sendCommand<ProviderInstance[]>(
-      "providers",
-    )) {
-      this.providers[prov.instance_id] = prov;
+    await this.fetchProviders();
+  }
+
+  public async fetchProviders() {
+    const providers = await this.sendCommand<ProviderInstance[]>("providers");
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    for (const provider of providers) {
+      this.providers[provider.instance_id] = provider;
     }
   }
 

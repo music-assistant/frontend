@@ -252,8 +252,6 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
-  const isPartyGuest = authManager.isPartyGuest();
-  const isMusicQuizGuest = authManager.isMusicQuizGuest();
 
   // Enable kiosk mode when running in Home Assistant ingress
   // COMMENTED OUT - HA INTEGRATION DISABLED
@@ -319,6 +317,7 @@ const completeInitialization = async () => {
     }
   } else {
     console.debug("[App] Guest user - skipping regular user initialization");
+    await api.fetchProviders();
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -329,12 +328,8 @@ const completeInitialization = async () => {
   ) {
     store.isOnboarding = true;
     router.push("/settings");
-  } else if (isPartyGuest) {
-    // Party guests should always be redirected to the guest view
+  } else if (isGuestAccessSession) {
     router.push("/guest");
-  } else if (isMusicQuizGuest) {
-    // Music Quiz guests should always be redirected to the quiz play view
-    router.push("/music-quiz/play");
   }
   // Don't push to any route here - let the router handle navigation naturally
   // from the URL hash. The router config already redirects "/" to "/discover"

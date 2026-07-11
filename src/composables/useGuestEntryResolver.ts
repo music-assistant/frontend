@@ -1,0 +1,148 @@
+import { isMusicQuizProviderEvent } from "@/composables/useMusicQuiz";
+import api, { ConnectionState } from "@/plugins/api";
+import { EventType, type EventMessage } from "@/plugins/api/interfaces";
+import {
+  onBeforeUnmount,
+  onMounted,
+  readonly,
+  ref,
+  watch,
+  type InjectionKey,
+  type Ref,
+} from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+export type GuestEntryState =
+  | "loading"
+  | "quiz"
+  | "party"
+  | "quiz-inactive"
+  | "inactive";
+
+export const guestEntryStateKey: InjectionKey<Readonly<Ref<GuestEntryState>>> =
+  Symbol("guest-entry-state");
+
+export async function resolveGuestEntry(): Promise<GuestEntryState> {
+  const providerDomains = new Set(
+    Object.values(api.providers).map((provider) => provider.domain),
+  );
+  const hasMusicQuiz = providerDomains.has("music_quiz");
+
+  if (hasMusicQuiz) {
+    const game = await api.sendCommand<unknown | null>(
+      "music_quiz/get_game_info",
+    );
+    if (game) return "quiz";
+  }
+  if (providerDomains.has("party")) return "party";
+  return hasMusicQuiz ? "quiz-inactive" : "inactive";
+}
+
+export function useGuestEntryResolver() {
+  const route = useRoute();
+  const router = useRouter();
+  const state = ref<GuestEntryState>("loading");
+  let active = false;
+  let requestedVersion = 0;
+  let resolutionPromise: Promise<void> | null = null;
+  let quizProviderInstanceId: string | undefined;
+  const unsubscribers: (() => void)[] = [];
+
+  onMounted(async () => {
+    active = true;
+    await waitForApiInitialization();
+    if (!active) return;
+
+    unsubscribers.push(
+      api.subscribe(EventType.PROVIDERS_UPDATED, requestResolution),
+      api.subscribe(EventType.PROVIDER_EVENT, handleProviderEvent),
+    );
+    await requestResolution();
+  });
+
+  watch(
+    () => route.path,
+    () => void syncRoute(),
+  );
+
+  onBeforeUnmount(() => {
+    active = false;
+    requestedVersion += 1;
+    unsubscribers.forEach((unsubscribe) => unsubscribe());
+  });
+
+  return {
+    state: readonly(state),
+    resolve: requestResolution,
+  };
+
+  function requestResolution(): Promise<void> {
+    requestedVersion += 1;
+    resolutionPromise ??= processResolutions().finally(() => {
+      resolutionPromise = null;
+    });
+    return resolutionPromise;
+  }
+
+  async function processResolutions() {
+    while (active) {
+      const version = requestedVersion;
+      const nextState = await resolveGuestEntry();
+      if (!active) return;
+      if (version !== requestedVersion) continue;
+
+      state.value = nextState;
+      await syncRoute();
+      if (version === requestedVersion) return;
+    }
+  }
+
+  function handleProviderEvent(event: EventMessage) {
+    if (!isMusicQuizProviderEvent(event.data)) return;
+    if (!isScopedQuizProviderEvent(event.object_id)) return;
+    void requestResolution();
+  }
+
+  // Lock onto the first Music Quiz provider instance we see events from, matching
+  // the scoping convention used by useMusicQuizHost/useMusicQuizPlayer, so events
+  // from an unrelated instance can't spuriously re-trigger resolution.
+  function isScopedQuizProviderEvent(objectId?: string) {
+    if (!objectId) return false;
+    if (!quizProviderInstanceId) {
+      quizProviderInstanceId = objectId;
+      return true;
+    }
+    return quizProviderInstanceId === objectId;
+  }
+
+  async function syncRoute() {
+    const target = getGuestEntryPath(state.value);
+    if (target && route.path !== target) {
+      await router.replace(target);
+    }
+  }
+}
+
+function getGuestEntryPath(state: GuestEntryState): string | undefined {
+  if (state === "quiz") return "/guest/quiz";
+  if (state === "party") return "/guest/party";
+  if (state === "quiz-inactive" || state === "inactive") return "/guest";
+  return undefined;
+}
+
+async function waitForApiInitialization() {
+  if (api.state.value === ConnectionState.INITIALIZED) return;
+
+  await new Promise<void>((resolve) => {
+    const unwatch = watch(
+      () => api.state.value,
+      (newState) => {
+        if (newState === ConnectionState.INITIALIZED) {
+          unwatch();
+          resolve();
+        }
+      },
+      { immediate: true },
+    );
+  });
+}

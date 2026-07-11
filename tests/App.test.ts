@@ -18,6 +18,7 @@ const {
   const apiMock = {
     baseUrl: "http://music-assistant.test",
     fetchState: vi.fn(),
+    fetchProviders: vi.fn(),
     getCurrentUserInfo: vi.fn(),
     getLibraryAlbumsCount: vi.fn(),
     getLibraryArtistsCount: vi.fn(),
@@ -212,6 +213,7 @@ describe("App initialization", () => {
       username: "regular-user",
     });
     apiMock.fetchState.mockResolvedValue(undefined);
+    apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.getProviderConfigs.mockResolvedValue([{ enabled: true }]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
@@ -251,12 +253,9 @@ describe("App initialization", () => {
     vi.unstubAllGlobals();
   });
 
-  it.each([
-    ["party", "/guest"],
-    ["music_quiz", "/music-quiz/play"],
-  ] as const)(
+  it.each(["party", "music_quiz"] as const)(
     "avoids regular-user commands for a %s guest while initializing audio",
-    async (type, destination) => {
+    async (type) => {
       guestType.value = type;
       apiMock.getCurrentUserInfo.mockResolvedValue({
         preferences: {},
@@ -272,10 +271,11 @@ describe("App initialization", () => {
       expect(apiMock.fetchState).not.toHaveBeenCalled();
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.fetchProviders).toHaveBeenCalledOnce();
       expectLibraryCountsNotCalled();
       expect(webPlayerMock.setBaseUrl).toHaveBeenCalledWith(apiMock.baseUrl);
       expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
-      expect(mockRouterPush).toHaveBeenCalledWith(destination);
+      expect(mockRouterPush).toHaveBeenCalledWith("/guest");
 
       await signalProvidersUpdated();
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
@@ -288,6 +288,7 @@ describe("App initialization", () => {
 
     expect(mockSetPreference).toHaveBeenCalledWith("theme", "dark");
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();
     expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(

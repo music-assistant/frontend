@@ -1099,6 +1099,14 @@
     "exclude_genre": "Exclude genre",
     "genre_exclusions": "Genre Exclusions",
     "remove_genre_exclusion": "Remove exclusion",
+    "guest": {
+        "loading_title": "Finding the active experience",
+        "loading_description": "Please wait...",
+        "no_quiz_title": "No Quiz is currently active",
+        "no_quiz_description": "Ask the host to start a Music Quiz.",
+        "nothing_active_title": "Nothing is currently active",
+        "nothing_active_description": "Ask the host to start a guest experience."
+    },
     "providers": {
         "party": {
             "guest_page": {
