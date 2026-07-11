@@ -1240,7 +1240,6 @@
             "final_leaderboard": "Final leaderboard",
             "setup_placeholder": "Setup form coming soon",
             "connection_lost": "Connection lost, reconnecting...",
-            "session_name": "Quiz name",
             "rounds": "Rounds",
             "suggestions": "Answer choices",
             "answer_seconds": "Answer time (seconds)",

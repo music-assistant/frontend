@@ -1,13 +1,6 @@
 <template>
   <div class="flex flex-col gap-5">
     <div class="grid gap-4 sm:grid-cols-2">
-      <Field class="sm:col-span-2">
-        <FieldLabel for="quiz-name">
-          {{ $t("providers.music_quiz.session_name") }}
-        </FieldLabel>
-        <Input id="quiz-name" v-model="name" />
-      </Field>
-
       <Field>
         <FieldLabel for="quiz-rounds">
           {{ $t("providers.music_quiz.rounds") }}
@@ -100,7 +93,6 @@ import type {
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   NumberField,
@@ -127,7 +119,6 @@ const MAX_SECONDS = 120;
 defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
-const name = ref("");
 const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
@@ -144,8 +135,6 @@ function create() {
     difficulty: difficulty.value,
     source_uris: sourceUris.value,
   };
-  const trimmedName = name.value.trim();
-  if (trimmedName) config.name = trimmedName;
   emit("create", {
     quiz_type: "guess_the_song",
     answer_type: "multiple_choice",

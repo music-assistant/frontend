@@ -52,7 +52,6 @@ describe("TriviaSetup", () => {
 
     await wrapper.get('[data-testid="select-sources"]').trigger("click");
     await wrapper.get("#trivia-difficulty").setValue("hard");
-    await wrapper.get("#trivia-name").setValue("Friday Trivia");
     await nextTick();
     await wrapper
       .findAll("button")
@@ -70,14 +69,13 @@ describe("TriviaSetup", () => {
             answer_duration: 30,
             difficulty: "hard",
             source_uris: ["library://playlist/1", "library://genre/rock"],
-            name: "Friday Trivia",
           },
         },
       ],
     ]);
   });
 
-  it("omits a blank optional session name", async () => {
+  it("never renders or emits a session name", async () => {
     const wrapper = mount(TriviaSetup, {
       props: { busy: false },
       global: {
@@ -99,7 +97,7 @@ describe("TriviaSetup", () => {
       },
     });
 
-    expect(wrapper.get("#trivia-name").element).toHaveProperty("value", "");
+    expect(wrapper.find("#trivia-name").exists()).toBe(false);
     await wrapper.get('[data-testid="select-sources"]').trigger("click");
     await nextTick();
     await wrapper
