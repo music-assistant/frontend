@@ -310,6 +310,53 @@ describe("MusicQuizPlayerView routing", () => {
     expect(mockListenInSetup).not.toHaveBeenCalled();
     wrapper.unmount();
   });
+
+  it("distinguishes waiting for a host from a game that ended", () => {
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const waitingWrapper = mountView();
+    expect(waitingWrapper.text()).toContain("guest.no_quiz_title");
+    expect(waitingWrapper.text()).toContain("guest.no_quiz_description");
+    expect(waitingWrapper.text()).not.toContain(
+      "providers.music_quiz.game_ended",
+    );
+    waitingWrapper.unmount();
+
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(true),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const endedWrapper = mountView();
+    expect(endedWrapper.text()).toContain("providers.music_quiz.game_ended");
+    expect(endedWrapper.text()).toContain(
+      "providers.music_quiz.game_ended_detail",
+    );
+    expect(endedWrapper.text()).toContain(
+      "providers.music_quiz.game_ended_wait",
+    );
+    expect(endedWrapper.text()).not.toContain("guest.no_quiz_title");
+    endedWrapper.unmount();
+  });
 });
 
 function createDefinition(supportsListenIn: boolean) {
@@ -358,6 +405,11 @@ function mountView() {
         MusicQuizConnectionBanners: true,
         MusicQuizLeaderboard: true,
         MusicQuizPlayerHeader: true,
+        MusicQuizSessionHeader: {
+          props: ["game", "mode"],
+          template:
+            '<div><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
+        },
         MusicQuizPodium: true,
         MusicQuizUnsupportedGame: {
           template: '<div data-testid="unsupported-game" />',

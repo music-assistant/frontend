@@ -13,6 +13,7 @@ const {
   mockGetStoredPlayerId,
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
+  mockMarkJoinedGameEnded,
   storedPlayerId,
   providerHandlers,
   unmountHandlers,
@@ -29,6 +30,7 @@ const {
   mockGetStoredPlayerId: vi.fn(),
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
+  mockMarkJoinedGameEnded: vi.fn(),
   storedPlayerId: { value: null as string | null },
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
@@ -92,6 +94,10 @@ vi.mock("@/helpers/music_quiz", () => ({
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
+}));
+
+vi.mock("@/helpers/music_quiz_guest_state", () => ({
+  markMusicQuizJoinedGameEnded: mockMarkJoinedGameEnded,
 }));
 
 import { EventType } from "@/plugins/api/interfaces";
@@ -322,6 +328,7 @@ describe("useMusicQuizPlayer", () => {
     mockGetStoredPlayerId.mockReset();
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
+    mockMarkJoinedGameEnded.mockReset();
     mockHeartbeatMusicQuiz.mockResolvedValue(true);
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockStorePlayerId.mockImplementation((playerId: string) => {
@@ -588,14 +595,14 @@ describe("useMusicQuizPlayer", () => {
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledTimes(1);
   });
 
-  it("returns from game-removed state when a new game update arrives", async () => {
+  it("keeps the initial no-game state distinct from a removed joined game", async () => {
     mockGetMusicQuizInfo
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(QUIZ_INFO);
     const player = useMusicQuizPlayer({ notifyError: vi.fn() });
     await flushPromises();
 
-    expect(player.gameRemoved.value).toBe(true);
+    expect(player.gameRemoved.value).toBe(false);
 
     const handler = providerHandlers[0];
     expect(handler).toBeTypeOf("function");
@@ -610,6 +617,8 @@ describe("useMusicQuizPlayer", () => {
   });
 
   it("ignores pending info after the game is removed", async () => {
+    storedPlayerId.value = "stored-player";
+    mockHeartbeatMusicQuiz.mockResolvedValue(false);
     const pendingInfo = deferred<typeof QUIZ_INFO>();
     mockGetMusicQuizInfo.mockReturnValueOnce(pendingInfo.promise);
     const player = useMusicQuizPlayer({ notifyError: vi.fn() });
@@ -623,6 +632,7 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
 
     expect(player.gameRemoved.value).toBe(true);
+    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
     expect(player.info.value).toBeNull();
     expect(player.playerId.value).toBeNull();
     expect(player.state.value).toBeNull();
@@ -706,6 +716,36 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toBeNull();
     expect(player.gameRemoved.value).toBe(true);
     expect(storedPlayerId.value).toBeNull();
+  });
+
+  it("does not carry joined status into a later unjoined game", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_removed" },
+    });
+    expect(player.gameRemoved.value).toBe(true);
+    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_updated", state: PUBLIC_STATE },
+    });
+    await flushPromises();
+    expect(player.gameRemoved.value).toBe(false);
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_removed" },
+    });
+
+    expect(player.gameRemoved.value).toBe(false);
+    expect(mockMarkJoinedGameEnded).toHaveBeenCalledOnce();
   });
 
   it("only handles provider events from the active quiz instance", async () => {

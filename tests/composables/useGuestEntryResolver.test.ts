@@ -3,6 +3,7 @@ import {
   useGuestEntryResolver,
   type GuestEntryState,
 } from "@/composables/useGuestEntryResolver";
+import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { EventType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { defineComponent, h, type DeepReadonly, type Ref } from "vue";
@@ -139,6 +140,7 @@ describe("guest entry transitions", () => {
     wrapper = mountResolver((state) => {
       resolverState = state;
     });
+
     await vi.waitFor(() => expect(apiMock.sendCommand).toHaveBeenCalledOnce());
 
     signalProviderEvent({ event: "game_updated", state: {} });
@@ -149,6 +151,70 @@ describe("guest entry transitions", () => {
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
     expect(routerReplace).toHaveBeenCalledTimes(1);
     expect(routerReplace).toHaveBeenCalledWith("/guest/quiz");
+  });
+
+  it("keeps a joined guest on the Quiz route when their game ends", async () => {
+    setProviders("music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    markMusicQuizJoinedGameEnded();
+    apiMock.sendCommand.mockResolvedValue(null);
+    signalProviderEvent({ event: "game_removed" });
+    await expectState("quiz-ended");
+
+    expect(routeMock.path).toBe("/guest/quiz");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
+  });
+
+  it("routes an ended Quiz guest to an available Party", async () => {
+    setProviders("music_quiz", "party");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    markMusicQuizJoinedGameEnded();
+    apiMock.sendCommand.mockResolvedValue(null);
+    signalProviderEvent({ event: "game_removed" });
+    await expectState("party");
+
+    expect(routeMock.path).toBe("/guest/party");
+  });
+
+  it("does not let an in-flight refresh overwrite the ended state", async () => {
+    setProviders("music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    let resolveRefresh!: (value: null) => void;
+    apiMock.sendCommand
+      .mockImplementationOnce(
+        () =>
+          new Promise<null>((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      )
+      .mockResolvedValue(null);
+    signalProviderEvent({ event: "game_updated", state: {} });
+    await vi.waitFor(() =>
+      expect(apiMock.sendCommand).toHaveBeenCalledTimes(2),
+    );
+
+    markMusicQuizJoinedGameEnded();
+    signalProviderEvent({ event: "game_removed" });
+    resolveRefresh(null);
+    await expectState("quiz-ended");
+
+    expect(routeMock.path).toBe("/guest/quiz");
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(3);
   });
 
   it("ignores a provider event from an unrelated instance once scoped", async () => {

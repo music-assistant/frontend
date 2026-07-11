@@ -2,21 +2,21 @@
   <section
     class="bg-background flex min-h-screen flex-col gap-4 p-5 sm:gap-6 sm:p-8"
   >
-    <header class="flex items-start justify-between gap-4">
-      <div class="min-w-0">
-        <h1 class="truncate text-3xl font-black sm:text-4xl lg:text-5xl">
-          {{ state.name || $t("providers.music_quiz.title") }}
-        </h1>
-        <p class="text-muted-foreground text-base sm:text-lg lg:text-xl">
-          {{ phaseLabel }}
-          <span v-if="roundLabel"> • {{ roundLabel }}</span>
-        </p>
-      </div>
-      <Button variant="ghost-outline" size="lg" @click="emit('exit')">
-        <Minimize2 class="size-5" />
-        {{ $t("providers.music_quiz.exit_present_mode") }}
-      </Button>
-    </header>
+    <MusicQuizSessionHeader
+      :game="game"
+      :name="state.name"
+      :phase-label="phaseLabel"
+      :round-label="roundLabel"
+      :mode="state.mode"
+      present
+    >
+      <template #actions>
+        <Button variant="ghost-outline" size="lg" @click="emit('exit')">
+          <Minimize2 class="size-5" />
+          {{ $t("providers.music_quiz.exit_present_mode") }}
+        </Button>
+      </template>
+    </MusicQuizSessionHeader>
 
     <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
@@ -124,6 +124,8 @@ import MusicQuizLeaderboard, {
 import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPlayerTile from "@/components/music-quiz/MusicQuizPlayerTile.vue";
 import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
+import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
+import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import { Button } from "@/components/ui/button";
 import type {
   MusicQuizCurrentRound,
@@ -136,6 +138,7 @@ import { computed, watch, type Component } from "vue";
 
 const props = defineProps<{
   state: MusicQuizSupportedHostState;
+  game: MusicQuizGameDefinition;
   currentRound: MusicQuizCurrentRound | null;
   leaderboardRows: MusicQuizLeaderboardRow[];
   winnerText: string;

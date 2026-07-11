@@ -1,5 +1,8 @@
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
-import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
+import type {
+  MusicQuizPhase,
+  MusicQuizSupportedHostState,
+} from "@/composables/useMusicQuiz";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -31,22 +34,7 @@ const HOST_STATE: MusicQuizSupportedHostState = {
 
 describe("MusicQuizHostPanel", () => {
   it("offers the host an end-game action", async () => {
-    const wrapper = mount(MusicQuizHostPanel, {
-      props: {
-        state: HOST_STATE,
-        busy: false,
-        joinLink: HOST_STATE.join_url,
-        isLastRound: false,
-      },
-      slots: {
-        game: "<div />",
-      },
-      global: {
-        stubs: {
-          MusicQuizQrCard: true,
-        },
-      },
-    });
+    const wrapper = mountPanel("lobby");
 
     const endGameButton = wrapper
       .findAll("button")
@@ -57,4 +45,42 @@ describe("MusicQuizHostPanel", () => {
     await endGameButton?.trigger("click");
     expect(wrapper.emitted("endGame")).toHaveLength(1);
   });
+
+  it.each([
+    ["lobby", "providers.music_quiz.start"],
+    ["answering", "providers.music_quiz.phase_reveal"],
+    ["reveal", "providers.music_quiz.next"],
+    ["finished", "providers.music_quiz.new_game"],
+  ] as const)(
+    "keeps the %s lifecycle action in the shared control bar",
+    (phase, actionLabel) => {
+      const wrapper = mountPanel(phase);
+      const actions = wrapper.get('[data-testid="quiz-host-actions"]');
+
+      expect(actions.text()).toContain(
+        "providers.music_quiz.enter_present_mode",
+      );
+      expect(actions.text()).toContain("End game");
+      expect(actions.text()).toContain(actionLabel);
+    },
+  );
 });
+
+function mountPanel(phase: MusicQuizPhase) {
+  return mount(MusicQuizHostPanel, {
+    props: {
+      state: { ...HOST_STATE, phase },
+      busy: false,
+      joinLink: HOST_STATE.join_url,
+      isLastRound: false,
+    },
+    slots: {
+      game: "<div />",
+    },
+    global: {
+      stubs: {
+        MusicQuizQrCard: true,
+      },
+    },
+  });
+}

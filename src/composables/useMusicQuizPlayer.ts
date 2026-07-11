@@ -22,6 +22,7 @@ import {
   getMusicQuizErrorMessage,
   isNoActiveGameError,
 } from "@/helpers/music_quiz";
+import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
@@ -54,6 +55,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
   let unsubscribeProviderEvent: (() => void) | undefined;
   let reconnectPlayerId: string | null = null;
+  let joinedGame = false;
   let requestedPlayerStateId: string | null = null;
   let playerStateResolutionPromise: Promise<boolean> | null = null;
   let loadingRequestId = 0;
@@ -86,7 +88,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       const nextInfo = await getMusicQuizInfo();
       if (loadingRequestId !== requestId) return;
       info.value = nextInfo;
-      gameRemoved.value = !nextInfo;
+      if (nextInfo) joinedGame = false;
+      gameRemoved.value = !nextInfo && joinedGame;
     } catch (err) {
       if (loadingRequestId !== requestId) return;
       notifyError(
@@ -113,6 +116,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
     const storedPlayerId = getStoredMusicQuizPlayerId();
     if (storedPlayerId) {
+      joinedGame = true;
       await reconnectPlayer(storedPlayerId);
     } else {
       await fetchInfo();
@@ -124,6 +128,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       const result = await joinMusicQuiz(name);
       storeMusicQuizPlayerId(result.player_id);
+      joinedGame = true;
       applyPlayerState(result.state);
       gameRemoved.value = false;
       void startHeartbeat(result.player_id);
@@ -188,6 +193,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
   async function leave() {
     clearActivePlayer();
+    joinedGame = false;
+    gameRemoved.value = false;
   }
 
   onMounted(() => {
@@ -297,8 +304,11 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         void fetchInfo();
       }
     } else if (payload.event === "game_removed") {
+      const wasJoined = joinedGame || !!playerId.value;
+      if (wasJoined) markMusicQuizJoinedGameEnded();
       clearActivePlayer();
-      gameRemoved.value = true;
+      joinedGame = false;
+      gameRemoved.value = wasJoined;
     }
   }
 

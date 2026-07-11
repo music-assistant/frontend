@@ -9,11 +9,24 @@
     <div class="flex flex-col gap-4">
       <slot name="game" />
 
-      <div v-if="showActions" class="flex flex-wrap justify-end gap-2">
+      <div
+        v-if="showActions"
+        class="bg-muted/40 flex min-h-14 flex-wrap items-center justify-end gap-2 rounded-lg border p-2"
+        data-testid="quiz-host-actions"
+      >
         <Button
           :disabled="busy"
           type="button"
           variant="outline"
+          @click="emit('present')"
+        >
+          <Maximize2 class="size-4" />
+          {{ $t("providers.music_quiz.enter_present_mode") }}
+        </Button>
+        <Button
+          :disabled="busy"
+          type="button"
+          variant="destructive"
           @click="emit('endGame')"
         >
           <Square class="size-4" />
@@ -65,7 +78,14 @@ import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
 import { Button } from "@/components/ui/button";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { Eye, Play, RotateCcw, SkipForward, Square } from "@lucide/vue";
+import {
+  Eye,
+  Maximize2,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Square,
+} from "@lucide/vue";
 import type { VNode } from "vue";
 
 withDefaults(
@@ -83,6 +103,7 @@ withDefaults(
 defineSlots<{ game: () => VNode[] }>();
 const emit = defineEmits<{
   endGame: [];
+  present: [];
   start: [];
   reveal: [];
   next: [];

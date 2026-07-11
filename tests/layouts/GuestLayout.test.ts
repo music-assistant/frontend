@@ -8,8 +8,14 @@ vi.mock("@/composables/useGuestEntryResolver", () => ({
   useGuestEntryResolver: () => ({ state: ref("inactive") }),
 }));
 
+vi.mock("vuetify", () => ({
+  useTheme: () => ({
+    current: ref({ dark: false }),
+  }),
+}));
+
 describe("GuestLayout", () => {
-  it("provides a viewport-height scroll container for guest routes", () => {
+  it("provides shared branding and a viewport-height guest container", () => {
     const wrapper = mount(GuestLayout, {
       global: {
         stubs: {
@@ -19,6 +25,10 @@ describe("GuestLayout", () => {
     });
 
     expect(wrapper.classes()).toContain("h-dvh");
-    expect(wrapper.classes()).toContain("overflow-y-auto");
+    expect(wrapper.classes()).toContain("overflow-hidden");
+    expect(
+      wrapper.get('img[alt="Music Assistant"]').attributes("src"),
+    ).toContain("logo-dark.svg");
+    expect(wrapper.get("main").classes()).toContain("overflow-y-auto");
   });
 });

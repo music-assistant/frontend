@@ -20,30 +20,7 @@
       <Progress :model-value="(step / TOTAL_STEPS) * 100" />
     </div>
 
-    <section
-      v-if="step === 1"
-      class="flex flex-col items-center gap-4 py-4 text-center"
-    >
-      <span
-        class="bg-primary/10 text-primary grid size-16 place-items-center rounded-full"
-      >
-        <PartyPopper class="size-8" />
-      </span>
-      <div class="flex flex-col gap-1">
-        <h2 class="text-xl font-bold">
-          {{ $t("providers.music_quiz.title") }}
-        </h2>
-        <p class="text-muted-foreground">
-          {{ $t("providers.music_quiz.create_intro") }}
-        </p>
-      </div>
-      <Button size="lg" @click="step = 2">
-        <Sparkles class="size-4" />
-        {{ $t("providers.music_quiz.new_game") }}
-      </Button>
-    </section>
-
-    <section v-else-if="step === 2" class="flex flex-col gap-3">
+    <section v-if="step === 1" class="flex flex-col gap-3">
       <h2 class="text-lg font-semibold">
         {{ $t("providers.music_quiz.choose_game_type") }}
       </h2>
@@ -103,10 +80,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, PartyPopper, Sparkles } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { computed, ref } from "vue";
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 2;
 
 const props = withDefaults(
   defineProps<{ busy: boolean; availableQuizTypes?: string[] }>(),
@@ -121,20 +98,16 @@ const availableGameTypes = computed(() =>
     isMusicQuizGameAvailable(type, props.availableQuizTypes),
   ),
 );
-const step = ref<1 | 2 | 3>(1);
+const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 
 function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;
-  step.value = 3;
+  step.value = 2;
 }
 
 function back() {
-  if (step.value === 3) {
-    step.value = 2;
-  } else if (step.value === 2) {
-    step.value = 1;
-  }
+  step.value = 1;
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {

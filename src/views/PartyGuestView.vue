@@ -1,10 +1,5 @@
 <template>
   <div class="guest-view">
-    <!-- Logo -->
-    <div class="guest-logo">
-      <img :src="logoSrc" alt="Music Assistant" class="logo-img" />
-    </div>
-
     <!-- Listen in (shared audio) -->
     <PartyListenIn />
 
@@ -239,14 +234,7 @@ import {
   watch,
 } from "vue";
 import { toast } from "vue-sonner";
-import { useTheme } from "vuetify";
 const searchBarRef = ref<InstanceType<typeof PartySearchBar> | null>(null);
-const theme = useTheme();
-const logoSrc = computed(() =>
-  theme.current.value.dark
-    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
-    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
-);
 
 // --- Composables ---
 const { config: partyConfig, fetchConfig } = usePartyConfig();
@@ -605,28 +593,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.guest-logo {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 0.75rem;
-  flex-shrink: 0;
-}
-
-.logo-img {
-  height: 28px;
-  width: auto;
-  opacity: 0.85;
-  margin-bottom: 1rem;
-}
-
 .guest-view {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
-  height: 100dvh;
-  max-height: 100dvh;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -716,11 +690,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-  .logo-img {
-    height: 25px;
-    margin-bottom: 0.2rem;
-  }
-
   .guest-view {
     padding: 0.75rem;
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));

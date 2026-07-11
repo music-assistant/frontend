@@ -74,6 +74,7 @@ describe("HitsterSetup", () => {
     });
     expect(wrapper.text()).not.toContain("providers.music_quiz.difficulty");
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
+    expect(wrapper.get("#hitster-name").element).toHaveProperty("value", "");
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')

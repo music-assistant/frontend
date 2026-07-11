@@ -1,66 +1,61 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
-    <Card v-if="gameRemoved">
+    <Card v-if="gameRemoved" role="status">
+      <CardHeader class="items-center text-center">
+        <CircleStop class="text-muted-foreground size-10" />
+        <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
+        <CardDescription>
+          {{ $t("providers.music_quiz.game_ended_detail") }}
+        </CardDescription>
+      </CardHeader>
       <CardContent>
-        <p class="text-muted-foreground text-center">
-          {{ $t("providers.music_quiz.game_no_longer_available") }}
+        <p class="text-muted-foreground text-center text-sm">
+          {{ $t("providers.music_quiz.game_ended_wait") }}
         </p>
       </CardContent>
     </Card>
 
     <MusicQuizUnsupportedGame v-else-if="unsupportedGame" />
 
-    <Card v-else-if="!playerId && !loading">
-      <CardHeader class="items-center text-center">
-        <span
-          class="bg-primary/10 text-primary mb-1 grid size-14 place-items-center rounded-full"
-        >
-          <PartyPopper class="size-7" />
-        </span>
-        <CardTitle class="text-2xl">
-          {{ activeInfo?.name || $t("providers.music_quiz.title") }}
-        </CardTitle>
-        <div v-if="activeInfo" class="flex flex-wrap justify-center gap-2 pt-1">
-          <Badge variant="secondary">
-            {{
-              $t("providers.music_quiz.players_count", [
-                activeInfo.player_count,
-              ])
-            }}
-          </Badge>
-          <Badge variant="secondary">
-            {{
-              $t("providers.music_quiz.rounds_count", [activeInfo.round_count])
-            }}
-          </Badge>
-          <Badge
-            v-if="resolvedDefinition?.game.supportsListenIn"
-            variant="secondary"
-          >
-            {{ modeLabel }}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <MusicQuizJoinForm
-          :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
-          :busy="busy"
-          @join="handleJoin"
-        />
-      </CardContent>
-    </Card>
+    <template
+      v-else-if="activeInfo && !playerId && !loading && resolvedDefinition"
+    >
+      <MusicQuizSessionHeader
+        :game="resolvedDefinition.game"
+        :name="activeInfo.name"
+        :phase-label="infoPhaseText"
+        :round-label="
+          $t('providers.music_quiz.rounds_count', [activeInfo.round_count])
+        "
+        :mode="activeInfo.mode"
+      />
+      <Card>
+        <CardContent>
+          <MusicQuizJoinForm
+            :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
+            :busy="busy"
+            @join="handleJoin"
+          />
+        </CardContent>
+      </Card>
+    </template>
 
     <template v-else-if="activeState && resolvedDefinition">
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
+      <MusicQuizSessionHeader
+        :game="resolvedDefinition.game"
+        :name="activeState.name"
+        :phase-label="phaseText"
+        :round-label="roundProgress"
+        :mode="activeState.mode"
+      />
+
       <MusicQuizPlayerHeader
         :player-name="activeState.you.name"
         :rank="playerRank"
-        :round-progress="roundProgress"
-        :round-fraction="roundFraction"
         :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
-        :phase-label="phaseText"
       />
 
       <ListenIn
@@ -85,12 +80,20 @@
       />
     </template>
 
-    <Card v-else>
+    <Card v-else-if="loading">
       <CardContent>
         <p class="text-muted-foreground text-center">
           {{ $t("providers.music_quiz.loading") }}
         </p>
       </CardContent>
+    </Card>
+
+    <Card v-else role="status">
+      <CardHeader class="items-center text-center">
+        <Clock3 class="text-muted-foreground size-10" />
+        <CardTitle>{{ $t("guest.no_quiz_title") }}</CardTitle>
+        <CardDescription>{{ $t("guest.no_quiz_description") }}</CardDescription>
+      </CardHeader>
     </Card>
   </div>
 </template>
@@ -106,9 +109,15 @@ import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
+import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
 import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
 import {
@@ -124,7 +133,7 @@ import {
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper } from "@lucide/vue";
+import { CircleStop, Clock3 } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -168,12 +177,6 @@ const mode = computed(() => {
   if (activeState.value) return activeState.value.mode;
   return activeInfo.value?.mode;
 });
-const modeLabel = computed(() =>
-  mode.value === "remote"
-    ? $t("providers.music_quiz.mode_remote")
-    : $t("providers.music_quiz.mode_venue"),
-);
-
 const listenInRecheckEvents = [EventType.PROVIDER_EVENT];
 const listenInLabels = computed<ListenInLabels>(() => ({
   title: $t("providers.music_quiz.listen_in"),
@@ -221,15 +224,6 @@ const roundProgress = computed(() => {
   return `${label} ${currentRound.value.round_index + 1}/${activeState.value.round_count}`;
 });
 
-const roundFraction = computed(() => {
-  const currentState = activeState.value;
-  if (!currentState || currentState.round_count <= 0) return 0;
-  if (!currentRound.value) return 100;
-  return (
-    ((currentRound.value.round_index + 1) / currentState.round_count) * 100
-  );
-});
-
 const playerRoundScoreLabel = computed(() =>
   activeState.value
     ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
@@ -241,6 +235,13 @@ const phaseText = computed(() => {
   const definition = resolvedDefinition.value;
   return currentState && definition
     ? $t(getMusicQuizPhaseLabelKey(definition.game, currentState.phase))
+    : "";
+});
+const infoPhaseText = computed(() => {
+  const currentInfo = activeInfo.value;
+  const definition = resolvedDefinition.value;
+  return currentInfo && definition
+    ? $t(getMusicQuizPhaseLabelKey(definition.game, currentInfo.phase))
     : "";
 });
 
@@ -272,7 +273,7 @@ async function handleReady() {
 
 <style scoped>
 .music-quiz-player {
-  min-height: 100dvh;
+  min-height: 100%;
   padding: calc(0.75rem + env(safe-area-inset-top, 0px))
     calc(0.75rem + env(safe-area-inset-right, 0px))
     calc(1rem + env(safe-area-inset-bottom, 0px))

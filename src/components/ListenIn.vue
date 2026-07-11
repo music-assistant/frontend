@@ -7,7 +7,10 @@
     <div class="listen-in__row">
       <Headphones :size="20" class="listen-in__icon" />
       <div class="listen-in__text">
-        <span class="listen-in__title">{{ title }}</span>
+        <span class="listen-in__title-row">
+          <span class="listen-in__title">{{ title }}</span>
+          <span class="listen-in__attribution">{{ labels.poweredBy }}</span>
+        </span>
         <span class="listen-in__desc">{{ description }}</span>
       </div>
       <Button
@@ -29,7 +32,6 @@
         @update:model-value="onToggle"
       />
     </div>
-    <span class="listen-in__attribution">{{ labels.poweredBy }}</span>
   </div>
 </template>
 
@@ -117,8 +119,6 @@ function onToggle(enabled: boolean) {
 <style scoped>
 .listen-in {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
   padding: 0.6rem 0.9rem;
   margin-bottom: 1rem;
   border-radius: 12px;
@@ -155,6 +155,13 @@ function onToggle(enabled: boolean) {
   font-size: 0.9rem;
 }
 
+.listen-in__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
 .listen-in__desc {
   font-size: 0.78rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
@@ -167,6 +174,6 @@ function onToggle(enabled: boolean) {
 .listen-in__attribution {
   font-size: 0.68rem;
   color: rgba(var(--v-theme-on-surface), 0.5);
-  text-align: center;
+  font-weight: 400;
 }
 </style>

@@ -161,6 +161,7 @@ describe("GuessTheSongSetup", () => {
       ],
     });
     const wrapper = mountConfig();
+    expect(wrapper.get("#quiz-name").element).toHaveProperty("value", "");
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
@@ -176,7 +177,7 @@ describe("GuessTheSongSetup", () => {
       .find((button) => button.text().includes("create"))
       ?.trigger("click");
 
-    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+    expect(wrapper.emitted("create")?.[0]?.[0]).toEqual({
       quiz_type: "guess_the_song",
       answer_type: "multiple_choice",
       config: {
