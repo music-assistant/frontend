@@ -2,6 +2,7 @@ import { MUSIC_QUIZ_ANSWER_TYPES } from "@/components/music-quiz/answer_types";
 import {
   DEFAULT_MUSIC_QUIZ_GAME_TYPE,
   MUSIC_QUIZ_GAME_TYPES,
+  isMusicQuizGameAvailable,
   resolveMusicQuizDefinition,
 } from "@/components/music-quiz/game_types";
 import type {
@@ -16,6 +17,9 @@ import type {
   MusicQuizSupportedHostState,
   MusicQuizSupportedPersonalizedState,
   MusicQuizSupportedRound,
+  MusicQuizTriviaHostState,
+  MusicQuizTriviaPersonalizedState,
+  MusicQuizTriviaRound,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
 import { shallowMount } from "@vue/test-utils";
@@ -155,6 +159,44 @@ const hitsterHostState = {
   rounds: [],
 } satisfies MusicQuizHitsterHostState;
 
+const triviaRound = {
+  question: "Which artist released this album?",
+  round_index: 0,
+  started_at: 1,
+  deadline: Date.now() / 1000 + 30,
+  suggestions: [
+    { suggestion_id: "one", label: "Artist One" },
+    { suggestion_id: "two", label: "Artist Two" },
+  ],
+} satisfies MusicQuizTriviaRound;
+
+const triviaPlayerState = {
+  quiz_type: "trivia",
+  answer_type: "multiple_choice",
+  phase: "answering",
+  name: "Trivia",
+  round_count: 5,
+  suggestion_count: 2,
+  answer_duration: 30,
+  mode: "venue",
+  players: [],
+  current_round: triviaRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+} satisfies MusicQuizTriviaPersonalizedState;
+
+const triviaHostState = {
+  ...triviaPlayerState,
+  created_at: 1,
+  sources: [],
+  join_url: "https://example.test/join",
+  rounds: [],
+} satisfies MusicQuizTriviaHostState;
+
 interface GameMountFixture {
   playerState: MusicQuizSupportedPersonalizedState;
   hostState: MusicQuizSupportedHostState;
@@ -171,6 +213,11 @@ const GAME_MOUNT_FIXTURES = {
     playerState: hitsterPlayerState,
     hostState: hitsterHostState,
     currentRound: hitsterRound,
+  },
+  trivia: {
+    playerState: triviaPlayerState,
+    hostState: triviaHostState,
+    currentRound: triviaRound,
   },
 } satisfies Record<MusicQuizType, GameMountFixture>;
 
@@ -192,6 +239,7 @@ describe("Music Quiz registries", () => {
     expect(MUSIC_QUIZ_GAME_TYPES.map((game) => game.id)).toEqual([
       "guess_the_song",
       "hitster",
+      "trivia",
     ]);
     expect(MUSIC_QUIZ_ANSWER_TYPES.map((answer) => answer.id)).toEqual([
       "multiple_choice",
@@ -233,6 +281,7 @@ describe("Music Quiz registries", () => {
     const expected = {
       guess_the_song: "multiple_choice",
       hitster: "timeline",
+      trivia: "multiple_choice",
     } satisfies MusicQuizGameAnswerTypeMap;
 
     expect(mapping).toEqual(expected);
@@ -240,6 +289,23 @@ describe("Music Quiz registries", () => {
       MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "hitster")
         ?.supportsListenIn,
     ).toBe(true);
+    expect(
+      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia")
+        ?.supportsListenIn,
+    ).toBe(false);
+  });
+
+  it("gates only Trivia on backend availability", () => {
+    const guess = MUSIC_QUIZ_GAME_TYPES.find(
+      (game) => game.id === "guess_the_song",
+    );
+    const hitster = MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "hitster");
+    const trivia = MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia");
+
+    expect(guess && isMusicQuizGameAvailable(guess, [])).toBe(true);
+    expect(hitster && isMusicQuizGameAvailable(hitster, [])).toBe(true);
+    expect(trivia && isMusicQuizGameAvailable(trivia, [])).toBe(false);
+    expect(trivia && isMusicQuizGameAvailable(trivia, ["trivia"])).toBe(true);
   });
 
   it.each(MUSIC_QUIZ_GAME_TYPES)("mounts every $id game adapter", (game) => {

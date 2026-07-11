@@ -93,7 +93,10 @@
 <script setup lang="ts">
 import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
-import { resolveMusicQuizDefinition } from "@/components/music-quiz/game_types";
+import {
+  getMusicQuizPhaseLabelKey,
+  resolveMusicQuizDefinition,
+} from "@/components/music-quiz/game_types";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
@@ -229,14 +232,11 @@ const playerRoundScoreLabel = computed(() =>
 );
 
 const phaseText = computed(() => {
-  if (!activeState.value) return "";
-  if (activeState.value.phase === "lobby")
-    return $t("providers.music_quiz.phase_waiting_for_players");
-  if (activeState.value.phase === "answering")
-    return $t("providers.music_quiz.phase_answers_open");
-  if (activeState.value.phase === "reveal")
-    return $t("providers.music_quiz.phase_enjoy_track");
-  return $t("providers.music_quiz.phase_finished");
+  const currentState = activeState.value;
+  const definition = resolvedDefinition.value;
+  return currentState && definition
+    ? $t(getMusicQuizPhaseLabelKey(definition.game, currentState.phase))
+    : "";
 });
 
 const isConnectionDegraded = computed(

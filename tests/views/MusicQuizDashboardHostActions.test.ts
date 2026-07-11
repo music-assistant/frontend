@@ -15,6 +15,8 @@ vi.mock("@/composables/useMusicQuizHost", () => ({
 }));
 
 vi.mock("@/components/music-quiz/game_types", () => ({
+  getMusicQuizPhaseLabelKey: () =>
+    "providers.music_quiz.phase_waiting_for_players",
   resolveMusicQuizDefinition: mockResolveMusicQuizDefinition,
 }));
 
@@ -86,6 +88,7 @@ describe("MusicQuizDashboardView host actions", () => {
     mockUseMusicQuizHost.mockReset();
     mockUseMusicQuizHost.mockReturnValue({
       busy: ref(false),
+      availableQuizTypes: ref(["guess_the_song", "hitster"]),
       create: vi.fn(),
       currentRound: ref(null),
       deleteGame: mockDeleteGame,
@@ -93,7 +96,6 @@ describe("MusicQuizDashboardView host actions", () => {
       joinLink: ref(HOST_STATE.join_url),
       loading: ref(false),
       next: vi.fn(),
-      phaseLabel: ref("Waiting for players"),
       reset: vi.fn(),
       reveal: vi.fn(),
       start: vi.fn(),

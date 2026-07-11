@@ -49,11 +49,10 @@
       </h2>
       <div class="grid gap-3 sm:grid-cols-2">
         <button
-          v-for="type in gameTypes"
+          v-for="type in availableGameTypes"
           :key="type.id"
           type="button"
-          class="hover:border-primary focus-visible:ring-ring flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border"
-          :disabled="!type.available"
+          class="hover:border-primary focus-visible:ring-ring flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
           @click="selectType(type)"
         >
           <span
@@ -64,9 +63,6 @@
           <span class="flex min-w-0 flex-col gap-1">
             <span class="flex items-center gap-2 font-semibold">
               {{ $t(type.labelKey) }}
-              <Badge v-if="!type.available" variant="secondary">
-                {{ $t("providers.music_quiz.coming_soon") }}
-              </Badge>
             </span>
             <span class="text-muted-foreground text-sm">
               {{ $t(type.descriptionKey) }}
@@ -100,27 +96,35 @@
 <script setup lang="ts">
 import {
   MUSIC_QUIZ_GAME_TYPES,
+  isMusicQuizGameAvailable,
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft, PartyPopper, Sparkles } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const TOTAL_STEPS = 3;
 
-defineProps<{ busy: boolean }>();
+const props = withDefaults(
+  defineProps<{ busy: boolean; availableQuizTypes?: string[] }>(),
+  {
+    availableQuizTypes: () => [],
+  },
+);
 const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
 
-const gameTypes = MUSIC_QUIZ_GAME_TYPES;
+const availableGameTypes = computed(() =>
+  MUSIC_QUIZ_GAME_TYPES.filter((type) =>
+    isMusicQuizGameAvailable(type, props.availableQuizTypes),
+  ),
+);
 const step = ref<1 | 2 | 3>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 
 function selectType(type: MusicQuizGameDefinition) {
-  if (!type.available) return;
   selectedType.value = type;
   step.value = 3;
 }

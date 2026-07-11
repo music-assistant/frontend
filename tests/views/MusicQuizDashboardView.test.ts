@@ -50,7 +50,11 @@ describe("MusicQuizDashboardView", () => {
     mockSendCommand.mockReset();
     mockSubscribe.mockReset();
     mockToastError.mockReset();
-    mockSendCommand.mockResolvedValue(null);
+    mockSendCommand.mockImplementation((command: string) =>
+      command === "music_quiz/available_quiz_types"
+        ? Promise.resolve(["guess_the_song", "hitster"])
+        : Promise.resolve(null),
+    );
     mockSubscribe.mockReturnValue(() => {});
   });
 
@@ -75,6 +79,9 @@ describe("MusicQuizDashboardView", () => {
     await flushPromises();
 
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/get");
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "music_quiz/available_quiz_types",
+    );
     expect(mockToastError).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("providers.music_quiz.no_active_game");
     expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
