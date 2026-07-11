@@ -16,6 +16,85 @@
         </p>
       </div>
 
+      <div
+        v-if="state.you.answer"
+        ref="postPlacementRef"
+        data-testid="timeline-post-placement"
+        class="scroll-mt-3"
+        tabindex="-1"
+        aria-live="polite"
+      >
+        <Card v-if="!state.you.answer.finished">
+          <CardContent class="flex flex-col gap-4">
+            <template v-if="activeBonus">
+              <div>
+                <h2 class="font-semibold">{{ activeBonusLabel }}</h2>
+                <p class="text-muted-foreground text-sm">
+                  {{ $t("providers.music_quiz.timeline_bonus_optional") }}
+                </p>
+              </div>
+
+              <form
+                v-if="activeBonus.mode === 'free_text'"
+                class="flex flex-col gap-3"
+                @submit.prevent="submitTextBonus"
+              >
+                <Label :for="`timeline-${activeBonus.bonus_type}-answer`">
+                  {{ activeBonusLabel }}
+                </Label>
+                <Input
+                  :id="`timeline-${activeBonus.bonus_type}-answer`"
+                  v-model="bonusText"
+                  :disabled="busy"
+                  :maxlength="MAX_BONUS_TEXT_LENGTH"
+                  autocomplete="off"
+                />
+                <Button type="submit" :disabled="busy || !bonusText.trim()">
+                  <Send class="size-4" />
+                  {{ $t("providers.music_quiz.timeline_submit_bonus") }}
+                </Button>
+              </form>
+
+              <div v-else class="grid gap-2 sm:grid-cols-2">
+                <Button
+                  v-for="option in activeBonus.options"
+                  :key="option.option_id"
+                  type="button"
+                  variant="outline"
+                  class="h-auto min-h-14 justify-start whitespace-normal text-left"
+                  :disabled="busy"
+                  @click="submitChoiceBonus(option.option_id)"
+                >
+                  {{ option.label }}
+                </Button>
+              </div>
+            </template>
+
+            <p v-else class="text-muted-foreground text-center" role="status">
+              {{ $t("providers.music_quiz.timeline_all_bonuses_answered") }}
+            </p>
+
+            <Button
+              type="button"
+              :variant="activeBonus ? 'outline' : 'default'"
+              :disabled="busy"
+              @click="finish"
+            >
+              <Check class="size-4" />
+              {{
+                activeBonus
+                  ? $t("providers.music_quiz.timeline_skip_and_finish")
+                  : $t("providers.music_quiz.timeline_finish_answer")
+              }}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <p v-else class="text-muted-foreground text-center" role="status">
+          {{ $t("providers.music_quiz.answered") }}
+        </p>
+      </div>
+
       <TimelineDisplay
         :entries="currentRound.timeline"
         :selectable="true"
@@ -26,80 +105,6 @@
         :selected-next-entry-id="state.you.answer?.next_entry_id ?? undefined"
         @select="place"
       />
-
-      <Card v-if="state.you.answer && !state.you.answer.finished">
-        <CardContent class="flex flex-col gap-4">
-          <template v-if="activeBonus">
-            <div>
-              <h2 class="font-semibold">{{ activeBonusLabel }}</h2>
-              <p class="text-muted-foreground text-sm">
-                {{ $t("providers.music_quiz.timeline_bonus_optional") }}
-              </p>
-            </div>
-
-            <form
-              v-if="activeBonus.mode === 'free_text'"
-              class="flex flex-col gap-3"
-              @submit.prevent="submitTextBonus"
-            >
-              <Label :for="`timeline-${activeBonus.bonus_type}-answer`">
-                {{ activeBonusLabel }}
-              </Label>
-              <Input
-                :id="`timeline-${activeBonus.bonus_type}-answer`"
-                v-model="bonusText"
-                :disabled="busy"
-                :maxlength="MAX_BONUS_TEXT_LENGTH"
-                autocomplete="off"
-              />
-              <Button type="submit" :disabled="busy || !bonusText.trim()">
-                <Send class="size-4" />
-                {{ $t("providers.music_quiz.timeline_submit_bonus") }}
-              </Button>
-            </form>
-
-            <div v-else class="grid gap-2 sm:grid-cols-2">
-              <Button
-                v-for="option in activeBonus.options"
-                :key="option.option_id"
-                type="button"
-                variant="outline"
-                class="h-auto min-h-14 justify-start whitespace-normal text-left"
-                :disabled="busy"
-                @click="submitChoiceBonus(option.option_id)"
-              >
-                {{ option.label }}
-              </Button>
-            </div>
-          </template>
-
-          <p v-else class="text-muted-foreground text-center" role="status">
-            {{ $t("providers.music_quiz.timeline_all_bonuses_answered") }}
-          </p>
-
-          <Button
-            type="button"
-            :variant="activeBonus ? 'outline' : 'default'"
-            :disabled="busy"
-            @click="finish"
-          >
-            <Check class="size-4" />
-            {{
-              activeBonus
-                ? $t("providers.music_quiz.timeline_skip_and_finish")
-                : $t("providers.music_quiz.timeline_finish_answer")
-            }}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <p
-        v-else-if="state.you.answer?.finished"
-        class="text-muted-foreground text-center"
-        role="status"
-      >
-        {{ $t("providers.music_quiz.answered") }}
-      </p>
     </template>
 
     <p v-else class="text-muted-foreground text-center" role="status">
@@ -173,6 +178,7 @@
 <script setup lang="ts">
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
+import { useTimelinePostPlacementFocus } from "@/components/music-quiz/answer-types/timeline/useTimelinePostPlacementFocus";
 import type {
   MusicQuizPlayerAnswerAdapterEmits,
   MusicQuizPlayerAnswerAdapterProps,
@@ -204,6 +210,10 @@ const props =
 const emit = defineEmits<MusicQuizPlayerAnswerAdapterEmits<"timeline">>();
 
 const bonusText = ref("");
+const { postPlacementRef } = useTimelinePostPlacementFocus(
+  () => !!props.state.you.answer,
+  () => props.busy,
+);
 const answeredBonusTypes = computed(
   () =>
     new Set(
