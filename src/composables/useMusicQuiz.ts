@@ -56,6 +56,7 @@ export type MusicQuizAnswerSubmission =
 export type MusicQuizGameAnswerTypeMap = {
   guess_the_song: "multiple_choice";
   hitster: "timeline";
+  trivia: "multiple_choice";
 };
 
 export type MusicQuizType = keyof MusicQuizGameAnswerTypeMap;
@@ -96,6 +97,19 @@ interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
 
 export type MusicQuizGuessTheSongPublicState = MusicQuizGuessTheSongStateBase;
 
+interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
+  quiz_type: "trivia";
+  answer_type: "multiple_choice";
+  round_count: number;
+  suggestion_count: number;
+  answer_duration: number;
+  mode: MusicQuizMode;
+  players: MusicQuizMultipleChoicePlayer[];
+  current_round?: MusicQuizTriviaRound | null;
+}
+
+export type MusicQuizTriviaPublicState = MusicQuizTriviaStateBase;
+
 interface MusicQuizHitsterStateBase extends MusicQuizStateIdentity {
   quiz_type: "hitster";
   answer_type: "timeline";
@@ -112,7 +126,8 @@ export type MusicQuizHitsterPublicState = MusicQuizHitsterStateBase;
 
 export type MusicQuizSupportedPublicState =
   | MusicQuizGuessTheSongPublicState
-  | MusicQuizHitsterPublicState;
+  | MusicQuizHitsterPublicState
+  | MusicQuizTriviaPublicState;
 
 type MusicQuizMismatchedStateIdentity = {
   [TGame in MusicQuizType]: [
@@ -140,13 +155,22 @@ export interface MusicQuizGuessTheSongPersonalizedState extends MusicQuizGuessTh
   you: MusicQuizMultipleChoiceYou;
 }
 
+export interface MusicQuizTriviaPersonalizedState extends MusicQuizTriviaStateBase {
+  you: MusicQuizMultipleChoiceYou;
+}
+
 export type MusicQuizSupportedPersonalizedState =
   | MusicQuizGuessTheSongPersonalizedState
-  | MusicQuizHitsterPersonalizedState;
+  | MusicQuizHitsterPersonalizedState
+  | MusicQuizTriviaPersonalizedState;
 
 export interface MusicQuizHitsterPersonalizedState extends MusicQuizHitsterStateBase {
   you: MusicQuizTimelineYou;
 }
+
+export type MusicQuizMultipleChoicePersonalizedState =
+  | MusicQuizGuessTheSongPersonalizedState
+  | MusicQuizTriviaPersonalizedState;
 
 export type MusicQuizUnsupportedPersonalizedState =
   MusicQuizUnsupportedPublicState;
@@ -169,9 +193,21 @@ export interface MusicQuizHitsterHostState extends MusicQuizHitsterStateBase {
   rounds: MusicQuizHitsterHostRound[];
 }
 
+export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
+  created_at: number;
+  sources: MusicQuizSource[];
+  join_url: string;
+  rounds: MusicQuizTriviaRound[];
+}
+
 export type MusicQuizSupportedHostState =
   | MusicQuizGuessTheSongHostState
-  | MusicQuizHitsterHostState;
+  | MusicQuizHitsterHostState
+  | MusicQuizTriviaHostState;
+
+export type MusicQuizMultipleChoiceHostState =
+  | MusicQuizGuessTheSongHostState
+  | MusicQuizTriviaHostState;
 
 export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState;
 
@@ -195,9 +231,18 @@ export interface MusicQuizHitsterInfo extends MusicQuizStateIdentity {
   mode: MusicQuizMode;
 }
 
+export interface MusicQuizTriviaInfo extends MusicQuizStateIdentity {
+  quiz_type: "trivia";
+  answer_type: "multiple_choice";
+  player_count: number;
+  round_count: number;
+  mode: MusicQuizMode;
+}
+
 export type MusicQuizSupportedInfo =
   | MusicQuizGuessTheSongInfo
-  | MusicQuizHitsterInfo;
+  | MusicQuizHitsterInfo
+  | MusicQuizTriviaInfo;
 
 export type MusicQuizUnsupportedInfo = MusicQuizFallbackState;
 
@@ -327,6 +372,11 @@ export interface MusicQuizGuessTheSongRound extends MusicQuizMultipleChoiceRound
   duration?: number | null;
 }
 
+export interface MusicQuizTriviaRound extends MusicQuizMultipleChoiceRound {
+  question: string;
+  answer_label?: string;
+}
+
 export interface MusicQuizTimelineEntry {
   entry_id: string;
   release_year: number;
@@ -431,7 +481,8 @@ export interface MusicQuizHitsterHostRound {
 
 export type MusicQuizSupportedRound =
   | MusicQuizGuessTheSongRound
-  | MusicQuizHitsterRound;
+  | MusicQuizHitsterRound
+  | MusicQuizTriviaRound;
 export type MusicQuizCurrentRound = MusicQuizSupportedRound;
 export type MusicQuizRound = MusicQuizSupportedRound;
 
@@ -481,9 +532,25 @@ export interface MusicQuizHitsterCreateRequest {
   config: MusicQuizHitsterConfig;
 }
 
+export interface MusicQuizTriviaConfig {
+  round_count: number;
+  suggestion_count: number;
+  answer_duration: number;
+  source_uris: string[];
+  name?: string;
+  difficulty: MusicQuizDifficulty;
+}
+
+export interface MusicQuizTriviaCreateRequest {
+  quiz_type: "trivia";
+  answer_type: "multiple_choice";
+  config: MusicQuizTriviaConfig;
+}
+
 export type MusicQuizCreateRequest =
   | MusicQuizGuessTheSongCreateRequest
-  | MusicQuizHitsterCreateRequest;
+  | MusicQuizHitsterCreateRequest
+  | MusicQuizTriviaCreateRequest;
 
 export type MusicQuizProviderEvent =
   | { event: "game_updated"; state: MusicQuizPublicState }
@@ -497,16 +564,18 @@ export function isSupportedMusicQuiz<
   T,
   | { quiz_type: "guess_the_song"; answer_type: "multiple_choice" }
   | { quiz_type: "hitster"; answer_type: "timeline" }
+  | { quiz_type: "trivia"; answer_type: "multiple_choice" }
 > {
   return (
     (value.quiz_type === "guess_the_song" &&
       value.answer_type === "multiple_choice") ||
-    (value.quiz_type === "hitster" && value.answer_type === "timeline")
+    (value.quiz_type === "hitster" && value.answer_type === "timeline") ||
+    (value.quiz_type === "trivia" && value.answer_type === "multiple_choice")
   );
 }
 
 export function parseMusicQuizType(value: string): MusicQuizRuntimeType {
-  return value === "guess_the_song" || value === "hitster"
+  return value === "guess_the_song" || value === "hitster" || value === "trivia"
     ? value
     : (value as MusicQuizUnsupportedType);
 }
@@ -533,6 +602,19 @@ export function isMusicQuizProviderEvent(
 }
 
 // Host commands (Scope.USERS_INVITE)
+export async function getAvailableMusicQuizTypes(): Promise<string[]> {
+  const result = await api.sendCommand<unknown>(
+    "music_quiz/available_quiz_types",
+  );
+  if (
+    !Array.isArray(result) ||
+    result.some((quizType) => typeof quizType !== "string")
+  ) {
+    throw new TypeError("Invalid available Music Quiz types response");
+  }
+  return result;
+}
+
 export function createMusicQuiz(request: MusicQuizCreateRequest) {
   const { quiz_type, config } = request;
   return api.sendCommand<MusicQuizHostState>("music_quiz/create", {

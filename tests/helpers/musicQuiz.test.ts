@@ -1,6 +1,7 @@
 import type {
   MusicQuizGuessTheSongPublicState,
   MusicQuizHitsterPublicState,
+  MusicQuizTriviaPublicState,
 } from "@/composables/useMusicQuiz";
 import { getMusicQuizRoundScoreLabel } from "@/helpers/music_quiz";
 import { describe, expect, it, vi } from "vitest";
@@ -98,5 +99,43 @@ describe("Music Quiz round score labels", () => {
     } satisfies MusicQuizGuessTheSongPublicState;
 
     expect(getMusicQuizRoundScoreLabel(state, "Player")).toBe("(+1000)");
+  });
+
+  it("uses multiple-choice point labels for Trivia", () => {
+    const state = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      phase: "reveal",
+      name: "Trivia",
+      round_count: 1,
+      suggestion_count: 2,
+      answer_duration: 30,
+      mode: "venue",
+      players: [
+        {
+          name: "Player",
+          score: 750,
+          ready: false,
+          answered: true,
+          active_from_round: 0,
+          last_answer: {
+            suggestion_id: "correct",
+            correct: true,
+            points: 750,
+          },
+        },
+      ],
+      current_round: {
+        round_index: 0,
+        started_at: 1,
+        deadline: 31,
+        question: "Who released Blue?",
+        suggestions: [],
+        correct_suggestion_id: "correct",
+        answer_label: "Joni Mitchell",
+      },
+    } satisfies MusicQuizTriviaPublicState;
+
+    expect(getMusicQuizRoundScoreLabel(state, "Player")).toBe("(+750)");
   });
 });

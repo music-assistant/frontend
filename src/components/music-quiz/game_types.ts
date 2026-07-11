@@ -12,11 +12,16 @@ import HitsterHostRound from "@/components/music-quiz/game-types/hitster/Hitster
 import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
 import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
 import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
+import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
+import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
+import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
+import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.vue";
 import type {
   MusicQuizGameAnswerTypeMap,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
-import { Disc3, ListMusic } from "@lucide/vue";
+import { BrainCircuit, Disc3, ListMusic } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -29,7 +34,7 @@ export interface MusicQuizGameDefinition<
   labelKey: string;
   descriptionKey: string;
   icon: Component;
-  available: boolean;
+  availability: "always" | "server";
   supportsListenIn: boolean;
   adapters: {
     setup: Component;
@@ -51,7 +56,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
     icon: markRaw(Disc3),
-    available: true,
+    availability: "always",
     supportsListenIn: true,
     adapters: {
       setup: markRaw(GuessTheSongSetup),
@@ -67,7 +72,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     labelKey: "providers.music_quiz.game_type_hitster",
     descriptionKey: "providers.music_quiz.game_type_hitster_description",
     icon: markRaw(ListMusic),
-    available: true,
+    availability: "always",
     supportsListenIn: true,
     adapters: {
       setup: markRaw(HitsterSetup),
@@ -75,6 +80,22 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       hostPanel: markRaw(HitsterHostPanel),
       host: markRaw(HitsterHostRound),
       present: markRaw(HitsterPresentRound),
+    },
+  },
+  trivia: {
+    id: "trivia",
+    answerType: "multiple_choice",
+    labelKey: "providers.music_quiz.game_type_trivia",
+    descriptionKey: "providers.music_quiz.game_type_trivia_description",
+    icon: markRaw(BrainCircuit),
+    availability: "server",
+    supportsListenIn: false,
+    adapters: {
+      setup: markRaw(TriviaSetup),
+      player: markRaw(TriviaPlayerRound),
+      hostPanel: markRaw(TriviaHostPanel),
+      host: markRaw(TriviaHostRound),
+      present: markRaw(TriviaPresentRound),
     },
   },
 } satisfies MusicQuizGameRegistry;

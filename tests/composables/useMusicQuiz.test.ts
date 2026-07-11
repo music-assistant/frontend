@@ -13,6 +13,7 @@ vi.mock("@/plugins/api", () => ({
 import {
   answerMusicQuiz,
   createMusicQuiz,
+  getAvailableMusicQuizTypes,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -25,7 +26,11 @@ import {
 
 function unsupportedQuizType(value: string) {
   const quizType = parseMusicQuizType(value);
-  if (quizType === "guess_the_song" || quizType === "hitster") {
+  if (
+    quizType === "guess_the_song" ||
+    quizType === "hitster" ||
+    quizType === "trivia"
+  ) {
     throw new Error("Expected an unsupported quiz type");
   }
   return quizType;
@@ -103,6 +108,57 @@ describe("useMusicQuiz commands", () => {
       title_bonus_mode: "multiple_choice",
     });
   });
+
+  it("sends the exact flat Trivia create payload", async () => {
+    await createMusicQuiz({
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 8,
+        suggestion_count: 5,
+        answer_duration: 45,
+        source_uris: ["library://artist/1"],
+        difficulty: "hard",
+      },
+    });
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
+      quiz_type: "trivia",
+      round_count: 8,
+      suggestion_count: 5,
+      answer_duration: 45,
+      source_uris: ["library://artist/1"],
+      difficulty: "hard",
+    });
+  });
+
+  it("fetches the exact host-only availability command", async () => {
+    mockSendCommand.mockResolvedValueOnce([
+      "guess_the_song",
+      "hitster",
+      "trivia",
+      "future_game",
+    ]);
+
+    await expect(getAvailableMusicQuizTypes()).resolves.toEqual([
+      "guess_the_song",
+      "hitster",
+      "trivia",
+      "future_game",
+    ]);
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "music_quiz/available_quiz_types",
+    );
+  });
+
+  it.each([null, {}, ["trivia", 1]])(
+    "rejects malformed availability payloads",
+    async (payload) => {
+      mockSendCommand.mockResolvedValueOnce(payload);
+
+      await expect(getAvailableMusicQuizTypes()).rejects.toThrow(TypeError);
+    },
+  );
 
   it("sends strict timeline submissions through the generic command", async () => {
     const submission = {
@@ -195,18 +251,39 @@ describe("useMusicQuiz commands", () => {
       players: [],
       current_round: null,
     } satisfies MusicQuizPublicState;
+    const trivia = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Trivia",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "remote",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
     const mismatched = {
       quiz_type: "guess_the_song",
       answer_type: "timeline",
       phase: "lobby",
       name: "Mismatched Quiz",
     } satisfies MusicQuizPublicState;
+    const mismatchedTrivia = {
+      quiz_type: "trivia",
+      answer_type: "timeline",
+      phase: "lobby",
+      name: "Mismatched Trivia",
+    } satisfies MusicQuizPublicState;
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
     expect(isSupportedMusicQuiz(hitster)).toBe(true);
+    expect(isSupportedMusicQuiz(trivia)).toBe(true);
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);
+    expect(isSupportedMusicQuiz(mismatchedTrivia)).toBe(false);
+    expect(parseMusicQuizType("trivia")).toBe("trivia");
   });
 
   it("preserves nullable server fields in supported state", () => {

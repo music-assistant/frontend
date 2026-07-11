@@ -32,8 +32,9 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   resetMusicQuiz: vi.fn(),
   deleteMusicQuiz: mockDeleteMusicQuiz,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
-    value.quiz_type === "guess_the_song" &&
-    value.answer_type === "multiple_choice",
+    (value.quiz_type === "guess_the_song" &&
+      value.answer_type === "multiple_choice") ||
+    (value.quiz_type === "trivia" && value.answer_type === "multiple_choice"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -258,5 +259,20 @@ describe("useMusicQuizHost", () => {
     expect(host.state.value?.answer_type).toBe("timeline");
     expect(host.currentRound.value).toBeNull();
     expect(host.joinLink.value).toBe("");
+  });
+
+  it("uses a non-audio reveal label for Trivia", async () => {
+    mockGetMusicQuiz.mockResolvedValue({
+      ...HOST_STATE,
+      quiz_type: "trivia",
+      phase: "reveal",
+    });
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.phaseLabel.value).toBe(
+      "providers.music_quiz.phase_answer_revealed",
+    );
   });
 });

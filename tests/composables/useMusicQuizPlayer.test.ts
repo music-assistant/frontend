@@ -56,7 +56,8 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     (value.quiz_type === "guess_the_song" &&
       value.answer_type === "multiple_choice") ||
-    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
+    (value.quiz_type === "hitster" && value.answer_type === "timeline") ||
+    (value.quiz_type === "trivia" && value.answer_type === "multiple_choice"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -150,6 +151,75 @@ const PUBLIC_STATE = {
   mode: "venue",
   players: PLAYER_STATE.players,
   current_round: null,
+} as const;
+
+const TRIVIA_ANSWERING_STATE = {
+  quiz_type: "trivia",
+  answer_type: "multiple_choice",
+  phase: "answering",
+  name: "Trivia",
+  round_count: 2,
+  suggestion_count: 2,
+  answer_duration: 30,
+  mode: "venue",
+  players: [
+    {
+      name: "Player",
+      score: 0,
+      ready: false,
+      answered: false,
+      active_from_round: 0,
+    },
+  ],
+  current_round: {
+    round_index: 0,
+    started_at: 1,
+    deadline: 31,
+    question: "Who released Blue?",
+    suggestions: [
+      { suggestion_id: "correct", label: "Joni Mitchell" },
+      { suggestion_id: "wrong", label: "Carole King" },
+    ],
+  },
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+} as const;
+
+const TRIVIA_REVEAL_STATE = {
+  ...TRIVIA_ANSWERING_STATE,
+  phase: "reveal",
+  players: [
+    {
+      ...TRIVIA_ANSWERING_STATE.players[0],
+      score: 750,
+      answered: true,
+      last_answer: {
+        suggestion_id: "correct",
+        correct: true,
+        points: 750,
+      },
+    },
+  ],
+  current_round: {
+    ...TRIVIA_ANSWERING_STATE.current_round,
+    answer_label: "Joni Mitchell",
+    correct_suggestion_id: "correct",
+    ended_at: 20,
+  },
+  you: {
+    ...TRIVIA_ANSWERING_STATE.you,
+    score: 750,
+    answer: {
+      suggestion_id: "correct",
+      answered_at: 10,
+      correct: true,
+      points: 750,
+    },
+  },
 } as const;
 
 const TIMELINE_ANCHOR = {
@@ -959,18 +1029,17 @@ describe("useMusicQuizPlayer", () => {
   it("submits a discriminated answer through the legacy command", async () => {
     storedPlayerId.value = "stored-player";
     const answeredState = {
-      ...PLAYER_STATE,
-      phase: "answering",
+      ...TRIVIA_ANSWERING_STATE,
       you: {
-        ...PLAYER_STATE.you,
+        ...TRIVIA_ANSWERING_STATE.you,
         answer: {
-          suggestion_id: "suggestion-1",
+          suggestion_id: "correct",
           answered_at: 10,
         },
       },
     } as const;
     mockGetMusicQuizState
-      .mockResolvedValueOnce(PLAYER_STATE)
+      .mockResolvedValueOnce(TRIVIA_ANSWERING_STATE)
       .mockResolvedValueOnce(answeredState);
     mockAnswerMusicQuiz.mockResolvedValue(answeredState);
 
@@ -978,13 +1047,15 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
     await player.submitAnswer({
       answer_type: "multiple_choice",
-      suggestion_id: "suggestion-1",
+      suggestion_id: "correct",
     });
 
     expect(mockAnswerMusicQuiz).toHaveBeenCalledWith(
       "stored-player",
-      "suggestion-1",
+      "correct",
     );
+    expect(mockHeartbeatMusicQuiz).toHaveBeenCalledWith("stored-player");
+    expect(player.state.value?.quiz_type).toBe("trivia");
     expect(player.state.value).toEqual(answeredState);
   });
 
@@ -1123,6 +1194,36 @@ describe("useMusicQuizPlayer", () => {
     await expect(player.ready()).resolves.toBe(true);
     expect(mockReadyMusicQuiz).toHaveBeenCalledWith("stored-player");
     expect(player.state.value).toEqual(TIMELINE_REVEAL_STATE);
+  });
+
+  it("keeps a Trivia reveal authoritative over a delayed legacy answer", async () => {
+    storedPlayerId.value = "stored-player";
+    const delayedAnswer = deferred<typeof TRIVIA_ANSWERING_STATE>();
+    const eventRefresh = deferred<typeof TRIVIA_ANSWERING_STATE>();
+    mockGetMusicQuizState
+      .mockResolvedValueOnce(TRIVIA_ANSWERING_STATE)
+      .mockReturnValueOnce(eventRefresh.promise)
+      .mockResolvedValueOnce(TRIVIA_REVEAL_STATE);
+    mockAnswerMusicQuiz.mockReturnValueOnce(delayedAnswer.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const submitting = player.submitAnswer({
+      answer_type: "multiple_choice",
+      suggestion_id: "correct",
+    });
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: { event: "game_updated", state: TRIVIA_REVEAL_STATE },
+    });
+    await flushPromises();
+    delayedAnswer.resolve(TRIVIA_ANSWERING_STATE);
+    await flushPromises();
+    eventRefresh.resolve(TRIVIA_ANSWERING_STATE);
+    await submitting;
+
+    expect(player.state.value).toEqual(TRIVIA_REVEAL_STATE);
+    expect(player.busy.value).toBe(false);
   });
 
   it("keeps the next round authoritative over a delayed ready response", async () => {

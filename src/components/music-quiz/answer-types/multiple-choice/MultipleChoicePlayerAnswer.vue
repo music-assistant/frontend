@@ -1,27 +1,32 @@
 <template>
   <template v-if="state.phase === 'answering'">
-    <div class="flex flex-col items-center gap-2">
-      <MusicQuizCountdown
-        :size="132"
-        :fraction="remainingFraction"
-        :label="remainingLabel || '…'"
+    <template v-if="canAnswerRound">
+      <div class="flex flex-col items-center gap-2">
+        <MusicQuizCountdown
+          :size="132"
+          :fraction="remainingFraction"
+          :label="remainingLabel || '…'"
+        />
+        <p class="text-lg font-bold">
+          {{ $t("providers.music_quiz.choose_answer") }}
+        </p>
+      </div>
+      <MultipleChoiceGrid
+        :suggestions="currentRound.suggestions"
+        :disabled="busy || !!state.you.answer"
+        :selected-suggestion-id="state.you.answer?.suggestion_id ?? null"
+        @select="submit"
       />
-      <p class="text-lg font-bold">
-        {{ $t("providers.music_quiz.choose_answer") }}
+      <p
+        v-if="state.you.answer"
+        class="text-muted-foreground text-center"
+        role="status"
+      >
+        {{ $t("providers.music_quiz.answered") }}
       </p>
-    </div>
-    <MultipleChoiceGrid
-      :suggestions="currentRound.suggestions"
-      :disabled="busy || !!state.you.answer"
-      :selected-suggestion-id="state.you.answer?.suggestion_id ?? null"
-      @select="submit"
-    />
-    <p
-      v-if="state.you.answer"
-      class="text-muted-foreground text-center"
-      role="status"
-    >
-      {{ $t("providers.music_quiz.answered") }}
+    </template>
+    <p v-else class="text-muted-foreground text-center" role="status">
+      {{ $t("providers.music_quiz.waiting_for_next") }}
     </p>
     <MultipleChoiceProgress
       :statuses="roundPlayerStatuses"
@@ -40,16 +45,27 @@
       <span>+{{ state.you.answer.points ?? 0 }}</span>
     </div>
     <div
+      v-else-if="state.you.answer"
+      class="text-destructive flex items-center justify-center gap-2 rounded-md bg-red-500/10 py-2 font-semibold"
+      role="status"
+    >
+      <CircleX class="size-5" />
+      {{ $t("providers.music_quiz.incorrect") }}
+    </div>
+    <p
+      v-else-if="!canAnswerRound"
+      class="text-muted-foreground text-center"
+      role="status"
+    >
+      {{ $t("providers.music_quiz.waiting_for_next") }}
+    </p>
+    <div
       v-else
       class="text-destructive flex items-center justify-center gap-2 rounded-md bg-red-500/10 py-2 font-semibold"
       role="status"
     >
       <CircleX class="size-5" />
-      {{
-        state.you.answer
-          ? $t("providers.music_quiz.incorrect")
-          : $t("providers.music_quiz.no_answer_submitted")
-      }}
+      {{ $t("providers.music_quiz.no_answer_submitted") }}
     </div>
   </template>
 </template>
@@ -63,7 +79,7 @@ import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-ch
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
 import MusicQuizCountdown from "@/components/music-quiz/MusicQuizCountdown.vue";
 import type {
-  MusicQuizGuessTheSongPersonalizedState,
+  MusicQuizMultipleChoicePersonalizedState,
   MusicQuizMultipleChoiceRound,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
@@ -75,7 +91,7 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPlayerAnswerAdapterProps<
-      MusicQuizGuessTheSongPersonalizedState,
+      MusicQuizMultipleChoicePersonalizedState,
       MusicQuizMultipleChoiceRound
     >
   >();
@@ -84,6 +100,9 @@ const emit =
 
 const roundPlayerStatuses = computed(() =>
   getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
+);
+const canAnswerRound = computed(
+  () => props.state.you.active_from_round <= props.currentRound.round_index,
 );
 const answeredCount = computed(
   () => roundPlayerStatuses.value.filter((player) => player.answered).length,
@@ -95,6 +114,7 @@ const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
 });
 
 function submit(suggestionId: string) {
+  if (!canAnswerRound.value) return;
   emit("submit", {
     answer_type: "multiple_choice",
     suggestion_id: suggestionId,

@@ -37,7 +37,7 @@
           {{ $t("providers.music_quiz.create_intro") }}
         </p>
       </div>
-      <Button size="lg" @click="step = 2">
+      <Button size="lg" @click="showGameTypes">
         <Sparkles class="size-4" />
         {{ $t("providers.music_quiz.new_game") }}
       </Button>
@@ -53,7 +53,15 @@
           :key="type.id"
           type="button"
           class="hover:border-primary focus-visible:ring-ring flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border"
-          :disabled="!type.available"
+          :disabled="!isTypeAvailable(type)"
+          :aria-busy="
+            type.availability === 'server' && availabilityStatus === 'loading'
+          "
+          :aria-describedby="
+            type.availability === 'server' && availabilityMessage
+              ? 'music-quiz-server-availability'
+              : undefined
+          "
           @click="selectType(type)"
         >
           <span
@@ -64,8 +72,8 @@
           <span class="flex min-w-0 flex-col gap-1">
             <span class="flex items-center gap-2 font-semibold">
               {{ $t(type.labelKey) }}
-              <Badge v-if="!type.available" variant="secondary">
-                {{ $t("providers.music_quiz.coming_soon") }}
+              <Badge v-if="typeAvailabilityLabel(type)" variant="secondary">
+                {{ typeAvailabilityLabel(type) }}
               </Badge>
             </span>
             <span class="text-muted-foreground text-sm">
@@ -73,6 +81,31 @@
             </span>
           </span>
         </button>
+      </div>
+      <div
+        v-if="availabilityMessage"
+        id="music-quiz-server-availability"
+        class="bg-muted/50 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
+        role="status"
+        aria-live="polite"
+      >
+        <LoaderCircle
+          v-if="availabilityStatus === 'loading'"
+          class="text-muted-foreground size-4 animate-spin motion-reduce:animate-none"
+        />
+        <span class="text-muted-foreground flex-1">
+          {{ availabilityMessage }}
+        </span>
+        <Button
+          v-if="availabilityStatus === 'error'"
+          type="button"
+          variant="ghost"
+          size="sm"
+          @click="refreshAvailability"
+        >
+          <RefreshCw class="size-4" />
+          {{ $t("providers.music_quiz.retry_availability") }}
+        </Button>
       </div>
     </section>
 
@@ -91,6 +124,7 @@
         :is="selectedType.adapters.setup"
         v-if="selectedType"
         :busy="busy"
+        :available="isTypeAvailable(selectedType)"
         @create="onConfigCreate"
       />
     </section>
@@ -106,9 +140,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
+import { useMusicQuizAvailability } from "@/composables/useMusicQuizAvailability";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, PartyPopper, Sparkles } from "@lucide/vue";
-import { ref } from "vue";
+import {
+  ArrowLeft,
+  LoaderCircle,
+  PartyPopper,
+  RefreshCw,
+  Sparkles,
+} from "@lucide/vue";
+import { computed, ref } from "vue";
 
 const TOTAL_STEPS = 3;
 
@@ -118,16 +159,36 @@ const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
 const gameTypes = MUSIC_QUIZ_GAME_TYPES;
 const step = ref<1 | 2 | 3>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
+const {
+  status: availabilityStatus,
+  isAvailable: isServerTypeAvailable,
+  refresh: refreshAvailability,
+} = useMusicQuizAvailability();
+const availabilityMessage = computed(() => {
+  if (
+    availabilityStatus.value === "idle" ||
+    availabilityStatus.value === "loading"
+  ) {
+    return $t("providers.music_quiz.trivia_checking_availability");
+  }
+  if (availabilityStatus.value === "error") {
+    return $t("providers.music_quiz.trivia_availability_failed");
+  }
+  if (!isServerTypeAvailable("trivia")) {
+    return $t("providers.music_quiz.trivia_requires_ai_provider");
+  }
+  return "";
+});
 
 function selectType(type: MusicQuizGameDefinition) {
-  if (!type.available) return;
+  if (!isTypeAvailable(type)) return;
   selectedType.value = type;
   step.value = 3;
 }
 
 function back() {
   if (step.value === 3) {
-    step.value = 2;
+    showGameTypes();
   } else if (step.value === 2) {
     step.value = 1;
   }
@@ -135,5 +196,28 @@ function back() {
 
 function onConfigCreate(request: MusicQuizCreateRequest) {
   emit("create", request);
+}
+
+function showGameTypes() {
+  step.value = 2;
+  void refreshAvailability();
+}
+
+function isTypeAvailable(type: MusicQuizGameDefinition) {
+  return type.availability === "always" || isServerTypeAvailable(type.id);
+}
+
+function typeAvailabilityLabel(type: MusicQuizGameDefinition) {
+  if (type.availability === "always" || isTypeAvailable(type)) return "";
+  if (
+    availabilityStatus.value === "idle" ||
+    availabilityStatus.value === "loading"
+  ) {
+    return $t("providers.music_quiz.checking_availability");
+  }
+  if (availabilityStatus.value === "error") {
+    return $t("providers.music_quiz.availability_check_failed");
+  }
+  return $t("providers.music_quiz.ai_provider_required");
 }
 </script>

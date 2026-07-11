@@ -131,6 +131,44 @@ describe("multiple-choice adapters", () => {
     wrapper.unmount();
   });
 
+  it("keeps late joiners out of the active round", () => {
+    const lateState = {
+      ...playerState,
+      you: {
+        ...playerState.you,
+        active_from_round: currentRound.round_index + 1,
+      },
+    } satisfies MusicQuizGuessTheSongPersonalizedState;
+    const answering = shallowMount(MultipleChoicePlayerAnswer, {
+      props: {
+        state: lateState,
+        currentRound,
+        busy: false,
+      },
+    });
+
+    expect(answering.findComponent(MultipleChoiceGrid).exists()).toBe(false);
+    expect(answering.text()).toContain("providers.music_quiz.waiting_for_next");
+    answering.unmount();
+
+    const reveal = shallowMount(MultipleChoicePlayerAnswer, {
+      props: {
+        state: {
+          ...lateState,
+          phase: "reveal",
+        },
+        currentRound,
+        busy: false,
+      },
+    });
+
+    expect(reveal.text()).toContain("providers.music_quiz.waiting_for_next");
+    expect(reveal.text()).not.toContain(
+      "providers.music_quiz.no_answer_submitted",
+    );
+    reveal.unmount();
+  });
+
   it("excludes late joiners from player, host, and present progress", () => {
     const players = [
       {

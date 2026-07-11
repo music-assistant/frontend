@@ -72,7 +72,9 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     if (state.value.phase === "answering")
       return $t("providers.music_quiz.phase_answers_open");
     if (state.value.phase === "reveal")
-      return $t("providers.music_quiz.phase_enjoy_track");
+      return state.value.quiz_type === "trivia"
+        ? $t("providers.music_quiz.phase_answer_revealed")
+        : $t("providers.music_quiz.phase_enjoy_track");
     return $t("providers.music_quiz.phase_finished");
   });
 

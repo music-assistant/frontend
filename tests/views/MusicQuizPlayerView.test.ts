@@ -136,6 +136,34 @@ const hitsterState = {
     active_from_round: 0,
   },
 };
+const triviaRound = {
+  question: "Who released Blue?",
+  round_index: 0,
+  started_at: 1,
+  deadline: 2,
+  suggestions: [
+    { suggestion_id: "one", label: "Joni Mitchell" },
+    { suggestion_id: "two", label: "Carole King" },
+  ],
+};
+const triviaState = {
+  quiz_type: "trivia",
+  answer_type: "multiple_choice",
+  phase: "answering",
+  name: "Trivia",
+  round_count: 1,
+  suggestion_count: 2,
+  answer_duration: 30,
+  mode: "venue",
+  players: [],
+  current_round: triviaRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+};
 
 describe("MusicQuizPlayerView routing", () => {
   beforeEach(() => {
@@ -158,8 +186,20 @@ describe("MusicQuizPlayerView routing", () => {
     });
   });
 
-  it("does not initialize ListenIn or lyrics for a non-audio definition", () => {
+  it("does not initialize ListenIn or lyrics for Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(triviaState),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(triviaRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
 
     const wrapper = mountView();
 
