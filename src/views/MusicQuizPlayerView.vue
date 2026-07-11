@@ -33,7 +33,12 @@
               $t("providers.music_quiz.rounds_count", [activeInfo.round_count])
             }}
           </Badge>
-          <Badge variant="secondary">{{ modeLabel }}</Badge>
+          <Badge
+            v-if="resolvedDefinition?.game.supportsListenIn"
+            variant="secondary"
+          >
+            {{ modeLabel }}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent>

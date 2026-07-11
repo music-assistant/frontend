@@ -240,6 +240,64 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("hides the mode label before joining Trivia", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "trivia",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Trivia",
+        player_count: 2,
+        round_count: 5,
+        mode: "venue",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+    wrapper.unmount();
+  });
+
+  it("keeps the mode label before joining audio games", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 2,
+        round_count: 5,
+        mode: "venue",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
+    wrapper.unmount();
+  });
+
   it("uses the update-required state when pair resolution fails", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(undefined);
 
