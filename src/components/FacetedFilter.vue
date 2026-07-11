@@ -63,6 +63,7 @@
             tabindex="0"
             @click="toggle(option.value)"
             @keydown.space.prevent="toggle(option.value)"
+            @keydown.enter.prevent="toggle(option.value)"
           >
             <Checkbox
               :model-value="selectedSet.has(option.value)"
