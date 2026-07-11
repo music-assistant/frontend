@@ -8,7 +8,7 @@ import type {
   MusicQuizHitsterRound,
 } from "@/composables/useMusicQuiz";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetTrackLyrics } = vi.hoisted(() => ({
   mockGetTrackLyrics: vi.fn(),
@@ -21,7 +21,8 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, values?: Array<string | number>) =>
+    values?.length ? `${key} ${values.join(" ")}` : key,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -50,6 +51,7 @@ const answeringRound = {
   round_index: 0,
   started_at: 1,
   deadline: 31,
+  auto_advance_at: null,
   question: null,
   timeline: [anchor],
   bonus_definitions: [],
@@ -86,6 +88,16 @@ const playerState = {
 } satisfies MusicQuizHitsterPersonalizedState;
 
 describe("Hitster game adapters", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    mockGetTrackLyrics.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("never renders provided song details before reveal", () => {
     const wrapper = mount(HitsterRound, {
       props: {
@@ -120,7 +132,58 @@ describe("Hitster game adapters", () => {
     );
   });
 
-  it("supports ready state without requesting lyrics", async () => {
+  it("renders no auto-advance countdown without a server deadline", () => {
+    const wrapper = mount(HitsterRound, {
+      props: {
+        phase: "reveal",
+        round: revealRound,
+      },
+    });
+
+    expect(wrapper.find('[data-testid="hitster-auto-advance"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("renders the full server-scheduled countdown", () => {
+    const wrapper = mount(HitsterRound, {
+      props: {
+        phase: "reveal",
+        round: {
+          ...revealRound,
+          auto_advance_at: Date.now() / 1000 + 30,
+        },
+      },
+    });
+    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+
+    expect(countdown.attributes("role")).toBe("timer");
+    expect(countdown.text()).toContain("30s");
+    expect(countdown.attributes("aria-label")).toContain("30s");
+  });
+
+  it("resumes an elapsed server countdown after reconnect", async () => {
+    const autoAdvanceAt = Date.now() / 1000 + 30;
+    vi.advanceTimersByTime(18_000);
+    const wrapper = mount(HitsterRound, {
+      props: {
+        phase: "reveal",
+        round: {
+          ...revealRound,
+          auto_advance_at: autoAdvanceAt,
+        },
+      },
+    });
+    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+
+    expect(countdown.text()).toContain("12s");
+
+    await vi.advanceTimersByTimeAsync(13_000);
+
+    expect(countdown.text()).toContain("0s");
+  });
+
+  it("places Ready after song details and keeps its action", async () => {
     const wrapper = mount(HitsterPlayerRound, {
       props: {
         state: playerState,
@@ -128,8 +191,16 @@ describe("Hitster game adapters", () => {
         busy: false,
       },
     });
+    const title = wrapper.get("h2");
+    const readyButton = wrapper.get('[data-testid="hitster-ready"]');
 
-    await wrapper.get("button").trigger("click");
+    expect(
+      title.element.compareDocumentPosition(readyButton.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(readyButton.text()).toContain("providers.music_quiz.ready");
+
+    await readyButton.trigger("click");
 
     expect(wrapper.emitted("ready")).toEqual([[]]);
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
@@ -161,6 +232,7 @@ describe("Hitster game adapters", () => {
       duration: 180,
       started_at: 1,
       ended_at: null,
+      auto_advance_at: null,
     } satisfies MusicQuizHitsterHostRound;
     const state = {
       quiz_type: "hitster",

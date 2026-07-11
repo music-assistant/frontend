@@ -207,6 +207,7 @@ const TIMELINE_ANSWERING_STATE = {
     round_index: 0,
     started_at: 1,
     deadline: 31,
+    auto_advance_at: null,
     question: null,
     timeline: [TIMELINE_ANCHOR],
     bonus_definitions: [
@@ -1258,6 +1259,7 @@ describe("useMusicQuizPlayer", () => {
         round_index: 0,
         started_at: 1,
         deadline: 31,
+        auto_advance_at: null,
         question: null,
         timeline: [],
         bonus_definitions: [],

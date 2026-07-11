@@ -88,6 +88,7 @@ const currentRound = {
   round_index: 0,
   started_at: 1,
   deadline: 2,
+  auto_advance_at: null,
   suggestions: [{ suggestion_id: "one", label: "One" }],
 } satisfies MusicQuizGuessTheSongRound;
 
@@ -214,13 +215,18 @@ describe("Music Quiz shared stages", () => {
     });
 
     const leaderboard = wrapper.get('[data-testid="leaderboard"]');
+    const section = wrapper.get("section");
+    expect(section.element.children[0]).toBe(
+      wrapper.get('[data-testid="game-adapter"]').element,
+    );
+    expect(section.element.children[1]).toBe(
+      wrapper.get('[data-testid="timeline-answer-adapter"]').element,
+    );
     expect(
       wrapper.find('[data-testid="timeline-answer-adapter"]').exists(),
     ).toBe(true);
     expect(leaderboard.attributes("data-compact")).toBe("true");
-    expect(wrapper.get("section").element.lastElementChild).toBe(
-      leaderboard.element,
-    );
+    expect(section.element.lastElementChild).toBe(leaderboard.element);
   });
 
   it("keeps the full leaderboard for final player results", () => {

@@ -20,6 +20,7 @@ const currentRound = {
   round_index: 1,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   suggestions: [
     { suggestion_id: "one", label: "One" },
     { suggestion_id: "two", label: "Two" },

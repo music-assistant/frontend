@@ -79,6 +79,7 @@ const currentRound = {
   round_index: 0,
   started_at: 1,
   deadline: 2,
+  auto_advance_at: null,
   suggestions: [],
   track_uri: "library://track/1",
 };
@@ -105,6 +106,7 @@ const hitsterRound = {
   round_index: 0,
   started_at: 1,
   deadline: 2,
+  auto_advance_at: null,
   timeline: [
     {
       entry_id: "anchor",
@@ -142,6 +144,7 @@ const triviaRound = {
   round_index: 0,
   started_at: 1,
   deadline: 2,
+  auto_advance_at: null,
   suggestions: [],
 };
 const triviaState = {

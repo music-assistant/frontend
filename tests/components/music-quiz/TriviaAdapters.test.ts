@@ -21,6 +21,7 @@ const answeringRound = {
   round_index: 0,
   started_at: 1,
   deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
   suggestions: [
     { suggestion_id: "daft-punk", label: "Daft Punk" },
     { suggestion_id: "air", label: "Air" },

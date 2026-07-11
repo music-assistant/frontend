@@ -281,6 +281,7 @@ describe("useMusicQuiz commands", () => {
         round_index: 0,
         started_at: 1,
         deadline: 2,
+        auto_advance_at: null,
         suggestions: [],
         track_uri: null,
       },
@@ -290,6 +291,7 @@ describe("useMusicQuiz commands", () => {
     expect(state.name).toBeNull();
     expect(state.current_round.question).toBeNull();
     expect(state.current_round.track_uri).toBeNull();
+    expect(state.current_round.auto_advance_at).toBeNull();
   });
 
   it("accepts the nullable Hitster round start timestamp", () => {
@@ -308,6 +310,7 @@ describe("useMusicQuiz commands", () => {
         round_index: 0,
         started_at: null,
         deadline: 30,
+        auto_advance_at: null,
         question: null,
         timeline: [],
         bonus_definitions: [],

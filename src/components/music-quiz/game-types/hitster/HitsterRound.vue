@@ -1,17 +1,6 @@
 <template>
   <Card class="overflow-hidden">
     <CardContent class="flex flex-col gap-4">
-      <Button
-        v-if="showReadyButton && phase === 'reveal'"
-        class="w-full max-w-sm self-center"
-        size="lg"
-        :disabled="busy || isReady"
-        @click="emit('ready')"
-      >
-        <Check class="size-4" />
-        {{ readyLabel }}
-      </Button>
-
       <div
         v-if="phase === 'answering'"
         class="flex flex-col items-center gap-3 py-4 text-center"
@@ -60,6 +49,29 @@
           </p>
         </div>
       </div>
+
+      <div
+        v-if="autoAdvanceText"
+        class="bg-muted/40 text-muted-foreground flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold tabular-nums"
+        role="timer"
+        :aria-label="autoAdvanceText"
+        data-testid="hitster-auto-advance"
+      >
+        <Clock3 class="size-4" aria-hidden="true" />
+        {{ autoAdvanceText }}
+      </div>
+
+      <Button
+        v-if="showReadyButton && phase === 'reveal'"
+        class="w-full max-w-sm self-center"
+        size="lg"
+        :disabled="busy || isReady"
+        data-testid="hitster-ready"
+        @click="emit('ready')"
+      >
+        <Check class="size-4" />
+        {{ readyLabel }}
+      </Button>
     </CardContent>
   </Card>
 </template>
@@ -72,9 +84,10 @@ import type {
   MusicQuizHitsterRound,
   MusicQuizPhase,
 } from "@/composables/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
-import { AudioLines, Check, Music2 } from "@lucide/vue";
+import { AudioLines, Check, Clock3, Music2 } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = withDefaults(
@@ -98,5 +111,16 @@ const emit = defineEmits<{ ready: [] }>();
 const revealedEntry = computed(() => props.round.revealed_entry);
 const imageUrl = computed(() =>
   getMediaImageUrl(revealedEntry.value?.image_url ?? ""),
+);
+const { remainingLabel: autoAdvanceLabel } = useMusicQuizAnswerDeadline({
+  active: () =>
+    props.phase === "reveal" && props.round.auto_advance_at !== null,
+  deadline: () => props.round.auto_advance_at,
+  duration: () => null,
+});
+const autoAdvanceText = computed(() =>
+  autoAdvanceLabel.value
+    ? $t("providers.music_quiz.next_round_in", [autoAdvanceLabel.value])
+    : "",
 );
 </script>

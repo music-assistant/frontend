@@ -12,6 +12,7 @@ const baseProps = {
     round_index: 0,
     started_at: 0,
     deadline: 0,
+    auto_advance_at: null,
     suggestions: [],
     answer_label: "Song",
   },

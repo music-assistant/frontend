@@ -356,6 +356,7 @@ export interface MusicQuizRoundBase {
   round_index: number;
   started_at: number | null;
   deadline: number;
+  auto_advance_at: number | null;
   ended_at?: number;
 }
 
@@ -480,6 +481,7 @@ export interface MusicQuizHitsterHostRound {
   duration: number | null;
   started_at: number | null;
   ended_at: number | null;
+  auto_advance_at: number | null;
 }
 
 export interface MusicQuizTriviaHostRound {
@@ -493,6 +495,7 @@ export interface MusicQuizTriviaHostRound {
   duration: null;
   started_at: number | null;
   ended_at: number | null;
+  auto_advance_at: number | null;
 }
 
 export type MusicQuizSupportedRound =
