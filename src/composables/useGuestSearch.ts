@@ -1,23 +1,80 @@
 /**
  * Guest search composable for search, filtering, artist drill-down,
  * and infinite scroll on search results.
+ *
+ * Search runs through the progressive engine: the library and fast providers
+ * show up right away and slower providers merge in while the guest watches.
  */
 
-import { ref, computed, watch } from "vue";
+import { useProgressiveSearch } from "@/composables/useProgressiveSearch";
+import { sortByRelevance } from "@/helpers/relevanceScoring";
 import api from "@/plugins/api";
 import { MediaType, type Artist, type Track } from "@/plugins/api/interfaces";
-import { sortByRelevance } from "@/helpers/relevanceScoring";
 import { $t } from "@/plugins/i18n";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
+
+const MIN_SEARCH_LENGTH = 2;
+const SEARCH_DEBOUNCE_MS = 500;
+const PAGE_SIZE = 10;
+
+const dedupeKey = (item: Track | Artist): string | null => {
+  if (!item.name) return null;
+  if (item.media_type === MediaType.ARTIST)
+    return `artist:${item.name.toLowerCase()}`;
+  const artist =
+    "artists" in item ? item.artists?.[0]?.name?.toLowerCase() || "" : "";
+  return `track:${item.name.toLowerCase()}:${artist}`;
+};
 
 export function useGuestSearch() {
   // Search state
   const searchQuery = ref("");
-  const searchResults = ref<(Track | Artist)[]>([]);
-  const searching = ref(false);
   const hasSearched = ref(false);
   const searchFilter = ref<"all" | "track" | "artist">("all");
   let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const selectedMediaTypes = computed<MediaType[]>(() => {
+    if (searchFilter.value === "track") return [MediaType.TRACK];
+    if (searchFilter.value === "artist") return [MediaType.ARTIST];
+    return [MediaType.TRACK, MediaType.ARTIST];
+  });
+
+  const {
+    activeSearchTerm,
+    loading: searching,
+    searchResult,
+    search,
+  } = useProgressiveSearch({
+    mediaTypes: selectedMediaTypes,
+    allowedMediaTypes: [MediaType.TRACK, MediaType.ARTIST],
+    limits: { single: 25, multi: 25 },
+  });
+
+  const searchResults = computed<(Track | Artist)[]>(() => {
+    const result = searchResult.value;
+    if (!result) return [];
+    let combined: (Track | Artist)[];
+    if (searchFilter.value === "track") {
+      combined = result.tracks;
+    } else if (searchFilter.value === "artist") {
+      combined = result.artists;
+    } else {
+      combined = [...result.tracks, ...result.artists];
+    }
+    // Guests see no provider badges, so the same artist/track from several
+    // providers reads as plain duplicates: keep the first occurrence only
+    // (the engine merges library results first).
+    const seen = new Set<string>();
+    combined = combined.filter((item) => {
+      const key = dedupeKey(item);
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return sortByRelevance(combined, activeSearchTerm.value);
+  });
 
   // Artist drill-down state
   const selectedArtist = ref<Artist | null>(null);
@@ -26,7 +83,7 @@ export function useGuestSearch() {
 
   // Infinite scroll state
   const resultsListRef = ref<HTMLElement | null>(null);
-  const displayedResultsCount = ref(10);
+  const displayedResultsCount = ref(PAGE_SIZE);
   const displayedResults = computed(() =>
     searchResults.value.slice(0, displayedResultsCount.value),
   );
@@ -36,8 +93,9 @@ export function useGuestSearch() {
     (document.activeElement as HTMLElement)?.blur();
   };
 
-  const performSearch = async () => {
-    if (!searchQuery.value || searchQuery.value.length < 2) return;
+  const performSearch = () => {
+    if (!searchQuery.value || searchQuery.value.length < MIN_SEARCH_LENGTH)
+      return;
 
     // Cancel any pending debounce to prevent double-fire when Enter triggers
     // an immediate search while a debounce timer is still pending
@@ -47,55 +105,26 @@ export function useGuestSearch() {
     }
 
     blurActiveElement();
-
-    searching.value = true;
     hasSearched.value = true;
-    try {
-      const mediaTypes: MediaType[] = [];
-      if (searchFilter.value === "all" || searchFilter.value === "track") {
-        mediaTypes.push(MediaType.TRACK);
-      }
-      if (searchFilter.value === "all" || searchFilter.value === "artist") {
-        mediaTypes.push(MediaType.ARTIST);
-      }
-
-      const results = await api.search(searchQuery.value, mediaTypes);
-
-      let combinedResults: (Track | Artist)[];
-      if (searchFilter.value === "track") {
-        combinedResults = results.tracks;
-      } else if (searchFilter.value === "artist") {
-        combinedResults = results.artists;
-      } else {
-        combinedResults = [...results.tracks, ...results.artists];
-      }
-
-      searchResults.value = sortByRelevance(combinedResults, searchQuery.value);
-      displayedResultsCount.value = 10;
-    } catch (error) {
-      console.error("Search failed:", error);
-      toast.error($t("providers.party.guest_page.search_failed"));
-    } finally {
-      searching.value = false;
-    }
+    search(searchQuery.value);
   };
 
   const debouncedSearch = () => {
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer);
     }
-    if (searchQuery.value && searchQuery.value.length >= 2) {
+    if (searchQuery.value && searchQuery.value.length >= MIN_SEARCH_LENGTH) {
       searchDebounceTimer = setTimeout(() => {
         performSearch();
-      }, 2000);
+      }, SEARCH_DEBOUNCE_MS);
     }
   };
 
   // Watch for search query changes
   watch(searchQuery, (newQuery) => {
-    if (!newQuery || newQuery.length < 2) {
+    if (!newQuery || newQuery.length < MIN_SEARCH_LENGTH) {
       if (hasSearched.value) {
-        searchResults.value = [];
+        search("");
         hasSearched.value = false;
       }
     } else {
@@ -103,11 +132,9 @@ export function useGuestSearch() {
     }
   });
 
-  // Watch for filter changes and re-search
-  watch(searchFilter, () => {
-    if (searchQuery.value && searchQuery.value.length >= 2) {
-      performSearch();
-    }
+  // a new search or filter change starts the result list from the top
+  watch([activeSearchTerm, searchFilter], () => {
+    displayedResultsCount.value = PAGE_SIZE;
   });
 
   const clearSearch = () => {
@@ -115,8 +142,8 @@ export function useGuestSearch() {
       clearTimeout(searchDebounceTimer);
     }
     searchQuery.value = "";
-    searchResults.value = [];
-    displayedResultsCount.value = 10;
+    search("");
+    displayedResultsCount.value = PAGE_SIZE;
     hasSearched.value = false;
     selectedArtist.value = null;
     artistTracks.value = [];
@@ -169,9 +196,8 @@ export function useGuestSearch() {
   };
 
   const loadMoreResults = () => {
-    const increment = 10;
     displayedResultsCount.value = Math.min(
-      displayedResultsCount.value + increment,
+      displayedResultsCount.value + PAGE_SIZE,
       searchResults.value.length,
     );
   };
