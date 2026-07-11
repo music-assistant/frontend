@@ -1410,12 +1410,16 @@ export class MusicAssistantApi {
     search_query: string,
     media_types?: MediaType[],
     limit?: number,
+    providers?: string[],
   ): Promise<SearchResults> {
-    // Perform global search for media items on all providers.
+    // Perform global search for media items on the given providers.
+    // providers: provider instance ids/domains and/or "library";
+    // omit to search the library and all available providers combined.
     return this.sendCommand("music/search", {
       search_query,
       media_types,
       limit,
+      providers,
     });
   }
 

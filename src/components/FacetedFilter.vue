@@ -58,14 +58,16 @@
             v-for="option in filteredOptions"
             :key="option.value"
             class="faceted-filter-item"
+            :class="{ 'faceted-filter-item--locked': option.locked }"
             role="checkbox"
-            :aria-checked="selectedSet.has(option.value)"
-            tabindex="0"
-            @click="toggle(option.value)"
-            @keydown.space.prevent="toggle(option.value)"
+            :aria-checked="option.locked || selectedSet.has(option.value)"
+            :aria-disabled="option.locked"
+            :tabindex="option.locked ? -1 : 0"
+            @click="toggle(option)"
+            @keydown.space.prevent="toggle(option)"
           >
             <Checkbox
-              :model-value="selectedSet.has(option.value)"
+              :model-value="option.locked || selectedSet.has(option.value)"
               class="mr-2 pointer-events-none"
               tabindex="-1"
               aria-hidden="true"
@@ -108,6 +110,9 @@ import { Separator } from "@/components/ui/separator";
 interface FacetedOption {
   label: string;
   value: string;
+  // locked options render as permanently checked and cannot be toggled;
+  // they are not part of the model value (e.g. an always-active entry)
+  locked?: boolean;
 }
 
 const props = defineProps<{
@@ -137,12 +142,13 @@ const filteredOptions = computed(() => {
   return props.options.filter((opt) => opt.label.toLowerCase().includes(term));
 });
 
-const toggle = (value: string) => {
+const toggle = (option: FacetedOption) => {
+  if (option.locked) return;
   const next = new Set(selectedSet.value);
-  if (next.has(value)) {
-    next.delete(value);
+  if (next.has(option.value)) {
+    next.delete(option.value);
   } else {
-    next.add(value);
+    next.add(option.value);
   }
   emit("update:modelValue", Array.from(next));
 };
@@ -189,6 +195,15 @@ const clear = () => {
 
 .faceted-filter-item:hover {
   background-color: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.faceted-filter-item--locked {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.faceted-filter-item--locked:hover {
+  background-color: transparent;
 }
 
 .faceted-filter-clear {

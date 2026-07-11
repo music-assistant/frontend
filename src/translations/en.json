@@ -713,6 +713,7 @@
     "check_item_on_provider": "Check {0} on {1}",
     "check_item_in_library": "Check {0} in the library",
     "media_details": "Media details",
+    "media_type": "Media type",
     "mapped_providers": "Provider details",
     "item_in_library": "This item is available in the library",
     "back": "Back",
