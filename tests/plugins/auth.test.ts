@@ -1,6 +1,6 @@
 import { createGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import { AuthManager } from "@/plugins/auth";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { storage } = vi.hoisted(() => {
   const values = new Map<string, string>();
@@ -21,6 +21,10 @@ const { storage } = vi.hoisted(() => {
 describe("AuthManager guest affinity", () => {
   beforeEach(() => {
     storage.clear();
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
   });
 
   it("preserves affinity only while the same guest token remains active", () => {
