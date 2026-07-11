@@ -35,7 +35,7 @@
     >
       <TimelineProgress
         v-if="state.phase === 'answering'"
-        :statuses="state.players"
+        :statuses="roundPlayerStatuses"
       />
 
       <Card v-if="state.phase === 'reveal' && revealedResults.length">
@@ -95,6 +95,7 @@ import type {
   MusicQuizHitsterRound,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";
 import { computed, type VNode } from "vue";
@@ -126,6 +127,9 @@ const revealedResults = computed(() =>
       },
     ];
   }),
+);
+const roundPlayerStatuses = computed(() =>
+  getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
 );
 const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
   active: () => props.state.phase === "answering",

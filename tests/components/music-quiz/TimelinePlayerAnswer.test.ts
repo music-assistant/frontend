@@ -1,5 +1,6 @@
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
+import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
 import type {
   MusicQuizHitsterPersonalizedState,
   MusicQuizHitsterRound,
@@ -52,6 +53,7 @@ const player = {
   score: 0,
   ready: false,
   answered: false,
+  active_from_round: 0,
   placed: false,
   artist_bonus_answered: false,
   title_bonus_answered: false,
@@ -182,6 +184,31 @@ describe("TimelinePlayerAnswer", () => {
     expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_next");
     expect(wrapper.findComponent(TimelineDisplay).exists()).toBe(false);
     expect(wrapper.find("button").exists()).toBe(false);
+  });
+
+  it("excludes late joiners from player progress totals", () => {
+    const state = {
+      ...baseState,
+      players: [
+        player,
+        {
+          ...player,
+          name: "Late",
+          active_from_round: 1,
+        },
+      ],
+    } satisfies MusicQuizHitsterPersonalizedState;
+    const wrapper = shallowMount(TimelinePlayerAnswer, {
+      props: {
+        state,
+        currentRound: baseRound,
+        busy: false,
+      },
+    });
+
+    expect(wrapper.getComponent(TimelineProgress).props("statuses")).toEqual([
+      player,
+    ]);
   });
 
   it("restores the server-locked placement and completion state", () => {

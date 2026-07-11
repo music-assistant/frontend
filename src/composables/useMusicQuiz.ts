@@ -208,7 +208,7 @@ export interface MusicQuizPlayerBase {
   score: number;
   ready: boolean;
   answered: boolean;
-  active_from_round?: number;
+  active_from_round: number;
 }
 
 export interface MusicQuizMultipleChoicePlayer extends MusicQuizPlayerBase {

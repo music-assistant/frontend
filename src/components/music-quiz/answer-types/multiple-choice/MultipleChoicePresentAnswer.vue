@@ -16,7 +16,7 @@
       />
       <div class="flex flex-col gap-4">
         <MultipleChoiceProgress
-          :statuses="state.players"
+          :statuses="roundPlayerStatuses"
           :answered-count="answeredCount"
         />
         <slot name="leaderboard" />
@@ -41,6 +41,7 @@ import type {
   MusicQuizMultipleChoiceRound,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { computed } from "vue";
 
 const props =
@@ -52,8 +53,11 @@ const props =
   >();
 defineSlots<MusicQuizAnswerAdapterSlots>();
 
+const roundPlayerStatuses = computed(() =>
+  getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
+);
 const answeredCount = computed(
-  () => props.state.players.filter((player) => player.answered).length,
+  () => roundPlayerStatuses.value.filter((player) => player.answered).length,
 );
 const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
   active: () => props.state.phase === "answering",

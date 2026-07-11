@@ -85,6 +85,7 @@ const leaderboardRows = [
     score: 10,
     ready: false,
     answered: true,
+    active_from_round: 0,
     rank: 1,
     roundScoreLabel: "",
   },

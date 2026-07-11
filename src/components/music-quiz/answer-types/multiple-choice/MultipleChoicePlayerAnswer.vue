@@ -24,7 +24,7 @@
       {{ $t("providers.music_quiz.answered") }}
     </p>
     <MultipleChoiceProgress
-      :statuses="state.players"
+      :statuses="roundPlayerStatuses"
       :answered-count="answeredCount"
     />
   </template>
@@ -67,6 +67,7 @@ import type {
   MusicQuizMultipleChoiceRound,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX } from "@lucide/vue";
 import { computed } from "vue";
@@ -81,8 +82,11 @@ const props =
 const emit =
   defineEmits<MusicQuizPlayerAnswerAdapterEmits<"multiple_choice">>();
 
+const roundPlayerStatuses = computed(() =>
+  getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
+);
 const answeredCount = computed(
-  () => props.state.players.filter((player) => player.answered).length,
+  () => roundPlayerStatuses.value.filter((player) => player.answered).length,
 );
 const { remainingLabel, remainingFraction } = useMusicQuizAnswerDeadline({
   active: () => props.state.phase === "answering",

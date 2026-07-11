@@ -42,6 +42,7 @@ import type {
   MusicQuizMultipleChoiceRound,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { computed } from "vue";
 
 const props =
@@ -54,12 +55,10 @@ const props =
 defineSlots<MusicQuizAnswerAdapterSlots>();
 
 const roundPlayerStatuses = computed(() =>
-  props.state.players
-    .filter(
-      (player) =>
-        (player.active_from_round ?? 0) <= props.currentRound.round_index,
-    )
-    .sort((a, b) => a.name.localeCompare(b.name)),
+  getMusicQuizRoundPlayers(
+    props.state.players,
+    props.currentRound.round_index,
+  ).sort((a, b) => a.name.localeCompare(b.name)),
 );
 const answeredPlayerCount = computed(
   () => roundPlayerStatuses.value.filter((player) => player.answered).length,

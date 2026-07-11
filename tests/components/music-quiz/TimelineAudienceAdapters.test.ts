@@ -85,6 +85,7 @@ const hostState = {
       score: 0,
       ready: false,
       answered: false,
+      active_from_round: 0,
       placed: true,
       artist_bonus_answered: false,
       title_bonus_answered: false,
@@ -94,8 +95,19 @@ const hostState = {
       score: 0,
       ready: false,
       answered: true,
+      active_from_round: 0,
       placed: true,
       artist_bonus_answered: true,
+      title_bonus_answered: false,
+    },
+    {
+      name: "Late",
+      score: 0,
+      ready: false,
+      answered: false,
+      active_from_round: 1,
+      placed: false,
+      artist_bonus_answered: false,
       title_bonus_answered: false,
     },
   ],
@@ -125,10 +137,30 @@ describe("timeline host and present answers", () => {
       false,
     );
     expect(wrapper.getComponent(TimelineProgress).props("statuses")).toEqual(
-      hostState.players,
+      hostState.players.slice(0, 2),
     );
     expect(wrapper.text()).not.toContain("SECRET TITLE");
     expect(wrapper.html()).not.toContain("library://track/secret");
+  });
+
+  it("excludes late joiners from host and present progress totals", () => {
+    for (const present of [false, true]) {
+      const wrapper = shallowMount(TimelineAudienceAnswer, {
+        props: {
+          state: hostState,
+          currentRound,
+          present,
+        },
+        slots: {
+          leaderboard: "<div>Leaderboard</div>",
+        },
+      });
+
+      expect(wrapper.getComponent(TimelineProgress).props("statuses")).toEqual(
+        hostState.players.slice(0, 2),
+      );
+      wrapper.unmount();
+    }
   });
 
   it("shows aggregate reveal results and preserves the leaderboard slot", () => {

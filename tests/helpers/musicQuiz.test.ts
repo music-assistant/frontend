@@ -41,6 +41,7 @@ describe("Music Quiz round score labels", () => {
           score: 1250,
           ready: false,
           answered: true,
+          active_from_round: 0,
           placed: true,
           artist_bonus_answered: true,
           title_bonus_answered: true,
@@ -78,6 +79,7 @@ describe("Music Quiz round score labels", () => {
           score: 1000,
           ready: false,
           answered: true,
+          active_from_round: 0,
           last_answer: {
             suggestion_id: "correct",
             correct: true,
