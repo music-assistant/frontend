@@ -102,6 +102,11 @@ export interface Props {
   limit?: number;
   // hide these items from the results (e.g. items already selected)
   excludeUris?: string[];
+  // collapse the same item returned by multiple providers (matched by name
+  // and artist); the first occurrence wins, which is the library one. Same
+  // named playlists are genuinely different lists, so they are never
+  // collapsed. Useful when the results show no provider information.
+  dedupe?: boolean;
   placeholder?: string;
   minLength?: number;
   debounceMs?: number;
@@ -115,6 +120,7 @@ const props = withDefaults(defineProps<Props>(), {
   showProviderFilter: false,
   limit: 8,
   excludeUris: () => [],
+  dedupe: false,
   placeholder: undefined,
   minLength: 2,
   debounceMs: 300,
@@ -165,6 +171,13 @@ const panelVisible = computed(
   () => query.value.trim().length >= props.minLength,
 );
 
+const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
+  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  const artist =
+    "artists" in item ? item.artists?.[0]?.name?.toLowerCase() || "" : "";
+  return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
+};
+
 // merged results as one flat list: the selected (or allowed) media types in
 // their fixed order, minus the excluded items
 const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
@@ -177,7 +190,16 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
     if (!mediaTypes.includes(mediaType)) continue;
     items.push(...filteredItems(mediaType));
   }
-  return items.filter((item) => !excluded.has(item.uri));
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (excluded.has(item.uri)) return false;
+    if (!props.dedupe) return true;
+    const key = dedupeKey(item);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 });
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {

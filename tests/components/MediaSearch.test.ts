@@ -164,4 +164,41 @@ describe("MediaSearch", () => {
     expect(wrapper.find(".media-search-result").exists()).toBe(false);
     vi.useRealTimers();
   });
+
+  it("collapses the same item from multiple providers when dedupe is on", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [
+        {
+          uri: "library://track/1",
+          name: "Song",
+          media_type: "track",
+          artists: [{ name: "Band" }],
+        },
+        {
+          uri: "spotify://track/9",
+          name: "Song",
+          media_type: "track",
+          artists: [{ name: "Band" }],
+        },
+      ],
+      playlists: [
+        { uri: "library://playlist/1", name: "Party", media_type: "playlist" },
+        { uri: "spotify://playlist/9", name: "Party", media_type: "playlist" },
+      ],
+    });
+    const wrapper = mountSearch({
+      allowedMediaTypes: [MediaType.TRACK, MediaType.PLAYLIST],
+      dedupe: true,
+    });
+
+    await wrapper.find("input").setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+
+    const rows = wrapper.findAll(".media-search-result");
+    // the duplicate track collapses, same-named playlists never do
+    expect(rows.filter((row) => row.text().includes("Song"))).toHaveLength(1);
+    expect(rows.filter((row) => row.text().includes("Party"))).toHaveLength(2);
+    vi.useRealTimers();
+  });
 });
