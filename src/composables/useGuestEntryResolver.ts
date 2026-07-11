@@ -2,8 +2,13 @@ import {
   getMusicQuizInfo,
   isMusicQuizProviderEvent,
 } from "@/composables/useMusicQuiz";
+import {
+  createGuestQuizAffinity,
+  type GuestQuizAffinity,
+} from "@/helpers/guest_quiz_affinity";
 import { consumeMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import api, { ConnectionState } from "@/plugins/api";
+import { authManager } from "@/plugins/auth";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 import {
   onBeforeUnmount,
@@ -27,24 +32,20 @@ export type GuestEntryState =
 export const guestEntryStateKey: InjectionKey<Readonly<Ref<GuestEntryState>>> =
   Symbol("guest-entry-state");
 
-export async function resolveGuestEntry(): Promise<GuestEntryState> {
-  const providerDomains = new Set(
-    Object.values(api.providers).map((provider) => provider.domain),
-  );
-  const hasMusicQuiz = providerDomains.has("music_quiz");
-
-  if (hasMusicQuiz) {
-    const game = await getMusicQuizInfo();
-    if (game) return "quiz";
-  }
-  if (providerDomains.has("party")) return "party";
-  return hasMusicQuiz ? "quiz-inactive" : "inactive";
+export async function resolveGuestEntry(
+  quizAffinity: GuestQuizAffinity = createGuestQuizAffinity(getGuestIdentity()),
+): Promise<GuestEntryState> {
+  const state = await resolveGuestEntryState(quizAffinity);
+  if (state === "quiz") quizAffinity.record();
+  return state;
 }
 
 export function useGuestEntryResolver() {
   const route = useRoute();
   const router = useRouter();
   const state = ref<GuestEntryState>("loading");
+  let guestIdentity = getGuestIdentity();
+  let quizAffinity = createGuestQuizAffinity(guestIdentity);
   let active = false;
   let requestedVersion = 0;
   let preserveEndedState = false;
@@ -100,12 +101,20 @@ export function useGuestEntryResolver() {
   async function processResolutions() {
     while (active) {
       const version = requestedVersion;
-      const nextState = await resolveGuestEntry();
+      const resolutionAffinity = getQuizAffinity();
+      const nextState = await resolveGuestEntryState(resolutionAffinity);
       if (!active) return;
       if (version !== requestedVersion) continue;
+      if (resolutionAffinity !== getQuizAffinity()) {
+        requestedVersion += 1;
+        continue;
+      }
 
+      if (nextState === "quiz") resolutionAffinity.record();
       state.value =
-        preserveEndedState && nextState === "quiz-inactive"
+        preserveEndedState &&
+        nextState === "quiz-inactive" &&
+        !quizAffinity.active
           ? "quiz-ended"
           : nextState;
       preserveEndedState = false;
@@ -149,6 +158,38 @@ export function useGuestEntryResolver() {
       await router.replace(target);
     }
   }
+
+  function getQuizAffinity(): GuestQuizAffinity {
+    const currentIdentity = getGuestIdentity();
+    if (currentIdentity !== guestIdentity) {
+      guestIdentity = currentIdentity;
+      quizAffinity = createGuestQuizAffinity(currentIdentity);
+      preserveEndedState = false;
+    }
+    return quizAffinity;
+  }
+}
+
+function getGuestIdentity(): string | undefined {
+  if (!authManager.isGuestAccessSession()) return undefined;
+  return authManager.getClaim("jti") || undefined;
+}
+
+async function resolveGuestEntryState(
+  quizAffinity: GuestQuizAffinity,
+): Promise<GuestEntryState> {
+  const providerDomains = new Set(
+    Object.values(api.providers).map((provider) => provider.domain),
+  );
+  const hasMusicQuiz = providerDomains.has("music_quiz");
+
+  if (hasMusicQuiz) {
+    const game = await getMusicQuizInfo();
+    if (game) return "quiz";
+  }
+  if (quizAffinity.active) return "quiz-inactive";
+  if (providerDomains.has("party")) return "party";
+  return hasMusicQuiz ? "quiz-inactive" : "inactive";
 }
 
 function getGuestEntryPath(state: GuestEntryState): string | undefined {
