@@ -99,40 +99,38 @@ describe("GuessTheSongSetup", () => {
     );
     await searchInput.setValue("old");
     await vi.advanceTimersByTimeAsync(300);
-    expect(mockSearch).toHaveBeenCalledWith(
-      "old",
-      [MediaType.TRACK, MediaType.PLAYLIST],
-      8,
-      ["library"],
-    );
+    expect(mockSearch).toHaveBeenCalledWith("old", [MediaType.PLAYLIST], 8, [
+      "library",
+    ]);
 
     await searchInput.setValue("new");
     await vi.advanceTimersByTimeAsync(300);
-    expect(mockSearch).toHaveBeenCalledWith(
-      "new",
-      [MediaType.TRACK, MediaType.PLAYLIST],
-      8,
-      ["library"],
-    );
+    expect(mockSearch).toHaveBeenCalledWith("new", [MediaType.PLAYLIST], 8, [
+      "library",
+    ]);
 
     newSearch.resolve({
-      tracks: [
+      tracks: [],
+      playlists: [
         {
-          uri: "track:new",
+          uri: "playlist:new",
           name: "Newest result",
-          media_type: MediaType.TRACK,
+          media_type: MediaType.PLAYLIST,
         },
       ],
-      playlists: [],
     });
     await flushPromises();
     expect(wrapper.text()).toContain("Newest result");
 
     oldSearch.resolve({
-      tracks: [
-        { uri: "track:old", name: "Older result", media_type: MediaType.TRACK },
+      tracks: [],
+      playlists: [
+        {
+          uri: "playlist:old",
+          name: "Older result",
+          media_type: MediaType.PLAYLIST,
+        },
       ],
-      playlists: [],
     });
     await flushPromises();
 
@@ -142,14 +140,14 @@ describe("GuessTheSongSetup", () => {
 
   it("emits a discriminated create request", async () => {
     mockSearch.mockResolvedValue({
-      tracks: [
+      tracks: [],
+      playlists: [
         {
-          uri: "track:test",
-          name: "Test track",
-          media_type: MediaType.TRACK,
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
         },
       ],
-      playlists: [],
     });
     const wrapper = mountConfig();
 
@@ -160,7 +158,7 @@ describe("GuessTheSongSetup", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Test track"))
+      .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
     await wrapper
       .findAll("button")
@@ -175,21 +173,21 @@ describe("GuessTheSongSetup", () => {
         suggestion_count: 4,
         answer_duration: 30,
         difficulty: "normal",
-        source_uris: ["track:test"],
+        source_uris: ["playlist:test"],
       },
     });
   });
 
   it("hides already selected items from the search results", async () => {
     mockSearch.mockResolvedValue({
-      tracks: [
+      tracks: [],
+      playlists: [
         {
-          uri: "track:test",
-          name: "Test track",
-          media_type: MediaType.TRACK,
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
         },
       ],
-      playlists: [],
     });
     const wrapper = mountConfig();
 
@@ -200,15 +198,15 @@ describe("GuessTheSongSetup", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Test track"))
+      .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
     await flushPromises();
 
     // still selected (removable) but no longer offered as a search result
     const resultButtons = wrapper
       .findAll(".media-search-result")
-      .filter((button) => button.text().includes("Test track"));
+      .filter((button) => button.text().includes("Test playlist"));
     expect(resultButtons).toHaveLength(0);
-    expect(wrapper.text()).toContain("Test track");
+    expect(wrapper.text()).toContain("Test playlist");
   });
 });

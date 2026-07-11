@@ -48,14 +48,14 @@ describe("HitsterSetup", () => {
     mockGetLibraryGenres.mockReset();
     mockGetLibraryGenres.mockResolvedValue([]);
     mockSearch.mockResolvedValue({
-      tracks: [
+      tracks: [],
+      playlists: [
         {
-          uri: "track:test",
-          name: "Test track",
-          media_type: MediaType.TRACK,
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
         },
       ],
-      playlists: [],
     });
   });
 
@@ -82,7 +82,7 @@ describe("HitsterSetup", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Test track"))
+      .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
     await wrapper
       .findAll("button")
@@ -95,7 +95,7 @@ describe("HitsterSetup", () => {
       config: {
         round_count: 5,
         answer_duration: 30,
-        source_uris: ["track:test"],
+        source_uris: ["playlist:test"],
         artist_bonus_mode: "off",
         title_bonus_mode: "off",
       },
@@ -122,7 +122,7 @@ describe("HitsterSetup", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Test track"))
+      .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
     await wrapper
       .findAll("button")
@@ -148,7 +148,7 @@ describe("HitsterSetup", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Test track"))
+      .find((button) => button.text().includes("Test playlist"))
       ?.trigger("click");
 
     expect(

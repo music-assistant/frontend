@@ -88,6 +88,7 @@
         <MediaSearch
           input-id="quiz-source-search"
           :allowed-media-types="[MediaType.TRACK, MediaType.PLAYLIST]"
+          :default-selected-media-types="[MediaType.PLAYLIST]"
           :exclude-uris="sourceUris"
           :placeholder="$t('providers.music_quiz.search_music')"
           @select="onSourceSelect"
@@ -197,6 +198,12 @@ const {
 
 function onSourceSelect(item: MediaItemTypeOrItemMapping) {
   // the search is restricted to tracks and playlists
+  if (
+    item.media_type !== MediaType.TRACK &&
+    item.media_type !== MediaType.PLAYLIST
+  ) {
+    return;
+  }
   addSource(item as MusicQuizSourceItem);
 }
 
