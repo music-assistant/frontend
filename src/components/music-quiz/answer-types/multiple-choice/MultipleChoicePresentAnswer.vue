@@ -23,6 +23,9 @@
       </div>
     </div>
   </template>
+  <template v-else-if="state.phase === 'reveal'">
+    <slot name="leaderboard" />
+  </template>
 </template>
 
 <script setup lang="ts">

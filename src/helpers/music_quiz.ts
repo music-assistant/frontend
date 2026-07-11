@@ -88,9 +88,14 @@ export function getMusicQuizRoundScoreLabel(
   ) {
     return "";
   }
-  if (player.last_answer && player.last_answer.points !== undefined) {
-    return `(+${player.last_answer.points})`;
-  }
+  if (!player.last_answer) return "";
+  const points =
+    "placement" in player.last_answer
+      ? player.last_answer.placement.points +
+        (player.last_answer.artist?.points ?? 0) +
+        (player.last_answer.title?.points ?? 0)
+      : player.last_answer.points;
+  if (points !== undefined) return `(+${points})`;
   return "";
 }
 

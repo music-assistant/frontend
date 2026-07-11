@@ -47,7 +47,15 @@
             :state="state"
             :current-round="currentRound"
           />
-          <MusicQuizLeaderboard :rows="leaderboardRows" />
+          <component
+            :is="answerComponent"
+            :state="state"
+            :current-round="currentRound"
+          >
+            <template #leaderboard>
+              <MusicQuizLeaderboard :rows="leaderboardRows" />
+            </template>
+          </component>
         </div>
       </template>
 

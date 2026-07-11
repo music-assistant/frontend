@@ -154,6 +154,41 @@ describe("Music Quiz shared stages", () => {
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
   });
 
+  it("keeps reveal presentation routed through the answer adapter", () => {
+    const state = {
+      ...hostState,
+      phase: "reveal",
+    } satisfies MusicQuizGuessTheSongHostState;
+    const wrapper = mount(MusicQuizPresentStage, {
+      props: {
+        state,
+        currentRound,
+        leaderboardRows,
+        winnerText: "",
+        phaseLabel: "Reveal",
+        roundLabel: "Round 1",
+        joinLink: "https://example.test/join",
+        isConnectionDegraded: false,
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          Button: true,
+          MusicQuizConnectionBanners: true,
+          MusicQuizLeaderboard: {
+            template: '<div data-testid="leaderboard" />',
+          },
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="game-adapter"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+  });
+
   it("keeps the podium in the shared finished presentation", () => {
     const state = {
       ...hostState,

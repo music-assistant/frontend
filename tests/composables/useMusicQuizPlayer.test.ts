@@ -7,6 +7,7 @@ const {
   mockJoinMusicQuiz,
   mockReadyMusicQuiz,
   mockAnswerMusicQuiz,
+  mockSubmitMusicQuizAnswer,
   mockSubscribe,
   mockStorePlayerId,
   mockGetStoredPlayerId,
@@ -22,6 +23,7 @@ const {
   mockJoinMusicQuiz: vi.fn(),
   mockReadyMusicQuiz: vi.fn(),
   mockAnswerMusicQuiz: vi.fn(),
+  mockSubmitMusicQuizAnswer: vi.fn(),
   mockSubscribe: vi.fn(),
   mockStorePlayerId: vi.fn(),
   mockGetStoredPlayerId: vi.fn(),
@@ -50,9 +52,11 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   joinMusicQuiz: mockJoinMusicQuiz,
   readyMusicQuiz: mockReadyMusicQuiz,
   answerMusicQuiz: mockAnswerMusicQuiz,
+  submitMusicQuizAnswer: mockSubmitMusicQuizAnswer,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
-    value.quiz_type === "guess_the_song" &&
-    value.answer_type === "multiple_choice",
+    (value.quiz_type === "guess_the_song" &&
+      value.answer_type === "multiple_choice") ||
+    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -176,6 +180,7 @@ describe("useMusicQuizPlayer", () => {
     mockJoinMusicQuiz.mockReset();
     mockReadyMusicQuiz.mockReset();
     mockAnswerMusicQuiz.mockReset();
+    mockSubmitMusicQuizAnswer.mockReset();
     mockSubscribe.mockReset();
     mockStorePlayerId.mockReset();
     mockGetStoredPlayerId.mockReset();
@@ -840,6 +845,170 @@ describe("useMusicQuizPlayer", () => {
       "stored-player",
       "suggestion-1",
     );
+    expect(player.state.value).toEqual(answeredState);
+  });
+
+  it("routes timeline actions through the generic submission command", async () => {
+    storedPlayerId.value = "stored-player";
+    const timelineState = {
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      phase: "answering",
+      name: "Hitster",
+      round_count: 1,
+      answer_duration: 30,
+      artist_bonus_mode: "off",
+      title_bonus_mode: "off",
+      mode: "venue",
+      players: [],
+      current_round: {
+        round_index: 0,
+        started_at: 1,
+        deadline: 31,
+        question: null,
+        timeline: [],
+        bonus_definitions: [],
+      },
+      you: {
+        name: "Player",
+        score: 0,
+        ready: false,
+        active_from_round: 0,
+      },
+    } as const;
+    const submission = {
+      answer_type: "timeline",
+      action: "place",
+      previous_entry_id: null,
+      next_entry_id: "anchor",
+    } as const;
+    mockGetMusicQuizState.mockResolvedValue(timelineState);
+    mockSubmitMusicQuizAnswer.mockResolvedValue(timelineState);
+
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    await player.submitAnswer(submission);
+
+    expect(mockSubmitMusicQuizAnswer).toHaveBeenCalledWith(
+      "stored-player",
+      submission,
+    );
+    expect(mockAnswerMusicQuiz).not.toHaveBeenCalled();
+    expect(player.state.value).toEqual(timelineState);
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: {
+        event: "game_updated",
+        state: {
+          ...timelineState,
+          players: [
+            {
+              name: "Player",
+              score: 0,
+              ready: false,
+              answered: true,
+              placed: true,
+              artist_bonus_answered: false,
+              title_bonus_answered: false,
+            },
+          ],
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(mockHeartbeatMusicQuiz).toHaveBeenCalledWith("stored-player");
+    expect(mockGetMusicQuizState).toHaveBeenCalledTimes(2);
+    expect(player.state.value?.quiz_type).toBe("hitster");
+  });
+
+  it("does not let a stale event refresh undo a timeline action", async () => {
+    storedPlayerId.value = "stored-player";
+    const timelineState = {
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      phase: "answering",
+      name: "Hitster",
+      round_count: 1,
+      answer_duration: 30,
+      artist_bonus_mode: "free_text",
+      title_bonus_mode: "off",
+      mode: "venue",
+      players: [],
+      current_round: {
+        round_index: 0,
+        started_at: 1,
+        deadline: 31,
+        question: null,
+        timeline: [],
+        bonus_definitions: [
+          {
+            bonus_type: "artist",
+            mode: "free_text",
+          },
+        ],
+      },
+      you: {
+        name: "Player",
+        score: 0,
+        ready: false,
+        active_from_round: 0,
+      },
+    } as const;
+    const answeredState = {
+      ...timelineState,
+      you: {
+        ...timelineState.you,
+        answer: {
+          previous_entry_id: null,
+          next_entry_id: "anchor",
+          answered_at: 10,
+          bonuses: [],
+          finished: false,
+        },
+      },
+    } as const;
+    const staleRefresh = deferred<typeof timelineState>();
+    mockGetMusicQuizState
+      .mockResolvedValueOnce(timelineState)
+      .mockReturnValueOnce(staleRefresh.promise);
+    mockSubmitMusicQuizAnswer.mockResolvedValue(answeredState);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    providerHandlers[0]({
+      object_id: "quiz-instance",
+      data: {
+        event: "game_updated",
+        state: {
+          ...timelineState,
+          players: [
+            {
+              name: "Player",
+              score: 0,
+              ready: false,
+              answered: false,
+              placed: false,
+              artist_bonus_answered: false,
+              title_bonus_answered: false,
+            },
+          ],
+        },
+      },
+    });
+    await flushPromises();
+    expect(mockGetMusicQuizState).toHaveBeenCalledTimes(2);
+
+    await player.submitAnswer({
+      answer_type: "timeline",
+      action: "place",
+      previous_entry_id: null,
+      next_entry_id: "anchor",
+    });
+    staleRefresh.resolve(timelineState);
+    await flushPromises();
+
     expect(player.state.value).toEqual(answeredState);
   });
 

@@ -18,13 +18,14 @@ import {
   isSupportedMusicQuiz,
   parseMusicQuizAnswerType,
   parseMusicQuizType,
+  submitMusicQuizAnswer,
   type MusicQuizProviderEvent,
   type MusicQuizPublicState,
 } from "@/composables/useMusicQuiz";
 
 function unsupportedQuizType(value: string) {
   const quizType = parseMusicQuizType(value);
-  if (quizType === "guess_the_song") {
+  if (quizType === "guess_the_song" || quizType === "hitster") {
     throw new Error("Expected an unsupported quiz type");
   }
   return quizType;
@@ -32,7 +33,7 @@ function unsupportedQuizType(value: string) {
 
 function unsupportedAnswerType(value: string) {
   const answerType = parseMusicQuizAnswerType(value);
-  if (answerType === "multiple_choice") {
+  if (answerType === "multiple_choice" || answerType === "timeline") {
     throw new Error("Expected an unsupported answer type");
   }
   return answerType;
@@ -78,6 +79,76 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
+  it("sends a flat Hitster create payload without answer-only fields", async () => {
+    await createMusicQuiz({
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      config: {
+        round_count: 10,
+        answer_duration: 45,
+        source_uris: ["library://playlist/1"],
+        name: "Friday Hitster",
+        artist_bonus_mode: "free_text",
+        title_bonus_mode: "multiple_choice",
+      },
+    });
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
+      quiz_type: "hitster",
+      round_count: 10,
+      answer_duration: 45,
+      source_uris: ["library://playlist/1"],
+      name: "Friday Hitster",
+      artist_bonus_mode: "free_text",
+      title_bonus_mode: "multiple_choice",
+    });
+  });
+
+  it("sends strict timeline submissions through the generic command", async () => {
+    const submission = {
+      answer_type: "timeline",
+      action: "place",
+      previous_entry_id: "older",
+      next_entry_id: "newer",
+    } as const;
+
+    await submitMusicQuizAnswer("player-id", submission);
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/submit_answer", {
+      player_id: "player-id",
+      submission,
+    });
+  });
+
+  it.each([
+    {
+      answer_type: "timeline",
+      action: "bonus_text",
+      bonus_type: "artist",
+      value: "Massive Attack",
+    },
+    {
+      answer_type: "timeline",
+      action: "bonus_choice",
+      bonus_type: "title",
+      option_id: "option-2",
+    },
+    {
+      answer_type: "timeline",
+      action: "finish",
+    },
+  ] as const)(
+    "preserves the exact $action submission keys",
+    async (submission) => {
+      await submitMusicQuizAnswer("player-id", submission);
+
+      expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/submit_answer", {
+        player_id: "player-id",
+        submission,
+      });
+    },
+  );
+
   it("sends a typed player heartbeat", async () => {
     mockSendCommand.mockResolvedValue(true);
 
@@ -107,14 +178,35 @@ describe("useMusicQuiz commands", () => {
     } satisfies MusicQuizPublicState;
     const unsupportedAnswer = {
       quiz_type: "guess_the_song",
-      answer_type: unsupportedAnswerType("timeline"),
+      answer_type: unsupportedAnswerType("future_answer"),
       phase: "lobby",
       name: "Future Quiz",
     } satisfies MusicQuizPublicState;
+    const hitster = {
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      phase: "lobby",
+      name: null,
+      round_count: 5,
+      answer_duration: 30,
+      artist_bonus_mode: "off",
+      title_bonus_mode: "off",
+      mode: "remote",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
+    const mismatched = {
+      quiz_type: "guess_the_song",
+      answer_type: "timeline",
+      phase: "lobby",
+      name: "Mismatched Quiz",
+    } satisfies MusicQuizPublicState;
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
+    expect(isSupportedMusicQuiz(hitster)).toBe(true);
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
+    expect(isSupportedMusicQuiz(mismatched)).toBe(false);
   });
 
   it("preserves nullable server fields in supported state", () => {

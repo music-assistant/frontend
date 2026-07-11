@@ -7,6 +7,7 @@ import {
   isMusicQuizProviderEvent,
   joinMusicQuiz,
   readyMusicQuiz,
+  submitMusicQuizAnswer,
   type MusicQuizAnswerSubmission,
   type MusicQuizCurrentRound,
   type MusicQuizInfo,
@@ -121,7 +122,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       const result = await joinMusicQuiz(name);
       storeMusicQuizPlayerId(result.player_id);
-      state.value = result.state;
+      applyPlayerState(result.state);
       gameRemoved.value = false;
       void startHeartbeat(result.player_id);
       return true;
@@ -143,11 +144,11 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     }
     busy.value = true;
     try {
-      const nextState = await answerMusicQuiz(
-        currentPlayerId,
-        submission.suggestion_id,
-      );
-      state.value = nextState;
+      const nextState =
+        submission.answer_type === "multiple_choice"
+          ? await answerMusicQuiz(currentPlayerId, submission.suggestion_id)
+          : await submitMusicQuizAnswer(currentPlayerId, submission);
+      applyPlayerState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -168,7 +169,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     busy.value = true;
     try {
       const nextState = await readyMusicQuiz(currentPlayerId);
-      state.value = nextState;
+      applyPlayerState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -220,11 +221,21 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       loading.value = true;
       const nextState = await getMusicQuizState(currentPlayerId);
-      if (playerId.value !== currentPlayerId) return;
+      if (
+        loadingRequestId !== requestId ||
+        playerId.value !== currentPlayerId
+      ) {
+        return;
+      }
       state.value = nextState;
       gameRemoved.value = false;
     } catch (err) {
-      if (playerId.value !== currentPlayerId) return;
+      if (
+        loadingRequestId !== requestId ||
+        playerId.value !== currentPlayerId
+      ) {
+        return;
+      }
       if (
         isNoActiveGameError(err) ||
         getMusicQuizErrorMessage(err).toLowerCase().includes("player not found")
@@ -336,6 +347,12 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     loading.value = false;
     stopHeartbeat();
     clearStoredMusicQuizPlayerId();
+  }
+
+  function applyPlayerState(nextState: MusicQuizPersonalizedState) {
+    loadingRequestId += 1;
+    state.value = nextState;
+    loading.value = false;
   }
 
   async function resetToJoinInfo() {

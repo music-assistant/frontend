@@ -1,6 +1,9 @@
 import MultipleChoiceHostAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceHostAnswer.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
 import MultipleChoicePresentAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePresentAnswer.vue";
+import TimelineHostAnswer from "@/components/music-quiz/answer-types/timeline/TimelineHostAnswer.vue";
+import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
+import TimelinePresentAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePresentAnswer.vue";
 import type { MusicQuizAnswerType } from "@/composables/useMusicQuiz";
 import { markRaw, type Component } from "vue";
 
@@ -28,11 +31,18 @@ const MUSIC_QUIZ_ANSWER_TYPE_REGISTRY = {
       present: markRaw(MultipleChoicePresentAnswer),
     },
   },
+  timeline: {
+    id: "timeline",
+    adapters: {
+      player: markRaw(TimelinePlayerAnswer),
+      host: markRaw(TimelineHostAnswer),
+      present: markRaw(TimelinePresentAnswer),
+    },
+  },
 } satisfies MusicQuizAnswerRegistry;
 
-export const MUSIC_QUIZ_ANSWER_TYPES = Object.values(
-  MUSIC_QUIZ_ANSWER_TYPE_REGISTRY,
-);
+export const MUSIC_QUIZ_ANSWER_TYPES: MusicQuizAnswerTypeDefinition[] =
+  Object.values(MUSIC_QUIZ_ANSWER_TYPE_REGISTRY);
 
 export function getMusicQuizAnswerType(
   id: string,
