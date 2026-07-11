@@ -2,6 +2,7 @@
   <HitsterRound
     :phase="state.phase"
     :round="currentRound"
+    :is-final-round="isFinalRound"
     :busy="busy"
     :is-ready="state.you.ready"
     :ready-label="readyLabel"
@@ -32,9 +33,20 @@ const props =
   >();
 const emit = defineEmits<MusicQuizPlayerGameAdapterEmits>();
 
+const isFinalRound = computed(
+  () => props.currentRound.round_index + 1 >= props.state.round_count,
+);
 const readyLabel = computed(() =>
   props.state.you.ready
-    ? $t("providers.music_quiz.waiting_for_next")
-    : $t("providers.music_quiz.ready"),
+    ? $t(
+        isFinalRound.value
+          ? "providers.music_quiz.waiting_for_final_results"
+          : "providers.music_quiz.waiting_for_next",
+      )
+    : $t(
+        isFinalRound.value
+          ? "providers.music_quiz.ready_for_final_results"
+          : "providers.music_quiz.ready",
+      ),
 );
 </script>

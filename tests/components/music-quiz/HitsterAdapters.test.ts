@@ -1,5 +1,7 @@
 import HitsterHostPanel from "@/components/music-quiz/game-types/hitster/HitsterHostPanel.vue";
+import HitsterHostRound from "@/components/music-quiz/game-types/hitster/HitsterHostRound.vue";
 import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
+import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
 import HitsterRound from "@/components/music-quiz/game-types/hitster/HitsterRound.vue";
 import type {
   MusicQuizHitsterHostRound,
@@ -7,7 +9,7 @@ import type {
   MusicQuizHitsterPersonalizedState,
   MusicQuizHitsterRound,
 } from "@/composables/useMusicQuiz";
-import { mount } from "@vue/test-utils";
+import { mount, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetTrackLyrics } = vi.hoisted(() => ({
@@ -72,7 +74,7 @@ const playerState = {
   answer_type: "timeline",
   phase: "reveal",
   name: "Hitster",
-  round_count: 1,
+  round_count: 2,
   answer_duration: 30,
   artist_bonus_mode: "off",
   title_bonus_mode: "off",
@@ -86,6 +88,23 @@ const playerState = {
     active_from_round: 0,
   },
 } satisfies MusicQuizHitsterPersonalizedState;
+const hostState = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "reveal",
+  name: "Hitster",
+  round_count: 1,
+  answer_duration: 30,
+  artist_bonus_mode: "off",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [],
+  current_round: revealRound,
+  created_at: 1,
+  sources: [],
+  join_url: "https://example.test/join",
+  rounds: [],
+} satisfies MusicQuizHitsterHostState;
 
 describe("Hitster game adapters", () => {
   beforeEach(() => {
@@ -103,6 +122,7 @@ describe("Hitster game adapters", () => {
       props: {
         phase: "answering",
         round: revealRound,
+        isFinalRound: false,
       },
     });
 
@@ -118,6 +138,7 @@ describe("Hitster game adapters", () => {
       props: {
         phase: "reveal",
         round: revealRound,
+        isFinalRound: false,
       },
     });
 
@@ -137,6 +158,7 @@ describe("Hitster game adapters", () => {
       props: {
         phase: "reveal",
         round: revealRound,
+        isFinalRound: false,
       },
     });
 
@@ -145,7 +167,7 @@ describe("Hitster game adapters", () => {
     );
   });
 
-  it("renders the full server-scheduled countdown", () => {
+  it("renders the intermediate server-scheduled countdown", () => {
     const wrapper = mount(HitsterRound, {
       props: {
         phase: "reveal",
@@ -153,13 +175,35 @@ describe("Hitster game adapters", () => {
           ...revealRound,
           auto_advance_at: Date.now() / 1000 + 30,
         },
+        isFinalRound: false,
       },
     });
     const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
 
     expect(countdown.attributes("role")).toBe("timer");
+    expect(countdown.text()).toContain("providers.music_quiz.next_round_in");
     expect(countdown.text()).toContain("30s");
     expect(countdown.attributes("aria-label")).toContain("30s");
+  });
+
+  it("renders final-results semantics for the last countdown", () => {
+    const wrapper = mount(HitsterRound, {
+      props: {
+        phase: "reveal",
+        round: {
+          ...revealRound,
+          auto_advance_at: Date.now() / 1000 + 30,
+        },
+        isFinalRound: true,
+      },
+    });
+    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+
+    expect(countdown.text()).toContain("providers.music_quiz.final_results_in");
+    expect(countdown.text()).not.toContain(
+      "providers.music_quiz.next_round_in",
+    );
+    expect(countdown.text()).toContain("30s");
   });
 
   it("resumes an elapsed server countdown after reconnect", async () => {
@@ -172,6 +216,7 @@ describe("Hitster game adapters", () => {
           ...revealRound,
           auto_advance_at: autoAdvanceAt,
         },
+        isFinalRound: false,
       },
     });
     const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
@@ -183,7 +228,7 @@ describe("Hitster game adapters", () => {
     expect(countdown.text()).toContain("0s");
   });
 
-  it("places Ready after song details and keeps its action", async () => {
+  it("keeps intermediate Ready after song details", async () => {
     const wrapper = mount(HitsterPlayerRound, {
       props: {
         state: playerState,
@@ -204,6 +249,88 @@ describe("Hitster game adapters", () => {
 
     expect(wrapper.emitted("ready")).toEqual([[]]);
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+
+    await wrapper.setProps({
+      state: {
+        ...playerState,
+        you: {
+          ...playerState.you,
+          ready: true,
+        },
+      },
+    });
+
+    expect(readyButton.text()).toContain(
+      "providers.music_quiz.waiting_for_next",
+    );
+    expect(readyButton.text()).not.toContain(
+      "providers.music_quiz.waiting_for_final_results",
+    );
+  });
+
+  it("uses final-results Ready and waiting labels without changing its action", async () => {
+    const finalState = {
+      ...playerState,
+      round_count: 1,
+    } satisfies MusicQuizHitsterPersonalizedState;
+    const wrapper = mount(HitsterPlayerRound, {
+      props: {
+        state: finalState,
+        currentRound: revealRound,
+        busy: false,
+      },
+    });
+    const title = wrapper.get("h2");
+    const readyButton = wrapper.get('[data-testid="hitster-ready"]');
+
+    expect(
+      title.element.compareDocumentPosition(readyButton.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(readyButton.text()).toContain(
+      "providers.music_quiz.ready_for_final_results",
+    );
+
+    await readyButton.trigger("click");
+
+    expect(wrapper.emitted("ready")).toEqual([[]]);
+
+    await wrapper.setProps({
+      state: {
+        ...finalState,
+        you: {
+          ...finalState.you,
+          ready: true,
+        },
+      },
+    });
+
+    expect(readyButton.text()).toContain(
+      "providers.music_quiz.waiting_for_final_results",
+    );
+    expect(readyButton.attributes()).toHaveProperty("disabled");
+  });
+
+  it("passes final-round semantics through host and present adapters", () => {
+    const hostWrapper = shallowMount(HitsterHostRound, {
+      props: {
+        state: hostState,
+        currentRound: revealRound,
+      },
+    });
+    const presentWrapper = shallowMount(HitsterPresentRound, {
+      props: {
+        state: hostState,
+        currentRound: revealRound,
+      },
+    });
+
+    expect(hostWrapper.getComponent(HitsterRound).props("isFinalRound")).toBe(
+      true,
+    );
+    expect(
+      presentWrapper.getComponent(HitsterRound).props("isFinalRound"),
+    ).toBe(true);
   });
 
   it("keeps protected host round data hidden until reveal", async () => {

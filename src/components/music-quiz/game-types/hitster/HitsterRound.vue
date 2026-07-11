@@ -94,6 +94,7 @@ const props = withDefaults(
   defineProps<{
     phase: MusicQuizPhase;
     round: MusicQuizHitsterRound;
+    isFinalRound: boolean;
     busy?: boolean;
     isReady?: boolean;
     readyLabel?: string;
@@ -120,7 +121,12 @@ const { remainingLabel: autoAdvanceLabel } = useMusicQuizAnswerDeadline({
 });
 const autoAdvanceText = computed(() =>
   autoAdvanceLabel.value
-    ? $t("providers.music_quiz.next_round_in", [autoAdvanceLabel.value])
+    ? $t(
+        props.isFinalRound
+          ? "providers.music_quiz.final_results_in"
+          : "providers.music_quiz.next_round_in",
+        [autoAdvanceLabel.value],
+      )
     : "",
 );
 </script>
