@@ -518,14 +518,22 @@ const scrollHero = (dir: number) => {
 };
 
 let heroRo: ResizeObserver | undefined;
+let observedHeroGrid: HTMLElement | null = null;
+
 const observeHero = () => {
   const el = heroGrid.value;
-  if (!el) return;
-  updateHeroNav();
-  if ("ResizeObserver" in window && !heroRo) {
-    heroRo = new ResizeObserver(updateHeroNav);
-    heroRo.observe(el);
+  if (!(el instanceof HTMLElement)) {
+    heroRo?.disconnect();
+    observedHeroGrid = null;
+    return;
   }
+  updateHeroNav();
+  if (!("ResizeObserver" in window)) return;
+  heroRo ??= new ResizeObserver(updateHeroNav);
+  if (observedHeroGrid === el) return;
+  heroRo.disconnect();
+  heroRo.observe(el);
+  observedHeroGrid = el;
 };
 
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
@@ -731,35 +739,43 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
+const refreshRecommendations = useDebounceFn(async () => {
+  await loadRecommendations();
+  // Keeps the same picks while the cache is fresh; rebuilds once expired.
+  resolveHeroPicks();
+}, 1500);
+
+const unsubscribeRecommendations = api.subscribe(
+  EventType.MEDIA_ITEM_PLAYED,
+  (evt: EventMessage) => {
+    // Only refetch when a track actually finished (is_playing = false),
+    // not on the periodic ~30s progress reports that also emit this event.
+    if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
+      refreshRecommendations();
+    }
+  },
+);
+
+let isUnmounted = false;
+
 onMounted(async () => {
   await Promise.all([loadRecommendations(), loadGenres()]);
+  if (isUnmounted) return;
   resolveHeroPicks();
   loading.value = false;
-  nextTick(observeHero);
+  nextTick(() => {
+    if (!isUnmounted) observeHero();
+  });
   window.addEventListener("resize", updateHeroNav);
-
-  const refreshRecommendations = useDebounceFn(async () => {
-    await loadRecommendations();
-    // Keeps the same picks while the cache is fresh; rebuilds once expired.
-    resolveHeroPicks();
-  }, 1500);
-
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_PLAYED,
-    (evt: EventMessage) => {
-      // Only refetch when a track actually finished (is_playing = false),
-      // not on the periodic ~30s progress reports that also emit this event.
-      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        refreshRecommendations();
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
 });
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   window.removeEventListener("resize", updateHeroNav);
+  unsubscribeRecommendations();
   heroRo?.disconnect();
+  heroRo = undefined;
+  observedHeroGrid = null;
 });
 </script>
 
