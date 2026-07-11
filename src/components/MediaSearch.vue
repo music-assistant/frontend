@@ -165,8 +165,20 @@ const panelVisible = computed(
   () => query.value.trim().length >= props.minLength,
 );
 
+// The results show no provider information, so the same item returned by
+// multiple providers reads as a plain duplicate: collapse by name (and
+// artist), keeping the first occurrence - the library one, as the engine
+// merges library results first. Same-named playlists are genuinely
+// different lists and are never collapsed.
+const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
+  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  const artist =
+    "artists" in item ? item.artists?.[0]?.name?.toLowerCase() || "" : "";
+  return `${item.media_type}:${item.name.toLowerCase()}:${artist}`;
+};
+
 // merged results as one flat list: the selected (or allowed) media types in
-// their fixed order, minus the excluded items
+// their fixed order, minus the excluded items and provider duplicates
 const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
   const mediaTypes = selectedMediaTypes.value.length
     ? selectedMediaTypes.value
@@ -177,7 +189,15 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
     if (!mediaTypes.includes(mediaType)) continue;
     items.push(...filteredItems(mediaType));
   }
-  return items.filter((item) => !excluded.has(item.uri));
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (excluded.has(item.uri)) return false;
+    const key = dedupeKey(item);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 });
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
