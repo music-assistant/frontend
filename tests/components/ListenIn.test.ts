@@ -1,8 +1,7 @@
 import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import { Switch } from "@/components/ui/switch";
+import { $t } from "@/plugins/i18n";
 import { mount } from "@vue/test-utils";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import type { Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,32 +38,14 @@ vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn() },
 }));
 
-interface ListenInTranslationSource {
-  listen_in: string;
-  listen_in_active: string;
-  listen_in_venue: string;
-  listen_in_remote: string;
-  listen_in_tap: string;
-  listen_in_stop: string;
-  listen_in_powered_by: string;
-}
-
-const messages = JSON.parse(
-  readFileSync(resolve("src/translations/en.json"), "utf8"),
-) as {
-  providers: {
-    party: { guest_page: ListenInTranslationSource };
-    music_quiz: ListenInTranslationSource;
-  };
-};
 const surfaces = [
   {
     domain: "party",
-    labels: labelsFrom(messages.providers.party.guest_page),
+    labels: labelsFrom("providers.party.guest_page"),
   },
   {
     domain: "music_quiz",
-    labels: labelsFrom(messages.providers.music_quiz),
+    labels: labelsFrom("providers.music_quiz"),
   },
 ] as const;
 const modes = ["venue", "remote"] as const;
@@ -207,15 +188,15 @@ describe("ListenIn", () => {
   });
 });
 
-function labelsFrom(source: ListenInTranslationSource): ListenInLabels {
+function labelsFrom(prefix: string): ListenInLabels {
   return {
-    title: source.listen_in,
-    titleActive: source.listen_in_active,
-    descriptionVenue: source.listen_in_venue,
-    descriptionRemote: source.listen_in_remote,
-    tap: source.listen_in_tap,
-    stop: source.listen_in_stop,
-    poweredBy: source.listen_in_powered_by,
+    title: $t(`${prefix}.listen_in`),
+    titleActive: $t(`${prefix}.listen_in_active`),
+    descriptionVenue: $t(`${prefix}.listen_in_venue`),
+    descriptionRemote: $t(`${prefix}.listen_in_remote`),
+    tap: $t(`${prefix}.listen_in_tap`),
+    stop: $t(`${prefix}.listen_in_stop`),
+    poweredBy: $t(`${prefix}.listen_in_powered_by`),
     errorNoWebPlayer: "Unavailable",
     errorListenIn: "Start failed",
     errorStopListenIn: "Stop failed",
