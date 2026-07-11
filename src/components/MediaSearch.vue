@@ -173,7 +173,7 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
     : props.allowedMediaTypes;
   const excluded = new Set(props.excludeUris);
   const items: MediaItemTypeOrItemMapping[] = [];
-  for (const mediaType of SEARCHABLE_MEDIA_TYPES) {
+  for (const mediaType of props.allowedMediaTypes) {
     if (!mediaTypes.includes(mediaType)) continue;
     items.push(...filteredItems(mediaType));
   }

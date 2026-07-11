@@ -106,15 +106,17 @@ describe("MediaSearch", () => {
     await vi.advanceTimersByTimeAsync(300);
     await flushPromises();
 
-    for (const name of [
+    expect(
+      wrapper
+        .findAll(".media-search-result")
+        .map((result) => result.find("strong").text()),
+    ).toEqual([
       "Some track",
       "Some playlist",
+      "Some genre",
       "Some album",
       "Some artist",
-      "Some genre",
-    ]) {
-      expect(wrapper.text()).toContain(name);
-    }
+    ]);
     vi.useRealTimers();
   });
 
