@@ -44,13 +44,32 @@ vi.mock("@/components/music-quiz/game_types", async () => {
         labelKey: "game_type",
         descriptionKey: "game_type_description",
         icon: { template: "<span />" },
-        available: true,
+        requiresBackendAvailability: false,
         supportsListenIn: true,
+        revealPhaseLabelKey: "reveal",
+        adapters: {
+          setup: configComponent,
+        },
+      },
+      {
+        id: "trivia",
+        answerType: "multiple_choice",
+        labelKey: "trivia_type",
+        descriptionKey: "trivia_description",
+        icon: { template: "<span />" },
+        requiresBackendAvailability: true,
+        supportsListenIn: false,
+        revealPhaseLabelKey: "reveal",
         adapters: {
           setup: configComponent,
         },
       },
     ],
+    isMusicQuizGameAvailable: (
+      game: { id: string; requiresBackendAvailability: boolean },
+      availableQuizTypes: string[],
+    ) =>
+      !game.requiresBackendAvailability || availableQuizTypes.includes(game.id),
   };
 });
 
@@ -68,19 +87,21 @@ const request = {
 } as const;
 
 describe("MusicQuizSetupWizard", () => {
+  it("shows Trivia only when the backend reports it available", async () => {
+    const wrapper = mountWizard();
+    await wrapper.find("section button").trigger("click");
+
+    expect(wrapper.text()).toContain("game_type");
+    expect(wrapper.text()).not.toContain("trivia_type");
+
+    await wrapper.setProps({ availableQuizTypes: ["trivia"] });
+
+    expect(wrapper.text()).toContain("game_type");
+    expect(wrapper.text()).toContain("trivia_type");
+  });
+
   it("forwards the selected game component's create request", async () => {
-    const wrapper = mount(MusicQuizSetupWizard, {
-      props: { busy: false },
-      global: {
-        stubs: {
-          Badge: true,
-          Button: {
-            template: "<button><slot /></button>",
-          },
-          Progress: true,
-        },
-      },
-    });
+    const wrapper = mountWizard();
 
     await wrapper.find("section button").trigger("click");
     await nextTick();
@@ -91,3 +112,17 @@ describe("MusicQuizSetupWizard", () => {
     expect(wrapper.emitted("create")).toEqual([[request]]);
   });
 });
+
+function mountWizard() {
+  return mount(MusicQuizSetupWizard, {
+    props: { busy: false },
+    global: {
+      stubs: {
+        Button: {
+          template: "<button><slot /></button>",
+        },
+        Progress: true,
+      },
+    },
+  });
+}

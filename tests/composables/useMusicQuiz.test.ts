@@ -13,6 +13,7 @@ vi.mock("@/plugins/api", () => ({
 import {
   answerMusicQuiz,
   createMusicQuiz,
+  getAvailableMusicQuizTypes,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -25,7 +26,11 @@ import {
 
 function unsupportedQuizType(value: string) {
   const quizType = parseMusicQuizType(value);
-  if (quizType === "guess_the_song" || quizType === "hitster") {
+  if (
+    quizType === "guess_the_song" ||
+    quizType === "hitster" ||
+    quizType === "trivia"
+  ) {
     throw new Error("Expected an unsupported quiz type");
   }
   return quizType;
@@ -67,6 +72,44 @@ describe("useMusicQuiz commands", () => {
       difficulty: "hard",
       source_uris: ["library://track/1"],
       name: "Test Quiz",
+    });
+  });
+
+  it("discovers currently available game types", async () => {
+    mockSendCommand.mockResolvedValue(["guess_the_song", "hitster", "trivia"]);
+
+    await expect(getAvailableMusicQuizTypes()).resolves.toEqual([
+      "guess_the_song",
+      "hitster",
+      "trivia",
+    ]);
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "music_quiz/available_quiz_types",
+    );
+  });
+
+  it("sends the complete Trivia create payload", async () => {
+    await createMusicQuiz({
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 8,
+        suggestion_count: 6,
+        answer_duration: 45,
+        difficulty: "hard",
+        source_uris: ["library://playlist/1", "library://genre/rock"],
+        name: "Friday Trivia",
+      },
+    });
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
+      quiz_type: "trivia",
+      round_count: 8,
+      suggestion_count: 6,
+      answer_duration: 45,
+      difficulty: "hard",
+      source_uris: ["library://playlist/1", "library://genre/rock"],
+      name: "Friday Trivia",
     });
   });
 
@@ -195,6 +238,18 @@ describe("useMusicQuiz commands", () => {
       players: [],
       current_round: null,
     } satisfies MusicQuizPublicState;
+    const trivia = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Trivia",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
     const mismatched = {
       quiz_type: "guess_the_song",
       answer_type: "timeline",
@@ -204,6 +259,7 @@ describe("useMusicQuiz commands", () => {
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
     expect(isSupportedMusicQuiz(hitster)).toBe(true);
+    expect(isSupportedMusicQuiz(trivia)).toBe(true);
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);

@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockDeleteMusicQuiz,
+  mockGetAvailableMusicQuizTypes,
   mockGetMusicQuiz,
   mockSubscribe,
   providerHandlers,
 } = vi.hoisted(() => ({
   mockDeleteMusicQuiz: vi.fn(),
+  mockGetAvailableMusicQuizTypes: vi.fn(),
   mockGetMusicQuiz: vi.fn(),
   mockSubscribe: vi.fn(),
   providerHandlers: [] as Array<
@@ -25,6 +27,7 @@ vi.mock("vue", async () => {
 
 vi.mock("@/composables/useMusicQuiz", () => ({
   getMusicQuiz: mockGetMusicQuiz,
+  getAvailableMusicQuizTypes: mockGetAvailableMusicQuizTypes,
   createMusicQuiz: vi.fn(),
   startMusicQuiz: vi.fn(),
   revealMusicQuiz: vi.fn(),
@@ -83,9 +86,14 @@ describe("useMusicQuizHost", () => {
   beforeEach(() => {
     providerHandlers.length = 0;
     mockDeleteMusicQuiz.mockReset();
+    mockGetAvailableMusicQuizTypes.mockReset();
     mockGetMusicQuiz.mockReset();
     mockSubscribe.mockReset();
     mockDeleteMusicQuiz.mockResolvedValue(undefined);
+    mockGetAvailableMusicQuizTypes.mockResolvedValue([
+      "guess_the_song",
+      "hitster",
+    ]);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockSubscribe.mockImplementation(
       (
@@ -110,6 +118,7 @@ describe("useMusicQuizHost", () => {
       object_id: "quiz-instance",
       data: { event: "game_updated", state: HOST_STATE },
     });
+
     await flushPromises();
     expect(mockGetMusicQuiz).toHaveBeenCalledTimes(2);
 
@@ -131,6 +140,36 @@ describe("useMusicQuizHost", () => {
       data: { event: "game_removed" },
     });
     expect(host.state.value).toBeNull();
+  });
+
+  it("exposes backend-discovered quiz types", async () => {
+    mockGetAvailableMusicQuizTypes.mockResolvedValue([
+      "guess_the_song",
+      "hitster",
+      "trivia",
+    ]);
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.availableQuizTypes.value).toEqual([
+      "guess_the_song",
+      "hitster",
+      "trivia",
+    ]);
+  });
+
+  it("keeps optional game types hidden on older servers", async () => {
+    mockGetAvailableMusicQuizTypes.mockRejectedValue(
+      "Invalid command: music_quiz/available_quiz_types",
+    );
+    const notifyError = vi.fn();
+
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(host.availableQuizTypes.value).toEqual([]);
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it("treats a null response as setup state without a toast", async () => {

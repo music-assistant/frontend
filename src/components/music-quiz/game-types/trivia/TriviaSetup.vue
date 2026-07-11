@@ -2,18 +2,18 @@
   <div class="flex flex-col gap-5">
     <div class="grid gap-4 sm:grid-cols-2">
       <Field class="sm:col-span-2">
-        <FieldLabel for="quiz-name">
+        <FieldLabel for="trivia-name">
           {{ $t("providers.music_quiz.session_name") }}
         </FieldLabel>
-        <Input id="quiz-name" v-model="name" />
+        <Input id="trivia-name" v-model="name" />
       </Field>
 
       <Field>
-        <FieldLabel for="quiz-rounds">
+        <FieldLabel for="trivia-rounds">
           {{ $t("providers.music_quiz.rounds") }}
         </FieldLabel>
         <NumberField
-          id="quiz-rounds"
+          id="trivia-rounds"
           v-model="roundCount"
           :min="MIN_ROUNDS"
           :max="MAX_ROUNDS"
@@ -27,11 +27,11 @@
       </Field>
 
       <Field>
-        <FieldLabel for="quiz-choices">
+        <FieldLabel for="trivia-choices">
           {{ $t("providers.music_quiz.answer_choices") }}
         </FieldLabel>
         <NumberField
-          id="quiz-choices"
+          id="trivia-choices"
           v-model="suggestionCount"
           :min="MIN_CHOICES"
           :max="MAX_CHOICES"
@@ -45,11 +45,11 @@
       </Field>
 
       <Field>
-        <FieldLabel for="quiz-seconds">
+        <FieldLabel for="trivia-seconds">
           {{ $t("providers.music_quiz.answer_seconds") }}
         </FieldLabel>
         <NumberField
-          id="quiz-seconds"
+          id="trivia-seconds"
           v-model="answerDuration"
           :min="MIN_SECONDS"
           :max="MAX_SECONDS"
@@ -63,10 +63,14 @@
       </Field>
 
       <Field>
-        <FieldLabel for="quiz-difficulty">
+        <FieldLabel for="trivia-difficulty">
           {{ $t("providers.music_quiz.difficulty") }}
         </FieldLabel>
-        <NativeSelect id="quiz-difficulty" v-model="difficulty" class="w-full">
+        <NativeSelect
+          id="trivia-difficulty"
+          v-model="difficulty"
+          class="w-full"
+        >
           <option value="easy">
             {{ $t("providers.music_quiz.difficulty_easy") }}
           </option>
@@ -82,11 +86,11 @@
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
-      input-id="quiz-source-search"
+      input-id="trivia-source-search"
     />
 
     <Button size="lg" :disabled="busy || !canCreate" @click="create">
-      <PartyPopper class="size-4" />
+      <Brain class="size-4" />
       {{ $t("create") }}
     </Button>
   </div>
@@ -109,23 +113,25 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import type { MusicQuizDifficulty } from "@/composables/useMusicQuiz";
-import { generateMusicQuizSessionName } from "@/helpers/music_quiz_naming";
+import type {
+  MusicQuizDifficulty,
+  MusicQuizTriviaConfig,
+} from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper } from "@lucide/vue";
+import { Brain } from "@lucide/vue";
 import { computed, ref } from "vue";
 
-const MIN_ROUNDS = 2;
-const MAX_ROUNDS = 50;
+const MIN_ROUNDS = 1;
+const MAX_ROUNDS = 100;
 const MIN_CHOICES = 2;
 const MAX_CHOICES = 8;
-const MIN_SECONDS = 5;
-const MAX_SECONDS = 120;
+const MIN_SECONDS = 1;
+const MAX_SECONDS = 300;
 
 defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
-const name = ref(generateMusicQuizSessionName());
+const name = ref("");
 const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
@@ -135,17 +141,19 @@ const canCreate = computed(() => sourceUris.value.length > 0);
 
 function create() {
   if (!canCreate.value) return;
+  const config: MusicQuizTriviaConfig = {
+    round_count: roundCount.value,
+    suggestion_count: suggestionCount.value,
+    answer_duration: answerDuration.value,
+    difficulty: difficulty.value,
+    source_uris: sourceUris.value,
+  };
+  const trimmedName = name.value.trim();
+  if (trimmedName) config.name = trimmedName;
   emit("create", {
-    quiz_type: "guess_the_song",
+    quiz_type: "trivia",
     answer_type: "multiple_choice",
-    config: {
-      round_count: roundCount.value,
-      suggestion_count: suggestionCount.value,
-      answer_duration: answerDuration.value,
-      difficulty: difficulty.value,
-      source_uris: sourceUris.value,
-      name: name.value.trim() || generateMusicQuizSessionName(),
-    },
+    config,
   });
 }
 </script>

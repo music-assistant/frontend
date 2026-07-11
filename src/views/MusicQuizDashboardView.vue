@@ -46,7 +46,11 @@
 
       <Card v-if="!state && !loading">
         <CardContent>
-          <MusicQuizSetupWizard :busy="busy" @create="handleCreate" />
+          <MusicQuizSetupWizard
+            :busy="busy"
+            :available-quiz-types="availableQuizTypes"
+            @create="handleCreate"
+          />
         </CardContent>
       </Card>
 
@@ -128,7 +132,10 @@
 
 <script setup lang="ts">
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
-import { resolveMusicQuizDefinition } from "@/components/music-quiz/game_types";
+import {
+  getMusicQuizPhaseLabelKey,
+  resolveMusicQuizDefinition,
+} from "@/components/music-quiz/game_types";
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
@@ -174,10 +181,10 @@ const {
   state,
   busy,
   loading,
+  availableQuizTypes,
   currentRound,
   isLastRound,
   joinLink,
-  phaseLabel,
 } = host;
 
 const resolvedDefinition = computed(() => {
@@ -212,6 +219,14 @@ const leaderboardRows = computed<MusicQuizLeaderboardRow[]>(() => {
 });
 
 const winnerText = computed(() => getMusicQuizWinnerText(rankedPlayers.value));
+
+const phaseLabel = computed(() => {
+  const currentState = activeState.value;
+  const definition = resolvedDefinition.value;
+  return currentState && definition
+    ? $t(getMusicQuizPhaseLabelKey(definition.game, currentState.phase))
+    : "";
+});
 
 const roundLabel = computed(() => {
   if (!activeState.value || !currentRound.value) return "";

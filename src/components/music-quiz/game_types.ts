@@ -12,11 +12,17 @@ import HitsterHostRound from "@/components/music-quiz/game-types/hitster/Hitster
 import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
 import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
 import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
+import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
+import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
+import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
+import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.vue";
 import type {
   MusicQuizGameAnswerTypeMap,
+  MusicQuizPhase,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
-import { Disc3, ListMusic } from "@lucide/vue";
+import { Brain, Disc3, ListMusic } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -29,8 +35,9 @@ export interface MusicQuizGameDefinition<
   labelKey: string;
   descriptionKey: string;
   icon: Component;
-  available: boolean;
+  requiresBackendAvailability: boolean;
   supportsListenIn: boolean;
+  revealPhaseLabelKey: string;
   adapters: {
     setup: Component;
     player: Component;
@@ -51,8 +58,9 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     labelKey: "providers.music_quiz.game_type_guess_the_song",
     descriptionKey: "providers.music_quiz.game_type_guess_the_song_description",
     icon: markRaw(Disc3),
-    available: true,
+    requiresBackendAvailability: false,
     supportsListenIn: true,
+    revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
     adapters: {
       setup: markRaw(GuessTheSongSetup),
       player: markRaw(GuessTheSongPlayerRound),
@@ -67,14 +75,32 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     labelKey: "providers.music_quiz.game_type_hitster",
     descriptionKey: "providers.music_quiz.game_type_hitster_description",
     icon: markRaw(ListMusic),
-    available: true,
+    requiresBackendAvailability: false,
     supportsListenIn: true,
+    revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
     adapters: {
       setup: markRaw(HitsterSetup),
       player: markRaw(HitsterPlayerRound),
       hostPanel: markRaw(HitsterHostPanel),
       host: markRaw(HitsterHostRound),
       present: markRaw(HitsterPresentRound),
+    },
+  },
+  trivia: {
+    id: "trivia",
+    answerType: "multiple_choice",
+    labelKey: "providers.music_quiz.game_type_trivia",
+    descriptionKey: "providers.music_quiz.game_type_trivia_description",
+    icon: markRaw(Brain),
+    requiresBackendAvailability: true,
+    supportsListenIn: false,
+    revealPhaseLabelKey: "providers.music_quiz.phase_answer_revealed",
+    adapters: {
+      setup: markRaw(TriviaSetup),
+      player: markRaw(TriviaPlayerRound),
+      hostPanel: markRaw(TriviaHostPanel),
+      host: markRaw(TriviaHostRound),
+      present: markRaw(TriviaPresentRound),
     },
   },
 } satisfies MusicQuizGameRegistry;
@@ -87,6 +113,26 @@ export function getMusicQuizGameType(
   id: string,
 ): MusicQuizGameDefinition | undefined {
   return MUSIC_QUIZ_GAME_TYPES.find((type) => type.id === id);
+}
+
+export function isMusicQuizGameAvailable(
+  game: MusicQuizGameDefinition,
+  availableQuizTypes: string[],
+) {
+  return (
+    !game.requiresBackendAvailability || availableQuizTypes.includes(game.id)
+  );
+}
+
+export function getMusicQuizPhaseLabelKey(
+  game: MusicQuizGameDefinition,
+  phase: MusicQuizPhase,
+) {
+  if (phase === "lobby")
+    return "providers.music_quiz.phase_waiting_for_players";
+  if (phase === "answering") return "providers.music_quiz.phase_answers_open";
+  if (phase === "reveal") return game.revealPhaseLabelKey;
+  return "providers.music_quiz.phase_finished";
 }
 
 export interface ResolvedMusicQuizDefinition {

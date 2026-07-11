@@ -1,6 +1,7 @@
 import {
   createMusicQuiz,
   deleteMusicQuiz,
+  getAvailableMusicQuizTypes,
   getMusicQuiz,
   isSupportedMusicQuiz,
   isMusicQuizProviderEvent,
@@ -37,6 +38,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const state = ref<MusicQuizHostState | null>(null);
   const busy = ref(false);
   const loading = ref(false);
+  const availableQuizTypes = ref<string[]>([]);
   const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
@@ -65,17 +67,6 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       : "";
   });
 
-  const phaseLabel = computed(() => {
-    if (!state.value) return "";
-    if (state.value.phase === "lobby")
-      return $t("providers.music_quiz.phase_waiting_for_players");
-    if (state.value.phase === "answering")
-      return $t("providers.music_quiz.phase_answers_open");
-    if (state.value.phase === "reveal")
-      return $t("providers.music_quiz.phase_enjoy_track");
-    return $t("providers.music_quiz.phase_finished");
-  });
-
   async function fetchState() {
     const requestId = ++stateRequestId;
     try {
@@ -99,6 +90,23 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       if (requestId === stateRequestId) {
         loading.value = false;
       }
+    }
+  }
+
+  async function fetchAvailableQuizTypes() {
+    try {
+      availableQuizTypes.value = await getAvailableMusicQuizTypes();
+    } catch (err) {
+      if (isUnknownCommandError(err)) {
+        availableQuizTypes.value = [];
+        return;
+      }
+      notifyError(
+        getMusicQuizErrorMessage(
+          err,
+          $t("providers.music_quiz.error_load_game_types"),
+        ),
+      );
     }
   }
 
@@ -233,6 +241,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   onMounted(() => {
     fetchState();
+    fetchAvailableQuizTypes();
     unsubscribeProviderEvent = api.subscribe(
       EventType.PROVIDER_EVENT,
       handleProviderEvent,
@@ -247,10 +256,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     state,
     busy,
     loading,
+    availableQuizTypes,
     currentRound,
     isLastRound,
     joinLink,
-    phaseLabel,
     create,
     start,
     reveal,
@@ -258,5 +267,12 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     reset,
     deleteGame,
     fetchState,
+    fetchAvailableQuizTypes,
   };
+
+  function isUnknownCommandError(err: unknown) {
+    return getMusicQuizErrorMessage(err)
+      .toLowerCase()
+      .includes("invalid command");
+  }
 }
