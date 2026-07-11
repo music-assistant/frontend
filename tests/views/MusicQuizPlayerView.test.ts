@@ -217,6 +217,48 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("hides round progress for a joined player in the lobby", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...playerState,
+        phase: "lobby",
+        current_round: null,
+      }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper
+        .get('[data-testid="music-quiz-session-header"]')
+        .attributes("data-round-label"),
+    ).toBe("");
+    wrapper.unmount();
+  });
+
+  it("keeps round progress for an active joined player", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper
+        .get('[data-testid="music-quiz-session-header"]')
+        .attributes("data-round-label"),
+    ).toBe("providers.music_quiz.round_label 1/1");
+    wrapper.unmount();
+  });
+
   it("enables Hitster ListenIn without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -269,6 +311,38 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("prefills the join form with the remembered name", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 0,
+        round_count: 5,
+        mode: "venue",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      rememberedName: ref("Player One"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
+    ).toBe("Player One");
+    wrapper.unmount();
+  });
+
   it("keeps the mode label before joining audio games", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -309,6 +383,59 @@ describe("MusicQuizPlayerView routing", () => {
     expect(mockGameAdapterSetup).not.toHaveBeenCalled();
     expect(mockListenInSetup).not.toHaveBeenCalled();
     wrapper.unmount();
+  });
+
+  it("distinguishes waiting for a host from a game that ended", () => {
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const waitingWrapper = mountView();
+    expect(waitingWrapper.text()).toContain("guest.no_quiz_title");
+    expect(waitingWrapper.text()).toContain("guest.no_quiz_description");
+    expect(waitingWrapper.text()).not.toContain(
+      "providers.music_quiz.game_ended",
+    );
+    expect(
+      waitingWrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
+    ).toBe("true");
+    waitingWrapper.unmount();
+
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(true),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const endedWrapper = mountView();
+    expect(endedWrapper.text()).toContain("providers.music_quiz.game_ended");
+    expect(endedWrapper.text()).toContain(
+      "providers.music_quiz.game_ended_detail",
+    );
+    expect(endedWrapper.text()).toContain(
+      "providers.music_quiz.game_ended_wait",
+    );
+    expect(endedWrapper.text()).not.toContain("guest.no_quiz_title");
+    expect(
+      endedWrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
+    ).toBe("true");
+    endedWrapper.unmount();
   });
 });
 
@@ -358,6 +485,11 @@ function mountView() {
         MusicQuizConnectionBanners: true,
         MusicQuizLeaderboard: true,
         MusicQuizPlayerHeader: true,
+        MusicQuizSessionHeader: {
+          props: ["game", "mode", "roundLabel"],
+          template:
+            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
+        },
         MusicQuizPodium: true,
         MusicQuizUnsupportedGame: {
           template: '<div data-testid="unsupported-game" />',

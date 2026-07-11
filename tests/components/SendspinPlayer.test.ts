@@ -188,6 +188,19 @@ describe("SendspinPlayer MediaSession", () => {
     },
   );
 
+  it("keeps Sendspin audio hidden behind custom controls", () => {
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    const audioElements = wrapper.findAll("audio");
+    expect(audioElements).toHaveLength(2);
+    expect(
+      audioElements.every((audio) => !("controls" in audio.attributes())),
+    ).toBe(true);
+    wrapper.unmount();
+  });
+
   it("clears stale guest state again when the player mode changes", async () => {
     authState.guest = "music_quiz";
     const wrapper = mount(SendspinPlayer, {

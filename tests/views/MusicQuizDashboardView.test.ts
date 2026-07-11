@@ -58,11 +58,25 @@ describe("MusicQuizDashboardView", () => {
     mockSubscribe.mockReturnValue(() => {});
   });
 
-  it("renders the setup state when the host getter returns null", async () => {
+  it("renders a compact empty state and opens setup on demand", async () => {
     const wrapper = mount(MusicQuizDashboardView, {
       global: {
         stubs: {
           AlertDialog: true,
+          Dialog: {
+            props: ["open"],
+            template: '<div v-if="open"><slot /></div>',
+          },
+          DialogContent: {
+            template: '<div data-testid="setup-dialog"><slot /></div>',
+          },
+          DialogDescription: true,
+          DialogHeader: {
+            template: "<header><slot /></header>",
+          },
+          DialogTitle: {
+            template: "<h2><slot /></h2>",
+          },
           Card: {
             template: "<div><slot /></div>",
           },
@@ -84,6 +98,13 @@ describe("MusicQuizDashboardView", () => {
     );
     expect(mockToastError).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("providers.music_quiz.no_active_game");
+    expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="setup-dialog"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
       true,
     );

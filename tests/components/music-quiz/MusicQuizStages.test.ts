@@ -43,6 +43,23 @@ const answerAdapter = {
   template:
     "<button data-testid=\"answer-adapter\" @click=\"$emit('submit', { answer_type: 'multiple_choice', suggestion_id: 'one' })\">Answer<slot name=\"leaderboard\" /></button>",
 };
+const gameDefinition = {
+  id: "guess_the_song",
+  answerType: "multiple_choice",
+  labelKey: "providers.music_quiz.game_type_guess_the_song",
+  descriptionKey: "",
+  icon: { template: "<span />" },
+  requiresBackendAvailability: false,
+  supportsListenIn: true,
+  revealPhaseLabelKey: "",
+  adapters: {
+    setup: gameAdapter,
+    player: gameAdapter,
+    hostPanel: gameAdapter,
+    host: gameAdapter,
+    present: gameAdapter,
+  },
+} as const;
 
 const currentRound = {
   question: "Which song is playing?",
@@ -129,6 +146,7 @@ describe("Music Quiz shared stages", () => {
     const wrapper = mount(MusicQuizPresentStage, {
       props: {
         state: hostState,
+        game: gameDefinition,
         currentRound,
         leaderboardRows,
         winnerText: "",
@@ -163,6 +181,7 @@ describe("Music Quiz shared stages", () => {
     const wrapper = mount(MusicQuizPresentStage, {
       props: {
         state,
+        game: gameDefinition,
         currentRound,
         leaderboardRows,
         winnerText: "",
@@ -199,6 +218,7 @@ describe("Music Quiz shared stages", () => {
     const wrapper = mount(MusicQuizPresentStage, {
       props: {
         state,
+        game: gameDefinition,
         currentRound: null,
         leaderboardRows,
         winnerText: "Player wins",

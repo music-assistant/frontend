@@ -524,7 +524,7 @@ export interface MusicQuizGuessTheSongConfig {
   answer_duration: number;
   difficulty: MusicQuizDifficulty;
   source_uris: string[];
-  name: string;
+  name?: string;
 }
 
 export interface MusicQuizGuessTheSongCreateRequest {

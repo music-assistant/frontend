@@ -76,4 +76,47 @@ describe("TriviaSetup", () => {
       ],
     ]);
   });
+
+  it("omits a blank optional session name", async () => {
+    const wrapper = mount(TriviaSetup, {
+      props: { busy: false },
+      global: {
+        stubs: {
+          MusicQuizSourceSelector: {
+            template:
+              "<button data-testid=\"select-sources\" @click=\"$emit('update:modelValue', ['library://playlist/1'])\" />",
+          },
+          NumberField: {
+            template: "<div><slot /></div>",
+          },
+          NumberFieldContent: {
+            template: "<div><slot /></div>",
+          },
+          NumberFieldDecrement: true,
+          NumberFieldIncrement: true,
+          NumberFieldInput: true,
+        },
+      },
+    });
+
+    expect(wrapper.get("#trivia-name").element).toHaveProperty("value", "");
+    await wrapper.get('[data-testid="select-sources"]').trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"))
+      ?.trigger("click");
+
+    expect(wrapper.emitted("create")?.[0]?.[0]).toEqual({
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "normal",
+        source_uris: ["library://playlist/1"],
+      },
+    });
+  });
 });

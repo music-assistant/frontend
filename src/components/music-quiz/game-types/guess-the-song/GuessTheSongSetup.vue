@@ -109,8 +109,10 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
-import type { MusicQuizDifficulty } from "@/composables/useMusicQuiz";
-import { generateMusicQuizSessionName } from "@/helpers/music_quiz_naming";
+import type {
+  MusicQuizDifficulty,
+  MusicQuizGuessTheSongConfig,
+} from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { PartyPopper } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -125,7 +127,7 @@ const MAX_SECONDS = 120;
 defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
-const name = ref(generateMusicQuizSessionName());
+const name = ref("");
 const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
@@ -135,17 +137,19 @@ const canCreate = computed(() => sourceUris.value.length > 0);
 
 function create() {
   if (!canCreate.value) return;
+  const config: MusicQuizGuessTheSongConfig = {
+    round_count: roundCount.value,
+    suggestion_count: suggestionCount.value,
+    answer_duration: answerDuration.value,
+    difficulty: difficulty.value,
+    source_uris: sourceUris.value,
+  };
+  const trimmedName = name.value.trim();
+  if (trimmedName) config.name = trimmedName;
   emit("create", {
     quiz_type: "guess_the_song",
     answer_type: "multiple_choice",
-    config: {
-      round_count: roundCount.value,
-      suggestion_count: suggestionCount.value,
-      answer_duration: answerDuration.value,
-      difficulty: difficulty.value,
-      source_uris: sourceUris.value,
-      name: name.value.trim() || generateMusicQuizSessionName(),
-    },
+    config,
   });
 }
 </script>

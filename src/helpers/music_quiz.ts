@@ -6,6 +6,7 @@ import type {
 import { $t, i18n } from "@/plugins/i18n";
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
+const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
 
 /**
  * Store the player_id credential in localStorage (guest's PRIVATE credential).
@@ -27,6 +28,16 @@ export function getStoredMusicQuizPlayerId(): string | null {
  */
 export function clearStoredMusicQuizPlayerId() {
   localStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+}
+
+export function storeMusicQuizPlayerName(name: string) {
+  const trimmedName = name.trim();
+  if (trimmedName)
+    localStorage.setItem(MUSIC_QUIZ_PLAYER_NAME_KEY, trimmedName);
+}
+
+export function getStoredMusicQuizPlayerName(): string {
+  return localStorage.getItem(MUSIC_QUIZ_PLAYER_NAME_KEY)?.trim() ?? "";
 }
 
 export type RankedMusicQuizPlayer = MusicQuizPlayer & { rank: number };

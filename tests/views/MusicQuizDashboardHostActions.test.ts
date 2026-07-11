@@ -116,18 +116,32 @@ describe("MusicQuizDashboardView host actions", () => {
     );
     expect(dialog.text()).not.toContain("Delete");
 
-    await wrapper.get('[data-testid="confirm-end-game"]').trigger("click");
+    const confirmButton = wrapper.get('[data-testid="confirm-end-game"]');
+    expect(confirmButton.classes()).toContain("bg-destructive");
+    expect(
+      dialog.get('[data-testid="end-dialog-content"]').classes(),
+    ).toContain("sm:max-w-sm");
+
+    await confirmButton.trigger("click");
     expect(mockDeleteGame).toHaveBeenCalledOnce();
   });
 
-  it("returns to the setup wizard when the host state is cleared", async () => {
+  it("returns to the compact empty state when the host state is cleared", async () => {
     const wrapper = mountDashboard();
 
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
     state.value = null;
     await nextTick();
 
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="new-game-empty"]').exists()).toBe(true);
+
+    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+
+    state.value = { ...HOST_STATE };
+    await nextTick();
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Game Ended");
   });
 });
@@ -147,7 +161,8 @@ function mountDashboard() {
           template: "<button><slot /></button>",
         },
         AlertDialogContent: {
-          template: "<div><slot /></div>",
+          template:
+            '<div data-testid="end-dialog-content" v-bind="$attrs"><slot /></div>',
         },
         AlertDialogDescription: {
           template: "<p><slot /></p>",
@@ -162,6 +177,7 @@ function mountDashboard() {
           template: "<h2><slot /></h2>",
         },
         MusicQuizConnectionBanners: true,
+        MusicQuizSessionHeader: true,
         MusicQuizHostPanel: {
           emits: ["endGame"],
           template:
@@ -173,6 +189,20 @@ function mountDashboard() {
           template: '<div data-testid="setup-wizard" />',
         },
         MusicQuizUnsupportedGame: true,
+        Dialog: {
+          props: ["open"],
+          template: '<div v-if="open"><slot /></div>',
+        },
+        DialogContent: {
+          template: "<div><slot /></div>",
+        },
+        DialogDescription: true,
+        DialogHeader: {
+          template: "<header><slot /></header>",
+        },
+        DialogTitle: {
+          template: "<h2><slot /></h2>",
+        },
       },
     },
   });

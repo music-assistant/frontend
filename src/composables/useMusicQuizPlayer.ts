@@ -17,11 +17,14 @@ import {
 import { createMusicQuizPlayerHeartbeat } from "@/composables/useMusicQuizPlayerHeartbeat";
 import {
   clearStoredMusicQuizPlayerId,
+  getStoredMusicQuizPlayerName,
   getStoredMusicQuizPlayerId,
-  storeMusicQuizPlayerId,
   getMusicQuizErrorMessage,
   isNoActiveGameError,
+  storeMusicQuizPlayerId,
+  storeMusicQuizPlayerName,
 } from "@/helpers/music_quiz";
+import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
@@ -42,6 +45,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   const info = ref<MusicQuizInfo | null>(null);
   const state = ref<MusicQuizPersonalizedState | null>(null);
   const playerId = ref<string | null>(null);
+  const rememberedName = ref(getStoredMusicQuizPlayerName());
   const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
@@ -54,9 +58,14 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
   let unsubscribeProviderEvent: (() => void) | undefined;
   let reconnectPlayerId: string | null = null;
+  let joinedGame = false;
   let requestedPlayerStateId: string | null = null;
   let playerStateResolutionPromise: Promise<boolean> | null = null;
   let loadingRequestId = 0;
+  let gameGeneration = 0;
+  let autoJoinAttemptedGeneration: number | null = null;
+  const activeJoinRequests = new Map<number, number>();
+  let disposed = false;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -84,11 +93,13 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       loading.value = true;
       const nextInfo = await getMusicQuizInfo();
-      if (loadingRequestId !== requestId) return;
+      if (disposed || loadingRequestId !== requestId) return;
       info.value = nextInfo;
-      gameRemoved.value = !nextInfo;
+      if (nextInfo) joinedGame = false;
+      gameRemoved.value = !nextInfo && joinedGame;
+      if (nextInfo) await attemptAutoJoin();
     } catch (err) {
-      if (loadingRequestId !== requestId) return;
+      if (disposed || loadingRequestId !== requestId) return;
       notifyError(
         getMusicQuizErrorMessage(
           err,
@@ -113,6 +124,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
     const storedPlayerId = getStoredMusicQuizPlayerId();
     if (storedPlayerId) {
+      joinedGame = true;
       await reconnectPlayer(storedPlayerId);
     } else {
       await fetchInfo();
@@ -120,22 +132,15 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   async function join(name: string) {
-    busy.value = true;
-    try {
-      const result = await joinMusicQuiz(name);
-      storeMusicQuizPlayerId(result.player_id);
-      applyPlayerState(result.state);
-      gameRemoved.value = false;
-      void startHeartbeat(result.player_id);
-      return true;
-    } catch (err) {
-      notifyError(
-        getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_join")),
-      );
-      return false;
-    } finally {
-      busy.value = false;
+    const trimmedName = name.trim();
+    if (!trimmedName) return false;
+    const joined = await performJoin(trimmedName, true, gameGeneration);
+    if (joined) {
+      autoJoinAttemptedGeneration = gameGeneration;
+      rememberedName.value = trimmedName;
+      storeMusicQuizPlayerName(trimmedName);
     }
+    return joined;
   }
 
   async function submitAnswer(submission: MusicQuizAnswerSubmission) {
@@ -188,6 +193,8 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
 
   async function leave() {
     clearActivePlayer();
+    joinedGame = false;
+    gameRemoved.value = false;
   }
 
   onMounted(() => {
@@ -199,6 +206,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   });
 
   onBeforeUnmount(() => {
+    disposed = true;
+    gameGeneration += 1;
+    loadingRequestId += 1;
+    requestedPlayerStateId = null;
     stopHeartbeat();
     unsubscribeProviderEvent?.();
   });
@@ -207,6 +218,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     info,
     state,
     playerId,
+    rememberedName,
     gameRemoved,
     busy,
     loading,
@@ -297,8 +309,14 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         void fetchInfo();
       }
     } else if (payload.event === "game_removed") {
+      const wasJoined = joinedGame || !!playerId.value;
+      if (wasJoined) markMusicQuizJoinedGameEnded();
+      gameGeneration += 1;
+      autoJoinAttemptedGeneration = null;
       clearActivePlayer();
-      gameRemoved.value = true;
+      busy.value = false;
+      joinedGame = false;
+      gameRemoved.value = wasJoined;
     }
   }
 
@@ -351,7 +369,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     currentPlayerId: string,
     active: boolean,
   ) {
-    if (playerId.value !== currentPlayerId) return;
+    if (disposed || playerId.value !== currentPlayerId) return;
     if (!active) {
       await resetToJoinInfo();
     } else if (reconnectPlayerId === currentPlayerId) {
@@ -361,7 +379,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   function handleHeartbeatError(currentPlayerId: string, err: unknown) {
-    if (playerId.value !== currentPlayerId) return;
+    if (disposed || playerId.value !== currentPlayerId) return;
     notifyError(
       getMusicQuizErrorMessage(
         err,
@@ -389,5 +407,64 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   async function resetToJoinInfo() {
     clearActivePlayer();
     await fetchInfo();
+  }
+
+  async function performJoin(
+    name: string,
+    notifyJoinError: boolean,
+    requestGeneration: number,
+  ) {
+    activeJoinRequests.set(
+      requestGeneration,
+      (activeJoinRequests.get(requestGeneration) ?? 0) + 1,
+    );
+    busy.value = true;
+    try {
+      const result = await joinMusicQuiz(name);
+      if (disposed || requestGeneration !== gameGeneration) return false;
+      storeMusicQuizPlayerId(result.player_id);
+      joinedGame = true;
+      applyPlayerState(result.state);
+      gameRemoved.value = false;
+      void startHeartbeat(result.player_id);
+      return true;
+    } catch (err) {
+      if (
+        !disposed &&
+        notifyJoinError &&
+        requestGeneration === gameGeneration
+      ) {
+        notifyError(
+          getMusicQuizErrorMessage(err, $t("providers.music_quiz.error_join")),
+        );
+      }
+      return false;
+    } finally {
+      const remainingRequests =
+        (activeJoinRequests.get(requestGeneration) ?? 1) - 1;
+      if (remainingRequests > 0) {
+        activeJoinRequests.set(requestGeneration, remainingRequests);
+      } else {
+        activeJoinRequests.delete(requestGeneration);
+      }
+      if (requestGeneration === gameGeneration) {
+        busy.value = remainingRequests > 0;
+      }
+    }
+  }
+
+  async function attemptAutoJoin() {
+    const name = rememberedName.value;
+    const requestGeneration = gameGeneration;
+    if (
+      !name ||
+      disposed ||
+      playerId.value ||
+      autoJoinAttemptedGeneration === requestGeneration
+    ) {
+      return;
+    }
+    autoJoinAttemptedGeneration = requestGeneration;
+    await performJoin(name, false, requestGeneration);
   }
 }

@@ -3,6 +3,7 @@
     <MusicQuizPresentStage
       v-if="presentMode && activeState && resolvedDefinition"
       :state="activeState"
+      :game="resolvedDefinition.game"
       :current-round="currentRound"
       :leaderboard-rows="leaderboardRows"
       :winner-text="winnerText"
@@ -21,36 +22,50 @@
           <h1 class="text-2xl font-bold">
             {{ $t("providers.music_quiz.title") }}
           </h1>
-          <p
-            class="text-muted-foreground mt-1 flex flex-wrap items-center gap-2"
-          >
-            <span>{{ statusText }}</span>
-            <Badge v-if="state && roundLabel" variant="secondary">
-              {{ roundLabel }}
-            </Badge>
+          <p v-if="!activeState" class="text-muted-foreground mt-1">
+            {{ statusText }}
           </p>
         </div>
         <Button
-          v-if="activeState"
-          variant="ghost-outline"
+          v-if="!state && !loading"
+          variant="default"
           size="sm"
+          data-testid="new-game"
           :disabled="busy"
-          @click="enterPresentMode"
+          @click="showSetupDialog = true"
         >
-          <Maximize2 class="size-4" />
-          {{ $t("providers.music_quiz.enter_present_mode") }}
+          <Plus class="size-4" />
+          {{ $t("providers.music_quiz.new_game") }}
         </Button>
       </header>
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
-      <Card v-if="!state && !loading">
-        <CardContent>
-          <MusicQuizSetupWizard
-            :busy="busy"
-            :available-quiz-types="availableQuizTypes"
-            @create="handleCreate"
-          />
+      <Card v-if="!state && !loading" class="mx-auto w-full max-w-xl">
+        <CardContent
+          class="flex flex-col items-center gap-4 px-5 py-8 text-center sm:px-8"
+        >
+          <span
+            class="bg-primary/10 text-primary grid size-14 place-items-center rounded-full"
+          >
+            <PartyPopper class="size-7" />
+          </span>
+          <div class="flex flex-col gap-1">
+            <h2 class="text-xl font-bold">
+              {{ $t("providers.music_quiz.no_active_game") }}
+            </h2>
+            <p class="text-muted-foreground">
+              {{ $t("providers.music_quiz.create_intro") }}
+            </p>
+          </div>
+          <Button
+            size="lg"
+            data-testid="new-game-empty"
+            @click="showSetupDialog = true"
+          >
+            <Plus class="size-4" />
+            {{ $t("providers.music_quiz.new_game") }}
+          </Button>
         </CardContent>
       </Card>
 
@@ -65,12 +80,21 @@
         v-else-if="activeState && resolvedDefinition"
         class="flex flex-col gap-4"
       >
+        <MusicQuizSessionHeader
+          :game="resolvedDefinition.game"
+          :name="activeState.name"
+          :phase-label="phaseLabel"
+          :round-label="roundLabel"
+          :mode="activeState.mode"
+        />
+
         <MusicQuizHostPanel
           :state="activeState"
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
           @end-game="showEndGameDialog = true"
+          @present="enterPresentMode"
           @start="host.start"
           @reveal="host.reveal"
           @next="host.next"
@@ -109,9 +133,29 @@
       </div>
     </section>
 
+    <Dialog v-model:open="showSetupDialog">
+      <DialogContent
+        data-testid="setup-dialog"
+        class="max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-w-3xl sm:p-6"
+      >
+        <DialogHeader class="pr-8 text-left">
+          <DialogTitle>{{ $t("providers.music_quiz.new_game") }}</DialogTitle>
+          <DialogDescription>
+            {{ $t("providers.music_quiz.create_intro") }}
+          </DialogDescription>
+        </DialogHeader>
+        <MusicQuizSetupWizard
+          v-if="showSetupDialog"
+          :busy="busy"
+          :available-quiz-types="availableQuizTypes"
+          @create="handleCreate"
+        />
+      </DialogContent>
+    </Dialog>
+
     <AlertDialog v-model:open="showEndGameDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
+      <AlertDialogContent class="gap-3 p-4 sm:max-w-sm sm:p-5">
+        <AlertDialogHeader class="gap-1 text-left">
           <AlertDialogTitle>
             {{ $t("providers.music_quiz.end_game") }}
           </AlertDialogTitle>
@@ -119,11 +163,16 @@
             {{ $t("providers.music_quiz.end_game_confirm") }}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
-          <AlertDialogAction :disabled="busy" @click="confirmEndGame">
+        <AlertDialogFooter class="flex-row justify-end">
+          <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
+          <Button
+            variant="destructive"
+            data-testid="confirm-end-game"
+            :disabled="busy"
+            @click="confirmEndGame"
+          >
             {{ $t("providers.music_quiz.end_game") }}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -141,12 +190,12 @@ import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
+import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -154,9 +203,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
@@ -169,7 +224,7 @@ import {
 } from "@/helpers/music_quiz";
 import api, { ConnectionState } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
-import { Maximize2 } from "@lucide/vue";
+import { PartyPopper, Plus } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -255,9 +310,10 @@ const isConnectionDegraded = computed(
 const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
 const showEndGameDialog = ref(false);
+const showSetupDialog = ref(false);
 
 async function handleCreate(request: MusicQuizCreateRequest) {
-  await host.create(request);
+  if (await host.create(request)) showSetupDialog.value = false;
 }
 
 async function enterPresentMode() {
@@ -290,6 +346,7 @@ function onFullscreenChange() {
 }
 
 watch(state, (nextState) => {
+  if (nextState) showSetupDialog.value = false;
   if (!nextState && presentMode.value) {
     void exitPresentMode();
   }

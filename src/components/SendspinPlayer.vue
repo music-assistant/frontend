@@ -1,5 +1,5 @@
 <template>
-  <audio ref="audioRef" controls class="hidden-audio"></audio>
+  <audio ref="audioRef" class="hidden-audio"></audio>
   <audio
     ref="silentAudioRef"
     class="hidden-audio"

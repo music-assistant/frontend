@@ -13,7 +13,6 @@
               #{{ rank }}
             </Badge>
           </div>
-          <p class="text-muted-foreground text-sm">{{ roundProgress }}</p>
         </div>
         <span
           class="flex shrink-0 items-baseline gap-1 text-xl font-bold tabular-nums"
@@ -24,14 +23,6 @@
           </span>
         </span>
       </div>
-      <Progress :model-value="roundFraction" />
-      <p
-        v-if="phaseLabel"
-        class="bg-primary/10 text-foreground rounded-md px-3 py-1.5 text-center text-sm font-bold"
-        role="status"
-      >
-        {{ phaseLabel }}
-      </p>
     </CardContent>
   </Card>
 </template>
@@ -40,15 +31,11 @@
 import MusicQuizAvatar from "@/components/music-quiz/MusicQuizAvatar.vue";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 defineProps<{
   playerName: string;
   rank: number | null;
-  roundProgress: string;
-  roundFraction?: number;
   score: number;
   scoreDelta: string;
-  phaseLabel: string;
 }>();
 </script>

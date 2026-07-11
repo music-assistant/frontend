@@ -1,5 +1,5 @@
 <template>
-  <main class="grid min-h-dvh place-items-center p-4">
+  <main class="grid min-h-full place-items-center p-4">
     <Card class="w-full max-w-md">
       <CardHeader class="items-center text-center">
         <CircleHelp class="text-muted-foreground size-10" />

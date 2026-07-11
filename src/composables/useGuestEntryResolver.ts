@@ -2,6 +2,7 @@ import {
   getMusicQuizInfo,
   isMusicQuizProviderEvent,
 } from "@/composables/useMusicQuiz";
+import { consumeMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 import {
@@ -19,6 +20,7 @@ export type GuestEntryState =
   | "loading"
   | "quiz"
   | "party"
+  | "quiz-ended"
   | "quiz-inactive"
   | "inactive";
 
@@ -45,6 +47,7 @@ export function useGuestEntryResolver() {
   const state = ref<GuestEntryState>("loading");
   let active = false;
   let requestedVersion = 0;
+  let preserveEndedState = false;
   let resolutionPromise: Promise<void> | null = null;
   let quizProviderInstanceId: string | undefined;
   const unsubscribers: (() => void)[] = [];
@@ -78,7 +81,16 @@ export function useGuestEntryResolver() {
   };
 
   function requestResolution(): Promise<void> {
+    return scheduleResolution(false);
+  }
+
+  function requestEndedResolution(): Promise<void> {
+    return scheduleResolution(true);
+  }
+
+  function scheduleResolution(preserveEnded: boolean): Promise<void> {
     requestedVersion += 1;
+    preserveEndedState ||= preserveEnded;
     resolutionPromise ??= processResolutions().finally(() => {
       resolutionPromise = null;
     });
@@ -92,7 +104,11 @@ export function useGuestEntryResolver() {
       if (!active) return;
       if (version !== requestedVersion) continue;
 
-      state.value = nextState;
+      state.value =
+        preserveEndedState && nextState === "quiz-inactive"
+          ? "quiz-ended"
+          : nextState;
+      preserveEndedState = false;
       await syncRoute();
       if (version === requestedVersion) return;
     }
@@ -101,6 +117,17 @@ export function useGuestEntryResolver() {
   function handleProviderEvent(event: EventMessage) {
     if (!isMusicQuizProviderEvent(event.data)) return;
     if (!isScopedQuizProviderEvent(event.object_id)) return;
+    if (event.data.event === "game_removed") {
+      queueMicrotask(() => {
+        if (!active) return;
+        if (consumeMusicQuizJoinedGameEnded() && route.path === "/guest/quiz") {
+          void requestEndedResolution();
+          return;
+        }
+        void requestResolution();
+      });
+      return;
+    }
     void requestResolution();
   }
 
@@ -126,6 +153,7 @@ export function useGuestEntryResolver() {
 
 function getGuestEntryPath(state: GuestEntryState): string | undefined {
   if (state === "quiz") return "/guest/quiz";
+  if (state === "quiz-ended") return "/guest/quiz";
   if (state === "party") return "/guest/party";
   if (state === "quiz-inactive" || state === "inactive") return "/guest";
   return undefined;

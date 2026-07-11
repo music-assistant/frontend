@@ -89,7 +89,6 @@ const request = {
 describe("MusicQuizSetupWizard", () => {
   it("shows Trivia only when the backend reports it available", async () => {
     const wrapper = mountWizard();
-    await wrapper.find("section button").trigger("click");
 
     expect(wrapper.text()).toContain("game_type");
     expect(wrapper.text()).not.toContain("trivia_type");
@@ -103,8 +102,6 @@ describe("MusicQuizSetupWizard", () => {
   it("forwards the selected game component's create request", async () => {
     const wrapper = mountWizard();
 
-    await wrapper.find("section button").trigger("click");
-    await nextTick();
     await wrapper.find("section button").trigger("click");
     await nextTick();
     await wrapper.get('[data-testid="create-game"]').trigger("click");
