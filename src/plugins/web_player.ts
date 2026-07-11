@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from "vue";
+import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
 import { EventType } from "./api/interfaces";
@@ -373,6 +374,7 @@ export const webPlayer = reactive({
     }
 
     this.tabMode = mode;
+    if (authManager.isGuestAccessSession()) resetMediaSession();
 
     if (this.player_id) {
       // The sendspin session follows the main API connection: tear the web player

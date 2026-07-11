@@ -16,8 +16,10 @@
   <PlayerBrowserMediaControls
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
-      webPlayer.interacted == true
+      webPlayer.interacted == true &&
+      !authManager.isGuestAccessSession()
     "
+    :key="webPlayer.tabMode"
   />
   <SendspinPlayer
     v-if="

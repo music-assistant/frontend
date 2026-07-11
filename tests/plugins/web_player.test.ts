@@ -30,6 +30,7 @@ vi.mock("@/plugins/auth", () => ({
   default: {
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
+    isGuestAccessSession: () => authState.guest !== null,
   },
 }));
 

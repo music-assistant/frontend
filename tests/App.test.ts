@@ -181,11 +181,11 @@ vi.mock("@/components/ui/sonner", () => ({
 }));
 
 vi.mock("@/components/SendspinPlayer.vue", () => ({
-  default: { template: "<div />" },
+  default: { name: "SendspinPlayer", template: "<div />" },
 }));
 
 vi.mock("@/layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue", () => ({
-  default: { template: "<div />" },
+  default: { name: "PlayerBrowserMediaControls", template: "<div />" },
 }));
 
 vi.mock("@/views/Login.vue", () => ({
@@ -230,6 +230,10 @@ describe("App initialization", () => {
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
     storeMock.isOnboarding = false;
+    webPlayerMock.audioSource = "disabled";
+    webPlayerMock.interacted = false;
+    webPlayerMock.player_id = null;
+    webPlayerMock.tabMode = "disabled";
     vi.stubGlobal("localStorage", createStorage());
     localStorage.setItem("frontend.settings.theme", "dark");
     Object.defineProperty(window, "matchMedia", {
@@ -304,6 +308,40 @@ describe("App initialization", () => {
     await signalProvidersUpdated();
     expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["party", "music_quiz"] as const)(
+    "does not mount browser media controls for a %s guest fallback tab",
+    async (type) => {
+      guestType.value = type;
+      apiMock.getCurrentUserInfo.mockResolvedValue({
+        preferences: {},
+        role: "guest",
+        user_id: "guest-id",
+        username: type === "party" ? "party_guest" : "music_quiz_guest",
+      });
+      webPlayerMock.audioSource = "controls_only";
+      webPlayerMock.interacted = true;
+      webPlayerMock.tabMode = "controls_only";
+
+      wrapper = await mountApp();
+
+      expect(
+        wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+      ).toBe(false);
+    },
+  );
+
+  it("keeps browser media controls for regular fallback tabs", async () => {
+    webPlayerMock.audioSource = "controls_only";
+    webPlayerMock.interacted = true;
+    webPlayerMock.tabMode = "controls_only";
+
+    wrapper = await mountApp();
+
+    expect(
+      wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+    ).toBe(true);
   });
 });
 
