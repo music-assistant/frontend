@@ -236,6 +236,32 @@ describe("useMusicQuiz commands", () => {
     expect(state.current_round.track_uri).toBeNull();
   });
 
+  it("accepts the nullable Hitster round start timestamp", () => {
+    const state = {
+      quiz_type: "hitster",
+      answer_type: "timeline",
+      phase: "answering",
+      name: null,
+      round_count: 1,
+      answer_duration: 30,
+      artist_bonus_mode: "off",
+      title_bonus_mode: "off",
+      mode: "venue",
+      players: [],
+      current_round: {
+        round_index: 0,
+        started_at: null,
+        deadline: 30,
+        question: null,
+        timeline: [],
+        bonus_definitions: [],
+      },
+    } satisfies MusicQuizPublicState;
+
+    expect(isSupportedMusicQuiz(state)).toBe(true);
+    expect(state.current_round.started_at).toBeNull();
+  });
+
   it("accepts public provider events as invalidation payloads", () => {
     const event = {
       event: "game_updated",

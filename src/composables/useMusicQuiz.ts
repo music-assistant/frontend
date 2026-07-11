@@ -105,7 +105,7 @@ interface MusicQuizHitsterStateBase extends MusicQuizStateIdentity {
   title_bonus_mode: MusicQuizTimelineBonusMode;
   mode: MusicQuizMode;
   players: MusicQuizTimelinePlayer[];
-  current_round?: MusicQuizHitsterRound | null;
+  current_round: MusicQuizHitsterRound | null;
 }
 
 export type MusicQuizHitsterPublicState = MusicQuizHitsterStateBase;
@@ -309,9 +309,9 @@ export interface MusicQuizTimelineYourAnswer {
 
 export interface MusicQuizRoundBase {
   round_index: number;
-  started_at: number;
+  started_at: number | null;
   deadline: number;
-  ended_at?: number | null;
+  ended_at?: number;
 }
 
 export interface MusicQuizMultipleChoiceRound extends MusicQuizRoundBase {
@@ -443,7 +443,7 @@ export interface MusicQuizSuggestion {
 export interface MusicQuizSource {
   uri: string;
   name: string;
-  media_type?: string | null;
+  media_type: string | null;
 }
 
 export interface MusicQuizJoinResult {
@@ -593,7 +593,7 @@ export function answerMusicQuiz(player_id: string, suggestion_id: string) {
 
 export function submitMusicQuizAnswer(
   player_id: string,
-  submission: MusicQuizAnswerSubmission,
+  submission: MusicQuizTimelineSubmission,
 ) {
   return api.sendCommand<MusicQuizPersonalizedState>(
     "music_quiz/submit_answer",

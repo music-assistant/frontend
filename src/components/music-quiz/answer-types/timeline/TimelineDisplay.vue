@@ -8,7 +8,10 @@
       :aria-label="$t('providers.music_quiz.timeline')"
     >
       <template v-for="boundary in boundaries" :key="boundary.key">
-        <li v-if="selectable" class="relative z-10 -my-1 flex justify-center">
+        <li
+          v-if="selectable && entries.length"
+          class="relative z-10 -my-1 flex justify-center"
+        >
           <Button
             type="button"
             size="sm"

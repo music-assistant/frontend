@@ -1,7 +1,7 @@
 <template>
   <article
     :data-entry-id="entry.entry_id"
-    class="bg-card grid grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-3 rounded-xl border p-3 shadow-sm transition-colors sm:grid-cols-[5rem_minmax(0,1fr)]"
+    class="bg-card grid grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-3 rounded-xl border p-3 shadow-sm transition-colors motion-reduce:transition-none sm:grid-cols-[5rem_minmax(0,1fr)]"
     :class="
       highlighted
         ? 'border-primary bg-primary/5 ring-primary/20 ring-2'

@@ -115,4 +115,15 @@ describe("TimelineDisplay", () => {
         .includes("border-primary"),
     ).toBe(true);
   });
+
+  it("never offers the invalid null-to-null boundary", () => {
+    const wrapper = mount(TimelineDisplay, {
+      props: {
+        entries: [],
+        selectable: true,
+      },
+    });
+
+    expect(wrapper.find("button").exists()).toBe(false);
+  });
 });
