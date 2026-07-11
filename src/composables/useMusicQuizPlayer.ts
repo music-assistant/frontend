@@ -30,7 +30,11 @@ export interface UseMusicQuizPlayerOptions {
   notifyError: (message: string) => void;
 }
 
-/** Manage Music Quiz guest state and player actions. */
+/**
+ * Manage Music Quiz guest state, player actions, and reconnection.
+ *
+ * Keeps joined players active and synchronizes state from provider events.
+ */
 export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   const { notifyError } = options;
 
