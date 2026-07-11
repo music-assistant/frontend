@@ -110,7 +110,7 @@ const {
   remove: removeSource,
 } = useMusicQuizSourceSearch();
 
-watch(sourceUris, (value) => (model.value = [...value]), { immediate: true });
+watch(sourceUris, (value) => (model.value = [...value]));
 
 function sourceSubtitle(item: MusicQuizSourceItem) {
   if (item.media_type === MediaType.PLAYLIST)

@@ -1,6 +1,8 @@
 import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import MusicQuizSourcePicker from "@/components/music-quiz/MusicQuizSourcePicker.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockSearch } = vi.hoisted(() => ({
@@ -116,5 +118,19 @@ describe("HitsterSetup", () => {
     expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
       config: { name: "Decades" },
     });
+  });
+
+  it("does not overwrite an initial source model on mount", async () => {
+    const updateModel = vi.fn();
+    const wrapper = mount(MusicQuizSourcePicker, {
+      props: {
+        modelValue: ["library://playlist/existing"],
+        "onUpdate:modelValue": updateModel,
+      },
+    });
+
+    await nextTick();
+    expect(updateModel).not.toHaveBeenCalled();
+    wrapper.unmount();
   });
 });
