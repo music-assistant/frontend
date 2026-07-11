@@ -3,7 +3,6 @@
     data-testid="music-quiz-session-header"
     class="bg-card flex min-w-0 flex-col gap-3 rounded-xl border p-4 shadow-sm sm:flex-row sm:items-center"
     :class="{ 'p-5 sm:p-6': present }"
-    :aria-label="$t(game.labelKey)"
   >
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <span
