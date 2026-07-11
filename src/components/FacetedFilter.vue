@@ -68,6 +68,7 @@
             :tabindex="option.locked ? -1 : 0"
             @click="toggle(option)"
             @keydown.space.prevent="toggle(option)"
+            @keydown.enter.prevent="toggle(option)"
           >
             <Checkbox
               :model-value="option.locked || selectedSet.has(option.value)"
