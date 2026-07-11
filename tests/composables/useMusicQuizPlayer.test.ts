@@ -541,9 +541,11 @@ describe("useMusicQuizPlayer", () => {
     await flushPromises();
 
     expect(player.playerId.value).toBe("stored-player");
-    expect(consoleError).toHaveBeenCalledWith(
-      "[Music Quiz] Heartbeat error handler failed",
-      expect.objectContaining({ message: "Toast failed" }),
+    await vi.waitFor(() =>
+      expect(consoleError).toHaveBeenCalledWith(
+        "[Music Quiz] Heartbeat error handler failed",
+        expect.objectContaining({ message: "Toast failed" }),
+      ),
     );
     consoleError.mockRestore();
   });
@@ -986,6 +988,28 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toEqual(answeredState);
   });
 
+  it("does not re-enable stale controls when action refresh fails", async () => {
+    storedPlayerId.value = "stored-player";
+    mockGetMusicQuizState
+      .mockResolvedValueOnce(PLAYER_STATE)
+      .mockRejectedValueOnce(new Error("Refresh failed"));
+    mockAnswerMusicQuiz.mockResolvedValue(PLAYER_STATE);
+    const notifyError = vi.fn();
+    const player = useMusicQuizPlayer({ notifyError });
+    await flushPromises();
+
+    await expect(
+      player.submitAnswer({
+        answer_type: "multiple_choice",
+        suggestion_id: "suggestion-1",
+      }),
+    ).resolves.toBe(false);
+
+    expect(player.state.value).toBeNull();
+    expect(player.busy.value).toBe(false);
+    expect(notifyError).toHaveBeenCalledWith("Refresh failed");
+  });
+
   it("routes timeline actions through the generic submission command", async () => {
     storedPlayerId.value = "stored-player";
     const timelineState = {
@@ -1088,12 +1112,13 @@ describe("useMusicQuizPlayer", () => {
     });
     await flushPromises();
     delayedAnswer.resolve(TIMELINE_PLACED_STATE);
+    await flushPromises();
+    expect(player.busy.value).toBe(true);
+    eventRefresh.resolve(TIMELINE_PLACED_STATE);
     await submitting;
 
     expect(player.state.value).toEqual(TIMELINE_REVEAL_STATE);
-    eventRefresh.resolve(TIMELINE_PLACED_STATE);
-    await flushPromises();
-    expect(player.state.value).toEqual(TIMELINE_REVEAL_STATE);
+    expect(player.busy.value).toBe(false);
 
     await expect(player.ready()).resolves.toBe(true);
     expect(mockReadyMusicQuiz).toHaveBeenCalledWith("stored-player");
@@ -1119,12 +1144,13 @@ describe("useMusicQuizPlayer", () => {
     });
     await flushPromises();
     delayedReady.resolve(TIMELINE_REVEAL_STATE);
+    await flushPromises();
+    expect(player.busy.value).toBe(true);
+    eventRefresh.resolve(TIMELINE_REVEAL_STATE);
     await markingReady;
 
     expect(player.state.value).toEqual(TIMELINE_NEXT_STATE);
-    eventRefresh.resolve(TIMELINE_REVEAL_STATE);
-    await flushPromises();
-    expect(player.state.value).toEqual(TIMELINE_NEXT_STATE);
+    expect(player.busy.value).toBe(false);
   });
 
   it("does not expose guess-the-song fields for an unknown game type", async () => {

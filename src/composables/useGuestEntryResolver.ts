@@ -1,4 +1,7 @@
-import { isMusicQuizProviderEvent } from "@/composables/useMusicQuiz";
+import {
+  getMusicQuizInfo,
+  isMusicQuizProviderEvent,
+} from "@/composables/useMusicQuiz";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 import {
@@ -29,9 +32,7 @@ export async function resolveGuestEntry(): Promise<GuestEntryState> {
   const hasMusicQuiz = providerDomains.has("music_quiz");
 
   if (hasMusicQuiz) {
-    const game = await api.sendCommand<unknown | null>(
-      "music_quiz/get_game_info",
-    );
+    const game = await getMusicQuizInfo();
     if (game) return "quiz";
   }
   if (providerDomains.has("party")) return "party";

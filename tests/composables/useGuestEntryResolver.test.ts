@@ -48,9 +48,7 @@ describe("guest entry decisions", () => {
     apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
 
     await expect(resolveGuestEntry()).resolves.toBe("quiz");
-    expect(apiMock.sendCommand).toHaveBeenCalledWith(
-      "music_quiz/get_game_info",
-    );
+    expect(apiMock.sendCommand).toHaveBeenCalledWith("music_quiz/info");
   });
 
   it("routes to Party when Music Quiz is inactive", async () => {
