@@ -97,6 +97,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     try {
       availableQuizTypes.value = await getAvailableMusicQuizTypes();
     } catch (err) {
+      if (isUnknownCommandError(err)) {
+        availableQuizTypes.value = [];
+        return;
+      }
       notifyError(
         getMusicQuizErrorMessage(
           err,
@@ -265,4 +269,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     fetchState,
     fetchAvailableQuizTypes,
   };
+
+  function isUnknownCommandError(err: unknown) {
+    return getMusicQuizErrorMessage(err)
+      .toLowerCase()
+      .includes("invalid command");
+  }
 }

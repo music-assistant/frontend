@@ -159,6 +159,19 @@ describe("useMusicQuizHost", () => {
     ]);
   });
 
+  it("keeps optional game types hidden on older servers", async () => {
+    mockGetAvailableMusicQuizTypes.mockRejectedValue(
+      "Invalid command: music_quiz/available_quiz_types",
+    );
+    const notifyError = vi.fn();
+
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(host.availableQuizTypes.value).toEqual([]);
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
   it("treats a null response as setup state without a toast", async () => {
     mockGetMusicQuiz.mockResolvedValue(null);
     const notifyError = vi.fn();
