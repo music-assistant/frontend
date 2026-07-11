@@ -1,7 +1,7 @@
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
 import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
-import type { MusicQuizHitsterPersonalizedState } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelinePersonalizedState } from "@/composables/useMusicQuiz";
 import { baseRound, baseState, player } from "./timelinePlayerFixtures";
 import { shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -55,7 +55,7 @@ describe("Timeline player placement", () => {
         ...baseState.you,
         active_from_round: 1,
       },
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state,
@@ -80,7 +80,7 @@ describe("Timeline player placement", () => {
           active_from_round: 1,
         },
       ],
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state,

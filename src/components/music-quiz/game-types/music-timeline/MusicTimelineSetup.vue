@@ -2,11 +2,11 @@
   <div class="flex flex-col gap-5">
     <div class="grid gap-4 sm:grid-cols-2">
       <Field>
-        <FieldLabel for="hitster-rounds">
+        <FieldLabel for="music-timeline-rounds">
           {{ $t("providers.music_quiz.rounds") }}
         </FieldLabel>
         <NumberField
-          id="hitster-rounds"
+          id="music-timeline-rounds"
           v-model="roundCount"
           :min="MIN_ROUNDS"
           :max="MAX_ROUNDS"
@@ -20,11 +20,11 @@
       </Field>
 
       <Field>
-        <FieldLabel for="hitster-seconds">
+        <FieldLabel for="music-timeline-seconds">
           {{ $t("providers.music_quiz.answer_seconds") }}
         </FieldLabel>
         <NumberField
-          id="hitster-seconds"
+          id="music-timeline-seconds"
           v-model="answerDuration"
           :min="MIN_SECONDS"
           :max="MAX_SECONDS"
@@ -38,11 +38,11 @@
       </Field>
 
       <Field>
-        <FieldLabel for="hitster-artist-bonus">
+        <FieldLabel for="music-timeline-artist-bonus">
           {{ $t("providers.music_quiz.timeline_artist_bonus") }}
         </FieldLabel>
         <NativeSelect
-          id="hitster-artist-bonus"
+          id="music-timeline-artist-bonus"
           v-model="artistBonusMode"
           class="w-full"
         >
@@ -57,11 +57,11 @@
       </Field>
 
       <Field>
-        <FieldLabel for="hitster-title-bonus">
+        <FieldLabel for="music-timeline-title-bonus">
           {{ $t("providers.music_quiz.timeline_title_bonus") }}
         </FieldLabel>
         <NativeSelect
-          id="hitster-title-bonus"
+          id="music-timeline-title-bonus"
           v-model="titleBonusMode"
           class="w-full"
         >
@@ -78,7 +78,7 @@
 
     <MusicQuizSourceSelector
       v-model="sourceUris"
-      input-id="hitster-source-search"
+      input-id="music-timeline-source-search"
     />
 
     <Button size="lg" :disabled="busy || !canCreate" @click="create">
@@ -105,7 +105,7 @@ import {
   NumberFieldInput,
 } from "@/components/ui/number-field";
 import type {
-  MusicQuizHitsterConfig,
+  MusicQuizTimelineConfig,
   MusicQuizTimelineBonusMode,
 } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
@@ -143,7 +143,7 @@ const bonusModeOptions = computed(() => [
 
 function create() {
   if (!canCreate.value) return;
-  const config: MusicQuizHitsterConfig = {
+  const config: MusicQuizTimelineConfig = {
     round_count: roundCount.value,
     answer_duration: answerDuration.value,
     source_uris: sourceUris.value,
@@ -151,7 +151,7 @@ function create() {
     title_bonus_mode: titleBonusMode.value,
   };
   emit("create", {
-    quiz_type: "hitster",
+    quiz_type: "music_timeline",
     answer_type: "timeline",
     config,
   });

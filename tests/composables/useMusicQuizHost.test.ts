@@ -92,7 +92,7 @@ describe("useMusicQuizHost", () => {
     mockDeleteMusicQuiz.mockResolvedValue(undefined);
     mockGetAvailableMusicQuizTypes.mockResolvedValue([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
     ]);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockSubscribe.mockImplementation(
@@ -145,7 +145,7 @@ describe("useMusicQuizHost", () => {
   it("exposes backend-discovered quiz types", async () => {
     mockGetAvailableMusicQuizTypes.mockResolvedValue([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
 
@@ -154,7 +154,7 @@ describe("useMusicQuizHost", () => {
 
     expect(host.availableQuizTypes.value).toEqual([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
   });

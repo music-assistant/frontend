@@ -97,7 +97,7 @@ describe("MusicQuizDashboardView host actions", () => {
     mockUseMusicQuizHost.mockReset();
     mockUseMusicQuizHost.mockReturnValue({
       busy,
-      availableQuizTypes: ref(["guess_the_song", "hitster"]),
+      availableQuizTypes: ref(["guess_the_song", "music_timeline"]),
       create: vi.fn(),
       currentRound: ref(null),
       deleteGame: mockDeleteGame,

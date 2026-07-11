@@ -52,7 +52,7 @@ describe("MusicQuizDashboardView", () => {
     mockToastError.mockReset();
     mockSendCommand.mockImplementation((command: string) =>
       command === "music_quiz/available_quiz_types"
-        ? Promise.resolve(["guess_the_song", "hitster"])
+        ? Promise.resolve(["guess_the_song", "music_timeline"])
         : Promise.resolve(null),
     );
     mockSubscribe.mockReturnValue(() => {});

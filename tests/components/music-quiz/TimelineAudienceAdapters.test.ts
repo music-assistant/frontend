@@ -2,9 +2,9 @@ import TimelineAudienceAnswer from "@/components/music-quiz/answer-types/timelin
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
 import TimelineProgress from "@/components/music-quiz/answer-types/timeline/TimelineProgress.vue";
 import type {
-  MusicQuizHitsterHostRound,
-  MusicQuizHitsterHostState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelineHostRound,
+  MusicQuizTimelineHostState,
+  MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 import { mount, shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -40,7 +40,7 @@ const currentRound = {
       mode: "free_text",
     },
   ],
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 const protectedHostRound = {
   round_index: 0,
   answer_label: "SECRET ARTIST - SECRET TITLE",
@@ -69,13 +69,13 @@ const protectedHostRound = {
   started_at: 1,
   ended_at: null,
   auto_advance_at: null,
-} satisfies MusicQuizHitsterHostRound;
+} satisfies MusicQuizTimelineHostRound;
 
 const hostState = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -118,7 +118,7 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [protectedHostRound],
-} satisfies MusicQuizHitsterHostState;
+} satisfies MusicQuizTimelineHostState;
 
 describe("timeline host and present answers", () => {
   it("uses only the redacted current round before reveal", () => {
@@ -182,7 +182,7 @@ describe("timeline host and present answers", () => {
       image_url: null,
       duration: 180,
       ended_at: 20,
-    } satisfies MusicQuizHitsterRound;
+    } satisfies MusicQuizTimelineRound;
     const state = {
       ...hostState,
       phase: "reveal",
@@ -205,7 +205,7 @@ describe("timeline host and present answers", () => {
           },
         },
       ],
-    } satisfies MusicQuizHitsterHostState;
+    } satisfies MusicQuizTimelineHostState;
     const wrapper = mount(TimelineAudienceAnswer, {
       props: {
         state,

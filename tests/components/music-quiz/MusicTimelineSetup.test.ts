@@ -1,4 +1,4 @@
-import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -41,7 +41,7 @@ async function flushPromises() {
   await nextTick();
 }
 
-describe("HitsterSetup", () => {
+describe("MusicTimelineSetup", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSearch.mockReset();
@@ -63,8 +63,8 @@ describe("HitsterSetup", () => {
     vi.useRealTimers();
   });
 
-  it("emits only the Hitster configuration fields", async () => {
-    const wrapper = mount(HitsterSetup, {
+  it("emits only the Music Timeline configuration fields", async () => {
+    const wrapper = mount(MusicTimelineSetup, {
       props: { busy: false },
       global: {
         stubs: {
@@ -74,7 +74,7 @@ describe("HitsterSetup", () => {
     });
     expect(wrapper.text()).not.toContain("providers.music_quiz.difficulty");
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
-    expect(wrapper.find("#hitster-name").exists()).toBe(false);
+    expect(wrapper.find("#music-timeline-name").exists()).toBe(false);
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
@@ -91,7 +91,7 @@ describe("HitsterSetup", () => {
       ?.trigger("click");
 
     expect(wrapper.emitted("create")?.[0]?.[0]).toEqual({
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       config: {
         round_count: 5,
@@ -104,7 +104,7 @@ describe("HitsterSetup", () => {
   });
 
   it("keeps bonus modes independent without adding a name", async () => {
-    const wrapper = mount(HitsterSetup, {
+    const wrapper = mount(MusicTimelineSetup, {
       props: { busy: false },
       global: {
         stubs: {
@@ -113,8 +113,10 @@ describe("HitsterSetup", () => {
       },
     });
 
-    await wrapper.get("#hitster-artist-bonus").setValue("free_text");
-    await wrapper.get("#hitster-title-bonus").setValue("multiple_choice");
+    await wrapper.get("#music-timeline-artist-bonus").setValue("free_text");
+    await wrapper
+      .get("#music-timeline-title-bonus")
+      .setValue("multiple_choice");
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')
       .setValue("test");
@@ -140,7 +142,7 @@ describe("HitsterSetup", () => {
   });
 
   it("labels removable sources for keyboard and screen-reader users", async () => {
-    const wrapper = mount(HitsterSetup, { props: { busy: false } });
+    const wrapper = mount(MusicTimelineSetup, { props: { busy: false } });
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')

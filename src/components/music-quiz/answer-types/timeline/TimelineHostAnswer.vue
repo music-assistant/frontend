@@ -13,14 +13,14 @@ import type {
   MusicQuizHostAnswerAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
 import type {
-  MusicQuizHitsterHostState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelineHostState,
+  MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 
 defineProps<
   MusicQuizHostAnswerAdapterProps<
-    MusicQuizHitsterHostState,
-    MusicQuizHitsterRound
+    MusicQuizTimelineHostState,
+    MusicQuizTimelineRound
   >
 >();
 defineSlots<MusicQuizAnswerAdapterSlots>();
