@@ -10,7 +10,9 @@
   </section>
 
   <section
-    v-else-if="state.phase === 'answering' && currentRound"
+    v-else-if="
+      (state.phase === 'answering' || state.phase === 'reveal') && currentRound
+    "
     class="flex flex-col gap-3"
   >
     <component
@@ -27,30 +29,10 @@
       :busy="busy"
       @submit="onSubmitAnswer"
     />
-  </section>
-
-  <section
-    v-else-if="state.phase === 'reveal' && currentRound"
-    class="flex flex-col gap-3"
-  >
-    <component
-      :is="gameComponent"
-      :state="state"
-      :current-round="currentRound"
-      :busy="busy"
-      @ready="emit('ready')"
-    />
-    <component
-      :is="answerComponent"
-      :state="state"
-      :current-round="currentRound"
-      :busy="busy"
-      @submit="onSubmitAnswer"
-    />
-
     <MusicQuizLeaderboard
       :rows="leaderboardRows"
       :current-player-name="state.you.name"
+      compact
     />
   </section>
 

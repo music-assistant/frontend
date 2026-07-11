@@ -1,25 +1,41 @@
 <template>
-  <Card class="gap-4 py-4">
-    <CardHeader class="px-4">
-      <CardTitle class="text-base">
+  <Card :class="compact ? 'gap-2 py-2' : 'gap-4 py-4'">
+    <CardHeader :class="compact ? 'px-3' : 'px-4'">
+      <CardTitle :class="compact ? 'text-sm' : 'text-base'">
         {{ title ?? $t("providers.music_quiz.leaderboard") }}
       </CardTitle>
     </CardHeader>
-    <CardContent class="px-4">
-      <TransitionGroup tag="ol" name="quiz-rank" class="flex flex-col gap-1">
+    <CardContent
+      :class="
+        compact ? 'max-h-56 overflow-y-auto overscroll-contain px-2' : 'px-4'
+      "
+    >
+      <TransitionGroup
+        tag="ol"
+        name="quiz-rank"
+        class="flex flex-col"
+        :class="compact ? 'gap-0.5' : 'gap-1'"
+      >
         <li
           v-for="row in rows"
           :key="row.name"
-          class="flex items-center gap-3 rounded-lg px-2 py-1.5"
-          :class="{ 'bg-primary/10': row.name === currentPlayerName }"
+          class="flex items-center rounded-lg"
+          :class="[
+            compact ? 'gap-2 px-1.5 py-1 text-sm' : 'gap-3 px-2 py-1.5',
+            { 'bg-primary/10': row.name === currentPlayerName },
+          ]"
           :aria-current="row.name === currentPlayerName ? 'true' : undefined"
         >
           <span
-            class="text-muted-foreground w-6 shrink-0 text-center font-bold tabular-nums"
+            class="text-muted-foreground shrink-0 text-center font-bold tabular-nums"
+            :class="compact ? 'w-5' : 'w-6'"
           >
             {{ row.rank }}
           </span>
-          <MusicQuizAvatar :name="row.name" class="size-8 shrink-0" />
+          <MusicQuizAvatar
+            :name="row.name"
+            :class="compact ? 'size-6 shrink-0' : 'size-8 shrink-0'"
+          />
           <span
             class="min-w-0 flex-1 truncate font-medium"
             :class="{
@@ -57,6 +73,7 @@ defineProps<{
   rows: MusicQuizLeaderboardRow[];
   currentPlayerName?: string;
   title?: string;
+  compact?: boolean;
 }>();
 </script>
 

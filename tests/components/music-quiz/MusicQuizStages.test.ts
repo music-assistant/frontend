@@ -4,7 +4,12 @@ import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
+  MusicQuizHitsterPersonalizedState,
 } from "@/composables/useMusicQuiz";
+import {
+  baseRound as hitsterRound,
+  baseState as hitsterState,
+} from "./timelinePlayerFixtures";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,6 +47,23 @@ const answerAdapter = {
   emits: ["submit"],
   template:
     "<button data-testid=\"answer-adapter\" @click=\"$emit('submit', { answer_type: 'multiple_choice', suggestion_id: 'one' })\">Answer<slot name=\"leaderboard\" /></button>",
+};
+const timelineAnswerAdapter = {
+  props: {
+    state: { type: Object, required: true },
+    currentRound: { type: Object, required: true },
+    busy: Boolean,
+  },
+  emits: ["submit"],
+  template:
+    "<button data-testid=\"timeline-answer-adapter\" @click=\"$emit('submit', { answer_type: 'timeline', action: 'finish' })\">Timeline answer</button>",
+};
+const leaderboardStub = {
+  props: {
+    compact: Boolean,
+  },
+  template:
+    "<div data-testid=\"leaderboard\" :data-compact=\"compact ? 'true' : 'false'\" />",
 };
 const gameDefinition = {
   id: "guess_the_song",
@@ -140,6 +162,94 @@ describe("Music Quiz shared stages", () => {
         },
       ],
     ]);
+  });
+
+  it("keeps the compact leaderboard last while answering", () => {
+    const wrapper = mount(MusicQuizPlayerStage, {
+      props: {
+        state: playerState,
+        currentRound,
+        busy: false,
+        leaderboardRows,
+        winnerText: "",
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          MusicQuizLeaderboard: leaderboardStub,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    const leaderboard = wrapper.get('[data-testid="leaderboard"]');
+    expect(leaderboard.attributes("data-compact")).toBe("true");
+    expect(wrapper.get("section").element.lastElementChild).toBe(
+      leaderboard.element,
+    );
+  });
+
+  it("keeps the compact leaderboard last during timeline reveal", () => {
+    const state = {
+      ...hitsterState,
+      phase: "reveal",
+    } satisfies MusicQuizHitsterPersonalizedState;
+    const wrapper = mount(MusicQuizPlayerStage, {
+      props: {
+        state,
+        currentRound: hitsterRound,
+        busy: false,
+        leaderboardRows,
+        winnerText: "",
+        gameComponent: gameAdapter,
+        answerComponent: timelineAnswerAdapter,
+      },
+      global: {
+        stubs: {
+          MusicQuizLeaderboard: leaderboardStub,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    const leaderboard = wrapper.get('[data-testid="leaderboard"]');
+    expect(
+      wrapper.find('[data-testid="timeline-answer-adapter"]').exists(),
+    ).toBe(true);
+    expect(leaderboard.attributes("data-compact")).toBe("true");
+    expect(wrapper.get("section").element.lastElementChild).toBe(
+      leaderboard.element,
+    );
+  });
+
+  it("keeps the full leaderboard for final player results", () => {
+    const state = {
+      ...playerState,
+      phase: "finished",
+      current_round: null,
+    } satisfies MusicQuizGuessTheSongPersonalizedState;
+    const wrapper = mount(MusicQuizPlayerStage, {
+      props: {
+        state,
+        currentRound: null,
+        busy: false,
+        leaderboardRows,
+        winnerText: "Player wins",
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          MusicQuizLeaderboard: leaderboardStub,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(
+      wrapper.get('[data-testid="leaderboard"]').attributes("data-compact"),
+    ).toBe("false");
   });
 
   it("keeps the shared leaderboard in the present answer slot", () => {
