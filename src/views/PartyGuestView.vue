@@ -297,15 +297,16 @@ watch(
 );
 
 // --- Back navigation ---
-const handleBack = (event: PopStateEvent) => {
+const handleBack = () => {
   if (selectedArtist.value || pickedTrack.value) {
-    event.preventDefault();
     if (selectedArtist.value) {
       clearArtistSelection();
       // Scroll is triggered by the watcher above when PartyQueueSection remounts
     } else {
       pickedTrack.value = null;
     }
+    // popstate cannot be canceled: re-arm the history entry so the next
+    // back press is caught here again instead of leaving the page
     history.pushState(null, "", location.href);
   }
 };

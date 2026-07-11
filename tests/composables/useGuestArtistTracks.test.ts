@@ -93,4 +93,67 @@ describe("useGuestArtistTracks", () => {
     expect(selectedArtist.value).toBeNull();
     expect(artistTracks.value).toEqual([]);
   });
+
+  it("ignores the response of a selection that was cleared meanwhile", async () => {
+    let resolveTracks!: (tracks: unknown[]) => void;
+    mockGetArtistTracks.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveTracks = resolve;
+      }),
+    );
+
+    const {
+      selectedArtist,
+      artistTracks,
+      loadingArtistTracks,
+      selectArtist,
+      clearArtistSelection,
+    } = useGuestArtistTracks();
+
+    const pending = selectArtist({
+      provider_mappings: [
+        { item_id: "artist-id", provider_instance: "provider-1" },
+      ],
+    } as unknown as Artist);
+    clearArtistSelection();
+    expect(loadingArtistTracks.value).toBe(false);
+
+    resolveTracks([{ id: "track1" }]);
+    await pending;
+
+    expect(selectedArtist.value).toBeNull();
+    expect(artistTracks.value).toEqual([]);
+    expect(loadingArtistTracks.value).toBe(false);
+  });
+
+  it("keeps only the latest selection when artists are picked rapidly", async () => {
+    let resolveFirst!: (tracks: unknown[]) => void;
+    const firstTracks = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondTracks = [{ id: "second-track" }];
+    mockGetArtistTracks
+      .mockReturnValueOnce(firstTracks)
+      .mockResolvedValueOnce(secondTracks);
+
+    const { selectedArtist, artistTracks, selectArtist } =
+      useGuestArtistTracks();
+
+    const first = selectArtist({
+      name: "First",
+      provider_mappings: [{ item_id: "a1", provider_instance: "provider-1" }],
+    } as unknown as Artist);
+    const second = selectArtist({
+      name: "Second",
+      provider_mappings: [{ item_id: "a2", provider_instance: "provider-1" }],
+    } as unknown as Artist);
+    await second;
+    resolveFirst([{ id: "first-track" }]);
+    await first;
+
+    expect((selectedArtist.value as unknown as { name: string }).name).toBe(
+      "Second",
+    );
+    expect(artistTracks.value).toEqual(secondTracks);
+  });
 });
