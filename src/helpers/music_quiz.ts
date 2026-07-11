@@ -46,6 +46,13 @@ export function rankMusicQuizPlayers(
   });
 }
 
+export function getMusicQuizRoundPlayers<T extends MusicQuizPlayer>(
+  players: T[],
+  roundIndex: number,
+) {
+  return players.filter((player) => player.active_from_round <= roundIndex);
+}
+
 export function formatNameList(names: string[]) {
   return new Intl.ListFormat(i18n.global.locale.value, {
     style: "long",
@@ -82,15 +89,17 @@ export function getMusicQuizRoundScoreLabel(
   if (state.phase !== "reveal" || !state.current_round) return "";
   const player = state.players.find((p) => p.name === playerName);
   if (!player) return "";
-  if (
-    player.active_from_round !== undefined &&
-    player.active_from_round > state.current_round.round_index
-  ) {
+  if (player.active_from_round > state.current_round.round_index) {
     return "";
   }
-  if (player.last_answer && player.last_answer.points !== undefined) {
-    return `(+${player.last_answer.points})`;
-  }
+  if (!player.last_answer) return "";
+  const points =
+    "placement" in player.last_answer
+      ? player.last_answer.placement.points +
+        (player.last_answer.artist?.points ?? 0) +
+        (player.last_answer.title?.points ?? 0)
+      : player.last_answer.points;
+  if (points !== undefined) return `(+${points})`;
   return "";
 }
 

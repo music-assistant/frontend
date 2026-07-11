@@ -99,6 +99,43 @@ const playerState = {
     active_from_round: 0,
   },
 };
+const hitsterRound = {
+  question: null,
+  round_index: 0,
+  started_at: 1,
+  deadline: 2,
+  timeline: [
+    {
+      entry_id: "anchor",
+      release_year: 1990,
+      title: "Anchor",
+      artist: "Artist",
+      track_uri: "library://track/anchor",
+      image_url: null,
+      is_anchor: true,
+    },
+  ],
+  bonus_definitions: [],
+};
+const hitsterState = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "answering",
+  name: "Hitster",
+  round_count: 1,
+  answer_duration: 30,
+  artist_bonus_mode: "off",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [],
+  current_round: hitsterRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+};
 
 describe("MusicQuizPlayerView routing", () => {
   beforeEach(() => {
@@ -139,6 +176,29 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockListenInSetup).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("enables Hitster ListenIn without fetching lyrics", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref(hitsterState),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(hitsterRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(mockGetTrackLyrics).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

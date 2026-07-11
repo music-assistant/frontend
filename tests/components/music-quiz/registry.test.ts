@@ -10,6 +10,12 @@ import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
+  MusicQuizHitsterHostState,
+  MusicQuizHitsterPersonalizedState,
+  MusicQuizHitsterRound,
+  MusicQuizSupportedHostState,
+  MusicQuizSupportedPersonalizedState,
+  MusicQuizSupportedRound,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
 import { shallowMount } from "@vue/test-utils";
@@ -92,10 +98,67 @@ const hostState = {
   rounds: [currentRound],
 } satisfies MusicQuizGuessTheSongHostState;
 
+const hitsterRound = {
+  question: null,
+  round_index: 0,
+  started_at: 1,
+  deadline: Date.now() / 1000 + 30,
+  timeline: [
+    {
+      entry_id: "anchor",
+      release_year: 1990,
+      title: "Anchor",
+      artist: "Artist",
+      track_uri: "library://track/anchor",
+      image_url: null,
+      is_anchor: true,
+    },
+  ],
+  bonus_definitions: [],
+} satisfies MusicQuizHitsterRound;
+
+const hitsterPlayerState = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "answering",
+  name: "Hitster",
+  round_count: 5,
+  answer_duration: 30,
+  artist_bonus_mode: "off",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [],
+  current_round: hitsterRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+  },
+} satisfies MusicQuizHitsterPersonalizedState;
+
+const hitsterHostState = {
+  quiz_type: "hitster",
+  answer_type: "timeline",
+  phase: "answering",
+  name: "Hitster",
+  round_count: 5,
+  answer_duration: 30,
+  artist_bonus_mode: "off",
+  title_bonus_mode: "off",
+  mode: "venue",
+  players: [],
+  current_round: hitsterRound,
+  created_at: 1,
+  sources: [],
+  join_url: "https://example.test/join",
+  rounds: [],
+} satisfies MusicQuizHitsterHostState;
+
 interface GameMountFixture {
-  playerState: MusicQuizGuessTheSongPersonalizedState;
-  hostState: MusicQuizGuessTheSongHostState;
-  currentRound: MusicQuizGuessTheSongRound;
+  playerState: MusicQuizSupportedPersonalizedState;
+  hostState: MusicQuizSupportedHostState;
+  currentRound: MusicQuizSupportedRound;
 }
 
 const GAME_MOUNT_FIXTURES = {
@@ -103,6 +166,11 @@ const GAME_MOUNT_FIXTURES = {
     playerState,
     hostState,
     currentRound,
+  },
+  hitster: {
+    playerState: hitsterPlayerState,
+    hostState: hitsterHostState,
+    currentRound: hitsterRound,
   },
 } satisfies Record<MusicQuizType, GameMountFixture>;
 
@@ -112,15 +180,22 @@ const ANSWER_MOUNT_FIXTURES = {
     hostState,
     currentRound,
   },
+  timeline: {
+    playerState: hitsterPlayerState,
+    hostState: hitsterHostState,
+    currentRound: hitsterRound,
+  },
 } satisfies Record<MusicQuizAnswerType, GameMountFixture>;
 
 describe("Music Quiz registries", () => {
   it("contains every game and answer exactly once", () => {
     expect(MUSIC_QUIZ_GAME_TYPES.map((game) => game.id)).toEqual([
       "guess_the_song",
+      "hitster",
     ]);
     expect(MUSIC_QUIZ_ANSWER_TYPES.map((answer) => answer.id)).toEqual([
       "multiple_choice",
+      "timeline",
     ]);
     expect(new Set(MUSIC_QUIZ_GAME_TYPES.map((game) => game.id)).size).toBe(
       MUSIC_QUIZ_GAME_TYPES.length,
@@ -157,9 +232,14 @@ describe("Music Quiz registries", () => {
     );
     const expected = {
       guess_the_song: "multiple_choice",
+      hitster: "timeline",
     } satisfies MusicQuizGameAnswerTypeMap;
 
     expect(mapping).toEqual(expected);
+    expect(
+      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "hitster")
+        ?.supportsListenIn,
+    ).toBe(true);
   });
 
   it.each(MUSIC_QUIZ_GAME_TYPES)("mounts every $id game adapter", (game) => {

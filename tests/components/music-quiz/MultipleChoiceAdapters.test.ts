@@ -1,6 +1,7 @@
 import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoiceHostAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceHostAnswer.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
+import MultipleChoicePresentAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePresentAnswer.vue";
 import MultipleChoiceProgress from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceProgress.vue";
 import type {
   MusicQuizGuessTheSongHostState,
@@ -130,44 +131,69 @@ describe("multiple-choice adapters", () => {
     wrapper.unmount();
   });
 
-  it("excludes players who joined after the current round", () => {
-    const state = {
+  it("excludes late joiners from player, host, and present progress", () => {
+    const players = [
+      {
+        name: "Active",
+        score: 0,
+        ready: false,
+        answered: true,
+        active_from_round: 1,
+      },
+      {
+        name: "Late",
+        score: 0,
+        ready: false,
+        answered: false,
+        active_from_round: 2,
+      },
+    ];
+    const personalizedState = {
       ...playerState,
-      players: [
-        {
-          name: "Active",
-          score: 0,
-          ready: false,
-          answered: true,
-          active_from_round: 1,
-        },
-        {
-          name: "Late",
-          score: 0,
-          ready: false,
-          answered: false,
-          active_from_round: 2,
-        },
-      ],
+      players,
+    } satisfies MusicQuizGuessTheSongPersonalizedState;
+    const hostState = {
+      ...playerState,
+      players,
       created_at: 1,
       sources: [],
       join_url: "https://example.test/join",
       rounds: [currentRound],
     } satisfies MusicQuizGuessTheSongHostState;
 
-    const wrapper = shallowMount(MultipleChoiceHostAnswer, {
-      props: {
-        state,
-        currentRound,
-      },
-      slots: {
-        leaderboard: "<div>Leaderboard</div>",
-      },
-    });
-    const progress = wrapper.getComponent(MultipleChoiceProgress);
+    const wrappers = [
+      shallowMount(MultipleChoicePlayerAnswer, {
+        props: {
+          state: personalizedState,
+          currentRound,
+          busy: false,
+        },
+      }),
+      shallowMount(MultipleChoiceHostAnswer, {
+        props: {
+          state: hostState,
+          currentRound,
+        },
+        slots: {
+          leaderboard: "<div>Leaderboard</div>",
+        },
+      }),
+      shallowMount(MultipleChoicePresentAnswer, {
+        props: {
+          state: hostState,
+          currentRound,
+        },
+        slots: {
+          leaderboard: "<div>Leaderboard</div>",
+        },
+      }),
+    ];
 
-    expect(progress.props("statuses")).toEqual([state.players[0]]);
-    expect(progress.props("answeredCount")).toBe(1);
-    wrapper.unmount();
+    for (const wrapper of wrappers) {
+      const progress = wrapper.getComponent(MultipleChoiceProgress);
+      expect(progress.props("statuses")).toEqual([players[0]]);
+      expect(progress.props("answeredCount")).toBe(1);
+      wrapper.unmount();
+    }
   });
 });

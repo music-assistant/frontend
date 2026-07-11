@@ -85,6 +85,7 @@ const leaderboardRows = [
     score: 10,
     ready: false,
     answered: true,
+    active_from_round: 0,
     rank: 1,
     roundScoreLabel: "",
   },
@@ -150,6 +151,41 @@ describe("Music Quiz shared stages", () => {
       },
     });
 
+    expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+  });
+
+  it("keeps reveal presentation routed through the answer adapter", () => {
+    const state = {
+      ...hostState,
+      phase: "reveal",
+    } satisfies MusicQuizGuessTheSongHostState;
+    const wrapper = mount(MusicQuizPresentStage, {
+      props: {
+        state,
+        currentRound,
+        leaderboardRows,
+        winnerText: "",
+        phaseLabel: "Reveal",
+        roundLabel: "Round 1",
+        joinLink: "https://example.test/join",
+        isConnectionDegraded: false,
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          Button: true,
+          MusicQuizConnectionBanners: true,
+          MusicQuizLeaderboard: {
+            template: '<div data-testid="leaderboard" />',
+          },
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-testid="game-adapter"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
   });
