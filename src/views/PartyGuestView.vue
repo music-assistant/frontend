@@ -9,7 +9,6 @@
     <div class="search-section">
       <MediaSearch
         :allowed-media-types="[MediaType.TRACK, MediaType.ARTIST]"
-        dedupe
         :placeholder="$t('providers.party.guest_page.search_placeholder')"
         @select="onSearchSelect"
       />

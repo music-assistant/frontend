@@ -102,11 +102,6 @@ export interface Props {
   limit?: number;
   // hide these items from the results (e.g. items already selected)
   excludeUris?: string[];
-  // collapse the same item returned by multiple providers (matched by name
-  // and artist); the first occurrence wins, which is the library one. Same
-  // named playlists are genuinely different lists, so they are never
-  // collapsed. Useful when the results show no provider information.
-  dedupe?: boolean;
   placeholder?: string;
   minLength?: number;
   debounceMs?: number;
@@ -120,7 +115,6 @@ const props = withDefaults(defineProps<Props>(), {
   showProviderFilter: false,
   limit: 8,
   excludeUris: () => [],
-  dedupe: false,
   placeholder: undefined,
   minLength: 2,
   debounceMs: 300,
@@ -171,6 +165,11 @@ const panelVisible = computed(
   () => query.value.trim().length >= props.minLength,
 );
 
+// The results show no provider information, so the same item returned by
+// multiple providers reads as a plain duplicate: collapse by name (and
+// artist), keeping the first occurrence - the library one, as the engine
+// merges library results first. Same-named playlists are genuinely
+// different lists and are never collapsed.
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
   const artist =
@@ -179,7 +178,7 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
 };
 
 // merged results as one flat list: the selected (or allowed) media types in
-// their fixed order, minus the excluded items
+// their fixed order, minus the excluded items and provider duplicates
 const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
   const mediaTypes = selectedMediaTypes.value.length
     ? selectedMediaTypes.value
@@ -193,7 +192,6 @@ const flatResults = computed<MediaItemTypeOrItemMapping[]>(() => {
   const seen = new Set<string>();
   return items.filter((item) => {
     if (excluded.has(item.uri)) return false;
-    if (!props.dedupe) return true;
     const key = dedupeKey(item);
     if (!key) return true;
     if (seen.has(key)) return false;

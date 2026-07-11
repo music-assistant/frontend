@@ -165,7 +165,7 @@ describe("MediaSearch", () => {
     vi.useRealTimers();
   });
 
-  it("collapses the same item from multiple providers when dedupe is on", async () => {
+  it("collapses the same item from multiple providers", async () => {
     mockSearch.mockResolvedValue({
       tracks: [
         {
@@ -188,7 +188,6 @@ describe("MediaSearch", () => {
     });
     const wrapper = mountSearch({
       allowedMediaTypes: [MediaType.TRACK, MediaType.PLAYLIST],
-      dedupe: true,
     });
 
     await wrapper.find("input").setValue("test");
