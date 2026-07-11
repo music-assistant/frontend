@@ -189,7 +189,7 @@ function resolvePreferredMode(): WebPlayerMode {
 
   // Force sendspin mode for music quiz guests (listen-in audio support)
   if (authManager.isMusicQuizGuest()) {
-    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+    return WebPlayerMode.SENDSPIN_ONLY;
   }
 
   const webPlayerEnabledPref =
