@@ -86,13 +86,9 @@ const {
   remove: removeSource,
 } = useMusicQuizSources();
 
-watch(
-  selectedSourceUris,
-  (uris) => {
-    sourceUris.value = uris;
-  },
-  { immediate: true },
-);
+watch(selectedSourceUris, (uris) => {
+  sourceUris.value = uris;
+});
 
 function onSourceSelect(item: MediaItemTypeOrItemMapping) {
   if (!isMusicQuizSourceItem(item)) return;
