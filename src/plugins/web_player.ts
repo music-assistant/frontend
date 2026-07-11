@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from "vue";
+import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
 import { EventType } from "./api/interfaces";
@@ -35,6 +36,22 @@ export function registerWebPlayerAudioUnlock(handler: () => void): void {
 
 export function clearWebPlayerAudioUnlock(handler: () => void): void {
   if (audioUnlockHandler === handler) audioUnlockHandler = null;
+}
+
+let browserMediaControlsRefreshHandler: (() => void) | null = null;
+
+export function registerBrowserMediaControlsRefresh(handler: () => void): void {
+  browserMediaControlsRefreshHandler = handler;
+}
+
+export function clearBrowserMediaControlsRefresh(handler: () => void): void {
+  if (browserMediaControlsRefreshHandler === handler) {
+    browserMediaControlsRefreshHandler = null;
+  }
+}
+
+export function refreshBrowserMediaControls(): void {
+  browserMediaControlsRefreshHandler?.();
 }
 
 let unsubSubscriptions: (() => void)[] = [];
@@ -373,6 +390,7 @@ export const webPlayer = reactive({
     }
 
     this.tabMode = mode;
+    if (authManager.isGuestAccessSession()) resetMediaSession();
 
     if (this.player_id) {
       // The sendspin session follows the main API connection: tear the web player

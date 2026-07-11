@@ -12,11 +12,19 @@
 // First second of this file has an inaudible 15Hz tone (-64dB), rest is silent.
 // We only play the tone once at the start to ensure that the notification is shown.
 import audio from "@/assets/almost_silent.mp3";
+import { resetMediaSession } from "@/helpers/mediaSession";
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
+import authManager from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { onMounted, ref, watch } from "vue";
+import {
+  clearBrowserMediaControlsRefresh,
+  isPlaybackMode,
+  registerBrowserMediaControlsRefresh,
+  webPlayer,
+} from "@/plugins/web_player";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
 
@@ -29,6 +37,8 @@ function apiCommandWithCurrentPlayer<T extends (id: string) => unknown>(
 }
 
 let interval = undefined as undefined | ReturnType<typeof setInterval>;
+let initializationTimeout: ReturnType<typeof setTimeout> | undefined;
+const pauseCommandTimeouts = new Set<ReturnType<typeof setTimeout>>();
 
 function updateMediaState(state?: PlaybackState) {
   if (!state || !audioRef.value) return;
@@ -72,11 +82,12 @@ watch(
     // Briefly start the playback to make the notification
     // even show up when paused.
     updateMediaState(PlaybackState.PLAYING);
-    setTimeout(() => {
+    initializationTimeout = setTimeout(() => {
       // not sure if this is needed, but lets make sure that the notification will
       // definitly show up even if some quick state changes will occur
       if (audioRef.value) audioRef.value.currentTime = 0;
       updateMediaState(store.activePlayer?.playback_state);
+      initializationTimeout = undefined;
     }, 100);
   },
   { once: true },
@@ -98,7 +109,7 @@ const lastSeekPosTimeout = function () {
   }, 2000);
 };
 
-useMediaBrowserMetaData();
+const unsubMetadata = useMediaBrowserMetaData();
 
 const seekHandler = function (
   evt: MediaSessionActionDetails,
@@ -132,6 +143,33 @@ const seekHandler = function (
 
 // MediaSession setup
 onMounted(() => {
+  registerBrowserMediaControlsRefresh(refreshMediaSession);
+  registerMediaSessionActionHandlers();
+});
+
+onBeforeUnmount(() => {
+  clearBrowserMediaControlsRefresh(refreshMediaSession);
+  unsubMetadata();
+  if (interval) clearInterval(interval);
+  if (initializationTimeout) clearTimeout(initializationTimeout);
+  if (lastSeekPosTimeoutHandle) clearTimeout(lastSeekPosTimeoutHandle);
+  for (const timeout of pauseCommandTimeouts) clearTimeout(timeout);
+  pauseCommandTimeouts.clear();
+  if (
+    authManager.isGuestAccessSession() ||
+    !isPlaybackMode(webPlayer.tabMode)
+  ) {
+    resetMediaSession();
+  }
+});
+
+function refreshMediaSession(): void {
+  unsubMetadata.refresh();
+  updateMediaState(store.activePlayer?.playback_state);
+  registerMediaSessionActionHandlers();
+}
+
+function registerMediaSessionActionHandlers(): void {
   navigator.mediaSession.setActionHandler("play", () => {
     apiCommandWithCurrentPlayer(api.playerCommandPlay.bind(api));
   });
@@ -139,9 +177,11 @@ onMounted(() => {
     // workaround-alert: delay the pause command a tiny bit
     // to workaround a browser bug where pause is sent if a laptop/computer
     // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       apiCommandWithCurrentPlayer(api.playerCommandPause.bind(api));
+      pauseCommandTimeouts.delete(timeout);
     }, 250);
+    pauseCommandTimeouts.add(timeout);
   });
   navigator.mediaSession.setActionHandler("nexttrack", () => {
     apiCommandWithCurrentPlayer(api.playerCommandNext.bind(api));
@@ -162,7 +202,7 @@ onMounted(() => {
       apiCommandWithCurrentPlayer((id) => seekHandler(evt, id));
     });
   }
-});
+}
 </script>
 <style lang="css">
 .audio-control {
