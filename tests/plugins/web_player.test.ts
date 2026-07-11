@@ -62,11 +62,8 @@ vi.mock("@/plugins/sendspin-connection", () => ({
 
 import { companionMode } from "@/plugins/companion";
 import {
-  clearBrowserMediaControlsRefresh,
   initializeWebPlayerModeSync,
   partyListenInEnabled,
-  refreshBrowserMediaControls,
-  registerBrowserMediaControlsRefresh,
   webPlayer,
   WebPlayerMode,
 } from "@/plugins/web_player";
@@ -160,20 +157,4 @@ describe("web player preferred mode", () => {
       expect(await applyPreferredMode()).toBe(expectedMode);
     },
   );
-});
-
-describe("browser media controls refresh", () => {
-  it("refreshes the registered controls and clears only their handler", () => {
-    const handler = vi.fn();
-    const otherHandler = vi.fn();
-    registerBrowserMediaControlsRefresh(handler);
-
-    refreshBrowserMediaControls();
-    clearBrowserMediaControlsRefresh(otherHandler);
-    refreshBrowserMediaControls();
-    clearBrowserMediaControlsRefresh(handler);
-    refreshBrowserMediaControls();
-
-    expect(handler).toHaveBeenCalledTimes(2);
-  });
 });

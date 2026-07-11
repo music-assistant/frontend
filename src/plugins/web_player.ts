@@ -38,22 +38,6 @@ export function clearWebPlayerAudioUnlock(handler: () => void): void {
   if (audioUnlockHandler === handler) audioUnlockHandler = null;
 }
 
-let browserMediaControlsRefreshHandler: (() => void) | null = null;
-
-export function registerBrowserMediaControlsRefresh(handler: () => void): void {
-  browserMediaControlsRefreshHandler = handler;
-}
-
-export function clearBrowserMediaControlsRefresh(handler: () => void): void {
-  if (browserMediaControlsRefreshHandler === handler) {
-    browserMediaControlsRefreshHandler = null;
-  }
-}
-
-export function refreshBrowserMediaControls(): void {
-  browserMediaControlsRefreshHandler?.();
-}
-
 let unsubSubscriptions: (() => void)[] = [];
 
 // We use a channel to communicate with all other tabs of MA open.

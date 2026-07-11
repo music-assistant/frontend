@@ -13,6 +13,15 @@ export function resetMediaSession(): void {
   navigator.mediaSession.setPositionState();
   navigator.mediaSession.playbackState = "none";
   for (const action of actions) {
-    navigator.mediaSession.setActionHandler(action, null);
+    try {
+      navigator.mediaSession.setActionHandler(action, null);
+    } catch (error) {
+      if (
+        !(error instanceof DOMException) ||
+        error.name !== "NotSupportedError"
+      ) {
+        throw error;
+      }
+    }
   }
 }

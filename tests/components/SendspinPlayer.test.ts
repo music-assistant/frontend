@@ -12,7 +12,6 @@ const {
   mockPlayerCommandPrevious,
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
-  mockRefreshBrowserMediaControls,
   mockUseMediaBrowserMetaData,
 } = vi.hoisted(() => ({
   authState: {
@@ -24,7 +23,6 @@ const {
   mockPlayerCommandPrevious: vi.fn(),
   mockPlayerCommandSeek: vi.fn(),
   mockPrepareSendspinSession: vi.fn(),
-  mockRefreshBrowserMediaControls: vi.fn(),
   mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
 }));
 
@@ -82,7 +80,6 @@ vi.mock("@/plugins/web_player", async () => {
       SENDSPIN_WITH_CONTROLS: "sendspin_with_controls",
     },
     clearWebPlayerAudioUnlock: vi.fn(),
-    refreshBrowserMediaControls: mockRefreshBrowserMediaControls,
     registerWebPlayerAudioUnlock: vi.fn(),
     webPlayer: reactive({
       interacted: false,
@@ -141,6 +138,9 @@ describe("SendspinPlayer MediaSession", () => {
     mediaSession.metadata = {} as MediaMetadata;
     mediaSession.playbackState = "playing";
     mediaSession.setActionHandler.mockClear();
+    mediaSession.setActionHandler.mockImplementation((action, handler) => {
+      handlers.set(action, handler);
+    });
     mediaSession.setPositionState.mockClear();
     mockPrepareSendspinSession.mockReset();
     mockPrepareSendspinSession.mockReturnValue(new Promise(() => {}));
@@ -150,7 +150,6 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandPlay.mockReset();
     mockPlayerCommandPrevious.mockReset();
     mockPlayerCommandSeek.mockReset();
-    mockRefreshBrowserMediaControls.mockReset();
     webPlayer.interacted = false;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     Object.defineProperty(navigator, "mediaSession", {
@@ -231,16 +230,21 @@ describe("SendspinPlayer MediaSession", () => {
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
   });
 
-  it("restores controls-only handlers after Sendspin unmounts", async () => {
+  it("continues clearing actions when an action is unsupported", () => {
+    authState.guest = "party";
+    mediaSession.setActionHandler.mockImplementation((action, handler) => {
+      if (action === "seekforward") {
+        throw new DOMException("Unsupported", "NotSupportedError");
+      }
+      handlers.set(action, handler);
+    });
+
     const wrapper = mount(SendspinPlayer, {
       props: { playerId: "web-player" },
     });
 
-    webPlayer.tabMode = WebPlayerMode.CONTROLS_ONLY;
-    await nextTick();
+    expect(handlers.get("seekbackward")).toBeNull();
     wrapper.unmount();
-
-    expect(mockRefreshBrowserMediaControls).toHaveBeenCalledOnce();
   });
 });
 

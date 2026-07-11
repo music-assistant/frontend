@@ -19,6 +19,7 @@
       webPlayer.interacted == true &&
       !authManager.isGuestAccessSession()
     "
+    :key="webPlayer.tabMode"
   />
   <SendspinPlayer
     v-if="

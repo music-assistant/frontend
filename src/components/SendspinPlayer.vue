@@ -23,7 +23,6 @@ import {
   webPlayer,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
-  refreshBrowserMediaControls,
   WebPlayerMode,
 } from "@/plugins/web_player";
 import {
@@ -378,12 +377,11 @@ onBeforeUnmount(() => {
   if (lastSeekPosTimeout) clearTimeout(lastSeekPosTimeout);
   for (const timeout of pauseCommandTimeouts) clearTimeout(timeout);
   pauseCommandTimeouts.clear();
-  resetMediaSession();
   if (
-    !isReceiveOnlyGuest() &&
-    webPlayer.tabMode === WebPlayerMode.CONTROLS_ONLY
+    isReceiveOnlyGuest() ||
+    webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
   ) {
-    refreshBrowserMediaControls();
+    resetMediaSession();
   }
 });
 

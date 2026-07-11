@@ -90,67 +90,60 @@ export function useMediaBrowserMetaData(player_id?: string) {
 
   let currentMediaMetadata: MediaMetadata | undefined;
 
-  const updateMetadata = (newMetadata: MediaMetadata | undefined) => {
-    if (!newMetadata) return;
-    //Lets make sure that the new media isn't spammed
-    if (
-      newMetadata.album === currentMediaMetadata?.album &&
-      newMetadata.title === currentMediaMetadata?.title &&
-      newMetadata.artist === currentMediaMetadata?.artist &&
-      newMetadata.artwork === currentMediaMetadata?.artwork
-    )
-      return;
-    navigator.mediaSession.metadata = newMetadata;
-    currentMediaMetadata = newMetadata;
-  };
-
   //watch the current media to update the metadata
-  const unwatch_metadata = watch(() => mediaMetadata.value, updateMetadata, {
-    immediate: true,
-  });
+  const unwatch_metadata = watch(
+    () => mediaMetadata.value,
+    (newMetadata) => {
+      if (!newMetadata) return;
+      //Lets make sure that the new media isn't spammed
+      if (
+        newMetadata.album === currentMediaMetadata?.album &&
+        newMetadata.title === currentMediaMetadata?.title &&
+        newMetadata.artist === currentMediaMetadata?.artist &&
+        newMetadata.artwork === currentMediaMetadata?.artwork
+      )
+        return;
+      navigator.mediaSession.metadata = newMetadata;
+      currentMediaMetadata = newMetadata;
+    },
+    { immediate: true },
+  );
   const queueElapsed = computed(() => {
     const queueId = playerQueue.value?.queue_id;
     return queueId ? api.queueElapsedTime[queueId] : undefined;
   });
-  const updatePosition = () => {
-    if (
-      !playerQueue.value?.active ||
-      playerQueue.value?.current_item?.media_item?.media_type !==
-        MediaType.TRACK
-    ) {
-      // Clear the progress bar.
-      navigator.mediaSession.setPositionState();
-      return;
-    }
-    const duration = playerQueue.value?.current_item?.duration || 1;
-    const position = Math.min(
-      duration,
-      queueElapsed.value?.elapsed_time != null
-        ? queueElapsed.value.elapsed_time
-        : 0,
-    );
-    navigator.mediaSession.setPositionState({
-      duration: duration,
-      playbackRate: 1.0,
-      position: position,
-    });
-  };
   const unwatch_position = watch(
     () => [
       queueElapsed.value?.elapsed_time,
       playerQueue.value?.current_item?.duration,
     ],
-    updatePosition,
+    () => {
+      if (
+        !playerQueue.value?.active ||
+        playerQueue.value?.current_item?.media_item?.media_type !==
+          MediaType.TRACK
+      ) {
+        // Clear the progress bar.
+        navigator.mediaSession.setPositionState();
+        return;
+      }
+      const duration = playerQueue.value?.current_item?.duration || 1;
+      const position = Math.min(
+        duration,
+        queueElapsed.value?.elapsed_time != null
+          ? queueElapsed.value.elapsed_time
+          : 0,
+      );
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        playbackRate: 1.0,
+        position: position,
+      });
+    },
     { immediate: true },
   );
-  const unsubscribe = () => {
+  return () => {
     unwatch_metadata();
     unwatch_position();
   };
-  unsubscribe.refresh = () => {
-    currentMediaMetadata = undefined;
-    updateMetadata(mediaMetadata.value);
-    updatePosition();
-  };
-  return unsubscribe;
 }
