@@ -20,6 +20,14 @@ describe("guest access routing", () => {
     },
   );
 
+  it.each(["/guest/does-not-exist", "/guest/party/extra", "/guest-lookalike"])(
+    "redirects an unmatched guest-prefixed path %s instead of letting it fall through to the catch-all route",
+    (path) => {
+      expect(isGuestAccessAllowedRoute(path)).toBe(false);
+      expect(getGuestNavigationRedirect(true, path)).toBe("/guest");
+    },
+  );
+
   it("does not redirect normal users", () => {
     expect(getGuestNavigationRedirect(false, "/discover")).toBeUndefined();
   });
