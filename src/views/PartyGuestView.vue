@@ -20,8 +20,12 @@
       @submit="performSearch"
     />
 
-    <!-- Search Loading State -->
-    <div v-if="searching && !selectedArtist" class="loading-state">
+    <!-- Search Loading State (results stream in progressively, so the big
+         spinner only shows while there is nothing to display yet) -->
+    <div
+      v-if="searching && searchResults.length === 0 && !selectedArtist"
+      class="loading-state"
+    >
       <Spinner class="size-12 text-primary" />
       <p>{{ $t("providers.party.guest_page.searching") }}</p>
     </div>
@@ -98,10 +102,7 @@
     </div>
 
     <!-- Search Results -->
-    <div
-      v-else-if="!searching && searchResults.length > 0"
-      class="results-section"
-    >
+    <div v-else-if="searchResults.length > 0" class="results-section">
       <div class="section-header">
         <h2 class="section-title">
           {{
