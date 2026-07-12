@@ -28,6 +28,7 @@
           $t('providers.music_quiz.rounds_count', [activeInfo.round_count])
         "
         :mode="activeInfo.mode"
+        :listen-in-enabled="listenInEnabled"
       />
       <Card>
         <CardContent>
@@ -54,6 +55,7 @@
         :phase-label="phaseText"
         :round-label="roundProgress"
         :mode="activeState.mode"
+        :listen-in-enabled="listenInEnabled"
       />
 
       <MusicQuizPlayerHeader
@@ -64,7 +66,7 @@
       />
 
       <ListenIn
-        v-if="resolvedDefinition.game.supportsListenIn"
+        v-if="listenInEnabled"
         domain="music_quiz"
         :mode="mode"
         :labels="listenInLabels"
@@ -110,6 +112,7 @@ import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnect
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
+  supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { type MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
@@ -179,6 +182,15 @@ const activeInfo = computed(() => {
     isSupportedMusicQuiz(currentInfo)
     ? currentInfo
     : null;
+});
+const listenInEnabled = computed(() => {
+  const definition = resolvedDefinition.value;
+  const currentState = activeState.value ?? activeInfo.value;
+  return !!(
+    definition &&
+    currentState &&
+    supportsMusicQuizListenIn(definition.game, currentState)
+  );
 });
 const unsupportedGame = computed(() => {
   const activeGame = state.value ?? info.value;

@@ -9,6 +9,7 @@
       :phase-label="phaseLabel"
       :round-label="roundLabel"
       :mode="state.mode"
+      :listen-in-enabled="listenInEnabled"
       present
     >
       <template #actions>
@@ -176,6 +177,7 @@ const props = defineProps<{
   roundLabel: string;
   joinLink: string;
   isConnectionDegraded: boolean;
+  listenInEnabled?: boolean;
   gameComponent: Component;
   answerComponent: Component;
 }>();

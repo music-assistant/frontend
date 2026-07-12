@@ -21,12 +21,22 @@ import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.v
 import type {
   MusicQuizGameAnswerTypeMap,
   MusicQuizPhase,
+  MusicQuizSupportedInfo,
+  MusicQuizSupportedPublicState,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
 import { Brain, Disc3, ListMusic } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
+
+export type MusicQuizCapabilityState =
+  | MusicQuizSupportedInfo
+  | MusicQuizSupportedPublicState;
+
+export type MusicQuizStateCapability =
+  | boolean
+  | ((state: MusicQuizCapabilityState) => boolean);
 
 export interface MusicQuizGameDefinition<
   TGame extends MusicQuizType = MusicQuizType,
@@ -37,7 +47,8 @@ export interface MusicQuizGameDefinition<
   descriptionKey: string;
   icon: Component;
   requiresBackendAvailability: boolean;
-  supportsListenIn: boolean;
+  supportsListenIn: MusicQuizStateCapability;
+  usesRevealCountdown?: boolean;
   revealPhaseLabelKey: string;
   adapters: {
     setup: Component;
@@ -96,7 +107,9 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
     icon: markRaw(Brain),
     requiresBackendAvailability: true,
-    supportsListenIn: false,
+    supportsListenIn: (state) =>
+      state.quiz_type === "trivia" && state.play_reveal_audio === true,
+    usesRevealCountdown: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_answer_revealed",
     adapters: {
       setup: markRaw(TriviaSetup),
@@ -125,6 +138,15 @@ export function isMusicQuizGameAvailable(
   return (
     !game.requiresBackendAvailability || availableQuizTypes.includes(game.id)
   );
+}
+
+export function supportsMusicQuizListenIn(
+  game: MusicQuizGameDefinition,
+  state?: MusicQuizCapabilityState | null,
+) {
+  return typeof game.supportsListenIn === "boolean"
+    ? game.supportsListenIn
+    : state != null && game.supportsListenIn(state);
 }
 
 export function getMusicQuizPhaseLabelKey(

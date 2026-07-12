@@ -33,6 +33,15 @@ vi.mock("@/components/ListenIn.vue", async () => {
 vi.mock("@/components/music-quiz/game_types", () => ({
   getMusicQuizPhaseLabelKey: () => "providers.music_quiz.phase_answers_open",
   resolveMusicQuizDefinition: mockResolveMusicQuizDefinition,
+  supportsMusicQuizListenIn: (
+    game: {
+      supportsListenIn: boolean | ((state: Record<string, unknown>) => boolean);
+    },
+    state: Record<string, unknown>,
+  ) =>
+    typeof game.supportsListenIn === "boolean"
+      ? game.supportsListenIn
+      : game.supportsListenIn(state),
 }));
 
 vi.mock("@/composables/useMusicQuizPlayer", () => ({
@@ -174,6 +183,8 @@ const triviaState = {
     active_from_round: 0,
   },
 };
+const triviaListenInCapability = (state: Record<string, unknown>) =>
+  state.play_reveal_audio === true;
 
 describe("MusicQuizPlayerView routing", () => {
   afterEach(() => {
@@ -200,11 +211,46 @@ describe("MusicQuizPlayerView routing", () => {
     });
   });
 
-  it("never initializes ListenIn or lyrics for Trivia", () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+  it.each([
+    ["legacy", triviaState],
+    ["disabled", { ...triviaState, play_reveal_audio: false }],
+  ])(
+    "never initializes ListenIn or lyrics for %s Trivia state",
+    (_case, state) => {
+      mockResolveMusicQuizDefinition.mockReturnValue(
+        createDefinition(triviaListenInCapability),
+      );
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(state),
+        playerId: ref("player-id"),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(triviaRound),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+      });
+
+      const wrapper = mountView();
+
+      expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
+      expect(mockListenInSetup).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+      expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+      expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
+  it("initializes ListenIn for reveal-audio Trivia during answering", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
-      state: ref(triviaState),
+      state: ref({ ...triviaState, play_reveal_audio: true }),
       playerId: ref("player-id"),
       gameRemoved: ref(false),
       busy: ref(false),
@@ -218,9 +264,40 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
-    expect(mockListenInSetup).not.toHaveBeenCalled();
-    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("allows reveal-audio Trivia ListenIn to be armed in the lobby", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...triviaState,
+        play_reveal_audio: true,
+        phase: "lobby",
+        current_round: null,
+      }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     wrapper.unmount();
   });
 
@@ -300,12 +377,15 @@ describe("MusicQuizPlayerView routing", () => {
   });
 
   it("hides the mode label before joining Trivia", () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref({
         quiz_type: "trivia",
         answer_type: "multiple_choice",
         language: "en",
+        play_reveal_audio: false,
         phase: "lobby",
         name: "Trivia",
         player_count: 2,
@@ -326,6 +406,40 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+    wrapper.unmount();
+  });
+
+  it("shows the mode label before joining reveal-audio Trivia", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "trivia",
+        answer_type: "multiple_choice",
+        language: "en",
+        play_reveal_audio: true,
+        phase: "lobby",
+        name: "Trivia",
+        player_count: 2,
+        round_count: 5,
+        mode: "venue",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
+    expect(mockListenInSetup).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -492,7 +606,9 @@ describe("MusicQuizPlayerView routing", () => {
   });
 });
 
-function createDefinition(supportsListenIn: boolean) {
+function createDefinition(
+  supportsListenIn: boolean | ((state: Record<string, unknown>) => boolean),
+) {
   const gameAdapter = {
     name: "TestGameAdapter",
     props: {
@@ -539,9 +655,9 @@ function mountView() {
         MusicQuizLeaderboard: true,
         MusicQuizPlayerHeader: true,
         MusicQuizSessionHeader: {
-          props: ["game", "mode", "roundLabel"],
+          props: ["listenInEnabled", "mode", "roundLabel"],
           template:
-            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
+            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="listenInEnabled">providers.music_quiz.mode_{{ mode }}</span></div>',
         },
         MusicQuizPodium: true,
         MusicQuizUnsupportedGame: {

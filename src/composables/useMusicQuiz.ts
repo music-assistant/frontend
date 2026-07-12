@@ -116,6 +116,7 @@ interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
+  play_reveal_audio?: boolean;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
@@ -237,6 +238,7 @@ export interface MusicQuizTriviaInfo extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   language: string;
+  play_reveal_audio?: boolean;
   player_count: number;
   round_count: number;
   mode: MusicQuizMode;
@@ -379,7 +381,7 @@ export interface MusicQuizGuessTheSongRound extends MusicQuizMultipleChoiceRound
 export interface MusicQuizTriviaRound extends MusicQuizMultipleChoiceRound {
   question: string;
   answer_label?: string;
-  track_uri?: null;
+  track_uri?: string | null;
   image_url?: null;
   duration?: null;
 }
@@ -492,7 +494,7 @@ export interface MusicQuizTriviaHostRound {
   answer_label: string;
   suggestions: MusicQuizSuggestion[];
   correct_suggestion_id: string;
-  track_uri: null;
+  track_uri: string | null;
   question: string;
   image_url: null;
   duration: null;
@@ -556,6 +558,7 @@ export interface MusicQuizTimelineCreateRequest {
 
 export interface MusicQuizTriviaConfig {
   language: string;
+  play_reveal_audio: boolean;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;

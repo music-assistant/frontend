@@ -1301,6 +1301,12 @@
             "game_ended_wait": "Ask the host to start a new game when everyone is ready.",
             "ready_for_final_results": "Ready for final results",
             "waiting_for_final_results": "Waiting for final results...",
+            "ready_for_next_round_countdown": "Ready for next round · {0}",
+            "waiting_for_next_round_countdown": "Waiting for next round · {0}",
+            "ready_for_final_results_countdown": "Ready for final results · {0}",
+            "waiting_for_final_results_countdown": "Waiting for final results · {0}",
+            "next_round_countdown": "Next Round · {0}",
+            "finish_quiz_countdown": "Finish Quiz · {0}",
             "next_round_in": "Next round in {0}",
             "final_results_in": "Final results in {0}",
             "timeline_skip_remaining_bonuses": "Skip remaining bonuses",
@@ -1316,7 +1322,11 @@
             "start_now_waiting": "Start now · Waiting…",
             "game_starts_in": "Game starts in {0}",
             "waiting_for_game_start": "Waiting for game to start…",
-            "question_language": "Question language"
+            "question_language": "Question language",
+            "play_revealed_songs": "Play revealed songs",
+            "play_revealed_songs_help": "Music plays only after the answer is revealed.",
+            "reveal_audio_on": "On",
+            "reveal_audio_off": "Off"
         }
     },
     "no_lyrics_available": "No lyrics available",

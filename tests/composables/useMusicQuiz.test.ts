@@ -23,6 +23,7 @@ import {
   submitMusicQuizAnswer,
   type MusicQuizProviderEvent,
   type MusicQuizPublicState,
+  type MusicQuizTriviaInfo,
 } from "@/composables/useMusicQuiz";
 
 function unsupportedQuizType(value: string) {
@@ -120,6 +121,7 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       config: {
         language: "sr-Latn",
+        play_reveal_audio: true,
         round_count: 8,
         suggestion_count: 6,
         answer_duration: 45,
@@ -132,6 +134,7 @@ describe("useMusicQuiz commands", () => {
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
       quiz_type: "trivia",
       language: "sr-Latn",
+      play_reveal_audio: true,
       round_count: 8,
       suggestion_count: 6,
       answer_duration: 45,
@@ -293,6 +296,62 @@ describe("useMusicQuiz commands", () => {
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);
+  });
+
+  it("types Trivia reveal audio in state and info while allowing legacy payloads", () => {
+    const state = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      language: "en",
+      play_reveal_audio: true,
+      phase: "lobby",
+      name: "Trivia",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
+    const legacyState = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      language: "en",
+      phase: "lobby",
+      name: "Trivia",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
+    const info = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      language: "en",
+      play_reveal_audio: false,
+      phase: "lobby",
+      name: "Trivia",
+      player_count: 2,
+      round_count: 5,
+      mode: "venue",
+    } satisfies MusicQuizTriviaInfo;
+    const legacyInfo = {
+      quiz_type: "trivia",
+      answer_type: "multiple_choice",
+      language: "en",
+      phase: "lobby",
+      name: "Trivia",
+      player_count: 2,
+      round_count: 5,
+      mode: "venue",
+    } satisfies MusicQuizTriviaInfo;
+
+    expect(state.play_reveal_audio).toBe(true);
+    expect("play_reveal_audio" in legacyState).toBe(false);
+    expect(info.play_reveal_audio).toBe(false);
+    expect("play_reveal_audio" in legacyInfo).toBe(false);
   });
 
   it("preserves nullable server fields in supported state", () => {
