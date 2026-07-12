@@ -177,7 +177,7 @@ function scrollEntryIntoView(entryId: string) {
 
   const reduceMotion =
     typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
   entry.scrollIntoView({
     behavior: reduceMotion ? "auto" : "smooth",
     block: "nearest",

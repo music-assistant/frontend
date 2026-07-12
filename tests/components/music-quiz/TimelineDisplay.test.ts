@@ -329,6 +329,29 @@ describe("TimelineDisplay", () => {
     });
   });
 
+  it("scrolls safely when matchMedia is unavailable", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: undefined,
+      writable: true,
+    });
+
+    mount(TimelineDisplay, {
+      props: {
+        entries,
+        highlightedEntryId: "same-b",
+        horizontal: true,
+      },
+    });
+    await flushPromises();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  });
+
   it("never offers the invalid null-to-null boundary", () => {
     const wrapper = mount(TimelineDisplay, {
       props: {
