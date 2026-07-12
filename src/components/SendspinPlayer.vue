@@ -63,15 +63,20 @@ interface SendspinAudioUnlock {
 // Create and resume that context now, while the gesture is still active, so the
 // stream plays reliably once it arrives.
 const primeAudio = () => {
-  if (!isIOS) return;
+  if (!isIOS) return true;
   try {
     const scheduler = (
       player as unknown as { scheduler?: SendspinAudioUnlock } | null
     )?.scheduler;
-    scheduler?.initAudioContext?.();
-    void scheduler?.resumeAudioContext?.();
+    if (!scheduler?.initAudioContext || !scheduler.resumeAudioContext) {
+      return false;
+    }
+    scheduler.initAudioContext();
+    void scheduler.resumeAudioContext();
+    return true;
   } catch (error) {
     console.debug("Sendspin: failed to prime audio for listen-in", error);
+    return false;
   }
 };
 

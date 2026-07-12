@@ -319,7 +319,7 @@ describe("MusicQuizSetupWizard", () => {
   });
 
   it("hides playback controls and omits fields for a legacy server", async () => {
-    const wrapper = mountWizard();
+    const wrapper = mountWizard({ playbackOptionsLegacy: true });
     await selectGame(wrapper, "game_type");
 
     expect(
@@ -348,6 +348,45 @@ describe("MusicQuizSetupWizard", () => {
 
     await wrapper.get('[data-testid="create-guess_the_song"]').trigger("click");
     expect(wrapper.emitted("create")).toBeUndefined();
+  });
+
+  it("blocks create and offers retry after initial discovery failure", async () => {
+    const wrapper = mountWizard({
+      playbackOptionsLegacy: false,
+      playbackOptionsError: true,
+    });
+    await selectGame(wrapper, "game_type");
+
+    expect(
+      wrapper.get('[data-testid="music-quiz-playback-error"]').text(),
+    ).toContain("providers.music_quiz.playback_options_unavailable");
+    expect(
+      wrapper
+        .get('[data-testid="create-guess_the_song"]')
+        .attributes("disabled"),
+    ).toBeDefined();
+
+    await wrapper
+      .get('[data-testid="music-quiz-playback-error"]')
+      .get("button")
+      .trigger("click");
+    expect(wrapper.emitted("retryPlaybackOptions")).toEqual([[]]);
+  });
+
+  it("retains explicit payloads when refreshing known options fails", async () => {
+    const wrapper = mountWizard({
+      playbackOptions: PLAYBACK_OPTIONS,
+      playbackOptionsLegacy: false,
+      playbackOptionsError: true,
+    });
+    await selectGame(wrapper, "game_type");
+
+    await wrapper.get('[data-testid="create-guess_the_song"]').trigger("click");
+
+    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+      playback_mode: "venue",
+      venue_player_id: "living-room",
+    });
   });
 
   it("shows preparation progress without discarding setup state", async () => {
@@ -443,6 +482,8 @@ function mountWizard(
     availableQuizTypes?: string[];
     playbackOptions?: MusicQuizPlaybackOptions | null;
     playbackOptionsLoading?: boolean;
+    playbackOptionsLegacy?: boolean;
+    playbackOptionsError?: boolean;
   } = {},
   attachToDocument = false,
 ) {

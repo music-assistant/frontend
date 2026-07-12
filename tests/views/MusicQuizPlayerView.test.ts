@@ -1,6 +1,7 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
-import { mount } from "@vue/test-utils";
+import { webPlayer } from "@/plugins/web_player";
+import { flushPromises, mount } from "@vue/test-utils";
 import { h, nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -97,11 +98,15 @@ vi.mock("@/plugins/i18n", () => ({
   },
 }));
 
-vi.mock("@/plugins/web_player", () => ({
-  webPlayer: {
-    primeAudio: mockPrimeAudio,
-  },
-}));
+vi.mock("@/plugins/web_player", async () => {
+  const { reactive } = await import("vue");
+  return {
+    webPlayer: reactive({
+      player_generation: 0,
+      primeAudio: mockPrimeAudio,
+    }),
+  };
+});
 
 vi.mock("vue-sonner", () => ({
   toast: {
@@ -214,6 +219,8 @@ describe("MusicQuizPlayerView routing", () => {
     mockGetTrackLyrics.mockReset();
     mockListenInSetup.mockReset();
     mockPrimeAudio.mockReset();
+    mockPrimeAudio.mockReturnValue(true);
+    webPlayer.player_generation = 0;
     mockResolveMusicQuizDefinition.mockReset();
     mockUseMusicQuizPlayer.mockReset();
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -330,7 +337,7 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("defaults Remote Listen-in on and remembers its choice", () => {
+  it("requires a Join-primed session before Remote auto-listen", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
@@ -349,37 +356,11 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockListenInSetup).toHaveBeenCalledWith(
       expect.objectContaining({
-        autoEnable: true,
+        autoEnable: false,
         mode: "remote",
         preferenceKey: "music_quiz_listen_in_enabled",
       }),
     );
-    wrapper.unmount();
-  });
-
-  it("reconnects remembered Listen-in for each new round", async () => {
-    const round = ref(currentRound);
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
-    mockUseMusicQuizPlayer.mockReturnValue({
-      info: ref(null),
-      state: ref({ ...playerState, mode: "remote" }),
-      playerId: ref("player-id"),
-      gameRemoved: ref(false),
-      busy: ref(false),
-      loading: ref(false),
-      currentRound: round,
-      join: vi.fn(),
-      submitAnswer: vi.fn(),
-      ready: vi.fn(),
-    });
-    const wrapper = mountView();
-
-    expect(mockListenInSetup).toHaveBeenCalledOnce();
-
-    round.value = { ...currentRound, round_index: 1 };
-    await nextTick();
-
-    expect(mockListenInSetup).toHaveBeenCalledTimes(2);
     wrapper.unmount();
   });
 
@@ -548,25 +529,33 @@ describe("MusicQuizPlayerView routing", () => {
   });
 
   it("unlocks guest audio from the Join gesture", async () => {
-    const join = vi.fn();
+    const info = ref({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      player_count: 0,
+      round_count: 5,
+      mode: "remote",
+    });
+    const state = ref<typeof playerState | null>(null);
+    const playerId = ref<string | null>(null);
+    const activeRound = ref<typeof currentRound | null>(null);
+    const join = vi.fn(async () => {
+      state.value = { ...playerState, mode: "remote" };
+      playerId.value = "player-id";
+      activeRound.value = currentRound;
+    });
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
-      info: ref({
-        quiz_type: "guess_the_song",
-        answer_type: "multiple_choice",
-        phase: "lobby",
-        name: "Quiz",
-        player_count: 0,
-        round_count: 5,
-        mode: "remote",
-      }),
-      state: ref(null),
-      playerId: ref(null),
+      info,
+      state,
+      playerId,
       rememberedName: ref(""),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
-      currentRound: ref(null),
+      currentRound: activeRound,
       join,
       submitAnswer: vi.fn(),
       ready: vi.fn(),
@@ -574,10 +563,68 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
-    await Promise.resolve();
+    await flushPromises();
 
     expect(mockPrimeAudio).toHaveBeenCalledOnce();
     expect(join).toHaveBeenCalledWith("Guest");
+    expect(mockListenInSetup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoEnable: true,
+        mode: "remote",
+      }),
+    );
+
+    webPlayer.player_generation++;
+    await nextTick();
+    expect(
+      wrapper.findComponent({ name: "ListenIn" }).props("autoEnable"),
+    ).toBe(false);
+  });
+
+  it("keeps Tap available when Join cannot prime audio yet", async () => {
+    mockPrimeAudio.mockReturnValue(false);
+    const info = ref({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      player_count: 0,
+      round_count: 5,
+      mode: "remote",
+    });
+    const state = ref<typeof playerState | null>(null);
+    const playerId = ref<string | null>(null);
+    const activeRound = ref<typeof currentRound | null>(null);
+    const join = vi.fn(async () => {
+      state.value = { ...playerState, mode: "remote" };
+      playerId.value = "player-id";
+      activeRound.value = currentRound;
+    });
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info,
+      state,
+      playerId,
+      rememberedName: ref(""),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: activeRound,
+      join,
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    const wrapper = mountView();
+
+    wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
+    await flushPromises();
+
+    expect(mockListenInSetup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoEnable: false,
+        mode: "remote",
+      }),
+    );
   });
 
   it("shows unjoined guests the server replay countdown", () => {

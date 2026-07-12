@@ -142,6 +142,8 @@ describe("MusicQuizDashboardView host actions", () => {
       loading: ref(false),
       playbackOptions: ref(null),
       playbackOptionsLoading: ref(false),
+      playbackOptionsLegacy: ref(false),
+      playbackOptionsError: ref(false),
       next: vi.fn(),
       reset: mockReset,
       reveal: vi.fn(),

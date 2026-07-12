@@ -175,7 +175,10 @@
           :available-quiz-types="availableQuizTypes"
           :playback-options="playbackOptions"
           :playback-options-loading="playbackOptionsLoading"
+          :playback-options-legacy="playbackOptionsLegacy"
+          :playback-options-error="playbackOptionsError"
           @create="handleCreate"
+          @retry-playback-options="host.fetchPlaybackOptions"
         />
       </DialogContent>
     </Dialog>
@@ -271,6 +274,8 @@ const {
   availableQuizTypes,
   playbackOptions,
   playbackOptionsLoading,
+  playbackOptionsLegacy,
+  playbackOptionsError,
   currentRound,
   isLastRound,
   joinLink,

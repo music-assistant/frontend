@@ -24,6 +24,27 @@
       {{ $t("providers.music_quiz.loading_playback_options") }}
     </div>
 
+    <div
+      v-else-if="error && !options"
+      class="border-destructive/40 bg-destructive/5 flex flex-col items-start gap-3 rounded-lg border p-3"
+      role="alert"
+      data-testid="music-quiz-playback-error"
+    >
+      <div class="flex items-start gap-2">
+        <TriangleAlert
+          class="text-destructive mt-0.5 size-4 shrink-0"
+          aria-hidden="true"
+        />
+        <p class="text-sm">
+          {{ $t("providers.music_quiz.playback_options_unavailable") }}
+        </p>
+      </div>
+      <Button variant="outline" size="sm" type="button" @click="emit('retry')">
+        <RefreshCw class="size-4" aria-hidden="true" />
+        {{ $t("settings.retry") }}
+      </Button>
+    </div>
+
     <template v-else-if="options">
       <FieldSet class="gap-4">
         <FieldLegend variant="label" class="sr-only">
@@ -142,6 +163,7 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type {
@@ -150,7 +172,7 @@ import type {
 } from "@/composables/useMusicQuiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { LoaderCircle } from "@lucide/vue";
+import { LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";
 import type { AcceptableValue } from "reka-ui";
 import { computed } from "vue";
 
@@ -158,10 +180,12 @@ const props = defineProps<{
   modelValue: MusicQuizPlaybackSelection;
   options: MusicQuizPlaybackOptions | null;
   loading: boolean;
+  error: boolean;
   disabled: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [selection: MusicQuizPlaybackSelection];
+  retry: [];
 }>();
 
 const venueAvailable = computed(

@@ -267,6 +267,8 @@ describe("useMusicQuizHost", () => {
     expect(mockGetMusicQuizPlaybackOptions).toHaveBeenCalledOnce();
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
     expect(host.playbackOptionsLoading.value).toBe(false);
+    expect(host.playbackOptionsLegacy.value).toBe(false);
+    expect(host.playbackOptionsError.value).toBe(false);
   });
 
   it("exposes playback discovery loading state", async () => {
@@ -296,10 +298,12 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toBeNull();
     expect(host.playbackOptionsLoading.value).toBe(false);
+    expect(host.playbackOptionsLegacy.value).toBe(true);
+    expect(host.playbackOptionsError.value).toBe(false);
     expect(notifyError).not.toHaveBeenCalled();
   });
 
-  it("reports playback discovery failures and keeps legacy setup available", async () => {
+  it("blocks legacy fallback after an initial playback discovery failure", async () => {
     mockGetMusicQuizPlaybackOptions.mockRejectedValue(
       new Error("Server unavailable"),
     );
@@ -310,10 +314,41 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toBeNull();
     expect(host.playbackOptionsLoading.value).toBe(false);
+    expect(host.playbackOptionsLegacy.value).toBe(false);
+    expect(host.playbackOptionsError.value).toBe(true);
     expect(notifyError).toHaveBeenCalledWith(
       "providers.music_quiz.error_load_playback_options",
     );
-    await expect(host.create(CREATE_REQUEST)).resolves.toBe(true);
+  });
+
+  it("recovers playback discovery through retry", async () => {
+    mockGetMusicQuizPlaybackOptions
+      .mockRejectedValueOnce(new Error("Server unavailable"))
+      .mockResolvedValueOnce(PLAYBACK_OPTIONS);
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(host.playbackOptionsError.value).toBe(true);
+
+    await host.fetchPlaybackOptions();
+
+    expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
+    expect(host.playbackOptionsLegacy.value).toBe(false);
+    expect(host.playbackOptionsError.value).toBe(false);
+  });
+
+  it("retains explicit playback options when refresh fails", async () => {
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+    mockGetMusicQuizPlaybackOptions.mockRejectedValueOnce(
+      new Error("Server unavailable"),
+    );
+
+    await host.fetchPlaybackOptions();
+
+    expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
+    expect(host.playbackOptionsLegacy.value).toBe(false);
+    expect(host.playbackOptionsError.value).toBe(true);
   });
 
   it("ignores stale playback option responses", async () => {

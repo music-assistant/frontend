@@ -97,6 +97,7 @@ function mountControls() {
           v-model="selection"
           :options="options"
           :loading="false"
+          :error="false"
           :disabled="false"
         />
       `,

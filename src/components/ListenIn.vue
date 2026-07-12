@@ -137,20 +137,19 @@ async function enableListenIn() {
 }
 
 async function disableListenIn() {
-  if (!(await stopListenIn())) return;
   rememberPreference(false);
+  await stopListenIn();
 }
 
 function shouldAutoEnable() {
-  if (!props.preferenceKey) return props.autoEnable ?? false;
+  if (!props.autoEnable) return false;
+  if (!props.preferenceKey) return true;
   try {
     const preference = window.localStorage.getItem(props.preferenceKey);
-    return preference === null
-      ? (props.autoEnable ?? false)
-      : preference === "true";
+    return preference === null || preference === "true";
   } catch (error) {
     console.debug("Could not read Listen-in preference:", error);
-    return props.autoEnable ?? false;
+    return true;
   }
 }
 

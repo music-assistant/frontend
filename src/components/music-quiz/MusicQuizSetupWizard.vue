@@ -85,11 +85,13 @@
         </h2>
       </div>
       <MusicQuizPlaybackControls
-        v-if="playbackOptionsLoading || playbackOptions"
+        v-if="playbackOptionsLoading || playbackOptions || playbackOptionsError"
         v-model="playbackSelection"
         :options="playbackOptions"
         :loading="playbackOptionsLoading"
+        :error="playbackOptionsError"
         :disabled="busy"
+        @retry="emit('retryPlaybackOptions')"
       />
       <Field
         orientation="horizontal"
@@ -162,14 +164,21 @@ const props = withDefaults(
     availableQuizTypes?: string[];
     playbackOptions?: MusicQuizPlaybackOptions | null;
     playbackOptionsLoading?: boolean;
+    playbackOptionsLegacy?: boolean;
+    playbackOptionsError?: boolean;
   }>(),
   {
     availableQuizTypes: () => [],
     playbackOptions: null,
     playbackOptionsLoading: false,
+    playbackOptionsLegacy: true,
+    playbackOptionsError: false,
   },
 );
-const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
+const emit = defineEmits<{
+  create: [request: MusicQuizCreateRequest];
+  retryPlaybackOptions: [];
+}>();
 
 const availableGameTypes = computed(() =>
   MUSIC_QUIZ_GAME_TYPES.filter((type) =>
@@ -188,12 +197,13 @@ const configureHeading = ref<HTMLHeadingElement | null>(null);
 const preparingStatus = ref<HTMLElement | null>(null);
 const sharedConfigValid = computed(() => {
   if (props.playbackOptionsLoading) return false;
-  return props.playbackOptions
-    ? isMusicQuizPlaybackSelectionValid(
-        playbackSelection.value,
-        props.playbackOptions,
-      )
-    : true;
+  if (props.playbackOptions) {
+    return isMusicQuizPlaybackSelectionValid(
+      playbackSelection.value,
+      props.playbackOptions,
+    );
+  }
+  return props.playbackOptionsLegacy && !props.playbackOptionsError;
 });
 
 watch(

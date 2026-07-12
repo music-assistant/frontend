@@ -67,13 +67,15 @@
 
       <ListenIn
         v-if="listenInEnabled"
-        :key="listenInKey"
         domain="music_quiz"
         :mode="mode"
         :labels="listenInLabels"
         :recheck-events="listenInRecheckEvents"
         :get-error-message="getMusicQuizErrorMessage"
-        :auto-enable="mode === 'remote'"
+        :auto-enable="
+          mode === 'remote' &&
+          listenInPrimedGeneration === webPlayer.player_generation
+        "
         preference-key="music_quiz_listen_in_enabled"
       />
 
@@ -147,7 +149,7 @@ import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { webPlayer } from "@/plugins/web_player";
 import { CircleStop, Clock3 } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const player = useMusicQuizPlayer({
@@ -202,16 +204,13 @@ const unsupportedGame = computed(() => {
 });
 
 const { celebrate } = useMusicQuizCelebration();
+const listenInPrimedGeneration = ref<number | null>(null);
 
 const mode = computed(() => {
   if (activeState.value) return activeState.value.mode;
   return activeInfo.value?.mode;
 });
 const listenInRecheckEvents = [EventType.PROVIDER_EVENT];
-const listenInKey = computed(
-  () =>
-    `${activeState.value?.quiz_type ?? "quiz"}:${currentRound.value?.round_index ?? activeState.value?.phase ?? "inactive"}`,
-);
 const listenInLabels = computed<ListenInLabels>(() => ({
   title: $t("providers.music_quiz.listen_in"),
   titleActive: $t("providers.music_quiz.listen_in_active"),
@@ -294,7 +293,11 @@ watch(
 );
 
 async function handleJoin(name: string) {
-  if (listenInEnabled.value) webPlayer.primeAudio();
+  if (listenInEnabled.value) {
+    listenInPrimedGeneration.value = webPlayer.primeAudio()
+      ? webPlayer.player_generation
+      : null;
+  }
   await player.join(name);
 }
 

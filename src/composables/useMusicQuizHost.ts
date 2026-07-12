@@ -43,6 +43,8 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const availableQuizTypes = ref<string[]>([]);
   const playbackOptions = ref<MusicQuizPlaybackOptions | null>(null);
   const playbackOptionsLoading = ref(false);
+  const playbackOptionsLegacy = ref(false);
+  const playbackOptionsError = ref(false);
   const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
@@ -117,16 +119,20 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   async function fetchPlaybackOptions() {
     const requestId = ++playbackOptionsRequestId;
-    playbackOptions.value = null;
     playbackOptionsLoading.value = true;
+    playbackOptionsLegacy.value = false;
+    playbackOptionsError.value = false;
     try {
       const options = await getMusicQuizPlaybackOptions();
       if (requestId !== playbackOptionsRequestId) return;
       playbackOptions.value = options;
     } catch (err) {
       if (requestId !== playbackOptionsRequestId) return;
-      playbackOptions.value = null;
-      if (!isUnknownCommandError(err)) {
+      if (isUnknownCommandError(err)) {
+        playbackOptions.value = null;
+        playbackOptionsLegacy.value = true;
+      } else {
+        playbackOptionsError.value = true;
         notifyError($t("providers.music_quiz.error_load_playback_options"));
       }
     } finally {
@@ -292,6 +298,8 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     availableQuizTypes,
     playbackOptions,
     playbackOptionsLoading,
+    playbackOptionsLegacy,
+    playbackOptionsError,
     currentRound,
     isLastRound,
     joinLink,

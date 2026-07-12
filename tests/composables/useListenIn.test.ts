@@ -37,6 +37,7 @@ vi.mock("@/plugins/web_player", async () => {
   return {
     webPlayer: reactive({
       player_id: "wp-1" as string | null,
+      player_generation: 0,
       primeAudio: mockPrimeAudio,
     }),
   };
@@ -87,6 +88,7 @@ describe("useListenIn", () => {
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockReturnValue(() => {});
     mockPrimeAudio.mockReset();
+    mockPrimeAudio.mockReturnValue(true);
     unmountCallbacks.length = 0;
     webPlayer.player_id = "wp-1";
   });
@@ -292,6 +294,20 @@ describe("useListenIn", () => {
       expect(mockPrimeAudio).not.toHaveBeenCalled();
     });
 
+    it("does not start when the audio output is not ready", async () => {
+      mockPrimeAudio.mockReturnValue(false);
+      const { enableListenIn, isListeningIn, notifyError } = create();
+
+      await expect(enableListenIn()).resolves.toBe(false);
+
+      expect(mockSendCommand).not.toHaveBeenCalledWith(
+        "party/listen_in",
+        expect.anything(),
+      );
+      expect(isListeningIn.value).toBe(false);
+      expect(notifyError).toHaveBeenCalledWith("no-web-player");
+    });
+
     it("reports the failure message and does not mark listening on error", async () => {
       mockSendCommand.mockRejectedValue(new Error("server-boom"));
       const { isListeningIn, busy, enableListenIn, notifyError } = create();
@@ -412,6 +428,130 @@ describe("useListenIn", () => {
 
       expect(canListenIn.value).toBe(false);
       expect(isListeningIn.value).toBe(false);
+    });
+
+    it("resets listening state when the web player is replaced", async () => {
+      mockSendCommand.mockResolvedValue(true);
+      const { isListeningIn, enableListenIn, checkCanListenIn } = create();
+
+      await checkCanListenIn();
+      await enableListenIn();
+      expect(isListeningIn.value).toBe(true);
+
+      webPlayer.player_id = "wp-2";
+      await nextTick();
+
+      expect(isListeningIn.value).toBe(false);
+      expect(mockSendCommand).toHaveBeenCalledWith("party/can_listen_in", {
+        web_player_id: "wp-2",
+      });
+    });
+
+    it("ignores a stale enable completion after player replacement", async () => {
+      const pendingStart = deferred<void>();
+      mockSendCommand.mockImplementation(
+        (command: string, params?: { web_player_id?: string }) => {
+          if (
+            command === "party/listen_in" &&
+            params?.web_player_id === "wp-1"
+          ) {
+            return pendingStart.promise;
+          }
+          return Promise.resolve(true);
+        },
+      );
+      const { isListeningIn, enableListenIn, checkCanListenIn } = create();
+      await checkCanListenIn();
+
+      const enabling = enableListenIn();
+      webPlayer.player_id = "wp-2";
+      await nextTick();
+      pendingStart.resolve();
+
+      await expect(enabling).resolves.toBe(false);
+      expect(isListeningIn.value).toBe(false);
+      expect(mockSendCommand).toHaveBeenCalledWith("party/stop_listen_in", {
+        web_player_id: "wp-1",
+      });
+    });
+
+    it("ignores a stale disable completion after player replacement", async () => {
+      const pendingStop = deferred<void>();
+      mockSendCommand.mockImplementation(
+        (command: string, params?: { web_player_id?: string }) => {
+          if (
+            command === "party/stop_listen_in" &&
+            params?.web_player_id === "wp-1"
+          ) {
+            return pendingStop.promise;
+          }
+          return Promise.resolve(true);
+        },
+      );
+      const {
+        isListeningIn,
+        enableListenIn,
+        disableListenIn,
+        checkCanListenIn,
+      } = create();
+      await checkCanListenIn();
+      await enableListenIn();
+
+      const disabling = disableListenIn();
+      webPlayer.player_id = "wp-2";
+      await nextTick();
+      pendingStop.resolve();
+
+      await expect(disabling).resolves.toBe(false);
+      expect(isListeningIn.value).toBe(false);
+    });
+
+    it("invalidates a recycled web player with the same ID", async () => {
+      const pendingStart = deferred<void>();
+      mockSendCommand.mockImplementation((command: string) =>
+        command === "party/listen_in"
+          ? pendingStart.promise
+          : Promise.resolve(true),
+      );
+      const { isListeningIn, enableListenIn, checkCanListenIn } = create();
+      await checkCanListenIn();
+
+      const enabling = enableListenIn();
+      webPlayer.player_generation++;
+      await nextTick();
+      pendingStart.resolve();
+
+      await expect(enabling).resolves.toBe(false);
+      expect(isListeningIn.value).toBe(false);
+      expect(mockSendCommand).toHaveBeenCalledWith("party/stop_listen_in", {
+        web_player_id: "wp-1",
+      });
+    });
+
+    it("does not let stale cleanup stop a newer same-ID start", async () => {
+      const pendingStart = deferred<void>();
+      let startCalls = 0;
+      mockSendCommand.mockImplementation((command: string) => {
+        if (command !== "party/listen_in") return Promise.resolve(true);
+        startCalls++;
+        return startCalls === 1
+          ? pendingStart.promise
+          : Promise.resolve(undefined);
+      });
+      const first = create();
+      await first.checkCanListenIn();
+      const firstStart = first.enableListenIn();
+
+      const second = create();
+      await second.checkCanListenIn();
+      await expect(second.enableListenIn()).resolves.toBe(true);
+
+      pendingStart.resolve();
+      await expect(firstStart).resolves.toBe(false);
+
+      expect(first.isListeningIn.value).toBe(false);
+      expect(second.isListeningIn.value).toBe(true);
+      expect(getCommandCallCount("party/stop_listen_in")).toBe(0);
     });
   });
 });
