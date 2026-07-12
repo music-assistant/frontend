@@ -595,11 +595,14 @@ export function isSupportedMusicQuiz<
 }
 
 export function parseMusicQuizType(value: string): MusicQuizRuntimeType {
-  return value === "guess_the_song" ||
+  if (
+    value === "guess_the_song" ||
     value === "music_timeline" ||
     value === "trivia"
-    ? value
-    : (value as MusicQuizUnsupportedType);
+  ) {
+    return value;
+  }
+  return value as MusicQuizUnsupportedType;
 }
 
 export function parseMusicQuizAnswerType(
