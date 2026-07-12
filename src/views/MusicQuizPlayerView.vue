@@ -1,7 +1,7 @@
 <template>
   <div class="music-quiz-player mx-auto flex w-full max-w-3xl flex-col gap-3">
     <Card v-if="gameRemoved" role="status">
-      <CardHeader class="items-center text-center">
+      <CardHeader class="justify-items-center text-center">
         <CircleStop class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("providers.music_quiz.game_ended") }}</CardTitle>
         <CardDescription>
@@ -96,7 +96,7 @@
     </Card>
 
     <Card v-else role="status">
-      <CardHeader class="items-center text-center">
+      <CardHeader class="justify-items-center text-center">
         <Clock3 class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ $t("guest.no_quiz_title") }}</CardTitle>
         <CardDescription>{{ $t("guest.no_quiz_description") }}</CardDescription>

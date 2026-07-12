@@ -1,8 +1,8 @@
 <template>
   <main class="grid min-h-full place-items-center p-4">
     <Card class="w-full max-w-md">
-      <CardHeader class="items-center text-center">
-        <CircleHelp class="text-muted-foreground size-10" />
+      <CardHeader class="justify-items-center text-center">
+        <CircleHelp class="text-muted-foreground size-10" aria-hidden="true" />
         <CardTitle>{{ copy.title }}</CardTitle>
         <CardDescription>{{ copy.description }}</CardDescription>
       </CardHeader>

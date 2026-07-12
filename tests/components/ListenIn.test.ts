@@ -82,20 +82,29 @@ describe("ListenIn", () => {
         props: { domain, mode, labels },
       });
       const text = wrapper.get(".listen-in__text");
+      const titleRow = wrapper.get(".listen-in__title-row");
       const title = wrapper.get(".listen-in__title");
       const description = wrapper.get(".listen-in__desc");
       const attribution = wrapper.get(".listen-in__attribution");
       const action = wrapper.get(".listen-in__action");
 
       expect(text.element.childElementCount).toBe(2);
-      expect(text.element.children[0]).toBe(title.element);
+      expect(text.element.children[0]).toBe(titleRow.element);
       expect(text.element.children[1]).toBe(description.element);
+      expect(titleRow.element.childElementCount).toBe(2);
+      expect(titleRow.element.children[0]).toBe(title.element);
+      expect(titleRow.element.children[1]).toBe(attribution.element);
       expect(title.text()).toBe(expectedTitle);
-      expect(description.text()).toBe("Play the music on this device");
+      expect(description.text()).toBe("Hear the music on this device");
       expect(attribution.text()).toBe("Powered by Sendspin");
-      expect(attribution.classes()).toContain("sr-only");
+      expect(attribution.isVisible()).toBe(true);
+      expect(attribution.classes()).not.toContain("sr-only");
+      expect(attribution.classes()).toEqual(
+        expect.arrayContaining(["min-w-0", "truncate", "text-[0.625rem]"]),
+      );
+      expect(attribution.classes()).not.toContain("shrink-0");
+      expect(attribution.attributes("title")).toBe(attribution.text());
       expect(attribution.attributes("aria-hidden")).toBeUndefined();
-      expect(text.find(".listen-in__attribution").exists()).toBe(false);
       expect(action.attributes("aria-describedby")).toBe(
         attribution.attributes("id"),
       );
@@ -106,15 +115,61 @@ describe("ListenIn", () => {
       expect(text.classes()).toEqual(
         expect.arrayContaining(["min-w-0", "overflow-hidden"]),
       );
+      expect(titleRow.classes()).toContain("min-w-0");
       expect(title.classes()).toEqual(
-        expect.arrayContaining(["block", "truncate"]),
+        expect.arrayContaining(["block", "shrink-0", "whitespace-nowrap"]),
       );
+      expect(title.classes()).not.toContain("truncate");
+      expect(title.classes()).not.toContain("min-w-0");
       expect(description.classes()).toEqual(
         expect.arrayContaining(["block", "truncate"]),
       );
       expect(action.classes()).toContain("shrink-0");
     },
   );
+
+  it("prioritizes the title over a long attribution", () => {
+    const labels = {
+      ...surfaces[0].labels,
+      title: "Luister mee",
+      titleActive: "Je luistert mee",
+      tap: "Tik om te luisteren",
+      poweredBy: "Mogelijk gemaakt door Sendspin",
+    };
+    const wrapper = mount(ListenIn, {
+      props: { domain: "party", mode: "remote", labels },
+    });
+    const text = wrapper.get(".listen-in__text");
+    const titleRow = wrapper.get(".listen-in__title-row");
+    const title = wrapper.get(".listen-in__title");
+    const attribution = wrapper.get(".listen-in__attribution");
+    const description = wrapper.get(".listen-in__desc");
+    const action = wrapper.get(".listen-in__action");
+
+    expect(text.element.childElementCount).toBe(2);
+    expect(text.element.children[0]).toBe(titleRow.element);
+    expect(text.element.children[1]).toBe(description.element);
+    expect(titleRow.element.children[0]).toBe(title.element);
+    expect(titleRow.element.children[1]).toBe(attribution.element);
+    expect(title.text()).toBe("Luister mee");
+    expect(title.classes()).toEqual(
+      expect.arrayContaining(["shrink-0", "whitespace-nowrap"]),
+    );
+    expect(title.classes()).not.toContain("truncate");
+    expect(attribution.text()).toBe("Mogelijk gemaakt door Sendspin");
+    expect(attribution.classes()).toEqual(
+      expect.arrayContaining(["min-w-0", "truncate"]),
+    );
+    expect(attribution.classes()).not.toContain("shrink-0");
+    expect(attribution.attributes("title")).toBe(
+      "Mogelijk gemaakt door Sendspin",
+    );
+    expect(description.text()).toBe("Hear the music on this device");
+    expect(action.text()).toBe("Tik om te luisteren");
+    expect(action.attributes("aria-describedby")).toBe(
+      attribution.attributes("id"),
+    );
+  });
 
   it("keeps the venue switch and remote start/stop actions", async () => {
     const venue = mount(ListenIn, {

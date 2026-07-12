@@ -35,5 +35,11 @@ describe("GuestEntryView", () => {
 
     expect(wrapper.text()).toContain(title);
     expect(wrapper.text()).toContain(description);
+    expect(wrapper.get('[data-slot="card-header"]').classes()).toContain(
+      "justify-items-center",
+    );
+    expect(
+      wrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
+    ).toBe("true");
   });
 });

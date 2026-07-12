@@ -14,6 +14,12 @@ describe("MusicQuizUnsupportedGame", () => {
     expect(wrapper.text()).toContain(
       "providers.music_quiz.unsupported_description",
     );
+    expect(wrapper.get('[data-slot="card-header"]').classes()).toContain(
+      "justify-items-center",
+    );
+    expect(
+      wrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
+    ).toBe("true");
     expect(wrapper.find("button").exists()).toBe(false);
   });
 

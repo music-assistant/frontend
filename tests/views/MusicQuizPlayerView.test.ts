@@ -572,6 +572,9 @@ describe("MusicQuizPlayerView routing", () => {
     expect(waitingWrapper.text()).not.toContain(
       "providers.music_quiz.game_ended",
     );
+    expect(waitingWrapper.get('[data-slot="card-header"]').classes()).toContain(
+      "justify-items-center",
+    );
     expect(
       waitingWrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
     ).toBe("true");
@@ -599,6 +602,9 @@ describe("MusicQuizPlayerView routing", () => {
       "providers.music_quiz.game_ended_wait",
     );
     expect(endedWrapper.text()).not.toContain("guest.no_quiz_title");
+    expect(endedWrapper.get('[data-slot="card-header"]').classes()).toContain(
+      "justify-items-center",
+    );
     expect(
       endedWrapper.get('svg[aria-hidden="true"]').attributes("aria-hidden"),
     ).toBe("true");
