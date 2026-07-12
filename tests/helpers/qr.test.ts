@@ -8,7 +8,10 @@ vi.mock("qrcode", () => ({
   },
 }));
 
-const originalDevicePixelRatio = window.devicePixelRatio;
+const originalDevicePixelRatioDescriptor = Object.getOwnPropertyDescriptor(
+  window,
+  "devicePixelRatio",
+);
 const mockToCanvas = vi.mocked(QRCode.toCanvas);
 
 describe("renderQrCode", () => {
@@ -17,7 +20,7 @@ describe("renderQrCode", () => {
   });
 
   afterEach(() => {
-    setDevicePixelRatio(originalDevicePixelRatio);
+    restoreDevicePixelRatio();
   });
 
   it("renders a standard high-contrast QR at the device pixel ratio", async () => {
@@ -80,4 +83,16 @@ function setDevicePixelRatio(pixelRatio: number | undefined) {
     configurable: true,
     value: pixelRatio,
   });
+}
+
+function restoreDevicePixelRatio() {
+  if (originalDevicePixelRatioDescriptor) {
+    Object.defineProperty(
+      window,
+      "devicePixelRatio",
+      originalDevicePixelRatioDescriptor,
+    );
+    return;
+  }
+  Reflect.deleteProperty(window, "devicePixelRatio");
 }
