@@ -9,7 +9,7 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/components/music-quiz/game_types", async () => {
-  const { defineComponent, h, ref } = await import("vue");
+  const { defineComponent, h, markRaw, ref } = await import("vue");
   const setupComponent = (quizType: string, answerType: string) =>
     defineComponent({
       props: {
@@ -69,12 +69,12 @@ vi.mock("@/components/music-quiz/game_types", async () => {
         answerType: "multiple_choice",
         labelKey: "game_type",
         descriptionKey: "game_type_description",
-        icon: { template: "<span />" },
+        icon: markRaw({ template: "<span />" }),
         requiresBackendAvailability: false,
         supportsListenIn: true,
         revealPhaseLabelKey: "reveal",
         adapters: {
-          setup: setupComponent("guess_the_song", "multiple_choice"),
+          setup: markRaw(setupComponent("guess_the_song", "multiple_choice")),
         },
       },
       {
@@ -82,12 +82,12 @@ vi.mock("@/components/music-quiz/game_types", async () => {
         answerType: "timeline",
         labelKey: "timeline_type",
         descriptionKey: "timeline_description",
-        icon: { template: "<span />" },
+        icon: markRaw({ template: "<span />" }),
         requiresBackendAvailability: false,
         supportsListenIn: true,
         revealPhaseLabelKey: "reveal",
         adapters: {
-          setup: setupComponent("music_timeline", "timeline"),
+          setup: markRaw(setupComponent("music_timeline", "timeline")),
         },
       },
       {
@@ -95,12 +95,12 @@ vi.mock("@/components/music-quiz/game_types", async () => {
         answerType: "multiple_choice",
         labelKey: "trivia_type",
         descriptionKey: "trivia_description",
-        icon: { template: "<span />" },
+        icon: markRaw({ template: "<span />" }),
         requiresBackendAvailability: true,
         supportsListenIn: false,
         revealPhaseLabelKey: "reveal",
         adapters: {
-          setup: setupComponent("trivia", "multiple_choice"),
+          setup: markRaw(setupComponent("trivia", "multiple_choice")),
         },
       },
     ],
@@ -257,6 +257,9 @@ describe("MusicQuizSetupWizard", () => {
     await wrapper.get("#music-quiz-venue-player").setValue("kitchen");
 
     await goBack(wrapper);
+    expect(
+      wrapper.find('[data-testid="setting-guess_the_song"]').exists(),
+    ).toBe(false);
     await selectGame(wrapper, "trivia_type");
     await wrapper.get('[data-testid="change-trivia"]').trigger("click");
     await wrapper.get('[data-testid="change-trivia"]').trigger("click");

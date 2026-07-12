@@ -88,7 +88,9 @@
       </Field>
       <KeepAlive v-if="selectedType">
         <component
-          :is="selectedType.adapters.setup"
+          :is="
+            step === 2 ? selectedType.adapters.setup : MusicQuizSetupPlaceholder
+          "
           :busy="busy"
           :include-similar-music="includeSimilarMusic"
           :shared-config-valid="sharedConfigValid"
@@ -122,9 +124,13 @@ import {
 } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
 const TOTAL_STEPS = 2;
+const MusicQuizSetupPlaceholder = defineComponent({
+  inheritAttrs: false,
+  setup: () => () => null,
+});
 
 const props = withDefaults(
   defineProps<{
@@ -177,6 +183,7 @@ watch(
 
 async function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;
+  await nextTick();
   step.value = 2;
   await nextTick();
   configureHeading.value?.focus({ preventScroll: true });
