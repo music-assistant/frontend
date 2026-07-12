@@ -48,6 +48,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
       dialogActive: false,
+      mobileLayout: false,
       showPlayersMenu: true,
     }),
   };
@@ -206,6 +207,7 @@ describe("PlayerSelect", () => {
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
     store.dialogActive = false;
+    store.mobileLayout = false;
     store.showPlayersMenu = true;
     webPlayer.player_id = null;
     storage.clear();
@@ -341,6 +343,19 @@ describe("PlayerSelect", () => {
     await wrapper.find(".player-select-backdrop").trigger("click");
 
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("stops above the bottom navigation in mobile layout", () => {
+    store.mobileLayout = true;
+
+    const wrapper = mountPlayerSelect();
+
+    expect(wrapper.find(".player-select-backdrop").classes()).toContain(
+      "bottom-[60px]",
+    );
+    expect(
+      wrapper.find('[data-testid="player-select-sheet"]').classes(),
+    ).toContain("bottom-[60px]");
   });
 
   it("restores focus to the menu trigger after closing", async () => {
