@@ -3,7 +3,7 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
 describe("MusicQuizCountdown", () => {
-  it("disables the progress transition when reduced motion is requested", () => {
+  it("includes the reduced-motion transition override", () => {
     const wrapper = mount(MusicQuizCountdown, {
       props: {
         label: "10",
