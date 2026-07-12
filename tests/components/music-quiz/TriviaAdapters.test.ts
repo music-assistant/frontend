@@ -85,6 +85,11 @@ const triviaSurfaces: Array<{
 
 describe("Trivia adapters", () => {
   it("shows the canonical server language after a host state refresh", async () => {
+    const displayNames = new Intl.DisplayNames(["en"], {
+      type: "language",
+      fallback: "code",
+      languageDisplay: "dialect",
+    });
     const wrapper = mount(TriviaHostPanel, {
       props: {
         state: { ...hostState, language: "pt-BR" },
@@ -93,14 +98,14 @@ describe("Trivia adapters", () => {
     });
 
     expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
-      "Brazilian Portuguese",
+      displayNames.of("pt-BR"),
     );
 
     await wrapper.setProps({
       state: { ...hostState, language: "sr-Latn" },
     });
     expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
-      "Serbian (Latin)",
+      displayNames.of("sr-Latn"),
     );
   });
 

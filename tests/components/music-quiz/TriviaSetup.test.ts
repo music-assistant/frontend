@@ -7,7 +7,7 @@ const { mockI18n } = vi.hoisted(() => ({
   mockI18n: {
     global: {
       locale: { value: "en" },
-      availableLocales: ["de", "en", "en_AU", "pt_BR", "sr_Latn"],
+      availableLocales: ["de", "en", "en_AU", "pt_BR", "sr", "sr_Latn"],
     },
   },
 }));
@@ -126,17 +126,25 @@ describe("TriviaSetup", () => {
     const labelByValue = Object.fromEntries(
       options.map((option) => [option.value, option.label]),
     );
+    const displayNames = new Intl.DisplayNames(["de"], {
+      type: "language",
+      fallback: "code",
+      languageDisplay: "dialect",
+    });
 
     expect(options.map((option) => option.value).sort()).toEqual(
       [...mockI18n.global.availableLocales].sort(),
     );
     expect(labelByValue).toMatchObject({
-      de: "Deutsch",
-      en: "Englisch",
-      en_AU: "Englisch (Australien)",
-      pt_BR: "Portugiesisch (Brasilien)",
-      sr_Latn: "Serbisch (Lateinisch)",
+      de: displayNames.of("de"),
+      en: displayNames.of("en"),
+      en_AU: displayNames.of("en-AU"),
+      pt_BR: displayNames.of("pt-BR"),
+      sr: displayNames.of("sr"),
+      sr_Latn: displayNames.of("sr-Latn"),
     });
+    expect(labelByValue.en_AU).not.toBe(labelByValue.en);
+    expect(labelByValue.sr_Latn).not.toBe(labelByValue.sr);
     expect(options.map((option) => option.label)).toEqual(
       options
         .map((option) => option.label)

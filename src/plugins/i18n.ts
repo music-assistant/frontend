@@ -24,7 +24,11 @@ export function getLocaleDisplayName(
   try {
     const displayNames = new Intl.DisplayNames(
       [canonicalizeLocale(displayLocale)],
-      { type: "language" },
+      {
+        type: "language",
+        fallback: "code",
+        languageDisplay: "dialect",
+      },
     );
     return displayNames.of(canonicalLocale) ?? canonicalLocale;
   } catch {

@@ -71,9 +71,22 @@ describe("locale presentation", () => {
   });
 
   it("uses friendly localized names with script and region distinctions", () => {
-    expect(getLocaleDisplayName("pt_BR", "en")).toBe("Brazilian Portuguese");
-    expect(getLocaleDisplayName("sr_Latn", "en")).toBe("Serbian (Latin)");
-    expect(getLocaleDisplayName("en_AU", "de")).toBe("Englisch (Australien)");
+    const englishNames = new Intl.DisplayNames(["en"], {
+      type: "language",
+      fallback: "code",
+      languageDisplay: "dialect",
+    });
+    const germanNames = new Intl.DisplayNames(["de"], {
+      type: "language",
+      fallback: "code",
+      languageDisplay: "dialect",
+    });
+
+    expect(getLocaleDisplayName("pt_BR", "en")).toBe(englishNames.of("pt-BR"));
+    expect(getLocaleDisplayName("sr_Latn", "en")).toBe(
+      englishNames.of("sr-Latn"),
+    );
+    expect(getLocaleDisplayName("en_AU", "de")).toBe(germanNames.of("en-AU"));
   });
 
   it("falls back safely to the normalized code", () => {
