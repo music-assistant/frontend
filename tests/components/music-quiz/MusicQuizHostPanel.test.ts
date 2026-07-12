@@ -1,7 +1,8 @@
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import type {
+  MusicQuizGuessTheSongHostState,
+  MusicQuizGuessTheSongRound,
   MusicQuizPhase,
-  MusicQuizSupportedHostState,
 } from "@/composables/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +16,13 @@ vi.mock("@/plugins/i18n", () => ({
           "providers.music_quiz.start_now_countdown": "Start now · {0}",
           "providers.music_quiz.start_now_waiting": "Start now · Waiting…",
           "providers.music_quiz.end_game": "End game",
+          "providers.music_quiz.next": "Next Round",
+          "providers.music_quiz.finish": "Finish Quiz",
+          "providers.music_quiz.next_round_countdown": "Next Round · {0}",
+          "providers.music_quiz.finish_quiz_countdown": "Finish Quiz · {0}",
+          "providers.music_quiz.waiting_for_next": "Waiting for next round...",
+          "providers.music_quiz.waiting_for_final_results":
+            "Waiting for final results...",
           "providers.music_quiz.play_again": "Play again",
           "providers.music_quiz.set_up_new_game": "Set up new game…",
         } as Record<string, string>
@@ -31,7 +39,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const HOST_STATE: MusicQuizSupportedHostState = {
+const HOST_STATE = {
   quiz_type: "guess_the_song",
   answer_type: "multiple_choice",
   phase: "lobby",
@@ -46,7 +54,15 @@ const HOST_STATE: MusicQuizSupportedHostState = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
-};
+} satisfies MusicQuizGuessTheSongHostState;
+const HOST_ROUND = {
+  question: "Which song is playing?",
+  round_index: 0,
+  started_at: 1,
+  deadline: 31,
+  auto_advance_at: null,
+  suggestions: [],
+} satisfies MusicQuizGuessTheSongRound;
 
 describe("MusicQuizHostPanel", () => {
   it("keeps Present mode and End game available", async () => {
@@ -73,7 +89,7 @@ describe("MusicQuizHostPanel", () => {
   it.each([
     ["lobby", "Start Quiz"],
     ["answering", "providers.music_quiz.phase_reveal"],
-    ["reveal", "providers.music_quiz.next"],
+    ["reveal", "Next Round"],
     ["finished", "Play again"],
   ] as const)(
     "keeps the %s lifecycle action in the shared control bar",
@@ -137,7 +153,9 @@ describe("MusicQuizHostPanel", () => {
   it("uses the server deadline for replay and never starts on its own", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    const wrapper = mountPanel("lobby", false, Date.now() / 1000 + 12);
+    const wrapper = mountPanel("lobby", false, {
+      autoStartAt: Date.now() / 1000 + 12,
+    });
     const startButton = wrapper.get('[data-testid="start-quiz"]');
 
     expect(startButton.text()).toContain("Start now · 12s");
@@ -163,7 +181,7 @@ describe("MusicQuizHostPanel", () => {
   });
 
   it("keeps a no-player lobby manual and guards Start while busy", async () => {
-    const wrapper = mountPanel("lobby", true, null);
+    const wrapper = mountPanel("lobby", true, { autoStartAt: null });
     const startButton = wrapper.get('[data-testid="start-quiz"]');
 
     expect(startButton.text()).toContain("Start Quiz");
@@ -172,19 +190,91 @@ describe("MusicQuizHostPanel", () => {
     await startButton.trigger("click");
     expect(wrapper.emitted("start")).toBeUndefined();
   });
+
+  it.each([
+    [false, "Next Round · 15s"],
+    [true, "Finish Quiz · 15s"],
+  ] as const)(
+    "shows the authoritative Trivia reveal action for final=%s",
+    async (isLastRound, expectedLabel) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      const wrapper = mountPanel("reveal", false, {
+        revealCountdown: true,
+        autoAdvanceAt: Date.now() / 1000 + 15,
+        isLastRound,
+      });
+      const nextButton = wrapper.get('[data-testid="next-quiz"]');
+
+      expect(nextButton.text()).toContain(expectedLabel);
+      await nextButton.trigger("click");
+      expect(wrapper.emitted("next")).toEqual([[]]);
+    },
+  );
+
+  it("waits without advancing at an elapsed Trivia reveal deadline", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const wrapper = mountPanel("reveal", false, {
+      revealCountdown: true,
+      autoAdvanceAt: Date.now() / 1000 + 1,
+    });
+    const nextButton = wrapper.get('[data-testid="next-quiz"]');
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(nextButton.text()).toContain("Waiting for next round...");
+    expect(nextButton.text()).not.toContain("0s");
+    expect(nextButton.attributes("disabled")).toBeDefined();
+    expect(wrapper.emitted("next")).toBeUndefined();
+    await nextButton.trigger("click");
+    expect(wrapper.emitted("next")).toBeUndefined();
+  });
+
+  it("keeps a null Trivia reveal deadline manual", async () => {
+    const wrapper = mountPanel("reveal", false, {
+      revealCountdown: true,
+      autoAdvanceAt: null,
+    });
+    const nextButton = wrapper.get('[data-testid="next-quiz"]');
+
+    expect(nextButton.text()).toContain("Next Round");
+    expect(nextButton.text()).not.toContain("·");
+    expect(nextButton.attributes("disabled")).toBeUndefined();
+
+    await nextButton.trigger("click");
+    expect(wrapper.emitted("next")).toEqual([[]]);
+  });
 });
 
 function mountPanel(
   phase: MusicQuizPhase,
   busy = false,
-  autoStartAt?: number | null,
+  options: {
+    autoStartAt?: number | null;
+    revealCountdown?: boolean;
+    autoAdvanceAt?: number | null;
+    isLastRound?: boolean;
+  } = {},
 ) {
   return mount(MusicQuizHostPanel, {
     props: {
-      state: { ...HOST_STATE, phase, auto_start_at: autoStartAt },
+      state: {
+        ...HOST_STATE,
+        phase,
+        auto_start_at: options.autoStartAt,
+        current_round:
+          phase === "answering" || phase === "reveal"
+            ? {
+                ...HOST_ROUND,
+                auto_advance_at: options.autoAdvanceAt ?? null,
+              }
+            : null,
+      },
       busy,
       joinLink: HOST_STATE.join_url,
-      isLastRound: false,
+      isLastRound: options.isLastRound ?? false,
+      revealCountdown: options.revealCountdown ?? false,
     },
     slots: {
       game: "<div />",

@@ -11,6 +11,7 @@ const { mockSendCommand, mockSubscribe, mockToastError } = vi.hoisted(() => ({
 vi.mock("@/components/music-quiz/game_types", () => ({
   MUSIC_QUIZ_GAME_TYPES: [],
   resolveMusicQuizDefinition: vi.fn(),
+  supportsMusicQuizListenIn: vi.fn(() => false),
 }));
 
 vi.mock("@/plugins/api", () => {

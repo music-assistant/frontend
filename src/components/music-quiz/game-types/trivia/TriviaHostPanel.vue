@@ -9,6 +9,24 @@
       </span>
     </div>
 
+    <div
+      class="flex items-center justify-between gap-3 border-t px-4 py-3"
+      data-testid="trivia-reveal-audio"
+    >
+      <span class="font-medium">
+        {{ $t("providers.music_quiz.play_revealed_songs") }}
+      </span>
+      <span class="text-muted-foreground text-sm">
+        {{
+          $t(
+            state.play_reveal_audio === true
+              ? "providers.music_quiz.reveal_audio_on"
+              : "providers.music_quiz.reveal_audio_off",
+          )
+        }}
+      </span>
+    </div>
+
     <Accordion
       v-if="state.sources.length"
       type="multiple"

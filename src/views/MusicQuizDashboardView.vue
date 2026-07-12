@@ -19,6 +19,7 @@
       :round-label="roundLabel"
       :join-link="joinLink"
       :is-connection-degraded="isConnectionDegraded"
+      :listen-in-enabled="listenInEnabled"
       :game-component="resolvedDefinition.game.adapters.present"
       :answer-component="resolvedDefinition.answer.adapters.present"
       @exit="exitPresentMode"
@@ -94,6 +95,7 @@
           :phase-label="phaseLabel"
           :round-label="roundLabel"
           :mode="activeState.mode"
+          :listen-in-enabled="listenInEnabled"
         />
 
         <MusicQuizHostPanel
@@ -101,6 +103,7 @@
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
+          :reveal-countdown="resolvedDefinition.game.usesRevealCountdown"
           @end-game="showEndGameDialog = true"
           @present="enterPresentMode"
           @start="host.start"
@@ -193,6 +196,7 @@ import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnect
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
+  supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import MusicQuizLeaderboard, {
@@ -267,6 +271,15 @@ const activeState = computed(() => {
     isSupportedMusicQuiz(currentState)
     ? currentState
     : null;
+});
+const listenInEnabled = computed(() => {
+  const definition = resolvedDefinition.value;
+  const currentState = activeState.value;
+  return !!(
+    definition &&
+    currentState &&
+    supportsMusicQuizListenIn(definition.game, currentState)
+  );
 });
 
 const rankedPlayers = computed(() =>

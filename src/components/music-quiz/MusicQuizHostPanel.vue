@@ -51,15 +51,12 @@
         </Button>
         <Button
           v-if="state.phase === 'reveal'"
-          :disabled="busy"
+          :disabled="busy || revealCountdownElapsed"
+          data-testid="next-quiz"
           @click="emit('next')"
         >
           <SkipForward class="size-4" />
-          {{
-            isLastRound
-              ? $t("providers.music_quiz.finish")
-              : $t("providers.music_quiz.next")
-          }}
+          {{ nextLabel }}
         </Button>
         <ButtonGroup v-if="state.phase === 'finished'" class="w-full sm:w-fit">
           <Button
@@ -113,6 +110,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
 import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
+import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,
@@ -132,9 +130,11 @@ const props = withDefaults(
     busy: boolean;
     joinLink: string;
     isLastRound: boolean;
+    revealCountdown?: boolean;
     showActions?: boolean;
   }>(),
   {
+    revealCountdown: false,
     showActions: true,
   },
 );
@@ -158,5 +158,32 @@ const startLabel = computed(() => {
     return $t("providers.music_quiz.start_now_waiting");
   }
   return $t("providers.music_quiz.start_now_countdown", [remainingLabel.value]);
+});
+const {
+  hasElapsed: revealCountdownElapsed,
+  isScheduled: revealCountdownScheduled,
+  remainingLabel: revealCountdownLabel,
+} = useMusicQuizRevealCountdown({
+  active: () => props.revealCountdown && props.state.phase === "reveal",
+  autoAdvanceAt: () => props.state.current_round?.auto_advance_at,
+});
+const nextLabel = computed(() => {
+  const defaultKey = props.isLastRound
+    ? "providers.music_quiz.finish"
+    : "providers.music_quiz.next";
+  if (!revealCountdownScheduled.value) return $t(defaultKey);
+  if (revealCountdownElapsed.value) {
+    return $t(
+      props.isLastRound
+        ? "providers.music_quiz.waiting_for_final_results"
+        : "providers.music_quiz.waiting_for_next",
+    );
+  }
+  return $t(
+    props.isLastRound
+      ? "providers.music_quiz.finish_quiz_countdown"
+      : "providers.music_quiz.next_round_countdown",
+    [revealCountdownLabel.value],
+  );
 });
 </script>

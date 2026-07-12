@@ -72,18 +72,20 @@ const props = withDefaults(
     phaseLabel: string;
     roundLabel?: string;
     mode?: MusicQuizMode;
+    listenInEnabled?: boolean;
     present?: boolean;
   }>(),
   {
     name: null,
     roundLabel: "",
     mode: undefined,
+    listenInEnabled: false,
     present: false,
   },
 );
 
 const showMode = computed(
-  () => props.game.supportsListenIn && props.mode !== undefined,
+  () => props.listenInEnabled && props.mode !== undefined,
 );
 const modeLabel = computed(() =>
   props.mode === "remote"

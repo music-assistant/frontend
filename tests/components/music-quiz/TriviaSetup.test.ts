@@ -66,6 +66,7 @@ describe("TriviaSetup", () => {
           answer_type: "multiple_choice",
           config: {
             language: "sr-Latn",
+            play_reveal_audio: true,
             round_count: 5,
             suggestion_count: 4,
             answer_duration: 30,
@@ -93,11 +94,35 @@ describe("TriviaSetup", () => {
       answer_type: "multiple_choice",
       config: {
         language: "en",
+        play_reveal_audio: true,
         round_count: 5,
         suggestion_count: 4,
         answer_duration: 30,
         difficulty: "normal",
         source_uris: ["library://playlist/1", "library://genre/rock"],
+      },
+    });
+  });
+
+  it("defaults reveal audio on and emits an explicit disabled value", async () => {
+    const wrapper = mountSetup();
+    const toggle = wrapper.get('[data-testid="trivia-play-reveal-audio"]');
+
+    expect(toggle.attributes("data-state")).toBe("checked");
+
+    await toggle.trigger("click");
+    await wrapper.get('[data-testid="select-sources"]').trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"))
+      ?.trigger("click");
+
+    expect(toggle.attributes("data-state")).toBe("unchecked");
+    expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
+      quiz_type: "trivia",
+      config: {
+        play_reveal_audio: false,
       },
     });
   });

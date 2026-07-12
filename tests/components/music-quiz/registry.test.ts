@@ -4,6 +4,7 @@ import {
   MUSIC_QUIZ_GAME_TYPES,
   isMusicQuizGameAvailable,
   resolveMusicQuizDefinition,
+  supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
 import type {
   MusicQuizAnswerType,
@@ -177,6 +178,7 @@ const triviaPlayerState = {
   quiz_type: "trivia",
   answer_type: "multiple_choice",
   language: "en",
+  play_reveal_audio: true,
   phase: "answering",
   name: "Trivia",
   round_count: 5,
@@ -290,13 +292,30 @@ describe("Music Quiz registries", () => {
 
     expect(mapping).toEqual(expected);
     expect(
-      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "music_timeline")
-        ?.supportsListenIn,
+      supportsMusicQuizListenIn(
+        MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "music_timeline")!,
+        musicTimelinePlayerState,
+      ),
     ).toBe(true);
+    const trivia = MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia")!;
+    expect(supportsMusicQuizListenIn(trivia, triviaPlayerState)).toBe(true);
     expect(
-      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia")
-        ?.supportsListenIn,
+      supportsMusicQuizListenIn(trivia, {
+        ...triviaPlayerState,
+        play_reveal_audio: false,
+      }),
     ).toBe(false);
+    const legacyTriviaState = {
+      ...triviaPlayerState,
+      play_reveal_audio: undefined,
+    };
+    expect(supportsMusicQuizListenIn(trivia, legacyTriviaState)).toBe(false);
+    expect(supportsMusicQuizListenIn(trivia)).toBe(false);
+    expect(
+      supportsMusicQuizListenIn(
+        MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "guess_the_song")!,
+      ),
+    ).toBe(true);
     expect(
       MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "music_timeline")
         ?.adapters.presentBody,

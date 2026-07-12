@@ -1386,6 +1386,24 @@ describe("useMusicQuizPlayer", () => {
     expect(player.busy.value).toBe(false);
   });
 
+  it("sends Ready only once while the first request is in flight", async () => {
+    storedPlayerId.value = "stored-player";
+    const delayedReady = deferred<typeof TIMELINE_REVEAL_STATE>();
+    mockGetMusicQuizState.mockResolvedValue(TIMELINE_REVEAL_STATE);
+    mockReadyMusicQuiz.mockReturnValueOnce(delayedReady.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const firstReady = player.ready();
+    await expect(player.ready()).resolves.toBe(false);
+
+    expect(mockReadyMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockReadyMusicQuiz).toHaveBeenCalledWith("stored-player");
+
+    delayedReady.resolve(TIMELINE_REVEAL_STATE);
+    await expect(firstReady).resolves.toBe(true);
+  });
+
   it("does not expose guess-the-song fields for an unknown game type", async () => {
     mockGetMusicQuizInfo.mockResolvedValue({
       quiz_type: "future_game",

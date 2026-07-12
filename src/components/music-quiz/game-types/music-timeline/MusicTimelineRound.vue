@@ -111,7 +111,7 @@ import type {
   MusicQuizTimelineRound,
   MusicQuizPhase,
 } from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { AudioLines, Check, Clock3, Music2 } from "@lucide/vue";
@@ -142,11 +142,10 @@ const revealedEntry = computed(() => props.round.revealed_entry);
 const imageUrl = computed(() =>
   getMediaImageUrl(revealedEntry.value?.image_url ?? ""),
 );
-const { remainingLabel: autoAdvanceLabel } = useMusicQuizAnswerDeadline({
+const { remainingLabel: autoAdvanceLabel } = useMusicQuizRevealCountdown({
   active: () =>
     props.phase === "reveal" && props.round.auto_advance_at !== null,
-  deadline: () => props.round.auto_advance_at,
-  duration: () => null,
+  autoAdvanceAt: () => props.round.auto_advance_at,
 });
 const autoAdvanceText = computed(() =>
   autoAdvanceLabel.value

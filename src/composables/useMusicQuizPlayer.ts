@@ -170,6 +170,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   async function ready() {
+    if (busy.value) return false;
     const currentPlayerId = playerId.value;
     if (!currentPlayerId) {
       notifyError($t("providers.music_quiz.error_not_joined"));

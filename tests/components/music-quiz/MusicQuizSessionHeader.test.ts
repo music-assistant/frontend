@@ -42,6 +42,7 @@ describe("MusicQuizSessionHeader", () => {
         phaseLabel: "Answers open",
         roundLabel: "Round 2 / 5",
         mode: "remote",
+        listenInEnabled: true,
       },
     });
 
@@ -70,6 +71,7 @@ describe("MusicQuizSessionHeader", () => {
         game: game("trivia", false),
         phaseLabel: "Answers open",
         mode: "venue",
+        listenInEnabled: false,
       },
     });
 
@@ -87,6 +89,7 @@ describe("MusicQuizSessionHeader", () => {
       phaseLabel: "Answers open",
       roundLabel: "Round 2 / 5",
       mode: "venue" as const,
+      listenInEnabled: true,
     };
     const regular = mount(MusicQuizSessionHeader, { props });
     const present = mount(MusicQuizSessionHeader, {

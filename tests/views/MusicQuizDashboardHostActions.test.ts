@@ -1,4 +1,8 @@
 import MusicQuizDashboardView from "@/views/MusicQuizDashboardView.vue";
+import type {
+  MusicQuizSupportedHostState,
+  MusicQuizTriviaHostState,
+} from "@/composables/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +29,10 @@ vi.mock("@/components/music-quiz/game_types", () => ({
   getMusicQuizPhaseLabelKey: () =>
     "providers.music_quiz.phase_waiting_for_players",
   resolveMusicQuizDefinition: mockResolveMusicQuizDefinition,
+  supportsMusicQuizListenIn: (
+    _game: unknown,
+    state: { quiz_type: string; play_reveal_audio?: boolean },
+  ) => state.quiz_type !== "trivia" || state.play_reveal_audio === true,
 }));
 
 vi.mock("@/helpers/music_quiz", () => ({
@@ -78,9 +86,16 @@ const HOST_STATE = {
   join_url: "http://join",
   rounds: [],
   current_round: null,
-} as const;
+} satisfies MusicQuizSupportedHostState;
+const TRIVIA_HOST_STATE = {
+  ...HOST_STATE,
+  quiz_type: "trivia",
+  language: "en",
+  play_reveal_audio: true,
+  rounds: [],
+} satisfies MusicQuizTriviaHostState;
 
-let state: Ref<typeof HOST_STATE | null>;
+let state: Ref<MusicQuizSupportedHostState | null>;
 let busy: Ref<boolean>;
 
 describe("MusicQuizDashboardView host actions", () => {
@@ -247,6 +262,45 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(root.classes()).not.toContain("p-4");
   });
 
+  it("shows the host playback badge only for reveal-audio Trivia", async () => {
+    state.value = {
+      ...TRIVIA_HOST_STATE,
+      play_reveal_audio: false,
+    };
+    const wrapper = mountDashboard();
+    await nextTick();
+
+    expect(
+      wrapper
+        .get('[data-testid="session-header"]')
+        .attributes("data-listen-in-enabled"),
+    ).toBe("false");
+
+    state.value = {
+      ...TRIVIA_HOST_STATE,
+      play_reveal_audio: true,
+    };
+    await nextTick();
+
+    expect(
+      wrapper
+        .get('[data-testid="session-header"]')
+        .attributes("data-listen-in-enabled"),
+    ).toBe("true");
+
+    state.value = {
+      ...TRIVIA_HOST_STATE,
+      play_reveal_audio: undefined,
+    };
+    await nextTick();
+
+    expect(
+      wrapper
+        .get('[data-testid="session-header"]')
+        .attributes("data-listen-in-enabled"),
+    ).toBe("false");
+  });
+
   it("returns to the compact empty state when the host state is cleared", async () => {
     const wrapper = mountDashboard();
 
@@ -298,7 +352,11 @@ function mountDashboard() {
           template: "<h2><slot /></h2>",
         },
         MusicQuizConnectionBanners: true,
-        MusicQuizSessionHeader: true,
+        MusicQuizSessionHeader: {
+          props: ["listenInEnabled"],
+          template:
+            '<div data-testid="session-header" :data-listen-in-enabled="String(listenInEnabled)" />',
+        },
         MusicQuizHostPanel: {
           props: ["busy"],
           emits: ["endGame", "present", "reset", "setUpNewGame", "start"],
