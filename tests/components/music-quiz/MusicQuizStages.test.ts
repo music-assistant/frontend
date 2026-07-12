@@ -10,11 +10,21 @@ import {
   baseRound as musicTimelineRound,
   baseState as musicTimelineState,
 } from "./timelinePlayerFixtures";
-import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { flushPromises, mount } from "@vue/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, values: unknown[] = []) => {
+    const message =
+      (
+        {
+          "providers.music_quiz.game_starts_in": "Game starts in {0}",
+          "providers.music_quiz.waiting_for_game_start":
+            "Waiting for game to start…",
+        } as Record<string, string>
+      )[key] ?? key;
+    return message.replace("{0}", String(values[0] ?? ""));
+  },
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -132,6 +142,10 @@ const leaderboardRows = [
 ];
 
 describe("Music Quiz shared stages", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("forwards player adapter actions through the shared shell", async () => {
     const wrapper = mount(MusicQuizPlayerStage, {
       props: {
@@ -256,6 +270,96 @@ describe("Music Quiz shared stages", () => {
     expect(
       wrapper.get('[data-testid="leaderboard"]').attributes("data-compact"),
     ).toBe("false");
+  });
+
+  it("shows joined guests the remaining server time and handles cancellation", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:18Z"));
+    const state = {
+      ...playerState,
+      phase: "lobby",
+      current_round: null,
+      auto_start_at: new Date("2026-01-01T00:00:30Z").getTime() / 1000,
+    } satisfies MusicQuizGuessTheSongPersonalizedState;
+    const wrapper = mount(MusicQuizPlayerStage, {
+      props: {
+        state,
+        currentRound: null,
+        busy: false,
+        leaderboardRows,
+        winnerText: "",
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          MusicQuizLeaderboard: leaderboardStub,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+      "Game starts in 12s",
+    );
+
+    vi.advanceTimersByTime(12_000);
+    await flushPromises();
+    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+      "Waiting for game to start…",
+    );
+
+    await wrapper.setProps({
+      state: {
+        ...state,
+        auto_start_at: null,
+      },
+    });
+    expect(wrapper.find('[data-testid="music-quiz-auto-start"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_start");
+    wrapper.unmount();
+  });
+
+  it("shows the authoritative countdown in present mode", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const state = {
+      ...hostState,
+      phase: "lobby",
+      current_round: null,
+      auto_start_at: Date.now() / 1000 + 9,
+    } satisfies MusicQuizGuessTheSongHostState;
+    const wrapper = mount(MusicQuizPresentStage, {
+      props: {
+        state,
+        game: gameDefinition,
+        currentRound: null,
+        leaderboardRows,
+        winnerText: "",
+        phaseLabel: "Lobby",
+        roundLabel: "",
+        joinLink: "https://example.test/join",
+        isConnectionDegraded: false,
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          Button: true,
+          MusicQuizConnectionBanners: true,
+          MusicQuizLeaderboard: true,
+          MusicQuizPodium: true,
+          MusicQuizQrCard: true,
+        },
+      },
+    });
+
+    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+      "Game starts in 9s",
+    );
+    wrapper.unmount();
   });
 
   it("keeps the shared leaderboard in the present answer slot", () => {

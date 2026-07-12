@@ -34,11 +34,12 @@
         </Button>
         <Button
           v-if="state.phase === 'lobby'"
+          data-testid="start-quiz"
           :disabled="busy"
           @click="emit('start')"
         >
           <Play class="size-4" />
-          {{ $t("providers.music_quiz.start") }}
+          {{ startLabel }}
         </Button>
         <Button
           v-if="state.phase === 'answering'"
@@ -111,6 +112,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
+import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,
@@ -122,9 +124,9 @@ import {
   SkipForward,
   Square,
 } from "@lucide/vue";
-import type { VNode } from "vue";
+import { computed, type VNode } from "vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     state: MusicQuizSupportedHostState;
     busy: boolean;
@@ -146,4 +148,15 @@ const emit = defineEmits<{
   reset: [];
   setUpNewGame: [];
 }>();
+
+const { hasElapsed, isScheduled, remainingLabel } = useMusicQuizAutoStart(
+  () => props.state,
+);
+const startLabel = computed(() => {
+  if (!isScheduled.value) return $t("providers.music_quiz.start");
+  if (hasElapsed.value) {
+    return $t("providers.music_quiz.start_now_waiting");
+  }
+  return $t("providers.music_quiz.start_now_countdown", [remainingLabel.value]);
+});
 </script>

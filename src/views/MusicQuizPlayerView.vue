@@ -31,6 +31,10 @@
       />
       <Card>
         <CardContent>
+          <MusicQuizAutoStartStatus
+            :state="activeInfo"
+            class="text-muted-foreground mb-4 text-center font-semibold"
+          />
           <MusicQuizJoinForm
             :session-name="activeInfo?.name || $t('providers.music_quiz.title')"
             :busy="busy"
@@ -101,6 +105,7 @@
 
 <script setup lang="ts">
 import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
+import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import {
   getMusicQuizPhaseLabelKey,

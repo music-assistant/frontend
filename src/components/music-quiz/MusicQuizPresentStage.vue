@@ -94,6 +94,10 @@
                 ({{ state.players.length }})
               </span>
             </h2>
+            <MusicQuizAutoStartStatus
+              :state="state"
+              class="text-muted-foreground text-lg font-semibold"
+            />
             <TransitionGroup
               v-if="state.players.length"
               tag="div"
@@ -117,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,

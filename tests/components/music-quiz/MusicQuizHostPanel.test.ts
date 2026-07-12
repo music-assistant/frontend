@@ -4,20 +4,32 @@ import type {
   MusicQuizSupportedHostState,
 } from "@/composables/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) =>
-    ({
-      "providers.music_quiz.end_game": "End game",
-      "providers.music_quiz.play_again": "Play again",
-      "providers.music_quiz.set_up_new_game": "Set up new game…",
-    })[key] ?? key,
+  $t: (key: string, values: unknown[] = []) => {
+    const message =
+      (
+        {
+          "providers.music_quiz.start": "Start Quiz",
+          "providers.music_quiz.start_now_countdown": "Start now · {0}",
+          "providers.music_quiz.start_now_waiting": "Start now · Waiting…",
+          "providers.music_quiz.end_game": "End game",
+          "providers.music_quiz.play_again": "Play again",
+          "providers.music_quiz.set_up_new_game": "Set up new game…",
+        } as Record<string, string>
+      )[key] ?? key;
+    return message.replace("{0}", String(values[0] ?? ""));
+  },
 }));
 
 vi.mock("@/helpers/utils", () => ({
   copyToClipboard: vi.fn(),
 }));
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const HOST_STATE: MusicQuizSupportedHostState = {
   quiz_type: "guess_the_song",
@@ -59,7 +71,7 @@ describe("MusicQuizHostPanel", () => {
   });
 
   it.each([
-    ["lobby", "providers.music_quiz.start"],
+    ["lobby", "Start Quiz"],
     ["answering", "providers.music_quiz.phase_reveal"],
     ["reveal", "providers.music_quiz.next"],
     ["finished", "Play again"],
@@ -121,12 +133,55 @@ describe("MusicQuizHostPanel", () => {
     expect(wrapper.emitted("reset")).toBeUndefined();
     expect(wrapper.emitted("setUpNewGame")).toBeUndefined();
   });
+
+  it("uses the server deadline for replay and never starts on its own", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const wrapper = mountPanel("lobby", false, Date.now() / 1000 + 12);
+    const startButton = wrapper.get('[data-testid="start-quiz"]');
+
+    expect(startButton.text()).toContain("Start now · 12s");
+
+    await startButton.trigger("click");
+    expect(wrapper.emitted("start")).toHaveLength(1);
+
+    vi.advanceTimersByTime(12_000);
+    await flushPromises();
+    expect(startButton.text()).toContain("Start now · Waiting…");
+    expect(wrapper.emitted("start")).toHaveLength(1);
+
+    await wrapper.setProps({
+      state: {
+        ...HOST_STATE,
+        phase: "lobby",
+        auto_start_at: null,
+      },
+    });
+    expect(startButton.text()).toContain("Start Quiz");
+    expect(startButton.text()).not.toContain("Start now");
+    wrapper.unmount();
+  });
+
+  it("keeps a no-player lobby manual and guards Start while busy", async () => {
+    const wrapper = mountPanel("lobby", true, null);
+    const startButton = wrapper.get('[data-testid="start-quiz"]');
+
+    expect(startButton.text()).toContain("Start Quiz");
+    expect(startButton.attributes("disabled")).toBeDefined();
+
+    await startButton.trigger("click");
+    expect(wrapper.emitted("start")).toBeUndefined();
+  });
 });
 
-function mountPanel(phase: MusicQuizPhase, busy = false) {
+function mountPanel(
+  phase: MusicQuizPhase,
+  busy = false,
+  autoStartAt?: number | null,
+) {
   return mount(MusicQuizHostPanel, {
     props: {
-      state: { ...HOST_STATE, phase },
+      state: { ...HOST_STATE, phase, auto_start_at: autoStartAt },
       busy,
       joinLink: HOST_STATE.join_url,
       isLastRound: false,

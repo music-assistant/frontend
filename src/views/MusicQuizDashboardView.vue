@@ -319,7 +319,7 @@ async function handleCreate(request: MusicQuizCreateRequest) {
 
 async function handleReplay() {
   if (busy.value) return;
-  await host.reset();
+  await host.reset(true);
 }
 
 async function handleSetUpNewGame() {
