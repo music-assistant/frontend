@@ -1140,6 +1140,7 @@ const openQueueMenu = function (evt: Event) {
     },
     icon: "mdi-waveform",
     selected: showWaveformPref.value,
+    close_on_click: false,
   });
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
