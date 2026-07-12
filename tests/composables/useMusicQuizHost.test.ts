@@ -4,12 +4,14 @@ const {
   mockDeleteMusicQuiz,
   mockGetAvailableMusicQuizTypes,
   mockGetMusicQuiz,
+  mockResetMusicQuiz,
   mockSubscribe,
   providerHandlers,
 } = vi.hoisted(() => ({
   mockDeleteMusicQuiz: vi.fn(),
   mockGetAvailableMusicQuizTypes: vi.fn(),
   mockGetMusicQuiz: vi.fn(),
+  mockResetMusicQuiz: vi.fn(),
   mockSubscribe: vi.fn(),
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
@@ -32,7 +34,7 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   startMusicQuiz: vi.fn(),
   revealMusicQuiz: vi.fn(),
   nextMusicQuiz: vi.fn(),
-  resetMusicQuiz: vi.fn(),
+  resetMusicQuiz: mockResetMusicQuiz,
   deleteMusicQuiz: mockDeleteMusicQuiz,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     value.quiz_type === "guess_the_song" &&
@@ -88,6 +90,7 @@ describe("useMusicQuizHost", () => {
     mockDeleteMusicQuiz.mockReset();
     mockGetAvailableMusicQuizTypes.mockReset();
     mockGetMusicQuiz.mockReset();
+    mockResetMusicQuiz.mockReset();
     mockSubscribe.mockReset();
     mockDeleteMusicQuiz.mockResolvedValue(undefined);
     mockGetAvailableMusicQuizTypes.mockResolvedValue([
@@ -95,6 +98,7 @@ describe("useMusicQuizHost", () => {
       "music_timeline",
     ]);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockResetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockSubscribe.mockImplementation(
       (
         _event: EventType,
@@ -180,6 +184,17 @@ describe("useMusicQuizHost", () => {
 
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
+  });
+
+  it("keeps host resets manual unless auto-start is requested", async () => {
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    await host.reset();
+    await host.reset(true);
+
+    expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(1, false);
+    expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(2, true);
   });
 
   it("treats a no-active-game string as an empty state without a toast", async () => {

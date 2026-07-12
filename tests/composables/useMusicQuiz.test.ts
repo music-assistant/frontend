@@ -19,6 +19,7 @@ import {
   isSupportedMusicQuiz,
   parseMusicQuizAnswerType,
   parseMusicQuizType,
+  resetMusicQuiz,
   submitMusicQuizAnswer,
   type MusicQuizProviderEvent,
   type MusicQuizPublicState,
@@ -90,6 +91,22 @@ describe("useMusicQuiz commands", () => {
     expect(mockSendCommand).toHaveBeenCalledWith(
       "music_quiz/available_quiz_types",
     );
+  });
+
+  it("opts into replay auto-start explicitly", async () => {
+    await resetMusicQuiz(true);
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/reset", {
+      auto_start: true,
+    });
+  });
+
+  it("keeps manual reset backward compatible by default", async () => {
+    await resetMusicQuiz();
+    await resetMusicQuiz(false);
+
+    expect(mockSendCommand).toHaveBeenNthCalledWith(1, "music_quiz/reset");
+    expect(mockSendCommand).toHaveBeenNthCalledWith(2, "music_quiz/reset");
   });
 
   it("parses the Music Timeline game and generic timeline answer types", () => {
@@ -280,6 +297,7 @@ describe("useMusicQuiz commands", () => {
       answer_type: "multiple_choice",
       phase: "reveal",
       name: null,
+      auto_start_at: null,
       round_count: 1,
       suggestion_count: 2,
       answer_duration: 30,
@@ -301,6 +319,7 @@ describe("useMusicQuiz commands", () => {
     expect(state.current_round.question).toBeNull();
     expect(state.current_round.track_uri).toBeNull();
     expect(state.current_round.auto_advance_at).toBeNull();
+    expect(state.auto_start_at).toBeNull();
   });
 
   it("accepts the nullable Music Timeline round start timestamp", () => {

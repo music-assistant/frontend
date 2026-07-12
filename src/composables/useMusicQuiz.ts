@@ -82,6 +82,7 @@ interface MusicQuizStateIdentity<
   answer_type: TAnswerType;
   phase: MusicQuizPhase;
   name: string | null;
+  auto_start_at?: number | null;
 }
 
 interface MusicQuizGuessTheSongStateBase extends MusicQuizStateIdentity {
@@ -655,8 +656,12 @@ export function nextMusicQuiz() {
   return api.sendCommand<MusicQuizHostState>("music_quiz/next");
 }
 
-export function resetMusicQuiz() {
-  return api.sendCommand<MusicQuizHostState>("music_quiz/reset");
+export function resetMusicQuiz(autoStart = false) {
+  return autoStart
+    ? api.sendCommand<MusicQuizHostState>("music_quiz/reset", {
+        auto_start: true,
+      })
+    : api.sendCommand<MusicQuizHostState>("music_quiz/reset");
 }
 
 export function deleteMusicQuiz() {

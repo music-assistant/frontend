@@ -174,10 +174,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
-  async function reset() {
+  async function reset(autoStart = false) {
     busy.value = true;
     try {
-      const nextState = await resetMusicQuiz();
+      const nextState = await resetMusicQuiz(autoStart);
       applyState(nextState);
       return true;
     } catch (err) {

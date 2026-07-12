@@ -1,7 +1,7 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import { mount } from "@vue/test-utils";
 import { h, ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockGameAdapterSetup,
@@ -65,7 +65,15 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, values: unknown[] = []) => {
+    const message =
+      (
+        {
+          "providers.music_quiz.game_starts_in": "Game starts in {0}",
+        } as Record<string, string>
+      )[key] ?? key;
+    return message.replace("{0}", String(values[0] ?? ""));
+  },
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -167,6 +175,10 @@ const triviaState = {
 };
 
 describe("MusicQuizPlayerView routing", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     mockGameAdapterSetup.mockReset();
     mockGetTrackLyrics.mockReset();
@@ -344,6 +356,41 @@ describe("MusicQuizPlayerView routing", () => {
     expect(
       wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
     ).toBe("Player One");
+    wrapper.unmount();
+  });
+
+  it("shows unjoined guests the server replay countdown", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 1,
+        round_count: 5,
+        mode: "venue",
+        auto_start_at: Date.now() / 1000 + 18,
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      rememberedName: ref("Player One"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+      "Game starts in 18s",
+    );
     wrapper.unmount();
   });
 
