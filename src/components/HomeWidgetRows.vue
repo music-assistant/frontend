@@ -301,7 +301,6 @@ import {
   GripVertical,
   RefreshCw,
 } from "@lucide/vue";
-import { useDebounceFn } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -518,14 +517,22 @@ const scrollHero = (dir: number) => {
 };
 
 let heroRo: ResizeObserver | undefined;
+let observedHeroGrid: HTMLElement | null = null;
+
 const observeHero = () => {
   const el = heroGrid.value;
-  if (!el) return;
-  updateHeroNav();
-  if ("ResizeObserver" in window && !heroRo) {
-    heroRo = new ResizeObserver(updateHeroNav);
-    heroRo.observe(el);
+  if (!(el instanceof HTMLElement)) {
+    heroRo?.disconnect();
+    observedHeroGrid = null;
+    return;
   }
+  updateHeroNav();
+  if (!("ResizeObserver" in window)) return;
+  heroRo ??= new ResizeObserver(updateHeroNav);
+  if (observedHeroGrid === el) return;
+  heroRo.disconnect();
+  heroRo.observe(el);
+  observedHeroGrid = el;
 };
 
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
@@ -731,35 +738,66 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-onMounted(async () => {
-  await Promise.all([loadRecommendations(), loadGenres()]);
-  resolveHeroPicks();
-  loading.value = false;
-  nextTick(observeHero);
-  window.addEventListener("resize", updateHeroNav);
+let isUnmounted = false;
+let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const refreshRecommendations = useDebounceFn(async () => {
+const cancelScheduledRecommendationRefresh = () => {
+  if (refreshRecommendationsTimer) {
+    clearTimeout(refreshRecommendationsTimer);
+    refreshRecommendationsTimer = undefined;
+  }
+};
+
+const scheduleRecommendationRefresh = () => {
+  cancelScheduledRecommendationRefresh();
+  refreshRecommendationsTimer = setTimeout(async () => {
+    refreshRecommendationsTimer = undefined;
+    if (isUnmounted) return;
     await loadRecommendations();
+    if (isUnmounted) return;
     // Keeps the same picks while the cache is fresh; rebuilds once expired.
     resolveHeroPicks();
   }, 1500);
+};
 
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_PLAYED,
-    (evt: EventMessage) => {
-      // Only refetch when a track actually finished (is_playing = false),
-      // not on the periodic ~30s progress reports that also emit this event.
-      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        refreshRecommendations();
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
+const isFinishedPlaybackEvent = (
+  data: unknown,
+): data is { is_playing: false } =>
+  typeof data === "object" &&
+  data !== null &&
+  "is_playing" in data &&
+  data.is_playing === false;
+
+const unsubscribeRecommendations = api.subscribe(
+  EventType.MEDIA_ITEM_PLAYED,
+  (evt: EventMessage) => {
+    // Only refetch when a track actually finished (is_playing = false),
+    // not on the periodic ~30s progress reports that also emit this event.
+    if (isFinishedPlaybackEvent(evt.data)) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
+onMounted(async () => {
+  await Promise.all([loadRecommendations(), loadGenres()]);
+  if (isUnmounted) return;
+  resolveHeroPicks();
+  loading.value = false;
+  nextTick(() => {
+    if (!isUnmounted) observeHero();
+  });
+  window.addEventListener("resize", updateHeroNav);
 });
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   window.removeEventListener("resize", updateHeroNav);
+  unsubscribeRecommendations();
+  cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
+  heroRo = undefined;
+  observedHeroGrid = null;
 });
 </script>
 
