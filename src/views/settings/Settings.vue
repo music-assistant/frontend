@@ -657,6 +657,7 @@ const activeTab = computed(() => {
     name.includes("core") ||
     name.includes("serverlog") ||
     name === "backgroundtasks" ||
+    name === "diagnostics" ||
     name === "genremanagement" ||
     name === "audioanalysissettings"
   ) {
