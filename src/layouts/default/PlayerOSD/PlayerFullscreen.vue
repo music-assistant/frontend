@@ -750,7 +750,6 @@ const showWaveformPref = getPreference("show_waveform", true);
 let waveformLoadGeneration = 0;
 const fetchWaveform = async () => {
   const generation = ++waveformLoadGeneration;
-  waveformData.value = null;
 
   const mediaItem = store.curQueueItem?.media_item;
   // Analysis is keyed by the provider-native (streaming) item id, not the library id.
@@ -758,11 +757,13 @@ const fetchWaveform = async () => {
   if (
     !showWaveformPref.value ||
     !store.showFullscreenPlayer ||
-    mediaItem?.media_type !== MediaType.TRACK ||
-    !streamDetails
+    mediaItem?.media_type !== MediaType.TRACK
   ) {
+    waveformData.value = null;
     return;
   }
+  // Keep the current waveform mounted to prevent timeline collapse while loading.
+  if (!streamDetails) return;
 
   try {
     const waveform = await api.getWaveForm(
