@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { renderMusicAssistantQr } from "@/helpers/branded_qr";
+import { renderQrCode } from "@/helpers/qr";
 import { copyToClipboard } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { Check, Copy } from "@lucide/vue";
@@ -60,7 +60,7 @@ let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 async function renderQr() {
   if (!qrCanvas.value || !props.joinLink) return;
   try {
-    await renderMusicAssistantQr(qrCanvas.value, props.joinLink, props.size);
+    await renderQrCode(qrCanvas.value, props.joinLink, props.size);
     qrError.value = false;
   } catch (err) {
     console.error("Could not render Music Quiz join QR", err);
