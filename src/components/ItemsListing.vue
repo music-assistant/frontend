@@ -1506,7 +1506,7 @@ const restoreSettings = async function () {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
+  if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
   // Let searchInput handle this.
