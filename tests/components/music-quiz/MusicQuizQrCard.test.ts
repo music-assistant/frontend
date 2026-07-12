@@ -64,6 +64,7 @@ describe("MusicQuizQrCard", () => {
       260,
     );
     expect(mockRenderQrCode).toHaveBeenCalledTimes(3);
+    wrapper.unmount();
   });
 
   it("reports rendering failures and clears the error after recovery", async () => {
@@ -91,5 +92,6 @@ describe("MusicQuizQrCard", () => {
     await flushPromises();
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    wrapper.unmount();
   });
 });
