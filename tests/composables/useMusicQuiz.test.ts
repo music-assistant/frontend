@@ -14,6 +14,7 @@ import {
   answerMusicQuiz,
   createMusicQuiz,
   getAvailableMusicQuizTypes,
+  getMusicQuizPlaybackOptions,
   heartbeatMusicQuiz,
   isMusicQuizProviderEvent,
   isSupportedMusicQuiz,
@@ -82,6 +83,79 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
+  it("sends an explicit Venue speaker in the create payload", async () => {
+    await createMusicQuiz({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      playback_mode: "venue",
+      venue_player_id: "living-room",
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "normal",
+        source_uris: ["library://track/1"],
+        include_similar_music: false,
+      },
+    });
+
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
+      quiz_type: "guess_the_song",
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      difficulty: "normal",
+      source_uris: ["library://track/1"],
+      include_similar_music: false,
+      playback_mode: "venue",
+      venue_player_id: "living-room",
+    });
+  });
+
+  it("sends Remote playback with a null Venue speaker", async () => {
+    await createMusicQuiz({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      playback_mode: "remote",
+      venue_player_id: null,
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "normal",
+        source_uris: ["library://track/1"],
+        include_similar_music: false,
+      },
+    });
+
+    expect(mockSendCommand).toHaveBeenCalledWith(
+      "music_quiz/create",
+      expect.objectContaining({
+        playback_mode: "remote",
+        venue_player_id: null,
+      }),
+    );
+  });
+
+  it("omits playback fields for legacy create requests", async () => {
+    await createMusicQuiz({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      config: {
+        round_count: 5,
+        suggestion_count: 4,
+        answer_duration: 30,
+        difficulty: "normal",
+        source_uris: ["library://track/1"],
+        include_similar_music: false,
+      },
+    });
+
+    const payload = mockSendCommand.mock.calls[0][1];
+    expect(payload).not.toHaveProperty("playback_mode");
+    expect(payload).not.toHaveProperty("venue_player_id");
+  });
+
   it("discovers currently available game types", async () => {
     mockSendCommand.mockResolvedValue([
       "guess_the_song",
@@ -97,6 +171,20 @@ describe("useMusicQuiz commands", () => {
     expect(mockSendCommand).toHaveBeenCalledWith(
       "music_quiz/available_quiz_types",
     );
+  });
+
+  it("requests the exact playback options command", async () => {
+    const options = {
+      default_playback_mode: "venue",
+      default_venue_player_id: "living-room",
+      venue_available: true,
+      remote_available: true,
+      venue_players: [{ player_id: "living-room", name: "Living Room" }],
+    } as const;
+    mockSendCommand.mockResolvedValue(options);
+
+    await expect(getMusicQuizPlaybackOptions()).resolves.toEqual(options);
+    expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/playback_options");
   });
 
   it("opts into replay auto-start explicitly", async () => {
@@ -392,6 +480,11 @@ describe("useMusicQuiz commands", () => {
       sources: [],
       join_url: "https://example.test/quiz",
       rounds: [],
+      playback: {
+        mode: "venue",
+        venue_player_id: "living-room",
+        venue_player_name: "Living Room",
+      },
     } satisfies MusicQuizHostState;
     const info = {
       quiz_type: "guess_the_song",
@@ -416,6 +509,7 @@ describe("useMusicQuiz commands", () => {
     expect(publicState.include_similar_music).toBe(true);
     expect(personalizedState.include_similar_music).toBe(true);
     expect(hostState.include_similar_music).toBe(true);
+    expect(hostState.playback.venue_player_name).toBe("Living Room");
     expect(info.include_similar_music).toBe(false);
     expect("include_similar_music" in legacyInfo).toBe(false);
   });

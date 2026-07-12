@@ -49,7 +49,7 @@
       </div>
     </section>
 
-    <section v-else class="flex flex-col gap-4">
+    <section v-show="step === 2" class="flex flex-col gap-4">
       <div class="flex items-center gap-2">
         <component
           :is="selectedType.icon"
@@ -60,6 +60,13 @@
           {{ $t("providers.music_quiz.configure_game") }}
         </h2>
       </div>
+      <MusicQuizPlaybackControls
+        v-if="playbackOptionsLoading || playbackOptions"
+        v-model="playbackSelection"
+        :options="playbackOptions"
+        :loading="playbackOptionsLoading"
+        :disabled="busy"
+      />
       <Field
         orientation="horizontal"
         class="items-center justify-between gap-4 rounded-lg border p-4"
@@ -79,13 +86,15 @@
           :disabled="busy"
         />
       </Field>
-      <component
-        :is="selectedType.adapters.setup"
-        v-if="selectedType"
-        :busy="busy"
-        :include-similar-music="includeSimilarMusic"
-        @create="onConfigCreate"
-      />
+      <KeepAlive v-if="selectedType">
+        <component
+          :is="selectedType.adapters.setup"
+          :busy="busy"
+          :include-similar-music="includeSimilarMusic"
+          :shared-config-valid="sharedConfigValid"
+          @create="onConfigCreate"
+        />
+      </KeepAlive>
     </section>
   </div>
 </template>
@@ -96,21 +105,38 @@ import {
   isMusicQuizGameAvailable,
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
+import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlaybackControls.vue";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
-import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
+import type {
+  MusicQuizCreateRequest,
+  MusicQuizPlaybackOptions,
+} from "@/composables/useMusicQuiz";
+import {
+  getDefaultMusicQuizPlaybackSelection,
+  getMusicQuizPlaybackCreateFields,
+  isMusicQuizPlaybackSelectionValid,
+  type MusicQuizPlaybackSelection,
+} from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 
 const TOTAL_STEPS = 2;
 
 const props = withDefaults(
-  defineProps<{ busy: boolean; availableQuizTypes?: string[] }>(),
+  defineProps<{
+    busy: boolean;
+    availableQuizTypes?: string[];
+    playbackOptions?: MusicQuizPlaybackOptions | null;
+    playbackOptionsLoading?: boolean;
+  }>(),
   {
     availableQuizTypes: () => [],
+    playbackOptions: null,
+    playbackOptionsLoading: false,
   },
 );
 const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
@@ -123,8 +149,31 @@ const availableGameTypes = computed(() =>
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 const includeSimilarMusic = ref(false);
+const playbackSelection = ref<MusicQuizPlaybackSelection>({
+  mode: null,
+  venuePlayerId: null,
+});
 const chooseHeading = ref<HTMLHeadingElement | null>(null);
 const configureHeading = ref<HTMLHeadingElement | null>(null);
+const sharedConfigValid = computed(() => {
+  if (props.playbackOptionsLoading) return false;
+  return props.playbackOptions
+    ? isMusicQuizPlaybackSelectionValid(
+        playbackSelection.value,
+        props.playbackOptions,
+      )
+    : true;
+});
+
+watch(
+  () => props.playbackOptions,
+  (options) => {
+    if (options) {
+      playbackSelection.value = getDefaultMusicQuizPlaybackSelection(options);
+    }
+  },
+  { immediate: true },
+);
 
 async function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;
@@ -140,6 +189,18 @@ async function back() {
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {
+  if (!sharedConfigValid.value) return;
+  const playbackFields = props.playbackOptions
+    ? getMusicQuizPlaybackCreateFields(
+        playbackSelection.value,
+        props.playbackOptions,
+      )
+    : null;
+  if (props.playbackOptions && !playbackFields) return;
+  if (playbackFields) {
+    emit("create", { ...request, ...playbackFields });
+    return;
+  }
   emit("create", request);
 }
 </script>

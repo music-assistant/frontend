@@ -3,6 +3,7 @@ import {
   deleteMusicQuiz,
   getAvailableMusicQuizTypes,
   getMusicQuiz,
+  getMusicQuizPlaybackOptions,
   isSupportedMusicQuiz,
   isMusicQuizProviderEvent,
   nextMusicQuiz,
@@ -12,6 +13,7 @@ import {
   type MusicQuizCreateRequest,
   type MusicQuizCurrentRound,
   type MusicQuizHostState,
+  type MusicQuizPlaybackOptions,
 } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
@@ -39,10 +41,13 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   const busy = ref(false);
   const loading = ref(false);
   const availableQuizTypes = ref<string[]>([]);
+  const playbackOptions = ref<MusicQuizPlaybackOptions | null>(null);
+  const playbackOptionsLoading = ref(false);
   const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
   let stateRequestId = 0;
+  let playbackOptionsRequestId = 0;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
     const currentState = state.value;
@@ -107,6 +112,27 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
           $t("providers.music_quiz.error_load_game_types"),
         ),
       );
+    }
+  }
+
+  async function fetchPlaybackOptions() {
+    const requestId = ++playbackOptionsRequestId;
+    playbackOptions.value = null;
+    playbackOptionsLoading.value = true;
+    try {
+      const options = await getMusicQuizPlaybackOptions();
+      if (requestId !== playbackOptionsRequestId) return;
+      playbackOptions.value = options;
+    } catch (err) {
+      if (requestId !== playbackOptionsRequestId) return;
+      playbackOptions.value = null;
+      if (!isUnknownCommandError(err)) {
+        notifyError($t("providers.music_quiz.error_load_playback_options"));
+      }
+    } finally {
+      if (requestId === playbackOptionsRequestId) {
+        playbackOptionsLoading.value = false;
+      }
     }
   }
 
@@ -248,6 +274,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   onMounted(() => {
     fetchState();
     fetchAvailableQuizTypes();
+    fetchPlaybackOptions();
     unsubscribeProviderEvent = api.subscribe(
       EventType.PROVIDER_EVENT,
       handleProviderEvent,
@@ -263,6 +290,8 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     busy,
     loading,
     availableQuizTypes,
+    playbackOptions,
+    playbackOptionsLoading,
     currentRound,
     isLastRound,
     joinLink,
@@ -274,6 +303,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     deleteGame,
     fetchState,
     fetchAvailableQuizTypes,
+    fetchPlaybackOptions,
   };
 
   function isUnknownCommandError(err: unknown) {

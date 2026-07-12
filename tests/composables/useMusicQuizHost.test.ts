@@ -5,6 +5,7 @@ const {
   mockDeleteMusicQuiz,
   mockGetAvailableMusicQuizTypes,
   mockGetMusicQuiz,
+  mockGetMusicQuizPlaybackOptions,
   mockNextMusicQuiz,
   mockRevealMusicQuiz,
   mockResetMusicQuiz,
@@ -16,6 +17,7 @@ const {
   mockDeleteMusicQuiz: vi.fn(),
   mockGetAvailableMusicQuizTypes: vi.fn(),
   mockGetMusicQuiz: vi.fn(),
+  mockGetMusicQuizPlaybackOptions: vi.fn(),
   mockNextMusicQuiz: vi.fn(),
   mockRevealMusicQuiz: vi.fn(),
   mockResetMusicQuiz: vi.fn(),
@@ -38,6 +40,7 @@ vi.mock("vue", async () => {
 vi.mock("@/composables/useMusicQuiz", () => ({
   getMusicQuiz: mockGetMusicQuiz,
   getAvailableMusicQuizTypes: mockGetAvailableMusicQuizTypes,
+  getMusicQuizPlaybackOptions: mockGetMusicQuizPlaybackOptions,
   createMusicQuiz: mockCreateMusicQuiz,
   startMusicQuiz: mockStartMusicQuiz,
   revealMusicQuiz: mockRevealMusicQuiz,
@@ -100,6 +103,13 @@ const CREATE_REQUEST: MusicQuizCreateRequest = {
     include_similar_music: false,
   },
 };
+const PLAYBACK_OPTIONS = {
+  default_playback_mode: "venue",
+  default_venue_player_id: "living-room",
+  venue_available: true,
+  remote_available: true,
+  venue_players: [{ player_id: "living-room", name: "Living Room" }],
+} as const;
 
 type Host = ReturnType<typeof useMusicQuizHost>;
 
@@ -167,6 +177,7 @@ describe("useMusicQuizHost", () => {
     mockDeleteMusicQuiz.mockReset();
     mockGetAvailableMusicQuizTypes.mockReset();
     mockGetMusicQuiz.mockReset();
+    mockGetMusicQuizPlaybackOptions.mockReset();
     mockNextMusicQuiz.mockReset();
     mockRevealMusicQuiz.mockReset();
     mockResetMusicQuiz.mockReset();
@@ -179,6 +190,7 @@ describe("useMusicQuizHost", () => {
       "music_timeline",
     ]);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockGetMusicQuizPlaybackOptions.mockResolvedValue(PLAYBACK_OPTIONS);
     mockNextMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockRevealMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockResetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
@@ -245,6 +257,86 @@ describe("useMusicQuizHost", () => {
       "music_timeline",
       "trivia",
     ]);
+  });
+
+  it("discovers playback options with the available game types", async () => {
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(mockGetAvailableMusicQuizTypes).toHaveBeenCalledOnce();
+    expect(mockGetMusicQuizPlaybackOptions).toHaveBeenCalledOnce();
+    expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
+    expect(host.playbackOptionsLoading.value).toBe(false);
+  });
+
+  it("exposes playback discovery loading state", async () => {
+    const pending = deferred<typeof PLAYBACK_OPTIONS>();
+    mockGetMusicQuizPlaybackOptions.mockReturnValue(pending.promise);
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+
+    expect(host.playbackOptions.value).toBeNull();
+    expect(host.playbackOptionsLoading.value).toBe(true);
+
+    pending.resolve(PLAYBACK_OPTIONS);
+    await flushPromises();
+
+    expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
+    expect(host.playbackOptionsLoading.value).toBe(false);
+  });
+
+  it("silently falls back for playback options on older servers", async () => {
+    mockGetMusicQuizPlaybackOptions.mockRejectedValue(
+      "Invalid command: music_quiz/playback_options",
+    );
+    const notifyError = vi.fn();
+
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(host.playbackOptions.value).toBeNull();
+    expect(host.playbackOptionsLoading.value).toBe(false);
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
+  it("reports playback discovery failures and keeps legacy setup available", async () => {
+    mockGetMusicQuizPlaybackOptions.mockRejectedValue(
+      new Error("Server unavailable"),
+    );
+    const notifyError = vi.fn();
+
+    const host = useMusicQuizHost({ notifyError });
+    await flushPromises();
+
+    expect(host.playbackOptions.value).toBeNull();
+    expect(host.playbackOptionsLoading.value).toBe(false);
+    expect(notifyError).toHaveBeenCalledWith(
+      "providers.music_quiz.error_load_playback_options",
+    );
+    await expect(host.create(CREATE_REQUEST)).resolves.toBe(true);
+  });
+
+  it("ignores stale playback option responses", async () => {
+    const first = deferred<typeof PLAYBACK_OPTIONS>();
+    const refreshedOptions = {
+      ...PLAYBACK_OPTIONS,
+      default_playback_mode: "remote",
+    } as const;
+    mockGetMusicQuizPlaybackOptions
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce(refreshedOptions);
+
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    const refresh = host.fetchPlaybackOptions();
+    await refresh;
+
+    expect(host.playbackOptions.value).toEqual(refreshedOptions);
+
+    first.resolve(PLAYBACK_OPTIONS);
+    await flushPromises();
+
+    expect(host.playbackOptions.value).toEqual(refreshedOptions);
+    expect(host.playbackOptionsLoading.value).toBe(false);
   });
 
   it("keeps optional game types hidden on older servers", async () => {

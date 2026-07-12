@@ -72,6 +72,7 @@ describe("MusicTimelineSetup", () => {
         },
       },
     });
+
     expect(wrapper.text()).not.toContain("providers.music_quiz.difficulty");
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
     expect(wrapper.find("#music-timeline-name").exists()).toBe(false);
@@ -102,6 +103,38 @@ describe("MusicTimelineSetup", () => {
         title_bonus_mode: "off",
       },
     });
+  });
+
+  it("blocks create when shared setup is invalid", async () => {
+    const wrapper = mount(MusicTimelineSetup, {
+      props: {
+        busy: false,
+        includeSimilarMusic: false,
+        sharedConfigValid: false,
+      },
+      global: {
+        stubs: {
+          Button: { template: "<button><slot /></button>" },
+        },
+      },
+    });
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test playlist"))
+      ?.trigger("click");
+    const createButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"));
+
+    expect(createButton?.attributes("disabled")).toBeDefined();
+    await createButton?.trigger("click");
+    expect(wrapper.emitted("create")).toBeUndefined();
   });
 
   it("keeps bonus modes independent without adding a name", async () => {

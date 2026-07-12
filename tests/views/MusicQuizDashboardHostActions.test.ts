@@ -9,12 +9,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockDeleteGame,
+  mockFetchPlaybackOptions,
   mockReset,
   mockResolveMusicQuizDefinition,
   mockStart,
   mockUseMusicQuizHost,
 } = vi.hoisted(() => ({
   mockDeleteGame: vi.fn(),
+  mockFetchPlaybackOptions: vi.fn(),
   mockReset: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
   mockStart: vi.fn(),
@@ -53,6 +55,19 @@ vi.mock("@/plugins/api", () => ({
     DISCONNECTED: "disconnected",
     RECONNECTING: "reconnecting",
   },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    isAdmin: () => false,
+  },
+}));
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -104,6 +119,8 @@ describe("MusicQuizDashboardView host actions", () => {
     busy = ref(false);
     mockDeleteGame.mockReset();
     mockDeleteGame.mockResolvedValue(true);
+    mockFetchPlaybackOptions.mockReset();
+    mockFetchPlaybackOptions.mockResolvedValue(undefined);
     mockReset.mockReset();
     mockReset.mockResolvedValue(true);
     mockStart.mockReset();
@@ -123,11 +140,14 @@ describe("MusicQuizDashboardView host actions", () => {
       isLastRound: ref(false),
       joinLink: ref(HOST_STATE.join_url),
       loading: ref(false),
+      playbackOptions: ref(null),
+      playbackOptionsLoading: ref(false),
       next: vi.fn(),
       reset: mockReset,
       reveal: vi.fn(),
       start: mockStart,
       state,
+      fetchPlaybackOptions: mockFetchPlaybackOptions,
     });
   });
 
@@ -206,6 +226,7 @@ describe("MusicQuizDashboardView host actions", () => {
     finishDelete();
     await flushPromises();
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+    expect(mockFetchPlaybackOptions).toHaveBeenCalledOnce();
   });
 
   it("retains the finished game when fresh setup deletion fails", async () => {
@@ -313,6 +334,7 @@ describe("MusicQuizDashboardView host actions", () => {
 
     await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(true);
+    expect(mockFetchPlaybackOptions).toHaveBeenCalledOnce();
 
     state.value = { ...HOST_STATE };
     await nextTick();

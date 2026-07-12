@@ -67,9 +67,9 @@ async function flushPromises() {
   await nextTick();
 }
 
-function mountConfig(includeSimilarMusic = false) {
+function mountConfig(includeSimilarMusic = false, sharedConfigValid = true) {
   return mount(GuessTheSongSetup, {
-    props: { busy: false, includeSimilarMusic },
+    props: { busy: false, includeSimilarMusic, sharedConfigValid },
     global: {
       stubs: {
         Button: { template: "<button><slot /></button>" },
@@ -160,6 +160,7 @@ describe("GuessTheSongSetup", () => {
         },
       ],
     });
+
     const wrapper = mountConfig();
     expect(wrapper.find("#quiz-name").exists()).toBe(false);
 
@@ -189,6 +190,37 @@ describe("GuessTheSongSetup", () => {
         include_similar_music: false,
       },
     });
+  });
+
+  it("blocks create when shared setup is invalid", async () => {
+    mockSearch.mockResolvedValue({
+      tracks: [],
+      playlists: [
+        {
+          uri: "playlist:test",
+          name: "Test playlist",
+          media_type: MediaType.PLAYLIST,
+        },
+      ],
+    });
+    const wrapper = mountConfig(false, false);
+
+    await wrapper
+      .find('input[placeholder="providers.music_quiz.search_music"]')
+      .setValue("test");
+    await vi.advanceTimersByTimeAsync(300);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Test playlist"))
+      ?.trigger("click");
+    const createButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"));
+
+    expect(createButton?.attributes("disabled")).toBeDefined();
+    await createButton?.trigger("click");
+    expect(wrapper.emitted("create")).toBeUndefined();
   });
 
   it("hides already selected items from the search results", async () => {

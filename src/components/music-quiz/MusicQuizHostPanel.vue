@@ -10,6 +10,20 @@
       <slot name="game" />
 
       <div
+        v-if="state.phase === 'lobby' && state.playback"
+        class="bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+        data-testid="music-quiz-playback-summary"
+      >
+        <Volume2
+          class="text-muted-foreground size-4 shrink-0"
+          aria-hidden="true"
+        />
+        <span class="font-medium">
+          {{ `${$t("providers.music_quiz.playback")}: ${playbackSummary}` }}
+        </span>
+      </div>
+
+      <div
         v-if="showActions"
         class="bg-muted/40 flex min-h-14 flex-wrap items-center justify-end gap-2 rounded-lg border p-2"
         data-testid="quiz-host-actions"
@@ -121,6 +135,7 @@ import {
   RotateCcw,
   SkipForward,
   Square,
+  Volume2,
 } from "@lucide/vue";
 import { computed, type VNode } from "vue";
 
@@ -158,6 +173,18 @@ const startLabel = computed(() => {
     return $t("providers.music_quiz.start_now_waiting");
   }
   return $t("providers.music_quiz.start_now_countdown", [remainingLabel.value]);
+});
+const playbackSummary = computed(() => {
+  const playback = props.state.playback;
+  if (!playback) return "";
+  if (playback.mode === "remote") {
+    return $t("providers.music_quiz.playback_summary_remote");
+  }
+  return playback.venue_player_name
+    ? $t("providers.music_quiz.playback_summary_venue", [
+        playback.venue_player_name,
+      ])
+    : $t("providers.music_quiz.playback_venue");
 });
 const {
   hasElapsed: revealCountdownElapsed,

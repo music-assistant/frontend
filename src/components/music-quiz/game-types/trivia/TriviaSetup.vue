@@ -116,7 +116,11 @@
       input-id="trivia-source-search"
     />
 
-    <Button size="lg" :disabled="busy || !canCreate" @click="create">
+    <Button
+      size="lg"
+      :disabled="busy || !canCreate || !sharedConfigValid"
+      @click="create"
+    >
       <Brain class="size-4" />
       {{ $t("create") }}
     </Button>
@@ -155,7 +159,9 @@ const MAX_CHOICES = 8;
 const MIN_SECONDS = 1;
 const MAX_SECONDS = 300;
 
-const props = defineProps<MusicQuizSetupAdapterProps>();
+const props = withDefaults(defineProps<MusicQuizSetupAdapterProps>(), {
+  sharedConfigValid: true,
+});
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
@@ -171,7 +177,7 @@ const languageOptions = computed(() =>
 );
 
 function create() {
-  if (!canCreate.value) return;
+  if (!canCreate.value || !props.sharedConfigValid) return;
   const config: MusicQuizTriviaConfig = {
     language: canonicalizeLocale(language.value),
     play_reveal_audio: playRevealAudio.value,

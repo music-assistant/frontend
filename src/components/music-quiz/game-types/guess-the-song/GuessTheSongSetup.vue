@@ -78,7 +78,11 @@
       input-id="quiz-source-search"
     />
 
-    <Button size="lg" :disabled="busy || !canCreate" @click="create">
+    <Button
+      size="lg"
+      :disabled="busy || !canCreate || !sharedConfigValid"
+      @click="create"
+    >
       <PartyPopper class="size-4" />
       {{ $t("create") }}
     </Button>
@@ -116,7 +120,9 @@ const MAX_CHOICES = 8;
 const MIN_SECONDS = 5;
 const MAX_SECONDS = 120;
 
-const props = defineProps<MusicQuizSetupAdapterProps>();
+const props = withDefaults(defineProps<MusicQuizSetupAdapterProps>(), {
+  sharedConfigValid: true,
+});
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
@@ -127,7 +133,7 @@ const sourceUris = ref<string[]>([]);
 const canCreate = computed(() => sourceUris.value.length > 0);
 
 function create() {
-  if (!canCreate.value) return;
+  if (!canCreate.value || !props.sharedConfigValid) return;
   const config: MusicQuizGuessTheSongConfig = {
     round_count: roundCount.value,
     suggestion_count: suggestionCount.value,

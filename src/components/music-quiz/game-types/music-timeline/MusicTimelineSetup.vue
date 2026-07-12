@@ -81,7 +81,11 @@
       input-id="music-timeline-source-search"
     />
 
-    <Button size="lg" :disabled="busy || !canCreate" @click="create">
+    <Button
+      size="lg"
+      :disabled="busy || !canCreate || !sharedConfigValid"
+      @click="create"
+    >
       <ListPlus class="size-4" />
       {{ $t("create") }}
     </Button>
@@ -117,7 +121,9 @@ const MAX_ROUNDS = 100;
 const MIN_SECONDS = 1;
 const MAX_SECONDS = 300;
 
-const props = defineProps<MusicQuizSetupAdapterProps>();
+const props = withDefaults(defineProps<MusicQuizSetupAdapterProps>(), {
+  sharedConfigValid: true,
+});
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
@@ -142,7 +148,7 @@ const bonusModeOptions = computed(() => [
 ]);
 
 function create() {
-  if (!canCreate.value) return;
+  if (!canCreate.value || !props.sharedConfigValid) return;
   const config: MusicQuizTimelineConfig = {
     round_count: roundCount.value,
     answer_duration: answerDuration.value,

@@ -3,6 +3,23 @@ import api from "@/plugins/api";
 export type MusicQuizPhase = "lobby" | "answering" | "reveal" | "finished";
 export type MusicQuizMode = "venue" | "remote";
 export type MusicQuizDifficulty = "easy" | "normal" | "hard";
+export interface MusicQuizPlaybackOptions {
+  default_playback_mode: MusicQuizMode;
+  default_venue_player_id: string | null;
+  venue_available: boolean;
+  remote_available: boolean;
+  venue_players: Array<{
+    player_id: string;
+    name: string;
+  }>;
+}
+
+export interface MusicQuizHostPlayback {
+  mode: MusicQuizMode;
+  venue_player_id: string | null;
+  venue_player_name: string | null;
+}
+
 export type MusicQuizTimelineBonusMode =
   | "off"
   | "free_text"
@@ -188,6 +205,7 @@ export interface MusicQuizGuessTheSongHostState extends MusicQuizGuessTheSongSta
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizGuessTheSongRound[];
+  playback?: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
@@ -195,6 +213,7 @@ export interface MusicQuizTimelineHostState extends MusicQuizTimelineStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTimelineHostRound[];
+  playback?: MusicQuizHostPlayback;
 }
 
 export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
@@ -202,6 +221,7 @@ export interface MusicQuizTriviaHostState extends MusicQuizTriviaStateBase {
   sources: MusicQuizSource[];
   join_url: string;
   rounds: MusicQuizTriviaHostRound[];
+  playback?: MusicQuizHostPlayback;
 }
 
 export type MusicQuizMultipleChoiceHostState =
@@ -213,7 +233,9 @@ export type MusicQuizSupportedHostState =
   | MusicQuizTimelineHostState
   | MusicQuizTriviaHostState;
 
-export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState;
+export type MusicQuizUnsupportedHostState = MusicQuizUnsupportedPublicState & {
+  playback?: MusicQuizHostPlayback;
+};
 
 export type MusicQuizHostState =
   | MusicQuizSupportedHostState
@@ -531,6 +553,11 @@ export interface MusicQuizSharedConfig {
   include_similar_music: boolean;
 }
 
+export interface MusicQuizPlaybackCreateFields {
+  playback_mode?: MusicQuizMode | null;
+  venue_player_id?: string | null;
+}
+
 export interface MusicQuizGuessTheSongConfig extends MusicQuizSharedConfig {
   round_count: number;
   suggestion_count: number;
@@ -540,7 +567,7 @@ export interface MusicQuizGuessTheSongConfig extends MusicQuizSharedConfig {
   name?: string;
 }
 
-export interface MusicQuizGuessTheSongCreateRequest {
+export interface MusicQuizGuessTheSongCreateRequest extends MusicQuizPlaybackCreateFields {
   quiz_type: "guess_the_song";
   answer_type: "multiple_choice";
   config: MusicQuizGuessTheSongConfig;
@@ -555,7 +582,7 @@ export interface MusicQuizTimelineConfig extends MusicQuizSharedConfig {
   title_bonus_mode: MusicQuizTimelineBonusMode;
 }
 
-export interface MusicQuizTimelineCreateRequest {
+export interface MusicQuizTimelineCreateRequest extends MusicQuizPlaybackCreateFields {
   quiz_type: "music_timeline";
   answer_type: "timeline";
   config: MusicQuizTimelineConfig;
@@ -572,7 +599,7 @@ export interface MusicQuizTriviaConfig extends MusicQuizSharedConfig {
   name?: string;
 }
 
-export interface MusicQuizTriviaCreateRequest {
+export interface MusicQuizTriviaCreateRequest extends MusicQuizPlaybackCreateFields {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
   config: MusicQuizTriviaConfig;
@@ -640,10 +667,12 @@ export function isMusicQuizProviderEvent(
 
 // Host commands (Scope.USERS_INVITE)
 export function createMusicQuiz(request: MusicQuizCreateRequest) {
-  const { quiz_type, config } = request;
+  const { quiz_type, config, playback_mode, venue_player_id } = request;
   return api.sendCommand<MusicQuizHostState>("music_quiz/create", {
     quiz_type,
     ...config,
+    ...(playback_mode !== undefined ? { playback_mode } : {}),
+    ...(venue_player_id !== undefined ? { venue_player_id } : {}),
   });
 }
 
@@ -653,6 +682,12 @@ export function getMusicQuiz() {
 
 export function getAvailableMusicQuizTypes() {
   return api.sendCommand<string[]>("music_quiz/available_quiz_types");
+}
+
+export function getMusicQuizPlaybackOptions() {
+  return api.sendCommand<MusicQuizPlaybackOptions>(
+    "music_quiz/playback_options",
+  );
 }
 
 export function startMusicQuiz() {
