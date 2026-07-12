@@ -7,6 +7,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -79,7 +80,7 @@ vi.mock("@/helpers/utils", () => ({
       ? `${player.name} +${childCount}`
       : player.name;
   },
-  isBuiltinPlayer: () => false,
+  isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
 }));
 
 const ButtonStub = {
@@ -190,6 +191,7 @@ function mountPlayerCard(
 describe("PlayerCard", () => {
   beforeEach(() => {
     apiMock.players = {};
+    store.deviceType = "desktop";
   });
 
   it("uses a primary border for the active player", () => {
@@ -220,13 +222,19 @@ describe("PlayerCard", () => {
       player_id: "patio",
       name: "Patio",
     });
+    const offline = createPlayer({
+      player_id: "offline",
+      name: "Offline",
+      available: false,
+    });
     const parent = createPlayer({
-      group_members: ["office", "player", "patio"],
+      group_members: ["office", "player", "patio", "offline"],
     });
     apiMock.players = {
       [parent.player_id]: parent,
       [office.player_id]: office,
       [patio.player_id]: patio,
+      [offline.player_id]: offline,
     };
 
     const mainCard = mountPlayerCard(parent);
@@ -242,6 +250,20 @@ describe("PlayerCard", () => {
     expect(wrapper.find(".player-card-name").text()).toBe("Kitchen +2");
     expect(members.text()).toBe("Kitchen • Office • Patio");
     expect(members.classes()).toContain("text-[11px]");
+  });
+
+  it("keeps the this-device badge accessible on phones", () => {
+    store.deviceType = "phone";
+
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+      }),
+    );
+    const badgeLabel = wrapper.find(".player-device-badge-label");
+
+    expect(badgeLabel.text()).toBe("this_device");
+    expect(badgeLabel.classes()).toContain("sr-only");
   });
 
   it("shows member names beneath a dedicated group title", () => {

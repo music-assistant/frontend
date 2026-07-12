@@ -272,7 +272,7 @@ const hasMediaDetails = computed(
 );
 
 const useStackedMediaLayout = computed(
-  () => props.stackMediaDetails && hasMediaDetails.value,
+  () => props.stackMediaDetails === true && hasMediaDetails.value,
 );
 
 const canPlayPause = computed(
@@ -311,8 +311,13 @@ const groupMemberNames = computed(() => {
 
   const childNames = [...new Set(props.player.group_members)]
     .filter((playerId) => playerId !== props.player.player_id)
-    .map((playerId) => api.players[playerId]?.name)
-    .filter((name): name is string => Boolean(name));
+    .map((playerId) => api.players[playerId])
+    .filter(
+      (member): member is Player =>
+        Boolean(member) &&
+        (props.player.type === PlayerType.GROUP || member.available),
+    )
+    .map((member) => member.name);
 
   if (childNames.length === 0 || props.player.type === PlayerType.GROUP) {
     return childNames;
