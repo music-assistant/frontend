@@ -48,22 +48,10 @@ const { hasElapsed, isScheduled, remainingLabel } = useMusicQuizRevealCountdown(
 );
 const readyRequested = ref(false);
 const readyDisabled = computed(
-  () =>
-    props.busy ||
-    props.state.you.ready ||
-    readyRequested.value ||
-    hasElapsed.value,
+  () => props.busy || props.state.you.ready || readyRequested.value,
 );
 const readyLabel = computed(() => {
-  if (hasElapsed.value) {
-    return $t(
-      isFinalRound.value
-        ? "providers.music_quiz.waiting_for_final_results"
-        : "providers.music_quiz.waiting_for_next",
-    );
-  }
-
-  if (isScheduled.value) {
+  if (isScheduled.value && !hasElapsed.value) {
     return $t(
       props.state.you.ready
         ? isFinalRound.value

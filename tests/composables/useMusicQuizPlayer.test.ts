@@ -1358,7 +1358,7 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toEqual(TIMELINE_REVEAL_STATE);
   });
 
-  it("keeps the next round authoritative over a delayed ready response", async () => {
+  it("keeps a successful next-round event authoritative over delayed Ready", async () => {
     storedPlayerId.value = "stored-player";
     const delayedReady = deferred<typeof TIMELINE_REVEAL_STATE>();
     const eventRefresh = deferred<typeof TIMELINE_REVEAL_STATE>();

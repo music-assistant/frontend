@@ -212,31 +212,53 @@ describe("MusicQuizHostPanel", () => {
     },
   );
 
-  it("waits without advancing at an elapsed Trivia reveal deadline", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    const wrapper = mountPanel("reveal", false, {
-      revealCountdown: true,
-      autoAdvanceAt: Date.now() / 1000 + 1,
-    });
-    const nextButton = wrapper.get('[data-testid="next-quiz"]');
+  it.each([
+    [false, "Next Round"],
+    [true, "Finish Quiz"],
+  ] as const)(
+    "keeps elapsed Trivia recovery actionable for final=%s",
+    async (isLastRound, expectedLabel) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      const wrapper = mountPanel("reveal", false, {
+        revealCountdown: true,
+        autoAdvanceAt: Date.now() / 1000 + 1,
+        isLastRound,
+      });
+      const nextButton = wrapper.get('[data-testid="next-quiz"]');
 
-    await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(1_000);
 
-    expect(nextButton.text()).toContain("Waiting for next round...");
-    expect(nextButton.text()).not.toContain("0s");
-    expect(nextButton.attributes("disabled")).toBeDefined();
-    expect(wrapper.emitted("next")).toBeUndefined();
-    await nextButton.trigger("click");
-    expect(wrapper.emitted("next")).toBeUndefined();
-  });
+      expect(nextButton.text()).toContain(expectedLabel);
+      expect(nextButton.text()).not.toContain("0s");
+      expect(nextButton.attributes("disabled")).toBeUndefined();
+      expect(wrapper.emitted("next")).toBeUndefined();
+
+      await nextButton.trigger("click");
+
+      expect(wrapper.emitted("next")).toEqual([[]]);
+    },
+  );
 
   it("keeps a null Trivia reveal deadline manual", async () => {
     const wrapper = mountPanel("reveal", false, {
       revealCountdown: true,
-      autoAdvanceAt: null,
+      autoAdvanceAt: Date.now() / 1000 + 15,
     });
     const nextButton = wrapper.get('[data-testid="next-quiz"]');
+
+    expect(nextButton.text()).toContain("·");
+
+    await wrapper.setProps({
+      state: {
+        ...HOST_STATE,
+        phase: "reveal",
+        current_round: {
+          ...HOST_ROUND,
+          auto_advance_at: null,
+        },
+      },
+    });
 
     expect(nextButton.text()).toContain("Next Round");
     expect(nextButton.text()).not.toContain("·");

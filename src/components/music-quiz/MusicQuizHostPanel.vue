@@ -51,7 +51,7 @@
         </Button>
         <Button
           v-if="state.phase === 'reveal'"
-          :disabled="busy || revealCountdownElapsed"
+          :disabled="busy"
           data-testid="next-quiz"
           @click="emit('next')"
         >
@@ -171,14 +171,8 @@ const nextLabel = computed(() => {
   const defaultKey = props.isLastRound
     ? "providers.music_quiz.finish"
     : "providers.music_quiz.next";
-  if (!revealCountdownScheduled.value) return $t(defaultKey);
-  if (revealCountdownElapsed.value) {
-    return $t(
-      props.isLastRound
-        ? "providers.music_quiz.waiting_for_final_results"
-        : "providers.music_quiz.waiting_for_next",
-    );
-  }
+  if (!revealCountdownScheduled.value || revealCountdownElapsed.value)
+    return $t(defaultKey);
   return $t(
     props.isLastRound
       ? "providers.music_quiz.finish_quiz_countdown"

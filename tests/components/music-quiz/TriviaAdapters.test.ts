@@ -398,7 +398,7 @@ describe("Trivia adapters", () => {
     ).toBe(false);
   });
 
-  it("emits Ready once and never emits when the countdown reaches zero", async () => {
+  it("emits Ready once and keeps manual recovery at zero", async () => {
     const round = scheduledRevealRound(1);
     const wrapper = mount(TriviaPlayerRound, {
       props: {
@@ -425,13 +425,15 @@ describe("Trivia adapters", () => {
 
     await vi.advanceTimersByTimeAsync(1_000);
 
-    expect(elapsedButton.text()).toContain(
-      "providers.music_quiz.waiting_for_next",
-    );
+    expect(elapsedButton.text()).toContain("providers.music_quiz.ready");
     expect(elapsedButton.text()).not.toContain("0s");
-    expect(elapsedButton.attributes("disabled")).toBeDefined();
-    await elapsedButton.trigger("click");
+    expect(elapsedButton.attributes("disabled")).toBeUndefined();
     expect(elapsedWrapper.emitted("ready")).toBeUndefined();
+
+    await elapsedButton.trigger("click");
+    await elapsedButton.trigger("click");
+
+    expect(elapsedWrapper.emitted("ready")).toEqual([[]]);
 
     const presentWrapper = mount(TriviaPresentRound, {
       props: {
@@ -452,6 +454,59 @@ describe("Trivia adapters", () => {
       "providers.music_quiz.waiting_for_next",
     );
     expect(presentCountdown.text()).not.toContain("0s");
+  });
+
+  it("keeps an elapsed ready player disabled", () => {
+    const round = scheduledRevealRound(-1);
+    const wrapper = mount(TriviaPlayerRound, {
+      props: {
+        state: revealPlayerState(round, {
+          ready: true,
+          roundCount: 2,
+        }),
+        currentRound: round,
+        busy: false,
+      },
+    });
+    const button = wrapper.get('[data-testid="trivia-ready"]');
+
+    expect(button.text()).toContain("providers.music_quiz.waiting_for_next");
+    expect(button.text()).not.toContain("0s");
+    expect(button.attributes("disabled")).toBeDefined();
+  });
+
+  it("lets a successful server round replace an elapsed Ready request", async () => {
+    const elapsedRound = scheduledRevealRound(-1);
+    const wrapper = mount(TriviaPlayerRound, {
+      props: {
+        state: revealPlayerState(elapsedRound, { roundCount: 2 }),
+        currentRound: elapsedRound,
+        busy: false,
+      },
+    });
+
+    await wrapper.get('[data-testid="trivia-ready"]').trigger("click");
+    expect(wrapper.emitted("ready")).toEqual([[]]);
+
+    const nextRound = {
+      ...revealRound,
+      round_index: 1,
+      auto_advance_at: Date.now() / 1000 + 15,
+    } satisfies MusicQuizTriviaRound;
+    await wrapper.setProps({
+      state: revealPlayerState(nextRound, { roundCount: 2 }),
+      currentRound: nextRound,
+    });
+    const nextButton = wrapper.get('[data-testid="trivia-ready"]');
+
+    expect(nextButton.text()).toContain(
+      "providers.music_quiz.ready_for_final_results_countdown",
+    );
+    expect(nextButton.attributes("disabled")).toBeUndefined();
+
+    await nextButton.trigger("click");
+
+    expect(wrapper.emitted("ready")).toEqual([[], []]);
   });
 });
 
