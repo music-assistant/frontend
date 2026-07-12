@@ -152,6 +152,11 @@ describe("MusicTimelinePresentBody", () => {
     expect(resultsContent.classes()).toEqual(
       expect.arrayContaining(["lg:min-h-0", "lg:overflow-y-auto"]),
     );
+    const resultScore = results.get('[data-testid="timeline-result-score"]');
+    expect(resultScore.classes()).not.toContain("shrink-0");
+    expect(resultScore.get("span.truncate").classes()).toEqual(
+      expect.arrayContaining(["min-w-0", "flex-1"]),
+    );
     expect(leaderboardRegion.classes()).toEqual(
       expect.arrayContaining(["lg:min-h-0", "lg:overflow-hidden"]),
     );

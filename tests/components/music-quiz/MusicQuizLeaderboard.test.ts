@@ -101,8 +101,14 @@ describe("MusicQuizLeaderboard", () => {
     expect(wrapper.get("li span.min-w-0.flex-1").classes()).toContain(
       "truncate",
     );
-    expect(wrapper.get("li span.max-w-\\[45\\%\\]").classes()).toContain(
-      "max-w-[45%]",
+    const score = wrapper.get("li span.max-w-\\[45\\%\\]");
+    expect(score.classes()).toContain("max-w-[45%]");
+    expect(score.classes()).not.toContain("shrink-0");
+    expect(score.get("strong").classes()).toEqual(
+      expect.arrayContaining(["min-w-0", "flex-1", "truncate"]),
+    );
+    expect(score.get("span").classes()).toEqual(
+      expect.arrayContaining(["min-w-0", "flex-1", "truncate"]),
     );
   });
 });

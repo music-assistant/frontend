@@ -69,7 +69,8 @@
                 {{ result.name }}
               </span>
               <span
-                class="flex min-w-0 max-w-[45%] shrink-0 items-center gap-1 font-semibold tabular-nums"
+                data-testid="timeline-result-score"
+                class="flex min-w-0 max-w-[45%] items-center gap-1 font-semibold tabular-nums"
                 :class="
                   result.correct
                     ? 'text-green-600 dark:text-green-400'
@@ -89,7 +90,9 @@
                       : $t("providers.music_quiz.incorrect")
                   }}
                 </span>
-                <span class="truncate">+{{ result.points }}</span>
+                <span class="min-w-0 flex-1 truncate">
+                  +{{ result.points }}
+                </span>
               </span>
             </li>
           </ul>
