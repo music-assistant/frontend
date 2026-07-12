@@ -61,8 +61,8 @@ describe("renderQrCode", () => {
     expect(canvas.style.height).toBe("260px");
   });
 
-  it.each([0, Number.NaN, Number.POSITIVE_INFINITY, -1, undefined])(
-    "falls back to a pixel ratio of one for %s",
+  it.each([0.5, 0, Number.NaN, Number.POSITIVE_INFINITY, -1, undefined])(
+    "uses a minimum pixel ratio of one for %s",
     async (pixelRatio) => {
       const canvas = document.createElement("canvas");
       setDevicePixelRatio(pixelRatio);

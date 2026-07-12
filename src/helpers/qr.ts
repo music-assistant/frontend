@@ -23,5 +23,5 @@ export async function renderQrCode(
 
 function getDevicePixelRatio() {
   const pixelRatio = window.devicePixelRatio;
-  return Number.isFinite(pixelRatio) && pixelRatio > 0 ? pixelRatio : 1;
+  return Number.isFinite(pixelRatio) ? Math.max(1, pixelRatio) : 1;
 }
