@@ -301,7 +301,6 @@ import {
   GripVertical,
   RefreshCw,
 } from "@lucide/vue";
-import { useDebounceFn } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -739,24 +738,46 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-const refreshRecommendations = useDebounceFn(async () => {
-  await loadRecommendations();
-  // Keeps the same picks while the cache is fresh; rebuilds once expired.
-  resolveHeroPicks();
-}, 1500);
+let isUnmounted = false;
+let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
+
+const cancelScheduledRecommendationRefresh = () => {
+  if (refreshRecommendationsTimer) {
+    clearTimeout(refreshRecommendationsTimer);
+    refreshRecommendationsTimer = undefined;
+  }
+};
+
+const scheduleRecommendationRefresh = () => {
+  cancelScheduledRecommendationRefresh();
+  refreshRecommendationsTimer = setTimeout(async () => {
+    refreshRecommendationsTimer = undefined;
+    if (isUnmounted) return;
+    await loadRecommendations();
+    if (isUnmounted) return;
+    // Keeps the same picks while the cache is fresh; rebuilds once expired.
+    resolveHeroPicks();
+  }, 1500);
+};
+
+const isFinishedPlaybackEvent = (
+  data: unknown,
+): data is { is_playing: false } =>
+  typeof data === "object" &&
+  data !== null &&
+  "is_playing" in data &&
+  data.is_playing === false;
 
 const unsubscribeRecommendations = api.subscribe(
   EventType.MEDIA_ITEM_PLAYED,
   (evt: EventMessage) => {
     // Only refetch when a track actually finished (is_playing = false),
     // not on the periodic ~30s progress reports that also emit this event.
-    if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-      refreshRecommendations();
+    if (isFinishedPlaybackEvent(evt.data)) {
+      scheduleRecommendationRefresh();
     }
   },
 );
-
-let isUnmounted = false;
 
 onMounted(async () => {
   await Promise.all([loadRecommendations(), loadGenres()]);
@@ -773,6 +794,7 @@ onBeforeUnmount(() => {
   isUnmounted = true;
   window.removeEventListener("resize", updateHeroNav);
   unsubscribeRecommendations();
+  cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
   heroRo = undefined;
   observedHeroGrid = null;
