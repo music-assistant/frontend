@@ -12,10 +12,10 @@
         </span>
         <div>
           <h2 class="text-xl font-bold">
-            {{ $t("providers.music_quiz.hitster_listen_title") }}
+            {{ $t("providers.music_quiz.music_timeline_listen_title") }}
           </h2>
           <p class="text-muted-foreground">
-            {{ $t("providers.music_quiz.hitster_listen_description") }}
+            {{ $t("providers.music_quiz.music_timeline_listen_description") }}
           </p>
         </div>
       </div>
@@ -55,7 +55,7 @@
         class="bg-muted/40 text-muted-foreground flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold tabular-nums"
         role="timer"
         :aria-label="autoAdvanceText"
-        data-testid="hitster-auto-advance"
+        data-testid="music-timeline-auto-advance"
       >
         <Clock3 class="size-4" aria-hidden="true" />
         {{ autoAdvanceText }}
@@ -66,7 +66,7 @@
         class="w-full max-w-sm self-center"
         size="lg"
         :disabled="busy || isReady"
-        data-testid="hitster-ready"
+        data-testid="music-timeline-ready"
         @click="emit('ready')"
       >
         <Check class="size-4" />
@@ -81,7 +81,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
-  MusicQuizHitsterRound,
+  MusicQuizTimelineRound,
   MusicQuizPhase,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
@@ -93,7 +93,7 @@ import { computed } from "vue";
 const props = withDefaults(
   defineProps<{
     phase: MusicQuizPhase;
-    round: MusicQuizHitsterRound;
+    round: MusicQuizTimelineRound;
     isFinalRound: boolean;
     busy?: boolean;
     isReady?: boolean;

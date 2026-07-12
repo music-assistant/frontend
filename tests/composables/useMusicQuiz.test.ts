@@ -28,7 +28,7 @@ function unsupportedQuizType(value: string) {
   const quizType = parseMusicQuizType(value);
   if (
     quizType === "guess_the_song" ||
-    quizType === "hitster" ||
+    quizType === "music_timeline" ||
     quizType === "trivia"
   ) {
     throw new Error("Expected an unsupported quiz type");
@@ -76,16 +76,25 @@ describe("useMusicQuiz commands", () => {
   });
 
   it("discovers currently available game types", async () => {
-    mockSendCommand.mockResolvedValue(["guess_the_song", "hitster", "trivia"]);
+    mockSendCommand.mockResolvedValue([
+      "guess_the_song",
+      "music_timeline",
+      "trivia",
+    ]);
 
     await expect(getAvailableMusicQuizTypes()).resolves.toEqual([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
     expect(mockSendCommand).toHaveBeenCalledWith(
       "music_quiz/available_quiz_types",
     );
+  });
+
+  it("parses the Music Timeline game and generic timeline answer types", () => {
+    expect(parseMusicQuizType("music_timeline")).toBe("music_timeline");
+    expect(parseMusicQuizAnswerType("timeline")).toBe("timeline");
   });
 
   it("sends the complete Trivia create payload", async () => {
@@ -122,26 +131,26 @@ describe("useMusicQuiz commands", () => {
     });
   });
 
-  it("sends a flat Hitster create payload without answer-only fields", async () => {
+  it("sends a flat Music Timeline create payload without answer-only fields", async () => {
     await createMusicQuiz({
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       config: {
         round_count: 10,
         answer_duration: 45,
         source_uris: ["library://playlist/1"],
-        name: "Friday Hitster",
+        name: "Friday Music Timeline",
         artist_bonus_mode: "free_text",
         title_bonus_mode: "multiple_choice",
       },
     });
 
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       round_count: 10,
       answer_duration: 45,
       source_uris: ["library://playlist/1"],
-      name: "Friday Hitster",
+      name: "Friday Music Timeline",
       artist_bonus_mode: "free_text",
       title_bonus_mode: "multiple_choice",
     });
@@ -225,8 +234,8 @@ describe("useMusicQuiz commands", () => {
       phase: "lobby",
       name: "Future Quiz",
     } satisfies MusicQuizPublicState;
-    const hitster = {
-      quiz_type: "hitster",
+    const musicTimeline = {
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "lobby",
       name: null,
@@ -258,7 +267,7 @@ describe("useMusicQuiz commands", () => {
     } satisfies MusicQuizPublicState;
 
     expect(isSupportedMusicQuiz(known)).toBe(true);
-    expect(isSupportedMusicQuiz(hitster)).toBe(true);
+    expect(isSupportedMusicQuiz(musicTimeline)).toBe(true);
     expect(isSupportedMusicQuiz(trivia)).toBe(true);
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
@@ -294,9 +303,9 @@ describe("useMusicQuiz commands", () => {
     expect(state.current_round.auto_advance_at).toBeNull();
   });
 
-  it("accepts the nullable Hitster round start timestamp", () => {
+  it("accepts the nullable Music Timeline round start timestamp", () => {
     const state = {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "answering",
       name: null,

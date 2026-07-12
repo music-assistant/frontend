@@ -4,11 +4,11 @@ import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
-  MusicQuizHitsterPersonalizedState,
+  MusicQuizTimelinePersonalizedState,
 } from "@/composables/useMusicQuiz";
 import {
-  baseRound as hitsterRound,
-  baseState as hitsterState,
+  baseRound as musicTimelineRound,
+  baseState as musicTimelineState,
 } from "./timelinePlayerFixtures";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -193,13 +193,13 @@ describe("Music Quiz shared stages", () => {
 
   it("keeps the compact leaderboard last during timeline reveal", () => {
     const state = {
-      ...hitsterState,
+      ...musicTimelineState,
       phase: "reveal",
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = mount(MusicQuizPlayerStage, {
       props: {
         state,
-        currentRound: hitsterRound,
+        currentRound: musicTimelineRound,
         busy: false,
         leaderboardRows,
         winnerText: "",

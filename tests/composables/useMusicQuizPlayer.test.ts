@@ -64,7 +64,7 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     (value.quiz_type === "guess_the_song" &&
       value.answer_type === "multiple_choice") ||
-    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
+    (value.quiz_type === "music_timeline" && value.answer_type === "timeline"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -193,10 +193,10 @@ const TIMELINE_PUBLIC_PLAYER = {
   title_bonus_answered: false,
 } as const;
 const TIMELINE_ANSWERING_STATE = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 2,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -1245,10 +1245,10 @@ describe("useMusicQuizPlayer", () => {
   it("routes timeline actions through the generic submission command", async () => {
     storedPlayerId.value = "stored-player";
     const timelineState = {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "answering",
-      name: "Hitster",
+      name: "Music Timeline",
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -1316,7 +1316,7 @@ describe("useMusicQuizPlayer", () => {
 
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledWith("stored-player");
     expect(mockGetMusicQuizState).toHaveBeenCalledTimes(3);
-    expect(player.state.value?.quiz_type).toBe("hitster");
+    expect(player.state.value?.quiz_type).toBe("music_timeline");
   });
 
   it("keeps a reveal authoritative over a delayed answer response", async () => {

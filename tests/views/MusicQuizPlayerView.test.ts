@@ -101,7 +101,7 @@ const playerState = {
     active_from_round: 0,
   },
 };
-const hitsterRound = {
+const musicTimelineRound = {
   question: null,
   round_index: 0,
   started_at: 1,
@@ -120,18 +120,18 @@ const hitsterRound = {
   ],
   bonus_definitions: [],
 };
-const hitsterState = {
-  quiz_type: "hitster",
+const musicTimelineState = {
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",
   title_bonus_mode: "off",
   mode: "venue",
   players: [],
-  current_round: hitsterRound,
+  current_round: musicTimelineRound,
   you: {
     name: "Player",
     score: 0,
@@ -263,16 +263,16 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("enables Hitster ListenIn without fetching lyrics", () => {
+  it("enables Music Timeline ListenIn without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
-      state: ref(hitsterState),
+      state: ref(musicTimelineState),
       playerId: ref("player-id"),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
-      currentRound: ref(hitsterRound),
+      currentRound: ref(musicTimelineRound),
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),

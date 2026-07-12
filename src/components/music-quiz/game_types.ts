@@ -7,11 +7,11 @@ import GuessTheSongHostRound from "@/components/music-quiz/game-types/guess-the-
 import GuessTheSongPlayerRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPlayerRound.vue";
 import GuessTheSongPresentRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPresentRound.vue";
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
-import HitsterHostPanel from "@/components/music-quiz/game-types/hitster/HitsterHostPanel.vue";
-import HitsterHostRound from "@/components/music-quiz/game-types/hitster/HitsterHostRound.vue";
-import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
-import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
-import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
+import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
+import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
+import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
+import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
 import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
@@ -69,21 +69,21 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       present: markRaw(GuessTheSongPresentRound),
     },
   },
-  hitster: {
-    id: "hitster",
+  music_timeline: {
+    id: "music_timeline",
     answerType: "timeline",
-    labelKey: "providers.music_quiz.game_type_hitster",
-    descriptionKey: "providers.music_quiz.game_type_hitster_description",
+    labelKey: "providers.music_quiz.game_type_music_timeline",
+    descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
     icon: markRaw(ListMusic),
     requiresBackendAvailability: false,
     supportsListenIn: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
     adapters: {
-      setup: markRaw(HitsterSetup),
-      player: markRaw(HitsterPlayerRound),
-      hostPanel: markRaw(HitsterHostPanel),
-      host: markRaw(HitsterHostRound),
-      present: markRaw(HitsterPresentRound),
+      setup: markRaw(MusicTimelineSetup),
+      player: markRaw(MusicTimelinePlayerRound),
+      hostPanel: markRaw(MusicTimelineHostPanel),
+      host: markRaw(MusicTimelineHostRound),
+      present: markRaw(MusicTimelinePresentRound),
     },
   },
   trivia: {

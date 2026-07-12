@@ -3,7 +3,7 @@
     <Accordion type="multiple" :default-value="['settings']">
       <AccordionItem value="settings" class="border-b-0 px-4">
         <AccordionTrigger>
-          {{ $t("providers.music_quiz.hitster_session_summary") }}
+          {{ $t("providers.music_quiz.music_timeline_session_summary") }}
         </AccordionTrigger>
         <AccordionContent>
           <dl class="grid gap-3 sm:grid-cols-2">
@@ -51,7 +51,7 @@
             <Badge>{{ currentRound.revealed_entry.release_year }}</Badge>
           </div>
           <p v-else class="text-muted-foreground">
-            {{ $t("providers.music_quiz.hitster_song_hidden") }}
+            {{ $t("providers.music_quiz.music_timeline_song_hidden") }}
           </p>
         </AccordionContent>
       </AccordionItem>
@@ -101,8 +101,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type {
-  MusicQuizHitsterHostState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelineHostState,
+  MusicQuizTimelineRound,
   MusicQuizTimelineBonusMode,
 } from "@/composables/useMusicQuiz";
 import {
@@ -115,8 +115,8 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizHostPanelGameAdapterProps<
-      MusicQuizHitsterHostState,
-      MusicQuizHitsterRound
+      MusicQuizTimelineHostState,
+      MusicQuizTimelineRound
     >
   >();
 

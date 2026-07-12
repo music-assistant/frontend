@@ -1,13 +1,13 @@
-import HitsterHostPanel from "@/components/music-quiz/game-types/hitster/HitsterHostPanel.vue";
-import HitsterHostRound from "@/components/music-quiz/game-types/hitster/HitsterHostRound.vue";
-import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
-import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
-import HitsterRound from "@/components/music-quiz/game-types/hitster/HitsterRound.vue";
+import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
+import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
+import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
+import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
+import MusicTimelineRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineRound.vue";
 import type {
-  MusicQuizHitsterHostRound,
-  MusicQuizHitsterHostState,
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelineHostRound,
+  MusicQuizTimelineHostState,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 import { mount, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -57,7 +57,7 @@ const answeringRound = {
   question: null,
   timeline: [anchor],
   bonus_definitions: [],
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 const revealRound = {
   ...answeringRound,
   timeline: [anchor, revealedEntry],
@@ -67,13 +67,13 @@ const revealRound = {
   image_url: revealedEntry.image_url,
   duration: 180,
   ended_at: 20,
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 
 const playerState = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "reveal",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 2,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -87,12 +87,12 @@ const playerState = {
     ready: false,
     active_from_round: 0,
   },
-} satisfies MusicQuizHitsterPersonalizedState;
+} satisfies MusicQuizTimelinePersonalizedState;
 const hostState = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "reveal",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -104,9 +104,9 @@ const hostState = {
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
-} satisfies MusicQuizHitsterHostState;
+} satisfies MusicQuizTimelineHostState;
 
-describe("Hitster game adapters", () => {
+describe("Music Timeline game adapters", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
@@ -118,7 +118,7 @@ describe("Hitster game adapters", () => {
   });
 
   it("never renders provided song details before reveal", () => {
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "answering",
         round: revealRound,
@@ -127,14 +127,14 @@ describe("Hitster game adapters", () => {
     });
 
     expect(wrapper.text()).toContain(
-      "providers.music_quiz.hitster_listen_title",
+      "providers.music_quiz.music_timeline_listen_title",
     );
     expect(wrapper.text()).not.toContain("Revealed Song");
     expect(wrapper.html()).not.toContain(revealedEntry.track_uri);
   });
 
   it("renders the revealed song responsively with accessible artwork", () => {
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "reveal",
         round: revealRound,
@@ -154,7 +154,7 @@ describe("Hitster game adapters", () => {
   });
 
   it("renders no auto-advance countdown without a server deadline", () => {
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "reveal",
         round: revealRound,
@@ -162,13 +162,13 @@ describe("Hitster game adapters", () => {
       },
     });
 
-    expect(wrapper.find('[data-testid="hitster-auto-advance"]').exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper.find('[data-testid="music-timeline-auto-advance"]').exists(),
+    ).toBe(false);
   });
 
   it("renders the intermediate server-scheduled countdown", () => {
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "reveal",
         round: {
@@ -178,7 +178,9 @@ describe("Hitster game adapters", () => {
         isFinalRound: false,
       },
     });
-    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+    const countdown = wrapper.get(
+      '[data-testid="music-timeline-auto-advance"]',
+    );
 
     expect(countdown.attributes("role")).toBe("timer");
     expect(countdown.text()).toContain("providers.music_quiz.next_round_in");
@@ -187,7 +189,7 @@ describe("Hitster game adapters", () => {
   });
 
   it("renders final-results semantics for the last countdown", () => {
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "reveal",
         round: {
@@ -197,7 +199,9 @@ describe("Hitster game adapters", () => {
         isFinalRound: true,
       },
     });
-    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+    const countdown = wrapper.get(
+      '[data-testid="music-timeline-auto-advance"]',
+    );
 
     expect(countdown.text()).toContain("providers.music_quiz.final_results_in");
     expect(countdown.text()).not.toContain(
@@ -209,7 +213,7 @@ describe("Hitster game adapters", () => {
   it("resumes an elapsed server countdown after reconnect", async () => {
     const autoAdvanceAt = Date.now() / 1000 + 30;
     vi.advanceTimersByTime(18_000);
-    const wrapper = mount(HitsterRound, {
+    const wrapper = mount(MusicTimelineRound, {
       props: {
         phase: "reveal",
         round: {
@@ -219,7 +223,9 @@ describe("Hitster game adapters", () => {
         isFinalRound: false,
       },
     });
-    const countdown = wrapper.get('[data-testid="hitster-auto-advance"]');
+    const countdown = wrapper.get(
+      '[data-testid="music-timeline-auto-advance"]',
+    );
 
     expect(countdown.text()).toContain("12s");
 
@@ -229,7 +235,7 @@ describe("Hitster game adapters", () => {
   });
 
   it("keeps intermediate Ready after song details", async () => {
-    const wrapper = mount(HitsterPlayerRound, {
+    const wrapper = mount(MusicTimelinePlayerRound, {
       props: {
         state: playerState,
         currentRound: revealRound,
@@ -237,7 +243,7 @@ describe("Hitster game adapters", () => {
       },
     });
     const title = wrapper.get("h2");
-    const readyButton = wrapper.get('[data-testid="hitster-ready"]');
+    const readyButton = wrapper.get('[data-testid="music-timeline-ready"]');
 
     expect(
       title.element.compareDocumentPosition(readyButton.element) &
@@ -272,8 +278,8 @@ describe("Hitster game adapters", () => {
     const finalState = {
       ...playerState,
       round_count: 1,
-    } satisfies MusicQuizHitsterPersonalizedState;
-    const wrapper = mount(HitsterPlayerRound, {
+    } satisfies MusicQuizTimelinePersonalizedState;
+    const wrapper = mount(MusicTimelinePlayerRound, {
       props: {
         state: finalState,
         currentRound: revealRound,
@@ -281,7 +287,7 @@ describe("Hitster game adapters", () => {
       },
     });
     const title = wrapper.get("h2");
-    const readyButton = wrapper.get('[data-testid="hitster-ready"]');
+    const readyButton = wrapper.get('[data-testid="music-timeline-ready"]');
 
     expect(
       title.element.compareDocumentPosition(readyButton.element) &
@@ -312,24 +318,24 @@ describe("Hitster game adapters", () => {
   });
 
   it("passes final-round semantics through host and present adapters", () => {
-    const hostWrapper = shallowMount(HitsterHostRound, {
+    const hostWrapper = shallowMount(MusicTimelineHostRound, {
       props: {
         state: hostState,
         currentRound: revealRound,
       },
     });
-    const presentWrapper = shallowMount(HitsterPresentRound, {
+    const presentWrapper = shallowMount(MusicTimelinePresentRound, {
       props: {
         state: hostState,
         currentRound: revealRound,
       },
     });
 
-    expect(hostWrapper.getComponent(HitsterRound).props("isFinalRound")).toBe(
-      true,
-    );
     expect(
-      presentWrapper.getComponent(HitsterRound).props("isFinalRound"),
+      hostWrapper.getComponent(MusicTimelineRound).props("isFinalRound"),
+    ).toBe(true);
+    expect(
+      presentWrapper.getComponent(MusicTimelineRound).props("isFinalRound"),
     ).toBe(true);
   });
 
@@ -360,12 +366,12 @@ describe("Hitster game adapters", () => {
       started_at: 1,
       ended_at: null,
       auto_advance_at: null,
-    } satisfies MusicQuizHitsterHostRound;
+    } satisfies MusicQuizTimelineHostRound;
     const state = {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "answering",
-      name: "Hitster",
+      name: "Music Timeline",
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -377,8 +383,8 @@ describe("Hitster game adapters", () => {
       sources: [],
       join_url: "https://example.test/join",
       rounds: [protectedRound],
-    } satisfies MusicQuizHitsterHostState;
-    const wrapper = mount(HitsterHostPanel, {
+    } satisfies MusicQuizTimelineHostState;
+    const wrapper = mount(MusicTimelineHostPanel, {
       props: {
         state,
         currentRound: answeringRound,
@@ -392,7 +398,7 @@ describe("Hitster game adapters", () => {
       ?.trigger("click");
 
     expect(wrapper.text()).toContain(
-      "providers.music_quiz.hitster_song_hidden",
+      "providers.music_quiz.music_timeline_song_hidden",
     );
     expect(wrapper.text()).not.toContain("SECRET TITLE");
     expect(wrapper.html()).not.toContain("library://track/secret");

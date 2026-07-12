@@ -1,6 +1,6 @@
 import type {
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
   MusicQuizTimelineBonusAnswer,
 } from "@/composables/useMusicQuiz";
 
@@ -22,7 +22,7 @@ export const baseRound = {
   question: null,
   timeline: [anchor],
   bonus_definitions: [],
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 
 export const player = {
   name: "Player",
@@ -36,10 +36,10 @@ export const player = {
 };
 
 export const baseState = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",
@@ -53,7 +53,7 @@ export const baseState = {
     ready: false,
     active_from_round: 0,
   },
-} satisfies MusicQuizHitsterPersonalizedState;
+} satisfies MusicQuizTimelinePersonalizedState;
 
 export const bonusRound = {
   ...baseRound,
@@ -71,12 +71,12 @@ export const bonusRound = {
       ],
     },
   ],
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 
 export function stateWithAnswer(
   bonuses: MusicQuizTimelineBonusAnswer[] = [],
   finished = false,
-): MusicQuizHitsterPersonalizedState {
+): MusicQuizTimelinePersonalizedState {
   return {
     ...baseState,
     artist_bonus_mode: "free_text",

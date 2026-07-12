@@ -1,5 +1,5 @@
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
-import type { MusicQuizHitsterPersonalizedState } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelinePersonalizedState } from "@/composables/useMusicQuiz";
 import {
   baseRound,
   baseState,
@@ -39,7 +39,7 @@ describe("Timeline player bonus flow", () => {
           finished: true,
         },
       },
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state,

@@ -11,9 +11,9 @@ import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
-  MusicQuizHitsterHostState,
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelineHostState,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
   MusicQuizSupportedHostState,
   MusicQuizSupportedPersonalizedState,
   MusicQuizSupportedRound,
@@ -103,7 +103,7 @@ const hostState = {
   rounds: [currentRound],
 } satisfies MusicQuizGuessTheSongHostState;
 
-const hitsterRound = {
+const musicTimelineRound = {
   question: null,
   round_index: 0,
   started_at: 1,
@@ -121,45 +121,45 @@ const hitsterRound = {
     },
   ],
   bonus_definitions: [],
-} satisfies MusicQuizHitsterRound;
+} satisfies MusicQuizTimelineRound;
 
-const hitsterPlayerState = {
-  quiz_type: "hitster",
+const musicTimelinePlayerState = {
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
   title_bonus_mode: "off",
   mode: "venue",
   players: [],
-  current_round: hitsterRound,
+  current_round: musicTimelineRound,
   you: {
     name: "Player",
     score: 0,
     ready: false,
     active_from_round: 0,
   },
-} satisfies MusicQuizHitsterPersonalizedState;
+} satisfies MusicQuizTimelinePersonalizedState;
 
-const hitsterHostState = {
-  quiz_type: "hitster",
+const musicTimelineHostState = {
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 5,
   answer_duration: 30,
   artist_bonus_mode: "off",
   title_bonus_mode: "off",
   mode: "venue",
   players: [],
-  current_round: hitsterRound,
+  current_round: musicTimelineRound,
   created_at: 1,
   sources: [],
   join_url: "https://example.test/join",
   rounds: [],
-} satisfies MusicQuizHitsterHostState;
+} satisfies MusicQuizTimelineHostState;
 
 const triviaRound = {
   question: "Which artist released this album?",
@@ -212,10 +212,10 @@ const GAME_MOUNT_FIXTURES = {
     hostState,
     currentRound,
   },
-  hitster: {
-    playerState: hitsterPlayerState,
-    hostState: hitsterHostState,
-    currentRound: hitsterRound,
+  music_timeline: {
+    playerState: musicTimelinePlayerState,
+    hostState: musicTimelineHostState,
+    currentRound: musicTimelineRound,
   },
   trivia: {
     playerState: triviaPlayerState,
@@ -231,9 +231,9 @@ const ANSWER_MOUNT_FIXTURES = {
     currentRound,
   },
   timeline: {
-    playerState: hitsterPlayerState,
-    hostState: hitsterHostState,
-    currentRound: hitsterRound,
+    playerState: musicTimelinePlayerState,
+    hostState: musicTimelineHostState,
+    currentRound: musicTimelineRound,
   },
 } satisfies Record<MusicQuizAnswerType, GameMountFixture>;
 
@@ -241,7 +241,7 @@ describe("Music Quiz registries", () => {
   it("contains every game and answer exactly once", () => {
     expect(MUSIC_QUIZ_GAME_TYPES.map((game) => game.id)).toEqual([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
     expect(MUSIC_QUIZ_ANSWER_TYPES.map((answer) => answer.id)).toEqual([
@@ -283,13 +283,13 @@ describe("Music Quiz registries", () => {
     );
     const expected = {
       guess_the_song: "multiple_choice",
-      hitster: "timeline",
+      music_timeline: "timeline",
       trivia: "multiple_choice",
     } satisfies MusicQuizGameAnswerTypeMap;
 
     expect(mapping).toEqual(expected);
     expect(
-      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "hitster")
+      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "music_timeline")
         ?.supportsListenIn,
     ).toBe(true);
     expect(
@@ -302,11 +302,15 @@ describe("Music Quiz registries", () => {
     const guess = MUSIC_QUIZ_GAME_TYPES.find(
       (game) => game.id === "guess_the_song",
     );
-    const hitster = MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "hitster");
+    const musicTimeline = MUSIC_QUIZ_GAME_TYPES.find(
+      (game) => game.id === "music_timeline",
+    );
     const trivia = MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia");
 
     expect(guess && isMusicQuizGameAvailable(guess, [])).toBe(true);
-    expect(hitster && isMusicQuizGameAvailable(hitster, [])).toBe(true);
+    expect(musicTimeline && isMusicQuizGameAvailable(musicTimeline, [])).toBe(
+      true,
+    );
     expect(trivia && isMusicQuizGameAvailable(trivia, [])).toBe(false);
     expect(trivia && isMusicQuizGameAvailable(trivia, ["trivia"])).toBe(true);
   });

@@ -1,6 +1,6 @@
 import type {
   MusicQuizGuessTheSongPublicState,
-  MusicQuizHitsterPublicState,
+  MusicQuizTimelinePublicState,
 } from "@/composables/useMusicQuiz";
 import { getMusicQuizRoundScoreLabel } from "@/helpers/music_quiz";
 import { describe, expect, it, vi } from "vitest";
@@ -27,10 +27,10 @@ describe("Music Quiz round score labels", () => {
       bonus_definitions: [],
     };
     const state = {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "reveal",
-      name: "Hitster",
+      name: "Music Timeline",
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "free_text",
@@ -59,7 +59,7 @@ describe("Music Quiz round score labels", () => {
         },
       ],
       current_round: currentRound,
-    } satisfies MusicQuizHitsterPublicState;
+    } satisfies MusicQuizTimelinePublicState;
 
     expect(getMusicQuizRoundScoreLabel(state, "Player")).toBe("(+1250)");
   });
