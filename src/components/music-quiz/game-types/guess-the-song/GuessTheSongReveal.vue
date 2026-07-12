@@ -38,6 +38,7 @@
               type="button"
               variant="outline"
               :title="$t('providers.music_quiz.copy_music_name')"
+              :aria-label="$t('providers.music_quiz.copy_music_name')"
               @click="emit('copy-title')"
             >
               <Copy class="size-4" />
