@@ -1,12 +1,15 @@
 <template>
-  <div class="w-auto" :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-6'">
+  <div
+    class="w-auto"
+    :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-6'"
+  >
     <div v-if="store.activePlayer">
       <SliderRoot
         v-model="wrappedCurTimeValue"
         data-slot="slider"
         class="relative flex items-center select-none touch-none w-full"
         :class="[
-          hasWaveform ? 'h-11 md:h-12 lg:h-14' : 'h-8',
+          usesWaveformLayout ? 'h-11 md:h-12 lg:h-14' : 'h-8',
           hasWaveform && canSeek ? 'cursor-pointer' : '',
         ]"
         :disabled="!canSeek"
@@ -25,9 +28,9 @@
         <SliderTrack
           data-slot="slider-track"
           class="relative grow rounded-full"
-          :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
+          :class="usesWaveformLayout ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
           :style="
-            hasWaveform
+            usesWaveformLayout
               ? undefined
               : {
                   'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
@@ -41,8 +44,15 @@
             :progress-percent="progressPercent"
             :hover-percent="hoverPercent"
           />
+          <div
+            v-else-if="waveformLoading"
+            class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
+            :style="{
+              'background-color': `color-mix(in oklab, ${color} 30%, transparent)`,
+            }"
+          />
           <SliderRange
-            v-else
+            v-if="!hasWaveform"
             data-slot="slider-range"
             class="absolute rounded-full h-1 top-1/2 -translate-y-1/2"
             :style="{ 'background-color': color }"
@@ -136,12 +146,14 @@ export interface Props {
   color?: string;
   // Precomputed waveform bins (0.0-1.0); when set, replaces the flat track.
   waveform?: number[] | null;
+  waveformLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showLabels: false,
   color: "var(--foreground)",
   waveform: null,
+  waveformLoading: false,
 });
 
 const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
@@ -155,7 +167,7 @@ const isThumbHidden = ref(true);
 const isDragging = ref(false);
 const curTimeValue = ref(0);
 const tempTime = ref(0);
-const pendingSeekPosition = ref<number | null>(null);
+const pendingSeek = ref<{ position: number; origin: number } | null>(null);
 // ticking ref to force recompute of elapsed time (Date.now() is non-reactive)
 // rAF drives smooth 60fps slider movement; a 1s interval keeps text
 // labels up-to-date when the tab is backgrounded (rAF pauses).
@@ -350,7 +362,7 @@ const displayedElapsedTime = computed(() => {
     return curTimeValue.value;
   }
 
-  return pendingSeekPosition.value ?? serverElapsedTime.value;
+  return pendingSeek.value?.position ?? serverElapsedTime.value;
 });
 
 const chapterTicks = computed(() =>
@@ -361,6 +373,9 @@ const chapterTicks = computed(() =>
 );
 
 const hasWaveform = computed(() => !!props.waveform?.length);
+const usesWaveformLayout = computed(
+  () => hasWaveform.value || props.waveformLoading,
+);
 
 const progressPercent = computed(() => {
   const duration = store.activePlayer?.current_media?.duration;
@@ -380,13 +395,16 @@ const onTrackPointerMove = (evt: PointerEvent) => {
 
 //watch
 watch(serverTiming, (timing) => {
-  const seekPosition = pendingSeekPosition.value;
-  if (
-    seekPosition != null &&
-    timing &&
-    Math.abs(timing.elapsedTime - seekPosition) <=
-      SEEK_CONFIRM_TOLERANCE_SECONDS
-  ) {
+  const seek = pendingSeek.value;
+  if (!seek || !timing) return;
+
+  const difference = timing.elapsedTime - seek.position;
+  const direction = Math.sign(seek.position - seek.origin);
+  const reachedTarget =
+    Math.abs(difference) <= SEEK_CONFIRM_TOLERANCE_SECONDS ||
+    (direction > 0 && difference >= 0) ||
+    (direction < 0 && difference <= 0);
+  if (reachedTarget) {
     clearPendingSeek();
   }
 });
@@ -427,12 +445,15 @@ const chapterClicked = function (chapter: MediaItemChapter) {
 
 const setPendingSeek = (position: number) => {
   clearPendingSeek();
-  pendingSeekPosition.value = position;
+  pendingSeek.value = {
+    position,
+    origin: serverTiming.value?.elapsedTime ?? position,
+  };
   pendingSeekTimer = setTimeout(clearPendingSeek, SEEK_CONFIRM_TIMEOUT_MS);
 };
 
 const clearPendingSeek = () => {
-  pendingSeekPosition.value = null;
+  pendingSeek.value = null;
   if (pendingSeekTimer !== null) {
     clearTimeout(pendingSeekTimer);
     pendingSeekTimer = null;
