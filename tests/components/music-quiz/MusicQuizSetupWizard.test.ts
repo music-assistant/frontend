@@ -120,6 +120,31 @@ describe("MusicQuizSetupWizard", () => {
     expect(wrapper.text()).toContain("trivia_type");
   });
 
+  it("moves focus between step headings after navigation", async () => {
+    const wrapper = mountWizard({}, true);
+    const gameTypeButton = wrapper.get<HTMLButtonElement>("section button");
+
+    gameTypeButton.element.focus();
+    await gameTypeButton.trigger("click");
+    await nextTick();
+
+    const configureHeading = wrapper.get("h2");
+    expect(configureHeading.text()).toBe("providers.music_quiz.configure_game");
+    expect(configureHeading.attributes("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(configureHeading.element);
+
+    const backButton = wrapper.get("button");
+    backButton.element.focus();
+    await backButton.trigger("click");
+    await nextTick();
+
+    const chooseHeading = wrapper.get("h2");
+    expect(chooseHeading.text()).toBe("providers.music_quiz.choose_game_type");
+    expect(chooseHeading.attributes("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(chooseHeading.element);
+    wrapper.unmount();
+  });
+
   it.each(GAME_CASES)(
     "renders one shared, accessible setting for $quizType and serializes both values",
     async ({ label, quizType, answerType }) => {
@@ -192,9 +217,13 @@ describe("MusicQuizSetupWizard", () => {
   });
 });
 
-function mountWizard(props: { availableQuizTypes?: string[] } = {}) {
+function mountWizard(
+  props: { availableQuizTypes?: string[] } = {},
+  attachToDocument = false,
+) {
   return mount(MusicQuizSetupWizard, {
     props: { busy: false, ...props },
+    ...(attachToDocument ? { attachTo: document.body } : {}),
     global: {
       stubs: {
         Button: {

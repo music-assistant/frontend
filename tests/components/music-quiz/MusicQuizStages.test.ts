@@ -1,4 +1,6 @@
+import MusicQuizLeaderboard from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
+import MusicQuizPodium from "@/components/music-quiz/MusicQuizPodium.vue";
 import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
 import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
 import type {
@@ -577,15 +579,18 @@ describe("Music Quiz shared stages", () => {
         stubs: {
           Button: true,
           MusicQuizConnectionBanners: true,
-          MusicQuizLeaderboard: true,
-          MusicQuizPodium: {
-            template: '<div data-testid="podium" />',
-          },
         },
       },
     });
 
-    expect(wrapper.find('[data-testid="podium"]').exists()).toBe(true);
+    expect(
+      wrapper.getComponent(MusicQuizPodium).attributes("aria-hidden"),
+    ).toBe("true");
+    const leaderboard = wrapper.getComponent(MusicQuizLeaderboard);
+    expect(leaderboard.attributes("role")).toBe("region");
+    expect(leaderboard.attributes("aria-label")).toBe(
+      "providers.music_quiz.leaderboard",
+    );
     expect(wrapper.text()).toContain("Player wins");
     const finished = wrapper.get('[data-testid="music-quiz-present-finished"]');
     expect(finished.classes()).toEqual(

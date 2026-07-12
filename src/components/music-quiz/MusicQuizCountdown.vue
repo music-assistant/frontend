@@ -21,7 +21,7 @@
         :stroke-width="STROKE_WIDTH"
       />
       <circle
-        class="transition-[stroke-dashoffset] duration-200 ease-linear"
+        class="transition-[stroke-dashoffset] duration-200 ease-linear motion-reduce:transition-none"
         :class="isUrgent ? 'stroke-destructive' : 'stroke-primary'"
         fill="none"
         stroke-linecap="round"
