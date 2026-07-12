@@ -176,6 +176,7 @@ const triviaRound = {
 const triviaPlayerState = {
   quiz_type: "trivia",
   answer_type: "multiple_choice",
+  language: "en",
   phase: "answering",
   name: "Trivia",
   round_count: 5,

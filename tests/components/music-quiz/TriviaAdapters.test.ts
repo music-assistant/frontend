@@ -1,5 +1,6 @@
 import MultipleChoiceGrid from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceGrid.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
+import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
 import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
 import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
@@ -12,8 +13,14 @@ import { mount, shallowMount } from "@vue/test-utils";
 import type { Component } from "vue";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/plugins/i18n", () => ({
+vi.mock("@/plugins/i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/plugins/i18n")>()),
   $t: (key: string) => key,
+  i18n: {
+    global: {
+      locale: { value: "en" },
+    },
+  },
 }));
 
 const answeringRound = {
@@ -41,6 +48,7 @@ const revealRound = {
 const playerState = {
   quiz_type: "trivia",
   answer_type: "multiple_choice",
+  language: "en",
   phase: "answering",
   name: "Music Trivia",
   round_count: 1,
@@ -76,6 +84,31 @@ const triviaSurfaces: Array<{
 ];
 
 describe("Trivia adapters", () => {
+  it("shows the canonical server language after a host state refresh", async () => {
+    const displayNames = new Intl.DisplayNames(["en"], {
+      type: "language",
+      fallback: "code",
+      languageDisplay: "dialect",
+    });
+    const wrapper = mount(TriviaHostPanel, {
+      props: {
+        state: { ...hostState, language: "pt-BR" },
+        currentRound: hostState.current_round,
+      },
+    });
+
+    expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
+      displayNames.of("pt-BR"),
+    );
+
+    await wrapper.setProps({
+      state: { ...hostState, language: "sr-Latn" },
+    });
+    expect(wrapper.get('[data-testid="trivia-language"]').text()).toBe(
+      displayNames.of("sr-Latn"),
+    );
+  });
+
   it.each(triviaSurfaces)(
     "shows the server question in the $name state",
     ({ component, state }) => {
