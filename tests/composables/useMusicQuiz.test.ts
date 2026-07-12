@@ -21,6 +21,9 @@ import {
   parseMusicQuizType,
   resetMusicQuiz,
   submitMusicQuizAnswer,
+  type MusicQuizHostState,
+  type MusicQuizInfo,
+  type MusicQuizPersonalizedState,
   type MusicQuizProviderEvent,
   type MusicQuizPublicState,
   type MusicQuizTriviaInfo,
@@ -62,6 +65,7 @@ describe("useMusicQuiz commands", () => {
         answer_duration: 30,
         difficulty: "hard",
         source_uris: ["library://track/1"],
+        include_similar_music: false,
         name: "Test Quiz",
       },
     });
@@ -73,6 +77,7 @@ describe("useMusicQuiz commands", () => {
       answer_duration: 30,
       difficulty: "hard",
       source_uris: ["library://track/1"],
+      include_similar_music: false,
       name: "Test Quiz",
     });
   });
@@ -127,6 +132,7 @@ describe("useMusicQuiz commands", () => {
         answer_duration: 45,
         difficulty: "hard",
         source_uris: ["library://playlist/1", "library://genre/rock"],
+        include_similar_music: true,
         name: "Friday Trivia",
       },
     });
@@ -140,6 +146,7 @@ describe("useMusicQuiz commands", () => {
       answer_duration: 45,
       difficulty: "hard",
       source_uris: ["library://playlist/1", "library://genre/rock"],
+      include_similar_music: true,
       name: "Friday Trivia",
     });
   });
@@ -161,6 +168,7 @@ describe("useMusicQuiz commands", () => {
         round_count: 10,
         answer_duration: 45,
         source_uris: ["library://playlist/1"],
+        include_similar_music: false,
         name: "Friday Music Timeline",
         artist_bonus_mode: "free_text",
         title_bonus_mode: "multiple_choice",
@@ -172,6 +180,7 @@ describe("useMusicQuiz commands", () => {
       round_count: 10,
       answer_duration: 45,
       source_uris: ["library://playlist/1"],
+      include_similar_music: false,
       name: "Friday Music Timeline",
       artist_bonus_mode: "free_text",
       title_bonus_mode: "multiple_choice",
@@ -352,6 +361,63 @@ describe("useMusicQuiz commands", () => {
     expect("play_reveal_audio" in legacyState).toBe(false);
     expect(info.play_reveal_audio).toBe(false);
     expect("play_reveal_audio" in legacyInfo).toBe(false);
+  });
+
+  it("types similar music across server state while allowing legacy payloads", () => {
+    const publicState = {
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      include_similar_music: true,
+      round_count: 5,
+      suggestion_count: 4,
+      answer_duration: 30,
+      mode: "venue",
+      players: [],
+      current_round: null,
+    } satisfies MusicQuizPublicState;
+    const personalizedState = {
+      ...publicState,
+      you: {
+        name: "Player",
+        score: 0,
+        ready: false,
+        active_from_round: 0,
+      },
+    } satisfies MusicQuizPersonalizedState;
+    const hostState = {
+      ...publicState,
+      created_at: 1,
+      sources: [],
+      join_url: "https://example.test/quiz",
+      rounds: [],
+    } satisfies MusicQuizHostState;
+    const info = {
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      include_similar_music: false,
+      player_count: 1,
+      round_count: 5,
+      mode: "venue",
+    } satisfies MusicQuizInfo;
+    const legacyInfo = {
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      player_count: 1,
+      round_count: 5,
+      mode: "venue",
+    } satisfies MusicQuizInfo;
+
+    expect(publicState.include_similar_music).toBe(true);
+    expect(personalizedState.include_similar_music).toBe(true);
+    expect(hostState.include_similar_music).toBe(true);
+    expect(info.include_similar_music).toBe(false);
+    expect("include_similar_music" in legacyInfo).toBe(false);
   });
 
   it("preserves nullable server fields in supported state", () => {

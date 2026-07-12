@@ -60,10 +60,30 @@
           {{ $t("providers.music_quiz.configure_game") }}
         </h2>
       </div>
+      <Field
+        orientation="horizontal"
+        class="items-center justify-between gap-4 rounded-lg border p-4"
+      >
+        <div class="flex flex-col gap-1">
+          <FieldLabel for="quiz-include-similar-music">
+            {{ $t("providers.music_quiz.include_similar_music") }}
+          </FieldLabel>
+          <FieldDescription>
+            {{ $t("providers.music_quiz.include_similar_music_help") }}
+          </FieldDescription>
+        </div>
+        <Switch
+          id="quiz-include-similar-music"
+          v-model="includeSimilarMusic"
+          data-testid="quiz-include-similar-music"
+          :disabled="busy"
+        />
+      </Field>
       <component
         :is="selectedType.adapters.setup"
         v-if="selectedType"
         :busy="busy"
+        :include-similar-music="includeSimilarMusic"
         @create="onConfigCreate"
       />
     </section>
@@ -77,7 +97,9 @@ import {
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
@@ -100,6 +122,7 @@ const availableGameTypes = computed(() =>
 );
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
+const includeSimilarMusic = ref(false);
 
 function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;

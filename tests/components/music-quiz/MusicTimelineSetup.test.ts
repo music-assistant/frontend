@@ -65,7 +65,7 @@ describe("MusicTimelineSetup", () => {
 
   it("emits only the Music Timeline configuration fields", async () => {
     const wrapper = mount(MusicTimelineSetup, {
-      props: { busy: false },
+      props: { busy: false, includeSimilarMusic: false },
       global: {
         stubs: {
           Button: { template: "<button><slot /></button>" },
@@ -97,6 +97,7 @@ describe("MusicTimelineSetup", () => {
         round_count: 5,
         answer_duration: 30,
         source_uris: ["playlist:test"],
+        include_similar_music: false,
         artist_bonus_mode: "off",
         title_bonus_mode: "off",
       },
@@ -105,7 +106,7 @@ describe("MusicTimelineSetup", () => {
 
   it("keeps bonus modes independent without adding a name", async () => {
     const wrapper = mount(MusicTimelineSetup, {
-      props: { busy: false },
+      props: { busy: false, includeSimilarMusic: true },
       global: {
         stubs: {
           Button: { template: "<button><slot /></button>" },
@@ -134,6 +135,7 @@ describe("MusicTimelineSetup", () => {
     const request = wrapper.emitted("create")?.[0]?.[0];
     expect(request).toMatchObject({
       config: {
+        include_similar_music: true,
         artist_bonus_mode: "free_text",
         title_bonus_mode: "multiple_choice",
       },
@@ -142,7 +144,9 @@ describe("MusicTimelineSetup", () => {
   });
 
   it("labels removable sources for keyboard and screen-reader users", async () => {
-    const wrapper = mount(MusicTimelineSetup, { props: { busy: false } });
+    const wrapper = mount(MusicTimelineSetup, {
+      props: { busy: false, includeSimilarMusic: false },
+    });
 
     await wrapper
       .find('input[placeholder="providers.music_quiz.search_music"]')

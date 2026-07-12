@@ -116,7 +116,7 @@ const MAX_CHOICES = 8;
 const MIN_SECONDS = 5;
 const MAX_SECONDS = 120;
 
-defineProps<MusicQuizSetupAdapterProps>();
+const props = defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
@@ -134,6 +134,7 @@ function create() {
     answer_duration: answerDuration.value,
     difficulty: difficulty.value,
     source_uris: sourceUris.value,
+    include_similar_music: props.includeSimilarMusic,
   };
   emit("create", {
     quiz_type: "guess_the_song",

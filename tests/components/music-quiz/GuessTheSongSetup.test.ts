@@ -67,9 +67,9 @@ async function flushPromises() {
   await nextTick();
 }
 
-function mountConfig() {
+function mountConfig(includeSimilarMusic = false) {
   return mount(GuessTheSongSetup, {
-    props: { busy: false },
+    props: { busy: false, includeSimilarMusic },
     global: {
       stubs: {
         Button: { template: "<button><slot /></button>" },
@@ -186,6 +186,7 @@ describe("GuessTheSongSetup", () => {
         answer_duration: 30,
         difficulty: "normal",
         source_uris: ["playlist:test"],
+        include_similar_music: false,
       },
     });
   });
@@ -236,7 +237,7 @@ describe("GuessTheSongSetup", () => {
         { uri: "genre:rock", name: "Rock", media_type: MediaType.GENRE },
       ],
     });
-    const wrapper = mountConfig();
+    const wrapper = mountConfig(true);
 
     const searchInput = wrapper.find(
       'input[placeholder="providers.music_quiz.search_music"]',
@@ -262,7 +263,10 @@ describe("GuessTheSongSetup", () => {
       ?.trigger("click");
 
     expect(wrapper.emitted("create")?.[0]?.[0]).toMatchObject({
-      config: { source_uris: ["playlist:test", "genre:rock"] },
+      config: {
+        source_uris: ["playlist:test", "genre:rock"],
+        include_similar_music: true,
+      },
     });
   });
 

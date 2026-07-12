@@ -48,7 +48,7 @@ describe("TriviaSetup", () => {
   });
 
   it("preserves selected sources, difficulty, and language in the create request", async () => {
-    const wrapper = mountSetup();
+    const wrapper = mountSetup(true);
 
     await wrapper.get('[data-testid="select-sources"]').trigger("click");
     await wrapper.get("#trivia-difficulty").setValue("hard");
@@ -72,6 +72,7 @@ describe("TriviaSetup", () => {
             answer_duration: 30,
             difficulty: "hard",
             source_uris: ["library://playlist/1", "library://genre/rock"],
+            include_similar_music: true,
           },
         },
       ],
@@ -100,6 +101,7 @@ describe("TriviaSetup", () => {
         answer_duration: 30,
         difficulty: "normal",
         source_uris: ["library://playlist/1", "library://genre/rock"],
+        include_similar_music: false,
       },
     });
   });
@@ -178,9 +180,9 @@ describe("TriviaSetup", () => {
   });
 });
 
-function mountSetup() {
+function mountSetup(includeSimilarMusic = false) {
   return mount(TriviaSetup, {
-    props: { busy: false },
+    props: { busy: false, includeSimilarMusic },
     global: {
       stubs: {
         MusicQuizSourceSelector: {

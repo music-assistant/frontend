@@ -12,6 +12,7 @@ import type { VNode } from "vue";
 
 export interface MusicQuizSetupAdapterProps {
   busy: boolean;
+  includeSimilarMusic: boolean;
 }
 
 export interface MusicQuizSetupAdapterEmits {
