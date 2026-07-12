@@ -312,7 +312,7 @@
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
         "show_waveform": {
-            "label": "Show waveform as progress bar",
+            "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
         "providers_description": "Manage your music sources, player providers and plugins",
