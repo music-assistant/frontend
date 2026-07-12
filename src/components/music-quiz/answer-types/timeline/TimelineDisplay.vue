@@ -1,10 +1,22 @@
 <template>
-  <div class="flex flex-col gap-2">
+  <div
+    ref="containerRef"
+    class="flex flex-col gap-2"
+    :class="{
+      'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
+    }"
+    :data-orientation="horizontal ? 'horizontal' : 'vertical'"
+  >
     <p v-if="selectable" class="text-muted-foreground text-center text-sm">
       {{ $t("providers.music_quiz.timeline_place_help") }}
     </p>
     <ol
-      class="mx-auto flex w-full max-w-2xl flex-col"
+      class="flex"
+      :class="
+        horizontal
+          ? 'w-max min-w-full flex-row items-stretch gap-2'
+          : 'mx-auto w-full max-w-2xl flex-col'
+      "
       :aria-label="$t('providers.music_quiz.timeline')"
     >
       <template v-for="boundary in boundaries" :key="boundary.key">
@@ -36,11 +48,17 @@
         </li>
         <li
           v-if="boundary.entry"
-          class="border-primary/25 border-l-2 py-2 pl-3"
+          class="border-primary/25"
+          :class="
+            horizontal
+              ? 'w-52 shrink-0 border-t-2 pt-2'
+              : 'border-l-2 py-2 pl-3'
+          "
         >
           <TimelineEntryCard
             :entry="boundary.entry"
             :highlighted="boundary.entry.entry_id === highlightedEntryId"
+            :compact="compact"
           />
         </li>
       </template>
@@ -54,7 +72,7 @@ import { Button } from "@/components/ui/button";
 import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Plus } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 
 interface TimelineBoundary {
   key: string;
@@ -73,6 +91,8 @@ const props = withDefaults(
     selectedPreviousEntryId?: string | null;
     selectedNextEntryId?: string | null;
     highlightedEntryId?: string | null;
+    horizontal?: boolean;
+    compact?: boolean;
   }>(),
   {
     selectable: false,
@@ -80,12 +100,15 @@ const props = withDefaults(
     selectedPreviousEntryId: null,
     selectedNextEntryId: null,
     highlightedEntryId: null,
+    horizontal: false,
+    compact: false,
   },
 );
 const emit = defineEmits<{
   select: [previousEntryId: string | null, nextEntryId: string | null];
 }>();
 
+const containerRef = ref<HTMLElement | null>(null);
 const boundaries = computed<TimelineBoundary[]>(() =>
   Array.from({ length: props.entries.length + 1 }, (_, index) => {
     const previous = props.entries[index - 1];
@@ -103,6 +126,20 @@ const boundaries = computed<TimelineBoundary[]>(() =>
         nextEntryId === props.selectedNextEntryId,
     };
   }),
+);
+
+watch(
+  () => ({
+    horizontal: props.horizontal,
+    highlightedEntryId: props.highlightedEntryId,
+    entryIds: props.entries.map((entry) => entry.entry_id).join("\0"),
+  }),
+  async ({ horizontal, highlightedEntryId }) => {
+    if (!horizontal || !highlightedEntryId) return;
+    await nextTick();
+    scrollEntryIntoView(highlightedEntryId);
+  },
+  { flush: "post", immediate: true },
 );
 
 function boundaryLabel(
@@ -130,5 +167,21 @@ function boundaryLabel(
     ]);
   }
   return $t("providers.music_quiz.timeline_place_here");
+}
+
+function scrollEntryIntoView(entryId: string) {
+  const entry = Array.from(
+    containerRef.value?.querySelectorAll<HTMLElement>("[data-entry-id]") ?? [],
+  ).find((element) => element.dataset.entryId === entryId);
+  if (!entry?.scrollIntoView) return;
+
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  entry.scrollIntoView({
+    behavior: reduceMotion ? "auto" : "smooth",
+    block: "nearest",
+    inline: "center",
+  });
 }
 </script>

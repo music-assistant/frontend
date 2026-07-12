@@ -1,10 +1,12 @@
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
+import type { MusicQuizGameDefinition } from "@/components/music-quiz/game_types";
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
   MusicQuizTimelinePersonalizedState,
+  MusicQuizTriviaHostState,
 } from "@/composables/useMusicQuiz";
 import {
   baseRound as musicTimelineRound,
@@ -58,6 +60,15 @@ const answerAdapter = {
   template:
     "<button data-testid=\"answer-adapter\" @click=\"$emit('submit', { answer_type: 'multiple_choice', suggestion_id: 'one' })\">Answer<slot name=\"leaderboard\" /></button>",
 };
+const presentBodyAdapter = {
+  props: {
+    state: { type: Object, required: true },
+    currentRound: { type: Object, required: true },
+    leaderboardRows: { type: Array, required: true },
+  },
+  template:
+    '<div data-testid="present-body-adapter">{{ leaderboardRows.length }}</div>',
+};
 const timelineAnswerAdapter = {
   props: {
     state: { type: Object, required: true },
@@ -92,6 +103,13 @@ const gameDefinition = {
     present: gameAdapter,
   },
 } as const;
+const gameDefinitionWithPresentBody = {
+  ...gameDefinition,
+  adapters: {
+    ...gameDefinition.adapters,
+    presentBody: presentBodyAdapter,
+  },
+} satisfies MusicQuizGameDefinition<"guess_the_song">;
 
 const currentRound = {
   question: "Which song is playing?",
@@ -128,6 +146,18 @@ const hostState = {
   join_url: "https://example.test/join",
   rounds: [currentRound],
 } satisfies MusicQuizGuessTheSongHostState;
+const triviaHostState = {
+  ...hostState,
+  quiz_type: "trivia",
+  name: "Trivia",
+  language: "en",
+  rounds: [],
+} satisfies MusicQuizTriviaHostState;
+const triviaGameDefinition = {
+  ...gameDefinition,
+  id: "trivia",
+  supportsListenIn: false,
+} satisfies MusicQuizGameDefinition<"trivia">;
 
 const leaderboardRows = [
   {
@@ -359,6 +389,11 @@ describe("Music Quiz shared stages", () => {
     expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
       "Game starts in 9s",
     );
+    const lobby = wrapper.get('[data-testid="music-quiz-present-lobby"]');
+    expect(lobby.classes()).toEqual(
+      expect.arrayContaining(["min-h-0", "flex-1", "lg:overflow-y-auto"]),
+    );
+    expect(lobby.classes()).not.toContain("overflow-y-auto");
     wrapper.unmount();
   });
 
@@ -391,6 +426,17 @@ describe("Music Quiz shared stages", () => {
 
     expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+    const root = wrapper.get('[data-testid="music-quiz-present-stage"]');
+    expect(root.classes()).toEqual(
+      expect.arrayContaining([
+        "min-h-dvh",
+        "lg:h-full",
+        "lg:min-h-0",
+        "lg:overflow-hidden",
+      ]),
+    );
+    expect(root.classes()).not.toContain("overflow-hidden");
+    expect(wrapper.get("button-stub").attributes("size")).toBe("sm");
   });
 
   it("keeps reveal presentation routed through the answer adapter", () => {
@@ -429,6 +475,84 @@ describe("Music Quiz shared stages", () => {
     expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
   });
 
+  it("uses the default present layout for Trivia answering and reveal", () => {
+    for (const phase of ["answering", "reveal"] as const) {
+      const wrapper = mount(MusicQuizPresentStage, {
+        props: {
+          state: {
+            ...triviaHostState,
+            phase,
+          },
+          game: triviaGameDefinition,
+          currentRound,
+          leaderboardRows,
+          winnerText: "",
+          phaseLabel: phase,
+          roundLabel: "Round 1",
+          joinLink: "https://example.test/join",
+          isConnectionDegraded: false,
+          gameComponent: gameAdapter,
+          answerComponent: answerAdapter,
+        },
+        global: {
+          stubs: {
+            Button: true,
+            MusicQuizConnectionBanners: true,
+            MusicQuizLeaderboard: {
+              template: '<div data-testid="leaderboard" />',
+            },
+            MusicQuizPodium: true,
+          },
+        },
+      });
+
+      expect(
+        wrapper.find('[data-testid="present-body-adapter"]').exists(),
+      ).toBe(false);
+      expect(wrapper.find('[data-testid="game-adapter"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(
+        true,
+      );
+      expect(wrapper.find('[data-testid="leaderboard"]').exists()).toBe(true);
+      wrapper.unmount();
+    }
+  });
+
+  it("routes active rounds through an optional game present body", () => {
+    const wrapper = mount(MusicQuizPresentStage, {
+      props: {
+        state: {
+          ...hostState,
+          phase: "reveal",
+        },
+        game: gameDefinitionWithPresentBody,
+        currentRound,
+        leaderboardRows,
+        winnerText: "",
+        phaseLabel: "Reveal",
+        roundLabel: "Round 1",
+        joinLink: "https://example.test/join",
+        isConnectionDegraded: false,
+        gameComponent: gameAdapter,
+        answerComponent: answerAdapter,
+      },
+      global: {
+        stubs: {
+          Button: true,
+          MusicQuizConnectionBanners: true,
+          MusicQuizLeaderboard: true,
+          MusicQuizPodium: true,
+        },
+      },
+    });
+
+    expect(wrapper.get('[data-testid="present-body-adapter"]').text()).toBe(
+      "1",
+    );
+    expect(wrapper.find('[data-testid="game-adapter"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="answer-adapter"]').exists()).toBe(false);
+  });
+
   it("keeps the podium in the shared finished presentation", () => {
     const state = {
       ...hostState,
@@ -463,5 +587,10 @@ describe("Music Quiz shared stages", () => {
 
     expect(wrapper.find('[data-testid="podium"]').exists()).toBe(true);
     expect(wrapper.text()).toContain("Player wins");
+    const finished = wrapper.get('[data-testid="music-quiz-present-finished"]');
+    expect(finished.classes()).toEqual(
+      expect.arrayContaining(["min-h-0", "flex-1", "lg:overflow-y-auto"]),
+    );
+    expect(finished.classes()).not.toContain("overflow-y-auto");
   });
 });

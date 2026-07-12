@@ -7,6 +7,7 @@ import type {
   MusicQuizSupportedPersonalizedState,
   MusicQuizSupportedRound,
 } from "@/composables/useMusicQuiz";
+import type { MusicQuizLeaderboardRow } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import type { VNode } from "vue";
 
 export interface MusicQuizSetupAdapterProps {
@@ -51,6 +52,15 @@ export type MusicQuizPresentGameAdapterProps<
   TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
   TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
 > = MusicQuizHostGameAdapterProps<TState, TRound>;
+
+export interface MusicQuizPresentBodyAdapterProps<
+  TState extends MusicQuizSupportedHostState = MusicQuizSupportedHostState,
+  TRound extends MusicQuizRoundBase = MusicQuizSupportedRound,
+> {
+  state: TState;
+  currentRound: TRound;
+  leaderboardRows: MusicQuizLeaderboardRow[];
+}
 
 export interface MusicQuizPlayerAnswerAdapterProps<
   TState extends MusicQuizSupportedPersonalizedState =

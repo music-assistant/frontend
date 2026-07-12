@@ -161,8 +161,32 @@ describe("timeline host and present answers", () => {
       expect(wrapper.getComponent(TimelineProgress).props("statuses")).toEqual(
         hostState.players.slice(0, 2),
       );
+      expect(wrapper.getComponent(TimelineProgress).props("scrollable")).toBe(
+        present,
+      );
       wrapper.unmount();
     }
+  });
+
+  it("contains long present progress lists with internal scrolling", () => {
+    const wrapper = mount(TimelineProgress, {
+      props: {
+        statuses: hostState.players,
+        scrollable: true,
+      },
+    });
+
+    expect(wrapper.get('[data-slot="card"]').classes()).toEqual(
+      expect.arrayContaining(["min-h-0", "overflow-hidden"]),
+    );
+    expect(wrapper.get('[data-slot="card-content"]').classes()).toEqual(
+      expect.arrayContaining([
+        "min-h-0",
+        "flex-1",
+        "overflow-y-auto",
+        "overscroll-contain",
+      ]),
+    );
   });
 
   it("shows aggregate reveal results and preserves the leaderboard slot", () => {
