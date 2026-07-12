@@ -462,6 +462,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     if (
       !name ||
       disposed ||
+      busy.value ||
       playerId.value ||
       autoJoinAttemptedGeneration === requestGeneration
     ) {

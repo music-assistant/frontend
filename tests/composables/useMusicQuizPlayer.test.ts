@@ -958,6 +958,33 @@ describe("useMusicQuizPlayer", () => {
     expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
   });
 
+  it("does not auto-join while a manual join is pending", async () => {
+    storedPlayerName.value = "Remembered Player";
+    const pendingInfo = deferred<typeof QUIZ_INFO>();
+    const pendingJoin = deferred<{
+      player_id: string;
+      state: typeof PLAYER_STATE;
+    }>();
+    mockGetMusicQuizInfo.mockReturnValue(pendingInfo.promise);
+    mockJoinMusicQuiz.mockReturnValue(pendingJoin.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const manualJoin = player.join("Manual Player");
+    pendingInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+
+    expect(mockJoinMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockJoinMusicQuiz).toHaveBeenCalledWith("Manual Player");
+
+    pendingJoin.resolve({
+      player_id: "manual-player",
+      state: PLAYER_STATE,
+    });
+    await expect(manualJoin).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+  });
+
   it("automatically joins an active game once with the remembered name", async () => {
     storedPlayerName.value = "Player";
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
