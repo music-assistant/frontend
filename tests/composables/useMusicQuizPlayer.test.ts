@@ -925,6 +925,39 @@ describe("useMusicQuizPlayer", () => {
     expect(player.rememberedName.value).toBe("Player One");
   });
 
+  it("serializes concurrent manual joins and allows a later retry", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const pendingJoin = deferred<{
+      player_id: string;
+      state: typeof PLAYER_STATE;
+    }>();
+    mockJoinMusicQuiz
+      .mockReturnValueOnce(pendingJoin.promise)
+      .mockResolvedValue({
+        player_id: "next-player",
+        state: PLAYER_STATE,
+      });
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const firstJoin = player.join("Player");
+    await expect(player.join("Player")).resolves.toBe(false);
+
+    expect(mockJoinMusicQuiz).toHaveBeenCalledOnce();
+    expect(player.busy.value).toBe(true);
+
+    pendingJoin.resolve({
+      player_id: "first-player",
+      state: PLAYER_STATE,
+    });
+    await expect(firstJoin).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+
+    await player.leave();
+    await expect(player.join("Player")).resolves.toBe(true);
+    expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
+  });
+
   it("automatically joins an active game once with the remembered name", async () => {
     storedPlayerName.value = "Player";
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
@@ -1027,6 +1060,8 @@ describe("useMusicQuizPlayer", () => {
     });
     await flushPromises();
 
+    expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
+    expect(mockJoinMusicQuiz).toHaveBeenNthCalledWith(2, "Player");
     expect(player.playerId.value).toBe("next-player");
     expect(player.busy.value).toBe(false);
 
@@ -1218,6 +1253,34 @@ describe("useMusicQuizPlayer", () => {
       "suggestion-1",
     );
     expect(player.state.value).toEqual(answeredState);
+  });
+
+  it("serializes concurrent answers and allows a later retry", async () => {
+    storedPlayerId.value = "stored-player";
+    const pendingAnswer = deferred<typeof PLAYER_STATE>();
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+    mockAnswerMusicQuiz
+      .mockReturnValueOnce(pendingAnswer.promise)
+      .mockResolvedValue(PLAYER_STATE);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    const submission = {
+      answer_type: "multiple_choice",
+      suggestion_id: "suggestion-1",
+    } as const;
+
+    const firstAnswer = player.submitAnswer(submission);
+    await expect(player.submitAnswer(submission)).resolves.toBe(false);
+
+    expect(mockAnswerMusicQuiz).toHaveBeenCalledOnce();
+    expect(player.busy.value).toBe(true);
+
+    pendingAnswer.resolve(PLAYER_STATE);
+    await expect(firstAnswer).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+
+    await expect(player.submitAnswer(submission)).resolves.toBe(true);
+    expect(mockAnswerMusicQuiz).toHaveBeenCalledTimes(2);
   });
 
   it("does not re-enable stale controls when action refresh fails", async () => {

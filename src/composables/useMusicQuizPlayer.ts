@@ -132,6 +132,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   async function join(name: string) {
+    if (busy.value) return false;
     const trimmedName = name.trim();
     if (!trimmedName) return false;
     const joined = await performJoin(trimmedName, true, gameGeneration);
@@ -144,6 +145,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   async function submitAnswer(submission: MusicQuizAnswerSubmission) {
+    if (busy.value) return false;
     const currentPlayerId = playerId.value;
     if (!currentPlayerId) {
       notifyError($t("providers.music_quiz.error_not_joined"));
