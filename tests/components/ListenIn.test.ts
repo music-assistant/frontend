@@ -2,7 +2,7 @@ import ListenIn, { type ListenInLabels } from "@/components/ListenIn.vue";
 import { Switch } from "@/components/ui/switch";
 import { $t, i18n } from "@/plugins/i18n";
 import { mount } from "@vue/test-utils";
-import type { Ref } from "vue";
+import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 interface MockListenInState {
@@ -55,6 +55,13 @@ const modes = ["venue", "remote"] as const;
 const surfaceModes = surfaces.flatMap((surface) =>
   modes.map((mode) => ({ ...surface, mode })),
 );
+const states = [
+  { isListeningIn: false, expectedTitle: "Listen in" },
+  { isListeningIn: true, expectedTitle: "You're listening" },
+] as const;
+const renderCases = surfaceModes.flatMap((surfaceMode) =>
+  states.map((state) => ({ ...surfaceMode, ...state })),
+);
 i18n.global.locale.value = initialLocale;
 
 describe("ListenIn", () => {
@@ -67,43 +74,45 @@ describe("ListenIn", () => {
     listenInMock.disableListenIn.mockReset();
   });
 
-  it.each(surfaceModes)(
-    "renders identical two-row copy for $domain in $mode mode",
-    ({ domain, labels, mode }) => {
+  it.each(renderCases)(
+    "renders exactly two compact text rows for $domain in $mode mode (active: $isListeningIn)",
+    ({ domain, labels, mode, isListeningIn, expectedTitle }) => {
+      getMockState().isListeningIn.value = isListeningIn;
       const wrapper = mount(ListenIn, {
         props: { domain, mode, labels },
       });
       const text = wrapper.get(".listen-in__text");
+      const title = wrapper.get(".listen-in__title");
+      const description = wrapper.get(".listen-in__desc");
+      const attribution = wrapper.get(".listen-in__attribution");
+      const action = wrapper.get(".listen-in__action");
 
       expect(text.element.childElementCount).toBe(2);
-      expect(wrapper.get(".listen-in__title").text()).toBe("Listen in");
-      expect(wrapper.get(".listen-in__attribution").text()).toBe(
-        "Powered by Sendspin",
+      expect(text.element.children[0]).toBe(title.element);
+      expect(text.element.children[1]).toBe(description.element);
+      expect(title.text()).toBe(expectedTitle);
+      expect(description.text()).toBe("Play the music on this device");
+      expect(attribution.text()).toBe("Powered by Sendspin");
+      expect(attribution.classes()).toContain("sr-only");
+      expect(attribution.attributes("aria-hidden")).toBeUndefined();
+      expect(text.find(".listen-in__attribution").exists()).toBe(false);
+      expect(action.attributes("aria-describedby")).toBe(
+        attribution.attributes("id"),
       );
-      expect(wrapper.get(".listen-in__desc").text()).toBe(
-        "Play the music on this device",
+      expect(wrapper.classes()).toContain("min-w-0");
+      expect(wrapper.get(".listen-in__row").classes()).toEqual(
+        expect.arrayContaining(["w-full", "min-w-0"]),
       );
-      expect(text.element.children[0]).toBe(
-        wrapper.get(".listen-in__title-row").element,
+      expect(text.classes()).toEqual(
+        expect.arrayContaining(["min-w-0", "overflow-hidden"]),
       );
-      expect(text.element.children[1]).toBe(
-        wrapper.get(".listen-in__desc").element,
+      expect(title.classes()).toEqual(
+        expect.arrayContaining(["block", "truncate"]),
       );
-    },
-  );
-
-  it.each(surfaceModes)(
-    "keeps the active copy for $domain in $mode mode",
-    ({ domain, labels, mode }) => {
-      getMockState().isListeningIn.value = true;
-      const wrapper = mount(ListenIn, {
-        props: { domain, mode, labels },
-      });
-
-      expect(wrapper.get(".listen-in__title").text()).toBe("You're listening");
-      expect(wrapper.get(".listen-in__desc").text()).toBe(
-        "Play the music on this device",
+      expect(description.classes()).toEqual(
+        expect.arrayContaining(["block", "truncate"]),
       );
+      expect(action.classes()).toContain("shrink-0");
     },
   );
 
@@ -148,8 +157,7 @@ describe("ListenIn", () => {
     expect(listenInMock.disableListenIn).toHaveBeenCalledTimes(2);
   });
 
-  it("disables both action types while busy", () => {
-    getMockState().busy.value = true;
+  it("renders enabled actions and disables both action types while busy", async () => {
     const venue = mount(ListenIn, {
       props: {
         domain: "party",
@@ -164,31 +172,19 @@ describe("ListenIn", () => {
         labels: surfaces[1].labels,
       },
     });
+    const venueAction = venue.get('[data-slot="switch"]');
+    const remoteAction = remote.get("button");
 
-    expect(venue.get('[data-slot="switch"]').attributes()).toHaveProperty(
-      "disabled",
-    );
-    expect(remote.get("button").attributes()).toHaveProperty("disabled");
-  });
+    expect(venueAction.attributes("disabled")).toBeUndefined();
+    expect(remoteAction.attributes("disabled")).toBeUndefined();
 
-  it("keeps Sendspin attribution secondary and inside the title row", () => {
-    const wrapper = mount(ListenIn, {
-      props: {
-        domain: "music_quiz",
-        mode: "remote",
-        labels: surfaces[1].labels,
-      },
-    });
+    getMockState().busy.value = true;
+    await nextTick();
 
-    const titleRow = wrapper.get(".listen-in__title-row");
-    expect(titleRow.text()).toContain("Listen in");
-    expect(titleRow.text()).toContain("Powered by Sendspin");
-    expect(wrapper.get(".listen-in__attribution").classes()).toContain(
-      "listen-in__attribution",
-    );
-    expect(wrapper.get(".listen-in__row").classes()).toEqual(
-      expect.arrayContaining(["w-full", "min-w-0"]),
-    );
+    expect(venueAction.attributes()).toHaveProperty("disabled");
+    expect(remoteAction.attributes()).toHaveProperty("disabled");
+    expect(venueAction.classes()).toContain("shrink-0");
+    expect(remoteAction.classes()).toContain("shrink-0");
   });
 });
 

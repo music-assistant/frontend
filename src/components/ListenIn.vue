@@ -1,24 +1,25 @@
 <template>
   <div
     v-if="visible"
-    class="listen-in"
+    class="listen-in min-w-0"
     :class="{ 'listen-in--active': isListeningIn }"
   >
+    <span :id="attributionId" class="listen-in__attribution sr-only">
+      {{ labels.poweredBy }}
+    </span>
     <div class="listen-in__row w-full min-w-0">
-      <Headphones :size="20" class="listen-in__icon" />
-      <div class="listen-in__text">
-        <span class="listen-in__title-row">
-          <span class="listen-in__title">{{ title }}</span>
-          <span class="listen-in__attribution">{{ labels.poweredBy }}</span>
-        </span>
-        <span class="listen-in__desc">{{ description }}</span>
+      <Headphones :size="20" class="listen-in__icon" aria-hidden="true" />
+      <div class="listen-in__text min-w-0 overflow-hidden">
+        <span class="listen-in__title block truncate">{{ title }}</span>
+        <span class="listen-in__desc block truncate">{{ description }}</span>
       </div>
       <Button
         v-if="mode === 'remote'"
         :variant="isListeningIn ? 'secondary' : 'default'"
         size="sm"
         :disabled="busy"
-        class="listen-in__action"
+        :aria-describedby="attributionId"
+        class="listen-in__action shrink-0"
         @click="isListeningIn ? disableListenIn() : enableListenIn()"
       >
         {{ isListeningIn ? labels.stop : labels.tap }}
@@ -28,7 +29,8 @@
         :model-value="isListeningIn"
         :disabled="busy"
         :aria-label="title"
-        class="listen-in__action"
+        :aria-describedby="attributionId"
+        class="listen-in__action shrink-0"
         @update:model-value="onToggle"
       />
     </div>
@@ -71,10 +73,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useListenIn } from "@/composables/useListenIn";
 import { Headphones } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, useId } from "vue";
 import { toast } from "vue-sonner";
 
 const props = defineProps<ListenInProps>();
+const attributionId = useId();
 
 const {
   isListeningIn,
@@ -155,25 +158,8 @@ function onToggle(enabled: boolean) {
   font-size: 0.9rem;
 }
 
-.listen-in__title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.5rem;
-}
-
 .listen-in__desc {
   font-size: 0.78rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.listen-in__action {
-  flex-shrink: 0;
-}
-
-.listen-in__attribution {
-  font-size: 0.68rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  font-weight: 400;
 }
 </style>
