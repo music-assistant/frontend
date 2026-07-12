@@ -56,7 +56,7 @@ vi.mock("@/plugins/web_player", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   return {
     webPlayer: reactive({
-      player_id: undefined as string | undefined,
+      player_id: null as string | null,
     }),
   };
 });

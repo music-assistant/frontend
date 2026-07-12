@@ -166,6 +166,36 @@ describe("PlayerGroupMembers", () => {
     );
   });
 
+  it("sends pending group changes before unmounting", async () => {
+    vi.useFakeTimers();
+    const candidate = createPlayer({
+      player_id: "candidate",
+      name: "Office",
+    });
+    const parent = createPlayer({
+      can_group_with: [candidate.player_id],
+      group_members: ["parent"],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [candidate.player_id]: candidate,
+    };
+    const wrapper = mountGroupMembers(parent, []);
+
+    await wrapper.find(".member-checkbox").trigger("click");
+    expect(api.playerCommandSetMembers).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      [candidate.player_id],
+      undefined,
+    );
+    await vi.runAllTimersAsync();
+    expect(api.playerCommandSetMembers).toHaveBeenCalledTimes(1);
+  });
+
   it("normalizes self-only membership after removing the final child", async () => {
     vi.useFakeTimers();
     const child = createPlayer({

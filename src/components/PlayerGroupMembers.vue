@@ -53,7 +53,7 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { computed, ref } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 
 const props = defineProps<{
   player: Player;
@@ -62,7 +62,9 @@ const props = defineProps<{
 
 const playersToAdd = ref<string[]>([]);
 const playersToRemove = ref<string[]>([]);
-const timeoutId = ref<ReturnType<typeof setTimeout>>();
+let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+onUnmounted(flushPendingMemberUpdate);
 
 const candidates = computed(() => {
   const players = [...props.members];
@@ -154,26 +156,34 @@ function updateGroupMember(playerId: string, selected: boolean) {
 }
 
 function scheduleMemberUpdate() {
-  if (timeoutId.value) clearTimeout(timeoutId.value);
+  if (timeoutId) clearTimeout(timeoutId);
   if (playersToAdd.value.length === 0 && playersToRemove.value.length === 0) {
     return;
   }
 
-  timeoutId.value = setTimeout(() => {
-    const playerIdsToAdd = [...playersToAdd.value];
-    const playerIdsToRemove = [...playersToRemove.value];
-    playersToAdd.value = [];
-    playersToRemove.value = [];
-    timeoutId.value = undefined;
+  timeoutId = setTimeout(sendMemberUpdate, 500);
+}
 
-    api
-      .playerCommandSetMembers(
-        props.player.player_id,
-        playerIdsToAdd.length ? playerIdsToAdd : undefined,
-        playerIdsToRemove.length ? playerIdsToRemove : undefined,
-      )
-      .catch(restorePlayer);
-  }, 500);
+function sendMemberUpdate() {
+  const playerIdsToAdd = [...playersToAdd.value];
+  const playerIdsToRemove = [...playersToRemove.value];
+  playersToAdd.value = [];
+  playersToRemove.value = [];
+  timeoutId = undefined;
+
+  api
+    .playerCommandSetMembers(
+      props.player.player_id,
+      playerIdsToAdd.length ? playerIdsToAdd : undefined,
+      playerIdsToRemove.length ? playerIdsToRemove : undefined,
+    )
+    .catch(restorePlayer);
+}
+
+function flushPendingMemberUpdate() {
+  if (!timeoutId) return;
+  clearTimeout(timeoutId);
+  sendMemberUpdate();
 }
 
 async function restorePlayer() {
