@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { $t, i18n } from "@/plugins/i18n";
 import { mount } from "@vue/test-utils";
 import type { Ref } from "vue";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 interface MockListenInState {
   isListeningIn: Ref<boolean>;
@@ -40,9 +40,6 @@ vi.mock("vue-sonner", () => ({
 
 const initialLocale = i18n.global.locale.value;
 i18n.global.locale.value = "en";
-afterAll(() => {
-  i18n.global.locale.value = initialLocale;
-});
 
 const surfaces = [
   {
@@ -58,6 +55,7 @@ const modes = ["venue", "remote"] as const;
 const surfaceModes = surfaces.flatMap((surface) =>
   modes.map((mode) => ({ ...surface, mode })),
 );
+i18n.global.locale.value = initialLocale;
 
 describe("ListenIn", () => {
   beforeEach(() => {
