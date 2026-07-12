@@ -1,5 +1,63 @@
 import { createI18n } from "vue-i18n";
 
+export interface LocaleOption {
+  value: string;
+  label: string;
+}
+
+export function canonicalizeLocale(locale: string): string {
+  const normalizedLocale = locale.trim().replaceAll("_", "-");
+  try {
+    return Intl.getCanonicalLocales(normalizedLocale)[0] ?? normalizedLocale;
+  } catch {
+    return normalizedLocale;
+  }
+}
+
+export function getLocaleDisplayName(
+  locale: string,
+  displayLocale: string,
+): string {
+  const canonicalLocale = canonicalizeLocale(locale);
+  if (typeof Intl.DisplayNames !== "function") return canonicalLocale;
+
+  try {
+    const displayNames = new Intl.DisplayNames(
+      [canonicalizeLocale(displayLocale)],
+      { type: "language" },
+    );
+    return displayNames.of(canonicalLocale) ?? canonicalLocale;
+  } catch {
+    return canonicalLocale;
+  }
+}
+
+export function getLocaleOptions(
+  locales: readonly string[],
+  displayLocale: string,
+): LocaleOption[] {
+  const options = locales.map((locale) => ({
+    value: locale,
+    label: getLocaleDisplayName(locale, displayLocale),
+  }));
+
+  try {
+    const collator = new Intl.Collator(canonicalizeLocale(displayLocale), {
+      sensitivity: "base",
+    });
+    return options.sort(
+      (a, b) =>
+        collator.compare(a.label, b.label) ||
+        collator.compare(a.value, b.value),
+    );
+  } catch {
+    return options.sort(
+      (a, b) =>
+        a.label.localeCompare(b.label) || a.value.localeCompare(b.value),
+    );
+  }
+}
+
 /*
  * All i18n resources specified in the plugin `include` option can be loaded
  * at once using the import syntax

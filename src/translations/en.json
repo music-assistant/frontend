@@ -1248,6 +1248,7 @@
             "suggestions": "Answer choices",
             "answer_seconds": "Answer time (seconds)",
             "difficulty": "Difficulty",
+            "question_language": "Question language",
             "difficulty_easy": "Easy",
             "difficulty_normal": "Normal",
             "difficulty_hard": "Hard",

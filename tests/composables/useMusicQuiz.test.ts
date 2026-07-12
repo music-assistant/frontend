@@ -119,6 +119,7 @@ describe("useMusicQuiz commands", () => {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
       config: {
+        language: "sr-Latn",
         round_count: 8,
         suggestion_count: 6,
         answer_duration: 45,
@@ -130,6 +131,7 @@ describe("useMusicQuiz commands", () => {
 
     expect(mockSendCommand).toHaveBeenCalledWith("music_quiz/create", {
       quiz_type: "trivia",
+      language: "sr-Latn",
       round_count: 8,
       suggestion_count: 6,
       answer_duration: 45,
@@ -267,6 +269,7 @@ describe("useMusicQuiz commands", () => {
     const trivia = {
       quiz_type: "trivia",
       answer_type: "multiple_choice",
+      language: "pt-BR",
       phase: "lobby",
       name: "Trivia",
       round_count: 5,
@@ -286,6 +289,7 @@ describe("useMusicQuiz commands", () => {
     expect(isSupportedMusicQuiz(known)).toBe(true);
     expect(isSupportedMusicQuiz(musicTimeline)).toBe(true);
     expect(isSupportedMusicQuiz(trivia)).toBe(true);
+    expect(trivia.language).toBe("pt-BR");
     expect(isSupportedMusicQuiz(unsupported)).toBe(false);
     expect(isSupportedMusicQuiz(unsupportedAnswer)).toBe(false);
     expect(isSupportedMusicQuiz(mismatched)).toBe(false);

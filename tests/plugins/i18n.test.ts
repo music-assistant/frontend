@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveLocale } from "@/plugins/i18n";
+import {
+  canonicalizeLocale,
+  getLocaleDisplayName,
+  resolveLocale,
+} from "@/plugins/i18n";
 
 // Mirrors the real translation filenames (POSIX `ll_CC` convention, as shipped by Lokalise).
 const AVAILABLE = [
@@ -56,5 +60,25 @@ describe("resolveLocale", () => {
   it("falls back to English for an unknown language", () => {
     expect(resolveLocale("ja", AVAILABLE)).toBe("en");
     expect(resolveLocale("xx-YY", AVAILABLE)).toBe("en");
+  });
+});
+
+describe("locale presentation", () => {
+  it("canonicalizes underscore, script, and region subtags", () => {
+    expect(canonicalizeLocale("pt_BR")).toBe("pt-BR");
+    expect(canonicalizeLocale("sr_Latn_RS")).toBe("sr-Latn-RS");
+    expect(canonicalizeLocale("es_419")).toBe("es-419");
+  });
+
+  it("uses friendly localized names with script and region distinctions", () => {
+    expect(getLocaleDisplayName("pt_BR", "en")).toBe("Brazilian Portuguese");
+    expect(getLocaleDisplayName("sr_Latn", "en")).toBe("Serbian (Latin)");
+    expect(getLocaleDisplayName("en_AU", "de")).toBe("Englisch (Australien)");
+  });
+
+  it("falls back safely to the normalized code", () => {
+    expect(getLocaleDisplayName("invalid_locale!", "en")).toBe(
+      "invalid-locale!",
+    );
   });
 });

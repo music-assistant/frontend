@@ -158,6 +158,7 @@ const triviaRound = {
 const triviaState = {
   quiz_type: "trivia",
   answer_type: "multiple_choice",
+  language: "en",
   phase: "answering",
   name: "Trivia",
   round_count: 1,
@@ -304,6 +305,7 @@ describe("MusicQuizPlayerView routing", () => {
       info: ref({
         quiz_type: "trivia",
         answer_type: "multiple_choice",
+        language: "en",
         phase: "lobby",
         name: "Trivia",
         player_count: 2,

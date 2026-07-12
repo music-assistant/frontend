@@ -75,6 +75,21 @@
           </option>
         </NativeSelect>
       </Field>
+
+      <Field class="sm:col-span-2">
+        <FieldLabel for="trivia-language">
+          {{ $t("providers.music_quiz.question_language") }}
+        </FieldLabel>
+        <NativeSelect id="trivia-language" v-model="language" class="w-full">
+          <option
+            v-for="option in languageOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </NativeSelect>
+      </Field>
     </div>
 
     <MusicQuizSourceSelector
@@ -109,7 +124,7 @@ import type {
   MusicQuizDifficulty,
   MusicQuizTriviaConfig,
 } from "@/composables/useMusicQuiz";
-import { $t } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
 import { Brain } from "@lucide/vue";
 import { computed, ref } from "vue";
 
@@ -127,12 +142,17 @@ const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
 const difficulty = ref<MusicQuizDifficulty>("normal");
+const language = ref(i18n.global.locale.value);
 const sourceUris = ref<string[]>([]);
 const canCreate = computed(() => sourceUris.value.length > 0);
+const languageOptions = computed(() =>
+  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value),
+);
 
 function create() {
   if (!canCreate.value) return;
   const config: MusicQuizTriviaConfig = {
+    language: canonicalizeLocale(language.value),
     round_count: roundCount.value,
     suggestion_count: suggestionCount.value,
     answer_duration: answerDuration.value,

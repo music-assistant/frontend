@@ -115,6 +115,7 @@ export type MusicQuizTimelinePublicState = MusicQuizTimelineStateBase;
 interface MusicQuizTriviaStateBase extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
+  language: string;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
@@ -235,6 +236,7 @@ export interface MusicQuizTimelineInfo extends MusicQuizStateIdentity {
 export interface MusicQuizTriviaInfo extends MusicQuizStateIdentity {
   quiz_type: "trivia";
   answer_type: "multiple_choice";
+  language: string;
   player_count: number;
   round_count: number;
   mode: MusicQuizMode;
@@ -553,6 +555,7 @@ export interface MusicQuizTimelineCreateRequest {
 }
 
 export interface MusicQuizTriviaConfig {
+  language: string;
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
