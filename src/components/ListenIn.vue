@@ -8,12 +8,13 @@
       <Headphones :size="20" class="listen-in__icon" aria-hidden="true" />
       <div class="listen-in__text min-w-0 overflow-hidden">
         <div class="listen-in__title-row min-w-0">
-          <span class="listen-in__title block min-w-0 truncate">
+          <span class="listen-in__title block shrink-0 whitespace-nowrap">
             {{ title }}
           </span>
           <span
             :id="attributionId"
-            class="listen-in__attribution shrink-0 whitespace-nowrap text-[0.625rem]"
+            :title="labels.poweredBy"
+            class="listen-in__attribution min-w-0 truncate text-[0.625rem]"
           >
             {{ labels.poweredBy }}
           </span>
@@ -168,8 +169,6 @@ function onToggle(enabled: boolean) {
 }
 
 .listen-in__title {
-  flex-shrink: 1;
-  min-width: 0;
   font-weight: 600;
   font-size: 0.9rem;
 }
