@@ -13,6 +13,11 @@ interface MockListenInState {
 
 const listenInMock = vi.hoisted(() => ({
   state: undefined as MockListenInState | undefined,
+  options: undefined as
+    | {
+        autoEnable?: () => boolean;
+      }
+    | undefined,
   enableListenIn: vi.fn(),
   disableListenIn: vi.fn(),
 }));
@@ -26,11 +31,14 @@ vi.mock("@/composables/useListenIn", async () => {
   };
   listenInMock.state = state;
   return {
-    useListenIn: () => ({
-      ...state,
-      enableListenIn: listenInMock.enableListenIn,
-      disableListenIn: listenInMock.disableListenIn,
-    }),
+    useListenIn: (options: { autoEnable?: () => boolean }) => {
+      listenInMock.options = options;
+      return {
+        ...state,
+        enableListenIn: listenInMock.enableListenIn,
+        disableListenIn: listenInMock.disableListenIn,
+      };
+    },
   };
 });
 
@@ -40,6 +48,21 @@ vi.mock("vue-sonner", () => ({
 
 const initialLocale = i18n.global.locale.value;
 i18n.global.locale.value = "en";
+const storageValues = new Map<string, string>();
+const mockLocalStorage: Storage = {
+  get length() {
+    return storageValues.size;
+  },
+  clear: () => storageValues.clear(),
+  getItem: (key) => storageValues.get(key) ?? null,
+  key: (index) => [...storageValues.keys()][index] ?? null,
+  removeItem: (key) => storageValues.delete(key),
+  setItem: (key, value) => storageValues.set(key, value),
+};
+Object.defineProperty(window, "localStorage", {
+  configurable: true,
+  value: mockLocalStorage,
+});
 
 const surfaces = [
   {
@@ -72,6 +95,10 @@ describe("ListenIn", () => {
     state.shouldShowListenInToggle.value = true;
     listenInMock.enableListenIn.mockReset();
     listenInMock.disableListenIn.mockReset();
+    listenInMock.enableListenIn.mockResolvedValue(true);
+    listenInMock.disableListenIn.mockResolvedValue(true);
+    listenInMock.options = undefined;
+    window.localStorage.removeItem("test_listen_in_enabled");
   });
 
   it.each(renderCases)(
@@ -179,6 +206,7 @@ describe("ListenIn", () => {
         labels: surfaces[0].labels,
       },
     });
+
     const venueSwitch = venue.getComponent(Switch);
 
     venueSwitch.vm.$emit("update:modelValue", true);
@@ -210,6 +238,29 @@ describe("ListenIn", () => {
 
     await activeRemote.get("button").trigger("click");
     expect(listenInMock.disableListenIn).toHaveBeenCalledTimes(2);
+  });
+
+  it("defaults on, remembers explicit choices, and restores the preference", async () => {
+    const wrapper = mount(ListenIn, {
+      props: {
+        domain: "music_quiz",
+        mode: "remote",
+        labels: surfaces[1].labels,
+        autoEnable: true,
+        preferenceKey: "test_listen_in_enabled",
+      },
+    });
+
+    expect(listenInMock.options?.autoEnable?.()).toBe(true);
+
+    await wrapper.get("button").trigger("click");
+    expect(window.localStorage.getItem("test_listen_in_enabled")).toBe("true");
+
+    getMockState().isListeningIn.value = true;
+    await nextTick();
+    await wrapper.get("button").trigger("click");
+    expect(window.localStorage.getItem("test_listen_in_enabled")).toBe("false");
+    expect(listenInMock.options?.autoEnable?.()).toBe(false);
   });
 
   it("renders enabled actions and disables both action types while busy", async () => {

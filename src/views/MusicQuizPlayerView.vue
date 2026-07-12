@@ -67,11 +67,14 @@
 
       <ListenIn
         v-if="listenInEnabled"
+        :key="listenInKey"
         domain="music_quiz"
         :mode="mode"
         :labels="listenInLabels"
         :recheck-events="listenInRecheckEvents"
         :get-error-message="getMusicQuizErrorMessage"
+        :auto-enable="mode === 'remote'"
+        preference-key="music_quiz_listen_in_enabled"
       />
 
       <MusicQuizPlayerStage
@@ -142,6 +145,7 @@ import {
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { webPlayer } from "@/plugins/web_player";
 import { CircleStop, Clock3 } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { toast } from "vue-sonner";
@@ -204,6 +208,10 @@ const mode = computed(() => {
   return activeInfo.value?.mode;
 });
 const listenInRecheckEvents = [EventType.PROVIDER_EVENT];
+const listenInKey = computed(
+  () =>
+    `${activeState.value?.quiz_type ?? "quiz"}:${currentRound.value?.round_index ?? activeState.value?.phase ?? "inactive"}`,
+);
 const listenInLabels = computed<ListenInLabels>(() => ({
   title: $t("providers.music_quiz.listen_in"),
   titleActive: $t("providers.music_quiz.listen_in_active"),
@@ -286,6 +294,7 @@ watch(
 );
 
 async function handleJoin(name: string) {
+  if (listenInEnabled.value) webPlayer.primeAudio();
   await player.join(name);
 }
 

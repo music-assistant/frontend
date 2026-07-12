@@ -26,6 +26,8 @@ export interface UseListenInOptions {
   recheckEvents?: EventType[];
   /** Optional server-error extractor; defaults to a generic message reader. */
   getErrorMessage?: (err: unknown, fallback: string) => string;
+  /** Whether Listen-in should start as soon as it becomes available. */
+  autoEnable?: () => boolean;
 }
 
 /**
@@ -42,6 +44,7 @@ export function useListenIn(options: UseListenInOptions) {
     notifyError,
     errorMessages,
     recheckEvents = [],
+    autoEnable,
   } = options;
   const getErrorMessage = options.getErrorMessage ?? defaultGetErrorMessage;
 
@@ -51,6 +54,9 @@ export function useListenIn(options: UseListenInOptions) {
 
   let unsubscribePlayerUpdated: (() => void) | undefined;
   let unsubscribeRecheckEvents: (() => void) | undefined;
+  let autoEnableAttemptedForPlayerId: string | null = null;
+  let availabilityRequestId = 0;
+  let disposed = false;
 
   const webPlayerId = computed(() => webPlayer.player_id ?? null);
 
@@ -63,17 +69,37 @@ export function useListenIn(options: UseListenInOptions) {
   );
 
   async function checkCanListenIn() {
+    const requestId = ++availabilityRequestId;
     const playerId = webPlayerId.value;
     if (!playerId) {
       canListenIn.value = false;
       return;
     }
     try {
-      canListenIn.value = await api.sendCommand<boolean>(
+      const available = await api.sendCommand<boolean>(
         `${domain}/can_listen_in`,
         { web_player_id: playerId },
       );
+      if (
+        disposed ||
+        requestId !== availabilityRequestId ||
+        webPlayerId.value !== playerId
+      ) {
+        return;
+      }
+      canListenIn.value = available;
+      if (
+        canListenIn.value &&
+        autoEnable?.() &&
+        autoEnableAttemptedForPlayerId !== playerId &&
+        !isListeningIn.value &&
+        !busy.value
+      ) {
+        autoEnableAttemptedForPlayerId = playerId;
+        await enableListenIn();
+      }
     } catch (err) {
+      if (disposed || requestId !== availabilityRequestId) return;
       // Availability is best-effort; on failure just treat it as unavailable.
       console.debug("can_listen_in check failed:", err);
       canListenIn.value = false;
@@ -132,6 +158,8 @@ export function useListenIn(options: UseListenInOptions) {
   }
 
   watch(webPlayerId, (newPlayerId) => {
+    availabilityRequestId++;
+    autoEnableAttemptedForPlayerId = null;
     if (newPlayerId) {
       checkCanListenIn();
     } else {
@@ -154,6 +182,8 @@ export function useListenIn(options: UseListenInOptions) {
   });
 
   onBeforeUnmount(() => {
+    disposed = true;
+    availabilityRequestId++;
     unsubscribePlayerUpdated?.();
     unsubscribeRecheckEvents?.();
   });

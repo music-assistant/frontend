@@ -2,13 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { EventType } from "@/plugins/api/interfaces";
 
-const { mockSendCommand, mockSubscribeMulti, mockPrimeAudio } = vi.hoisted(
-  () => ({
-    mockSendCommand: vi.fn(),
-    mockSubscribeMulti: vi.fn(() => () => {}),
-    mockPrimeAudio: vi.fn(),
-  }),
-);
+const {
+  mockSendCommand,
+  mockSubscribeMulti,
+  mockPrimeAudio,
+  unmountCallbacks,
+} = vi.hoisted(() => ({
+  mockSendCommand: vi.fn(),
+  mockSubscribeMulti: vi.fn(() => () => {}),
+  mockPrimeAudio: vi.fn(),
+  unmountCallbacks: [] as Array<() => void>,
+}));
 
 // Run lifecycle hooks eagerly so the composable can be exercised without a
 // host component (mirrors the pattern used by other composable tests).
@@ -17,7 +21,7 @@ vi.mock("vue", async () => {
   return {
     ...actual,
     onMounted: (fn: () => void) => fn(),
-    onBeforeUnmount: () => {},
+    onBeforeUnmount: (fn: () => void) => unmountCallbacks.push(fn),
   };
 });
 
@@ -47,7 +51,10 @@ const errorMessages = {
   stopListenIn: "stop-failed",
 };
 
-function create(mode: ListenInMode | undefined = "venue") {
+function create(
+  mode: ListenInMode | undefined = "venue",
+  autoEnable: () => boolean = () => false,
+) {
   const notifyError = vi.fn();
   const composable = useListenIn({
     domain: "party",
@@ -55,6 +62,7 @@ function create(mode: ListenInMode | undefined = "venue") {
     notifyError,
     errorMessages,
     recheckEvents: [EventType.QUEUE_UPDATED],
+    autoEnable,
   });
   return { ...composable, notifyError };
 }
@@ -79,6 +87,7 @@ describe("useListenIn", () => {
     mockSubscribeMulti.mockReset();
     mockSubscribeMulti.mockReturnValue(() => {});
     mockPrimeAudio.mockReset();
+    unmountCallbacks.length = 0;
     webPlayer.player_id = "wp-1";
   });
 
@@ -114,6 +123,20 @@ describe("useListenIn", () => {
 
       expect(canListenIn.value).toBe(false);
     });
+
+    it("ignores an availability result after unmount", async () => {
+      const pending = deferred<boolean>();
+      mockSendCommand.mockReturnValue(pending.promise);
+      const { isListeningIn, checkCanListenIn } = create("remote", () => true);
+
+      const check = checkCanListenIn();
+      unmountCallbacks.at(-1)?.();
+      pending.resolve(true);
+      await check;
+
+      expect(isListeningIn.value).toBe(false);
+      expect(getCommandCallCount("party/listen_in")).toBe(0);
+    });
   });
 
   describe("mode-aware UX flags", () => {
@@ -146,6 +169,27 @@ describe("useListenIn", () => {
 
       await enableListenIn();
       expect(shouldPromptListenIn.value).toBe(false);
+    });
+
+    it("automatically starts once when requested and available", async () => {
+      let autoEnable = true;
+      mockSendCommand.mockImplementation((command: string) =>
+        command === "party/can_listen_in"
+          ? Promise.resolve(true)
+          : Promise.resolve(undefined),
+      );
+      const { isListeningIn, checkCanListenIn } = create(
+        "remote",
+        () => autoEnable,
+      );
+
+      await checkCanListenIn();
+      await checkCanListenIn();
+
+      expect(getCommandCallCount("party/listen_in")).toBe(1);
+      expect(isListeningIn.value).toBe(true);
+      expect(mockPrimeAudio).toHaveBeenCalledOnce();
+      autoEnable = false;
     });
 
     it("hides the toggle and prompt when no mode is set", async () => {

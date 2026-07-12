@@ -1,18 +1,21 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
+import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import { mount } from "@vue/test-utils";
-import { h, ref } from "vue";
+import { h, nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockGameAdapterSetup,
   mockGetTrackLyrics,
   mockListenInSetup,
+  mockPrimeAudio,
   mockResolveMusicQuizDefinition,
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
   mockGameAdapterSetup: vi.fn(),
   mockGetTrackLyrics: vi.fn(),
   mockListenInSetup: vi.fn(),
+  mockPrimeAudio: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
   mockUseMusicQuizPlayer: vi.fn(),
 }));
@@ -22,8 +25,17 @@ vi.mock("@/components/ListenIn.vue", async () => {
   return {
     default: {
       name: "ListenIn",
-      setup() {
-        mockListenInSetup();
+      props: {
+        autoEnable: Boolean,
+        mode: String,
+        preferenceKey: String,
+      },
+      setup(props: {
+        autoEnable?: boolean;
+        mode?: string;
+        preferenceKey?: string;
+      }) {
+        mockListenInSetup(props);
         return () => h("div", { "data-testid": "listen-in" });
       },
     },
@@ -82,6 +94,12 @@ vi.mock("@/plugins/i18n", () => ({
         } as Record<string, string>
       )[key] ?? key;
     return message.replace("{0}", String(values[0] ?? ""));
+  },
+}));
+
+vi.mock("@/plugins/web_player", () => ({
+  webPlayer: {
+    primeAudio: mockPrimeAudio,
   },
 }));
 
@@ -195,6 +213,7 @@ describe("MusicQuizPlayerView routing", () => {
     mockGameAdapterSetup.mockReset();
     mockGetTrackLyrics.mockReset();
     mockListenInSetup.mockReset();
+    mockPrimeAudio.mockReset();
     mockResolveMusicQuizDefinition.mockReset();
     mockUseMusicQuizPlayer.mockReset();
     mockUseMusicQuizPlayer.mockReturnValue({
@@ -308,6 +327,59 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockListenInSetup).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("defaults Remote Listen-in on and remembers its choice", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({ ...playerState, mode: "remote" }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(currentRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoEnable: true,
+        mode: "remote",
+        preferenceKey: "music_quiz_listen_in_enabled",
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it("reconnects remembered Listen-in for each new round", async () => {
+    const round = ref(currentRound);
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({ ...playerState, mode: "remote" }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: round,
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+
+    round.value = { ...currentRound, round_index: 1 };
+    await nextTick();
+
+    expect(mockListenInSetup).toHaveBeenCalledTimes(2);
     wrapper.unmount();
   });
 
@@ -473,6 +545,39 @@ describe("MusicQuizPlayerView routing", () => {
       wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
     ).toBe("Player One");
     wrapper.unmount();
+  });
+
+  it("unlocks guest audio from the Join gesture", async () => {
+    const join = vi.fn();
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 0,
+        round_count: 5,
+        mode: "remote",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      rememberedName: ref(""),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join,
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    const wrapper = mountView();
+
+    wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
+    await Promise.resolve();
+
+    expect(mockPrimeAudio).toHaveBeenCalledOnce();
+    expect(join).toHaveBeenCalledWith("Guest");
   });
 
   it("shows unjoined guests the server replay countdown", () => {
