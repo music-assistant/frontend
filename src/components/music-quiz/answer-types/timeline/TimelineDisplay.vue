@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="containerRef"
     class="flex flex-col gap-2"
     :class="{
       'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
@@ -71,7 +72,7 @@ import { Button } from "@/components/ui/button";
 import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Plus } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 
 interface TimelineBoundary {
   key: string;
@@ -107,6 +108,7 @@ const emit = defineEmits<{
   select: [previousEntryId: string | null, nextEntryId: string | null];
 }>();
 
+const containerRef = ref<HTMLElement | null>(null);
 const boundaries = computed<TimelineBoundary[]>(() =>
   Array.from({ length: props.entries.length + 1 }, (_, index) => {
     const previous = props.entries[index - 1];
@@ -124,6 +126,20 @@ const boundaries = computed<TimelineBoundary[]>(() =>
         nextEntryId === props.selectedNextEntryId,
     };
   }),
+);
+
+watch(
+  () => ({
+    horizontal: props.horizontal,
+    highlightedEntryId: props.highlightedEntryId,
+    entryIds: props.entries.map((entry) => entry.entry_id).join("\0"),
+  }),
+  async ({ horizontal, highlightedEntryId }) => {
+    if (!horizontal || !highlightedEntryId) return;
+    await nextTick();
+    scrollEntryIntoView(highlightedEntryId);
+  },
+  { flush: "post", immediate: true },
 );
 
 function boundaryLabel(
@@ -151,5 +167,21 @@ function boundaryLabel(
     ]);
   }
   return $t("providers.music_quiz.timeline_place_here");
+}
+
+function scrollEntryIntoView(entryId: string) {
+  const entry = Array.from(
+    containerRef.value?.querySelectorAll<HTMLElement>("[data-entry-id]") ?? [],
+  ).find((element) => element.dataset.entryId === entryId);
+  if (!entry?.scrollIntoView) return;
+
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  entry.scrollIntoView({
+    behavior: reduceMotion ? "auto" : "smooth",
+    block: "nearest",
+    inline: "center",
+  });
 }
 </script>
