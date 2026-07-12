@@ -9,81 +9,97 @@
       'opacity-40': !player.available,
     }"
     @click.capture="swallowClickAfterHold"
-    @contextmenu.prevent="openPlayerMenu"
+    @contextmenu.prevent.stop="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
     <div class="flex min-w-0 items-center gap-1">
       <button
         type="button"
-        class="player-select-action focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2"
+        class="player-select-action focus-visible:ring-ring flex min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2"
         :disabled="!player.available"
         @click="emit('click', player)"
       >
         <span class="sr-only">{{ $t("tooltip.select_player") }}: </span>
         <div
-          class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
+          class="player-card-main flex min-w-0 flex-1"
+          :class="
+            useStackedMediaLayout ? 'flex-col gap-1.5' : 'items-center gap-3'
+          "
         >
-          <img
-            v-if="artworkUrl"
-            :src="artworkUrl"
-            alt=""
-            class="size-full object-cover"
-            loading="lazy"
-            @error="artworkFailed = true"
-          />
-          <PlayerIcon
-            v-else
-            :icon="player.icon"
-            :grouped="
-              player.type === PlayerType.PLAYER &&
-              player.group_members.some(
-                (playerId) => playerId !== player.player_id,
-              )
+          <PlayerCardTitle
+            v-if="useStackedMediaLayout"
+            :player-name="getPlayerName(player, 27)"
+            :member-names="groupMemberNames"
+          >
+            <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
+          </PlayerCardTitle>
+          <div
+            class="player-card-media-row"
+            :class="
+              useStackedMediaLayout
+                ? 'flex min-w-0 items-center gap-3'
+                : 'contents'
             "
-            :size="24"
-            class="opacity-80"
-          />
-        </div>
-
-        <div class="min-w-0 flex-1 py-0.5">
-          <div class="flex min-w-0 items-center gap-1.5">
-            <span class="truncate text-sm font-medium">
-              {{ getPlayerName(player, 27) }}
-            </span>
-            <Badge
-              v-if="isBuiltinPlayer(player)"
-              as="span"
-              variant="secondary"
-              class="h-5 shrink-0 gap-1 px-1.5 text-[11px]"
+          >
+            <div
+              class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
             >
-              <Smartphone v-if="store.deviceType === 'phone'" class="size-3" />
-              <Monitor v-else class="size-3" />
-              <span v-if="store.deviceType !== 'phone'">
-                {{ $t("this_device") }}
-              </span>
-            </Badge>
+              <img
+                v-if="artworkUrl"
+                :src="artworkUrl"
+                alt=""
+                class="size-full object-cover"
+                loading="lazy"
+                @error="artworkFailed = true"
+              />
+              <PlayerIcon
+                v-else
+                :icon="player.icon"
+                :grouped="
+                  player.type === PlayerType.PLAYER &&
+                  player.group_members.some(
+                    (playerId) => playerId !== player.player_id,
+                  )
+                "
+                :size="24"
+                class="opacity-80"
+              />
+            </div>
+
+            <div class="min-w-0 flex-1 py-0.5">
+              <PlayerCardTitle
+                v-if="!useStackedMediaLayout"
+                :player-name="getPlayerName(player, 27)"
+                :member-names="groupMemberNames"
+              >
+                <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
+              </PlayerCardTitle>
+              <p
+                v-if="player.powered !== false && player.current_media?.title"
+                class="truncate text-xs font-medium"
+              >
+                {{ player.current_media.title }}
+              </p>
+              <p
+                v-if="player.powered !== false && mediaByline"
+                class="text-muted-foreground truncate text-xs"
+              >
+                {{ mediaByline }}
+              </p>
+              <span
+                v-else-if="playerQueue?.items === 0"
+                class="sr-only"
+                :aria-label="$t('queue_empty')"
+              ></span>
+            </div>
           </div>
-          <p
-            v-if="player.powered !== false && player.current_media?.title"
-            class="truncate text-xs font-medium"
-          >
-            {{ player.current_media.title }}
-          </p>
-          <p
-            v-if="player.powered !== false && mediaByline"
-            class="text-muted-foreground truncate text-xs"
-          >
-            {{ mediaByline }}
-          </p>
-          <span
-            v-else-if="playerQueue?.items === 0"
-            class="sr-only"
-            :aria-label="$t('queue_empty')"
-          ></span>
         </div>
       </button>
 
-      <div class="flex shrink-0 items-center">
+      <div
+        class="player-card-actions flex shrink-0 items-center"
+        :class="{ 'self-end mb-1.5': useStackedMediaLayout }"
+      >
         <Button
           v-if="
             player.power_control !== PLAYER_CONTROL_NONE &&
@@ -166,6 +182,8 @@
 </template>
 
 <script setup lang="ts">
+import PlayerCardTitle from "@/components/PlayerCardTitle.vue";
+import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
 import { Badge } from "@/components/ui/badge";
@@ -193,15 +211,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import {
-  EllipsisVertical,
-  Monitor,
-  Pause,
-  Play,
-  Power,
-  Smartphone,
-  Speaker,
-} from "@lucide/vue";
+import { EllipsisVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
 import { computed, ref, toRef, watch } from "vue";
 
 export interface Props {
@@ -211,6 +221,8 @@ export interface Props {
   showChildVolumes?: boolean;
   showMemberControls?: boolean;
   showGroupControls?: boolean;
+  showGroupMemberNames?: boolean;
+  stackMediaDetails?: boolean;
   allowPowerControl?: boolean;
 }
 
@@ -253,6 +265,16 @@ const mediaByline = computed(() =>
     .join(" • "),
 );
 
+const hasMediaDetails = computed(
+  () =>
+    props.player.powered !== false &&
+    Boolean(props.player.current_media?.title || mediaByline.value),
+);
+
+const useStackedMediaLayout = computed(
+  () => props.stackMediaDetails && hasMediaDetails.value,
+);
+
 const canPlayPause = computed(
   () => activeSource.value?.can_play_pause === true,
 );
@@ -284,6 +306,20 @@ const groupMemberCount = computed(() => {
   return props.player.type === PlayerType.GROUP ? childCount : childCount + 1;
 });
 
+const groupMemberNames = computed(() => {
+  if (!props.showGroupMemberNames) return [];
+
+  const childNames = [...new Set(props.player.group_members)]
+    .filter((playerId) => playerId !== props.player.player_id)
+    .map((playerId) => api.players[playerId]?.name)
+    .filter((name): name is string => Boolean(name));
+
+  if (childNames.length === 0 || props.player.type === PlayerType.GROUP) {
+    return childNames;
+  }
+  return [props.player.name, ...childNames];
+});
+
 watch(
   () => props.player.current_media?.image_url,
   () => {
@@ -292,6 +328,7 @@ watch(
 );
 
 function openPlayerMenu(event: Event) {
+  event.stopPropagation();
   if (!props.player.available) return;
   const position = getEventPosition(event);
   eventbus.emit("contextmenu", {

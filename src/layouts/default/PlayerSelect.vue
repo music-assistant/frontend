@@ -26,6 +26,7 @@
       side="right"
       class="w-[90vw] gap-0 p-0 sm:max-w-[400px] max-md:bottom-[60px]"
       @keydown="handleSheetKeydown"
+      @interact-outside="handleSheetInteractOutside"
     >
       <SheetHeader class="flex-row items-center gap-2 border-b pr-14">
         <Speaker class="size-5 text-muted-foreground" />
@@ -66,6 +67,8 @@
               expandedMemberPlayerIds.has(player.player_id)
             "
             :show-group-controls="true"
+            :show-group-member-names="true"
+            :stack-media-details="true"
             :allow-power-control="true"
             @click="selectPlayer"
             @toggle-child-volumes="toggleChildVolumes"
@@ -80,6 +83,7 @@
 <script setup lang="ts">
 import PlayerCard from "@/components/PlayerCard.vue";
 import { SearchInput } from "@/components/ui/search-input";
+import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
   Sheet,
   SheetContent,
@@ -88,9 +92,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { isBuiltinPlayer, playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { PlaybackState, type Player } from "@/plugins/api/interfaces";
+import type { Player } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { Speaker } from "@lucide/vue";
@@ -104,25 +107,10 @@ const expandedMemberPlayerIds = reactive(new Set<string>());
 const { getPreference, setPreference } = useUserPreferences();
 let menuTrigger: HTMLElement | null = null;
 
-const players = computed(() =>
-  Object.values(api.players).filter((player) => playerVisible(player)),
-);
-
-const orderedPlayers = computed(() =>
-  [...players.value].sort((left, right) => {
-    const leftPriority = getPlayerPriority(left);
-    const rightPriority = getPlayerPriority(right);
-    if (leftPriority !== rightPriority) {
-      return leftPriority - rightPriority;
-    }
-    return left.name.localeCompare(right.name, undefined, {
-      sensitivity: "base",
-    });
-  }),
-);
+const orderedPlayers = useOrderedPlayers();
 
 const showSearch = computed(
-  () => players.value.length > SEARCH_PLAYER_THRESHOLD,
+  () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
 );
 
 const filteredPlayers = computed(() => {
@@ -194,6 +182,10 @@ function handleSheetKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") setMenuOpen(false);
 }
 
+function handleSheetInteractOutside(event: Event) {
+  if (store.dialogActive) event.preventDefault();
+}
+
 function selectPlayer(player: Player) {
   store.activePlayerId = player.player_id;
   store.showPlayersMenu = false;
@@ -209,13 +201,6 @@ function toggleMemberControls(player: Player) {
   const playerId = player.player_id;
   expandedVolumePlayerIds.delete(playerId);
   toggleExpandedPlayer(expandedMemberPlayerIds, playerId);
-}
-
-function getPlayerPriority(player: Player) {
-  if (player.player_id === store.activePlayerId) return 0;
-  if (isBuiltinPlayer(player)) return 1;
-  if (player.playback_state === PlaybackState.PLAYING) return 2;
-  return 3;
 }
 
 function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
