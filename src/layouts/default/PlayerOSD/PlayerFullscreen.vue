@@ -745,10 +745,8 @@ watch(
 
 // Waveform for the current track, rendered by PlayerTimeline instead of the flat bar.
 const waveformData = ref<number[] | null>(null);
-const showWaveformPref = useUserPreferences().getPreference(
-  "show_waveform",
-  true,
-);
+const { getPreference, setPreference } = useUserPreferences();
+const showWaveformPref = getPreference("show_waveform", true);
 let waveformLoadGeneration = 0;
 const fetchWaveform = async () => {
   const generation = ++waveformLoadGeneration;
@@ -1135,6 +1133,14 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value,
     },
   );
+  menuItems.push({
+    label: "settings.show_waveform.label",
+    action: () => {
+      void setPreference("show_waveform", !showWaveformPref.value);
+    },
+    icon: "mdi-waveform",
+    selected: showWaveformPref.value,
+  });
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
   if (showLyrics.value && showLyricsOffset.value) {
