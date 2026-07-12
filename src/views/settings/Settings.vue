@@ -853,9 +853,9 @@ const breadcrumbItems = computed(() => {
         disabled: true,
       });
     })
-    .with("serverlogs", () => {
+    .with("diagnostics", () => {
       items.push({
-        title: t("settings.server_logging"),
+        title: t("settings.diagnostics"),
         disabled: true,
       });
     })
