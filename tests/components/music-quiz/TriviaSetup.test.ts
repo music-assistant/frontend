@@ -106,6 +106,20 @@ describe("TriviaSetup", () => {
     });
   });
 
+  it("blocks create when shared setup is invalid", async () => {
+    const wrapper = mountSetup(false, false);
+
+    await wrapper.get('[data-testid="select-sources"]').trigger("click");
+    await nextTick();
+    const createButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("create"));
+
+    expect(createButton?.attributes("disabled")).toBeDefined();
+    await createButton?.trigger("click");
+    expect(wrapper.emitted("create")).toBeUndefined();
+  });
+
   it("defaults reveal audio on and emits an explicit disabled value", async () => {
     const wrapper = mountSetup();
     const toggle = wrapper.get('[data-testid="trivia-play-reveal-audio"]');
@@ -180,9 +194,9 @@ describe("TriviaSetup", () => {
   });
 });
 
-function mountSetup(includeSimilarMusic = false) {
+function mountSetup(includeSimilarMusic = false, sharedConfigValid = true) {
   return mount(TriviaSetup, {
-    props: { busy: false, includeSimilarMusic },
+    props: { busy: false, includeSimilarMusic, sharedConfigValid },
     global: {
       stubs: {
         MusicQuizSourceSelector: {

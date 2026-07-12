@@ -2,6 +2,7 @@ import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongRound,
+  MusicQuizHostPlayback,
   MusicQuizPhase,
 } from "@/composables/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -25,6 +26,11 @@ vi.mock("@/plugins/i18n", () => ({
             "Waiting for final results...",
           "providers.music_quiz.play_again": "Play again",
           "providers.music_quiz.set_up_new_game": "Set up new game…",
+          "providers.music_quiz.playback": "Playback",
+          "providers.music_quiz.playback_venue": "Venue",
+          "providers.music_quiz.playback_summary_venue": "Venue · {0}",
+          "providers.music_quiz.playback_summary_remote":
+            "Remote · Players listen on their own device",
         } as Record<string, string>
       )[key] ?? key;
     return message.replace("{0}", String(values[0] ?? ""));
@@ -84,6 +90,57 @@ describe("MusicQuizHostPanel", () => {
     await endGameButton?.trigger("click");
     expect(wrapper.emitted("present")).toHaveLength(1);
     expect(wrapper.emitted("endGame")).toHaveLength(1);
+  });
+
+  it.each([
+    [
+      {
+        mode: "venue",
+        venue_player_id: "living-room",
+        venue_player_name: "Living Room",
+      },
+      "Playback: Venue · Living Room",
+    ],
+    [
+      {
+        mode: "remote",
+        venue_player_id: null,
+        venue_player_name: null,
+      },
+      "Playback: Remote · Players listen on their own device",
+    ],
+  ] satisfies Array<[MusicQuizHostPlayback, string]>)(
+    "shows the host lobby playback summary",
+    (playback, expected) => {
+      const wrapper = mountPanel("lobby", false, { playback });
+
+      expect(
+        wrapper.get('[data-testid="music-quiz-playback-summary"]').text(),
+      ).toBe(expected);
+    },
+  );
+
+  it("keeps playback details out of non-lobby host UI", () => {
+    const wrapper = mountPanel("answering", false, {
+      playback: {
+        mode: "venue",
+        venue_player_id: "living-room",
+        venue_player_name: "Living Room",
+      },
+    });
+
+    expect(
+      wrapper.find('[data-testid="music-quiz-playback-summary"]').exists(),
+    ).toBe(false);
+    expect(wrapper.text()).not.toContain("Living Room");
+  });
+
+  it("keeps legacy lobbies usable without a playback summary", () => {
+    const wrapper = mountPanel("lobby");
+
+    expect(
+      wrapper.find('[data-testid="music-quiz-playback-summary"]').exists(),
+    ).toBe(false);
   });
 
   it.each([
@@ -277,6 +334,7 @@ function mountPanel(
     revealCountdown?: boolean;
     autoAdvanceAt?: number | null;
     isLastRound?: boolean;
+    playback?: MusicQuizHostPlayback;
   } = {},
 ) {
   return mount(MusicQuizHostPanel, {
@@ -292,6 +350,7 @@ function mountPanel(
                 auto_advance_at: options.autoAdvanceAt ?? null,
               }
             : null,
+        ...(options.playback ? { playback: options.playback } : {}),
       },
       busy,
       joinLink: HOST_STATE.join_url,

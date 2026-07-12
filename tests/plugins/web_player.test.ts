@@ -62,8 +62,10 @@ vi.mock("@/plugins/sendspin-connection", () => ({
 
 import { companionMode } from "@/plugins/companion";
 import {
+  clearWebPlayerAudioUnlock,
   initializeWebPlayerModeSync,
   partyListenInEnabled,
+  registerWebPlayerAudioUnlock,
   webPlayer,
   WebPlayerMode,
 } from "@/plugins/web_player";
@@ -122,6 +124,17 @@ describe("web player preferred mode", () => {
     partyListenInEnabled.value = false;
     vi.stubGlobal("localStorage", createStorage());
     window.localStorage.clear();
+  });
+
+  it("reports whether an audio unlock handler is ready", () => {
+    const handler = vi.fn(() => true);
+
+    expect(webPlayer.primeAudio()).toBe(false);
+    registerWebPlayerAudioUnlock(handler);
+    expect(webPlayer.primeAudio()).toBe(true);
+    expect(handler).toHaveBeenCalledOnce();
+    clearWebPlayerAudioUnlock(handler);
+    expect(webPlayer.primeAudio()).toBe(false);
   });
 
   it("uses receive-only Sendspin for Music Quiz guests", async () => {

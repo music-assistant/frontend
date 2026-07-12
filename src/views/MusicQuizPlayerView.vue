@@ -72,6 +72,11 @@
         :labels="listenInLabels"
         :recheck-events="listenInRecheckEvents"
         :get-error-message="getMusicQuizErrorMessage"
+        :auto-enable="
+          mode === 'remote' &&
+          listenInPrimedGeneration === webPlayer.player_generation
+        "
+        preference-key="music_quiz_listen_in_enabled"
       />
 
       <MusicQuizPlayerStage
@@ -142,8 +147,9 @@ import {
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { webPlayer } from "@/plugins/web_player";
 import { CircleStop, Clock3 } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 const player = useMusicQuizPlayer({
@@ -198,6 +204,7 @@ const unsupportedGame = computed(() => {
 });
 
 const { celebrate } = useMusicQuizCelebration();
+const listenInPrimedGeneration = ref<number | null>(null);
 
 const mode = computed(() => {
   if (activeState.value) return activeState.value.mode;
@@ -286,6 +293,11 @@ watch(
 );
 
 async function handleJoin(name: string) {
+  if (listenInEnabled.value) {
+    listenInPrimedGeneration.value = webPlayer.primeAudio()
+      ? webPlayer.player_generation
+      : null;
+  }
   await player.join(name);
 }
 

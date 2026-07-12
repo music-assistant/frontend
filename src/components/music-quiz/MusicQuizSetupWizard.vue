@@ -1,6 +1,30 @@
 <template>
-  <div class="flex flex-col gap-5">
-    <div class="flex flex-col gap-2">
+  <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
+    <div
+      v-if="busy"
+      ref="preparingStatus"
+      class="bg-background absolute inset-0 z-10 flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg p-6 text-center"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      tabindex="-1"
+      data-testid="music-quiz-preparing"
+    >
+      <LoaderCircle
+        class="text-primary size-8 animate-spin"
+        aria-hidden="true"
+      />
+      <div class="flex flex-col gap-1">
+        <h2 class="text-lg font-semibold">
+          {{ $t("providers.music_quiz.preparing_game") }}
+        </h2>
+        <p class="text-muted-foreground max-w-md text-sm">
+          {{ $t("providers.music_quiz.preparing_game_help") }}
+        </p>
+      </div>
+    </div>
+
+    <div v-show="!busy" class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-3">
         <Button
           v-if="step > 1"
@@ -20,7 +44,7 @@
       <Progress :model-value="(step / TOTAL_STEPS) * 100" />
     </div>
 
-    <section v-if="step === 1" class="flex flex-col gap-3">
+    <section v-if="!busy && step === 1" class="flex flex-col gap-3">
       <h2 ref="chooseHeading" class="text-lg font-semibold" tabindex="-1">
         {{ $t("providers.music_quiz.choose_game_type") }}
       </h2>
@@ -49,7 +73,7 @@
       </div>
     </section>
 
-    <section v-else class="flex flex-col gap-4">
+    <section v-show="!busy && step === 2" class="flex flex-col gap-4">
       <div class="flex items-center gap-2">
         <component
           :is="selectedType.icon"
@@ -60,6 +84,15 @@
           {{ $t("providers.music_quiz.configure_game") }}
         </h2>
       </div>
+      <MusicQuizPlaybackControls
+        v-if="playbackOptionsLoading || playbackOptions || playbackOptionsError"
+        v-model="playbackSelection"
+        :options="playbackOptions"
+        :loading="playbackOptionsLoading"
+        :error="playbackOptionsError"
+        :disabled="busy"
+        @retry="emit('retryPlaybackOptions')"
+      />
       <Field
         orientation="horizontal"
         class="items-center justify-between gap-4 rounded-lg border p-4"
@@ -79,13 +112,17 @@
           :disabled="busy"
         />
       </Field>
-      <component
-        :is="selectedType.adapters.setup"
-        v-if="selectedType"
-        :busy="busy"
-        :include-similar-music="includeSimilarMusic"
-        @create="onConfigCreate"
-      />
+      <KeepAlive v-if="selectedType">
+        <component
+          :is="
+            step === 2 ? selectedType.adapters.setup : MusicQuizSetupPlaceholder
+          "
+          :busy="busy"
+          :include-similar-music="includeSimilarMusic"
+          :shared-config-valid="sharedConfigValid"
+          @create="onConfigCreate"
+        />
+      </KeepAlive>
     </section>
   </div>
 </template>
@@ -96,24 +133,52 @@ import {
   isMusicQuizGameAvailable,
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
+import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlaybackControls.vue";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
-import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
+import type {
+  MusicQuizCreateRequest,
+  MusicQuizPlaybackOptions,
+} from "@/composables/useMusicQuiz";
+import {
+  getDefaultMusicQuizPlaybackSelection,
+  getMusicQuizPlaybackCreateFields,
+  isMusicQuizPlaybackSelectionValid,
+  type MusicQuizPlaybackSelection,
+} from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft } from "@lucide/vue";
-import { computed, nextTick, ref } from "vue";
+import { ArrowLeft, LoaderCircle } from "@lucide/vue";
+import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
 const TOTAL_STEPS = 2;
+const MusicQuizSetupPlaceholder = defineComponent({
+  inheritAttrs: false,
+  setup: () => () => null,
+});
 
 const props = withDefaults(
-  defineProps<{ busy: boolean; availableQuizTypes?: string[] }>(),
+  defineProps<{
+    busy: boolean;
+    availableQuizTypes?: string[];
+    playbackOptions?: MusicQuizPlaybackOptions | null;
+    playbackOptionsLoading?: boolean;
+    playbackOptionsLegacy?: boolean;
+    playbackOptionsError?: boolean;
+  }>(),
   {
     availableQuizTypes: () => [],
+    playbackOptions: null,
+    playbackOptionsLoading: false,
+    playbackOptionsLegacy: true,
+    playbackOptionsError: false,
   },
 );
-const emit = defineEmits<{ create: [request: MusicQuizCreateRequest] }>();
+const emit = defineEmits<{
+  create: [request: MusicQuizCreateRequest];
+  retryPlaybackOptions: [];
+}>();
 
 const availableGameTypes = computed(() =>
   MUSIC_QUIZ_GAME_TYPES.filter((type) =>
@@ -123,11 +188,47 @@ const availableGameTypes = computed(() =>
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 const includeSimilarMusic = ref(false);
+const playbackSelection = ref<MusicQuizPlaybackSelection>({
+  mode: null,
+  venuePlayerId: null,
+});
 const chooseHeading = ref<HTMLHeadingElement | null>(null);
 const configureHeading = ref<HTMLHeadingElement | null>(null);
+const preparingStatus = ref<HTMLElement | null>(null);
+const sharedConfigValid = computed(() => {
+  if (props.playbackOptionsLoading) return false;
+  if (props.playbackOptions) {
+    return isMusicQuizPlaybackSelectionValid(
+      playbackSelection.value,
+      props.playbackOptions,
+    );
+  }
+  return props.playbackOptionsLegacy && !props.playbackOptionsError;
+});
+
+watch(
+  () => props.playbackOptions,
+  (options) => {
+    if (options) {
+      playbackSelection.value = getDefaultMusicQuizPlaybackSelection(options);
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.busy,
+  async (busy) => {
+    if (!busy) return;
+    await nextTick();
+    preparingStatus.value?.focus({ preventScroll: true });
+  },
+  { immediate: true },
+);
 
 async function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;
+  await nextTick();
   step.value = 2;
   await nextTick();
   configureHeading.value?.focus({ preventScroll: true });
@@ -140,6 +241,18 @@ async function back() {
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {
+  if (!sharedConfigValid.value) return;
+  const playbackFields = props.playbackOptions
+    ? getMusicQuizPlaybackCreateFields(
+        playbackSelection.value,
+        props.playbackOptions,
+      )
+    : null;
+  if (props.playbackOptions && !playbackFields) return;
+  if (playbackFields) {
+    emit("create", { ...request, ...playbackFields });
+    return;
+  }
   emit("create", request);
 }
 </script>

@@ -35,17 +35,30 @@
             {{ statusText }}
           </p>
         </div>
-        <Button
-          v-if="!state && !loading"
-          variant="default"
-          size="sm"
-          data-testid="new-game"
-          :disabled="busy"
-          @click="showSetupDialog = true"
-        >
-          <Plus class="size-4" />
-          {{ $t("providers.music_quiz.new_game") }}
-        </Button>
+        <div class="flex shrink-0 items-center gap-2">
+          <Button
+            v-if="isAdmin && musicQuizProviderInstanceId"
+            variant="ghost"
+            size="icon"
+            data-testid="music-quiz-settings"
+            :aria-label="$t('providers.music_quiz.settings')"
+            :title="$t('providers.music_quiz.settings')"
+            @click="goToMusicQuizSettings"
+          >
+            <Settings class="size-5" />
+          </Button>
+          <Button
+            v-if="!state && !loading"
+            variant="default"
+            size="sm"
+            data-testid="new-game"
+            :disabled="busy"
+            @click="openSetupDialog"
+          >
+            <Plus class="size-4" />
+            {{ $t("providers.music_quiz.new_game") }}
+          </Button>
+        </div>
       </header>
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
@@ -70,7 +83,7 @@
           <Button
             size="lg"
             data-testid="new-game-empty"
-            @click="showSetupDialog = true"
+            @click="openSetupDialog"
           >
             <Plus class="size-4" />
             {{ $t("providers.music_quiz.new_game") }}
@@ -160,7 +173,12 @@
           v-if="showSetupDialog"
           :busy="busy"
           :available-quiz-types="availableQuizTypes"
+          :playback-options="playbackOptions"
+          :playback-options-loading="playbackOptionsLoading"
+          :playback-options-legacy="playbackOptionsLegacy"
+          :playback-options-error="playbackOptionsError"
           @create="handleCreate"
+          @retry-playback-options="host.fetchPlaybackOptions"
         />
       </DialogContent>
     </Dialog>
@@ -236,11 +254,15 @@ import {
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
 import api, { ConnectionState } from "@/plugins/api";
+import { ProviderType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper, Plus } from "@lucide/vue";
+import { PartyPopper, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
+const router = useRouter();
 const host = useMusicQuizHost({
   notifyError: (message) => toast.error(message),
 });
@@ -250,6 +272,10 @@ const {
   busy,
   loading,
   availableQuizTypes,
+  playbackOptions,
+  playbackOptionsLoading,
+  playbackOptionsLegacy,
+  playbackOptionsError,
   currentRound,
   isLastRound,
   joinLink,
@@ -333,6 +359,31 @@ const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
 const showEndGameDialog = ref(false);
 const showSetupDialog = ref(false);
+const musicQuizProviderInstanceId = ref<string | null>(null);
+const isAdmin = computed(() => authManager.isAdmin());
+
+watch(
+  isAdmin,
+  (admin) => {
+    if (admin && !musicQuizProviderInstanceId.value) {
+      void resolveMusicQuizProviderInstance();
+    }
+  },
+  { immediate: true },
+);
+
+function openSetupDialog() {
+  void host.fetchPlaybackOptions();
+  showSetupDialog.value = true;
+}
+
+function goToMusicQuizSettings() {
+  if (!musicQuizProviderInstanceId.value) return;
+  void router.push({
+    name: "editprovider",
+    params: { instanceId: musicQuizProviderInstanceId.value },
+  });
+}
 
 async function handleCreate(request: MusicQuizCreateRequest) {
   if (await host.create(request)) showSetupDialog.value = false;
@@ -345,7 +396,7 @@ async function handleReplay() {
 
 async function handleSetUpNewGame() {
   if (busy.value) return;
-  if (await host.deleteGame()) showSetupDialog.value = true;
+  if (await host.deleteGame()) openSetupDialog();
 }
 
 async function enterPresentMode() {
@@ -396,4 +447,17 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("fullscreenchange", onFullscreenChange);
 });
+
+async function resolveMusicQuizProviderInstance() {
+  try {
+    const configs = await api.getProviderConfigs(
+      ProviderType.PLUGIN,
+      "music_quiz",
+    );
+    musicQuizProviderInstanceId.value = configs[0]?.instance_id ?? null;
+  } catch (error) {
+    musicQuizProviderInstanceId.value = null;
+    console.error("Failed to load Music Quiz settings:", error);
+  }
+}
 </script>

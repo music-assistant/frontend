@@ -73,6 +73,10 @@ export interface ListenInProps {
   recheckEvents?: EventType[];
   /** Optional server-error extractor passed through to useListenIn. */
   getErrorMessage?: (err: unknown, fallback: string) => string;
+  /** Start listening when available unless a stored preference overrides it. */
+  autoEnable?: boolean;
+  /** Local-storage key used to remember the explicit on/off choice. */
+  preferenceKey?: string;
 }
 </script>
 
@@ -91,8 +95,8 @@ const {
   isListeningIn,
   busy,
   shouldShowListenInToggle,
-  enableListenIn,
-  disableListenIn,
+  enableListenIn: startListenIn,
+  disableListenIn: stopListenIn,
 } = useListenIn({
   domain: props.domain,
   mode: () => props.mode,
@@ -104,6 +108,7 @@ const {
   },
   recheckEvents: props.recheckEvents,
   getErrorMessage: props.getErrorMessage,
+  autoEnable: shouldAutoEnable,
 });
 
 // Remote mode keeps the control visible while listening so guests can stop.
@@ -124,6 +129,37 @@ const description = computed(() =>
 function onToggle(enabled: boolean) {
   if (enabled) enableListenIn();
   else disableListenIn();
+}
+
+async function enableListenIn() {
+  if (!(await startListenIn())) return;
+  rememberPreference(true);
+}
+
+async function disableListenIn() {
+  rememberPreference(false);
+  await stopListenIn();
+}
+
+function shouldAutoEnable() {
+  if (!props.autoEnable) return false;
+  if (!props.preferenceKey) return true;
+  try {
+    const preference = window.localStorage.getItem(props.preferenceKey);
+    return preference === null || preference === "true";
+  } catch (error) {
+    console.debug("Could not read Listen-in preference:", error);
+    return true;
+  }
+}
+
+function rememberPreference(enabled: boolean) {
+  if (!props.preferenceKey) return;
+  try {
+    window.localStorage.setItem(props.preferenceKey, String(enabled));
+  } catch (error) {
+    console.debug("Could not store Listen-in preference:", error);
+  }
 }
 </script>
 

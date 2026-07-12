@@ -3,6 +3,9 @@ import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { webPlayer } from "@/plugins/web_player";
 
+let nextListenInOperationId = 0;
+const latestListenInOperationByPlayer = new Map<string, number>();
+
 export type ListenInMode = "venue" | "remote";
 
 export interface ListenInErrorMessages {
@@ -26,6 +29,8 @@ export interface UseListenInOptions {
   recheckEvents?: EventType[];
   /** Optional server-error extractor; defaults to a generic message reader. */
   getErrorMessage?: (err: unknown, fallback: string) => string;
+  /** Whether Listen-in should start as soon as it becomes available. */
+  autoEnable?: () => boolean;
 }
 
 /**
@@ -42,6 +47,7 @@ export function useListenIn(options: UseListenInOptions) {
     notifyError,
     errorMessages,
     recheckEvents = [],
+    autoEnable,
   } = options;
   const getErrorMessage = options.getErrorMessage ?? defaultGetErrorMessage;
 
@@ -51,8 +57,12 @@ export function useListenIn(options: UseListenInOptions) {
 
   let unsubscribePlayerUpdated: (() => void) | undefined;
   let unsubscribeRecheckEvents: (() => void) | undefined;
+  let autoEnableAttemptedForGeneration: number | null = null;
+  let availabilityRequestId = 0;
+  let disposed = false;
 
   const webPlayerId = computed(() => webPlayer.player_id ?? null);
+  const webPlayerGeneration = computed(() => webPlayer.player_generation);
 
   const shouldShowListenInToggle = computed(
     () => canListenIn.value && mode() !== undefined,
@@ -63,17 +73,43 @@ export function useListenIn(options: UseListenInOptions) {
   );
 
   async function checkCanListenIn() {
+    const requestId = ++availabilityRequestId;
     const playerId = webPlayerId.value;
+    const playerGeneration = webPlayerGeneration.value;
     if (!playerId) {
       canListenIn.value = false;
       return;
     }
     try {
-      canListenIn.value = await api.sendCommand<boolean>(
+      const available = await api.sendCommand<boolean>(
         `${domain}/can_listen_in`,
         { web_player_id: playerId },
       );
+      if (
+        disposed ||
+        requestId !== availabilityRequestId ||
+        !isCurrentWebPlayer(playerId, playerGeneration)
+      ) {
+        return;
+      }
+      canListenIn.value = available;
+      if (
+        canListenIn.value &&
+        autoEnable?.() &&
+        autoEnableAttemptedForGeneration !== playerGeneration &&
+        !isListeningIn.value &&
+        !busy.value
+      ) {
+        autoEnableAttemptedForGeneration = playerGeneration;
+        await enableListenIn();
+      }
     } catch (err) {
+      if (
+        requestId !== availabilityRequestId ||
+        !isCurrentWebPlayer(playerId, playerGeneration)
+      ) {
+        return;
+      }
       // Availability is best-effort; on failure just treat it as unavailable.
       console.debug("can_listen_in check failed:", err);
       canListenIn.value = false;
@@ -83,44 +119,92 @@ export function useListenIn(options: UseListenInOptions) {
   async function enableListenIn() {
     if (busy.value) return false;
     const playerId = webPlayerId.value;
+    const playerGeneration = webPlayerGeneration.value;
     if (!playerId) {
       notifyError(errorMessages.noWebPlayer);
       return false;
     }
     // Unlock this browser's audio output within the user gesture; listen-in
     // audio starts asynchronously and would otherwise be blocked on iOS.
-    webPlayer.primeAudio();
+    if (!webPlayer.primeAudio()) {
+      notifyError(errorMessages.noWebPlayer);
+      return false;
+    }
+    const operationId = beginListenInOperation(domain, playerId);
     busy.value = true;
     try {
       await api.sendCommand<void>(`${domain}/listen_in`, {
         web_player_id: playerId,
       });
+      if (
+        !isCurrentWebPlayer(playerId, playerGeneration) ||
+        !isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        if (isLatestListenInOperation(domain, playerId, operationId)) {
+          await stopStaleListenIn(playerId);
+        }
+        return false;
+      }
       isListeningIn.value = true;
       return true;
     } catch (err) {
-      notifyError(getErrorMessage(err, errorMessages.listenIn));
+      if (
+        isCurrentWebPlayer(playerId, playerGeneration) &&
+        isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        notifyError(getErrorMessage(err, errorMessages.listenIn));
+      }
       return false;
     } finally {
       busy.value = false;
+      if (
+        !disposed &&
+        webPlayerId.value &&
+        !isCurrentWebPlayer(playerId, playerGeneration) &&
+        isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        void checkCanListenIn();
+      }
     }
   }
 
   async function disableListenIn() {
     if (busy.value) return false;
     const playerId = webPlayerId.value;
+    const playerGeneration = webPlayerGeneration.value;
     if (!playerId) return false;
+    const operationId = beginListenInOperation(domain, playerId);
     busy.value = true;
     try {
       await api.sendCommand<void>(`${domain}/stop_listen_in`, {
         web_player_id: playerId,
       });
+      if (
+        !isCurrentWebPlayer(playerId, playerGeneration) ||
+        !isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        return false;
+      }
       isListeningIn.value = false;
       return true;
     } catch (err) {
-      notifyError(getErrorMessage(err, errorMessages.stopListenIn));
+      if (
+        isCurrentWebPlayer(playerId, playerGeneration) &&
+        isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        notifyError(getErrorMessage(err, errorMessages.stopListenIn));
+      }
       return false;
     } finally {
       busy.value = false;
+      if (
+        !disposed &&
+        webPlayerId.value &&
+        !isCurrentWebPlayer(playerId, playerGeneration) &&
+        isLatestListenInOperation(domain, playerId, operationId)
+      ) {
+        void checkCanListenIn();
+      }
     }
   }
 
@@ -131,14 +215,33 @@ export function useListenIn(options: UseListenInOptions) {
     }
   }
 
-  watch(webPlayerId, (newPlayerId) => {
+  watch([webPlayerId, webPlayerGeneration], ([newPlayerId]) => {
+    availabilityRequestId++;
+    autoEnableAttemptedForGeneration = null;
+    canListenIn.value = false;
+    isListeningIn.value = false;
     if (newPlayerId) {
       checkCanListenIn();
-    } else {
-      canListenIn.value = false;
-      isListeningIn.value = false;
     }
   });
+
+  function isCurrentWebPlayer(playerId: string, generation: number) {
+    return (
+      !disposed &&
+      webPlayerId.value === playerId &&
+      webPlayerGeneration.value === generation
+    );
+  }
+
+  async function stopStaleListenIn(playerId: string) {
+    try {
+      await api.sendCommand<void>(`${domain}/stop_listen_in`, {
+        web_player_id: playerId,
+      });
+    } catch (error) {
+      console.debug("Could not stop stale listen-in session:", error);
+    }
+  }
 
   onMounted(() => {
     checkCanListenIn();
@@ -154,6 +257,8 @@ export function useListenIn(options: UseListenInOptions) {
   });
 
   onBeforeUnmount(() => {
+    disposed = true;
+    availabilityRequestId++;
     unsubscribePlayerUpdated?.();
     unsubscribeRecheckEvents?.();
   });
@@ -168,6 +273,22 @@ export function useListenIn(options: UseListenInOptions) {
     disableListenIn,
     checkCanListenIn,
   };
+}
+
+function beginListenInOperation(domain: string, playerId: string) {
+  const operationId = ++nextListenInOperationId;
+  latestListenInOperationByPlayer.set(`${domain}:${playerId}`, operationId);
+  return operationId;
+}
+
+function isLatestListenInOperation(
+  domain: string,
+  playerId: string,
+  operationId: number,
+) {
+  return (
+    latestListenInOperationByPlayer.get(`${domain}:${playerId}`) === operationId
+  );
 }
 
 function defaultGetErrorMessage(err: unknown, fallback = ""): string {
