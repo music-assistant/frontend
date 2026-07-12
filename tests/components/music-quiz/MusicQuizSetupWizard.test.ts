@@ -350,6 +350,30 @@ describe("MusicQuizSetupWizard", () => {
     expect(wrapper.emitted("create")).toBeUndefined();
   });
 
+  it("shows preparation progress without discarding setup state", async () => {
+    const wrapper = mountWizard({ playbackOptions: PLAYBACK_OPTIONS }, true);
+    await selectGame(wrapper, "game_type");
+    await wrapper.get('[data-testid="change-guess_the_song"]').trigger("click");
+
+    await wrapper.setProps({ busy: true });
+    await nextTick();
+
+    const status = wrapper.get('[data-testid="music-quiz-preparing"]');
+    expect(status.attributes("role")).toBe("status");
+    expect(status.text()).toContain("providers.music_quiz.preparing_game");
+    expect(status.text()).toContain("providers.music_quiz.preparing_game_help");
+    expect(document.activeElement).toBe(status.element);
+    expect(
+      wrapper.get('[data-testid="setting-guess_the_song"]').isVisible(),
+    ).toBe(false);
+
+    await wrapper.setProps({ busy: false });
+    expect(wrapper.get('[data-testid="setting-guess_the_song"]').text()).toBe(
+      "1",
+    );
+    wrapper.unmount();
+  });
+
   it("disables Venue with the empty-player reason while Remote stays usable", async () => {
     const options = {
       default_playback_mode: "remote",

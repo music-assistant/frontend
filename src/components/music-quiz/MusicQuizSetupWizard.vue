@@ -1,6 +1,30 @@
 <template>
-  <div class="flex flex-col gap-5">
-    <div class="flex flex-col gap-2">
+  <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
+    <div
+      v-if="busy"
+      ref="preparingStatus"
+      class="bg-background absolute inset-0 z-10 flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg p-6 text-center"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      tabindex="-1"
+      data-testid="music-quiz-preparing"
+    >
+      <LoaderCircle
+        class="text-primary size-8 animate-spin"
+        aria-hidden="true"
+      />
+      <div class="flex flex-col gap-1">
+        <h2 class="text-lg font-semibold">
+          {{ $t("providers.music_quiz.preparing_game") }}
+        </h2>
+        <p class="text-muted-foreground max-w-md text-sm">
+          {{ $t("providers.music_quiz.preparing_game_help") }}
+        </p>
+      </div>
+    </div>
+
+    <div v-show="!busy" class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-3">
         <Button
           v-if="step > 1"
@@ -20,7 +44,7 @@
       <Progress :model-value="(step / TOTAL_STEPS) * 100" />
     </div>
 
-    <section v-if="step === 1" class="flex flex-col gap-3">
+    <section v-if="!busy && step === 1" class="flex flex-col gap-3">
       <h2 ref="chooseHeading" class="text-lg font-semibold" tabindex="-1">
         {{ $t("providers.music_quiz.choose_game_type") }}
       </h2>
@@ -49,7 +73,7 @@
       </div>
     </section>
 
-    <section v-show="step === 2" class="flex flex-col gap-4">
+    <section v-show="!busy && step === 2" class="flex flex-col gap-4">
       <div class="flex items-center gap-2">
         <component
           :is="selectedType.icon"
@@ -123,7 +147,7 @@ import {
   type MusicQuizPlaybackSelection,
 } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft } from "@lucide/vue";
+import { ArrowLeft, LoaderCircle } from "@lucide/vue";
 import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
 const TOTAL_STEPS = 2;
@@ -161,6 +185,7 @@ const playbackSelection = ref<MusicQuizPlaybackSelection>({
 });
 const chooseHeading = ref<HTMLHeadingElement | null>(null);
 const configureHeading = ref<HTMLHeadingElement | null>(null);
+const preparingStatus = ref<HTMLElement | null>(null);
 const sharedConfigValid = computed(() => {
   if (props.playbackOptionsLoading) return false;
   return props.playbackOptions
@@ -177,6 +202,16 @@ watch(
     if (options) {
       playbackSelection.value = getDefaultMusicQuizPlaybackSelection(options);
     }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.busy,
+  async (busy) => {
+    if (!busy) return;
+    await nextTick();
+    preparingStatus.value?.focus({ preventScroll: true });
   },
   { immediate: true },
 );

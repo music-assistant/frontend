@@ -1238,6 +1238,8 @@
             "no_playback_modes": "No playback modes are available. Check your Music Quiz settings.",
             "loading_playback_options": "Loading playback options...",
             "error_load_playback_options": "Couldn't load playback options",
+            "preparing_game": "Preparing your game",
+            "preparing_game_help": "Loading your selected music and creating the rounds. This may take a moment.",
             "settings": "Music Quiz settings",
             "listen_in": "Listen in",
             "listen_in_venue": "Hear the music on this device",
