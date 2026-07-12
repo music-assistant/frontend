@@ -108,7 +108,7 @@
           v-model="venuePlayerId"
           class="w-full"
           :disabled="disabled || !venueAvailable"
-          :aria-invalid="!venueSelectionValid"
+          :aria-invalid="!disabled && venueAvailable && !venueSelectionValid"
         >
           <option value="" disabled>
             {{ $t("providers.music_quiz.choose_speaker") }}

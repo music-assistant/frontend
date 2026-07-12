@@ -390,6 +390,9 @@ describe("MusicQuizSetupWizard", () => {
         .get('[data-testid="create-music_timeline"]')
         .attributes("disabled"),
     ).toBeDefined();
+    expect(
+      wrapper.get("#music-quiz-venue-player").attributes("aria-invalid"),
+    ).toBe("false");
   });
 
   it("requires a concrete eligible speaker for Venue", async () => {
