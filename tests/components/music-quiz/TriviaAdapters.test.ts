@@ -5,6 +5,7 @@ import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHos
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
 import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
 import type {
+  MusicQuizTriviaHostRound,
   MusicQuizTriviaHostState,
   MusicQuizTriviaPersonalizedState,
   MusicQuizTriviaRound,
@@ -40,11 +41,25 @@ const revealRound = {
   ...answeringRound,
   answer_label: "Daft Punk",
   correct_suggestion_id: "daft-punk",
-  track_uri: null,
+  track_uri: "library://track/daft-punk",
   image_url: null,
   duration: null,
   ended_at: 20,
 } satisfies MusicQuizTriviaRound;
+
+const protectedHostRound = {
+  round_index: 0,
+  answer_label: "Daft Punk",
+  suggestions: answeringRound.suggestions,
+  correct_suggestion_id: "daft-punk",
+  track_uri: "library://track/daft-punk",
+  question: answeringRound.question,
+  image_url: null,
+  duration: null,
+  started_at: 1,
+  ended_at: null,
+  auto_advance_at: null,
+} satisfies MusicQuizTriviaHostRound;
 
 const playerState = {
   quiz_type: "trivia",
@@ -72,7 +87,7 @@ const hostState = {
   created_at: 1,
   sources: [],
   join_url: "https://example.test/join",
-  rounds: [],
+  rounds: [protectedHostRound],
 } satisfies MusicQuizTriviaHostState;
 
 const triviaSurfaces: Array<{
@@ -189,9 +204,34 @@ describe("Trivia adapters", () => {
       expect(wrapper.get('[data-testid="trivia-answer"]').text()).toBe(
         revealRound.answer_label,
       );
+      expect(wrapper.find("audio").exists()).toBe(false);
+      expect(wrapper.html()).not.toContain(revealRound.track_uri);
       wrapper.unmount();
     },
   );
+
+  it("matches answering redaction and reveal audio round fields", () => {
+    const disabledRevealRound = {
+      ...revealRound,
+      track_uri: null,
+    } satisfies MusicQuizTriviaRound;
+    const disabledRound = {
+      ...protectedHostRound,
+      track_uri: null,
+    } satisfies MusicQuizTriviaHostRound;
+
+    expect("track_uri" in answeringRound).toBe(false);
+    expect("image_url" in answeringRound).toBe(false);
+    expect("duration" in answeringRound).toBe(false);
+    expect("ended_at" in answeringRound).toBe(false);
+    expect(revealRound.track_uri).toBe("library://track/daft-punk");
+    expect(disabledRevealRound.track_uri).toBeNull();
+    expect(revealRound.image_url).toBeNull();
+    expect(revealRound.duration).toBeNull();
+    expect(revealRound.ended_at).toBe(20);
+    expect(protectedHostRound.track_uri).toBe("library://track/daft-punk");
+    expect(disabledRound.track_uri).toBeNull();
+  });
 
   it("uses the shared multiple-choice submission and reveal result", () => {
     const answerWrapper = shallowMount(MultipleChoicePlayerAnswer, {

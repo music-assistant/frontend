@@ -381,7 +381,7 @@ export interface MusicQuizGuessTheSongRound extends MusicQuizMultipleChoiceRound
 export interface MusicQuizTriviaRound extends MusicQuizMultipleChoiceRound {
   question: string;
   answer_label?: string;
-  track_uri?: null;
+  track_uri?: string | null;
   image_url?: null;
   duration?: null;
 }
@@ -494,7 +494,7 @@ export interface MusicQuizTriviaHostRound {
   answer_label: string;
   suggestions: MusicQuizSuggestion[];
   correct_suggestion_id: string;
-  track_uri: null;
+  track_uri: string | null;
   question: string;
   image_url: null;
   duration: null;
