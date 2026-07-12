@@ -145,7 +145,7 @@ const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
         size: props.size ?? 20,
         class: "shrink-0",
       })
-    : h(props.icon, { class: "size-4 shrink-0" });
+    : h(props.icon, { class: "size-5 shrink-0 scale-90" });
 };
 
 const playerSubItems = computed<ContextMenuItem[]>(() => {

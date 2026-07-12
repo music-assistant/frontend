@@ -183,8 +183,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
   MusicQuizTimelineBonusType,
 } from "@/composables/useMusicQuiz";
 import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
@@ -198,8 +198,8 @@ const MAX_BONUS_TEXT_LENGTH = 200;
 const props =
   defineProps<
     MusicQuizPlayerAnswerAdapterProps<
-      MusicQuizHitsterPersonalizedState,
-      MusicQuizHitsterRound
+      MusicQuizTimelinePersonalizedState,
+      MusicQuizTimelineRound
     >
   >();
 const emit = defineEmits<MusicQuizPlayerAnswerAdapterEmits<"timeline">>();

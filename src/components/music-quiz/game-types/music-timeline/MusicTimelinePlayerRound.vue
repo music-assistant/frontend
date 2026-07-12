@@ -1,5 +1,5 @@
 <template>
-  <HitsterRound
+  <MusicTimelineRound
     :phase="state.phase"
     :round="currentRound"
     :is-final-round="isFinalRound"
@@ -16,10 +16,10 @@ import type {
   MusicQuizPlayerGameAdapterEmits,
   MusicQuizPlayerGameAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
-import HitsterRound from "@/components/music-quiz/game-types/hitster/HitsterRound.vue";
+import MusicTimelineRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineRound.vue";
 import type {
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -27,8 +27,8 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPlayerGameAdapterProps<
-      MusicQuizHitsterPersonalizedState,
-      MusicQuizHitsterRound
+      MusicQuizTimelinePersonalizedState,
+      MusicQuizTimelineRound
     >
   >();
 const emit = defineEmits<MusicQuizPlayerGameAdapterEmits>();

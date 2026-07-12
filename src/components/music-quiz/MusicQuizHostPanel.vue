@@ -34,11 +34,12 @@
         </Button>
         <Button
           v-if="state.phase === 'lobby'"
+          data-testid="start-quiz"
           :disabled="busy"
           @click="emit('start')"
         >
           <Play class="size-4" />
-          {{ $t("providers.music_quiz.start") }}
+          {{ startLabel }}
         </Button>
         <Button
           v-if="state.phase === 'answering'"
@@ -51,14 +52,11 @@
         <Button
           v-if="state.phase === 'reveal'"
           :disabled="busy"
+          data-testid="next-quiz"
           @click="emit('next')"
         >
           <SkipForward class="size-4" />
-          {{
-            isLastRound
-              ? $t("providers.music_quiz.finish")
-              : $t("providers.music_quiz.next")
-          }}
+          {{ nextLabel }}
         </Button>
         <ButtonGroup v-if="state.phase === 'finished'" class="w-full sm:w-fit">
           <Button
@@ -111,6 +109,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
+import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
+import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,
@@ -122,17 +122,19 @@ import {
   SkipForward,
   Square,
 } from "@lucide/vue";
-import type { VNode } from "vue";
+import { computed, type VNode } from "vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     state: MusicQuizSupportedHostState;
     busy: boolean;
     joinLink: string;
     isLastRound: boolean;
+    revealCountdown?: boolean;
     showActions?: boolean;
   }>(),
   {
+    revealCountdown: false,
     showActions: true,
   },
 );
@@ -146,4 +148,36 @@ const emit = defineEmits<{
   reset: [];
   setUpNewGame: [];
 }>();
+
+const { hasElapsed, isScheduled, remainingLabel } = useMusicQuizAutoStart(
+  () => props.state,
+);
+const startLabel = computed(() => {
+  if (!isScheduled.value) return $t("providers.music_quiz.start");
+  if (hasElapsed.value) {
+    return $t("providers.music_quiz.start_now_waiting");
+  }
+  return $t("providers.music_quiz.start_now_countdown", [remainingLabel.value]);
+});
+const {
+  hasElapsed: revealCountdownElapsed,
+  isScheduled: revealCountdownScheduled,
+  remainingLabel: revealCountdownLabel,
+} = useMusicQuizRevealCountdown({
+  active: () => props.revealCountdown && props.state.phase === "reveal",
+  autoAdvanceAt: () => props.state.current_round?.auto_advance_at,
+});
+const nextLabel = computed(() => {
+  const defaultKey = props.isLastRound
+    ? "providers.music_quiz.finish"
+    : "providers.music_quiz.next";
+  if (!revealCountdownScheduled.value || revealCountdownElapsed.value)
+    return $t(defaultKey);
+  return $t(
+    props.isLastRound
+      ? "providers.music_quiz.finish_quiz_countdown"
+      : "providers.music_quiz.next_round_countdown",
+    [revealCountdownLabel.value],
+  );
+});
 </script>

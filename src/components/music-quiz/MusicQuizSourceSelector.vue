@@ -26,6 +26,7 @@
       </div>
       <div
         v-if="selectedSources.length"
+        ref="selectedList"
         class="flex max-h-52 flex-col gap-2 overflow-y-auto overscroll-contain"
       >
         <button
@@ -36,7 +37,7 @@
           :aria-label="
             $t('providers.music_quiz.remove_music_source', [item.name])
           "
-          @click="removeSource(item.uri)"
+          @click="onSourceRemove(item.uri)"
         >
           <span class="flex min-w-0 flex-col">
             <strong class="truncate">{{ item.name }}</strong>
@@ -47,7 +48,13 @@
           <X class="text-muted-foreground size-4 shrink-0" />
         </button>
       </div>
-      <p v-else class="text-muted-foreground text-sm">
+      <p
+        v-else
+        ref="emptyState"
+        class="text-muted-foreground text-sm"
+        role="status"
+        tabindex="-1"
+      >
         {{ $t("providers.music_quiz.pick_at_least_one_source") }}
       </p>
     </Field>
@@ -73,7 +80,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { X } from "@lucide/vue";
-import { watch } from "vue";
+import { nextTick, ref, watch } from "vue";
 
 defineProps<{ inputId: string }>();
 const sourceUris = defineModel<string[]>({ required: true });
@@ -85,6 +92,8 @@ const {
   add: addSource,
   remove: removeSource,
 } = useMusicQuizSources();
+const selectedList = ref<HTMLDivElement | null>(null);
+const emptyState = ref<HTMLParagraphElement | null>(null);
 
 watch(selectedSourceUris, (uris) => {
   sourceUris.value = uris;
@@ -93,6 +102,25 @@ watch(selectedSourceUris, (uris) => {
 function onSourceSelect(item: MediaItemTypeOrItemMapping) {
   if (!isMusicQuizSourceItem(item)) return;
   addSource(item);
+}
+
+async function onSourceRemove(uri: string) {
+  const removedIndex = selectedSources.value.findIndex(
+    (source) => source.uri === uri,
+  );
+  removeSource(uri);
+  await nextTick();
+
+  if (!selectedSources.value.length) {
+    emptyState.value?.focus({ preventScroll: true });
+    return;
+  }
+
+  const removeButtons =
+    selectedList.value?.querySelectorAll<HTMLButtonElement>("button");
+  removeButtons?.[Math.min(removedIndex, removeButtons.length - 1)]?.focus({
+    preventScroll: true,
+  });
 }
 
 function sourceSubtitle(item: MusicQuizSourceItem) {

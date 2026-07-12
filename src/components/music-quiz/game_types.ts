@@ -7,11 +7,12 @@ import GuessTheSongHostRound from "@/components/music-quiz/game-types/guess-the-
 import GuessTheSongPlayerRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPlayerRound.vue";
 import GuessTheSongPresentRound from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongPresentRound.vue";
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
-import HitsterHostPanel from "@/components/music-quiz/game-types/hitster/HitsterHostPanel.vue";
-import HitsterHostRound from "@/components/music-quiz/game-types/hitster/HitsterHostRound.vue";
-import HitsterPlayerRound from "@/components/music-quiz/game-types/hitster/HitsterPlayerRound.vue";
-import HitsterPresentRound from "@/components/music-quiz/game-types/hitster/HitsterPresentRound.vue";
-import HitsterSetup from "@/components/music-quiz/game-types/hitster/HitsterSetup.vue";
+import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
+import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
+import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
+import MusicTimelinePresentBody from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentBody.vue";
+import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
+import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
 import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHostRound.vue";
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
@@ -20,12 +21,22 @@ import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.v
 import type {
   MusicQuizGameAnswerTypeMap,
   MusicQuizPhase,
+  MusicQuizSupportedInfo,
+  MusicQuizSupportedPublicState,
   MusicQuizType,
 } from "@/composables/useMusicQuiz";
 import { Brain, Disc3, ListMusic } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
+
+export type MusicQuizCapabilityState =
+  | MusicQuizSupportedInfo
+  | MusicQuizSupportedPublicState;
+
+export type MusicQuizStateCapability =
+  | boolean
+  | ((state: MusicQuizCapabilityState) => boolean);
 
 export interface MusicQuizGameDefinition<
   TGame extends MusicQuizType = MusicQuizType,
@@ -36,7 +47,8 @@ export interface MusicQuizGameDefinition<
   descriptionKey: string;
   icon: Component;
   requiresBackendAvailability: boolean;
-  supportsListenIn: boolean;
+  supportsListenIn: MusicQuizStateCapability;
+  usesRevealCountdown?: boolean;
   revealPhaseLabelKey: string;
   adapters: {
     setup: Component;
@@ -44,6 +56,7 @@ export interface MusicQuizGameDefinition<
     hostPanel: Component;
     host: Component;
     present: Component;
+    presentBody?: Component;
   };
 }
 
@@ -69,21 +82,22 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       present: markRaw(GuessTheSongPresentRound),
     },
   },
-  hitster: {
-    id: "hitster",
+  music_timeline: {
+    id: "music_timeline",
     answerType: "timeline",
-    labelKey: "providers.music_quiz.game_type_hitster",
-    descriptionKey: "providers.music_quiz.game_type_hitster_description",
+    labelKey: "providers.music_quiz.game_type_music_timeline",
+    descriptionKey: "providers.music_quiz.game_type_music_timeline_description",
     icon: markRaw(ListMusic),
     requiresBackendAvailability: false,
     supportsListenIn: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
     adapters: {
-      setup: markRaw(HitsterSetup),
-      player: markRaw(HitsterPlayerRound),
-      hostPanel: markRaw(HitsterHostPanel),
-      host: markRaw(HitsterHostRound),
-      present: markRaw(HitsterPresentRound),
+      setup: markRaw(MusicTimelineSetup),
+      player: markRaw(MusicTimelinePlayerRound),
+      hostPanel: markRaw(MusicTimelineHostPanel),
+      host: markRaw(MusicTimelineHostRound),
+      present: markRaw(MusicTimelinePresentRound),
+      presentBody: markRaw(MusicTimelinePresentBody),
     },
   },
   trivia: {
@@ -93,7 +107,9 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     descriptionKey: "providers.music_quiz.game_type_trivia_description",
     icon: markRaw(Brain),
     requiresBackendAvailability: true,
-    supportsListenIn: false,
+    supportsListenIn: (state) =>
+      state.quiz_type === "trivia" && state.play_reveal_audio === true,
+    usesRevealCountdown: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_answer_revealed",
     adapters: {
       setup: markRaw(TriviaSetup),
@@ -122,6 +138,15 @@ export function isMusicQuizGameAvailable(
   return (
     !game.requiresBackendAvailability || availableQuizTypes.includes(game.id)
   );
+}
+
+export function supportsMusicQuizListenIn(
+  game: MusicQuizGameDefinition,
+  state?: MusicQuizCapabilityState | null,
+) {
+  return typeof game.supportsListenIn === "boolean"
+    ? game.supportsListenIn
+    : state != null && game.supportsListenIn(state);
 }
 
 export function getMusicQuizPhaseLabelKey(

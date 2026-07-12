@@ -53,4 +53,16 @@ describe("GuessTheSongReveal", () => {
     expect(wrapper.text()).toContain("no_lyrics_available");
     expect(wrapper.text()).not.toContain("providers.music_quiz.loading_lyrics");
   });
+
+  it("uses the copy tooltip as the button's accessible name", () => {
+    const wrapper = mountReveal(false);
+    const copyButton = wrapper.get("button");
+
+    expect(copyButton.attributes("title")).toBe(
+      "providers.music_quiz.copy_music_name",
+    );
+    expect(copyButton.attributes("aria-label")).toBe(
+      "providers.music_quiz.copy_music_name",
+    );
+  });
 });

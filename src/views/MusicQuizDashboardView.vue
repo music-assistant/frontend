@@ -1,5 +1,13 @@
 <template>
-  <div ref="presentRootRef" class="mx-auto w-full max-w-6xl p-4 sm:p-5">
+  <div
+    ref="presentRootRef"
+    data-testid="music-quiz-dashboard-root"
+    :class="
+      presentMode
+        ? 'w-full lg:h-full lg:min-h-0 lg:overflow-hidden'
+        : 'mx-auto w-full max-w-6xl p-4 sm:p-5'
+    "
+  >
     <MusicQuizPresentStage
       v-if="presentMode && activeState && resolvedDefinition"
       :state="activeState"
@@ -11,6 +19,7 @@
       :round-label="roundLabel"
       :join-link="joinLink"
       :is-connection-degraded="isConnectionDegraded"
+      :listen-in-enabled="listenInEnabled"
       :game-component="resolvedDefinition.game.adapters.present"
       :answer-component="resolvedDefinition.answer.adapters.present"
       @exit="exitPresentMode"
@@ -86,6 +95,7 @@
           :phase-label="phaseLabel"
           :round-label="roundLabel"
           :mode="activeState.mode"
+          :listen-in-enabled="listenInEnabled"
         />
 
         <MusicQuizHostPanel
@@ -93,6 +103,7 @@
           :busy="busy"
           :join-link="joinLink"
           :is-last-round="!!isLastRound"
+          :reveal-countdown="resolvedDefinition.game.usesRevealCountdown"
           @end-game="showEndGameDialog = true"
           @present="enterPresentMode"
           @start="host.start"
@@ -185,6 +196,7 @@ import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnect
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
+  supportsMusicQuizListenIn,
 } from "@/components/music-quiz/game_types";
 import MusicQuizHostPanel from "@/components/music-quiz/MusicQuizHostPanel.vue";
 import MusicQuizLeaderboard, {
@@ -260,6 +272,15 @@ const activeState = computed(() => {
     ? currentState
     : null;
 });
+const listenInEnabled = computed(() => {
+  const definition = resolvedDefinition.value;
+  const currentState = activeState.value;
+  return !!(
+    definition &&
+    currentState &&
+    supportsMusicQuizListenIn(definition.game, currentState)
+  );
+});
 
 const rankedPlayers = computed(() =>
   activeState.value ? rankMusicQuizPlayers(activeState.value.players) : [],
@@ -319,7 +340,7 @@ async function handleCreate(request: MusicQuizCreateRequest) {
 
 async function handleReplay() {
   if (busy.value) return;
-  await host.reset();
+  await host.reset(true);
 }
 
 async function handleSetUpNewGame() {

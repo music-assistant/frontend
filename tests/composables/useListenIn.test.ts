@@ -59,6 +59,20 @@ function create(mode: ListenInMode | undefined = "venue") {
   return { ...composable, notifyError };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
+function getCommandCallCount(command: string) {
+  return mockSendCommand.mock.calls.filter(
+    ([sentCommand]) => sentCommand === command,
+  ).length;
+}
+
 describe("useListenIn", () => {
   beforeEach(() => {
     mockSendCommand.mockReset();
@@ -196,6 +210,35 @@ describe("useListenIn", () => {
       expect(primedBeforeCommand).toBe(true);
     });
 
+    it("serializes concurrent starts and allows a later retry", async () => {
+      const pendingStart = deferred<void>();
+      const { busy, enableListenIn } = create();
+      let startCalls = 0;
+      mockPrimeAudio.mockClear();
+      mockSendCommand.mockImplementation((command: string) => {
+        if (command !== "party/listen_in") return Promise.resolve(true);
+        startCalls += 1;
+        return startCalls === 1
+          ? pendingStart.promise
+          : Promise.resolve(undefined);
+      });
+
+      const firstStart = enableListenIn();
+      await expect(enableListenIn()).resolves.toBe(false);
+
+      expect(getCommandCallCount("party/listen_in")).toBe(1);
+      expect(mockPrimeAudio).toHaveBeenCalledOnce();
+      expect(busy.value).toBe(true);
+
+      pendingStart.resolve();
+      await expect(firstStart).resolves.toBe(true);
+      expect(busy.value).toBe(false);
+
+      await expect(enableListenIn()).resolves.toBe(true);
+      expect(getCommandCallCount("party/listen_in")).toBe(2);
+      expect(mockPrimeAudio).toHaveBeenCalledTimes(2);
+    });
+
     it("does not prime the audio output without a web player", async () => {
       webPlayer.player_id = null;
       const { enableListenIn } = create();
@@ -246,6 +289,32 @@ describe("useListenIn", () => {
         web_player_id: "wp-1",
       });
       expect(isListeningIn.value).toBe(false);
+    });
+
+    it("serializes concurrent stops and allows a later retry", async () => {
+      const pendingStop = deferred<void>();
+      const { busy, disableListenIn } = create();
+      let stopCalls = 0;
+      mockSendCommand.mockImplementation((command: string) => {
+        if (command !== "party/stop_listen_in") return Promise.resolve(true);
+        stopCalls += 1;
+        return stopCalls === 1
+          ? pendingStop.promise
+          : Promise.resolve(undefined);
+      });
+
+      const firstStop = disableListenIn();
+      await expect(disableListenIn()).resolves.toBe(false);
+
+      expect(getCommandCallCount("party/stop_listen_in")).toBe(1);
+      expect(busy.value).toBe(true);
+
+      pendingStop.resolve();
+      await expect(firstStop).resolves.toBe(true);
+      expect(busy.value).toBe(false);
+
+      await expect(disableListenIn()).resolves.toBe(true);
+      expect(getCommandCallCount("party/stop_listen_in")).toBe(2);
     });
 
     it("silently bails out without a web player", async () => {

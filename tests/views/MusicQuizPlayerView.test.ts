@@ -1,7 +1,7 @@
 import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import { mount } from "@vue/test-utils";
 import { h, ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockGameAdapterSetup,
@@ -33,6 +33,15 @@ vi.mock("@/components/ListenIn.vue", async () => {
 vi.mock("@/components/music-quiz/game_types", () => ({
   getMusicQuizPhaseLabelKey: () => "providers.music_quiz.phase_answers_open",
   resolveMusicQuizDefinition: mockResolveMusicQuizDefinition,
+  supportsMusicQuizListenIn: (
+    game: {
+      supportsListenIn: boolean | ((state: Record<string, unknown>) => boolean);
+    },
+    state: Record<string, unknown>,
+  ) =>
+    typeof game.supportsListenIn === "boolean"
+      ? game.supportsListenIn
+      : game.supportsListenIn(state),
 }));
 
 vi.mock("@/composables/useMusicQuizPlayer", () => ({
@@ -65,7 +74,15 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, values: unknown[] = []) => {
+    const message =
+      (
+        {
+          "providers.music_quiz.game_starts_in": "Game starts in {0}",
+        } as Record<string, string>
+      )[key] ?? key;
+    return message.replace("{0}", String(values[0] ?? ""));
+  },
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -101,7 +118,7 @@ const playerState = {
     active_from_round: 0,
   },
 };
-const hitsterRound = {
+const musicTimelineRound = {
   question: null,
   round_index: 0,
   started_at: 1,
@@ -120,18 +137,18 @@ const hitsterRound = {
   ],
   bonus_definitions: [],
 };
-const hitsterState = {
-  quiz_type: "hitster",
+const musicTimelineState = {
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",
   title_bonus_mode: "off",
   mode: "venue",
   players: [],
-  current_round: hitsterRound,
+  current_round: musicTimelineRound,
   you: {
     name: "Player",
     score: 0,
@@ -150,6 +167,7 @@ const triviaRound = {
 const triviaState = {
   quiz_type: "trivia",
   answer_type: "multiple_choice",
+  language: "en",
   phase: "answering",
   name: "Trivia",
   round_count: 1,
@@ -165,8 +183,14 @@ const triviaState = {
     active_from_round: 0,
   },
 };
+const triviaListenInCapability = (state: Record<string, unknown>) =>
+  state.play_reveal_audio === true;
 
 describe("MusicQuizPlayerView routing", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     mockGameAdapterSetup.mockReset();
     mockGetTrackLyrics.mockReset();
@@ -187,11 +211,46 @@ describe("MusicQuizPlayerView routing", () => {
     });
   });
 
-  it("does not initialize ListenIn or lyrics for a non-audio definition", () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+  it.each([
+    ["legacy", triviaState],
+    ["disabled", { ...triviaState, play_reveal_audio: false }],
+  ])(
+    "never initializes ListenIn or lyrics for %s Trivia state",
+    (_case, state) => {
+      mockResolveMusicQuizDefinition.mockReturnValue(
+        createDefinition(triviaListenInCapability),
+      );
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state: ref(state),
+        playerId: ref("player-id"),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(triviaRound),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+      });
+
+      const wrapper = mountView();
+
+      expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
+      expect(mockListenInSetup).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
+      expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+      expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
+  it("initializes ListenIn for reveal-audio Trivia during answering", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
-      state: ref(triviaState),
+      state: ref({ ...triviaState, play_reveal_audio: true }),
       playerId: ref("player-id"),
       gameRemoved: ref(false),
       busy: ref(false),
@@ -205,8 +264,40 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
-    expect(mockListenInSetup).not.toHaveBeenCalled();
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("allows reveal-audio Trivia ListenIn to be armed in the lobby", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...triviaState,
+        play_reveal_audio: true,
+        phase: "lobby",
+        current_round: null,
+      }),
+      playerId: ref("player-id"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(mockListenInSetup).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
     wrapper.unmount();
   });
 
@@ -262,16 +353,16 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
-  it("enables Hitster ListenIn without fetching lyrics", () => {
+  it("enables Music Timeline ListenIn without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
-      state: ref(hitsterState),
+      state: ref(musicTimelineState),
       playerId: ref("player-id"),
       gameRemoved: ref(false),
       busy: ref(false),
       loading: ref(false),
-      currentRound: ref(hitsterRound),
+      currentRound: ref(musicTimelineRound),
       join: vi.fn(),
       submitAnswer: vi.fn(),
       ready: vi.fn(),
@@ -286,11 +377,15 @@ describe("MusicQuizPlayerView routing", () => {
   });
 
   it("hides the mode label before joining Trivia", () => {
-    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref({
         quiz_type: "trivia",
         answer_type: "multiple_choice",
+        language: "en",
+        play_reveal_audio: false,
         phase: "lobby",
         name: "Trivia",
         player_count: 2,
@@ -311,6 +406,40 @@ describe("MusicQuizPlayerView routing", () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+    wrapper.unmount();
+  });
+
+  it("shows the mode label before joining reveal-audio Trivia", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(
+      createDefinition(triviaListenInCapability),
+    );
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "trivia",
+        answer_type: "multiple_choice",
+        language: "en",
+        play_reveal_audio: true,
+        phase: "lobby",
+        name: "Trivia",
+        player_count: 2,
+        round_count: 5,
+        mode: "venue",
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain("providers.music_quiz.mode_venue");
+    expect(mockListenInSetup).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -343,6 +472,41 @@ describe("MusicQuizPlayerView routing", () => {
     expect(
       wrapper.get<HTMLInputElement>("#music-quiz-player-name").element.value,
     ).toBe("Player One");
+    wrapper.unmount();
+  });
+
+  it("shows unjoined guests the server replay countdown", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref({
+        quiz_type: "guess_the_song",
+        answer_type: "multiple_choice",
+        phase: "lobby",
+        name: "Quiz",
+        player_count: 1,
+        round_count: 5,
+        mode: "venue",
+        auto_start_at: Date.now() / 1000 + 18,
+      }),
+      state: ref(null),
+      playerId: ref(null),
+      rememberedName: ref("Player One"),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(null),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(wrapper.get('[data-testid="music-quiz-auto-start"]').text()).toBe(
+      "Game starts in 18s",
+    );
     wrapper.unmount();
   });
 
@@ -442,7 +606,9 @@ describe("MusicQuizPlayerView routing", () => {
   });
 });
 
-function createDefinition(supportsListenIn: boolean) {
+function createDefinition(
+  supportsListenIn: boolean | ((state: Record<string, unknown>) => boolean),
+) {
   const gameAdapter = {
     name: "TestGameAdapter",
     props: {
@@ -489,9 +655,9 @@ function mountView() {
         MusicQuizLeaderboard: true,
         MusicQuizPlayerHeader: true,
         MusicQuizSessionHeader: {
-          props: ["game", "mode", "roundLabel"],
+          props: ["listenInEnabled", "mode", "roundLabel"],
           template:
-            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="game.supportsListenIn">providers.music_quiz.mode_{{ mode }}</span></div>',
+            '<div data-testid="music-quiz-session-header" :data-round-label="roundLabel"><span v-if="listenInEnabled">providers.music_quiz.mode_{{ mode }}</span></div>',
         },
         MusicQuizPodium: true,
         MusicQuizUnsupportedGame: {

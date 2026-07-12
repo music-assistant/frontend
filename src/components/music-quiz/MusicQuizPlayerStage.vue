@@ -1,6 +1,11 @@
 <template>
   <section v-if="state.phase === 'lobby'" class="flex flex-col gap-3">
-    <p class="text-muted-foreground text-center">
+    <MusicQuizAutoStartStatus
+      v-if="state.auto_start_at != null"
+      :state="state"
+      class="text-muted-foreground text-center"
+    />
+    <p v-else class="text-muted-foreground text-center">
       {{ $t("providers.music_quiz.waiting_for_start") }}
     </p>
     <MusicQuizLeaderboard
@@ -53,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import MusicQuizAutoStartStatus from "@/components/music-quiz/MusicQuizAutoStartStatus.vue";
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";

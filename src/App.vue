@@ -40,7 +40,7 @@ import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
 import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
-import { i18n } from "@/plugins/i18n";
+import { i18n, resolveLocale } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -399,7 +399,10 @@ onMounted(async () => {
     localStorage.getItem("frontend.settings.language") ||
     "auto";
   if (langPref !== "auto") {
-    i18n.global.locale.value = langPref;
+    i18n.global.locale.value = resolveLocale(
+      langPref,
+      Array.from(i18n.global.availableLocales),
+    );
   }
   store.forceMobileLayout =
     localStorage.getItem("frontend.settings.force_mobile_layout") == "true";
@@ -417,7 +420,10 @@ onMounted(async () => {
           localStorage.getItem("frontend.settings.language") ||
           "auto";
         if (userLangPref !== "auto") {
-          i18n.global.locale.value = userLangPref;
+          i18n.global.locale.value = resolveLocale(
+            userLangPref,
+            Array.from(i18n.global.availableLocales),
+          );
         }
       }
     },

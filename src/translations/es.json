@@ -130,7 +130,6 @@
         "tracks_in_library": "Pistas en biblioteca",
         "playlists_in_library": "Listas de reproducción en biblioteca",
         "radio_in_library": "Radio en biblioteca",
-        "server_logging": "Registro del servidor",
         "download_log": "Descargar archivo de registro",
         "edit_group_members": "Editar miembros del grupo",
         "add_new_provider_button": "Añadir proveedor {0}",

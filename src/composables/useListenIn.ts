@@ -81,6 +81,7 @@ export function useListenIn(options: UseListenInOptions) {
   }
 
   async function enableListenIn() {
+    if (busy.value) return false;
     const playerId = webPlayerId.value;
     if (!playerId) {
       notifyError(errorMessages.noWebPlayer);
@@ -105,6 +106,7 @@ export function useListenIn(options: UseListenInOptions) {
   }
 
   async function disableListenIn() {
+    if (busy.value) return false;
     const playerId = webPlayerId.value;
     if (!playerId) return false;
     busy.value = true;

@@ -1,15 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 const {
+  mockCreateMusicQuiz,
   mockDeleteMusicQuiz,
   mockGetAvailableMusicQuizTypes,
   mockGetMusicQuiz,
+  mockNextMusicQuiz,
+  mockRevealMusicQuiz,
+  mockResetMusicQuiz,
+  mockStartMusicQuiz,
   mockSubscribe,
   providerHandlers,
 } = vi.hoisted(() => ({
+  mockCreateMusicQuiz: vi.fn(),
   mockDeleteMusicQuiz: vi.fn(),
   mockGetAvailableMusicQuizTypes: vi.fn(),
   mockGetMusicQuiz: vi.fn(),
+  mockNextMusicQuiz: vi.fn(),
+  mockRevealMusicQuiz: vi.fn(),
+  mockResetMusicQuiz: vi.fn(),
+  mockStartMusicQuiz: vi.fn(),
   mockSubscribe: vi.fn(),
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
@@ -28,11 +38,11 @@ vi.mock("vue", async () => {
 vi.mock("@/composables/useMusicQuiz", () => ({
   getMusicQuiz: mockGetMusicQuiz,
   getAvailableMusicQuizTypes: mockGetAvailableMusicQuizTypes,
-  createMusicQuiz: vi.fn(),
-  startMusicQuiz: vi.fn(),
-  revealMusicQuiz: vi.fn(),
-  nextMusicQuiz: vi.fn(),
-  resetMusicQuiz: vi.fn(),
+  createMusicQuiz: mockCreateMusicQuiz,
+  startMusicQuiz: mockStartMusicQuiz,
+  revealMusicQuiz: mockRevealMusicQuiz,
+  nextMusicQuiz: mockNextMusicQuiz,
+  resetMusicQuiz: mockResetMusicQuiz,
   deleteMusicQuiz: mockDeleteMusicQuiz,
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     value.quiz_type === "guess_the_song" &&
@@ -58,6 +68,7 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 import { EventType } from "@/plugins/api/interfaces";
+import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
 
 const HOST_STATE = {
@@ -77,24 +88,101 @@ const HOST_STATE = {
   current_round: null,
 } as const;
 
+const CREATE_REQUEST: MusicQuizCreateRequest = {
+  quiz_type: "guess_the_song",
+  answer_type: "multiple_choice",
+  config: {
+    round_count: 5,
+    suggestion_count: 4,
+    answer_duration: 30,
+    difficulty: "normal",
+    source_uris: [],
+    include_similar_music: false,
+  },
+};
+
+type Host = ReturnType<typeof useMusicQuizHost>;
+
+const HOST_ACTIONS = [
+  {
+    name: "create",
+    command: mockCreateMusicQuiz,
+    invoke: (host: Host) => host.create(CREATE_REQUEST),
+    result: HOST_STATE,
+  },
+  {
+    name: "start",
+    command: mockStartMusicQuiz,
+    invoke: (host: Host) => host.start(),
+    result: HOST_STATE,
+  },
+  {
+    name: "reveal",
+    command: mockRevealMusicQuiz,
+    invoke: (host: Host) => host.reveal(),
+    result: HOST_STATE,
+  },
+  {
+    name: "next",
+    command: mockNextMusicQuiz,
+    invoke: (host: Host) => host.next(),
+    result: HOST_STATE,
+  },
+  {
+    name: "reset",
+    command: mockResetMusicQuiz,
+    invoke: (host: Host) => host.reset(),
+    result: HOST_STATE,
+  },
+  {
+    name: "delete",
+    command: mockDeleteMusicQuiz,
+    invoke: (host: Host) => host.deleteGame(),
+    result: undefined,
+  },
+] satisfies Array<{
+  name: string;
+  command: Mock;
+  invoke: (host: Host) => Promise<boolean>;
+  result: typeof HOST_STATE | undefined;
+}>;
+
 async function flushPromises() {
   await Promise.resolve();
   await Promise.resolve();
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
 describe("useMusicQuizHost", () => {
   beforeEach(() => {
     providerHandlers.length = 0;
+    mockCreateMusicQuiz.mockReset();
     mockDeleteMusicQuiz.mockReset();
     mockGetAvailableMusicQuizTypes.mockReset();
     mockGetMusicQuiz.mockReset();
+    mockNextMusicQuiz.mockReset();
+    mockRevealMusicQuiz.mockReset();
+    mockResetMusicQuiz.mockReset();
+    mockStartMusicQuiz.mockReset();
     mockSubscribe.mockReset();
+    mockCreateMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockDeleteMusicQuiz.mockResolvedValue(undefined);
     mockGetAvailableMusicQuizTypes.mockResolvedValue([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
     ]);
     mockGetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockNextMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockRevealMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockResetMusicQuiz.mockResolvedValue({ ...HOST_STATE });
+    mockStartMusicQuiz.mockResolvedValue({ ...HOST_STATE });
     mockSubscribe.mockImplementation(
       (
         _event: EventType,
@@ -145,7 +233,7 @@ describe("useMusicQuizHost", () => {
   it("exposes backend-discovered quiz types", async () => {
     mockGetAvailableMusicQuizTypes.mockResolvedValue([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
 
@@ -154,7 +242,7 @@ describe("useMusicQuizHost", () => {
 
     expect(host.availableQuizTypes.value).toEqual([
       "guess_the_song",
-      "hitster",
+      "music_timeline",
       "trivia",
     ]);
   });
@@ -181,6 +269,40 @@ describe("useMusicQuizHost", () => {
     expect(notifyError).not.toHaveBeenCalled();
     expect(host.state.value).toBeNull();
   });
+
+  it("keeps host resets manual unless auto-start is requested", async () => {
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    await host.reset();
+    await host.reset(true);
+
+    expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(1, false);
+    expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(2, true);
+  });
+
+  it.each(HOST_ACTIONS)(
+    "serializes concurrent $name commands",
+    async ({ command, invoke, result }) => {
+      const pending = deferred<typeof result>();
+      command.mockReturnValueOnce(pending.promise);
+      const host = useMusicQuizHost({ notifyError: vi.fn() });
+      await flushPromises();
+
+      const firstAction = invoke(host);
+      await expect(invoke(host)).resolves.toBe(false);
+
+      expect(command).toHaveBeenCalledOnce();
+      expect(host.busy.value).toBe(true);
+
+      pending.resolve(result);
+      await expect(firstAction).resolves.toBe(true);
+      expect(host.busy.value).toBe(false);
+
+      await expect(invoke(host)).resolves.toBe(true);
+      expect(command).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it("treats a no-active-game string as an empty state without a toast", async () => {
     mockGetMusicQuiz.mockRejectedValue("There is no active Music Quiz game");

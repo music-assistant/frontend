@@ -1,5 +1,5 @@
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
-import type { MusicQuizHitsterRound } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelineRound } from "@/composables/useMusicQuiz";
 import {
   anchor,
   baseRound,
@@ -54,7 +54,7 @@ describe("Timeline player focus", () => {
         track_uri: `library://track/${index}`,
         is_anchor: index === 0,
       })),
-    } satisfies MusicQuizHitsterRound;
+    } satisfies MusicQuizTimelineRound;
     const wrapper = mount(TimelinePlayerAnswer, {
       attachTo: document.body,
       props: {

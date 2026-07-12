@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-end justify-center gap-3 sm:gap-5">
+  <div class="flex items-end justify-center gap-3 sm:gap-5" aria-hidden="true">
     <div
       v-for="spot in spots"
       :key="spot.row.name"

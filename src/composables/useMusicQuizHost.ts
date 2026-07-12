@@ -111,6 +111,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function create(request: MusicQuizCreateRequest) {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await createMusicQuiz(request);
@@ -127,6 +128,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function start() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await startMusicQuiz();
@@ -143,6 +145,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function reveal() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await revealMusicQuiz();
@@ -159,6 +162,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function next() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await nextMusicQuiz();
@@ -174,10 +178,11 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
-  async function reset() {
+  async function reset(autoStart = false) {
+    if (busy.value) return false;
     busy.value = true;
     try {
-      const nextState = await resetMusicQuiz();
+      const nextState = await resetMusicQuiz(autoStart);
       applyState(nextState);
       return true;
     } catch (err) {
@@ -191,6 +196,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function deleteGame() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       await deleteMusicQuiz();

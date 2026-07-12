@@ -1,7 +1,7 @@
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
 import type {
-  MusicQuizHitsterPersonalizedState,
-  MusicQuizHitsterRound,
+  MusicQuizTimelinePersonalizedState,
+  MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 import {
   anchor,
@@ -39,7 +39,7 @@ describe("Timeline player reveal", () => {
       image_url: null,
       duration: 180,
       ended_at: 20,
-    } satisfies MusicQuizHitsterRound;
+    } satisfies MusicQuizTimelineRound;
     const state = {
       ...stateWithAnswer([], true),
       phase: "reveal",
@@ -59,7 +59,7 @@ describe("Timeline player reveal", () => {
           ],
         },
       },
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state,
@@ -82,7 +82,7 @@ describe("Timeline player reveal", () => {
     const currentRound = {
       ...baseRound,
       ended_at: 20,
-    } satisfies MusicQuizHitsterRound;
+    } satisfies MusicQuizTimelineRound;
     const state = {
       ...baseState,
       phase: "reveal",
@@ -91,7 +91,7 @@ describe("Timeline player reveal", () => {
         ...baseState.you,
         active_from_round: 1,
       },
-    } satisfies MusicQuizHitsterPersonalizedState;
+    } satisfies MusicQuizTimelinePersonalizedState;
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state,

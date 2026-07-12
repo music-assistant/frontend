@@ -75,6 +75,40 @@
           </option>
         </NativeSelect>
       </Field>
+
+      <Field class="sm:col-span-2">
+        <FieldLabel for="trivia-language">
+          {{ $t("providers.music_quiz.question_language") }}
+        </FieldLabel>
+        <NativeSelect id="trivia-language" v-model="language" class="w-full">
+          <option
+            v-for="option in languageOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </NativeSelect>
+      </Field>
+
+      <Field
+        orientation="horizontal"
+        class="items-center justify-between rounded-lg border p-4 sm:col-span-2"
+      >
+        <div class="flex flex-col gap-1">
+          <FieldLabel for="trivia-play-reveal-audio">
+            {{ $t("providers.music_quiz.play_revealed_songs") }}
+          </FieldLabel>
+          <FieldDescription>
+            {{ $t("providers.music_quiz.play_revealed_songs_help") }}
+          </FieldDescription>
+        </div>
+        <Switch
+          id="trivia-play-reveal-audio"
+          v-model="playRevealAudio"
+          data-testid="trivia-play-reveal-audio"
+        />
+      </Field>
     </div>
 
     <MusicQuizSourceSelector
@@ -96,7 +130,7 @@ import type {
   MusicQuizSetupAdapterProps,
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   NumberField,
@@ -105,11 +139,12 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/ui/number-field";
+import { Switch } from "@/components/ui/switch";
 import type {
   MusicQuizDifficulty,
   MusicQuizTriviaConfig,
 } from "@/composables/useMusicQuiz";
-import { $t } from "@/plugins/i18n";
+import { $t, canonicalizeLocale, getLocaleOptions, i18n } from "@/plugins/i18n";
 import { Brain } from "@lucide/vue";
 import { computed, ref } from "vue";
 
@@ -120,24 +155,32 @@ const MAX_CHOICES = 8;
 const MIN_SECONDS = 1;
 const MAX_SECONDS = 300;
 
-defineProps<MusicQuizSetupAdapterProps>();
+const props = defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
 const suggestionCount = ref(4);
 const answerDuration = ref(30);
 const difficulty = ref<MusicQuizDifficulty>("normal");
+const language = ref(i18n.global.locale.value);
+const playRevealAudio = ref(true);
 const sourceUris = ref<string[]>([]);
 const canCreate = computed(() => sourceUris.value.length > 0);
+const languageOptions = computed(() =>
+  getLocaleOptions(i18n.global.availableLocales, i18n.global.locale.value),
+);
 
 function create() {
   if (!canCreate.value) return;
   const config: MusicQuizTriviaConfig = {
+    language: canonicalizeLocale(language.value),
+    play_reveal_audio: playRevealAudio.value,
     round_count: roundCount.value,
     suggestion_count: suggestionCount.value,
     answer_duration: answerDuration.value,
     difficulty: difficulty.value,
     source_uris: sourceUris.value,
+    include_similar_music: props.includeSimilarMusic,
   };
   emit("create", {
     quiz_type: "trivia",

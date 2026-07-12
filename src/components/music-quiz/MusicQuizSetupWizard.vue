@@ -21,7 +21,7 @@
     </div>
 
     <section v-if="step === 1" class="flex flex-col gap-3">
-      <h2 class="text-lg font-semibold">
+      <h2 ref="chooseHeading" class="text-lg font-semibold" tabindex="-1">
         {{ $t("providers.music_quiz.choose_game_type") }}
       </h2>
       <div class="grid gap-3 sm:grid-cols-2">
@@ -56,14 +56,34 @@
           v-if="selectedType"
           class="text-primary size-5"
         />
-        <h2 class="text-lg font-semibold">
+        <h2 ref="configureHeading" class="text-lg font-semibold" tabindex="-1">
           {{ $t("providers.music_quiz.configure_game") }}
         </h2>
       </div>
+      <Field
+        orientation="horizontal"
+        class="items-center justify-between gap-4 rounded-lg border p-4"
+      >
+        <div class="flex flex-col gap-1">
+          <FieldLabel for="quiz-include-similar-music">
+            {{ $t("providers.music_quiz.include_similar_music") }}
+          </FieldLabel>
+          <FieldDescription>
+            {{ $t("providers.music_quiz.include_similar_music_help") }}
+          </FieldDescription>
+        </div>
+        <Switch
+          id="quiz-include-similar-music"
+          v-model="includeSimilarMusic"
+          data-testid="quiz-include-similar-music"
+          :disabled="busy"
+        />
+      </Field>
       <component
         :is="selectedType.adapters.setup"
         v-if="selectedType"
         :busy="busy"
+        :include-similar-music="includeSimilarMusic"
         @create="onConfigCreate"
       />
     </section>
@@ -77,11 +97,13 @@ import {
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { ArrowLeft } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 
 const TOTAL_STEPS = 2;
 
@@ -100,14 +122,21 @@ const availableGameTypes = computed(() =>
 );
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
+const includeSimilarMusic = ref(false);
+const chooseHeading = ref<HTMLHeadingElement | null>(null);
+const configureHeading = ref<HTMLHeadingElement | null>(null);
 
-function selectType(type: MusicQuizGameDefinition) {
+async function selectType(type: MusicQuizGameDefinition) {
   selectedType.value = type;
   step.value = 2;
+  await nextTick();
+  configureHeading.value?.focus({ preventScroll: true });
 }
 
-function back() {
+async function back() {
   step.value = 1;
+  await nextTick();
+  chooseHeading.value?.focus({ preventScroll: true });
 }
 
 function onConfigCreate(request: MusicQuizCreateRequest) {

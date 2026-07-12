@@ -64,7 +64,7 @@ vi.mock("@/composables/useMusicQuiz", () => ({
   isSupportedMusicQuiz: (value: { quiz_type?: string; answer_type?: string }) =>
     (value.quiz_type === "guess_the_song" &&
       value.answer_type === "multiple_choice") ||
-    (value.quiz_type === "hitster" && value.answer_type === "timeline"),
+    (value.quiz_type === "music_timeline" && value.answer_type === "timeline"),
   isMusicQuizProviderEvent: (value: unknown) => {
     if (!value || typeof value !== "object" || !("event" in value))
       return false;
@@ -193,10 +193,10 @@ const TIMELINE_PUBLIC_PLAYER = {
   title_bonus_answered: false,
 } as const;
 const TIMELINE_ANSWERING_STATE = {
-  quiz_type: "hitster",
+  quiz_type: "music_timeline",
   answer_type: "timeline",
   phase: "answering",
-  name: "Hitster",
+  name: "Music Timeline",
   round_count: 2,
   answer_duration: 30,
   artist_bonus_mode: "free_text",
@@ -925,6 +925,66 @@ describe("useMusicQuizPlayer", () => {
     expect(player.rememberedName.value).toBe("Player One");
   });
 
+  it("serializes concurrent manual joins and allows a later retry", async () => {
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+    const pendingJoin = deferred<{
+      player_id: string;
+      state: typeof PLAYER_STATE;
+    }>();
+    mockJoinMusicQuiz
+      .mockReturnValueOnce(pendingJoin.promise)
+      .mockResolvedValue({
+        player_id: "next-player",
+        state: PLAYER_STATE,
+      });
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const firstJoin = player.join("Player");
+    await expect(player.join("Player")).resolves.toBe(false);
+
+    expect(mockJoinMusicQuiz).toHaveBeenCalledOnce();
+    expect(player.busy.value).toBe(true);
+
+    pendingJoin.resolve({
+      player_id: "first-player",
+      state: PLAYER_STATE,
+    });
+    await expect(firstJoin).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+
+    await player.leave();
+    await expect(player.join("Player")).resolves.toBe(true);
+    expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not auto-join while a manual join is pending", async () => {
+    storedPlayerName.value = "Remembered Player";
+    const pendingInfo = deferred<typeof QUIZ_INFO>();
+    const pendingJoin = deferred<{
+      player_id: string;
+      state: typeof PLAYER_STATE;
+    }>();
+    mockGetMusicQuizInfo.mockReturnValue(pendingInfo.promise);
+    mockJoinMusicQuiz.mockReturnValue(pendingJoin.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const manualJoin = player.join("Manual Player");
+    pendingInfo.resolve(QUIZ_INFO);
+    await flushPromises();
+
+    expect(mockJoinMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockJoinMusicQuiz).toHaveBeenCalledWith("Manual Player");
+
+    pendingJoin.resolve({
+      player_id: "manual-player",
+      state: PLAYER_STATE,
+    });
+    await expect(manualJoin).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+  });
+
   it("automatically joins an active game once with the remembered name", async () => {
     storedPlayerName.value = "Player";
     mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
@@ -1027,6 +1087,8 @@ describe("useMusicQuizPlayer", () => {
     });
     await flushPromises();
 
+    expect(mockJoinMusicQuiz).toHaveBeenCalledTimes(2);
+    expect(mockJoinMusicQuiz).toHaveBeenNthCalledWith(2, "Player");
     expect(player.playerId.value).toBe("next-player");
     expect(player.busy.value).toBe(false);
 
@@ -1220,6 +1282,34 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toEqual(answeredState);
   });
 
+  it("serializes concurrent answers and allows a later retry", async () => {
+    storedPlayerId.value = "stored-player";
+    const pendingAnswer = deferred<typeof PLAYER_STATE>();
+    mockGetMusicQuizState.mockResolvedValue(PLAYER_STATE);
+    mockAnswerMusicQuiz
+      .mockReturnValueOnce(pendingAnswer.promise)
+      .mockResolvedValue(PLAYER_STATE);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+    const submission = {
+      answer_type: "multiple_choice",
+      suggestion_id: "suggestion-1",
+    } as const;
+
+    const firstAnswer = player.submitAnswer(submission);
+    await expect(player.submitAnswer(submission)).resolves.toBe(false);
+
+    expect(mockAnswerMusicQuiz).toHaveBeenCalledOnce();
+    expect(player.busy.value).toBe(true);
+
+    pendingAnswer.resolve(PLAYER_STATE);
+    await expect(firstAnswer).resolves.toBe(true);
+    expect(player.busy.value).toBe(false);
+
+    await expect(player.submitAnswer(submission)).resolves.toBe(true);
+    expect(mockAnswerMusicQuiz).toHaveBeenCalledTimes(2);
+  });
+
   it("does not re-enable stale controls when action refresh fails", async () => {
     storedPlayerId.value = "stored-player";
     mockGetMusicQuizState
@@ -1245,10 +1335,10 @@ describe("useMusicQuizPlayer", () => {
   it("routes timeline actions through the generic submission command", async () => {
     storedPlayerId.value = "stored-player";
     const timelineState = {
-      quiz_type: "hitster",
+      quiz_type: "music_timeline",
       answer_type: "timeline",
       phase: "answering",
-      name: "Hitster",
+      name: "Music Timeline",
       round_count: 1,
       answer_duration: 30,
       artist_bonus_mode: "off",
@@ -1316,7 +1406,7 @@ describe("useMusicQuizPlayer", () => {
 
     expect(mockHeartbeatMusicQuiz).toHaveBeenCalledWith("stored-player");
     expect(mockGetMusicQuizState).toHaveBeenCalledTimes(3);
-    expect(player.state.value?.quiz_type).toBe("hitster");
+    expect(player.state.value?.quiz_type).toBe("music_timeline");
   });
 
   it("keeps a reveal authoritative over a delayed answer response", async () => {
@@ -1358,7 +1448,7 @@ describe("useMusicQuizPlayer", () => {
     expect(player.state.value).toEqual(TIMELINE_REVEAL_STATE);
   });
 
-  it("keeps the next round authoritative over a delayed ready response", async () => {
+  it("keeps a successful next-round event authoritative over delayed Ready", async () => {
     storedPlayerId.value = "stored-player";
     const delayedReady = deferred<typeof TIMELINE_REVEAL_STATE>();
     const eventRefresh = deferred<typeof TIMELINE_REVEAL_STATE>();
@@ -1384,6 +1474,24 @@ describe("useMusicQuizPlayer", () => {
 
     expect(player.state.value).toEqual(TIMELINE_NEXT_STATE);
     expect(player.busy.value).toBe(false);
+  });
+
+  it("sends Ready only once while the first request is in flight", async () => {
+    storedPlayerId.value = "stored-player";
+    const delayedReady = deferred<typeof TIMELINE_REVEAL_STATE>();
+    mockGetMusicQuizState.mockResolvedValue(TIMELINE_REVEAL_STATE);
+    mockReadyMusicQuiz.mockReturnValueOnce(delayedReady.promise);
+    const player = useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const firstReady = player.ready();
+    await expect(player.ready()).resolves.toBe(false);
+
+    expect(mockReadyMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockReadyMusicQuiz).toHaveBeenCalledWith("stored-player");
+
+    delayedReady.resolve(TIMELINE_REVEAL_STATE);
+    await expect(firstReady).resolves.toBe(true);
   });
 
   it("does not expose guess-the-song fields for an unknown game type", async () => {

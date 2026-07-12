@@ -42,6 +42,7 @@ describe("MusicQuizSessionHeader", () => {
         phaseLabel: "Answers open",
         roundLabel: "Round 2 / 5",
         mode: "remote",
+        listenInEnabled: true,
       },
     });
 
@@ -70,6 +71,7 @@ describe("MusicQuizSessionHeader", () => {
         game: game("trivia", false),
         phaseLabel: "Answers open",
         mode: "venue",
+        listenInEnabled: false,
       },
     });
 
@@ -78,5 +80,42 @@ describe("MusicQuizSessionHeader", () => {
       false,
     );
     expect(wrapper.text()).not.toContain("providers.music_quiz.mode_venue");
+  });
+
+  it("uses compact sizing only for present mode", () => {
+    const props = {
+      game: game("guess_the_song", true),
+      name: "Friday Quiz",
+      phaseLabel: "Answers open",
+      roundLabel: "Round 2 / 5",
+      mode: "venue" as const,
+      listenInEnabled: true,
+    };
+    const regular = mount(MusicQuizSessionHeader, { props });
+    const present = mount(MusicQuizSessionHeader, {
+      props: {
+        ...props,
+        present: true,
+      },
+    });
+
+    expect(
+      regular.get('[data-testid="music-quiz-session-header"]').classes(),
+    ).toEqual(expect.arrayContaining(["gap-3", "p-4"]));
+    expect(regular.get("h2").classes()).toEqual(
+      expect.arrayContaining(["text-lg", "sm:text-xl"]),
+    );
+
+    expect(
+      present.get('[data-testid="music-quiz-session-header"]').classes(),
+    ).toEqual(expect.arrayContaining(["gap-2", "p-3", "sm:p-4"]));
+    expect(present.get("h1").classes()).toEqual(
+      expect.arrayContaining(["text-xl", "sm:text-2xl"]),
+    );
+    expect(
+      present.get('[data-testid="game-icon"]').element.parentElement?.classList,
+    ).toContain("size-11");
+    expect(regular.find("h1").exists()).toBe(false);
+    expect(present.find("h2").exists()).toBe(false);
   });
 });
