@@ -4,15 +4,17 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  mockAdminState,
   mockGetProviderConfigs,
-  mockIsAdmin,
   mockRouterPush,
   mockSendCommand,
   mockSubscribe,
   mockToastError,
 } = vi.hoisted(() => ({
+  mockAdminState: {
+    current: undefined as { value: boolean } | undefined,
+  },
   mockGetProviderConfigs: vi.fn(),
-  mockIsAdmin: vi.fn(),
   mockRouterPush: vi.fn(),
   mockSendCommand: vi.fn(),
   mockSubscribe: vi.fn(),
@@ -42,11 +44,16 @@ vi.mock("@/plugins/api", () => {
   };
 });
 
-vi.mock("@/plugins/auth", () => ({
-  authManager: {
-    isAdmin: mockIsAdmin,
-  },
-}));
+vi.mock("@/plugins/auth", async () => {
+  const { ref } = await import("vue");
+  const isAdmin = ref(false);
+  mockAdminState.current = isAdmin;
+  return {
+    authManager: {
+      isAdmin: () => isAdmin.value,
+    },
+  };
+});
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -71,9 +78,8 @@ describe("MusicQuizDashboardView", () => {
     mockSubscribe.mockReset();
     mockToastError.mockReset();
     mockGetProviderConfigs.mockReset();
-    mockIsAdmin.mockReset();
     mockRouterPush.mockReset();
-    mockIsAdmin.mockReturnValue(false);
+    if (mockAdminState.current) mockAdminState.current.value = false;
     mockGetProviderConfigs.mockResolvedValue([]);
     mockSendCommand.mockImplementation((command: string) => {
       if (command === "music_quiz/available_quiz_types") {
@@ -122,7 +128,7 @@ describe("MusicQuizDashboardView", () => {
   });
 
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
-    mockIsAdmin.mockReturnValue(true);
+    if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockResolvedValue([
       { instance_id: "music_quiz--instance" },
     ]);
@@ -147,7 +153,7 @@ describe("MusicQuizDashboardView", () => {
   });
 
   it("keeps Quiz available when provider settings resolution fails", async () => {
-    mockIsAdmin.mockReturnValue(true);
+    if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockRejectedValue(new Error("Unavailable"));
     const consoleError = vi
       .spyOn(console, "error")
@@ -162,6 +168,27 @@ describe("MusicQuizDashboardView", () => {
     expect(mockToastError).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalledOnce();
     consoleError.mockRestore();
+  });
+
+  it("resolves the settings shortcut when admin access arrives after mount", async () => {
+    mockGetProviderConfigs.mockResolvedValue([
+      { instance_id: "music_quiz--instance" },
+    ]);
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    expect(mockGetProviderConfigs).not.toHaveBeenCalled();
+
+    if (mockAdminState.current) mockAdminState.current.value = true;
+    await flushPromises();
+
+    expect(mockGetProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.PLUGIN,
+      "music_quiz",
+    );
+    expect(wrapper.find('[data-testid="music-quiz-settings"]').exists()).toBe(
+      true,
+    );
   });
 });
 

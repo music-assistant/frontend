@@ -357,6 +357,16 @@ const showSetupDialog = ref(false);
 const musicQuizProviderInstanceId = ref<string | null>(null);
 const isAdmin = computed(() => authManager.isAdmin());
 
+watch(
+  isAdmin,
+  (admin) => {
+    if (admin && !musicQuizProviderInstanceId.value) {
+      void resolveMusicQuizProviderInstance();
+    }
+  },
+  { immediate: true },
+);
+
 function openSetupDialog() {
   void host.fetchPlaybackOptions();
   showSetupDialog.value = true;
@@ -427,7 +437,6 @@ async function confirmEndGame() {
 
 onMounted(() => {
   document.addEventListener("fullscreenchange", onFullscreenChange);
-  if (isAdmin.value) void resolveMusicQuizProviderInstance();
 });
 
 onBeforeUnmount(() => {

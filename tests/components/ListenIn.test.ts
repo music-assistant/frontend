@@ -263,6 +263,41 @@ describe("ListenIn", () => {
     expect(listenInMock.options?.autoEnable?.()).toBe(false);
   });
 
+  it("keeps Listen-in usable when browser storage is blocked", async () => {
+    const consoleDebug = vi
+      .spyOn(console, "debug")
+      .mockImplementation(() => {});
+    const getItem = vi
+      .spyOn(mockLocalStorage, "getItem")
+      .mockImplementationOnce(() => {
+        throw new DOMException("Blocked");
+      });
+    const wrapper = mount(ListenIn, {
+      props: {
+        domain: "music_quiz",
+        mode: "remote",
+        labels: surfaces[1].labels,
+        autoEnable: true,
+        preferenceKey: "test_listen_in_enabled",
+      },
+    });
+
+    expect(listenInMock.options?.autoEnable?.()).toBe(true);
+    getItem.mockRestore();
+
+    const setItem = vi
+      .spyOn(mockLocalStorage, "setItem")
+      .mockImplementationOnce(() => {
+        throw new DOMException("Blocked");
+      });
+    await wrapper.get("button").trigger("click");
+
+    expect(listenInMock.enableListenIn).toHaveBeenCalledOnce();
+    expect(consoleDebug).toHaveBeenCalledTimes(2);
+    setItem.mockRestore();
+    consoleDebug.mockRestore();
+  });
+
   it("renders enabled actions and disables both action types while busy", async () => {
     const venue = mount(ListenIn, {
       props: {

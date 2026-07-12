@@ -143,15 +143,23 @@ async function disableListenIn() {
 
 function shouldAutoEnable() {
   if (!props.preferenceKey) return props.autoEnable ?? false;
-  const preference = window.localStorage.getItem(props.preferenceKey);
-  return preference === null
-    ? (props.autoEnable ?? false)
-    : preference === "true";
+  try {
+    const preference = window.localStorage.getItem(props.preferenceKey);
+    return preference === null
+      ? (props.autoEnable ?? false)
+      : preference === "true";
+  } catch (error) {
+    console.debug("Could not read Listen-in preference:", error);
+    return props.autoEnable ?? false;
+  }
 }
 
 function rememberPreference(enabled: boolean) {
-  if (props.preferenceKey) {
+  if (!props.preferenceKey) return;
+  try {
     window.localStorage.setItem(props.preferenceKey, String(enabled));
+  } catch (error) {
+    console.debug("Could not store Listen-in preference:", error);
   }
 }
 </script>
