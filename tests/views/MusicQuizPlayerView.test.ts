@@ -187,7 +187,7 @@ describe("MusicQuizPlayerView routing", () => {
     });
   });
 
-  it("does not initialize ListenIn or lyrics for a non-audio definition", () => {
+  it("never initializes ListenIn or lyrics for Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(false));
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
@@ -206,6 +206,7 @@ describe("MusicQuizPlayerView routing", () => {
 
     expect(mockGameAdapterSetup).toHaveBeenCalledOnce();
     expect(mockListenInSetup).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
     expect(mockGetTrackLyrics).not.toHaveBeenCalled();
     wrapper.unmount();
   });
