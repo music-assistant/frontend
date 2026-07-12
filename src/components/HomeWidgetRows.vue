@@ -70,8 +70,8 @@
                 :player="player"
                 :show-volume-control="false"
                 :show-menu-button="false"
-                :show-sub-players="false"
-                :show-sync-controls="false"
+                :show-child-volumes="false"
+                :show-group-controls="false"
                 @click="playerClicked(player)"
               />
             </div>

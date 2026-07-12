@@ -1178,7 +1178,12 @@ onMounted(() => {
 
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
+  if (
+    e.key === "Escape" &&
+    store.showFullscreenPlayer &&
+    !store.dialogActive &&
+    !store.showPlayersMenu
+  ) {
     store.showFullscreenPlayer = false;
   }
 };

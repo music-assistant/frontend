@@ -857,8 +857,9 @@ export const isHiddenSendspinWebPlayer = function (
 export const getVolumeIconComponent = function (
   player: Player,
   displayVolume?: number,
+  muted = player.volume_muted ?? false,
 ) {
-  if (player.volume_muted) {
+  if (muted) {
     return VolumeX;
   }
 

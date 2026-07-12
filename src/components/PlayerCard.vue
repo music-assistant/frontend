@@ -1,247 +1,177 @@
 <template>
-  <v-card
+  <Card
     v-hold="onHold"
-    flat
-    class="panel-item"
+    class="gap-0 rounded-lg p-2 shadow-none transition-colors"
     :class="{
-      'panel-item-selected': player.player_id == store.activePlayerId,
-      'panel-item-idle': player.playback_state == PlaybackState.IDLE,
-      'panel-item-off': player.powered == false,
+      'border-primary bg-primary/15': player.player_id === store.activePlayerId,
+      'opacity-80': player.playback_state === PlaybackState.IDLE,
+      'opacity-60': player.powered === false,
+      'opacity-40': !player.available,
     }"
-    :ripple="false"
-    :disabled="!player.available"
-    @click="$emit('click', player)"
     @click.capture="swallowClickAfterHold"
     @contextmenu.prevent="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
-    <!-- now playing media -->
-    <v-list-item class="panel-item-details" flat :ripple="false">
-      <!-- prepend: media thumb -->
-      <template #prepend>
-        <div class="player-media-thumb">
-          <!-- current media image -->
-          <div
-            v-if="player.powered != false && player.current_media?.image_url"
-          >
-            <v-img
-              class="media-thumb"
-              size="44"
-              :src="getMediaImageUrl(player.current_media.image_url)"
-              :alt="$t('tooltip.artwork')"
-            />
-          </div>
-          <!-- fallback: display player icon -->
-          <div v-else class="icon-thumb">
-            <PlayerIcon
-              :icon="player.icon"
-              :grouped="
-                player.type == PlayerType.PLAYER &&
-                !!player.group_members.length
-              "
-              :size="24"
-              style="opacity: 0.8"
-            />
-          </div>
-        </div>
-      </template>
-
-      <!-- playername -->
-      <template #title>
-        <!-- special builtin player (web player or companion native player) -->
+    <div class="flex min-w-0 items-center gap-1">
+      <button
+        type="button"
+        class="player-select-action focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2"
+        :disabled="!player.available"
+        @click="emit('click', player)"
+      >
+        <span class="sr-only">{{ $t("tooltip.select_player") }}: </span>
         <div
-          v-if="isBuiltinPlayer(player)"
-          style="font-size: 0.88rem; line-height: 1.3"
+          class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
         >
-          <span>{{ getPlayerName(player, 12) }}</span>
-          <!-- append small icon to the title -->
-          <v-chip density="compact" size="small" class="ml-2" outlined>
-            <v-icon
-              size="14"
-              :icon="
-                store.deviceType == 'phone' ? 'mdi-cellphone' : 'mdi-monitor'
-              "
-            />
-            <span v-if="store.deviceType != 'phone'" style="margin-left: 6px">{{
-              $t("this_device")
-            }}</span>
-          </v-chip>
-        </div>
-        <!-- regular player -->
-        <div v-else style="font-size: 0.88rem; line-height: 1.3">
-          {{ getPlayerName(player, 27) }}
-        </div>
-      </template>
-
-      <!-- subtitle: media item title -->
-      <template #subtitle>
-        <div
-          v-if="player.powered != false"
-          style="
-            font-size: 0.8rem;
-            font-weight: 500;
-            white-space: nowrap;
-            line-height: 1.3;
-          "
-        >
-          <div v-if="player.current_media?.title">
-            {{ player.current_media.title }}
-          </div>
-        </div>
-      </template>
-
-      <!-- subtitle -->
-      <template #default>
-        <div
-          class="v-list-item-subtitle"
-          style="font-size: 0.78rem; white-space: nowrap; line-height: 1.3"
-        >
-          <!-- player powered off -->
-          <div v-if="player.powered == false"></div>
-
-          <!-- artist + album -->
-          <div
-            v-else-if="
-              player.current_media?.artist && player.current_media?.album
+          <img
+            v-if="artworkUrl"
+            :src="artworkUrl"
+            alt=""
+            class="size-full object-cover"
+            loading="lazy"
+            @error="artworkFailed = true"
+          />
+          <PlayerIcon
+            v-else
+            :icon="player.icon"
+            :grouped="
+              player.type === PlayerType.PLAYER &&
+              player.group_members.some(
+                (playerId) => playerId !== player.player_id,
+              )
             "
-          >
-            {{ player.current_media.artist }} •
-            {{ player.current_media.album }}
-          </div>
-
-          <!-- artist only -->
-          <div v-else-if="player.current_media?.artist">
-            {{ player.current_media.artist }}
-          </div>
-
-          <!-- album only -->
-          <div v-else-if="player.current_media?.album">
-            {{ player.current_media.album }}
-          </div>
-          <!-- queue empty (hidden visually, announced by screen readers) -->
-          <div
-            v-else-if="playerQueue?.items == 0"
-            :aria-label="$t('queue_empty')"
-          ></div>
+            :size="24"
+            class="opacity-80"
+          />
         </div>
-      </template>
 
-      <!-- power/play/pause + menu button -->
-      <template #append>
-        <!-- power button -->
+        <div class="min-w-0 flex-1 py-0.5">
+          <div class="flex min-w-0 items-center gap-1.5">
+            <span class="truncate text-sm font-medium">
+              {{ getPlayerName(player, 27) }}
+            </span>
+            <Badge
+              v-if="isBuiltinPlayer(player)"
+              as="span"
+              variant="secondary"
+              class="h-5 shrink-0 gap-1 px-1.5 text-[11px]"
+            >
+              <Smartphone v-if="store.deviceType === 'phone'" class="size-3" />
+              <Monitor v-else class="size-3" />
+              <span v-if="store.deviceType !== 'phone'">
+                {{ $t("this_device") }}
+              </span>
+            </Badge>
+          </div>
+          <p
+            v-if="player.powered !== false && player.current_media?.title"
+            class="truncate text-xs font-medium"
+          >
+            {{ player.current_media.title }}
+          </p>
+          <p
+            v-if="player.powered !== false && mediaByline"
+            class="text-muted-foreground truncate text-xs"
+          >
+            {{ mediaByline }}
+          </p>
+          <span
+            v-else-if="playerQueue?.items === 0"
+            class="sr-only"
+            :aria-label="$t('queue_empty')"
+          ></span>
+        </div>
+      </button>
+
+      <div class="flex shrink-0 items-center">
         <Button
           v-if="
-            player.power_control != PLAYER_CONTROL_NONE &&
+            player.power_control !== PLAYER_CONTROL_NONE &&
             allowPowerControl &&
             !player.powered
           "
-          variant="ghost-icon"
-          size="icon"
-          class="player-command-btn"
+          variant="ghost"
+          size="icon-sm"
+          :disabled="!player.available"
           :aria-label="$t('tooltip.toggle_power')"
-          @click.stop="
-            api.playerCommandPowerToggle(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
+          @click.stop="api.playerCommandPowerToggle(player.player_id)"
         >
-          <Power
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
-          />
+          <Power class="size-5" />
         </Button>
 
-        <!-- group members button -->
         <Button
-          v-if="
-            showSyncControls &&
-            player.can_group_with.length > 0 &&
-            showVolumeControl
-          "
-          variant="ghost-icon"
-          size="icon"
-          class="player-command-btn group-expand-btn"
-          :aria-label="$t('tooltip.group_members')"
-          @click.stop="$emit('toggle-expand', player)"
+          v-if="canEditGroupMembers"
+          variant="ghost"
+          size="icon-sm"
+          class="relative"
+          :disabled="!player.available"
+          :aria-label="`${$t('tooltip.group_members')}: ${groupMemberCount}`"
+          :aria-pressed="showMemberControls"
+          @click.stop="emit('toggle-member-controls', player)"
         >
-          <v-badge
-            color="primary"
-            :offset-x="-5"
-            :offset-y="-5"
-            :model-value="
-              player.type == PlayerType.GROUP ||
-              player.group_members.length >= 2
-            "
-            :content="player.group_members.length"
-            class="group-badge"
+          <Speaker class="size-5" />
+          <Badge
+            as="span"
+            class="absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[10px]"
           >
-            <Speaker
-              :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
-            />
-          </v-badge>
+            {{ groupMemberCount }}
+          </Badge>
         </Button>
 
-        <!-- play/pause button -->
         <Button
           v-if="canPlayPause"
-          variant="ghost-icon"
-          size="icon"
-          class="player-command-btn"
-          :disabled="
-            api.queues[player.player_id]?.extra_attributes
-              ?.play_action_in_progress === true
+          variant="ghost"
+          size="icon-sm"
+          :class="{ 'ml-1': canEditGroupMembers }"
+          :disabled="!player.available || playActionInProgress"
+          :aria-label="
+            player.playback_state === PlaybackState.PLAYING
+              ? $t('pause')
+              : $t('play')
           "
-          @click.stop="
-            api.playerCommandPlayPause(player.player_id);
-            store.activePlayerId = player.player_id;
-          "
+          @click.stop="api.playerCommandPlayPause(player.player_id)"
         >
-          <v-progress-circular
-            v-if="
-              api.queues[player.player_id]?.extra_attributes
-                ?.play_action_in_progress === true
-            "
-            indeterminate
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 24 : 26"
-            :width="2"
+          <Spinner v-if="playActionInProgress" class="size-5" />
+          <Pause
+            v-else-if="player.playback_state === PlaybackState.PLAYING"
+            class="size-5"
           />
-          <component
-            :is="player.playback_state == PlaybackState.PLAYING ? Pause : Play"
-            v-else
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 30 : 32"
-          />
+          <Play v-else class="size-5" />
         </Button>
 
-        <!-- menu button -->
         <Button
           v-if="showMenuButton"
-          variant="ghost-icon"
-          size="icon"
-          class="player-command-btn"
-          style="margin-right: -5px"
+          variant="ghost"
+          size="icon-sm"
+          :class="{ '-ml-1': canPlayPause }"
+          :disabled="!player.available"
           :aria-label="$t('tooltip.more_options')"
           @click.stop="openPlayerMenu"
         >
-          <MoreVertical
-            :size="getBreakpointValue({ breakpoint: 'phone' }) ? 26 : 30"
-          />
+          <EllipsisVertical class="size-5" />
         </Button>
-      </template>
-    </v-list-item>
+      </div>
+    </div>
+
     <VolumeControl
       v-if="showVolumeControl"
       :player="player"
-      :show-sync-controls="showSyncControls"
-      :show-heading-row="false"
-      :show-sub-players="showSubPlayers"
-      :show-volume-control="player.powered != false"
+      :show-member-controls="player.available && showMemberControls"
+      :show-child-volumes="player.available && showChildVolumes"
+      :show-volume-control="player.powered !== false"
       :allow-wheel="false"
-      @toggle-expand="$emit('toggle-expand', player)"
+      @toggle-child-volumes="emit('toggle-child-volumes', player)"
     />
-  </v-card>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import VolumeControl from "@/components/VolumeControl.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { useActiveSource } from "@/composables/activeSource";
 import {
   getEventPosition,
@@ -251,222 +181,128 @@ import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   getMediaImageUrl,
   getPlayerName,
-  ImageColorPalette,
   isBuiltinPlayer,
-  paletteFromServer,
 } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   PlaybackState,
-  Player,
+  type Player,
   PLAYER_CONTROL_NONE,
+  PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { MoreVertical, Pause, Play, Power, Speaker } from "@lucide/vue";
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import { computed, toRef } from "vue";
+import {
+  EllipsisVertical,
+  Monitor,
+  Pause,
+  Play,
+  Power,
+  Smartphone,
+  Speaker,
+} from "@lucide/vue";
+import { computed, ref, toRef, watch } from "vue";
 
-// properties
 export interface Props {
   player: Player;
   showVolumeControl?: boolean;
   showMenuButton?: boolean;
-  showSubPlayers?: boolean;
-  showSyncControls?: boolean;
+  showChildVolumes?: boolean;
+  showMemberControls?: boolean;
+  showGroupControls?: boolean;
   allowPowerControl?: boolean;
 }
 
-const compProps = defineProps<Props>();
-const { activeSource } = useActiveSource(toRef(compProps, "player"));
-
-// emits
-defineEmits<{
-  (e: "click", player: Player): void;
-  (e: "toggle-expand", player: Player): void;
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  (event: "click", player: Player): void;
+  (event: "toggle-child-volumes", player: Player): void;
+  (event: "toggle-member-controls", player: Player): void;
 }>();
 
+const artworkFailed = ref(false);
+const { activeSource } = useActiveSource(toRef(props, "player"));
+
 const playerQueue = computed(() => {
-  if (
-    compProps.player &&
-    compProps.player.active_source &&
-    compProps.player.active_source in api.queues
-  ) {
-    return api.queues[compProps.player.active_source];
+  if (props.player.active_source && props.player.active_source in api.queues) {
+    return api.queues[props.player.active_source];
   }
-  if (
-    compProps.player &&
-    !compProps.player.active_source &&
-    compProps.player.player_id in api.queues
-  ) {
-    return api.queues[compProps.player.player_id];
+  if (!props.player.active_source && props.player.player_id in api.queues) {
+    return api.queues[props.player.player_id];
   }
   return undefined;
 });
 
-const openPlayerMenu = function (evt: Event) {
-  const pos = getEventPosition(evt);
+const artworkUrl = computed(() => {
+  if (
+    artworkFailed.value ||
+    props.player.powered === false ||
+    !props.player.current_media?.image_url ||
+    (props.player.playback_state !== PlaybackState.PLAYING &&
+      props.player.playback_state !== PlaybackState.PAUSED)
+  ) {
+    return undefined;
+  }
+  return getMediaImageUrl(props.player.current_media.image_url);
+});
+
+const mediaByline = computed(() =>
+  [props.player.current_media?.artist, props.player.current_media?.album]
+    .filter(Boolean)
+    .join(" • "),
+);
+
+const canPlayPause = computed(
+  () => activeSource.value?.can_play_pause === true,
+);
+
+const playActionInProgress = computed(
+  () =>
+    api.queues[props.player.player_id]?.extra_attributes
+      ?.play_action_in_progress === true,
+);
+
+const canEditGroupMembers = computed(
+  () =>
+    props.showGroupControls &&
+    props.player.supported_features.includes(PlayerFeature.SET_MEMBERS) &&
+    (props.player.can_group_with.length > 0 ||
+      props.player.group_members.some(
+        (playerId) =>
+          playerId !== props.player.player_id &&
+          !props.player.static_group_members.includes(playerId),
+      )),
+);
+
+const groupMemberCount = computed(() => {
+  const childCount = new Set(
+    props.player.group_members.filter(
+      (playerId) => playerId !== props.player.player_id,
+    ),
+  ).size;
+  return props.player.type === PlayerType.GROUP ? childCount : childCount + 1;
+});
+
+watch(
+  () => props.player.current_media?.image_url,
+  () => {
+    artworkFailed.value = false;
+  },
+);
+
+function openPlayerMenu(event: Event) {
+  if (!props.player.available) return;
+  const position = getEventPosition(event);
   eventbus.emit("contextmenu", {
-    items: getPlayerMenuItems(compProps.player, playerQueue.value, {
+    items: getPlayerMenuItems(props.player, playerQueue.value, {
       context: "player",
     }),
-    posX: pos.x,
-    posY: pos.y,
+    posX: position.x,
+    posY: position.y,
   });
-};
+}
 
 const { onHold, onTouchStart, swallowClickAfterHold } =
   useHoldToOpenMenu(openPlayerMenu);
-
-const canPlayPause = computed(() => {
-  if (activeSource.value) {
-    return activeSource.value.can_play_pause;
-  }
-  return false;
-});
-
-// Use the server-derived palette from the now-playing media.
-const coverImageColorPalette = computed<ImageColorPalette>(() =>
-  paletteFromServer(compProps.player.current_media?.palette),
-);
 </script>
-
-<style scoped>
-.panel-item-details {
-  width: 100%;
-  margin: 0px !important;
-  padding: 0px !important;
-  min-height: 58px;
-}
-
-.panel-item-details :deep(.v-list-item__content) {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 50px;
-  gap: 0px;
-}
-
-.panel-item-details :deep(.v-list-item-title) {
-  padding: 0;
-  margin: 0;
-}
-
-.panel-item-details :deep(.v-list-item-subtitle) {
-  padding: 0;
-  margin: 0;
-}
-
-.panel-item-details :deep(.v-list-item__spacer) {
-  width: 10px;
-}
-
-.player-media-thumb {
-  margin-right: 0px;
-}
-
-.volumesliderrow {
-  margin-top: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  height: 24px;
-  min-height: 24px;
-}
-
-.volumecaption {
-  width: 25px;
-  text-align: right;
-  margin-right: 0px;
-}
-
-.volumesliderrow :deep(.v-list-item__prepend) {
-  width: 40px;
-  margin-left: -25px;
-}
-.volumesliderrow :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
-}
-
-.media-thumb {
-  width: 65px;
-  height: 65px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.icon-thumb {
-  width: 65px;
-  height: 65px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.media-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-}
-.icon-thumb {
-  width: 44px;
-  height: 44px;
-  margin-top: 4px;
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.panel-item {
-  border-style: ridge;
-  border-width: thin;
-  border-color: rgba(var(--v-theme-on-surface), 0.12);
-  padding-left: 8px;
-  padding-right: 8px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  opacity: 1;
-  transition: opacity 0.4s ease-in-out;
-  border-radius: 6px;
-  margin-left: 0px;
-  margin-right: 0px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  height: 100%;
-  width: auto;
-}
-.panel-item-idle {
-  opacity: 0.8;
-}
-.panel-item-off {
-  opacity: 0.6;
-}
-.panel-item-selected {
-  border-color: rgba(var(--v-theme-primary), 0.6);
-  background-color: rgba(var(--v-theme-primary), 0.3);
-}
-
-.player-command-btn {
-  width: 35px;
-  min-width: 35px;
-  margin-left: 5px;
-}
-
-.player-command-btn.group-expand-btn {
-  margin-right: 3px;
-}
-
-.group-badge :deep(.v-badge__badge) {
-  font-size: 13px;
-  height: 16px;
-  min-width: 16px;
-  padding: 0 4px 0 4px;
-}
-</style>

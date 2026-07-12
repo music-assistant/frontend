@@ -1,14 +1,11 @@
 <template>
-  <v-icon
-    v-if="grouped"
-    icon="mdi-speaker-multiple"
-    :size="size"
-    v-bind="$attrs"
-  />
-  <v-icon
+  <Speaker v-if="grouped" :size="size" v-bind="$attrs" />
+  <i
     v-else-if="isMdiIcon(icon)"
-    :icon="icon ?? undefined"
-    :size="size"
+    aria-hidden="true"
+    class="mdi"
+    :class="icon"
+    :style="{ fontSize: `${size ?? 24}px`, lineHeight: 1 }"
     v-bind="$attrs"
   />
   <component :is="lucideIcon || Speaker" v-else :size="size" v-bind="$attrs" />
@@ -25,7 +22,7 @@ defineOptions({
 
 const props = defineProps<{
   icon?: string | null;
-  size?: number | string;
+  size?: number;
   grouped?: boolean;
 }>();
 
