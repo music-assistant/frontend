@@ -53,6 +53,10 @@ const originalScrollIntoView = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
   "scrollIntoView",
 );
+const originalMatchMedia = Object.getOwnPropertyDescriptor(
+  window,
+  "matchMedia",
+);
 const scrollIntoView = vi.fn();
 
 describe("TimelineDisplay", () => {
@@ -62,13 +66,20 @@ describe("TimelineDisplay", () => {
       configurable: true,
       value: scrollIntoView,
     });
-    vi.spyOn(window, "matchMedia").mockImplementation((query) =>
-      mediaQueryList(query, false),
-    );
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn((query: string) => mediaQueryList(query, false)),
+      writable: true,
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    if (originalMatchMedia) {
+      Object.defineProperty(window, "matchMedia", originalMatchMedia);
+    } else {
+      Reflect.deleteProperty(window, "matchMedia");
+    }
   });
 
   afterAll(() => {
