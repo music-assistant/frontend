@@ -1,10 +1,10 @@
 <template>
   <Card>
-    <CardHeader class="items-center text-center">
+    <CardHeader class="justify-items-center text-center">
       <span
         class="bg-destructive/10 text-destructive grid size-12 place-items-center rounded-full"
       >
-        <TriangleAlert class="size-6" />
+        <TriangleAlert class="size-6" aria-hidden="true" />
       </span>
       <CardTitle>{{ $t("providers.music_quiz.unsupported_title") }}</CardTitle>
       <CardDescription>

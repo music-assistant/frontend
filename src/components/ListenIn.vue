@@ -4,13 +4,21 @@
     class="listen-in min-w-0"
     :class="{ 'listen-in--active': isListeningIn }"
   >
-    <span :id="attributionId" class="listen-in__attribution sr-only">
-      {{ labels.poweredBy }}
-    </span>
     <div class="listen-in__row w-full min-w-0">
       <Headphones :size="20" class="listen-in__icon" aria-hidden="true" />
       <div class="listen-in__text min-w-0 overflow-hidden">
-        <span class="listen-in__title block truncate">{{ title }}</span>
+        <div class="listen-in__title-row min-w-0">
+          <span class="listen-in__title block shrink-0 whitespace-nowrap">
+            {{ title }}
+          </span>
+          <span
+            :id="attributionId"
+            :title="labels.poweredBy"
+            class="listen-in__attribution min-w-0 truncate text-[0.625rem]"
+          >
+            {{ labels.poweredBy }}
+          </span>
+        </div>
         <span class="listen-in__desc block truncate">{{ description }}</span>
       </div>
       <Button
@@ -153,9 +161,21 @@ function onToggle(enabled: boolean) {
   flex: 1;
 }
 
+.listen-in__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .listen-in__title {
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.listen-in__attribution {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  line-height: 1;
 }
 
 .listen-in__desc {
