@@ -82,6 +82,7 @@ interface MusicQuizStateIdentity<
   answer_type: TAnswerType;
   phase: MusicQuizPhase;
   name: string | null;
+  include_similar_music?: boolean;
   auto_start_at?: number | null;
 }
 
@@ -526,7 +527,11 @@ export interface MusicQuizJoinResult {
   state: MusicQuizPersonalizedState;
 }
 
-export interface MusicQuizGuessTheSongConfig {
+export interface MusicQuizSharedConfig {
+  include_similar_music: boolean;
+}
+
+export interface MusicQuizGuessTheSongConfig extends MusicQuizSharedConfig {
   round_count: number;
   suggestion_count: number;
   answer_duration: number;
@@ -541,7 +546,7 @@ export interface MusicQuizGuessTheSongCreateRequest {
   config: MusicQuizGuessTheSongConfig;
 }
 
-export interface MusicQuizTimelineConfig {
+export interface MusicQuizTimelineConfig extends MusicQuizSharedConfig {
   round_count: number;
   answer_duration: number;
   source_uris: string[];
@@ -556,7 +561,7 @@ export interface MusicQuizTimelineCreateRequest {
   config: MusicQuizTimelineConfig;
 }
 
-export interface MusicQuizTriviaConfig {
+export interface MusicQuizTriviaConfig extends MusicQuizSharedConfig {
   language: string;
   play_reveal_audio: boolean;
   round_count: number;

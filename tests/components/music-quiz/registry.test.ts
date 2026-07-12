@@ -348,7 +348,7 @@ describe("Music Quiz registries", () => {
     const fixture = GAME_MOUNT_FIXTURES[game.id];
     const wrappers = [
       shallowMount(game.adapters.setup, {
-        props: { busy: false },
+        props: { busy: false, includeSimilarMusic: false },
       }),
       shallowMount(game.adapters.player, {
         props: {

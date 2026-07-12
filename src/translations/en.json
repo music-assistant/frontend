@@ -1251,6 +1251,8 @@
             "setup_step": "Step {0} of {1}",
             "coming_soon": "Coming soon",
             "answer_choices": "Answer choices",
+            "include_similar_music": "Include similar music",
+            "include_similar_music_help": "Add recommended tracks beyond your selected sources for more variety.",
             "game_type_guess_the_song": "Guess the Song",
             "game_type_guess_the_song_description": "Play a track and be the first to pick its title from the options.",
             "waiting_for_answer": "Waiting for answer",

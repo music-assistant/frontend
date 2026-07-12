@@ -117,7 +117,7 @@ const MAX_ROUNDS = 100;
 const MIN_SECONDS = 1;
 const MAX_SECONDS = 300;
 
-defineProps<MusicQuizSetupAdapterProps>();
+const props = defineProps<MusicQuizSetupAdapterProps>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);
@@ -147,6 +147,7 @@ function create() {
     round_count: roundCount.value,
     answer_duration: answerDuration.value,
     source_uris: sourceUris.value,
+    include_similar_music: props.includeSimilarMusic,
     artist_bonus_mode: artistBonusMode.value,
     title_bonus_mode: titleBonusMode.value,
   };
