@@ -277,7 +277,8 @@ import {
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { useListDragReorder } from "@/composables/useListDragReorder";
-import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
+import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
@@ -325,26 +326,13 @@ const tilesPerView = computed(() => {
   return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
 });
 
-const players = computed(() =>
-  Object.values(api.players)
-    .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1))
-    .sort((a, b) => playerSortScore(a) - playerSortScore(b)),
-);
+const players = useOrderedPlayers();
 
 const activeCount = computed(
   () =>
     players.value.filter((p) => p.playback_state == PlaybackState.PLAYING)
       .length,
 );
-
-function playerSortScore(player: Player) {
-  if (player.playback_state == PlaybackState.PLAYING) return 0;
-  if (player.playback_state == PlaybackState.PAUSED) return 1;
-  if (player.current_media && player.powered) return 3;
-  if (player.current_media) return 4;
-  return 99;
-}
 
 function playerClicked(player: Player) {
   store.activePlayerId = player.player_id;
@@ -886,6 +874,9 @@ onBeforeUnmount(() => {
 .ed-players {
   margin-top: 4px;
 }
+.ed-players :deep(.ed-shelf__track) {
+  align-items: stretch;
+}
 .ed-players__head {
   display: flex;
   align-items: center;
@@ -902,9 +893,13 @@ onBeforeUnmount(() => {
   color: rgba(var(--v-theme-on-surface), 0.45);
 }
 .ed-player-slot {
+  display: flex;
   flex: 0 0 auto;
   width: 280px;
   scroll-snap-align: start;
+}
+.ed-player-slot :deep([data-slot="card"]) {
+  width: 100%;
 }
 .ed-player-slot :deep(.panel-item) {
   height: auto;

@@ -47,6 +47,7 @@ vi.mock("@/plugins/store", async () => {
       activePlayer: undefined as Player | undefined,
       activePlayerId: undefined as string | undefined,
       companionPlayerId: undefined as string | undefined,
+      dialogActive: false,
       showPlayersMenu: true,
     }),
   };
@@ -79,6 +80,8 @@ const PlayerCardStub = {
     "showChildVolumes",
     "showMemberControls",
     "showGroupControls",
+    "showGroupMemberNames",
+    "stackMediaDetails",
   ],
   emits: ["click", "toggle-child-volumes", "toggle-member-controls"],
   template: `
@@ -87,6 +90,8 @@ const PlayerCardStub = {
       :data-player-id="player.player_id"
       :data-child-volumes="showChildVolumes ? 'true' : 'false'"
       :data-member-controls="showMemberControls ? 'true' : 'false'"
+      :data-group-member-names="showGroupMemberNames ? 'true' : 'false'"
+      :data-stack-media-details="stackMediaDetails ? 'true' : 'false'"
     >
       <button class="select-player" @click="$emit('click', player)">
         {{ player.name }}
@@ -116,6 +121,11 @@ const SearchInputStub = {
 };
 
 const passthroughStub = { template: "<div><slot /></div>" };
+const SheetContentStub = {
+  name: "SheetContent",
+  emits: ["interact-outside"],
+  template: "<div><slot /></div>",
+};
 
 function createPlayer(
   playerId: string,
@@ -174,7 +184,7 @@ function mountPlayerSelect() {
         PlayerCard: PlayerCardStub,
         SearchInput: SearchInputStub,
         Sheet: passthroughStub,
-        SheetContent: passthroughStub,
+        SheetContent: SheetContentStub,
         SheetDescription: passthroughStub,
         SheetHeader: passthroughStub,
         SheetTitle: passthroughStub,
@@ -195,12 +205,13 @@ describe("PlayerSelect", () => {
     store.activePlayer = undefined;
     store.activePlayerId = undefined;
     store.companionPlayerId = undefined;
+    store.dialogActive = false;
     store.showPlayersMenu = true;
     webPlayer.player_id = null;
     storage.clear();
   });
 
-  it("orders the active player first, then playing players", () => {
+  it("orders the active player, this device, then playing players first", () => {
     const activePlayer = createPlayer("active", "Kitchen");
     api.players = {
       office: createPlayer("office", "Office"),
@@ -238,6 +249,25 @@ describe("PlayerSelect", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe(remembered.player_id);
+  });
+
+  it("moves a newly active player to the front", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    const office = createPlayer("office", "Office");
+    api.players = {
+      [kitchen.player_id]: kitchen,
+      [office.player_id]: office,
+    };
+    const wrapper = mountPlayerSelect();
+
+    store.activePlayerId = office.player_id;
+    await nextTick();
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["office", "kitchen"]);
   });
 
   it("shows search only when more than ten players are visible", () => {
@@ -287,6 +317,20 @@ describe("PlayerSelect", () => {
 
     expect(store.activePlayerId).toBe(player.player_id);
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("enables the detailed card layout only in the selector", () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    api.players = { [player.player_id]: player };
+
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper.find(".player-card").attributes("data-group-member-names"),
+    ).toBe("true");
+    expect(
+      wrapper.find(".player-card").attributes("data-stack-media-details"),
+    ).toBe("true");
   });
 
   it("closes from the blurred backdrop", async () => {
@@ -344,6 +388,19 @@ describe("PlayerSelect", () => {
       .trigger("keydown", { key: "Escape" });
 
     expect(store.showPlayersMenu).toBe(false);
+  });
+
+  it("stays open while the context menu is active", () => {
+    const player = createPlayer("kitchen", "Kitchen");
+    api.players = { [player.player_id]: player };
+    store.dialogActive = true;
+    const wrapper = mountPlayerSelect();
+    const event = new Event("pointerdown", { cancelable: true });
+
+    wrapper.findComponent(SheetContentStub).vm.$emit("interact-outside", event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(store.showPlayersMenu).toBe(true);
   });
 
   it("keeps member and child-volume controls mutually exclusive", async () => {

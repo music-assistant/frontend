@@ -7,11 +7,13 @@ import {
   PlayerFeature,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, emitContextMenu } = vi.hoisted(() => ({
   apiMock: {
+    players: {} as Record<string, Player>,
     queues: {} as Record<
       string,
       {
@@ -69,8 +71,16 @@ vi.mock("@/helpers/player_menu_items", () => ({
 
 vi.mock("@/helpers/utils", () => ({
   getMediaImageUrl: (url: string) => url,
-  getPlayerName: (player: Player) => player.name,
-  isBuiltinPlayer: () => false,
+  getPlayerName: (player: Player) => {
+    const childCount = player.group_members.filter(
+      (playerId) =>
+        playerId !== player.player_id && apiMock.players[playerId]?.available,
+    ).length;
+    return player.type !== PlayerType.GROUP && childCount > 0
+      ? `${player.name} +${childCount}`
+      : player.name;
+  },
+  isBuiltinPlayer: (player: Player) => player.player_id === "builtin",
 }));
 
 const ButtonStub = {
@@ -139,7 +149,13 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
   };
 }
 
-function mountPlayerCard(player: Player) {
+function mountPlayerCard(
+  player: Player,
+  props: {
+    showGroupMemberNames?: boolean;
+    stackMediaDetails?: boolean;
+  } = {},
+) {
   return mount(PlayerCard, {
     props: {
       player,
@@ -147,6 +163,7 @@ function mountPlayerCard(player: Player) {
       showGroupControls: true,
       showMenuButton: true,
       showVolumeControl: true,
+      ...props,
     },
     global: {
       directives: {
@@ -172,6 +189,11 @@ function mountPlayerCard(player: Player) {
 }
 
 describe("PlayerCard", () => {
+  beforeEach(() => {
+    apiMock.players = {};
+    store.deviceType = "desktop";
+  });
+
   it("uses a primary border for the active player", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
@@ -189,6 +211,143 @@ describe("PlayerCard", () => {
     expect(action.attributes("aria-label")).toBeUndefined();
     expect(action.text()).toContain("tooltip.select_player");
     expect(action.text()).toContain("Kitchen");
+  });
+
+  it("lists every player name in a manual group", () => {
+    const office = createPlayer({
+      player_id: "office",
+      name: "Office",
+    });
+    const patio = createPlayer({
+      player_id: "patio",
+      name: "Patio",
+    });
+    const offline = createPlayer({
+      player_id: "offline",
+      name: "Offline",
+      available: false,
+    });
+    const parent = createPlayer({
+      group_members: ["office", "player", "patio", "offline"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [office.player_id]: office,
+      [patio.player_id]: patio,
+      [offline.player_id]: offline,
+    };
+
+    const mainCard = mountPlayerCard(parent);
+    expect(mainCard.find(".player-card-name").text()).toBe("Kitchen +2");
+    expect(mainCard.find(".player-card-group-members").exists()).toBe(false);
+    mainCard.unmount();
+
+    const wrapper = mountPlayerCard(parent, {
+      showGroupMemberNames: true,
+    });
+    const members = wrapper.find(".player-card-group-members");
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen +2");
+    expect(members.text()).toBe("Kitchen • Office • Patio");
+    expect(members.classes()).toContain("text-[11px]");
+  });
+
+  it("keeps the this-device badge accessible on phones", () => {
+    store.deviceType = "phone";
+
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        player_id: "builtin",
+      }),
+    );
+    const badgeLabel = wrapper.find(".player-device-badge-label");
+
+    expect(badgeLabel.text()).toBe("this_device");
+    expect(badgeLabel.classes()).toContain("sr-only");
+  });
+
+  it("shows member names beneath a dedicated group title", () => {
+    const livingRoom = createPlayer({
+      player_id: "living-room",
+      name: "Living room",
+    });
+    const kitchen = createPlayer({
+      player_id: "kitchen",
+      name: "Kitchen",
+    });
+    const group = createPlayer({
+      player_id: "downstairs",
+      name: "Downstairs",
+      type: PlayerType.GROUP,
+      group_members: [livingRoom.player_id, kitchen.player_id],
+    });
+    apiMock.players = {
+      [group.player_id]: group,
+      [livingRoom.player_id]: livingRoom,
+      [kitchen.player_id]: kitchen,
+    };
+
+    const wrapper = mountPlayerCard(group, {
+      showGroupMemberNames: true,
+    });
+    const members = wrapper.find(".player-card-group-members");
+
+    expect(wrapper.find(".player-card-name").text()).toBe("Downstairs");
+    expect(members.text()).toBe("Living room • Kitchen");
+    expect(members.classes()).toContain("text-[11px]");
+  });
+
+  it("stacks player identity above loaded media only when requested", () => {
+    const player = createPlayer({
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        uri: "test://track",
+        media_type: MediaType.TRACK,
+        title: "Hate Me Now",
+        artist: "Nas",
+      },
+    });
+
+    const mainCard = mountPlayerCard(player);
+    expect(mainCard.find(".player-card-main").classes()).not.toContain(
+      "flex-col",
+    );
+    expect(mainCard.find(".player-card-actions").classes()).not.toContain(
+      "self-end",
+    );
+    mainCard.unmount();
+
+    const selectorCard = mountPlayerCard(player, {
+      stackMediaDetails: true,
+    });
+    expect(selectorCard.find(".player-card-main").classes()).toContain(
+      "flex-col",
+    );
+    expect(
+      selectorCard.find(".player-card-main > .player-card-title").exists(),
+    ).toBe(true);
+    expect(
+      selectorCard.find(".player-card-media-row .player-card-title").exists(),
+    ).toBe(false);
+    expect(selectorCard.find(".player-card-media-row").text()).toContain(
+      "Hate Me Now",
+    );
+    expect(selectorCard.find(".player-card-actions").classes()).toContain(
+      "self-end",
+    );
+  });
+
+  it("keeps idle selector cards compact", () => {
+    const wrapper = mountPlayerCard(createPlayer(), {
+      stackMediaDetails: true,
+    });
+
+    expect(wrapper.find(".player-card-main").classes()).not.toContain(
+      "flex-col",
+    );
+    expect(wrapper.find(".player-card-actions").classes()).not.toContain(
+      "self-end",
+    );
   });
 
   it.each([PlaybackState.PLAYING, PlaybackState.PAUSED])(
@@ -242,6 +401,7 @@ describe("PlayerCard", () => {
       powered: false,
       group_members: ["player", "child"],
     });
+
     const wrapper = mountPlayerCard(player);
 
     await wrapper.find(".player-select-action").trigger("click");
@@ -271,6 +431,24 @@ describe("PlayerCard", () => {
         posY: 2,
       }),
     );
+  });
+
+  it("stops the native context-menu event at the card", () => {
+    vi.clearAllMocks();
+    const wrapper = mountPlayerCard(createPlayer());
+    const parent = wrapper.element.parentElement;
+    const parentHandler = vi.fn();
+    parent?.addEventListener("contextmenu", parentHandler);
+    const event = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+    });
+
+    wrapper.element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(parentHandler).not.toHaveBeenCalled();
+    expect(emitContextMenu).toHaveBeenCalledOnce();
   });
 
   it("disables every action for an unavailable player", async () => {
