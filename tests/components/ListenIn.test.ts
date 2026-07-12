@@ -82,20 +82,31 @@ describe("ListenIn", () => {
         props: { domain, mode, labels },
       });
       const text = wrapper.get(".listen-in__text");
+      const titleRow = wrapper.get(".listen-in__title-row");
       const title = wrapper.get(".listen-in__title");
       const description = wrapper.get(".listen-in__desc");
       const attribution = wrapper.get(".listen-in__attribution");
       const action = wrapper.get(".listen-in__action");
 
       expect(text.element.childElementCount).toBe(2);
-      expect(text.element.children[0]).toBe(title.element);
+      expect(text.element.children[0]).toBe(titleRow.element);
       expect(text.element.children[1]).toBe(description.element);
+      expect(titleRow.element.childElementCount).toBe(2);
+      expect(titleRow.element.children[0]).toBe(title.element);
+      expect(titleRow.element.children[1]).toBe(attribution.element);
       expect(title.text()).toBe(expectedTitle);
-      expect(description.text()).toBe("Play the music on this device");
+      expect(description.text()).toBe("Hear the music on this device");
       expect(attribution.text()).toBe("Powered by Sendspin");
-      expect(attribution.classes()).toContain("sr-only");
+      expect(attribution.isVisible()).toBe(true);
+      expect(attribution.classes()).not.toContain("sr-only");
+      expect(attribution.classes()).toEqual(
+        expect.arrayContaining([
+          "shrink-0",
+          "whitespace-nowrap",
+          "text-[0.625rem]",
+        ]),
+      );
       expect(attribution.attributes("aria-hidden")).toBeUndefined();
-      expect(text.find(".listen-in__attribution").exists()).toBe(false);
       expect(action.attributes("aria-describedby")).toBe(
         attribution.attributes("id"),
       );
@@ -106,8 +117,9 @@ describe("ListenIn", () => {
       expect(text.classes()).toEqual(
         expect.arrayContaining(["min-w-0", "overflow-hidden"]),
       );
+      expect(titleRow.classes()).toContain("min-w-0");
       expect(title.classes()).toEqual(
-        expect.arrayContaining(["block", "truncate"]),
+        expect.arrayContaining(["block", "min-w-0", "truncate"]),
       );
       expect(description.classes()).toEqual(
         expect.arrayContaining(["block", "truncate"]),
