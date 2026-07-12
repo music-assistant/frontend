@@ -1,10 +1,21 @@
 <template>
-  <div class="flex flex-col gap-2">
+  <div
+    class="flex flex-col gap-2"
+    :class="{
+      'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
+    }"
+    :data-orientation="horizontal ? 'horizontal' : 'vertical'"
+  >
     <p v-if="selectable" class="text-muted-foreground text-center text-sm">
       {{ $t("providers.music_quiz.timeline_place_help") }}
     </p>
     <ol
-      class="mx-auto flex w-full max-w-2xl flex-col"
+      class="flex"
+      :class="
+        horizontal
+          ? 'w-max min-w-full flex-row items-stretch gap-2'
+          : 'mx-auto w-full max-w-2xl flex-col'
+      "
       :aria-label="$t('providers.music_quiz.timeline')"
     >
       <template v-for="boundary in boundaries" :key="boundary.key">
@@ -36,11 +47,17 @@
         </li>
         <li
           v-if="boundary.entry"
-          class="border-primary/25 border-l-2 py-2 pl-3"
+          class="border-primary/25"
+          :class="
+            horizontal
+              ? 'w-52 shrink-0 border-t-2 pt-2'
+              : 'border-l-2 py-2 pl-3'
+          "
         >
           <TimelineEntryCard
             :entry="boundary.entry"
             :highlighted="boundary.entry.entry_id === highlightedEntryId"
+            :compact="compact"
           />
         </li>
       </template>
@@ -73,6 +90,8 @@ const props = withDefaults(
     selectedPreviousEntryId?: string | null;
     selectedNextEntryId?: string | null;
     highlightedEntryId?: string | null;
+    horizontal?: boolean;
+    compact?: boolean;
   }>(),
   {
     selectable: false,
@@ -80,6 +99,8 @@ const props = withDefaults(
     selectedPreviousEntryId: null,
     selectedNextEntryId: null,
     highlightedEntryId: null,
+    horizontal: false,
+    compact: false,
   },
 );
 const emit = defineEmits<{

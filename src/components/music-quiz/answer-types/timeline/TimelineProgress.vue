@@ -1,5 +1,5 @@
 <template>
-  <Card class="gap-4 py-4">
+  <Card class="gap-4 py-4" :class="{ 'min-h-0 overflow-hidden': scrollable }">
     <CardHeader class="px-4">
       <CardTitle class="text-base">
         {{ $t("providers.music_quiz.timeline_progress") }}
@@ -13,7 +13,12 @@
         </Badge>
       </CardAction>
     </CardHeader>
-    <CardContent class="px-4">
+    <CardContent
+      class="px-4"
+      :class="{
+        'min-h-0 flex-1 overflow-y-auto overscroll-contain': scrollable,
+      }"
+    >
       <ul class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
         <li v-for="player in statuses" :key="player.name">
           <MusicQuizPlayerTile :name="player.name">
@@ -51,7 +56,15 @@ import { $t } from "@/plugins/i18n";
 import { CheckCircle2, Clock, ListChecks } from "@lucide/vue";
 import { computed } from "vue";
 
-const props = defineProps<{ statuses: MusicQuizTimelinePlayer[] }>();
+const props = withDefaults(
+  defineProps<{
+    statuses: MusicQuizTimelinePlayer[];
+    scrollable?: boolean;
+  }>(),
+  {
+    scrollable: false,
+  },
+);
 
 const placedCount = computed(
   () => props.statuses.filter((player) => player.placed).length,

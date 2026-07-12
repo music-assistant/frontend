@@ -1,5 +1,13 @@
 <template>
-  <div ref="presentRootRef" class="mx-auto w-full max-w-6xl p-4 sm:p-5">
+  <div
+    ref="presentRootRef"
+    data-testid="music-quiz-dashboard-root"
+    :class="
+      presentMode
+        ? 'w-full lg:h-full lg:min-h-0 lg:overflow-hidden'
+        : 'mx-auto w-full max-w-6xl p-4 sm:p-5'
+    "
+  >
     <MusicQuizPresentStage
       v-if="presentMode && activeState && resolvedDefinition"
       :state="activeState"

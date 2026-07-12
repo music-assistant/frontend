@@ -1,17 +1,17 @@
 <template>
   <section
     data-testid="music-quiz-session-header"
-    class="bg-card flex min-w-0 flex-col gap-3 rounded-xl border p-4 shadow-sm sm:flex-row sm:items-center"
-    :class="{ 'p-5 sm:p-6': present }"
+    class="bg-card flex min-w-0 flex-col rounded-xl border shadow-sm sm:flex-row sm:items-center"
+    :class="present ? 'gap-2 p-3 sm:p-4' : 'gap-3 p-4'"
   >
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <span
         class="bg-primary/10 text-primary grid shrink-0 place-items-center rounded-lg"
-        :class="present ? 'size-14' : 'size-11'"
+        :class="present ? 'size-11 sm:size-12' : 'size-11'"
       >
         <component
           :is="game.icon"
-          :class="present ? 'size-7' : 'size-5'"
+          :class="present ? 'size-5 sm:size-6' : 'size-5'"
           aria-hidden="true"
         />
       </span>
@@ -19,18 +19,20 @@
         <p
           v-if="name"
           class="text-primary text-xs font-bold tracking-wide uppercase"
-          :class="{ 'sm:text-sm': present }"
         >
           {{ $t(game.labelKey) }}
         </p>
         <component
           :is="present ? 'h1' : 'h2'"
           class="truncate font-bold"
-          :class="present ? 'text-2xl sm:text-4xl' : 'text-lg sm:text-xl'"
+          :class="present ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'"
         >
           {{ name || $t(game.labelKey) }}
         </component>
-        <div class="mt-1 flex flex-wrap items-center gap-2">
+        <div
+          class="flex flex-wrap items-center"
+          :class="present ? 'mt-0.5 gap-1.5' : 'mt-1 gap-2'"
+        >
           <Badge
             variant="secondary"
             role="status"

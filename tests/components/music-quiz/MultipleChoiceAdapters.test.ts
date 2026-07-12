@@ -8,7 +8,7 @@ import type {
   MusicQuizGuessTheSongPersonalizedState,
   MusicQuizGuessTheSongRound,
 } from "@/composables/useMusicQuiz";
-import { shallowMount } from "@vue/test-utils";
+import { mount, shallowMount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
@@ -190,11 +190,48 @@ describe("multiple-choice adapters", () => {
       }),
     ];
 
-    for (const wrapper of wrappers) {
+    for (const [index, wrapper] of wrappers.entries()) {
       const progress = wrapper.getComponent(MultipleChoiceProgress);
       expect(progress.props("statuses")).toEqual([players[0]]);
       expect(progress.props("answeredCount")).toBe(1);
+      expect(progress.props("scrollable")).toBe(index === 2);
+      if (index === 2) {
+        const panels = wrapper.get(
+          '[data-testid="multiple-choice-present-panels"]',
+        );
+        expect(panels.classes()).toEqual(
+          expect.arrayContaining([
+            "lg:grid",
+            "lg:min-h-0",
+            "lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)]",
+            "lg:overflow-hidden",
+          ]),
+        );
+        expect(panels.classes()).not.toContain("overflow-hidden");
+      }
       wrapper.unmount();
     }
+  });
+
+  it("contains long present progress lists with internal scrolling", () => {
+    const wrapper = mount(MultipleChoiceProgress, {
+      props: {
+        statuses: playerState.players,
+        answeredCount: 0,
+        scrollable: true,
+      },
+    });
+
+    expect(wrapper.get('[data-slot="card"]').classes()).toEqual(
+      expect.arrayContaining(["min-h-0", "overflow-hidden"]),
+    );
+    expect(wrapper.get('[data-slot="card-content"]').classes()).toEqual(
+      expect.arrayContaining([
+        "min-h-0",
+        "flex-1",
+        "overflow-y-auto",
+        "overscroll-contain",
+      ]),
+    );
   });
 });

@@ -147,6 +147,56 @@ describe("TimelineDisplay", () => {
     ).toBe(true);
   });
 
+  it("renders a compact chronological strip with horizontal overflow", () => {
+    const wrapper = mount(TimelineDisplay, {
+      props: {
+        entries,
+        highlightedEntryId: "same-b",
+        horizontal: true,
+        compact: true,
+      },
+    });
+    const display = wrapper.get('[data-orientation="horizontal"]');
+    const list = display.get("ol");
+    const cards = display.findAll("article");
+
+    expect(display.classes()).toEqual(
+      expect.arrayContaining([
+        "min-w-0",
+        "overflow-x-auto",
+        "overscroll-x-contain",
+      ]),
+    );
+    expect(list.classes()).toEqual(
+      expect.arrayContaining(["w-max", "min-w-full", "flex-row"]),
+    );
+    expect(cards.map((card) => card.attributes("data-entry-id"))).toEqual([
+      "older",
+      "same-a",
+      "same-b",
+    ]);
+    expect(
+      cards.every((card) => card.attributes("data-compact") === "true"),
+    ).toBe(true);
+    expect(
+      cards.every((card) =>
+        card.classes().includes("grid-cols-[3rem_minmax(0,1fr)]"),
+      ),
+    ).toBe(true);
+    expect(
+      display
+        .find('article[data-entry-id="same-b"]')
+        .classes()
+        .includes("border-primary"),
+    ).toBe(true);
+    expect(
+      display
+        .findAll("li")
+        .filter((item) => item.find("article").exists())
+        .every((item) => item.classes().includes("shrink-0")),
+    ).toBe(true);
+  });
+
   it("never offers the invalid null-to-null boundary", () => {
     const wrapper = mount(TimelineDisplay, {
       props: {

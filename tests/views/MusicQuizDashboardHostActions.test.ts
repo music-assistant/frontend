@@ -225,10 +225,26 @@ describe("MusicQuizDashboardView host actions", () => {
 
   it("keeps Present mode available", async () => {
     const wrapper = mountDashboard();
+    const root = wrapper.get('[data-testid="music-quiz-dashboard-root"]');
+
+    expect(root.classes()).toEqual(
+      expect.arrayContaining(["mx-auto", "max-w-6xl", "p-4"]),
+    );
+    expect(root.classes()).not.toContain("lg:h-full");
 
     await wrapper.get('[data-testid="enter-present"]').trigger("click");
 
     expect(wrapper.find('[data-testid="present-stage"]').exists()).toBe(true);
+    expect(root.classes()).toEqual(
+      expect.arrayContaining([
+        "w-full",
+        "lg:h-full",
+        "lg:min-h-0",
+        "lg:overflow-hidden",
+      ]),
+    );
+    expect(root.classes()).not.toContain("mx-auto");
+    expect(root.classes()).not.toContain("p-4");
   });
 
   it("returns to the compact empty state when the host state is cleared", async () => {

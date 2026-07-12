@@ -297,6 +297,15 @@ describe("Music Quiz registries", () => {
       MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "trivia")
         ?.supportsListenIn,
     ).toBe(false);
+    expect(
+      MUSIC_QUIZ_GAME_TYPES.find((game) => game.id === "music_timeline")
+        ?.adapters.presentBody,
+    ).toBeDefined();
+    expect(
+      MUSIC_QUIZ_GAME_TYPES.filter(
+        (game) => game.id !== "music_timeline",
+      ).every((game) => game.adapters.presentBody === undefined),
+    ).toBe(true);
   });
 
   it("gates only Trivia on backend availability", () => {

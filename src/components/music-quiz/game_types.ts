@@ -10,6 +10,7 @@ import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song
 import MusicTimelineHostPanel from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostPanel.vue";
 import MusicTimelineHostRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelineHostRound.vue";
 import MusicTimelinePlayerRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePlayerRound.vue";
+import MusicTimelinePresentBody from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentBody.vue";
 import MusicTimelinePresentRound from "@/components/music-quiz/game-types/music-timeline/MusicTimelinePresentRound.vue";
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import TriviaHostPanel from "@/components/music-quiz/game-types/trivia/TriviaHostPanel.vue";
@@ -44,6 +45,7 @@ export interface MusicQuizGameDefinition<
     hostPanel: Component;
     host: Component;
     present: Component;
+    presentBody?: Component;
   };
 }
 
@@ -84,6 +86,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       hostPanel: markRaw(MusicTimelineHostPanel),
       host: markRaw(MusicTimelineHostRound),
       present: markRaw(MusicTimelinePresentRound),
+      presentBody: markRaw(MusicTimelinePresentBody),
     },
   },
   trivia: {

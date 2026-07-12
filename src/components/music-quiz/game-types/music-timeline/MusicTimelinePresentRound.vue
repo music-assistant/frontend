@@ -3,6 +3,7 @@
     :phase="state.phase"
     :round="currentRound"
     :is-final-round="currentRound.round_index + 1 >= state.round_count"
+    :compact="compact"
   />
 </template>
 
@@ -14,10 +15,17 @@ import type {
   MusicQuizTimelineRound,
 } from "@/composables/useMusicQuiz";
 
-defineProps<
-  MusicQuizPresentGameAdapterProps<
-    MusicQuizTimelineHostState,
-    MusicQuizTimelineRound
-  >
->();
+withDefaults(
+  defineProps<
+    MusicQuizPresentGameAdapterProps<
+      MusicQuizTimelineHostState,
+      MusicQuizTimelineRound
+    > & {
+      compact?: boolean;
+    }
+  >(),
+  {
+    compact: false,
+  },
+);
 </script>

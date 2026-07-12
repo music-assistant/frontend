@@ -7,17 +7,23 @@
         :label="remainingLabel || '…'"
       />
     </div>
-    <div class="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+    <div
+      class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
+    >
       <MultipleChoiceGrid
         :suggestions="currentRound.suggestions"
         :disabled="true"
         :selected-suggestion-id="null"
         @select="noop"
       />
-      <div class="flex flex-col gap-4">
+      <div
+        data-testid="multiple-choice-present-panels"
+        class="flex flex-col gap-4 lg:grid lg:min-h-0 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden"
+      >
         <MultipleChoiceProgress
           :statuses="roundPlayerStatuses"
           :answered-count="answeredCount"
+          scrollable
         />
         <slot name="leaderboard" />
       </div>

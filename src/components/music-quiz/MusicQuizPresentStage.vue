@@ -1,6 +1,7 @@
 <template>
   <section
-    class="bg-background flex min-h-screen flex-col gap-4 p-5 sm:gap-6 sm:p-8"
+    data-testid="music-quiz-present-stage"
+    class="bg-background flex min-h-dvh flex-col gap-3 p-3 sm:gap-4 sm:p-5 lg:h-full lg:min-h-0 lg:overflow-hidden"
   >
     <MusicQuizSessionHeader
       :game="game"
@@ -11,8 +12,8 @@
       present
     >
       <template #actions>
-        <Button variant="ghost-outline" size="lg" @click="emit('exit')">
-          <Minimize2 class="size-5" />
+        <Button variant="ghost-outline" size="sm" @click="emit('exit')">
+          <Minimize2 class="size-4" />
           {{ $t("providers.music_quiz.exit_present_mode") }}
         </Button>
       </template>
@@ -21,7 +22,19 @@
     <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
 
     <div class="flex min-h-0 flex-1 flex-col gap-4">
-      <template v-if="state.phase === 'answering' && currentRound">
+      <component
+        :is="game.adapters.presentBody"
+        v-if="
+          game.adapters.presentBody &&
+          currentRound &&
+          (state.phase === 'answering' || state.phase === 'reveal')
+        "
+        :state="state"
+        :current-round="currentRound"
+        :leaderboard-rows="leaderboardRows"
+      />
+
+      <template v-else-if="state.phase === 'answering' && currentRound">
         <component
           :is="gameComponent"
           :state="state"
@@ -33,14 +46,18 @@
           :current-round="currentRound"
         >
           <template #leaderboard>
-            <MusicQuizLeaderboard :rows="leaderboardRows" />
+            <MusicQuizLeaderboard
+              class="min-h-0 flex-1"
+              :rows="leaderboardRows"
+              scrollable
+            />
           </template>
         </component>
       </template>
 
       <template v-else-if="state.phase === 'reveal' && currentRound">
         <div
-          class="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
+          class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
         >
           <component
             :is="gameComponent"
@@ -53,14 +70,21 @@
             :current-round="currentRound"
           >
             <template #leaderboard>
-              <MusicQuizLeaderboard :rows="leaderboardRows" />
+              <MusicQuizLeaderboard
+                class="min-h-0 flex-1"
+                :rows="leaderboardRows"
+                scrollable
+              />
             </template>
           </component>
         </div>
       </template>
 
       <template v-else-if="state.phase === 'finished'">
-        <div class="flex flex-col gap-6">
+        <div
+          data-testid="music-quiz-present-finished"
+          class="flex min-h-0 flex-1 flex-col gap-6 lg:overflow-y-auto"
+        >
           <div class="flex flex-col items-center gap-1 text-center">
             <h2 class="text-2xl font-black sm:text-3xl lg:text-4xl">
               {{ $t("providers.music_quiz.final_leaderboard") }}
@@ -79,7 +103,8 @@
 
       <template v-else>
         <div
-          class="grid flex-1 items-start gap-6 lg:grid-cols-[auto_minmax(0,1fr)]"
+          data-testid="music-quiz-present-lobby"
+          class="grid min-h-0 flex-1 items-start gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:overflow-y-auto"
         >
           <MusicQuizQrCard
             class="mx-auto w-full max-w-sm lg:w-80"

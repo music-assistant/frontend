@@ -65,4 +65,44 @@ describe("MusicQuizLeaderboard", () => {
       renderedRows[1].findComponent({ name: "MusicQuizAvatar" }).classes(),
     ).toContain("size-6");
   });
+
+  it("fills a constrained region and scrolls long rankings internally", () => {
+    const manyRows = Array.from({ length: 30 }, (_, index) => ({
+      ...rows[0],
+      name: `Player ${index + 1} with a safely truncated long name`,
+      rank: index + 1,
+      score: Number.MAX_SAFE_INTEGER,
+    }));
+    const wrapper = mount(MusicQuizLeaderboard, {
+      props: {
+        rows: manyRows,
+        scrollable: true,
+      },
+    });
+    const card = wrapper.get('[data-slot="card"]');
+    const content = wrapper.get('[data-slot="card-content"]');
+
+    expect(card.attributes("role")).toBe("region");
+    expect(card.attributes("aria-label")).toBe(
+      "providers.music_quiz.leaderboard",
+    );
+    expect(card.classes()).toEqual(
+      expect.arrayContaining(["min-h-0", "overflow-hidden"]),
+    );
+    expect(content.classes()).toEqual(
+      expect.arrayContaining([
+        "min-h-0",
+        "flex-1",
+        "overflow-y-auto",
+        "overscroll-contain",
+      ]),
+    );
+    expect(wrapper.findAll("li")).toHaveLength(30);
+    expect(wrapper.get("li span.min-w-0.flex-1").classes()).toContain(
+      "truncate",
+    );
+    expect(wrapper.get("li span.max-w-\\[45\\%\\]").classes()).toContain(
+      "max-w-[45%]",
+    );
+  });
 });

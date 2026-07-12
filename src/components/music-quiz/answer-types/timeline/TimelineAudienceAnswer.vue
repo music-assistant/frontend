@@ -1,11 +1,8 @@
 <template>
   <div
+    data-testid="timeline-audience-answer"
     class="flex flex-col gap-4"
-    :class="
-      present && state.phase === 'reveal'
-        ? 'max-h-[calc(100dvh-8rem)] overflow-y-auto pr-1'
-        : ''
-    "
+    :class="{ 'lg:h-full lg:min-h-0 lg:overflow-hidden': present }"
   >
     <div
       v-if="state.phase === 'answering'"
@@ -19,41 +16,60 @@
     </div>
 
     <TimelineDisplay
+      v-if="showTimeline"
       :entries="currentRound.timeline"
       :highlighted-entry-id="currentRound.revealed_entry?.entry_id"
     />
 
     <div
       class="grid gap-4"
-      :class="
-        present && state.phase === 'answering'
-          ? 'lg:grid-cols-[minmax(0,1fr)_22rem]'
-          : !present
-            ? 'lg:grid-cols-2'
-            : ''
-      "
+      :class="{
+        'lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:overflow-hidden':
+          present && state.phase === 'answering',
+        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(7rem,2fr)_minmax(9rem,3fr)] lg:overflow-hidden':
+          present && state.phase === 'reveal' && revealedResults.length,
+        'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden':
+          present && state.phase === 'reveal' && !revealedResults.length,
+        'lg:grid-cols-2': !present,
+      }"
     >
       <TimelineProgress
         v-if="state.phase === 'answering'"
         :statuses="roundPlayerStatuses"
+        :scrollable="present"
       />
 
-      <Card v-if="state.phase === 'reveal' && revealedResults.length">
-        <CardHeader>
+      <Card
+        v-if="state.phase === 'reveal' && revealedResults.length"
+        data-testid="timeline-round-results"
+        role="region"
+        :aria-label="$t('providers.music_quiz.timeline_round_results')"
+        :class="{
+          'lg:min-h-0 lg:gap-3 lg:overflow-hidden lg:py-3': present,
+        }"
+      >
+        <CardHeader :class="{ 'lg:px-4': present }">
           <CardTitle class="text-base">
             {{ $t("providers.music_quiz.timeline_round_results") }}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent
+          :class="{
+            'lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:px-4':
+              present,
+          }"
+        >
           <ul class="flex flex-col gap-2">
             <li
               v-for="result in revealedResults"
               :key="result.name"
               class="bg-muted flex items-center justify-between gap-3 rounded-md px-3 py-2"
             >
-              <span class="truncate font-medium">{{ result.name }}</span>
+              <span class="min-w-0 flex-1 truncate font-medium">
+                {{ result.name }}
+              </span>
               <span
-                class="flex shrink-0 items-center gap-1 font-semibold tabular-nums"
+                class="flex min-w-0 max-w-[45%] shrink-0 items-center gap-1 font-semibold tabular-nums"
                 :class="
                   result.correct
                     ? 'text-green-600 dark:text-green-400'
@@ -73,14 +89,21 @@
                       : $t("providers.music_quiz.incorrect")
                   }}
                 </span>
-                +{{ result.points }}
+                <span class="truncate">+{{ result.points }}</span>
               </span>
             </li>
           </ul>
         </CardContent>
       </Card>
 
-      <slot name="leaderboard" />
+      <div
+        v-if="present"
+        data-testid="timeline-leaderboard-region"
+        class="lg:min-h-0 lg:overflow-hidden"
+      >
+        <slot name="leaderboard" />
+      </div>
+      <slot v-else name="leaderboard" />
     </div>
   </div>
 </template>
@@ -105,9 +128,11 @@ const props = withDefaults(
     state: MusicQuizTimelineHostState;
     currentRound: MusicQuizTimelineRound;
     present?: boolean;
+    showTimeline?: boolean;
   }>(),
   {
     present: false,
+    showTimeline: true,
   },
 );
 defineSlots<{ leaderboard: () => VNode[] }>();
