@@ -3,20 +3,13 @@
     <Card class="flex flex-1 flex-col gap-0 overflow-hidden py-0 min-h-0">
       <CardHeader class="shrink-0 border-b px-6 py-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <Button
-            size="sm"
-            :disabled="downloadingDiagnostics"
-            @click="downloadDiagnostics"
-          >
-            <Spinner v-if="downloadingDiagnostics" class="size-4" />
-            <Stethoscope v-else class="size-4" />
-            {{ $t("settings.download_diagnostics") }}
-          </Button>
-          <div class="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" @click="downloadLog">
-              <Download class="size-4" />
-              {{ $t("settings.download_log") }}
-            </Button>
+          <div class="flex items-center gap-2">
+            <Switch id="auto-refresh" v-model="autoRefresh" />
+            <Label class="cursor-pointer" for="auto-refresh">
+              {{ $t("settings.auto_refresh_log") }}
+            </Label>
+          </div>
+          <div class="flex gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -26,12 +19,19 @@
               <RefreshCw class="size-4" />
               {{ $t("settings.reload") }}
             </Button>
-            <div class="flex items-center gap-2">
-              <Switch id="auto-refresh" v-model="autoRefresh" />
-              <Label class="cursor-pointer" for="auto-refresh">
-                {{ $t("settings.auto_refresh_log") }}
-              </Label>
-            </div>
+            <Button variant="outline" size="sm" @click="downloadLog">
+              <Download class="size-4" />
+              {{ $t("settings.download_log") }}
+            </Button>
+            <Button
+              size="sm"
+              :disabled="downloadingDiagnostics"
+              @click="downloadDiagnostics"
+            >
+              <Spinner v-if="downloadingDiagnostics" class="size-4" />
+              <Stethoscope v-else class="size-4" />
+              {{ $t("settings.download_diagnostics") }}
+            </Button>
           </div>
         </div>
       </CardHeader>
