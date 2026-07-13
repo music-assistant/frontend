@@ -23,8 +23,30 @@ export function getDefaultMusicQuizPlaybackSelection(
 ): MusicQuizPlaybackSelection {
   return {
     mode: options.default_playback_mode,
-    venuePlayerId: options.default_venue_player_id,
+    venuePlayerId: isVenuePlayerAvailable(
+      options.default_venue_player_id,
+      options,
+    )
+      ? options.default_venue_player_id
+      : null,
   };
+}
+
+export function reconcileMusicQuizPlaybackSelection(
+  selection: MusicQuizPlaybackSelection,
+  options: MusicQuizPlaybackOptions,
+): MusicQuizPlaybackSelection {
+  const defaults = getDefaultMusicQuizPlaybackSelection(options);
+  const mode = isPlaybackModeAvailable(selection.mode, options)
+    ? selection.mode
+    : defaults.mode;
+  const venuePlayerId = isVenuePlayerAvailable(selection.venuePlayerId, options)
+    ? selection.venuePlayerId
+    : defaults.venuePlayerId;
+
+  return mode === selection.mode && venuePlayerId === selection.venuePlayerId
+    ? selection
+    : { mode, venuePlayerId };
 }
 
 export function getMusicQuizPlaybackCreateFields(
@@ -59,4 +81,25 @@ export function isMusicQuizPlaybackSelectionValid(
   options: MusicQuizPlaybackOptions,
 ) {
   return getMusicQuizPlaybackCreateFields(selection, options) !== null;
+}
+
+function isPlaybackModeAvailable(
+  mode: MusicQuizMode | null,
+  options: MusicQuizPlaybackOptions,
+) {
+  if (mode === "remote") return options.remote_available;
+  if (mode === "venue") {
+    return options.venue_available && options.venue_players.length > 0;
+  }
+  return false;
+}
+
+function isVenuePlayerAvailable(
+  playerId: string | null,
+  options: MusicQuizPlaybackOptions,
+) {
+  return (
+    playerId !== null &&
+    options.venue_players.some((player) => player.player_id === playerId)
+  );
 }

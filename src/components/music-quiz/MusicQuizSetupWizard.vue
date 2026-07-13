@@ -154,9 +154,9 @@ import type {
   MusicQuizPlaybackOptions,
 } from "@/composables/useMusicQuiz";
 import {
-  getDefaultMusicQuizPlaybackSelection,
   getMusicQuizPlaybackCreateFields,
   isMusicQuizPlaybackSelectionValid,
+  reconcileMusicQuizPlaybackSelection,
   type MusicQuizPlaybackSelection,
 } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
@@ -190,6 +190,15 @@ const emit = defineEmits<{
   create: [request: MusicQuizCreateRequest];
   retryPlaybackOptions: [];
 }>();
+const playbackSelection = defineModel<MusicQuizPlaybackSelection>(
+  "playbackSelection",
+  {
+    default: () => ({
+      mode: null,
+      venuePlayerId: null,
+    }),
+  },
+);
 
 const availableGameTypes = computed(() =>
   MUSIC_QUIZ_GAME_TYPES.filter((type) =>
@@ -199,10 +208,6 @@ const availableGameTypes = computed(() =>
 const step = ref<1 | 2>(1);
 const selectedType = ref<MusicQuizGameDefinition | null>(null);
 const includeSimilarMusic = ref(false);
-const playbackSelection = ref<MusicQuizPlaybackSelection>({
-  mode: null,
-  venuePlayerId: null,
-});
 const chooseHeading = ref<HTMLHeadingElement | null>(null);
 const configureHeading = ref<HTMLHeadingElement | null>(null);
 const preparingStatus = ref<HTMLElement | null>(null);
@@ -221,7 +226,13 @@ watch(
   () => props.playbackOptions,
   (options) => {
     if (options) {
-      playbackSelection.value = getDefaultMusicQuizPlaybackSelection(options);
+      const reconciled = reconcileMusicQuizPlaybackSelection(
+        playbackSelection.value,
+        options,
+      );
+      if (reconciled !== playbackSelection.value) {
+        playbackSelection.value = reconciled;
+      }
     }
   },
   { immediate: true },
