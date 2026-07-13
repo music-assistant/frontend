@@ -1,5 +1,5 @@
 <template>
-  <div class="grid gap-4 lg:grid-cols-2">
+  <div class="grid gap-4 md:grid-cols-2">
     <Field>
       <FieldLabel :for="inputId">
         {{ $t("providers.music_quiz.add_music_sources") }}

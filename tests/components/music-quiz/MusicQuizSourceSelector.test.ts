@@ -33,6 +33,13 @@ describe("MusicQuizSourceSelector", () => {
     document.body.replaceChildren();
   });
 
+  it("uses its available width for the tablet source layout", () => {
+    const wrapper = mountSelector();
+
+    expect(wrapper.classes()).toContain("md:grid-cols-2");
+    expect(wrapper.classes()).not.toContain("lg:grid-cols-2");
+  });
+
   it.each([
     { description: "middle", removedIndex: 1, expectedFocusIndex: 1 },
     { description: "first", removedIndex: 0, expectedFocusIndex: 0 },
