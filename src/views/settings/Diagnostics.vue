@@ -19,12 +19,11 @@
               <RefreshCw class="size-4" />
               {{ $t("settings.reload") }}
             </Button>
-            <Button size="sm" @click="downloadLog">
+            <Button variant="outline" size="sm" @click="downloadLog">
               <Download class="size-4" />
               {{ $t("settings.download_log") }}
             </Button>
             <Button
-              variant="outline"
               size="sm"
               :disabled="downloadingDiagnostics"
               @click="downloadDiagnostics"
