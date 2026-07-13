@@ -90,7 +90,7 @@ export function useAiRadioRun() {
           runDynamicBatchSizeOverrideInput.value,
         ),
       });
-      await loadStatus(true);
+      await loadStatus();
     } catch (error) {
       toast.error(
         $t("providers.ai_radio.toast.run_start_failed", [errorMessage(error)]),

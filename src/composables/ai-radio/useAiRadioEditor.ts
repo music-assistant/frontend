@@ -28,53 +28,40 @@ const deletingStation = ref(false);
 const savingSection = ref(false);
 const deletingSection = ref(false);
 
+const PLAYLIST_PAGE_SIZE = 200;
+const PLAYLIST_FETCH_LIMIT = 5000;
+
 const sortByName = <T extends { name: string }>(items: T[]): T[] => {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 };
 
-async function loadStations(silent = false): Promise<AIRadioStation[]> {
+async function loadStations(): Promise<AIRadioStation[]> {
   loadingStations.value = true;
   try {
     const result = await api.sendCommand<AIRadioStation[]>(
       "ai_radio/stations/list",
     );
     stations.value = sortByName(result || []);
-    if (!silent) {
-      toast.success($t("providers.ai_radio.toast.stations_loaded"));
-    }
     return stations.value;
-  } catch (error) {
-    if (!silent) {
-      toast.error($t("providers.ai_radio.toast.stations_load_failed"));
-    }
-    throw error;
   } finally {
     loadingStations.value = false;
   }
 }
 
-async function loadSections(silent = false): Promise<AIRadioSection[]> {
+async function loadSections(): Promise<AIRadioSection[]> {
   loadingSections.value = true;
   try {
     const result = await api.sendCommand<AIRadioSection[]>(
       "ai_radio/sections/list",
     );
     sections.value = sortByName(result || []);
-    if (!silent) {
-      toast.success($t("providers.ai_radio.toast.sections_loaded"));
-    }
     return sections.value;
-  } catch (error) {
-    if (!silent) {
-      toast.error($t("providers.ai_radio.toast.sections_load_failed"));
-    }
-    throw error;
   } finally {
     loadingSections.value = false;
   }
 }
 
-async function loadTemplates(silent = false): Promise<void> {
+async function loadTemplates(): Promise<void> {
   loadingTemplates.value = true;
   try {
     const [station, section] = await Promise.all([
@@ -83,67 +70,49 @@ async function loadTemplates(silent = false): Promise<void> {
     ]);
     stationTemplate.value = station;
     sectionTemplate.value = section;
-    if (!silent) {
-      toast.success($t("providers.ai_radio.toast.templates_loaded"));
-    }
-  } catch (error) {
-    if (!silent) {
-      toast.error($t("providers.ai_radio.toast.templates_load_failed"));
-    }
-    throw error;
   } finally {
     loadingTemplates.value = false;
   }
 }
 
-async function loadPlayers(silent = false): Promise<Player[]> {
+async function loadPlayers(): Promise<Player[]> {
   loadingPlayers.value = true;
   try {
     const result = await api.getPlayers();
     players.value = [...result].sort((a, b) => a.name.localeCompare(b.name));
-    if (!silent) {
-      toast.success($t("providers.ai_radio.toast.players_loaded"));
-    }
     return players.value;
-  } catch (error) {
-    if (!silent) {
-      toast.error($t("providers.ai_radio.toast.players_load_failed"));
-    }
-    throw error;
   } finally {
     loadingPlayers.value = false;
   }
 }
 
-async function loadPlaylists(silent = false): Promise<Playlist[]> {
+async function loadPlaylists(): Promise<Playlist[]> {
   loadingPlaylists.value = true;
   try {
     // Load in pages to avoid truncating larger libraries.
-    const limit = 200;
     let offset = 0;
     let hasMore = true;
     const allItems: Playlist[] = [];
-    while (hasMore && offset < 5000) {
+    while (hasMore && offset < PLAYLIST_FETCH_LIMIT) {
       const batch = await api.getLibraryPlaylists(
         undefined,
         undefined,
-        limit,
+        PLAYLIST_PAGE_SIZE,
         offset,
       );
       allItems.push(...batch);
-      hasMore = batch.length === limit;
-      offset += limit;
+      hasMore = batch.length === PLAYLIST_PAGE_SIZE;
+      offset += PLAYLIST_PAGE_SIZE;
+    }
+    if (hasMore) {
+      toast.warning(
+        $t("providers.ai_radio.toast.playlists_truncated", [
+          PLAYLIST_FETCH_LIMIT,
+        ]),
+      );
     }
     playlists.value = sortByName(allItems);
-    if (!silent) {
-      toast.success($t("providers.ai_radio.toast.playlists_loaded"));
-    }
     return playlists.value;
-  } catch (error) {
-    if (!silent) {
-      toast.error($t("providers.ai_radio.toast.playlists_load_failed"));
-    }
-    throw error;
   } finally {
     loadingPlaylists.value = false;
   }
@@ -159,11 +128,8 @@ async function saveStation(station: AIRadioStation): Promise<AIRadioStation> {
       },
     );
     toast.success($t("providers.ai_radio.toast.station_saved"));
-    await loadStations(true);
+    await loadStations();
     return saved;
-  } catch (error) {
-    toast.error($t("providers.ai_radio.toast.station_save_failed"));
-    throw error;
   } finally {
     savingStation.value = false;
   }
@@ -176,10 +142,7 @@ async function deleteStation(stationId: string): Promise<void> {
       station_id: stationId,
     });
     toast.success($t("providers.ai_radio.toast.station_deleted"));
-    await loadStations(true);
-  } catch (error) {
-    toast.error($t("providers.ai_radio.toast.station_delete_failed"));
-    throw error;
+    await loadStations();
   } finally {
     deletingStation.value = false;
   }
@@ -209,11 +172,8 @@ async function saveSection(section: AIRadioSection): Promise<AIRadioSection> {
       },
     );
     toast.success($t("providers.ai_radio.toast.section_saved"));
-    await Promise.all([loadSections(true), loadStations(true)]);
+    await Promise.all([loadSections(), loadStations()]);
     return saved;
-  } catch (error) {
-    toast.error($t("providers.ai_radio.toast.section_save_failed"));
-    throw error;
   } finally {
     savingSection.value = false;
   }
@@ -226,10 +186,7 @@ async function deleteSection(sectionId: string): Promise<void> {
       section_id: sectionId,
     });
     toast.success($t("providers.ai_radio.toast.section_deleted"));
-    await Promise.all([loadSections(true), loadStations(true)]);
-  } catch (error) {
-    toast.error($t("providers.ai_radio.toast.section_delete_failed"));
-    throw error;
+    await Promise.all([loadSections(), loadStations()]);
   } finally {
     deletingSection.value = false;
   }
@@ -241,13 +198,13 @@ async function getSection(sectionId: string): Promise<AIRadioSection> {
   });
 }
 
-async function refreshEditor(silent = false): Promise<void> {
+async function refreshEditor(): Promise<void> {
   await Promise.all([
-    loadStations(silent),
-    loadSections(silent),
-    loadTemplates(silent),
-    loadPlayers(silent),
-    loadPlaylists(silent),
+    loadStations(),
+    loadSections(),
+    loadTemplates(),
+    loadPlayers(),
+    loadPlaylists(),
   ]);
 }
 

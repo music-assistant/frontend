@@ -88,63 +88,79 @@
         </Select>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2">
-        <div class="space-y-2">
-          <Label for="ai-radio-run-source-cap">{{
-            $t("providers.ai_radio.run.source_playtime_cap_override")
-          }}</Label>
-          <Input
-            id="ai-radio-run-source-cap"
-            v-model="runSourcePlaytimeCapOverrideInput"
-            type="number"
-            min="0"
-            step="1"
-            :placeholder="
-              $t('providers.ai_radio.placeholders.use_station_default')
-            "
-          />
+      <details class="rounded-md border p-3">
+        <summary class="cursor-pointer select-none text-sm font-medium">
+          {{ $t("providers.ai_radio.run.advanced") }}
+        </summary>
+        <div class="mt-3 grid gap-4 md:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="ai-radio-run-source-cap">{{
+              $t("providers.ai_radio.run.source_playtime_cap_override")
+            }}</Label>
+            <Input
+              id="ai-radio-run-source-cap"
+              v-model="runSourcePlaytimeCapOverrideInput"
+              type="number"
+              min="0"
+              step="1"
+              :placeholder="
+                $t('providers.ai_radio.placeholders.use_station_default')
+              "
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="ai-radio-run-batch-size">{{
+              $t("providers.ai_radio.run.dynamic_batch_size_override")
+            }}</Label>
+            <Input
+              id="ai-radio-run-batch-size"
+              v-model="runDynamicBatchSizeOverrideInput"
+              type="number"
+              min="1"
+              step="1"
+              :placeholder="
+                $t('providers.ai_radio.placeholders.use_station_default')
+              "
+            />
+          </div>
         </div>
-        <div class="space-y-2">
-          <Label for="ai-radio-run-batch-size">{{
-            $t("providers.ai_radio.run.dynamic_batch_size_override")
-          }}</Label>
-          <Input
-            id="ai-radio-run-batch-size"
-            v-model="runDynamicBatchSizeOverrideInput"
-            type="number"
-            min="1"
-            step="1"
-            :placeholder="
-              $t('providers.ai_radio.placeholders.use_station_default')
-            "
-          />
-        </div>
-      </div>
+      </details>
 
-      <div class="grid gap-2 sm:grid-cols-2">
-        <Button
-          :disabled="!selectedRunStationId || startingRun"
-          @click="runStart('playlist')"
-        >
-          <Sparkles class="mr-1 h-4 w-4" />
-          {{
-            startingRun
-              ? $t("providers.ai_radio.actions.starting")
-              : $t("providers.ai_radio.actions.create_playlist")
-          }}
-        </Button>
-        <Button
-          :disabled="!selectedRunStationId || startingRun"
-          @click="runStart('dynamic')"
-        >
-          <Sparkles class="mr-1 h-4 w-4" />
-          <Radio class="mr-1 h-4 w-4" />
-          {{
-            startingRun
-              ? $t("providers.ai_radio.actions.starting")
-              : $t("providers.ai_radio.actions.start_live_radio")
-          }}
-        </Button>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="space-y-1">
+          <Button
+            class="w-full"
+            :disabled="!selectedRunStationId || startingRun"
+            @click="runStart('playlist')"
+          >
+            <ListMusic class="mr-1 h-4 w-4" />
+            {{
+              startingRun
+                ? $t("providers.ai_radio.actions.starting")
+                : $t("providers.ai_radio.actions.create_playlist")
+            }}
+          </Button>
+          <p class="text-xs text-muted-foreground">
+            {{ $t("providers.ai_radio.run.create_playlist_hint") }}
+          </p>
+        </div>
+        <div class="space-y-1">
+          <Button
+            class="w-full"
+            :disabled="!selectedRunStationId || startingRun"
+            @click="runStart('dynamic')"
+          >
+            <Radio class="mr-1 h-4 w-4" />
+            {{
+              startingRun
+                ? $t("providers.ai_radio.actions.starting")
+                : $t("providers.ai_radio.actions.start_live_radio")
+            }}
+          </Button>
+          <p class="text-xs text-muted-foreground">
+            {{ $t("providers.ai_radio.run.start_live_hint") }}
+          </p>
+        </div>
       </div>
 
       <div class="border-t pt-3">
@@ -185,7 +201,7 @@ import {
 } from "@/composables/ai-radio/useAiRadioRun";
 import { useAiRadioWizard } from "@/composables/ai-radio/useAiRadioWizard";
 import { $t } from "@/plugins/i18n";
-import { Radio, Sparkles } from "@lucide/vue";
+import { ListMusic, Radio } from "@lucide/vue";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();

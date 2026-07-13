@@ -58,14 +58,24 @@
             <Button
               variant="outline"
               size="sm"
-              :disabled="stoppingRun"
+              :disabled="stoppingSessionId === session.session_id"
               @click="stopSession(session.session_id)"
             >
               {{
-                stoppingRun
+                stoppingSessionId === session.session_id
                   ? $t("providers.ai_radio.actions.stopping")
                   : $t("providers.ai_radio.actions.stop")
               }}
+            </Button>
+          </div>
+          <div v-else-if="sessionResultPlaylistId(session)" class="mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="openResultPlaylist(session)"
+            >
+              <ListMusic class="mr-1 h-4 w-4" />
+              {{ $t("providers.ai_radio.sessions.open_playlist") }}
             </Button>
           </div>
         </li>
@@ -89,7 +99,9 @@ import { useAiRadioEditor } from "@/composables/ai-radio/useAiRadioEditor";
 import { errorMessage, formatTimestamp } from "@/helpers/ai_radio";
 import type { AIRadioSession } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { ListMusic } from "@lucide/vue";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
@@ -105,8 +117,36 @@ type AIRadioProgressPhase =
   | "waiting_for_playback"
   | "running";
 
-const { sessions, stoppingRun, stopRun } = useAiRadio();
+const router = useRouter();
+
+const { sessions, stoppingSessionId, stopRun } = useAiRadio();
 const { stations } = useAiRadioEditor();
+
+// Completed playlist runs report the generated library playlist in `result`.
+const sessionResultPlaylistId = (session: AIRadioSession): string => {
+  if (session.status !== "completed" || session.mode !== "playlist") {
+    return "";
+  }
+  const playlistId = session.result?.target_playlist_id;
+  if (typeof playlistId === "string" && playlistId.trim()) {
+    return playlistId;
+  }
+  if (typeof playlistId === "number") {
+    return String(playlistId);
+  }
+  return "";
+};
+
+const openResultPlaylist = (session: AIRadioSession) => {
+  const itemId = sessionResultPlaylistId(session);
+  if (!itemId) {
+    return;
+  }
+  void router.push({
+    name: "playlist",
+    params: { itemId, provider: "library" },
+  });
+};
 
 const stationById = computed(() => {
   const output = new Map<string, string>();
