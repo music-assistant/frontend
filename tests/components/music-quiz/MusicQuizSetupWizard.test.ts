@@ -365,6 +365,24 @@ describe("MusicQuizSetupWizard", () => {
     ).toBe("kitchen");
   });
 
+  it("does not emit when refreshed options keep the selection unchanged", async () => {
+    const wrapper = mountWizard({ playbackOptions: PLAYBACK_OPTIONS });
+    await nextTick();
+    const initialUpdates =
+      wrapper.emitted("update:playbackSelection")?.length ?? 0;
+
+    await wrapper.setProps({
+      playbackOptions: {
+        ...PLAYBACK_OPTIONS,
+        venue_players: [...PLAYBACK_OPTIONS.venue_players],
+      },
+    });
+
+    expect(wrapper.emitted("update:playbackSelection")?.length ?? 0).toBe(
+      initialUpdates,
+    );
+  });
+
   it("hides playback controls and omits fields for a legacy server", async () => {
     const wrapper = mountWizard({ playbackOptionsLegacy: true });
     await selectGame(wrapper, "game_type");

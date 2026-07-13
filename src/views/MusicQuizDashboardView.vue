@@ -171,6 +171,7 @@
         </DialogHeader>
         <MusicQuizSetupWizard
           v-if="showSetupDialog"
+          v-model:playback-selection="playbackSelection"
           :busy="busy"
           :available-quiz-types="availableQuizTypes"
           :playback-options="playbackOptions"
@@ -253,6 +254,7 @@ import {
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
 } from "@/helpers/music_quiz";
+import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -359,6 +361,10 @@ const presentMode = ref(false);
 const presentRootRef = ref<HTMLElement | null>(null);
 const showEndGameDialog = ref(false);
 const showSetupDialog = ref(false);
+const playbackSelection = ref<MusicQuizPlaybackSelection>({
+  mode: null,
+  venuePlayerId: null,
+});
 const musicQuizProviderInstanceId = ref<string | null>(null);
 const isAdmin = computed(() => authManager.isAdmin());
 

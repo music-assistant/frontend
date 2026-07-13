@@ -131,6 +131,27 @@ describe("MusicQuizDashboardView", () => {
     wrapper.unmount();
   });
 
+  it("retains playback changes when setup is cancelled and reopened", async () => {
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
+    await flushPromises();
+    await wrapper
+      .get('[data-testid="select-remote-playback"]')
+      .trigger("click");
+    await wrapper.get('[data-testid="cancel-setup"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="playback-mode"]').text()).toBe("remote");
+  });
+
   it("resolves the admin settings shortcut and routes to its provider config", async () => {
     if (mockAdminState.current) mockAdminState.current.value = true;
     mockGetProviderConfigs.mockResolvedValue([
@@ -203,7 +224,9 @@ function mountDashboard() {
         AlertDialog: true,
         Dialog: {
           props: ["open"],
-          template: '<div v-if="open"><slot /></div>',
+          emits: ["update:open"],
+          template:
+            '<div v-if="open"><slot /><button data-testid="cancel-setup" @click="$emit(\'update:open\', false)">Cancel</button></div>',
         },
         DialogContent: {
           template: '<div data-testid="setup-dialog"><slot /></div>',
@@ -223,7 +246,10 @@ function mountDashboard() {
         },
         MusicQuizConnectionBanners: true,
         MusicQuizSetupWizard: {
-          template: '<div data-testid="music-quiz-setup" />',
+          props: ["playbackSelection"],
+          emits: ["update:playbackSelection"],
+          template:
+            '<div data-testid="music-quiz-setup"><span data-testid="playback-mode">{{ playbackSelection.mode }}</span><button data-testid="select-remote-playback" @click="$emit(\'update:playbackSelection\', { mode: \'remote\', venuePlayerId: \'living-room\' })">Remote</button></div>',
         },
       },
     },
