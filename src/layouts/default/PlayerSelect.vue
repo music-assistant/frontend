@@ -9,7 +9,10 @@
       <button
         v-if="store.showPlayersMenu"
         type="button"
-        class="player-select-backdrop fixed inset-x-0 top-0 bottom-[60px] z-[99999] bg-black/60 backdrop-blur-sm md:bottom-0"
+        :class="[
+          'player-select-backdrop fixed inset-x-0 top-0 z-[99999] bg-black/60 backdrop-blur-sm',
+          store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+        ]"
         :aria-label="$t('close')"
         @click="setMenuOpen(false)"
       ></button>
@@ -24,7 +27,10 @@
     <SheetContent
       data-testid="player-select-sheet"
       side="right"
-      class="w-[90vw] gap-0 p-0 sm:max-w-[400px] max-md:bottom-[60px]"
+      :class="[
+        'w-[90vw] gap-0 p-0 sm:max-w-[400px]',
+        store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+      ]"
       @keydown="handleSheetKeydown"
       @interact-outside="handleSheetInteractOutside"
     >
