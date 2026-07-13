@@ -408,6 +408,35 @@ describe("useMusicQuizHost", () => {
     expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(2, true);
   });
 
+  it("exposes preparation state while a game is starting", async () => {
+    const pending = deferred<typeof HOST_STATE>();
+    mockStartMusicQuiz.mockReturnValueOnce(pending.promise);
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const start = host.start();
+
+    expect(host.starting.value).toBe(true);
+    expect(host.busy.value).toBe(true);
+
+    pending.resolve(HOST_STATE);
+    await expect(start).resolves.toBe(true);
+
+    expect(host.starting.value).toBe(false);
+    expect(host.busy.value).toBe(false);
+  });
+
+  it("clears preparation state when starting fails", async () => {
+    mockStartMusicQuiz.mockRejectedValueOnce(new Error("Unavailable"));
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    await expect(host.start()).resolves.toBe(false);
+
+    expect(host.starting.value).toBe(false);
+    expect(host.busy.value).toBe(false);
+  });
+
   it.each(HOST_ACTIONS)(
     "serializes concurrent $name commands",
     async ({ command, invoke, result }) => {

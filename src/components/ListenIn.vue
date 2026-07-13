@@ -73,10 +73,8 @@ export interface ListenInProps {
   recheckEvents?: EventType[];
   /** Optional server-error extractor passed through to useListenIn. */
   getErrorMessage?: (err: unknown, fallback: string) => string;
-  /** Start listening when available unless a stored preference overrides it. */
+  /** Start listening when available until the guest explicitly opts out. */
   autoEnable?: boolean;
-  /** Local-storage key used to remember the explicit on/off choice. */
-  preferenceKey?: string;
 }
 </script>
 
@@ -85,11 +83,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useListenIn } from "@/composables/useListenIn";
 import { Headphones } from "@lucide/vue";
-import { computed, useId } from "vue";
+import { computed, ref, useId } from "vue";
 import { toast } from "vue-sonner";
 
 const props = defineProps<ListenInProps>();
 const attributionId = useId();
+const autoEnableSuppressed = ref(false);
 
 const {
   isListeningIn,
@@ -133,33 +132,18 @@ function onToggle(enabled: boolean) {
 
 async function enableListenIn() {
   if (!(await startListenIn())) return;
-  rememberPreference(true);
+  autoEnableSuppressed.value = false;
 }
 
 async function disableListenIn() {
-  rememberPreference(false);
+  autoEnableSuppressed.value = true;
   await stopListenIn();
 }
 
 function shouldAutoEnable() {
-  if (!props.autoEnable) return false;
-  if (!props.preferenceKey) return true;
-  try {
-    const preference = window.localStorage.getItem(props.preferenceKey);
-    return preference === null || preference === "true";
-  } catch (error) {
-    console.debug("Could not read Listen-in preference:", error);
-    return true;
-  }
-}
-
-function rememberPreference(enabled: boolean) {
-  if (!props.preferenceKey) return;
-  try {
-    window.localStorage.setItem(props.preferenceKey, String(enabled));
-  } catch (error) {
-    console.debug("Could not store Listen-in preference:", error);
-  }
+  return (
+    props.mode === "remote" && !!props.autoEnable && !autoEnableSuppressed.value
+  );
 }
 </script>
 

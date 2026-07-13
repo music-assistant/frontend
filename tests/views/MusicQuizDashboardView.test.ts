@@ -113,6 +113,8 @@ describe("MusicQuizDashboardView", () => {
       false,
     );
     expect(wrapper.text()).toContain("providers.music_quiz.no_active_game");
+    expect(wrapper.find('[data-testid="new-game"]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid="new-game-empty"]')).toHaveLength(1);
     expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
       false,
     );

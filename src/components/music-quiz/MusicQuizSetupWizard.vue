@@ -1,28 +1,9 @@
 <template>
   <div class="relative flex flex-col gap-5" :class="{ 'min-h-64': busy }">
-    <div
+    <MusicQuizPreparingState
       v-if="busy"
-      ref="preparingStatus"
-      class="bg-background absolute inset-0 z-10 flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg p-6 text-center"
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      tabindex="-1"
-      data-testid="music-quiz-preparing"
-    >
-      <LoaderCircle
-        class="text-primary size-8 animate-spin"
-        aria-hidden="true"
-      />
-      <div class="flex flex-col gap-1">
-        <h2 class="text-lg font-semibold">
-          {{ $t("providers.music_quiz.preparing_game") }}
-        </h2>
-        <p class="text-muted-foreground max-w-md text-sm">
-          {{ $t("providers.music_quiz.preparing_game_help") }}
-        </p>
-      </div>
-    </div>
+      class="absolute inset-0 z-10 rounded-lg"
+    />
 
     <div
       class="flex-col gap-2"
@@ -145,6 +126,7 @@ import {
   type MusicQuizGameDefinition,
 } from "@/components/music-quiz/game_types";
 import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlaybackControls.vue";
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
@@ -160,7 +142,7 @@ import {
   type MusicQuizPlaybackSelection,
 } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, LoaderCircle } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
 const TOTAL_STEPS = 2;
@@ -210,7 +192,6 @@ const selectedType = ref<MusicQuizGameDefinition | null>(null);
 const includeSimilarMusic = ref(false);
 const chooseHeading = ref<HTMLHeadingElement | null>(null);
 const configureHeading = ref<HTMLHeadingElement | null>(null);
-const preparingStatus = ref<HTMLElement | null>(null);
 const sharedConfigValid = computed(() => {
   if (props.playbackOptionsLoading) return false;
   if (props.playbackOptions) {
@@ -234,16 +215,6 @@ watch(
         playbackSelection.value = reconciled;
       }
     }
-  },
-  { immediate: true },
-);
-
-watch(
-  () => props.busy,
-  async (busy) => {
-    if (!busy) return;
-    await nextTick();
-    preparingStatus.value?.focus({ preventScroll: true });
   },
   { immediate: true },
 );

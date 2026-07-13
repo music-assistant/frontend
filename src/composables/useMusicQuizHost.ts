@@ -39,6 +39,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   const state = ref<MusicQuizHostState | null>(null);
   const busy = ref(false);
+  const starting = ref(false);
   const loading = ref(false);
   const availableQuizTypes = ref<string[]>([]);
   const playbackOptions = ref<MusicQuizPlaybackOptions | null>(null);
@@ -162,6 +163,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   async function start() {
     if (busy.value) return false;
     busy.value = true;
+    starting.value = true;
     try {
       const nextState = await startMusicQuiz();
       applyState(nextState);
@@ -172,6 +174,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       );
       return false;
     } finally {
+      starting.value = false;
       busy.value = false;
     }
   }
@@ -294,6 +297,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   return {
     state,
     busy,
+    starting,
     loading,
     availableQuizTypes,
     playbackOptions,

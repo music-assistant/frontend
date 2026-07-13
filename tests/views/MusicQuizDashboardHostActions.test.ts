@@ -112,11 +112,13 @@ const TRIVIA_HOST_STATE = {
 
 let state: Ref<MusicQuizSupportedHostState | null>;
 let busy: Ref<boolean>;
+let starting: Ref<boolean>;
 
 describe("MusicQuizDashboardView host actions", () => {
   beforeEach(() => {
     state = ref({ ...HOST_STATE });
     busy = ref(false);
+    starting = ref(false);
     mockDeleteGame.mockReset();
     mockDeleteGame.mockResolvedValue(true);
     mockFetchPlaybackOptions.mockReset();
@@ -148,6 +150,7 @@ describe("MusicQuizDashboardView host actions", () => {
       reset: mockReset,
       reveal: vi.fn(),
       start: mockStart,
+      starting,
       state,
       fetchPlaybackOptions: mockFetchPlaybackOptions,
     });
@@ -206,6 +209,36 @@ describe("MusicQuizDashboardView host actions", () => {
     await wrapper.get('[data-testid="start-now"]').trigger("click");
 
     expect(mockStart).toHaveBeenCalledOnce();
+  });
+
+  it("shows preparation progress while the game starts", async () => {
+    state.value = { ...HOST_STATE, phase: "lobby" };
+    let finishStart!: () => void;
+    mockStart.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          starting.value = true;
+          finishStart = () => {
+            starting.value = false;
+            resolve(true);
+          };
+        }),
+    );
+    const wrapper = mountDashboard();
+
+    await wrapper.get('[data-testid="start-now"]').trigger("click");
+
+    const status = wrapper.get('[data-testid="music-quiz-preparing"]');
+    expect(status.attributes("role")).toBe("status");
+    expect(status.text()).toContain("providers.music_quiz.preparing_game");
+    expect(wrapper.find('[data-testid="start-now"]').exists()).toBe(false);
+
+    finishStart();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="music-quiz-preparing"]').exists()).toBe(
+      false,
+    );
   });
 
   it("deletes the finished game before opening fresh setup", async () => {
