@@ -19,12 +19,7 @@
               <RefreshCw class="size-4" />
               {{ $t("settings.reload") }}
             </Button>
-            <Button size="sm" @click="downloadLog">
-              <Download class="size-4" />
-              {{ $t("settings.download_log") }}
-            </Button>
             <Button
-              variant="outline"
               size="sm"
               :disabled="downloadingDiagnostics"
               @click="downloadDiagnostics"
@@ -32,6 +27,10 @@
               <Spinner v-if="downloadingDiagnostics" class="size-4" />
               <Stethoscope v-else class="size-4" />
               {{ $t("settings.download_diagnostics") }}
+            </Button>
+            <Button variant="outline" size="sm" @click="downloadLog">
+              <Download class="size-4" />
+              {{ $t("settings.download_log") }}
             </Button>
           </div>
         </div>
