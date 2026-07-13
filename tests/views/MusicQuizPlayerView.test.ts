@@ -29,13 +29,8 @@ vi.mock("@/components/ListenIn.vue", async () => {
       props: {
         autoEnable: Boolean,
         mode: String,
-        preferenceKey: String,
       },
-      setup(props: {
-        autoEnable?: boolean;
-        mode?: string;
-        preferenceKey?: string;
-      }) {
+      setup(props: { autoEnable?: boolean; mode?: string }) {
         mockListenInSetup(props);
         return () => h("div", { "data-testid": "listen-in" });
       },
@@ -358,7 +353,6 @@ describe("MusicQuizPlayerView routing", () => {
       expect.objectContaining({
         autoEnable: false,
         mode: "remote",
-        preferenceKey: "music_quiz_listen_in_enabled",
       }),
     );
     wrapper.unmount();
@@ -579,6 +573,52 @@ describe("MusicQuizPlayerView routing", () => {
     expect(
       wrapper.findComponent({ name: "ListenIn" }).props("autoEnable"),
     ).toBe(false);
+  });
+
+  it("keeps venue listen-in opt-in when joining", async () => {
+    const info = ref({
+      quiz_type: "guess_the_song",
+      answer_type: "multiple_choice",
+      phase: "lobby",
+      name: "Quiz",
+      player_count: 0,
+      round_count: 5,
+      mode: "venue",
+    });
+    const state = ref<typeof playerState | null>(null);
+    const playerId = ref<string | null>(null);
+    const activeRound = ref<typeof currentRound | null>(null);
+    const join = vi.fn(async () => {
+      state.value = { ...playerState, mode: "venue" };
+      playerId.value = "player-id";
+      activeRound.value = currentRound;
+    });
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info,
+      state,
+      playerId,
+      rememberedName: ref(""),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: activeRound,
+      join,
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+    });
+    const wrapper = mountView();
+
+    wrapper.getComponent(MusicQuizJoinForm).vm.$emit("join", "Guest");
+    await flushPromises();
+
+    expect(mockPrimeAudio).toHaveBeenCalledOnce();
+    expect(mockListenInSetup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoEnable: false,
+        mode: "venue",
+      }),
+    );
   });
 
   it("keeps Tap available when Join cannot prime audio yet", async () => {

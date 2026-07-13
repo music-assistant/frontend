@@ -48,21 +48,6 @@ vi.mock("vue-sonner", () => ({
 
 const initialLocale = i18n.global.locale.value;
 i18n.global.locale.value = "en";
-const storageValues = new Map<string, string>();
-const mockLocalStorage: Storage = {
-  get length() {
-    return storageValues.size;
-  },
-  clear: () => storageValues.clear(),
-  getItem: (key) => storageValues.get(key) ?? null,
-  key: (index) => [...storageValues.keys()][index] ?? null,
-  removeItem: (key) => storageValues.delete(key),
-  setItem: (key, value) => storageValues.set(key, value),
-};
-Object.defineProperty(window, "localStorage", {
-  configurable: true,
-  value: mockLocalStorage,
-});
 
 const surfaces = [
   {
@@ -98,7 +83,6 @@ describe("ListenIn", () => {
     listenInMock.enableListenIn.mockResolvedValue(true);
     listenInMock.disableListenIn.mockResolvedValue(true);
     listenInMock.options = undefined;
-    window.localStorage.removeItem("test_listen_in_enabled");
   });
 
   it.each(renderCases)(
@@ -240,37 +224,43 @@ describe("ListenIn", () => {
     expect(listenInMock.disableListenIn).toHaveBeenCalledTimes(2);
   });
 
-  it("defaults on, remembers explicit choices, and restores the preference", async () => {
+  it("defaults remote listening on until the guest explicitly opts out", async () => {
     const wrapper = mount(ListenIn, {
       props: {
         domain: "music_quiz",
         mode: "remote",
         labels: surfaces[1].labels,
         autoEnable: true,
-        preferenceKey: "test_listen_in_enabled",
       },
     });
 
     expect(listenInMock.options?.autoEnable?.()).toBe(true);
 
-    await wrapper.get("button").trigger("click");
-    expect(window.localStorage.getItem("test_listen_in_enabled")).toBe("true");
-
     getMockState().isListeningIn.value = true;
     await nextTick();
     await wrapper.get("button").trigger("click");
-    expect(window.localStorage.getItem("test_listen_in_enabled")).toBe("false");
+
     expect(listenInMock.options?.autoEnable?.()).toBe(false);
+
+    wrapper.unmount();
+    mount(ListenIn, {
+      props: {
+        domain: "music_quiz",
+        mode: "remote",
+        labels: surfaces[1].labels,
+        autoEnable: true,
+      },
+    });
+    expect(listenInMock.options?.autoEnable?.()).toBe(true);
   });
 
-  it("remembers Stop before the async command completes", async () => {
+  it("applies remote opt-out before the stop command completes", async () => {
     let resolveStop!: (result: boolean) => void;
     listenInMock.disableListenIn.mockReturnValueOnce(
       new Promise<boolean>((resolve) => {
         resolveStop = resolve;
       }),
     );
-    window.localStorage.setItem("test_listen_in_enabled", "true");
     getMockState().isListeningIn.value = true;
     const wrapper = mount(ListenIn, {
       props: {
@@ -278,65 +268,27 @@ describe("ListenIn", () => {
         mode: "remote",
         labels: surfaces[1].labels,
         autoEnable: true,
-        preferenceKey: "test_listen_in_enabled",
       },
     });
 
     await wrapper.get("button").trigger("click");
 
-    expect(window.localStorage.getItem("test_listen_in_enabled")).toBe("false");
+    expect(listenInMock.options?.autoEnable?.()).toBe(false);
     resolveStop(false);
   });
 
-  it("never restores Remote opt-in while the current mode requires opt-in", () => {
-    window.localStorage.setItem("test_listen_in_enabled", "true");
+  it("never auto-enables venue listening", () => {
     mount(ListenIn, {
       props: {
         domain: "music_quiz",
         mode: "venue",
         labels: surfaces[1].labels,
-        autoEnable: false,
-        preferenceKey: "test_listen_in_enabled",
+        autoEnable: true,
       },
     });
 
     expect(listenInMock.options?.autoEnable?.()).toBe(false);
     expect(listenInMock.enableListenIn).not.toHaveBeenCalled();
-  });
-
-  it("keeps Listen-in usable when browser storage is blocked", async () => {
-    const consoleDebug = vi
-      .spyOn(console, "debug")
-      .mockImplementation(() => {});
-    const getItem = vi
-      .spyOn(mockLocalStorage, "getItem")
-      .mockImplementationOnce(() => {
-        throw new DOMException("Blocked");
-      });
-    const wrapper = mount(ListenIn, {
-      props: {
-        domain: "music_quiz",
-        mode: "remote",
-        labels: surfaces[1].labels,
-        autoEnable: true,
-        preferenceKey: "test_listen_in_enabled",
-      },
-    });
-
-    expect(listenInMock.options?.autoEnable?.()).toBe(true);
-    getItem.mockRestore();
-
-    const setItem = vi
-      .spyOn(mockLocalStorage, "setItem")
-      .mockImplementationOnce(() => {
-        throw new DOMException("Blocked");
-      });
-    await wrapper.get("button").trigger("click");
-
-    expect(listenInMock.enableListenIn).toHaveBeenCalledOnce();
-    expect(consoleDebug).toHaveBeenCalledTimes(2);
-    setItem.mockRestore();
-    consoleDebug.mockRestore();
   });
 
   it("renders enabled actions and disables both action types while busy", async () => {

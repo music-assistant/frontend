@@ -35,30 +35,18 @@
             {{ statusText }}
           </p>
         </div>
-        <div class="flex shrink-0 items-center gap-2">
-          <Button
-            v-if="isAdmin && musicQuizProviderInstanceId"
-            variant="ghost"
-            size="icon"
-            data-testid="music-quiz-settings"
-            :aria-label="$t('providers.music_quiz.settings')"
-            :title="$t('providers.music_quiz.settings')"
-            @click="goToMusicQuizSettings"
-          >
-            <Settings class="size-5" />
-          </Button>
-          <Button
-            v-if="!state && !loading"
-            variant="default"
-            size="sm"
-            data-testid="new-game"
-            :disabled="busy"
-            @click="openSetupDialog"
-          >
-            <Plus class="size-4" />
-            {{ $t("providers.music_quiz.new_game") }}
-          </Button>
-        </div>
+        <Button
+          v-if="isAdmin && musicQuizProviderInstanceId"
+          class="shrink-0"
+          variant="ghost"
+          size="icon"
+          data-testid="music-quiz-settings"
+          :aria-label="$t('providers.music_quiz.settings')"
+          :title="$t('providers.music_quiz.settings')"
+          @click="goToMusicQuizSettings"
+        >
+          <Settings class="size-5" />
+        </Button>
       </header>
 
       <MusicQuizConnectionBanners :degraded="isConnectionDegraded" />
@@ -96,6 +84,11 @@
         :busy="busy"
         :can-end-game="true"
         @end-game="showEndGameDialog = true"
+      />
+
+      <MusicQuizPreparingState
+        v-else-if="starting && activeState"
+        class="rounded-xl border shadow-sm"
       />
 
       <div
@@ -222,6 +215,7 @@ import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
 import MusicQuizPresentStage from "@/components/music-quiz/MusicQuizPresentStage.vue";
+import MusicQuizPreparingState from "@/components/music-quiz/MusicQuizPreparingState.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
@@ -272,6 +266,7 @@ const host = useMusicQuizHost({
 const {
   state,
   busy,
+  starting,
   loading,
   availableQuizTypes,
   playbackOptions,

@@ -76,7 +76,6 @@
           mode === 'remote' &&
           listenInPrimedGeneration === webPlayer.player_generation
         "
-        preference-key="music_quiz_listen_in_enabled"
       />
 
       <MusicQuizPlayerStage
