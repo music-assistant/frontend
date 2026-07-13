@@ -192,6 +192,28 @@ const handleLocalConnect = async (serverAddress: string) => {
 
 let initializationCompleted = false;
 
+const refreshPluginEnabledState = async (domain: string) => {
+  try {
+    const providers = await api.getProviderConfigs(ProviderType.PLUGIN, domain);
+    if (providers.length > 0 && providers[0].enabled) {
+      store.enabledPlugins.add(domain);
+    } else {
+      store.enabledPlugins.delete(domain);
+    }
+  } catch (error) {
+    console.error("[App] Failed to check " + domain + " status:", error);
+    store.enabledPlugins.delete(domain);
+  }
+};
+
+const refreshPluginEnabledStates = async () => {
+  await Promise.all([
+    refreshPluginEnabledState("party"),
+    refreshPluginEnabledState("music_quiz"),
+    refreshPluginEnabledState("ai_radio"),
+  ]);
+};
+
 // TODO: Remove this migration code in v2.9 release
 // Added in: current version
 // Can be removed: v2.9
@@ -282,37 +304,8 @@ const completeInitialization = async () => {
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
 
-    // Check if party plugin is enabled
-    try {
-      const partyProviders = await api.getProviderConfigs(
-        ProviderType.PLUGIN,
-        "party",
-      );
-      if (partyProviders.length > 0 && partyProviders[0].enabled) {
-        store.enabledPlugins.add("party");
-      } else {
-        store.enabledPlugins.delete("party");
-      }
-    } catch (error) {
-      console.error("[App] Failed to check party status:", error);
-      store.enabledPlugins.delete("party");
-    }
-
-    // Check if music_quiz plugin is enabled
-    try {
-      const musicQuizProviders = await api.getProviderConfigs(
-        ProviderType.PLUGIN,
-        "music_quiz",
-      );
-      if (musicQuizProviders.length > 0 && musicQuizProviders[0].enabled) {
-        store.enabledPlugins.add("music_quiz");
-      } else {
-        store.enabledPlugins.delete("music_quiz");
-      }
-    } catch (error) {
-      console.error("[App] Failed to check music_quiz status:", error);
-      store.enabledPlugins.delete("music_quiz");
-    }
+    // Keep plugin-backed UI entries in sync with enabled providers.
+    await refreshPluginEnabledStates();
   } else {
     console.debug("[App] Guest user - skipping regular user initialization");
     await api.fetchProviders();
@@ -521,23 +514,11 @@ onMounted(async () => {
     await completeInitialization();
   }
 
-  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync
+  // Subscribe to PROVIDERS_UPDATED to keep enabledPlugins in sync.
   api.subscribe(EventType.PROVIDERS_UPDATED, async () => {
     if (authManager.isGuestAccessSession()) return;
 
-    try {
-      const partyProviders = await api.getProviderConfigs(
-        ProviderType.PLUGIN,
-        "party",
-      );
-      if (partyProviders.length > 0 && partyProviders[0].enabled) {
-        store.enabledPlugins.add("party");
-      } else {
-        store.enabledPlugins.delete("party");
-      }
-    } catch (error) {
-      console.error("[App] Failed to update party status:", error);
-    }
+    await refreshPluginEnabledStates();
   });
 
   // Re-prune when the provider set changes at runtime.

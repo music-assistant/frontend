@@ -15,6 +15,7 @@ import {
   Radio,
   Search,
   Settings,
+  Sparkles,
 } from "@lucide/vue";
 import { Component } from "vue";
 
@@ -98,6 +99,15 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/browse",
     isLibraryNode: true,
     group: "explore",
+  },
+  {
+    id: "ai_radio",
+    label: "providers.ai_radio.title",
+    icon: Sparkles,
+    path: "/ai-radio",
+    isLibraryNode: false,
+    group: "explore",
+    available: () => store.enabledPlugins.has("ai_radio"),
   },
   {
     id: "party",
