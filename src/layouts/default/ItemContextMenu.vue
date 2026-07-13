@@ -266,6 +266,7 @@ import {
   RadioTower,
   RefreshCw,
   SkipForward,
+  Sparkles,
   Trash2,
 } from "@lucide/vue";
 import type { Component } from "vue";
@@ -470,7 +471,7 @@ export const getContextMenuItems = async function (
           },
         });
       },
-      icon: "mdi-radio-tower",
+      icon: Sparkles,
     });
   }
 

@@ -1076,6 +1076,11 @@
     "remove_genre_exclusion": "Ausschluss entfernen",
     "providers": {
         "ai_radio": {
+            "empty": {
+                "title": "Erstelle deinen ersten Sender",
+                "description": "AI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit KI-Moderation. Die geführte Einrichtung hilft dir dabei.",
+                "cta": "Sender erstellen"
+            },
             "title": "AI Radio",
             "header": {
                 "subtitle": "KI-Radiosender und wiederverwendbare Abschnitte starten, erstellen und verwalten."
@@ -1089,6 +1094,7 @@
                 "sections": "Abschnitte"
             },
             "actions": {
+                "discard": "Verwerfen",
                 "show_tutorial": "Tutorial anzeigen",
                 "refresh": "Aktualisieren",
                 "refreshing": "Aktualisiere...",
@@ -1128,9 +1134,13 @@
                 "select_section": "-- Abschnitt auswählen --"
             },
             "misc": {
+                "id_locked": "Die ID kann nach dem Erstellen nicht geändert werden.",
                 "not_available": "Nicht verfügbar"
             },
             "run": {
+                "advanced": "Erweiterte Optionen",
+                "create_playlist_hint": "Erstellt eine fertige Wiedergabeliste in deiner Bibliothek.",
+                "start_live_hint": "Spielt Titel und Moderation live auf einem Player.",
                 "title": "Ausführen",
                 "description": "Sender auswählen und dann entweder die Wiedergabelisten-Generierung oder die Live-Wiedergabelisten-Injektion starten.",
                 "source_playlist_override": "Quell-Wiedergabeliste überschreiben (optional)",
@@ -1142,6 +1152,7 @@
                 "guided_hint": "Für den ersten Start empfohlen. Erweiterte Einstellungen kannst du später im Sender-Tab anpassen."
             },
             "sessions": {
+                "open_playlist": "Wiedergabeliste öffnen",
                 "title": "Sitzungen",
                 "description": "Neueste KI-Radio-Sitzungen auf diesem Server.",
                 "empty": "Noch keine Sitzungen.",
@@ -1160,7 +1171,6 @@
                 "title": "Radiosender-Editor",
                 "description": "Quell-Wiedergabeliste, Abschnittsauswahl, Ablaufregeln und Wiedergabeprofil konfigurieren.",
                 "custom_source_playlist": "Benutzerdefinierte Quell-Wiedergabeliste",
-                "multiselect_hint": "Cmd\/Strg-Klick für Mehrfachauswahl.",
                 "merge_section_help": "Wird verwendet, wenn ein Slot mehrere gesprochene Abschnitte enthält. Alle ausgewählten Abschnitte werden dann vor diesem Slot zusammengeführt und als ein Abschnitt behandelt.",
                 "advanced": "Erweiterte Ausführungs- und Anbietereinstellungen",
                 "empty": "Kein Sender ausgewählt. Erstelle zuerst einen neuen Sender."
@@ -1207,6 +1217,9 @@
                 "insert_at": "Einfügen nach"
             },
             "flow": {
+                "type_must": "Immer abspielen",
+                "type_alternative": "Eine Option wählen (gewichtet)",
+                "type_optional": "Gelegentlich abspielen",
                 "title": "Wiedergabe-Ablaufregeln",
                 "description": "MUST wird immer eingefügt, ALTERNATIVE wählt eine gewichtete Option, OPTIONAL wird nach Wahrscheinlichkeit und Guards eingefügt.",
                 "add_rule": "Platzierungsregel hinzufügen",
@@ -1285,6 +1298,7 @@
                 }
             },
             "validation": {
+                "invalid_import_file": "Die Datei ist kein gültiger AI-Radio-Export.",
                 "select_station_first": "Bitte zuerst einen Sender auswählen",
                 "complete_current_step": "Bitte zuerst den aktuellen Schritt abschließen",
                 "station_name_required": "Sendername ist erforderlich",
@@ -1303,10 +1317,17 @@
                 "no_section_loaded": "Kein Abschnitt geladen"
             },
             "confirm": {
+                "discard_changes_title": "Änderungen verwerfen?",
+                "discard_changes": "Du hast ungespeicherte Änderungen, die verloren gehen.",
+                "delete_station_title": "Sender löschen?",
+                "delete_section_title": "Abschnitt löschen?",
                 "delete_station": "Diesen Sender löschen?",
                 "delete_section": "Diesen Abschnitt löschen?"
             },
             "toast": {
+                "playlists_truncated": "Es wurden nur die ersten {0} Wiedergabelisten geladen.",
+                "import_used_first": "Die Datei enthält {0} Einträge; nur der erste wurde importiert.",
+                "unavailable": "AI Radio ist nicht aktiviert.",
                 "stations_loaded": "KI-Radiosender geladen",
                 "stations_load_failed": "KI-Radiosender konnten nicht geladen werden",
                 "sections_loaded": "KI-Radio-Abschnitte geladen",

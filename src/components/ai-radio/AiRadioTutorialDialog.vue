@@ -65,13 +65,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TUTORIAL_SEEN_STORAGE_KEY } from "@/helpers/ai_radio";
 import { $t } from "@/plugins/i18n";
 
 const open = defineModel<boolean>("open", { default: false });
 
 const closeTutorial = () => {
   open.value = false;
-  localStorage.setItem(TUTORIAL_SEEN_STORAGE_KEY, "1");
 };
 </script>

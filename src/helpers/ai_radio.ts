@@ -9,8 +9,6 @@ import type {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
-export const TUTORIAL_SEEN_STORAGE_KEY = "ai_radio_tutorial_seen_v1";
-
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
 export const NONE_SELECT_VALUE = "__none__";
@@ -326,19 +324,29 @@ export const defaultGuidedPlacement = (
   const label = `${section.id} ${section.name}`.toLowerCase();
   // Check end-of-playlist markers first because section names like
   // "Song_Introduction_End" otherwise match the loose "intro" substring below.
+  // Covers English and German markers, matching the app's supported locales.
   if (
     label.includes("outro") ||
-    /(^|[\s_-])end([\s_-]|$)/.test(label) ||
+    /(^|[\s_-])(end|ende)([\s_-]|$)/.test(label) ||
     label.includes("closing") ||
     label.includes("signoff") ||
-    label.includes("sign-off")
+    label.includes("sign-off") ||
+    label.includes("schluss") ||
+    label.includes("abschluss") ||
+    label.includes("verabschiedung")
   ) {
     return "end_of_playlist";
   }
   if (
     /(^|[\s_-])intro([\s_-]|$)/.test(label) ||
     label.includes("start") ||
-    label.includes("opening")
+    label.includes("opening") ||
+    label.includes("anfang") ||
+    label.includes("beginn") ||
+    label.includes("begrüßung") ||
+    label.includes("begruessung") ||
+    label.includes("eröffnung") ||
+    label.includes("eroeffnung")
   ) {
     return "start_of_playlist";
   }
