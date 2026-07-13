@@ -46,7 +46,31 @@
       </TabsList>
 
       <TabsContent value="run" class="mt-4 space-y-4">
-        <div class="grid gap-4 lg:grid-cols-2">
+        <Card v-if="showEmptyState">
+          <CardContent
+            class="flex flex-col items-center gap-3 py-12 text-center"
+          >
+            <Sparkles class="h-10 w-10 text-muted-foreground" />
+            <div>
+              <h2 class="text-lg font-semibold">
+                {{ $t("providers.ai_radio.empty.title") }}
+              </h2>
+              <p class="mt-1 max-w-md text-sm text-muted-foreground">
+                {{ $t("providers.ai_radio.empty.description") }}
+              </p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2">
+              <Button @click="openGuidedStationCreator">
+                <Sparkles class="mr-1 h-4 w-4" />
+                {{ $t("providers.ai_radio.empty.cta") }}
+              </Button>
+              <Button variant="outline" @click="tutorialOpen = true">
+                {{ $t("providers.ai_radio.actions.show_tutorial") }}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <div v-else class="grid gap-4 lg:grid-cols-2">
           <AiRadioRunCard />
           <AiRadioSessionsCard />
         </div>
@@ -74,31 +98,34 @@ import AiRadioSessionsCard from "@/components/ai-radio/AiRadioSessionsCard.vue";
 import AiRadioStationsTab from "@/components/ai-radio/AiRadioStationsTab.vue";
 import AiRadioTutorialDialog from "@/components/ai-radio/AiRadioTutorialDialog.vue";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAiRadio } from "@/composables/ai-radio/useAiRadio";
 import { useAiRadioEditor } from "@/composables/ai-radio/useAiRadioEditor";
 import { useAiRadioRun } from "@/composables/ai-radio/useAiRadioRun";
 import { useAiRadioSectionDraft } from "@/composables/ai-radio/useAiRadioSectionDraft";
 import { useAiRadioStationDraft } from "@/composables/ai-radio/useAiRadioStationDraft";
-import {
-  errorMessage,
-  getQueryValue,
-  TUTORIAL_SEEN_STORAGE_KEY,
-} from "@/helpers/ai_radio";
+import { useAiRadioWizard } from "@/composables/ai-radio/useAiRadioWizard";
+import { errorMessage, getQueryValue } from "@/helpers/ai_radio";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Sparkles } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 const AUTO_REFRESH_MS = 5000;
+// Without a running session, only refresh on every Nth tick.
+const IDLE_REFRESH_TICKS = 6;
 
 const activeTab = ref<"run" | "stations" | "sections">("run");
 const tutorialOpen = ref(false);
+const initialLoadDone = ref(false);
 
 const route = useRoute();
+const router = useRouter();
 
-const { loadingStatus, loadStatus } = useAiRadio();
+const { sessions, loadingStatus, loadStatus } = useAiRadio();
 const {
   stations,
   sections,
@@ -114,12 +141,22 @@ const {
   resetSourcePlaylistOverride,
   applyRunStationDefaults,
 } = useAiRadioRun();
-const { selectedEditorStationId, selectStationForEdit, clearStationDraft } =
-  useAiRadioStationDraft();
-const { selectedEditorSectionId, selectSectionForEdit, clearSectionDraft } =
-  useAiRadioSectionDraft();
+const {
+  selectedEditorStationId,
+  stationDraftDirty,
+  selectStationForEdit,
+  clearStationDraft,
+} = useAiRadioStationDraft();
+const {
+  selectedEditorSectionId,
+  sectionDraftDirty,
+  selectSectionForEdit,
+  clearSectionDraft,
+} = useAiRadioSectionDraft();
+const { openGuidedStationCreator } = useAiRadioWizard();
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let refreshTick = 0;
 
 const isRefreshing = computed(() => {
   return (
@@ -129,6 +166,14 @@ const isRefreshing = computed(() => {
     loadingPlayers.value ||
     loadingPlaylists.value
   );
+});
+
+const showEmptyState = computed(() => {
+  return initialLoadDone.value && stations.value.length === 0;
+});
+
+const hasRunningSession = computed(() => {
+  return sessions.value.some((session) => session.status === "running");
 });
 
 const applyRouteOverrides = () => {
@@ -166,7 +211,7 @@ const applyRouteOverrides = () => {
 
 const handleRefresh = async () => {
   try {
-    await Promise.all([refreshEditor(true), loadStatus(true)]);
+    await Promise.all([refreshEditor(), loadStatus()]);
     applyRouteOverrides();
     toast.success($t("providers.ai_radio.toast.data_refreshed"));
   } catch (error) {
@@ -178,15 +223,13 @@ const handleRefresh = async () => {
 
 onMounted(async () => {
   try {
-    await Promise.all([refreshEditor(true), loadStatus(true)]);
-
-    if (!localStorage.getItem(TUTORIAL_SEEN_STORAGE_KEY)) {
-      tutorialOpen.value = true;
-    }
+    await Promise.all([refreshEditor(), loadStatus()]);
 
     if (stations.value.length > 0) {
       if (!selectedEditorStationId.value) {
-        await selectStationForEdit(stations.value[0].id);
+        await selectStationForEdit(stations.value[0].id, {
+          skipDirtyCheck: true,
+        });
       }
       if (!selectedRunStationId.value) {
         selectedRunStationId.value = stations.value[0].id;
@@ -195,18 +238,25 @@ onMounted(async () => {
     }
 
     if (sections.value.length > 0 && !selectedEditorSectionId.value) {
-      await selectSectionForEdit(sections.value[0].id);
+      await selectSectionForEdit(sections.value[0].id, {
+        skipDirtyCheck: true,
+      });
     }
 
     applyRouteOverrides();
 
     refreshTimer = setInterval(() => {
-      void loadStatus(true).catch(() => undefined);
+      refreshTick += 1;
+      if (hasRunningSession.value || refreshTick % IDLE_REFRESH_TICKS === 0) {
+        void loadStatus().catch(() => undefined);
+      }
     }, AUTO_REFRESH_MS);
   } catch (error) {
     toast.error(
       $t("providers.ai_radio.toast.init_failed", [errorMessage(error)]),
     );
+  } finally {
+    initialLoadDone.value = true;
   }
 });
 
@@ -230,7 +280,7 @@ watch(stations, async (nextStations) => {
       (station) => station.id === selectedEditorStationId.value,
     )
   ) {
-    await selectStationForEdit(nextStations[0].id);
+    await selectStationForEdit(nextStations[0].id, { skipDirtyCheck: true });
   }
 
   if (
@@ -256,8 +306,25 @@ watch(sections, async (nextSections) => {
       (section) => section.id === selectedEditorSectionId.value,
     )
   ) {
-    await selectSectionForEdit(nextSections[0].id);
+    await selectSectionForEdit(nextSections[0].id, { skipDirtyCheck: true });
   }
+});
+
+onBeforeRouteLeave((to) => {
+  if (!stationDraftDirty.value && !sectionDraftDirty.value) {
+    return true;
+  }
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("providers.ai_radio.confirm.discard_changes_title"),
+    message: $t("providers.ai_radio.confirm.discard_changes"),
+    confirmLabel: $t("providers.ai_radio.actions.discard"),
+    onConfirm: () => {
+      clearStationDraft();
+      clearSectionDraft();
+      void router.push(to.fullPath);
+    },
+  });
+  return false;
 });
 
 onBeforeUnmount(() => {

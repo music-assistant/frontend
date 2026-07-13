@@ -100,9 +100,15 @@
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MUST">MUST</SelectItem>
-                <SelectItem value="ALTERNATIVE">ALTERNATIVE</SelectItem>
-                <SelectItem value="OPTIONAL">OPTIONAL</SelectItem>
+                <SelectItem value="MUST">
+                  {{ $t("providers.ai_radio.flow.type_must") }}
+                </SelectItem>
+                <SelectItem value="ALTERNATIVE">
+                  {{ $t("providers.ai_radio.flow.type_alternative") }}
+                </SelectItem>
+                <SelectItem value="OPTIONAL">
+                  {{ $t("providers.ai_radio.flow.type_optional") }}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button

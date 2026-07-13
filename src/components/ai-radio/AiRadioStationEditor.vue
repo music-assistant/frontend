@@ -185,7 +185,17 @@
             <Label for="station-id">{{
               $t("providers.ai_radio.fields.station_id")
             }}</Label>
-            <Input id="station-id" v-model="stationDraft.id" />
+            <Input
+              id="station-id"
+              v-model="stationDraft.id"
+              :disabled="Boolean(selectedEditorStationId)"
+            />
+            <p
+              v-if="selectedEditorStationId"
+              class="text-xs text-muted-foreground"
+            >
+              {{ $t("providers.ai_radio.misc.id_locked") }}
+            </p>
           </div>
           <div class="space-y-2">
             <Label for="station-clear-queue">{{

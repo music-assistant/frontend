@@ -1077,6 +1077,11 @@
     "remove_genre_exclusion": "Remove exclusion",
     "providers": {
         "ai_radio": {
+            "empty": {
+                "title": "Create your first station",
+                "description": "AI Radio turns one of your playlists into a radio show with an AI host. The guided setup walks you through it.",
+                "cta": "Create station"
+            },
             "title": "AI Radio",
             "header": {
                 "subtitle": "Run, create, and manage AI Radio stations and reusable sections."
@@ -1090,6 +1095,7 @@
                 "sections": "Sections"
             },
             "actions": {
+                "discard": "Discard",
                 "show_tutorial": "Show Tutorial",
                 "refresh": "Refresh",
                 "refreshing": "Refreshing...",
@@ -1129,9 +1135,13 @@
                 "select_section": "-- Select section --"
             },
             "misc": {
+                "id_locked": "The ID cannot be changed after creation.",
                 "not_available": "Not available"
             },
             "run": {
+                "advanced": "Advanced options",
+                "create_playlist_hint": "Generate a finished playlist in your library.",
+                "start_live_hint": "Queue songs and host segments live on a player.",
                 "title": "Start Run",
                 "description": "Select a station, then start playlist generation or live queue injection.",
                 "source_playlist_override": "Source Playlist Override",
@@ -1143,6 +1153,7 @@
                 "guided_hint": "Recommended for first setup. Advanced settings can be edited later in the Stations tab."
             },
             "sessions": {
+                "open_playlist": "Open playlist",
                 "title": "Sessions",
                 "description": "Latest AI Radio sessions for this server.",
                 "empty": "No sessions yet.",
@@ -1161,7 +1172,6 @@
                 "title": "Station Editor",
                 "description": "Configure source playlist, section selection, flow rules, and runtime profile.",
                 "custom_source_playlist": "Custom source playlist",
-                "multiselect_hint": "Cmd\/Ctrl-click for multi-select.",
                 "merge_section_help": "Used when one between-song slot generates multiple spoken sections.",
                 "advanced": "Advanced Runtime and Provider Settings",
                 "empty": "No station selected. Create a new station to begin."
@@ -1208,6 +1218,9 @@
                 "insert_at": "Insert At"
             },
             "flow": {
+                "type_must": "Always play",
+                "type_alternative": "Pick one (weighted)",
+                "type_optional": "Sometimes play",
                 "title": "Playback Flow Rules",
                 "description": "MUST always includes, ALTERNATIVE picks one weighted choice, OPTIONAL runs by chance and guards.",
                 "add_rule": "Add Placement Rule",
@@ -1286,6 +1299,7 @@
                 }
             },
             "validation": {
+                "invalid_import_file": "The file is not a valid AI Radio export.",
                 "select_station_first": "Select a station first",
                 "complete_current_step": "Please complete the current step first",
                 "station_name_required": "Station name is required",
@@ -1304,10 +1318,17 @@
                 "no_section_loaded": "No section loaded"
             },
             "confirm": {
+                "discard_changes_title": "Discard changes?",
+                "discard_changes": "You have unsaved changes that will be lost.",
+                "delete_station_title": "Delete station?",
+                "delete_section_title": "Delete section?",
                 "delete_station": "Delete this station?",
                 "delete_section": "Delete this section?"
             },
             "toast": {
+                "playlists_truncated": "Only the first {0} playlists were loaded.",
+                "import_used_first": "The file contains {0} items; only the first one was imported.",
+                "unavailable": "AI Radio is not enabled.",
                 "stations_loaded": "AI Radio stations loaded",
                 "stations_load_failed": "Failed to load AI Radio stations",
                 "sections_loaded": "AI Radio sections loaded",

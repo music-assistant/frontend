@@ -1,5 +1,7 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
+import { $t } from "@/plugins/i18n";
 import { watch } from "vue";
+import { toast } from "vue-sonner";
 import {
   createRouter,
   createWebHashHistory,
@@ -114,11 +116,17 @@ export const routes: RouteRecordRaw[] = [
           import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
         beforeEnter: async () => {
           if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
             await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
               const unwatch = watch(
                 () => api.state.value,
                 (newState) => {
                   if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
                     unwatch();
                     resolve();
                   }
@@ -128,6 +136,7 @@ export const routes: RouteRecordRaw[] = [
             });
           }
           if (!store.enabledPlugins.has("ai_radio")) {
+            toast.error($t("providers.ai_radio.toast.unavailable"));
             return { name: "discover" };
           }
         },

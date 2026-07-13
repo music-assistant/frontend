@@ -163,7 +163,17 @@
             <Label for="section-id">{{
               $t("providers.ai_radio.fields.section_id")
             }}</Label>
-            <Input id="section-id" v-model="sectionDraft.id" />
+            <Input
+              id="section-id"
+              v-model="sectionDraft.id"
+              :disabled="Boolean(selectedEditorSectionId)"
+            />
+            <p
+              v-if="selectedEditorSectionId"
+              class="text-xs text-muted-foreground"
+            >
+              {{ $t("providers.ai_radio.misc.id_locked") }}
+            </p>
           </div>
         </details>
 
