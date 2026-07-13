@@ -16,7 +16,7 @@
 import MusicQuizLeaderboard, {
   type MusicQuizLeaderboardRow,
 } from "@/components/music-quiz/MusicQuizLeaderboard.vue";
-import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
+import type { MusicQuizSupportedHostState } from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,

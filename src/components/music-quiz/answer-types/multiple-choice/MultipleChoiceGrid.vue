@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
-import type { MusicQuizSuggestion } from "@/composables/useMusicQuiz";
+import type { MusicQuizSuggestion } from "@/composables/music-quiz/useMusicQuiz";
 
 const OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
