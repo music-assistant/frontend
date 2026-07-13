@@ -1671,6 +1671,10 @@
     "menu_section_show_label": "Show section label",
     "media_type": "Media type",
     "guest": {
+        "access_label": "Guest access",
+        "menu_label": "Guest options",
+        "leave": "Leave guest mode",
+        "return_to_app": "Back to Music Assistant",
         "loading_title": "Finding the active experience",
         "loading_description": "Please wait...",
         "no_quiz_title": "No Quiz is currently active",

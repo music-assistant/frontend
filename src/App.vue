@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
+import { useThemePreference } from "@/composables/useThemePreference";
 import { api, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
@@ -42,11 +43,9 @@ import { getDeviceName } from "@/plugins/api/helpers";
 import authManager from "@/plugins/auth";
 import { i18n, resolveLocale } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useColorMode } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import "vue-sonner/style.css";
-import { useTheme } from "vuetify";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
 import { pruneStaleProviderFilters } from "./composables/userPreferences";
@@ -68,9 +67,8 @@ import {
 import Login from "./views/Login.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 
-const theme = useTheme();
 const router = useRouter();
-const mode = useColorMode();
+const { applyThemePreference: setTheme } = useThemePreference();
 
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);
@@ -89,38 +87,6 @@ const showMainApp = computed(() => {
   }
   return true;
 });
-
-const setTheme = function () {
-  // TODO: Remove localStorage fallback once migration period is over (theme moved to user preferences)
-  const themePref =
-    (store.currentUser?.preferences?.theme as string) ||
-    localStorage.getItem("frontend.settings.theme") ||
-    "auto";
-  let themeValue: "light" | "dark";
-
-  if (themePref == "dark") {
-    // forced dark mode
-    theme.change("dark");
-    themeValue = "dark";
-  } else if (themePref == "light") {
-    // forced light mode
-    theme.change("light");
-    themeValue = "light";
-  } else if (
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    // dark mode is enabled in browser
-    theme.change("dark");
-    themeValue = "dark";
-  } else {
-    // light mode is enabled in browser
-    theme.change("light");
-    themeValue = "light";
-  }
-
-  mode.value = themePref === "auto" ? "auto" : themeValue;
-};
 
 const interactedHandler = function () {
   webPlayer.setInteracted();
@@ -174,6 +140,9 @@ const handleRemoteAuthenticated = async (credentials: {
     }
 
     // Update remote connection manager
+    if (!authManager.isGuestAccessSession()) {
+      remoteConnectionManager.rememberCurrentRemoteConnection();
+    }
     remoteConnectionManager.setAuthenticated(
       api.serverInfo.value?.server_id || undefined,
     );
@@ -192,6 +161,8 @@ const handleLocalConnect = async (serverAddress: string) => {
   }
   const { authManager } = await import("@/plugins/auth");
   authManager.setBaseUrl(serverAddress);
+  await httpProxyBridge.ensureReady();
+  await httpProxyBridge.setTransport(null);
   await api.initialize(serverAddress);
   isConnected.value = true;
 };

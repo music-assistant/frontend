@@ -8,7 +8,10 @@ const {
   guestType,
   mockInitializeCompanionIntegration,
   mockInitializeWebPlayerModeSync,
+  mockProxyEnsureReady,
+  mockProxySetTransport,
   mockPruneStaleProviderFilters,
+  mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
   storeMock,
@@ -29,6 +32,7 @@ const {
     getLibraryRadiosCount: vi.fn(),
     getLibraryTracksCount: vi.fn(),
     getProviderConfigs: vi.fn(),
+    initialize: vi.fn(),
     isRemoteConnection: { value: false },
     serverInfo: {
       value: {
@@ -47,7 +51,9 @@ const {
     isGuestAccessSession: vi.fn(() => guestType.value !== null),
     isMusicQuizGuest: vi.fn(() => guestType.value === "music_quiz"),
     isPartyGuest: vi.fn(() => guestType.value === "party"),
+    setBaseUrl: vi.fn(),
     setCurrentUser: vi.fn(),
+    setToken: vi.fn(),
   };
 
   return {
@@ -56,7 +62,10 @@ const {
     guestType,
     mockInitializeCompanionIntegration: vi.fn(),
     mockInitializeWebPlayerModeSync: vi.fn(),
+    mockProxyEnsureReady: vi.fn(),
+    mockProxySetTransport: vi.fn(),
     mockPruneStaleProviderFilters: vi.fn(),
+    mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
     storeMock: {
@@ -134,13 +143,16 @@ vi.mock("@/plugins/companion", () => ({
 
 vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
+    rememberCurrentRemoteConnection: mockRememberCurrentRemoteConnection,
     setAuthenticated: vi.fn(),
   },
 }));
 
 vi.mock("@/plugins/remote/http-proxy", () => ({
   httpProxyBridge: {
+    ensureReady: mockProxyEnsureReady,
     isReady: { value: true },
+    setTransport: mockProxySetTransport,
   },
 }));
 
@@ -190,7 +202,11 @@ vi.mock("@/layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue", () => ({
 }));
 
 vi.mock("@/views/Login.vue", () => ({
-  default: { template: "<div />" },
+  default: {
+    name: "Login",
+    emits: ["authenticated"],
+    template: "<div />",
+  },
 }));
 
 let wrapper: VueWrapper | undefined;
@@ -214,6 +230,7 @@ describe("App initialization", () => {
     });
     apiMock.fetchState.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
+    apiMock.initialize.mockResolvedValue(undefined);
     apiMock.getProviderConfigs.mockResolvedValue([{ enabled: true }]);
     for (const method of [
       apiMock.getLibraryAlbumsCount,
@@ -228,6 +245,8 @@ describe("App initialization", () => {
       method.mockResolvedValue(1);
     }
     mockInitializeWebPlayerModeSync.mockResolvedValue(undefined);
+    mockProxyEnsureReady.mockResolvedValue(undefined);
+    mockProxySetTransport.mockResolvedValue(undefined);
     mockPruneStaleProviderFilters.mockResolvedValue(undefined);
     storeMock.currentUser = undefined;
     storeMock.enabledPlugins = new Set<string>();
@@ -270,6 +289,7 @@ describe("App initialization", () => {
       expect(mockSetPreference).not.toHaveBeenCalled();
       expect(apiMock.fetchState).not.toHaveBeenCalled();
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
+      expect(mockRememberCurrentRemoteConnection).not.toHaveBeenCalled();
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
       expect(apiMock.fetchProviders).toHaveBeenCalledOnce();
       expectLibraryCountsNotCalled();
@@ -343,6 +363,59 @@ describe("App initialization", () => {
     expect(
       wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
     ).toBe(true);
+  });
+
+  it("remembers a temporary remote connection after regular login", async () => {
+    apiMock.state.value = "auth_required";
+    const { default: App } = await import("@/App.vue");
+    wrapper = shallowMount(App, {
+      global: {
+        stubs: {
+          RouterView: true,
+        },
+      },
+    });
+
+    wrapper.findComponent({ name: "Login" }).vm.$emit("authenticated", {
+      token: "regular-token",
+      user: {
+        preferences: {},
+        role: "user",
+        user_id: "user-id",
+        username: "regular-user",
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("clears proxy mode before connecting to a local server", async () => {
+    apiMock.state.value = "disconnected";
+    const { default: App } = await import("@/App.vue");
+    wrapper = shallowMount(App, {
+      global: {
+        stubs: {
+          RouterView: true,
+        },
+      },
+    });
+
+    wrapper
+      .findComponent({ name: "Login" })
+      .vm.$emit("local-connect", "http://music-assistant.local:8095");
+
+    await vi.waitFor(() => {
+      expect(apiMock.initialize).toHaveBeenCalledWith(
+        "http://music-assistant.local:8095",
+      );
+    });
+    expect(mockProxyEnsureReady).toHaveBeenCalledOnce();
+    expect(mockProxySetTransport).toHaveBeenCalledWith(null);
+    expect(mockProxySetTransport.mock.invocationCallOrder[0]).toBeLessThan(
+      apiMock.initialize.mock.invocationCallOrder[0],
+    );
   });
 });
 

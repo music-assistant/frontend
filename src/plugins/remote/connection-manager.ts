@@ -37,9 +37,14 @@ export interface StoredRemoteConnection {
   lastConnected?: number;
 }
 
+export interface RemoteConnectionOptions {
+  remember?: boolean;
+}
+
 const REMOTE_CONNECTIONS_STORAGE_KEY = "ma_remote_connections";
 const REMOTE_MODE_STORAGE_KEY = "ma_remote_mode";
 const CURRENT_REMOTE_ID_STORAGE_KEY = "ma_current_remote_id";
+const LEGACY_REMOTE_ID_STORAGE_KEY = "mass_remote_id";
 
 const DEFAULT_CONFIG: RemoteConnectionConfig = {
   signalingServerUrl: "wss://signaling.music-assistant.io/ws",
@@ -58,6 +63,7 @@ class RemoteConnectionManager {
 
   // Current transport
   private transport: ITransport | null = null;
+  private rememberCurrentConnection = true;
 
   // Stored connections for quick access
   public storedConnections = reactive<StoredRemoteConnection[]>([]);
@@ -98,6 +104,7 @@ class RemoteConnectionManager {
    * Set connection mode
    */
   setMode(mode: ConnectionMode): void {
+    this.rememberCurrentConnection = true;
     this.mode.value = mode;
     localStorage.setItem(REMOTE_MODE_STORAGE_KEY, mode);
   }
@@ -134,14 +141,24 @@ class RemoteConnectionManager {
   /**
    * Connect to a remote Music Assistant instance via WebRTC
    */
-  async connectRemote(remoteId: string): Promise<ITransport> {
-    this.setMode(ConnectionMode.REMOTE);
+  async connectRemote(
+    remoteId: string,
+    options: RemoteConnectionOptions = {},
+  ): Promise<ITransport> {
+    const remember = options.remember ?? true;
+    this.rememberCurrentConnection = remember;
+    if (remember) {
+      this.setMode(ConnectionMode.REMOTE);
+    } else {
+      this.mode.value = ConnectionMode.REMOTE;
+    }
     this.currentRemoteId.value = remoteId;
     this.state.value = RemoteConnectionState.CONNECTING;
     this.error.value = null;
 
-    // Store the remote ID
-    localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
+    if (remember) {
+      localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
+    }
 
     // Ensure the service worker is ready and controlling before proceeding
     // This prevents race conditions where images load before the SW can intercept them
@@ -161,17 +178,19 @@ class RemoteConnectionManager {
 
       // Set up HTTP proxy bridge for remote connections
       // This must be awaited to ensure SW has remote mode set before images load
-      await httpProxyBridge.setTransport(transport);
+      await httpProxyBridge.setTransport(transport, remoteId);
 
-      // Store successful connection
-      this.storeConnection(remoteId);
+      if (remember) {
+        localStorage.setItem(LEGACY_REMOTE_ID_STORAGE_KEY, remoteId);
+        this.storeConnection(remoteId);
+      }
 
       return transport;
     } catch (err) {
       this.state.value = RemoteConnectionState.FAILED;
       this.error.value =
         err instanceof Error ? err.message : "Connection failed";
-      localStorage.removeItem(CURRENT_REMOTE_ID_STORAGE_KEY);
+      if (remember) localStorage.removeItem(CURRENT_REMOTE_ID_STORAGE_KEY);
       throw err;
     }
   }
@@ -187,6 +206,7 @@ class RemoteConnectionManager {
     this.state.value = RemoteConnectionState.DISCONNECTED;
     this.currentRemoteId.value = null;
     this.serverName.value = null;
+    this.rememberCurrentConnection = true;
 
     // Clear HTTP proxy bridge
     httpProxyBridge.setTransport(null);
@@ -207,6 +227,19 @@ class RemoteConnectionManager {
   }
 
   /**
+   * Persist the active remote connection for future regular sessions.
+   */
+  rememberCurrentRemoteConnection(): void {
+    const remoteId = this.currentRemoteId.value;
+    if (this.rememberCurrentConnection || !remoteId) return;
+
+    this.setMode(ConnectionMode.REMOTE);
+    localStorage.setItem(CURRENT_REMOTE_ID_STORAGE_KEY, remoteId);
+    localStorage.setItem(LEGACY_REMOTE_ID_STORAGE_KEY, remoteId);
+    this.storeConnection(remoteId);
+  }
+
+  /**
    * Update state to authenticated
    */
   setAuthenticated(serverName?: string): void {
@@ -214,7 +247,7 @@ class RemoteConnectionManager {
     if (serverName) {
       this.serverName.value = serverName;
       // Update stored connection with server name
-      if (this.currentRemoteId.value) {
+      if (this.rememberCurrentConnection && this.currentRemoteId.value) {
         this.updateStoredConnection(this.currentRemoteId.value, { serverName });
       }
     }
@@ -224,7 +257,10 @@ class RemoteConnectionManager {
    * Get stored remote ID (for auto-reconnect)
    */
   getStoredRemoteId(): string | null {
-    return localStorage.getItem(CURRENT_REMOTE_ID_STORAGE_KEY);
+    return (
+      localStorage.getItem(CURRENT_REMOTE_ID_STORAGE_KEY) ||
+      localStorage.getItem(LEGACY_REMOTE_ID_STORAGE_KEY)
+    );
   }
 
   /**
@@ -232,6 +268,7 @@ class RemoteConnectionManager {
    */
   clearStoredRemoteId(): void {
     localStorage.removeItem(CURRENT_REMOTE_ID_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_REMOTE_ID_STORAGE_KEY);
   }
 
   /**

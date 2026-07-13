@@ -4,6 +4,10 @@
  */
 
 import { clearGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
+import {
+  clearGuestSessionStorage,
+  GUEST_TOKEN_STORAGE_KEY,
+} from "@/helpers/guest_session";
 import type { User } from "./api/interfaces";
 import { store } from "./store";
 
@@ -32,34 +36,8 @@ export class AuthManager {
   private baseUrl: string = "";
 
   constructor() {
-    this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (this.token) {
-      this.claims = this.decodeJWT(this.token);
-    }
+    this.loadStoredToken();
     if (!this.isGuestAccessSession()) clearGuestQuizAffinity();
-  }
-
-  /**
-   * Decode JWT payload without signature verification.
-   * Signature verification is the server's responsibility.
-   * This allows the frontend to read claims from the self-contained token.
-   */
-  private decodeJWT(token: string): JWTClaims | null {
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-      // Base64url decode the payload (middle part)
-      const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-      // Add padding so length is a multiple of 4 (required by atob)
-      let padded = payload;
-      while (padded.length % 4 !== 0) {
-        padded += "=";
-      }
-      const decoded = JSON.parse(atob(padded));
-      return decoded as JWTClaims;
-    } catch {
-      return null;
-    }
   }
 
   /**
@@ -107,13 +85,21 @@ export class AuthManager {
       : undefined;
     this.token = token;
     this.claims = this.decodeJWT(token);
+    if (this.isGuestAccessSession()) {
+      sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, token);
+      if (localStorage.getItem(TOKEN_STORAGE_KEY) === token) {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    } else {
+      clearGuestSessionStorage();
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    }
     const nextGuestIdentity = this.isGuestAccessSession()
       ? this.claims?.jti
       : undefined;
     if (!nextGuestIdentity || previousGuestIdentity !== nextGuestIdentity) {
       clearGuestQuizAffinity();
     }
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
   }
 
   /**
@@ -164,6 +150,32 @@ export class AuthManager {
   }
 
   /**
+   * End guest access while keeping any saved regular session.
+   */
+  clearGuestSession(): void {
+    clearGuestSessionStorage();
+    if (!this.isGuestAccessSession()) return;
+
+    this.restorePersistentToken();
+    store.currentUser = undefined;
+    clearGuestQuizAffinity();
+  }
+
+  /**
+   * Leave guest access and return to the full application.
+   */
+  leaveGuestSession(): void {
+    if (!this.isGuestAccessSession()) return;
+
+    this.clearGuestSession();
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.delete("join");
+    returnUrl.hash = "/discover";
+    window.history.replaceState({}, "", returnUrl);
+    window.location.reload();
+  }
+
+  /**
    * Clear authentication token, claims, and user
    */
   clearAuth(): void {
@@ -171,6 +183,7 @@ export class AuthManager {
     this.claims = null;
     store.currentUser = undefined;
     clearGuestQuizAffinity();
+    clearGuestSessionStorage();
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   }
 
@@ -178,6 +191,11 @@ export class AuthManager {
    * Logout current user
    */
   async logout(): Promise<void> {
+    if (this.isGuestAccessSession()) {
+      this.leaveGuestSession();
+      return;
+    }
+
     // Send logout command to server first (best effort)
     if (this.token) {
       try {
@@ -211,7 +229,77 @@ export class AuthManager {
     // Reload page to show Vue login screen (browser mode)
     window.location.reload();
   }
+
+  private loadStoredToken(): void {
+    const guestToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
+    if (guestToken) {
+      const guestClaims = this.decodeJWT(guestToken);
+      if (isGuestAccessClaims(guestClaims)) {
+        this.token = guestToken;
+        this.claims = guestClaims;
+        return;
+      }
+      clearGuestSessionStorage();
+    }
+
+    const persistentToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const persistentClaims = persistentToken
+      ? this.decodeJWT(persistentToken)
+      : null;
+    if (persistentToken && isGuestAccessClaims(persistentClaims)) {
+      sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, persistentToken);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+    this.token = persistentToken;
+    this.claims = persistentClaims;
+  }
+
+  private restorePersistentToken(): void {
+    const persistentToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const persistentClaims = persistentToken
+      ? this.decodeJWT(persistentToken)
+      : null;
+    if (persistentToken && isGuestAccessClaims(persistentClaims)) {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      this.token = null;
+      this.claims = null;
+      return;
+    }
+    this.token = persistentToken;
+    this.claims = persistentClaims;
+  }
+
+  /**
+   * Decode JWT payload without signature verification.
+   * Signature verification is the server's responsibility.
+   * This allows the frontend to read claims from the self-contained token.
+   */
+  private decodeJWT(token: string): JWTClaims | null {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      // Base64url decode the payload (middle part)
+      const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      // Add padding so length is a multiple of 4 (required by atob)
+      let padded = payload;
+      while (padded.length % 4 !== 0) {
+        padded += "=";
+      }
+      const decoded = JSON.parse(atob(padded));
+      return decoded as JWTClaims;
+    } catch {
+      return null;
+    }
+  }
 }
+
+function isGuestAccessClaims(claims: JWTClaims | null): boolean {
+  return (
+    claims?.username === "party_guest" ||
+    claims?.username === "music_quiz_guest"
+  );
+}
+
 // Export singleton instance
 export const authManager = new AuthManager();
 export default authManager;
