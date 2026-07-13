@@ -29,7 +29,7 @@
         "@tabler/icons-vue": "^3.44.0",
         "@tailwindcss/vite": "^4.3.2",
         "@tanstack/form-core": "1.33.0",
-        "@tanstack/vue-form": "^1.33.0",
+        "@tanstack/vue-form": "^1.33.2",
         "@tanstack/vue-table": "^8.21.3",
         "@tanstack/vue-virtual": "3.13.30",
         "@types/qrcode": "^1.5.6",
