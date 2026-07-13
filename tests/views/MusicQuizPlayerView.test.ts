@@ -11,6 +11,8 @@ const {
   mockListenInSetup,
   mockPrimeAudio,
   mockResolveMusicQuizDefinition,
+  mockToastError,
+  mockToastSuccess,
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
   mockGameAdapterSetup: vi.fn(),
@@ -18,6 +20,8 @@ const {
   mockListenInSetup: vi.fn(),
   mockPrimeAudio: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
+  mockToastError: vi.fn(),
+  mockToastSuccess: vi.fn(),
   mockUseMusicQuizPlayer: vi.fn(),
 }));
 
@@ -105,7 +109,8 @@ vi.mock("@/plugins/web_player", async () => {
 
 vi.mock("vue-sonner", () => ({
   toast: {
-    error: vi.fn(),
+    error: mockToastError,
+    success: mockToastSuccess,
   },
 }));
 
@@ -217,6 +222,8 @@ describe("MusicQuizPlayerView routing", () => {
     mockPrimeAudio.mockReturnValue(true);
     webPlayer.player_generation = 0;
     mockResolveMusicQuizDefinition.mockReset();
+    mockToastError.mockReset();
+    mockToastSuccess.mockReset();
     mockUseMusicQuizPlayer.mockReset();
     mockUseMusicQuizPlayer.mockReturnValue({
       info: ref(null),
@@ -399,6 +406,69 @@ describe("MusicQuizPlayerView routing", () => {
     ).toBe("providers.music_quiz.round_label 1/1");
     wrapper.unmount();
   });
+
+  it.each([
+    ["correct", true],
+    ["incorrect", false],
+  ] as const)(
+    "shows a toast for %s answers when the result is revealed",
+    async (_result, correct) => {
+      const state = ref({
+        ...playerState,
+        phase: "answering" as "answering" | "reveal",
+        you: {
+          ...playerState.you,
+          answer: {
+            suggestion_id: "one",
+            answered_at: 1,
+            correct: undefined as boolean | undefined,
+            points: undefined as number | undefined,
+          },
+        },
+      });
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        info: ref(null),
+        state,
+        playerId: ref("player-id"),
+        gameRemoved: ref(false),
+        busy: ref(false),
+        loading: ref(false),
+        currentRound: ref(currentRound),
+        join: vi.fn(),
+        submitAnswer: vi.fn(),
+        ready: vi.fn(),
+      });
+      const wrapper = mountView();
+
+      state.value = {
+        ...state.value,
+        phase: "reveal",
+        you: {
+          ...state.value.you,
+          answer: {
+            ...state.value.you.answer,
+            correct,
+            points: correct ? 7 : 0,
+          },
+        },
+      };
+      await nextTick();
+
+      const expectedToast = correct ? mockToastSuccess : mockToastError;
+      expect(expectedToast).toHaveBeenCalledOnce();
+      expect(expectedToast).toHaveBeenCalledWith(
+        correct
+          ? "providers.music_quiz.correct"
+          : "providers.music_quiz.incorrect",
+      );
+
+      state.value = { ...state.value };
+      await nextTick();
+      expect(expectedToast).toHaveBeenCalledOnce();
+      wrapper.unmount();
+    },
+  );
 
   it("enables Music Timeline ListenIn without fetching lyrics", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));

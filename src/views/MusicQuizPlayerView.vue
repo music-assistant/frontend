@@ -291,6 +291,28 @@ watch(
   },
 );
 
+watch(
+  [
+    () => activeState.value?.phase,
+    () => currentRound.value?.round_index,
+    () => activeState.value?.you.answer?.correct,
+  ],
+  ([phase, , correct]) => {
+    if (phase !== "reveal" || correct === undefined) return;
+    const message = $t(
+      correct
+        ? "providers.music_quiz.correct"
+        : "providers.music_quiz.incorrect",
+    );
+    if (correct) {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
+  },
+  { immediate: true },
+);
+
 async function handleJoin(name: string) {
   if (listenInEnabled.value) {
     listenInPrimedGeneration.value = webPlayer.primeAudio()
