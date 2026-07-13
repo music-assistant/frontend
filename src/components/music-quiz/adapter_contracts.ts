@@ -20,6 +20,10 @@ export interface MusicQuizSetupAdapterEmits {
   create: [request: MusicQuizCreateRequest];
 }
 
+export interface MusicQuizSetupAdapterSlots {
+  "before-sources": () => VNode[];
+}
+
 export interface MusicQuizPlayerGameAdapterProps<
   TState extends MusicQuizSupportedPersonalizedState =
     MusicQuizSupportedPersonalizedState,

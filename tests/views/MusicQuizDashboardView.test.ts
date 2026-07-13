@@ -119,7 +119,11 @@ describe("MusicQuizDashboardView", () => {
 
     await wrapper.get('[data-testid="new-game-empty"]').trigger("click");
 
-    expect(wrapper.find('[data-testid="setup-dialog"]').exists()).toBe(true);
+    const setupDialog = wrapper.get('[data-testid="setup-dialog"]');
+    expect(setupDialog.classes()).toEqual(
+      expect.arrayContaining(["sm:max-w-[calc(100%-2rem)]", "lg:max-w-3xl"]),
+    );
+    expect(setupDialog.classes()).not.toContain("sm:max-w-3xl");
     expect(wrapper.find('[data-testid="music-quiz-setup"]').exists()).toBe(
       true,
     );

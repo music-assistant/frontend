@@ -24,7 +24,11 @@
       </div>
     </div>
 
-    <div v-show="!busy" class="flex flex-col gap-2">
+    <div
+      class="flex-col gap-2"
+      :class="busy ? 'hidden' : 'flex'"
+      data-testid="music-quiz-setup-progress"
+    >
       <div class="flex items-center justify-between gap-3">
         <Button
           v-if="step > 1"
@@ -73,7 +77,11 @@
       </div>
     </section>
 
-    <section v-show="!busy && step === 2" class="flex flex-col gap-4">
+    <section
+      class="flex-col gap-4"
+      :class="!busy && step === 2 ? 'flex' : 'hidden'"
+      data-testid="music-quiz-configure-step"
+    >
       <div class="flex items-center gap-2">
         <component
           :is="selectedType.icon"
@@ -93,25 +101,6 @@
         :disabled="busy"
         @retry="emit('retryPlaybackOptions')"
       />
-      <Field
-        orientation="horizontal"
-        class="items-center justify-between gap-4 rounded-lg border p-4"
-      >
-        <div class="flex flex-col gap-1">
-          <FieldLabel for="quiz-include-similar-music">
-            {{ $t("providers.music_quiz.include_similar_music") }}
-          </FieldLabel>
-          <FieldDescription>
-            {{ $t("providers.music_quiz.include_similar_music_help") }}
-          </FieldDescription>
-        </div>
-        <Switch
-          id="quiz-include-similar-music"
-          v-model="includeSimilarMusic"
-          data-testid="quiz-include-similar-music"
-          :disabled="busy"
-        />
-      </Field>
       <KeepAlive v-if="selectedType">
         <component
           :is="
@@ -121,7 +110,29 @@
           :include-similar-music="includeSimilarMusic"
           :shared-config-valid="sharedConfigValid"
           @create="onConfigCreate"
-        />
+        >
+          <template #before-sources>
+            <Field
+              orientation="horizontal"
+              class="items-center justify-between gap-4 rounded-lg border p-4"
+            >
+              <div class="flex flex-col gap-1">
+                <FieldLabel for="quiz-include-similar-music">
+                  {{ $t("providers.music_quiz.include_similar_music") }}
+                </FieldLabel>
+                <FieldDescription>
+                  {{ $t("providers.music_quiz.include_similar_music_help") }}
+                </FieldDescription>
+              </div>
+              <Switch
+                id="quiz-include-similar-music"
+                v-model="includeSimilarMusic"
+                data-testid="quiz-include-similar-music"
+                :disabled="busy"
+              />
+            </Field>
+          </template>
+        </component>
       </KeepAlive>
     </section>
   </div>

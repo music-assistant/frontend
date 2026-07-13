@@ -161,7 +161,7 @@
     <Dialog v-model:open="showSetupDialog">
       <DialogContent
         data-testid="setup-dialog"
-        class="max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-w-3xl sm:p-6"
+        class="max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
       >
         <DialogHeader class="pr-8 text-left">
           <DialogTitle>{{ $t("providers.music_quiz.new_game") }}</DialogTitle>

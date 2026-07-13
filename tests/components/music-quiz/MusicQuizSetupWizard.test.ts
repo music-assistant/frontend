@@ -23,7 +23,7 @@ vi.mock("@/components/music-quiz/game_types", async () => {
         },
       },
       emits: ["create"],
-      setup(props, { emit }) {
+      setup(props, { emit, slots }) {
         const gameSetting = ref(0);
         return () =>
           h("div", [
@@ -35,6 +35,9 @@ vi.mock("@/components/music-quiz/game_types", async () => {
               },
               "Change setting",
             ),
+            h("div", { "data-testid": `options-${quizType}` }, "Game options"),
+            slots["before-sources"]?.(),
+            h("div", { "data-testid": `sources-${quizType}` }, "Music sources"),
             h(
               "span",
               { "data-testid": `setting-${quizType}` },
@@ -186,6 +189,50 @@ describe("MusicQuizSetupWizard", () => {
     expect(document.activeElement).toBe(chooseHeading?.element);
     wrapper.unmount();
   });
+
+  it("uses mutually exclusive display classes for wizard visibility", async () => {
+    const wrapper = mountWizard();
+    const progress = wrapper.get('[data-testid="music-quiz-setup-progress"]');
+    const configureStep = wrapper.get(
+      '[data-testid="music-quiz-configure-step"]',
+    );
+
+    expect(progress.classes()).toContain("flex");
+    expect(progress.classes()).not.toContain("hidden");
+    expect(configureStep.classes()).toContain("hidden");
+    expect(configureStep.classes()).not.toContain("flex");
+
+    await selectGame(wrapper, "game_type");
+
+    expect(configureStep.classes()).toContain("flex");
+    expect(configureStep.classes()).not.toContain("hidden");
+
+    await wrapper.setProps({ busy: true });
+
+    expect(progress.classes()).toContain("hidden");
+    expect(progress.classes()).not.toContain("flex");
+    expect(configureStep.classes()).toContain("hidden");
+    expect(configureStep.classes()).not.toContain("flex");
+  });
+
+  it.each(GAME_CASES)(
+    "places the shared source option next to $quizType music sources",
+    async ({ label, quizType }) => {
+      const wrapper = mountWizard({ availableQuizTypes: ["trivia"] });
+
+      await selectGame(wrapper, label);
+
+      const sourceSelector = wrapper.get(`[data-testid="sources-${quizType}"]`);
+      const includeSimilar = wrapper.get(
+        '[data-testid="quiz-include-similar-music"]',
+      );
+      expect(
+        sourceSelector.element.previousElementSibling?.contains(
+          includeSimilar.element,
+        ),
+      ).toBe(true);
+    },
+  );
 
   it.each(GAME_CASES)(
     "adds one shared playback payload without changing $quizType config",
@@ -402,9 +449,11 @@ describe("MusicQuizSetupWizard", () => {
     expect(status.text()).toContain("providers.music_quiz.preparing_game");
     expect(status.text()).toContain("providers.music_quiz.preparing_game_help");
     expect(document.activeElement).toBe(status.element);
-    expect(
-      wrapper.get('[data-testid="setting-guess_the_song"]').isVisible(),
-    ).toBe(false);
+    const configureStep = wrapper.get(
+      '[data-testid="music-quiz-configure-step"]',
+    );
+    expect(configureStep.classes()).toContain("hidden");
+    expect(configureStep.classes()).not.toContain("flex");
 
     await wrapper.setProps({ busy: false });
     expect(wrapper.get('[data-testid="setting-guess_the_song"]').text()).toBe(

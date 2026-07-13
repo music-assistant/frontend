@@ -111,6 +111,8 @@
       </Field>
     </div>
 
+    <slot name="before-sources" />
+
     <MusicQuizSourceSelector
       v-model="sourceUris"
       input-id="trivia-source-search"
@@ -132,6 +134,7 @@ import MusicQuizSourceSelector from "@/components/music-quiz/MusicQuizSourceSele
 import type {
   MusicQuizSetupAdapterEmits,
   MusicQuizSetupAdapterProps,
+  MusicQuizSetupAdapterSlots,
 } from "@/components/music-quiz/adapter_contracts";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -162,6 +165,7 @@ const MAX_SECONDS = 300;
 const props = withDefaults(defineProps<MusicQuizSetupAdapterProps>(), {
   sharedConfigValid: true,
 });
+defineSlots<MusicQuizSetupAdapterSlots>();
 const emit = defineEmits<MusicQuizSetupAdapterEmits>();
 
 const roundCount = ref(5);

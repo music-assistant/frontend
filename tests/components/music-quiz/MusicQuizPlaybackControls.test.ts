@@ -22,9 +22,13 @@ const PLAYBACK_OPTIONS = {
 describe("MusicQuizPlaybackControls", () => {
   it("provides responsive, labelled radio and speaker controls", () => {
     const wrapper = mountControls();
+    const fieldSet = wrapper.get('[data-slot="field-set"]');
     const radioGroup = wrapper.get('[data-slot="radio-group"]');
     const speaker = wrapper.get("#music-quiz-venue-player");
 
+    expect(fieldSet.classes()).toEqual(
+      expect.arrayContaining(["m-0", "min-w-0", "border-0", "p-0"]),
+    );
     expect(radioGroup.classes()).toEqual(
       expect.arrayContaining(["grid", "sm:grid-cols-2"]),
     );
