@@ -108,6 +108,31 @@ export const routes: RouteRecordRaw[] = [
           import(/* webpackChunkName: "discover" */ "@/views/HomeView.vue"),
       },
       {
+        path: "/ai-radio",
+        name: "ai-radio",
+        component: () =>
+          import(/* webpackChunkName: "ai-radio" */ "@/views/AIRadioView.vue"),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            await new Promise<void>((resolve) => {
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          if (!store.enabledPlugins.has("ai_radio")) {
+            return { name: "discover" };
+          }
+        },
+      },
+      {
         path: "/search",
         name: "search",
         component: () =>

@@ -301,13 +301,18 @@ describe("App initialization", () => {
       ProviderType.PLUGIN,
       "music_quiz",
     );
+    expect(apiMock.getProviderConfigs).toHaveBeenNthCalledWith(
+      3,
+      ProviderType.PLUGIN,
+      "ai_radio",
+    );
     expect(storeMock.enabledPlugins).toEqual(
-      new Set<string>(["party", "music_quiz"]),
+      new Set<string>(["party", "music_quiz", "ai_radio"]),
     );
     expect(mockInitializeWebPlayerModeSync).toHaveBeenCalledOnce();
 
     await signalProvidersUpdated();
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(3);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledTimes(6);
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledTimes(2);
   });
 
