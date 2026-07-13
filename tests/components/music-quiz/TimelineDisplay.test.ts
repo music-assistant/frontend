@@ -1,5 +1,5 @@
 import TimelineDisplay from "@/components/music-quiz/answer-types/timeline/TimelineDisplay.vue";
-import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelineEntry } from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import {
   afterAll,

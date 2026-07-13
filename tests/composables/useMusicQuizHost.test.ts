@@ -37,7 +37,7 @@ vi.mock("vue", async () => {
   };
 });
 
-vi.mock("@/composables/useMusicQuiz", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   getMusicQuiz: mockGetMusicQuiz,
   getAvailableMusicQuizTypes: mockGetAvailableMusicQuizTypes,
   getMusicQuizPlaybackOptions: mockGetMusicQuizPlaybackOptions,
@@ -71,8 +71,8 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 import { EventType } from "@/plugins/api/interfaces";
-import type { MusicQuizCreateRequest } from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+import type { MusicQuizCreateRequest } from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 
 const HOST_STATE = {
   quiz_type: "guess_the_song",

@@ -1,5 +1,5 @@
 import TimelinePlayerAnswer from "@/components/music-quiz/answer-types/timeline/TimelinePlayerAnswer.vue";
-import type { MusicQuizTimelineRound } from "@/composables/useMusicQuiz";
+import type { MusicQuizTimelineRound } from "@/composables/music-quiz/useMusicQuiz";
 import {
   anchor,
   baseRound,

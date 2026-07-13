@@ -269,7 +269,7 @@ import ListItem from "@/components/ListItem.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
-import { useBackgroundTasks } from "@/composables/useBackgroundTasks";
+import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {

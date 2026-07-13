@@ -19,7 +19,7 @@ import type {
 import type {
   MusicQuizTimelineHostState,
   MusicQuizTimelineRound,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 defineProps<
   MusicQuizPresentAnswerAdapterProps<

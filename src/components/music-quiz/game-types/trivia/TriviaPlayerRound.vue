@@ -22,8 +22,8 @@ import { Button } from "@/components/ui/button";
 import type {
   MusicQuizTriviaPersonalizedState,
   MusicQuizTriviaRound,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizRevealCountdown } from "@/composables/music-quiz/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import { Check } from "@lucide/vue";
 import { computed, ref, watch } from "vue";

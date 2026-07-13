@@ -4,7 +4,7 @@ const { mockSetupDebouncedSearch } = vi.hoisted(() => ({
   mockSetupDebouncedSearch: vi.fn(),
 }));
 
-vi.mock("@/composables/useSmartPlaylistSearchHelpers", () => ({
+vi.mock("@/composables/smart-playlist/useSmartPlaylistSearchHelpers", () => ({
   setupDebouncedSearch: mockSetupDebouncedSearch,
 }));
 
@@ -43,7 +43,7 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 import api from "@/plugins/api";
-import { useSmartPlaylistSeedItems } from "@/composables/useSmartPlaylistSeedItems";
+import { useSmartPlaylistSeedItems } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import type { Album, Track } from "@/plugins/api/interfaces";
 
 interface SearchFnArg {

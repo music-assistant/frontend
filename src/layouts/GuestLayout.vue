@@ -15,7 +15,7 @@
 import {
   guestEntryStateKey,
   useGuestEntryResolver,
-} from "@/composables/useGuestEntryResolver";
+} from "@/composables/guest/useGuestEntryResolver";
 import { computed, provide } from "vue";
 import { useTheme } from "vuetify";
 

@@ -186,8 +186,8 @@ import type {
   MusicQuizTimelinePersonalizedState,
   MusicQuizTimelineRound,
   MusicQuizTimelineBonusType,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizAnswerDeadline } from "@/composables/useMusicQuizAnswerDeadline";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizAnswerDeadline } from "@/composables/music-quiz/useMusicQuizAnswerDeadline";
 import { getMusicQuizRoundPlayers } from "@/helpers/music_quiz";
 import { $t } from "@/plugins/i18n";
 import { CircleCheck, CircleX, Send, SkipForward } from "@lucide/vue";

@@ -139,7 +139,7 @@ import {
   rowId,
   useAudioAnalysisFailures,
   type FailureRow,
-} from "@/composables/useAudioAnalysisFailures";
+} from "@/composables/audio-analysis/useAudioAnalysisFailures";
 import { formatRelativeTime } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";

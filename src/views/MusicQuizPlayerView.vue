@@ -131,12 +131,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMusicQuizCelebration } from "@/composables/useMusicQuizCelebration";
-import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
+import { useMusicQuizCelebration } from "@/composables/music-quiz/useMusicQuizCelebration";
+import { useMusicQuizPlayer } from "@/composables/music-quiz/useMusicQuizPlayer";
 import {
   isSupportedMusicQuiz,
   type MusicQuizAnswerSubmission,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
   getMusicQuizRoundScoreLabel,

@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SmartPlaylistMode } from "@/composables/useSmartPlaylistRulesForm";
+import type { SmartPlaylistMode } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import { $t } from "@/plugins/i18n";
 import { Check, Library, Sparkles } from "@lucide/vue";
 

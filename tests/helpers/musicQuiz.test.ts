@@ -1,7 +1,7 @@
 import type {
   MusicQuizGuessTheSongPublicState,
   MusicQuizTimelinePublicState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { getMusicQuizRoundScoreLabel } from "@/helpers/music_quiz";
 import { describe, expect, it, vi } from "vitest";
 

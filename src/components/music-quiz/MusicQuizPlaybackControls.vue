@@ -169,7 +169,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type {
   MusicQuizMode,
   MusicQuizPlaybackOptions,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import type { MusicQuizPlaybackSelection } from "@/helpers/music_quiz_playback";
 import { $t } from "@/plugins/i18n";
 import { LoaderCircle, RefreshCw, TriangleAlert } from "@lucide/vue";

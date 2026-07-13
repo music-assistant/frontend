@@ -3,7 +3,7 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/composables/useGuestEntryResolver", () => ({
+vi.mock("@/composables/guest/useGuestEntryResolver", () => ({
   guestEntryStateKey: Symbol("guest-entry-state"),
   useGuestEntryResolver: () => ({ state: ref("inactive") }),
 }));

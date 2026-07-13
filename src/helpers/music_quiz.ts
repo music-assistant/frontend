@@ -2,7 +2,7 @@ import type {
   MusicQuizPhase,
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t, i18n } from "@/plugins/i18n";
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";

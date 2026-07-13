@@ -28,7 +28,7 @@ import {
   type MusicQuizProviderEvent,
   type MusicQuizPublicState,
   type MusicQuizTriviaInfo,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 
 function unsupportedQuizType(value: string) {
   const quizType = parseMusicQuizType(value);

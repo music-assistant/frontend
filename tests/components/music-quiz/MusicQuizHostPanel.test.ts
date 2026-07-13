@@ -4,7 +4,7 @@ import type {
   MusicQuizGuessTheSongRound,
   MusicQuizHostPlayback,
   MusicQuizPhase,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
