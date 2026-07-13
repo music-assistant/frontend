@@ -21,7 +21,7 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-import { useSmartPlaylistGenres } from "@/composables/useSmartPlaylistGenres";
+import { useSmartPlaylistGenres } from "@/composables/smart-playlist/useSmartPlaylistGenres";
 
 describe("useSmartPlaylistGenres", () => {
   it("loads the genre list on mount and exposes options", async () => {

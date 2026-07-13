@@ -50,7 +50,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { MusicQuizPlayer } from "@/composables/useMusicQuiz";
+import type { MusicQuizPlayer } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Check, Clock } from "@lucide/vue";
 

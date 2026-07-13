@@ -71,7 +71,7 @@ import {
   MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
   useMusicQuizSources,
   type MusicQuizSourceItem,
-} from "@/composables/useMusicQuizSources";
+} from "@/composables/music-quiz/useMusicQuizSources";
 import { musicQuizSourceTypeLabel } from "@/helpers/music_quiz_sources";
 import {
   MediaType,

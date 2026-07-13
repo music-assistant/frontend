@@ -13,8 +13,8 @@ import {
   type MusicQuizInfo,
   type MusicQuizPersonalizedState,
   type MusicQuizPublicState,
-} from "@/composables/useMusicQuiz";
-import { createMusicQuizPlayerHeartbeat } from "@/composables/useMusicQuizPlayerHeartbeat";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { createMusicQuizPlayerHeartbeat } from "@/composables/music-quiz/useMusicQuizPlayerHeartbeat";
 import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,

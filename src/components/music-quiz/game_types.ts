@@ -24,7 +24,7 @@ import type {
   MusicQuizSupportedInfo,
   MusicQuizSupportedPublicState,
   MusicQuizType,
-} from "@/composables/useMusicQuiz";
+} from "@/composables/music-quiz/useMusicQuiz";
 import { Brain, Disc3, ListMusic } from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 

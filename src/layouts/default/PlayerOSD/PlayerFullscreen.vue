@@ -449,8 +449,8 @@ import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
-import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
-import { useLyricsOffset } from "@/composables/useLyricsOffset";
+import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime";
+import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {

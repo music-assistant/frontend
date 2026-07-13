@@ -227,8 +227,8 @@ import {
 import {
   isSupportedMusicQuiz,
   type MusicQuizCreateRequest,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 import {
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,

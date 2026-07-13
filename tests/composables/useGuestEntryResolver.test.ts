@@ -2,7 +2,7 @@ import {
   resolveGuestEntry,
   useGuestEntryResolver,
   type GuestEntryState,
-} from "@/composables/useGuestEntryResolver";
+} from "@/composables/guest/useGuestEntryResolver";
 import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { EventType } from "@/plugins/api/interfaces";
 import { mount } from "@vue/test-utils";

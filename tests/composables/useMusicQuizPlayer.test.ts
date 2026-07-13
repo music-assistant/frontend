@@ -60,7 +60,7 @@ vi.mock("vue", async () => {
   };
 });
 
-vi.mock("@/composables/useMusicQuiz", () => ({
+vi.mock("@/composables/music-quiz/useMusicQuiz", () => ({
   getMusicQuizInfo: mockGetMusicQuizInfo,
   getMusicQuizState: mockGetMusicQuizState,
   heartbeatMusicQuiz: mockHeartbeatMusicQuiz,
@@ -145,7 +145,7 @@ vi.mock("@/helpers/music_quiz_guest_state", () => ({
 }));
 
 import { EventType } from "@/plugins/api/interfaces";
-import { useMusicQuizPlayer } from "@/composables/useMusicQuizPlayer";
+import { useMusicQuizPlayer } from "@/composables/music-quiz/useMusicQuizPlayer";
 
 const originalVisibilityStateDescriptor = Object.getOwnPropertyDescriptor(
   document,

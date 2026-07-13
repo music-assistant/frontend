@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { Card, CardContent } from "@/components/ui/card";
-import type { MusicQuizTriviaRound } from "@/composables/useMusicQuiz";
+import type { MusicQuizTriviaRound } from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 
 withDefaults(

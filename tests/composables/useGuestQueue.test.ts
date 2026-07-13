@@ -31,7 +31,7 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 // Import after mocks so that composable uses the mocked modules
-import { useGuestQueue } from "@/composables/useGuestQueue";
+import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 
 describe("useGuestQueue", () => {
   beforeEach(() => {

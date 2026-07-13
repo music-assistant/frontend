@@ -1,5 +1,5 @@
 import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
-import type { RuleField } from "@/composables/useSmartPlaylistRulesForm";
+import type { RuleField } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import {
   Ban,
   CalendarRange,
