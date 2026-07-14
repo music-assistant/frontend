@@ -714,7 +714,7 @@ export function deleteMusicQuiz() {
   return api.sendCommand<null>("music_quiz/delete");
 }
 
-// Guest commands (any authenticated user; server validates guest username)
+// Participant game commands (available to any authenticated user)
 export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
   // Without the music_quiz provider loaded on the server, the command isn't
   // even registered ("Invalid or unsupported command") — and there can be no
@@ -770,7 +770,7 @@ export function readyMusicQuiz(player_id: string) {
   });
 }
 
-// Listen-in commands (Scope.PLAYERS_CONTROL + guest validation)
+// Listen-in commands (Scope.PLAYERS_CONTROL)
 export function listenInMusicQuiz(web_player_id: string) {
   return api.sendCommand<void>("music_quiz/listen_in", { web_player_id });
 }
