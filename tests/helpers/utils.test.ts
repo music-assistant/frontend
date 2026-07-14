@@ -19,6 +19,7 @@ import {
   type Player,
   PlayerType,
 } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -30,7 +31,7 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: {},
+  store: { companionPlayerId: undefined },
 }));
 
 vi.mock("@/plugins/breakpoint", () => ({
@@ -97,6 +98,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
 
 describe("groupMemberPickerVisible", () => {
   beforeEach(() => {
+    store.companionPlayerId = undefined;
     webPlayer.player_id = null;
   });
 
@@ -106,6 +108,16 @@ describe("groupMemberPickerVisible", () => {
       hide_in_ui: true,
     });
     webPlayer.player_id = player.player_id;
+
+    expect(groupMemberPickerVisible(player)).toBe(true);
+  });
+
+  it("shows the hidden companion player owned by this app", () => {
+    const player = createPlayer({
+      player_id: "local-companion-player",
+      hide_in_ui: true,
+    });
+    store.companionPlayerId = player.player_id;
 
     expect(groupMemberPickerVisible(player)).toBe(true);
   });
