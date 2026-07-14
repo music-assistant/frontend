@@ -7,7 +7,8 @@ import {
   type GuestQuizAffinity,
 } from "@/helpers/guest_quiz_affinity";
 import { consumeMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
-import api, { ConnectionState } from "@/plugins/api";
+import api from "@/plugins/api";
+import { waitForApiInitialization } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
 import {
@@ -200,21 +201,4 @@ function getGuestEntryPath(state: GuestEntryState): string | undefined {
   if (state === "party") return "/guest/party";
   if (state === "quiz-inactive" || state === "inactive") return "/guest";
   return undefined;
-}
-
-async function waitForApiInitialization() {
-  if (api.state.value === ConnectionState.INITIALIZED) return;
-
-  await new Promise<void>((resolve) => {
-    const unwatch = watch(
-      () => api.state.value,
-      (newState) => {
-        if (newState === ConnectionState.INITIALIZED) {
-          unwatch();
-          resolve();
-        }
-      },
-      { immediate: true },
-    );
-  });
 }
