@@ -37,53 +37,20 @@
       >
         {{ qrText }}
       </p>
-      <ButtonGroup class="qr-actions">
-        <Button
-          type="button"
-          variant="ghost-outline"
-          class="qr-action"
-          data-testid="party-invitation-primary-action"
-          :disabled="sharing"
-          @click="
-            nativeShareAvailable ? shareInvitation() : copyUrlToClipboard()
-          "
-        >
-          <LoaderCircle v-if="sharing" class="size-4 animate-spin" />
-          <Share2 v-else-if="nativeShareAvailable" class="size-4" />
-          <Copy v-else class="size-4" />
-          {{
-            $t(
-              nativeShareAvailable
-                ? "providers.party.share_invitation"
-                : "providers.party.copy_link",
-            )
-          }}
-        </Button>
-        <DropdownMenu v-if="nativeShareAvailable">
-          <DropdownMenuTrigger as-child>
-            <Button
-              type="button"
-              variant="ghost-outline"
-              size="icon"
-              class="qr-action"
-              data-testid="party-invitation-menu"
-              :aria-label="$t('providers.party.more_share_options')"
-              :disabled="sharing"
-            >
-              <ChevronDown class="size-4" aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              data-testid="party-invitation-copy"
-              @click="copyUrlToClipboard"
-            >
-              <Copy class="size-4" />
-              {{ $t("providers.party.copy_link") }}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </ButtonGroup>
+      <InvitationShareActions
+        ref="shareActions"
+        class="qr-actions"
+        variant="ghost-outline"
+        :join-link="qrCodeUrl"
+        :title="shareTitle"
+        :description="shareDescription"
+        :copy-label="$t('providers.party.copy_link')"
+        :copied-label="$t('providers.party.link_copy_success')"
+        :more-options-label="$t('providers.party.more_share_options')"
+        :share-label="$t('providers.party.share_invitation')"
+        :share-failed-message="$t('providers.party.share_failed')"
+        @copied="handleCopyResult"
+      />
     </div>
     <div v-else class="qr-error">
       <AlertCircle :size="64" />
@@ -94,39 +61,15 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import InvitationShareActions from "@/components/InvitationShareActions.vue";
 import { Spinner } from "@/components/ui/spinner";
 import { usePartyConfig } from "@/composables/usePartyConfig";
-import { createPartyInvitationFile } from "@/helpers/party_share";
-import { copyToClipboard } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import {
-  AlertCircle,
-  Check,
-  ChevronDown,
-  Copy,
-  LoaderCircle,
-  Share2,
-} from "@lucide/vue";
+import { AlertCircle, Check } from "@lucide/vue";
 import QRCode from "qrcode";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  shallowRef,
-  watch,
-} from "vue";
-import { toast } from "vue-sonner";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -158,29 +101,29 @@ const shareDescription = computed(
     partyConfig.value?.qr_text?.trim() ||
     $t("providers.party.share_description"),
 );
-const logoUrl = new URL("@/assets/logo/logo.png", import.meta.url).href;
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrContainer = ref<HTMLElement | null>(null);
+const shareActions = ref<InstanceType<typeof InvitationShareActions> | null>(
+  null,
+);
 const qrCodeUrl = ref<string>("");
 const guestAccessEnabled = ref<boolean>(false);
 const loading = ref(true);
 const qrSize = ref(320);
 const copyFeedback = ref<string>("");
 const copySucceeded = ref(false);
-const nativeShareAvailable = ref(false);
-const sharing = ref(false);
-const invitationFile = shallowRef<File | null>(null);
 let copyFeedbackTimeout: ReturnType<typeof setTimeout> | undefined;
-let invitationGeneration = 0;
 let resizeObserver: ResizeObserver | null = null;
 let unsubProviders: (() => void) | undefined;
 let unsubCoreState: (() => void) | undefined;
 let unmounted = false;
 
-async function copyUrlToClipboard() {
-  if (!qrCodeUrl.value) return;
-  const success = await copyToClipboard(qrCodeUrl.value);
+function copyUrlToClipboard() {
+  void shareActions.value?.copyLink();
+}
+
+function handleCopyResult(success: boolean) {
   copySucceeded.value = success;
   copyFeedback.value = success
     ? $t("providers.party.link_copy_success")
@@ -189,36 +132,6 @@ async function copyUrlToClipboard() {
   copyFeedbackTimeout = setTimeout(() => {
     copyFeedback.value = "";
   }, 2000);
-}
-
-async function shareInvitation() {
-  const share = navigator.share;
-  if (typeof share !== "function" || !qrCodeUrl.value) {
-    await copyUrlToClipboard();
-    return;
-  }
-
-  const shareData: ShareData = {
-    title: shareTitle.value,
-    text: shareDescription.value,
-    url: qrCodeUrl.value,
-  };
-  const file = invitationFile.value;
-  if (file) {
-    const richShareData = { ...shareData, files: [file] };
-    if (canShare(richShareData)) shareData.files = [file];
-  }
-
-  sharing.value = true;
-  try {
-    await share.call(navigator, shareData);
-  } catch (error) {
-    if (isShareCancellation(error)) return;
-    console.error("Failed to share party invitation:", error);
-    toast.error($t("providers.party.share_failed"));
-  } finally {
-    sharing.value = false;
-  }
 }
 
 // Render QR code when canvas mounts (after v-if switches to the qr-display branch)
@@ -234,12 +147,7 @@ watch(
   },
 );
 
-watch([qrCodeUrl, shareTitle, shareDescription], () => {
-  void prepareInvitationFile();
-});
-
 onMounted(async () => {
-  nativeShareAvailable.value = typeof navigator.share === "function";
   await generateQRCode();
   if (unmounted) return;
 
@@ -284,7 +192,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   unmounted = true;
-  invitationGeneration++;
   if (copyFeedbackTimeout) clearTimeout(copyFeedbackTimeout);
   resizeObserver?.disconnect();
   unsubProviders?.();
@@ -342,56 +249,6 @@ async function generateQRCode() {
     emit("available", guestAccessEnabled.value);
   }
 }
-
-async function prepareInvitationFile() {
-  const generation = ++invitationGeneration;
-  invitationFile.value = null;
-  if (!qrCodeUrl.value || !supportsFileSharing()) return;
-
-  try {
-    const file = await createPartyInvitationFile({
-      description: shareDescription.value,
-      joinLink: qrCodeUrl.value,
-      logoUrl,
-      title: shareTitle.value,
-    });
-    if (generation === invitationGeneration) {
-      invitationFile.value = file;
-    }
-  } catch (error) {
-    if (generation === invitationGeneration) {
-      console.error("Failed to create party invitation image:", error);
-    }
-  }
-}
-
-function supportsFileSharing() {
-  if (
-    !nativeShareAvailable.value ||
-    typeof navigator.canShare !== "function" ||
-    typeof File !== "function"
-  ) {
-    return false;
-  }
-
-  const testFile = new File([""], "music-assistant-party.png", {
-    type: "image/png",
-  });
-  return canShare({ files: [testFile] });
-}
-
-function canShare(data: ShareData) {
-  try {
-    return navigator.canShare?.(data) ?? false;
-  } catch (error) {
-    console.error("Failed to check native share support:", error);
-    return false;
-  }
-}
-
-function isShareCancellation(error: unknown) {
-  return error instanceof Error && error.name === "AbortError";
-}
 </script>
 
 <style scoped>
@@ -444,13 +301,13 @@ function isShareCancellation(error: unknown) {
   margin-top: 0.25rem;
 }
 
-.qr-action {
+.qr-actions :deep([data-slot="button"]) {
   border-color: var(--qr-color);
   background: rgba(127, 127, 127, 0.12);
   color: var(--qr-color);
 }
 
-.qr-action:hover {
+.qr-actions :deep([data-slot="button"]:hover) {
   background: rgba(127, 127, 127, 0.28);
   color: var(--qr-color);
 }

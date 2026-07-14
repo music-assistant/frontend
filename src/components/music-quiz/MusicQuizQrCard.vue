@@ -18,30 +18,27 @@
       >
         {{ $t("providers.music_quiz.qr_unavailable") }}
       </p>
-      <Button type="button" variant="outline" @click="copyLink">
-        <Copy v-if="!copied" class="size-4" />
-        <Check v-else class="size-4" />
-        {{
-          copied
-            ? $t("providers.music_quiz.copied")
-            : $t("providers.music_quiz.copy_link")
-        }}
-      </Button>
+      <InvitationShareActions
+        :join-link="joinLink"
+        :title="$t('providers.music_quiz.share_title')"
+        :description="$t('providers.music_quiz.share_description')"
+        :copy-label="$t('providers.music_quiz.copy_link')"
+        :copied-label="$t('providers.music_quiz.copied')"
+        :copy-failed-message="$t('providers.music_quiz.copy_join_link_failed')"
+        :more-options-label="$t('providers.music_quiz.more_share_options')"
+        :share-label="$t('providers.music_quiz.share_invitation')"
+        :share-failed-message="$t('providers.music_quiz.share_failed')"
+      />
     </CardContent>
   </Card>
 </template>
 
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
+import InvitationShareActions from "@/components/InvitationShareActions.vue";
 import { Card, CardContent } from "@/components/ui/card";
 import { renderQrCode } from "@/helpers/qr";
-import { copyToClipboard } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
-import { Check, Copy } from "@lucide/vue";
-import { onBeforeUnmount, ref, watch } from "vue";
-import { toast } from "vue-sonner";
-
-const COPIED_RESET_MS = 1600;
+import { ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -53,9 +50,7 @@ const props = withDefaults(
 );
 
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
-const copied = ref(false);
 const qrError = ref(false);
-let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 
 async function renderQr() {
   if (!qrCanvas.value || !props.joinLink) return;
@@ -68,24 +63,7 @@ async function renderQr() {
   }
 }
 
-async function copyLink() {
-  if (!props.joinLink) return;
-  copied.value = await copyToClipboard(props.joinLink);
-  if (!copied.value) {
-    toast.error($t("providers.music_quiz.copy_join_link_failed"));
-    return;
-  }
-  if (copiedTimeout) clearTimeout(copiedTimeout);
-  copiedTimeout = setTimeout(() => {
-    copied.value = false;
-  }, COPIED_RESET_MS);
-}
-
 watch([qrCanvas, () => props.joinLink, () => props.size], () => renderQr(), {
   immediate: true,
-});
-
-onBeforeUnmount(() => {
-  if (copiedTimeout) clearTimeout(copiedTimeout);
 });
 </script>

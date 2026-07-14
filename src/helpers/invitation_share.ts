@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 
-export interface PartyInvitationDetails {
+export interface InvitationDetails {
   description: string;
   joinLink: string;
   logoUrl: string;
@@ -8,8 +8,8 @@ export interface PartyInvitationDetails {
 }
 
 /** Create a branded PNG invitation for sharing. */
-export async function createPartyInvitationFile(
-  details: PartyInvitationDetails,
+export async function createInvitationFile(
+  details: InvitationDetails,
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   canvas.width = CARD_WIDTH;
@@ -27,7 +27,7 @@ export async function createPartyInvitationFile(
   drawInvitation(context, logo, qrCanvas, details);
 
   const blob = await canvasToBlob(canvas);
-  return new File([blob], "music-assistant-party.png", {
+  return new File([blob], "music-assistant-invitation.png", {
     type: "image/png",
   });
 }
@@ -58,7 +58,7 @@ function drawInvitation(
   context: CanvasRenderingContext2D,
   logo: HTMLImageElement,
   qrCanvas: HTMLCanvasElement,
-  details: PartyInvitationDetails,
+  details: InvitationDetails,
 ) {
   drawBackground(context);
 
@@ -251,7 +251,7 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
       if (blob) {
         resolve(blob);
       } else {
-        reject(new Error("Could not create the party invitation image"));
+        reject(new Error("Could not create the invitation image"));
       }
     }, "image/png");
   });

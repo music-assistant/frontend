@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   canShare: vi.fn(),
   copyToClipboard: vi.fn(),
-  createPartyInvitationFile: vi.fn(),
+  createInvitationFile: vi.fn(),
   partyConfig: { value: null as Record<string, unknown> | null },
   sendCommand: vi.fn(),
   share: vi.fn(),
@@ -18,8 +18,8 @@ vi.mock("@/composables/usePartyConfig", () => ({
   usePartyConfig: () => ({ config: mocks.partyConfig }),
 }));
 
-vi.mock("@/helpers/party_share", () => ({
-  createPartyInvitationFile: mocks.createPartyInvitationFile,
+vi.mock("@/helpers/invitation_share", () => ({
+  createInvitationFile: mocks.createInvitationFile,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -84,7 +84,7 @@ describe("PartyQR", () => {
     setNavigatorProperty("share", mocks.share);
     setNavigatorProperty("canShare", mocks.canShare);
 
-    invitationFile = new File(["image"], "music-assistant-party.png", {
+    invitationFile = new File(["image"], "music-assistant-invitation.png", {
       type: "image/png",
     });
     mocks.partyConfig.value = {
@@ -93,9 +93,7 @@ describe("PartyQR", () => {
     };
     mocks.canShare.mockReset().mockReturnValue(true);
     mocks.copyToClipboard.mockReset().mockResolvedValue(true);
-    mocks.createPartyInvitationFile
-      .mockReset()
-      .mockResolvedValue(invitationFile);
+    mocks.createInvitationFile.mockReset().mockResolvedValue(invitationFile);
     mocks.sendCommand.mockReset().mockResolvedValue(JOIN_LINK);
     mocks.share.mockReset().mockResolvedValue(undefined);
     mocks.subscribe.mockReset().mockReturnValue(vi.fn());
@@ -113,7 +111,7 @@ describe("PartyQR", () => {
     const wrapper = mount(PartyQR);
     await flushPromises();
 
-    expect(mocks.createPartyInvitationFile).toHaveBeenCalledWith({
+    expect(mocks.createInvitationFile).toHaveBeenCalledWith({
       description: "Bring your requests",
       joinLink: JOIN_LINK,
       logoUrl: expect.stringContaining("logo"),
@@ -121,7 +119,7 @@ describe("PartyQR", () => {
     });
 
     await wrapper
-      .get('[data-testid="party-invitation-primary-action"]')
+      .get('[data-testid="invitation-share-primary"]')
       .trigger("click");
     await flushPromises();
 
@@ -139,10 +137,10 @@ describe("PartyQR", () => {
     const wrapper = mount(PartyQR);
     await flushPromises();
 
-    await wrapper.get('[data-testid="party-invitation-menu"]').trigger("click");
+    await wrapper.get('[data-testid="invitation-share-menu"]').trigger("click");
     await flushPromises();
     const copyAction = document.querySelector<HTMLElement>(
-      '[data-testid="party-invitation-copy"]',
+      '[data-testid="invitation-share-copy"]',
     );
     expect(copyAction).not.toBeNull();
 
@@ -154,14 +152,25 @@ describe("PartyQR", () => {
     wrapper.unmount();
   });
 
+  it("keeps the QR code itself as a copy shortcut", async () => {
+    const wrapper = mount(PartyQR);
+    await flushPromises();
+
+    await wrapper.get(".qr-link").trigger("click");
+    await flushPromises();
+
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith(JOIN_LINK);
+    wrapper.unmount();
+  });
+
   it("shares the title, description, and link when files are unsupported", async () => {
     mocks.canShare.mockReturnValue(false);
     const wrapper = mount(PartyQR);
     await flushPromises();
 
-    expect(mocks.createPartyInvitationFile).not.toHaveBeenCalled();
+    expect(mocks.createInvitationFile).not.toHaveBeenCalled();
     await wrapper
-      .get('[data-testid="party-invitation-primary-action"]')
+      .get('[data-testid="invitation-share-primary"]')
       .trigger("click");
     await flushPromises();
 
@@ -179,11 +188,9 @@ describe("PartyQR", () => {
     const wrapper = mount(PartyQR);
     await flushPromises();
 
-    const action = wrapper.get(
-      '[data-testid="party-invitation-primary-action"]',
-    );
+    const action = wrapper.get('[data-testid="invitation-share-primary"]');
     expect(action.text()).toBe("Copy link");
-    expect(wrapper.find('[data-testid="party-invitation-menu"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="invitation-share-menu"]').exists()).toBe(
       false,
     );
 
@@ -205,7 +212,7 @@ describe("PartyQR", () => {
     await flushPromises();
 
     await wrapper
-      .get('[data-testid="party-invitation-primary-action"]')
+      .get('[data-testid="invitation-share-primary"]')
       .trigger("click");
     await flushPromises();
 
@@ -224,12 +231,12 @@ describe("PartyQR", () => {
     await flushPromises();
 
     await wrapper
-      .get('[data-testid="party-invitation-primary-action"]')
+      .get('[data-testid="invitation-share-primary"]')
       .trigger("click");
     await flushPromises();
 
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to share party invitation:",
+      "Failed to share invitation:",
       error,
     );
     expect(mocks.toastError).toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { createPartyInvitationFile } from "@/helpers/party_share";
+import { createInvitationFile } from "@/helpers/invitation_share";
 import QRCode from "qrcode";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,7 +10,7 @@ vi.mock("qrcode", () => ({
 
 const mockToCanvas = vi.mocked(QRCode.toCanvas);
 
-describe("createPartyInvitationFile", () => {
+describe("createInvitationFile", () => {
   const addColorStop = vi.fn();
   const context = {
     beginPath: vi.fn(),
@@ -66,7 +66,7 @@ describe("createPartyInvitationFile", () => {
   });
 
   it("renders a branded PNG containing the QR and invitation details", async () => {
-    const file = await createPartyInvitationFile({
+    const file = await createInvitationFile({
       description: "Bring your requests",
       joinLink: "https://example.com/party?join=abc",
       logoUrl: "/assets/logo.png",
@@ -103,7 +103,7 @@ describe("createPartyInvitationFile", () => {
       540,
       1198,
     );
-    expect(file.name).toBe("music-assistant-party.png");
+    expect(file.name).toBe("music-assistant-invitation.png");
     expect(file.type).toBe("image/png");
   });
 });
