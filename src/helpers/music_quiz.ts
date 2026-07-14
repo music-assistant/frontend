@@ -93,25 +93,30 @@ export function isMusicQuizWinner(
   );
 }
 
+export function getMusicQuizRoundScore(
+  state: MusicQuizSupportedPublicState,
+  playerName: string,
+) {
+  if (state.phase !== "reveal" || !state.current_round) return undefined;
+  const player = state.players.find((p) => p.name === playerName);
+  if (!player) return undefined;
+  if (player.active_from_round > state.current_round.round_index) {
+    return undefined;
+  }
+  if (!player.last_answer) return undefined;
+  return "placement" in player.last_answer
+    ? player.last_answer.placement.points +
+        (player.last_answer.artist?.points ?? 0) +
+        (player.last_answer.title?.points ?? 0)
+    : player.last_answer.points;
+}
+
 export function getMusicQuizRoundScoreLabel(
   state: MusicQuizSupportedPublicState,
   playerName: string,
 ) {
-  if (state.phase !== "reveal" || !state.current_round) return "";
-  const player = state.players.find((p) => p.name === playerName);
-  if (!player) return "";
-  if (player.active_from_round > state.current_round.round_index) {
-    return "";
-  }
-  if (!player.last_answer) return "";
-  const points =
-    "placement" in player.last_answer
-      ? player.last_answer.placement.points +
-        (player.last_answer.artist?.points ?? 0) +
-        (player.last_answer.title?.points ?? 0)
-      : player.last_answer.points;
-  if (points !== undefined) return `(+${points})`;
-  return "";
+  const points = getMusicQuizRoundScore(state, playerName);
+  return points === undefined ? "" : `(+${points})`;
 }
 
 export function getMusicQuizErrorMessage(err: unknown, fallback = "") {

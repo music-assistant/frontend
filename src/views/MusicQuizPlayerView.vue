@@ -139,6 +139,7 @@ import {
 } from "@/composables/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
+  getMusicQuizRoundScore,
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
@@ -262,6 +263,11 @@ const playerRoundScoreLabel = computed(() =>
     ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
     : "",
 );
+const playerRoundScore = computed(() =>
+  activeState.value
+    ? getMusicQuizRoundScore(activeState.value, activeState.value.you.name)
+    : undefined,
+);
 
 const phaseText = computed(() => {
   const currentState = activeState.value;
@@ -289,6 +295,32 @@ watch(
   (phase) => {
     if (phase === "finished") void celebrate();
   },
+);
+
+watch(
+  [
+    () => activeState.value?.phase,
+    () => currentRound.value?.round_index,
+    () => activeState.value?.you.answer?.correct,
+    () => playerRoundScore.value,
+  ],
+  ([phase, , correct, points]) => {
+    if (phase !== "reveal" || correct === undefined || points === undefined) {
+      return;
+    }
+    const result = $t(
+      correct
+        ? "providers.music_quiz.correct"
+        : "providers.music_quiz.incorrect",
+    );
+    const message = `${result} +${points}`;
+    if (correct) {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
+  },
+  { immediate: true },
 );
 
 async function handleJoin(name: string) {
