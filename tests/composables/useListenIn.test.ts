@@ -6,11 +6,13 @@ const {
   mockSendCommand,
   mockSubscribeMulti,
   mockPrimeAudio,
+  mockIsGuestAccessSession,
   unmountCallbacks,
 } = vi.hoisted(() => ({
   mockSendCommand: vi.fn(),
   mockSubscribeMulti: vi.fn(() => () => {}),
   mockPrimeAudio: vi.fn(),
+  mockIsGuestAccessSession: vi.fn(() => true),
   unmountCallbacks: [] as Array<() => void>,
 }));
 
@@ -30,6 +32,10 @@ vi.mock("@/plugins/api", () => ({
     sendCommand: mockSendCommand,
     subscribe_multi: mockSubscribeMulti,
   },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { isGuestAccessSession: mockIsGuestAccessSession },
 }));
 
 vi.mock("@/plugins/web_player", async () => {
@@ -89,6 +95,8 @@ describe("useListenIn", () => {
     mockSubscribeMulti.mockReturnValue(() => {});
     mockPrimeAudio.mockReset();
     mockPrimeAudio.mockReturnValue(true);
+    mockIsGuestAccessSession.mockReset();
+    mockIsGuestAccessSession.mockReturnValue(true);
     unmountCallbacks.length = 0;
     webPlayer.player_id = "wp-1";
   });
@@ -100,10 +108,24 @@ describe("useListenIn", () => {
 
       await checkCanListenIn();
 
-      expect(mockSendCommand).toHaveBeenCalledWith("party/can_listen_in", {
-        web_player_id: "wp-1",
-      });
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "party/can_listen_in",
+        { web_player_id: "wp-1" },
+        { suppressGlobalError: true },
+      );
       expect(canListenIn.value).toBe(true);
+    });
+
+    it("stays unavailable and skips the command outside a guest session", async () => {
+      // can_listen_in is guest-only on the server; other roles get rejected.
+      mockIsGuestAccessSession.mockReturnValue(false);
+      mockSendCommand.mockResolvedValue(true);
+      const { canListenIn, checkCanListenIn } = create();
+
+      await checkCanListenIn();
+
+      expect(mockSendCommand).not.toHaveBeenCalled();
+      expect(canListenIn.value).toBe(false);
     });
 
     it("stays unavailable and skips the command without a web player", async () => {
@@ -442,9 +464,11 @@ describe("useListenIn", () => {
       await nextTick();
 
       expect(isListeningIn.value).toBe(false);
-      expect(mockSendCommand).toHaveBeenCalledWith("party/can_listen_in", {
-        web_player_id: "wp-2",
-      });
+      expect(mockSendCommand).toHaveBeenCalledWith(
+        "party/can_listen_in",
+        { web_player_id: "wp-2" },
+        { suppressGlobalError: true },
+      );
     });
 
     it("ignores a stale enable completion after player replacement", async () => {

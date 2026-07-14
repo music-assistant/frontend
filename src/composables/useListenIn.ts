@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { webPlayer } from "@/plugins/web_player";
 
 let nextListenInOperationId = 0;
@@ -80,10 +81,18 @@ export function useListenIn(options: UseListenInOptions) {
       canListenIn.value = false;
       return;
     }
+    // The server's can_listen_in endpoints are guest-only and reject any
+    // other role, so don't even ask outside a guest access session.
+    if (!authManager.isGuestAccessSession()) {
+      canListenIn.value = false;
+      return;
+    }
     try {
       const available = await api.sendCommand<boolean>(
         `${domain}/can_listen_in`,
         { web_player_id: playerId },
+        // Availability is best-effort; failures are handled below.
+        { suppressGlobalError: true },
       );
       if (
         disposed ||

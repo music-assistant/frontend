@@ -69,11 +69,22 @@ describe("guest entry decisions", () => {
     apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
 
     await expect(resolveGuestEntry()).resolves.toBe("quiz");
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("music_quiz/info");
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "music_quiz/info",
+      undefined,
+      { suppressGlobalError: true },
+    );
     expect(getStoredAffinity()).toEqual({
       version: 1,
       guestIdentity: "guest-token-1",
     });
+  });
+
+  it("treats a music quiz info failure as no active quiz", async () => {
+    setProviders("party", "music_quiz");
+    apiMock.sendCommand.mockRejectedValue(new Error("boom"));
+
+    await expect(resolveGuestEntry()).resolves.toBe("party");
   });
 
   it("keeps an entered Music Quiz ahead of Party after it disappears", async () => {

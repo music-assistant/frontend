@@ -715,8 +715,19 @@ export function deleteMusicQuiz() {
 }
 
 // Guest commands (any authenticated user; server validates guest username)
-export function getMusicQuizInfo() {
-  return api.sendCommand<MusicQuizInfo | null>("music_quiz/info");
+export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
+  // Without the music_quiz provider loaded on the server, the command isn't
+  // even registered ("Invalid or unsupported command") — and there can be no
+  // active quiz, so don't bother the server.
+  const hasMusicQuiz = Object.values(api.providers).some(
+    (provider) => provider.domain === "music_quiz",
+  );
+  if (!hasMusicQuiz) return Promise.resolve(null);
+  // Callers treat failures as "no quiz available" and surface their own
+  // messaging, so skip the global error toast.
+  return api.sendCommand<MusicQuizInfo | null>("music_quiz/info", undefined, {
+    suppressGlobalError: true,
+  });
 }
 
 export function joinMusicQuiz(name: string) {

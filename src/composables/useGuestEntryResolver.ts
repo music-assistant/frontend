@@ -184,7 +184,9 @@ async function resolveGuestEntryState(
   const hasMusicQuiz = providerDomains.has("music_quiz");
 
   if (hasMusicQuiz) {
-    const game = await getMusicQuizInfo();
+    // Best-effort: an info failure must not strand the resolver in its
+    // loading state, so treat it the same as "no active quiz".
+    const game = await getMusicQuizInfo().catch(() => null);
     if (game) return "quiz";
   }
   if (quizAffinity.active) return "quiz-inactive";
