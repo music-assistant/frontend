@@ -8,6 +8,7 @@ import { WebSocketTransport } from "../remote/websocket-transport";
 import { getDeviceName } from "./helpers";
 import {
   type Album,
+  type AudioProcessingChain,
   type Artist,
   type AuthToken,
   type BackgroundTask,
@@ -58,6 +59,11 @@ import {
   SoundEffect,
   UserRole,
 } from "./interfaces";
+import {
+  clearAudioProcessingSnapshots,
+  replaceAudioProcessingSnapshot,
+  supportsAudioProcessing,
+} from "./audioProcessing";
 
 const DEBUG = process.env.NODE_ENV === "development";
 
@@ -86,6 +92,9 @@ export class MusicAssistantApi {
   public serverInfo = ref<ServerInfoMessage>();
   public players = reactive<{ [player_id: string]: Player }>({});
   public queues = reactive<{ [queue_id: string]: PlayerQueue }>({});
+  public audioProcessingChains = reactive<{
+    [queue_id: string]: AudioProcessingChain;
+  }>({});
   public queueElapsedTime = reactive<{
     [queue_id: string]: {
       elapsed_time: number;
@@ -202,6 +211,7 @@ export class MusicAssistantApi {
       // Handle specific state transitions
       if (state === "reconnecting") {
         // Transport is attempting to reconnect
+        clearAudioProcessingSnapshots(this.audioProcessingChains);
         this.state.value = ConnectionState.RECONNECTING;
         this.signalEvent({
           event: EventType.DISCONNECTED,
@@ -213,6 +223,7 @@ export class MusicAssistantApi {
         setTimeout(() => {
           if (this.transportState.value === "failed") {
             // Still failed after brief wait - this is permanent failure
+            clearAudioProcessingSnapshots(this.audioProcessingChains);
             this.state.value = ConnectionState.FAILED;
             this.signalEvent({
               event: EventType.DISCONNECTED,
@@ -226,6 +237,7 @@ export class MusicAssistantApi {
         // Use nextTick to allow reconnecting state to be set first
         setTimeout(() => {
           if (this.transportState.value === "disconnected") {
+            clearAudioProcessingSnapshots(this.audioProcessingChains);
             this.state.value = ConnectionState.DISCONNECTED;
             this.signalEvent({
               event: EventType.DISCONNECTED,
@@ -389,6 +401,7 @@ export class MusicAssistantApi {
     // Clear reactive state
     Object.keys(this.players).forEach((key) => delete this.players[key]);
     Object.keys(this.queues).forEach((key) => delete this.queues[key]);
+    clearAudioProcessingSnapshots(this.audioProcessingChains);
     Object.keys(this.queueElapsedTime).forEach(
       (key) => delete this.queueElapsedTime[key],
     );
@@ -1482,6 +1495,15 @@ export class MusicAssistantApi {
     return this.sendCommand("player_queues/all");
   }
 
+  public getAudioProcessingChain(
+    queue_id: string,
+  ): Promise<AudioProcessingChain | null> {
+    if (!this.supportsAudioProcessing) return Promise.resolve(null);
+    return this.sendCommand("player_queues/audio_processing_chain", {
+      queue_id,
+    });
+  }
+
   public getPlayerQueueItems(
     queue_id: string,
     limit: number,
@@ -2400,6 +2422,12 @@ export class MusicAssistantApi {
           };
         }
       }
+    } else if (msg.event == EventType.AUDIO_PROCESSING_UPDATED) {
+      replaceAudioProcessingSnapshot(
+        this.audioProcessingChains,
+        msg.object_id ?? "",
+        msg.data as AudioProcessingChain | null | undefined,
+      );
     } else if (msg.event == EventType.PLAYER_ADDED) {
       const player = msg.data as Player;
       this.players[player.player_id] = player;
@@ -2411,6 +2439,7 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.PLAYER_REMOVED) {
       delete this.players[msg.object_id!];
       delete this.queues[msg.object_id!];
+      delete this.audioProcessingChains[msg.object_id!];
       delete this.queueElapsedTime[msg.object_id!];
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
@@ -2507,6 +2536,10 @@ export class MusicAssistantApi {
       (this.serverInfo.value?.schema_version ?? 0) >=
       TRANSLATIONS_SCHEMA_VERSION
     );
+  }
+
+  public get supportsAudioProcessing(): boolean {
+    return supportsAudioProcessing(this.serverInfo.value?.schema_version);
   }
 
   /**

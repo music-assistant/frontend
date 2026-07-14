@@ -800,6 +800,111 @@
                 "fixed_gain": "Volume normalization is active based on fixed gain correction."
             }
         },
+        "audio_processing": {
+            "unknown": "Unknown",
+            "unknown_format": "Unknown format",
+            "source_format": "Source: {0}",
+            "server_input_format": "Server input: {0}",
+            "shared_input_format": "Shared processing input: {0}",
+            "shared_output_format": "Shared processing output: {0}",
+            "path_input_format": "Output path input: {0}",
+            "handoff_format": "Provider handoff: {0}",
+            "output_format": "Final output: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-bit",
+            "channel_count": "{0} channels",
+            "bit_rate": "{0} kbps",
+            "pcm": "PCM",
+            "float_pcm_32": "32-bit float PCM",
+            "float_pcm_64": "64-bit float PCM",
+            "normalization": "Volume normalization: {0}",
+            "measurement_source": "Measurement: {0}",
+            "target_lufs": "Target level: {0} LUFS",
+            "measured_lufs": "Measured loudness: {0} LUFS",
+            "applied_gain_db": "Applied gain: {0} dB",
+            "target_true_peak_dbtp": "True-peak target: {0} dBTP",
+            "target_loudness_range_lu": "Loudness range target: {0} LU",
+            "tempo": "Playback speed: {0}x",
+            "crossfade": "Crossfade: {0} · {1}",
+            "planned_duration": "Planned duration: {0} seconds",
+            "actual_duration": "Actual duration: {0} seconds",
+            "from_queue_item": "From queue item: {0}",
+            "to_queue_item": "To queue item: {0}",
+            "reason": "Reason: {0}",
+            "overlay": "Overlay: {0} at {1}%",
+            "channels": "Channel routing: {0}",
+            "limiter_enabled": "Limiter enabled",
+            "limiter_enabled_threshold": "Limiter enabled ({0} dBFS)",
+            "limiter_disabled": "Limiter disabled",
+            "resampling": "Resampling: {0}",
+            "dithering": "Dithering: {0}",
+            "bit_perfect": "Bit-perfect output",
+            "not_bit_perfect": "Processed output",
+            "destination_unknown": "Destination {0}",
+            "destination_unavailable": "Destination unavailable",
+            "state": {
+                "pending": "Pending",
+                "ready": "Ready",
+                "unknown": "State unknown"
+            },
+            "quality": {
+                "low": "Low quality",
+                "standard": "Standard quality",
+                "lossless": "Lossless",
+                "hi_res": "Hi-res",
+                "unknown": "Quality unknown"
+            },
+            "normalization_mode": {
+                "disabled": "Disabled",
+                "dynamic": "Dynamic",
+                "measurement_only": "Measured loudness",
+                "fallback_fixed_gain": "Fallback fixed gain",
+                "fixed_gain": "Fixed gain",
+                "fallback_dynamic": "Fallback dynamic"
+            },
+            "measurement": {
+                "track": "Track",
+                "album": "Album",
+                "live": "Live",
+                "fallback": "Fallback"
+            },
+            "crossfade_mode": {
+                "smart": "Smart",
+                "standard": "Standard",
+                "disabled": "Disabled"
+            },
+            "crossfade_state": {
+                "pending": "Pending",
+                "applied": "Applied",
+                "bypassed": "Bypassed"
+            },
+            "dsp_state": {
+                "enabled": "DSP active",
+                "disabled": "DSP disabled",
+                "disabled_by_unsupported_group": "DSP unavailable for this group",
+                "unknown": "DSP state unknown"
+            },
+            "channel_mode": {
+                "stereo": "Stereo",
+                "mono": "Mono",
+                "left": "Left channel",
+                "right": "Right channel"
+            },
+            "dithering_method": {
+                "triangular_hp": "High-pass triangular"
+            },
+            "reason_code": {
+                "fixed_gain": "Fixed gain configured",
+                "format_change_requires_restart": "Format change requires a stream restart",
+                "insufficient_audio": "Not enough audio to apply the crossfade",
+                "measurement_unavailable": "Loudness measurement unavailable",
+                "next_item_unavailable": "Next item unavailable",
+                "not_applicable": "Not applicable",
+                "processing_failed": "Processing failed",
+                "gapless_playback_unsupported": "Gapless playback unsupported",
+                "unknown": "Unknown reason"
+            }
+        },
         "click_to_expand": "Click to show all players",
         "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player.",
         "more_info": "More information",

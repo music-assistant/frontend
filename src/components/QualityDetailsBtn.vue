@@ -1,6 +1,6 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="streamDetails">
+  <Popover v-if="detailsAvailable">
     <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
@@ -34,7 +34,10 @@
       }"
       @open-auto-focus.prevent
     >
-      <StreamDetailsChain :stream-details="streamDetails" />
+      <StreamDetailsChain
+        :audio-processing-chain="source.audioProcessingChain"
+        :stream-details="source.streamDetails"
+      />
     </PopoverContent>
   </Popover>
 </template>
@@ -51,35 +54,46 @@ import StreamDetailsChain from "@/components/StreamDetailsChain.vue";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 import {
-  QualityTier,
+  qualityTierRangeLabel,
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
+import {
+  selectAudioProcessingSource,
+  useAudioProcessingChain,
+} from "@/composables/useAudioProcessingChain";
 
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
 
+const activeQueue = computed(() => store.activePlayerQueue);
 const streamDetails = computed(
-  () => store.activePlayerQueue?.current_item?.streamdetails,
+  () => activeQueue.value?.current_item?.streamdetails,
 );
 
-const { maxOutputQualityTier } = useStreamQuality(streamDetails);
+const { chain, isSupported } = useAudioProcessingChain(activeQueue);
+const source = computed(() =>
+  selectAudioProcessingSource(
+    isSupported.value,
+    chain.value,
+    streamDetails.value,
+  ),
+);
+const detailsAvailable = computed(
+  () => !!source.value.audioProcessingChain || !!source.value.streamDetails,
+);
 
-// two-letter quality label shown inside the trigger button (LQ/SQ/HQ/HR)
+const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
+  () => source.value.streamDetails,
+  () => source.value.audioProcessingChain,
+);
+
 const qualityLabel = computed(() => {
-  switch (maxOutputQualityTier.value) {
-    case QualityTier.LOW:
-      return "LQ";
-    case QualityTier.GOOD:
-      return "SQ";
-    case QualityTier.LOSSLESS:
-      return "HQ";
-    case QualityTier.HIRES:
-      return "HR";
-    default:
-      return "";
-  }
+  return qualityTierRangeLabel(
+    minOutputQualityTier.value,
+    maxOutputQualityTier.value,
+  );
 });
 
 // disable the trigger when there is no active queue with items

@@ -1,15 +1,14 @@
 /**
- * Reactive stream-quality tiers derived from a queue item's stream details.
+ * Derive reactive quality tiers from a processing snapshot or legacy stream details.
  *
- * Shared by the quality trigger button (which shows the highest output tier as
- * a short label and colour) and the audio signal-chain diagram (which shows the
- * input tier and the per-player output tiers). Pass the stream details as a ref
- * or getter; every tier recomputes when it changes.
+ * The authoritative snapshot always wins when supplied.
  */
 
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import {
+  type AudioProcessingChain,
   type AudioFormat,
+  AudioQuality,
   ContentType,
   type StreamDetails,
 } from "@/plugins/api/interfaces";
@@ -76,10 +75,65 @@ export function qualityTierToColor(tier: QualityTier) {
   }
 }
 
+export function qualityTierToLabel(tier: QualityTier) {
+  switch (tier) {
+    case QualityTier.LOW:
+      return "LQ";
+    case QualityTier.GOOD:
+      return "SQ";
+    case QualityTier.LOSSLESS:
+      return "HQ";
+    case QualityTier.HIRES:
+      return "HR";
+    default:
+      return "";
+  }
+}
+
+export function qualityTierRangeLabel(
+  minimumTier: QualityTier,
+  maximumTier: QualityTier,
+): string {
+  const maximum = qualityTierToLabel(maximumTier);
+  const minimum = qualityTierToLabel(minimumTier);
+  if (
+    !maximum ||
+    !minimum ||
+    minimumTier === QualityTier.UNKNOWN ||
+    minimumTier === maximumTier
+  ) {
+    return maximum;
+  }
+  return `${minimum}-${maximum}`;
+}
+
+export function audioQualityToTier(quality: AudioQuality | string | undefined) {
+  switch (quality) {
+    case AudioQuality.LOW:
+      return QualityTier.LOW;
+    case AudioQuality.STANDARD:
+      return QualityTier.GOOD;
+    case AudioQuality.LOSSLESS:
+      return QualityTier.LOSSLESS;
+    case AudioQuality.HI_RES:
+      return QualityTier.HIRES;
+    default:
+      return QualityTier.UNKNOWN;
+  }
+}
+
 export function useStreamQuality(
   streamDetails: MaybeRefOrGetter<StreamDetails | undefined>,
+  audioProcessingChain: MaybeRefOrGetter<
+    AudioProcessingChain | undefined
+  > = undefined,
 ) {
   const inputQualityTier = computed(() => {
+    const chain = toValue(audioProcessingChain);
+    if (chain) {
+      return audioQualityToTier(chain.input?.fidelity?.quality);
+    }
+
     const sd = toValue(streamDetails);
     if (!sd || sd.audio_format.content_type === ContentType.UNKNOWN)
       return QualityTier.UNKNOWN;
@@ -103,6 +157,18 @@ export function useStreamQuality(
   });
 
   const outputQualityTiers = computed(() => {
+    const chain = toValue(audioProcessingChain);
+    if (chain) {
+      const tiers: Record<string, QualityTier> = {};
+      for (const output of chain.outputs ?? []) {
+        const tier = audioQualityToTier(output.fidelity?.quality);
+        for (const playerId of output.player_ids ?? []) {
+          tiers[playerId] = tier;
+        }
+      }
+      return tiers;
+    }
+
     const sd = toValue(streamDetails);
     const tiers: Record<string, QualityTier> = {};
     if (!sd?.dsp) {
@@ -134,6 +200,10 @@ export function useStreamQuality(
   });
 
   const combinedOutputQualityTiers = computed(() => {
+    if (toValue(audioProcessingChain)) {
+      return { ...outputQualityTiers.value };
+    }
+
     // like outputQualityTiers, but limited by the input quality
     const sd = toValue(streamDetails);
     const tiers: Record<string, QualityTier> = {};
@@ -154,11 +224,21 @@ export function useStreamQuality(
   });
 
   const minOutputQualityTier = computed(() => {
+    const chain = toValue(audioProcessingChain);
+    if (chain) {
+      return audioQualityToTier(chain.fidelity?.min_output_quality);
+    }
+
     const tiers = Object.values(combinedOutputQualityTiers.value);
     return tiers.length ? Math.min(...tiers) : QualityTier.UNKNOWN;
   });
 
   const maxOutputQualityTier = computed(() => {
+    const chain = toValue(audioProcessingChain);
+    if (chain) {
+      return audioQualityToTier(chain.fidelity?.max_output_quality);
+    }
+
     const tiers = Object.values(combinedOutputQualityTiers.value);
     return tiers.length ? Math.max(...tiers) : QualityTier.UNKNOWN;
   });

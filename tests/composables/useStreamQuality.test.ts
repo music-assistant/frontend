@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { ref } from "vue";
 import {
+  audioQualityToTier,
   isContentTypeLossless,
   isHiResFormat,
   isPcm,
   QualityTier,
+  qualityTierRangeLabel,
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
 import {
+  type AudioProcessingChain,
+  AudioQuality,
   type AudioFormat,
   ContentType,
   type DSPDetails,
@@ -101,6 +105,17 @@ describe("useStreamQuality format helpers", () => {
     expect(qualityTierToColor(QualityTier.LOW)).toBe("orange");
     expect(qualityTierToColor(QualityTier.UNKNOWN)).toBe("gray");
   });
+
+  it("maps authoritative quality values and renders a min-max badge", () => {
+    expect(audioQualityToTier(AudioQuality.STANDARD)).toBe(QualityTier.GOOD);
+    expect(audioQualityToTier("future")).toBe(QualityTier.UNKNOWN);
+    expect(qualityTierRangeLabel(QualityTier.LOW, QualityTier.HIRES)).toBe(
+      "LQ-HR",
+    );
+    expect(
+      qualityTierRangeLabel(QualityTier.LOSSLESS, QualityTier.LOSSLESS),
+    ).toBe("HQ");
+  });
 });
 
 describe("useStreamQuality input tier", () => {
@@ -155,6 +170,74 @@ describe("useStreamQuality output tiers", () => {
     );
     expect(maxOutputQualityTier.value).toBe(QualityTier.HIRES);
     expect(minOutputQualityTier.value).toBe(QualityTier.LOW);
+  });
+
+  it("uses authoritative fidelity and top-level min/max without legacy merging", () => {
+    const legacy = makeStream(FLAC_HIRES, {
+      p1: makeDsp(FLAC_HIRES),
+      p2: makeDsp(FLAC_HIRES),
+    });
+    const chain: AudioProcessingChain = {
+      queue_id: "queue-1",
+      queue_item_id: "item-1",
+      revision: 1,
+      input: {
+        fidelity: { quality: AudioQuality.LOW },
+      },
+      outputs: [
+        {
+          player_ids: ["p1"],
+          fidelity: { quality: AudioQuality.STANDARD },
+        },
+        {
+          player_ids: ["p2"],
+          fidelity: { quality: AudioQuality.HI_RES },
+        },
+      ],
+      fidelity: {
+        min_output_quality: AudioQuality.LOW,
+        max_output_quality: AudioQuality.HI_RES,
+      },
+    };
+
+    const quality = useStreamQuality(ref(legacy), ref(chain));
+
+    expect(quality.inputQualityTier.value).toBe(QualityTier.LOW);
+    expect(quality.outputQualityTiers.value).toEqual({
+      p1: QualityTier.GOOD,
+      p2: QualityTier.HIRES,
+    });
+    expect(quality.combinedOutputQualityTiers.value).toEqual({
+      p1: QualityTier.GOOD,
+      p2: QualityTier.HIRES,
+    });
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.LOW);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.HIRES);
+  });
+
+  it("keeps unknown authoritative fidelity unknown", () => {
+    const chain: AudioProcessingChain = {
+      queue_id: "queue-1",
+      queue_item_id: "item-1",
+      revision: 1,
+      input: { fidelity: { quality: AudioQuality.UNKNOWN } },
+      outputs: [
+        {
+          player_ids: ["p1"],
+          fidelity: { quality: AudioQuality.UNKNOWN },
+        },
+      ],
+      fidelity: {
+        min_output_quality: AudioQuality.UNKNOWN,
+        max_output_quality: AudioQuality.UNKNOWN,
+      },
+    };
+    const quality = useStreamQuality(ref(undefined), ref(chain));
+
+    expect(quality.inputQualityTier.value).toBe(QualityTier.UNKNOWN);
+    expect(quality.outputQualityTiers.value.p1).toBe(QualityTier.UNKNOWN);
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.UNKNOWN);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.UNKNOWN);
   });
 });
 

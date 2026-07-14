@@ -3,7 +3,11 @@
        (curves/dots/dotted branches), the right column is each stage of the
        chain (input -> processing -> per-player output). The two columns share
        the --sd-row rhythm so rows and rail stay aligned. -->
-  <TooltipProvider v-if="streamDetails" :delay-duration="200">
+  <AudioProcessingDetails
+    v-if="audioProcessingChain"
+    :chain="audioProcessingChain"
+  />
+  <TooltipProvider v-else-if="streamDetails" :delay-duration="200">
     <div class="flex">
       <div>
         <!-- Input header -->
@@ -554,6 +558,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   Tooltip,
@@ -565,15 +570,15 @@ import { AlertCircle, AudioLines, Info, SlidersHorizontal } from "@lucide/vue";
 import api from "@/plugins/api";
 import {
   ContentType,
+  type AudioProcessingChain,
   type DSPDetails,
-  type DSPFilter,
-  DSPFilterType,
   DSPState,
   type Player,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { areDspDetailsEqual, dspFilterText } from "@/helpers/audioProcessing";
 import {
   isPcm,
   QualityTier,
@@ -581,7 +586,10 @@ import {
   useStreamQuality,
 } from "@/composables/useStreamQuality";
 
-const props = defineProps<{ streamDetails?: StreamDetails }>();
+const props = defineProps<{
+  audioProcessingChain?: AudioProcessingChain;
+  streamDetails?: StreamDetails;
+}>();
 
 const { inputQualityTier, combinedOutputQualityTiers } = useStreamQuality(
   () => props.streamDetails,
@@ -639,9 +647,7 @@ const dsp_grouped = computed(() => {
   const grouped: { dsp: DSPDetails; player_id: string; players: string[] }[] =
     [];
   for (const [player_id, dsp] of Object.entries(props.streamDetails.dsp)) {
-    const identical_dsp = grouped.find(
-      (g) => JSON.stringify(g.dsp) === JSON.stringify(dsp),
-    );
+    const identical_dsp = grouped.find((g) => areDspDetailsEqual(g.dsp, dsp));
     if (identical_dsp) {
       identical_dsp.players.push(player_id);
     } else {
@@ -717,19 +723,6 @@ const outputProtocolDomain = function (player: Player) {
     }
   }
   return player.provider.split("--")[0];
-};
-
-const dspFilterText = function (filter: DSPFilter) {
-  let text = $t("settings.dsp.types." + filter.type);
-  if (filter.type === DSPFilterType.PARAMETRIC_EQ) {
-    const enabledBandsCount = filter.bands.filter(
-      (band) => band.enabled,
-    ).length;
-    if (enabledBandsCount === 1)
-      text += ` (${$t("streamdetails.eq_band_count_singular")})`;
-    else text += ` (${$t("streamdetails.eq_band_count", [enabledBandsCount])})`;
-  }
-  return text;
 };
 </script>
 
