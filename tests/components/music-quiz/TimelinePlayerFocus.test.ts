@@ -82,7 +82,7 @@ describe("Timeline player focus", () => {
 
     const controls = wrapper.get('[data-testid="timeline-post-placement"]');
     const timeline = wrapper.get(
-      'ol[aria-label="providers.music_quiz.timeline"]',
+      'ol[aria-label="providers.music_quiz.timeline_order"]',
     );
     expect(
       controls.element.compareDocumentPosition(timeline.element) &
