@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockGameAdapterSetup,
+  mockGetMusicQuizRoundScore,
   mockGetTrackLyrics,
   mockListenInSetup,
   mockPrimeAudio,
@@ -16,6 +17,7 @@ const {
   mockUseMusicQuizPlayer,
 } = vi.hoisted(() => ({
   mockGameAdapterSetup: vi.fn(),
+  mockGetMusicQuizRoundScore: vi.fn(),
   mockGetTrackLyrics: vi.fn(),
   mockListenInSetup: vi.fn(),
   mockPrimeAudio: vi.fn(),
@@ -68,6 +70,7 @@ vi.mock("@/composables/useMusicQuizCelebration", () => ({
 
 vi.mock("@/helpers/music_quiz", () => ({
   getMusicQuizErrorMessage: () => "",
+  getMusicQuizRoundScore: mockGetMusicQuizRoundScore,
   getMusicQuizRoundScoreLabel: () => "",
   getMusicQuizWinnerText: () => "",
   rankMusicQuizPlayers: () => [],
@@ -216,6 +219,7 @@ describe("MusicQuizPlayerView routing", () => {
 
   beforeEach(() => {
     mockGameAdapterSetup.mockReset();
+    mockGetMusicQuizRoundScore.mockReset();
     mockGetTrackLyrics.mockReset();
     mockListenInSetup.mockReset();
     mockPrimeAudio.mockReset();
@@ -413,6 +417,8 @@ describe("MusicQuizPlayerView routing", () => {
   ] as const)(
     "shows a toast for %s answers when the result is revealed",
     async (_result, correct) => {
+      const points = correct ? 7 : 0;
+      mockGetMusicQuizRoundScore.mockReturnValue(points);
       const state = ref({
         ...playerState,
         phase: "answering" as "answering" | "reveal",
@@ -449,7 +455,7 @@ describe("MusicQuizPlayerView routing", () => {
           answer: {
             ...state.value.you.answer,
             correct,
-            points: correct ? 7 : 0,
+            points,
           },
         },
       };
@@ -458,9 +464,11 @@ describe("MusicQuizPlayerView routing", () => {
       const expectedToast = correct ? mockToastSuccess : mockToastError;
       expect(expectedToast).toHaveBeenCalledOnce();
       expect(expectedToast).toHaveBeenCalledWith(
-        correct
-          ? "providers.music_quiz.correct"
-          : "providers.music_quiz.incorrect",
+        `${
+          correct
+            ? "providers.music_quiz.correct"
+            : "providers.music_quiz.incorrect"
+        } +${points}`,
       );
 
       state.value = { ...state.value };
