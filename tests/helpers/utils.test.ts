@@ -2,6 +2,7 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
+  groupMemberPickerVisible,
   hexToRgb,
   kebabize,
   markdownToHtml,
@@ -12,8 +13,14 @@ import {
   sleep,
   truncateString,
 } from "@/helpers/utils";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
-import { describe, expect, it, vi } from "vitest";
+import {
+  IdentifierType,
+  type MediaItemPalette,
+  type Player,
+  PlayerType,
+} from "@/plugins/api/interfaces";
+import { webPlayer } from "@/plugins/web_player";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -47,6 +54,72 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
 }));
+
+function createPlayer(overrides: Partial<Player> = {}): Player {
+  return {
+    player_id: "player",
+    provider: "test",
+    type: PlayerType.PLAYER,
+    name: "Player",
+    available: true,
+    device_info: {
+      model: "Test",
+      manufacturer: "Test",
+      identifiers: {
+        [IdentifierType.MAC_ADDRESS]: "",
+        [IdentifierType.SERIAL_NUMBER]: "",
+        [IdentifierType.UUID]: "",
+        [IdentifierType.IP_ADDRESS]: "",
+        [IdentifierType.UNKNOWN]: "",
+      },
+    },
+    supported_features: [],
+    can_group_with: [],
+    enabled: true,
+    group_members: [],
+    static_group_members: [],
+    source_list: [],
+    sound_mode_list: [],
+    options: [],
+    group_volume: null,
+    group_volume_muted: null,
+    hide_in_ui: false,
+    icon: "speaker",
+    power_control: "power",
+    volume_control: "volume",
+    mute_control: "mute",
+    needs_setup: false,
+    output_protocols: [],
+    active_output_protocol: null,
+    ...overrides,
+  };
+}
+
+describe("groupMemberPickerVisible", () => {
+  beforeEach(() => {
+    webPlayer.player_id = null;
+  });
+
+  it("shows the hidden web player owned by this browser", () => {
+    const player = createPlayer({
+      player_id: "local-web-player",
+      hide_in_ui: true,
+    });
+    webPlayer.player_id = player.player_id;
+
+    expect(groupMemberPickerVisible(player)).toBe(true);
+  });
+
+  it("keeps unrelated hidden players out of the picker", () => {
+    const player = createPlayer({
+      player_id: "remote-web-player",
+      hide_in_ui: true,
+    });
+    webPlayer.player_id = "local-web-player";
+
+    expect(groupMemberPickerVisible(player)).toBe(false);
+  });
+});
 
 describe("formatDuration", () => {
   it("formats seconds correctly", () => {
