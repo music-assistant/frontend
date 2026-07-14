@@ -52,10 +52,17 @@ export interface ListItemEmits {
 
 export const useListItem = (props: ListItemProps) => {
   const listItemProps = computed(() => {
-    const { variant, showMenuBtn, ...vuetifyProps } = props;
+    const { variant, showMenuBtn, link, value, ...vuetifyProps } = props;
 
     const baseProps = {
       ...vuetifyProps,
+      ...(link ? { link } : {}),
+      // value of false/null would register every item under the same ID in
+      // Vuetify's nested registry ("Multiple nodes with the same ID"); omit
+      // it so Vuetify falls back to a unique uid per item.
+      ...(value !== false && value !== undefined && value !== null
+        ? { value }
+        : {}),
       "aria-label": props["aria-label"],
     };
 
@@ -104,5 +111,4 @@ export const useListItem = (props: ListItemProps) => {
 export const defaultListItemProps = {
   variant: "default" as const,
   showMenuBtn: false,
-  link: false,
 };

@@ -119,6 +119,46 @@ describe("useListItem", () => {
     expect(listItemProps.value).not.toHaveProperty("showMenuBtn");
   });
 
+  it("omits value when false so v-list-items don't share a nested ID", () => {
+    // Passing value: false to every v-list-item makes Vuetify's nested
+    // registry log "Multiple nodes with the same ID" for each collision.
+    const props: ListItemProps = { variant: "default", value: false };
+    const { listItemProps } = useListItem(props);
+
+    expect(listItemProps.value).not.toHaveProperty("value");
+  });
+
+  it("omits value when undefined", () => {
+    const props: ListItemProps = { variant: "default" };
+    const { listItemProps } = useListItem(props);
+
+    expect(listItemProps.value).not.toHaveProperty("value");
+  });
+
+  it("passes falsy-but-valid values through (0, empty string)", () => {
+    expect(
+      useListItem({ variant: "default", value: 0 }).listItemProps.value.value,
+    ).toBe(0);
+    expect(
+      useListItem({ variant: "default", value: "" }).listItemProps.value.value,
+    ).toBe("");
+  });
+
+  it("omits link when false or undefined", () => {
+    expect(
+      useListItem({ variant: "default", link: false }).listItemProps.value,
+    ).not.toHaveProperty("link");
+    expect(
+      useListItem({ variant: "default" }).listItemProps.value,
+    ).not.toHaveProperty("link");
+  });
+
+  it("passes link through when true", () => {
+    const { listItemProps } = useListItem({ variant: "default", link: true });
+
+    expect(listItemProps.value.link).toBe(true);
+  });
+
   it("handles object class correctly", () => {
     const props: ListItemProps = {
       variant: "default",
