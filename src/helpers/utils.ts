@@ -726,12 +726,12 @@ export const playerVisible = function (
   return true;
 };
 
-// Whether a player can be offered in the group/sync member picker. Honours
-// hide_in_ui, except for light/visualizer players which are hidden from the
-// normal player view but exist to be grouped (e.g. Hue lights synced to audio).
+// Keep hidden players out of group pickers unless they represent this device or
+// are player types intended to be grouped with audio players.
 export const groupMemberPickerVisible = function (player: Player): boolean {
   return (
     !player.hide_in_ui ||
+    isBuiltinPlayer(player) ||
     player.type === PlayerType.LIGHT ||
     player.type === PlayerType.VISUALIZER
   );
