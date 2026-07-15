@@ -24,6 +24,7 @@ import { useRoute, useRouter } from "vue-router";
 
 export type GuestEntryState =
   | "loading"
+  | "error"
   | "quiz"
   | "party"
   | "quiz-ended"
@@ -103,7 +104,22 @@ export function useGuestEntryResolver() {
     while (active) {
       const version = requestedVersion;
       const resolutionAffinity = getQuizAffinity();
-      const nextState = await resolveGuestEntryState(resolutionAffinity);
+      let nextState: GuestEntryState;
+      try {
+        nextState = await resolveGuestEntryState(resolutionAffinity);
+      } catch {
+        if (!active) return;
+        if (version !== requestedVersion) continue;
+        if (resolutionAffinity !== getQuizAffinity()) {
+          requestedVersion += 1;
+          continue;
+        }
+        if (state.value === "loading") {
+          state.value = "error";
+          await syncRoute();
+        }
+        return;
+      }
       if (!active) return;
       if (version !== requestedVersion) continue;
       if (resolutionAffinity !== getQuizAffinity()) {
@@ -185,9 +201,7 @@ async function resolveGuestEntryState(
   const hasMusicQuiz = providerDomains.has("music_quiz");
 
   if (hasMusicQuiz) {
-    // Best-effort: an info failure must not strand the resolver in its
-    // loading state, so treat it the same as "no active quiz".
-    const game = await getMusicQuizInfo().catch(() => null);
+    const game = await getMusicQuizInfo();
     if (game) return "quiz";
   }
   if (quizAffinity.active) return "quiz-inactive";
@@ -199,6 +213,7 @@ function getGuestEntryPath(state: GuestEntryState): string | undefined {
   if (state === "quiz") return "/guest/quiz";
   if (state === "quiz-ended") return "/guest/quiz";
   if (state === "party") return "/guest/party";
+  if (state === "error") return "/guest";
   if (state === "quiz-inactive" || state === "inactive") return "/guest";
   return undefined;
 }

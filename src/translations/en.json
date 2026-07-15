@@ -1673,6 +1673,8 @@
     "guest": {
         "loading_title": "Finding the active experience",
         "loading_description": "Please wait...",
+        "error_title": "Unable to load the active experience",
+        "error_description": "Check your connection and try again.",
         "no_quiz_title": "No Quiz is currently active",
         "no_quiz_description": "Ask the host to start a Music Quiz.",
         "nothing_active_title": "Nothing is currently active",
