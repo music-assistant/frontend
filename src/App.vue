@@ -36,6 +36,10 @@
 import { Toaster } from "@/components/ui/sonner";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
+import {
+  createLocalConnectionIdentity,
+  createRemoteConnectionIdentity,
+} from "@/helpers/connection_identity";
 import { api, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
@@ -118,7 +122,10 @@ const handleRemoteAuthenticated = async (credentials: {
       authManager.setCurrentUser(credentials.user);
       api.state.value = ConnectionState.AUTHENTICATED;
     } else if (credentials.token && credentials.user) {
-      authManager.setToken(credentials.token);
+      authManager.setToken(
+        credentials.token,
+        getCurrentAuthConnectionIdentity(),
+      );
       authManager.setCurrentUser(credentials.user);
     } else if (credentials.username && credentials.password) {
       const result = await api.loginWithCredentials(
@@ -126,7 +133,7 @@ const handleRemoteAuthenticated = async (credentials: {
         credentials.password,
         getDeviceName(),
       );
-      authManager.setToken(result.token);
+      authManager.setToken(result.token, getCurrentAuthConnectionIdentity());
       user = result.user;
       if (user) {
         authManager.setCurrentUser(user);
@@ -223,6 +230,10 @@ const completeInitialization = async () => {
   store.serverInfo = serverInfo;
 
   const isGuestAccessSession = authManager.isGuestAccessSession();
+  const connectionIdentity = getCurrentAuthConnectionIdentity();
+  if (!isGuestAccessSession && connectionIdentity) {
+    authManager.bindPersistentToken(connectionIdentity);
+  }
 
   // Enable kiosk mode when running in Home Assistant ingress
   // COMMENTED OUT - HA INTEGRATION DISABLED
@@ -524,4 +535,12 @@ onMounted(async () => {
 onUnmounted(() => {
   // unsubscribeFromHAProperties();
 });
+
+function getCurrentAuthConnectionIdentity() {
+  return api.isRemoteConnection.value
+    ? createRemoteConnectionIdentity(
+        remoteConnectionManager.currentRemoteId.value,
+      )
+    : createLocalConnectionIdentity(api.baseUrl);
+}
 </script>

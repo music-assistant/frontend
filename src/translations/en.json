@@ -1142,6 +1142,8 @@
         },
         "music_quiz": {
             "title": "Music Quiz",
+            "play_along": "Play along",
+            "host_controls": "Host controls",
             "create_intro": "Create a new quiz game to test your music knowledge!",
             "loading": "Loading...",
             "no_active_game": "No active game",

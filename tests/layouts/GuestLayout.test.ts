@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   isGuestSession: { value: true },
   leaveGuestSession: vi.fn(),
+  routeName: { value: "guest" },
   routerPush: vi.fn(),
   setGuestThemePreference: vi.fn(),
   store: {
@@ -43,6 +44,11 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 vi.mock("vue-router", () => ({
+  useRoute: () => ({
+    get name() {
+      return mocks.routeName.value;
+    },
+  }),
   useRouter: () => ({ push: mocks.routerPush }),
 }));
 
@@ -89,6 +95,7 @@ describe("GuestLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isGuestSession.value = true;
+    mocks.routeName.value = "guest";
   });
 
   it("provides guest branding, appearance controls, and a safe exit", async () => {
@@ -126,5 +133,15 @@ describe("GuestLayout", () => {
     await returnButton?.trigger("click");
 
     expect(mocks.routerPush).toHaveBeenCalledWith({ name: "discover" });
+  });
+
+  it("lets a regular Quiz participant return to host controls", async () => {
+    mocks.isGuestSession.value = false;
+    mocks.routeName.value = "guest-quiz";
+    const wrapper = mountLayout();
+
+    await wrapper.get('[data-testid="guest-host-controls"]').trigger("click");
+
+    expect(mocks.routerPush).toHaveBeenCalledWith({ name: "music-quiz" });
   });
 });

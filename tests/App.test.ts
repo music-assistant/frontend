@@ -47,6 +47,7 @@ const {
     supportsServerSideTranslations: false,
   };
   const authManagerMock = {
+    bindPersistentToken: vi.fn(),
     getToken: vi.fn(),
     isGuestAccessSession: vi.fn(() => guestType.value !== null),
     isMusicQuizGuest: vi.fn(() => guestType.value === "music_quiz"),
@@ -114,6 +115,11 @@ vi.mock("@/plugins/auth", () => ({
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
+}));
+
+vi.mock("@/helpers/connection_identity", () => ({
+  createLocalConnectionIdentity: () => "local:http://music-assistant.test",
+  createRemoteConnectionIdentity: () => "remote:REMOTE",
 }));
 
 vi.mock("@/composables/userPreferences", () => ({
@@ -389,6 +395,10 @@ describe("App initialization", () => {
     await vi.waitFor(() => {
       expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
     });
+    expect(authManagerMock.setToken).toHaveBeenCalledWith(
+      "regular-token",
+      "local:http://music-assistant.test",
+    );
   });
 
   it("clears proxy mode before connecting to a local server", async () => {

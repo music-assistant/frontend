@@ -16,6 +16,10 @@ import {
 } from "@/composables/useMusicQuiz";
 import { createMusicQuizPlayerHeartbeat } from "@/composables/useMusicQuizPlayerHeartbeat";
 import {
+  createLocalConnectionIdentity,
+  createRemoteConnectionIdentity,
+} from "@/helpers/connection_identity";
+import {
   clearStoredMusicQuizPlayerId,
   getStoredMusicQuizPlayerName,
   getStoredMusicQuizPlayerId,
@@ -23,11 +27,15 @@ import {
   isNoActiveGameError,
   storeMusicQuizPlayerId,
   storeMusicQuizPlayerName,
+  type MusicQuizParticipantStorageContext,
 } from "@/helpers/music_quiz";
 import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { remoteConnectionManager } from "@/plugins/remote";
+import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 export interface UseMusicQuizPlayerOptions {
@@ -35,7 +43,7 @@ export interface UseMusicQuizPlayerOptions {
 }
 
 /**
- * Manage Music Quiz guest state, player actions, and reconnection.
+ * Manage Music Quiz participant state, player actions, and reconnection.
  *
  * Keeps joined players active and synchronizes state from provider events.
  */
@@ -45,7 +53,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   const info = ref<MusicQuizInfo | null>(null);
   const state = ref<MusicQuizPersonalizedState | null>(null);
   const playerId = ref<string | null>(null);
-  const rememberedName = ref(getStoredMusicQuizPlayerName());
+  const participantStorageContext = getParticipantStorageContext();
+  const rememberedName = ref(
+    getStoredMusicQuizPlayerName(participantStorageContext),
+  );
   const gameRemoved = ref(false);
   const busy = ref(false);
   const loading = ref(false);
@@ -122,7 +133,9 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       return;
     }
 
-    const storedPlayerId = getStoredMusicQuizPlayerId();
+    const storedPlayerId = getStoredMusicQuizPlayerId(
+      participantStorageContext,
+    );
     if (storedPlayerId) {
       joinedGame = true;
       await reconnectPlayer(storedPlayerId);
@@ -139,7 +152,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     if (joined) {
       autoJoinAttemptedGeneration = gameGeneration;
       rememberedName.value = trimmedName;
-      storeMusicQuizPlayerName(trimmedName);
+      storeMusicQuizPlayerName(trimmedName, participantStorageContext);
     }
     return joined;
   }
@@ -306,7 +319,10 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     if (payload.event === "game_updated") {
       if (isCurrentPlayerMissing(payload.state)) {
         void resetToJoinInfo();
-      } else if (playerId.value || getStoredMusicQuizPlayerId()) {
+      } else if (
+        playerId.value ||
+        getStoredMusicQuizPlayerId(participantStorageContext)
+      ) {
         void fetchState();
       } else {
         void fetchInfo();
@@ -425,7 +441,7 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
     try {
       const result = await joinMusicQuiz(name);
       if (disposed || requestGeneration !== gameGeneration) return false;
-      storeMusicQuizPlayerId(result.player_id);
+      storeMusicQuizPlayerId(result.player_id, participantStorageContext);
       joinedGame = true;
       applyPlayerState(result.state);
       gameRemoved.value = false;
@@ -454,6 +470,21 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
         busy.value = remainingRequests > 0;
       }
     }
+  }
+
+  function getParticipantStorageContext():
+    | MusicQuizParticipantStorageContext
+    | undefined {
+    const connectionIdentity = api.isRemoteConnection.value
+      ? createRemoteConnectionIdentity(
+          remoteConnectionManager.currentRemoteId.value,
+        )
+      : createLocalConnectionIdentity(api.baseUrl);
+    const participantIdentity =
+      authManager.getClaim("jti") || store.currentUser?.user_id;
+    return connectionIdentity && participantIdentity
+      ? { connectionIdentity, participantIdentity }
+      : undefined;
   }
 
   async function attemptAutoJoin() {

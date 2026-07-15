@@ -8,10 +8,12 @@ import {
   clearGuestSessionStorage,
   GUEST_TOKEN_STORAGE_KEY,
 } from "@/helpers/guest_session";
+import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import type { User } from "./api/interfaces";
 import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
+const TOKEN_CONNECTION_STORAGE_KEY = "ma_access_token_connection";
 
 /**
  * JWT claims structure from Music Assistant tokens
@@ -37,7 +39,6 @@ export class AuthManager {
 
   constructor() {
     this.loadStoredToken();
-    if (!this.isGuestAccessSession()) clearGuestQuizAffinity();
   }
 
   /**
@@ -52,6 +53,18 @@ export class AuthManager {
    */
   getToken(): string | null {
     return this.token;
+  }
+
+  /**
+   * Get the saved regular-user token.
+   */
+  getPersistentToken(connectionIdentity: ConnectionIdentity): string | null {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!token || isGuestAccessClaims(this.decodeJWT(token))) return null;
+    return localStorage.getItem(TOKEN_CONNECTION_STORAGE_KEY) ===
+      connectionIdentity
+      ? token
+      : null;
   }
 
   /**
@@ -79,10 +92,8 @@ export class AuthManager {
    * Set token directly (for server-side login flow)
    * Automatically decodes JWT claims for frontend use
    */
-  setToken(token: string): void {
-    const previousGuestIdentity = this.isGuestAccessSession()
-      ? this.claims?.jti
-      : undefined;
+  setToken(token: string, connectionIdentity?: ConnectionIdentity): void {
+    const previousIdentity = this.claims?.jti;
     this.token = token;
     this.claims = this.decodeJWT(token);
     if (this.isGuestAccessSession()) {
@@ -93,11 +104,14 @@ export class AuthManager {
     } else {
       clearGuestSessionStorage();
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      if (connectionIdentity) {
+        localStorage.setItem(TOKEN_CONNECTION_STORAGE_KEY, connectionIdentity);
+      } else {
+        localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
+      }
     }
-    const nextGuestIdentity = this.isGuestAccessSession()
-      ? this.claims?.jti
-      : undefined;
-    if (!nextGuestIdentity || previousGuestIdentity !== nextGuestIdentity) {
+    const nextIdentity = this.claims?.jti;
+    if (!nextIdentity || previousIdentity !== nextIdentity) {
       clearGuestQuizAffinity();
     }
   }
@@ -150,6 +164,15 @@ export class AuthManager {
   }
 
   /**
+   * Bind the current regular token to its authenticated connection.
+   */
+  bindPersistentToken(connectionIdentity: ConnectionIdentity): void {
+    if (!this.token || this.isGuestAccessSession()) return;
+    if (localStorage.getItem(TOKEN_STORAGE_KEY) !== this.token) return;
+    localStorage.setItem(TOKEN_CONNECTION_STORAGE_KEY, connectionIdentity);
+  }
+
+  /**
    * End guest access while keeping any saved regular session.
    */
   clearGuestSession(): void {
@@ -185,6 +208,7 @@ export class AuthManager {
     clearGuestQuizAffinity();
     clearGuestSessionStorage();
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
   }
 
   /**
@@ -249,6 +273,7 @@ export class AuthManager {
     if (persistentToken && isGuestAccessClaims(persistentClaims)) {
       sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, persistentToken);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
     }
     this.token = persistentToken;
     this.claims = persistentClaims;

@@ -9,28 +9,39 @@ import { mount } from "@vue/test-utils";
 import { defineComponent, h, type DeepReadonly, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, authManagerMock, guestIdentity, routeMock, routerReplace } =
-  vi.hoisted(() => {
-    const routeMock = { path: "/guest" };
-    const guestIdentity = { value: "guest-token-1" as string | undefined };
-    return {
-      apiMock: {
-        providers: {} as Record<string, { domain: string }>,
-        sendCommand: vi.fn(),
-        state: { value: "initialized" },
-        subscribe: vi.fn(),
-      },
-      authManagerMock: {
-        getClaim: vi.fn(() => guestIdentity.value),
-        isGuestAccessSession: vi.fn(() => true),
-      },
-      guestIdentity,
-      routeMock,
-      routerReplace: vi.fn(async (path: string) => {
-        routeMock.path = path;
-      }),
-    };
-  });
+const {
+  apiMock,
+  authManagerMock,
+  guestIdentity,
+  routeMock,
+  routerReplace,
+  storeMock,
+} = vi.hoisted(() => {
+  const routeMock = { path: "/guest" };
+  const guestIdentity = { value: "guest-token-1" as string | undefined };
+  return {
+    apiMock: {
+      baseUrl: "http://music-assistant:8095",
+      isRemoteConnection: { value: false },
+      providers: {} as Record<string, { domain: string }>,
+      sendCommand: vi.fn(),
+      state: { value: "initialized" },
+      subscribe: vi.fn(),
+    },
+    authManagerMock: {
+      getClaim: vi.fn(() => guestIdentity.value),
+      isGuestAccessSession: vi.fn(() => true),
+    },
+    guestIdentity,
+    routeMock,
+    routerReplace: vi.fn(async (path: string) => {
+      routeMock.path = path;
+    }),
+    storeMock: {
+      currentUser: undefined as { user_id: string } | undefined,
+    },
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
@@ -39,6 +50,16 @@ vi.mock("@/plugins/api", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   authManager: authManagerMock,
+}));
+
+vi.mock("@/plugins/remote", () => ({
+  remoteConnectionManager: {
+    currentRemoteId: { value: null },
+  },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
 }));
 
 vi.mock("vue-router", () => ({
@@ -61,6 +82,8 @@ describe("guest entry decisions", () => {
     authManagerMock.isGuestAccessSession.mockReturnValue(true);
     guestIdentity.value = "guest-token-1";
     vi.stubGlobal("localStorage", createStorage());
+    vi.stubGlobal("sessionStorage", createStorage());
+    storeMock.currentUser = undefined;
     routeMock.path = "/guest";
   });
 
@@ -71,8 +94,9 @@ describe("guest entry decisions", () => {
     await expect(resolveGuestEntry()).resolves.toBe("quiz");
     expect(apiMock.sendCommand).toHaveBeenCalledWith("music_quiz/info");
     expect(getStoredAffinity()).toEqual({
-      version: 1,
-      guestIdentity: "guest-token-1",
+      version: 2,
+      connectionIdentity: "local:http://music-assistant:8095",
+      participantIdentity: "guest-token-1",
     });
   });
 
@@ -132,13 +156,13 @@ describe("guest entry decisions", () => {
 
   it("ignores corrupt affinity without misrouting a Party guest", async () => {
     setProviders("party", "music_quiz");
-    localStorage.setItem("music_quiz_guest_affinity", "{broken");
+    sessionStorage.setItem("music_quiz_guest_affinity", "{broken");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(resolveGuestEntry()).resolves.toBe("party");
     expect(getStoredAffinity()).toBeNull();
     expect(warn).toHaveBeenCalledWith(
-      "Ignoring corrupt Music Quiz guest affinity.",
+      "Ignoring corrupt Music Quiz participant affinity.",
       expect.any(SyntaxError),
     );
   });
@@ -158,6 +182,8 @@ describe("guest entry transitions", () => {
     authManagerMock.isGuestAccessSession.mockReturnValue(true);
     guestIdentity.value = "guest-token-1";
     vi.stubGlobal("localStorage", createStorage());
+    vi.stubGlobal("sessionStorage", createStorage());
+    storeMock.currentUser = undefined;
     routeMock.path = "/guest";
   });
 
@@ -200,6 +226,7 @@ describe("guest entry transitions", () => {
     wrapper = mountResolver((state) => {
       resolverState = state;
     });
+
     await expectState("quiz");
 
     wrapper.unmount();
@@ -212,6 +239,32 @@ describe("guest entry transitions", () => {
 
     await expectState("quiz-inactive");
     expect(routeMock.path).toBe("/guest");
+  });
+
+  it("restores Quiz affinity for a regular authenticated user", async () => {
+    guestIdentity.value = undefined;
+    storeMock.currentUser = { user_id: "regular-user" };
+    setProviders("party", "music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("quiz");
+
+    wrapper.unmount();
+    wrapper = undefined;
+    routeMock.path = "/guest";
+    apiMock.sendCommand.mockResolvedValue(null);
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+
+    await expectState("quiz-inactive");
+    expect(getStoredAffinity()).toEqual({
+      version: 2,
+      connectionIdentity: "local:http://music-assistant:8095",
+      participantIdentity: "regular-user",
+    });
   });
 
   it("drops live affinity when the guest identity changes", async () => {
@@ -379,7 +432,7 @@ describe("guest entry transitions", () => {
 
   it("keeps live affinity when persistent storage is unavailable", async () => {
     const storageError = new DOMException("Storage denied", "SecurityError");
-    vi.stubGlobal("localStorage", {
+    vi.stubGlobal("sessionStorage", {
       getItem: vi.fn(() => {
         throw storageError;
       }),
@@ -470,14 +523,18 @@ function getSubscriber(eventType: EventType) {
 }
 
 function storeAffinity(guestIdentity: string) {
-  localStorage.setItem(
+  sessionStorage.setItem(
     "music_quiz_guest_affinity",
-    JSON.stringify({ version: 1, guestIdentity }),
+    JSON.stringify({
+      version: 2,
+      connectionIdentity: "local:http://music-assistant:8095",
+      participantIdentity: guestIdentity,
+    }),
   );
 }
 
 function getStoredAffinity(): unknown {
-  const value = localStorage.getItem("music_quiz_guest_affinity");
+  const value = sessionStorage.getItem("music_quiz_guest_affinity");
   return value === null ? null : JSON.parse(value);
 }
 

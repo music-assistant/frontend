@@ -1,73 +1,91 @@
 <template>
   <div class="bg-background flex h-dvh flex-col overflow-hidden">
     <header
-      class="grid h-12 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center border-b px-2"
+      class="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b px-2"
     >
-      <div />
+      <Button
+        v-if="showHostControls"
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="justify-self-start px-2"
+        data-testid="guest-host-controls"
+        :aria-label="$t('providers.music_quiz.host_controls')"
+        :title="$t('providers.music_quiz.host_controls')"
+        @click="returnToHostControls"
+      >
+        <SlidersHorizontal class="size-4" aria-hidden="true" />
+        <span class="hidden sm:inline">
+          {{ $t("providers.music_quiz.host_controls") }}
+        </span>
+      </Button>
+      <div v-else />
       <img
         :src="logoSrc"
         alt="Music Assistant"
         class="h-6 w-auto justify-self-center opacity-85"
       />
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="rounded-full"
-            :aria-label="$t('guest.menu_label')"
-          >
-            <Avatar class="size-8">
-              <AvatarFallback
-                class="bg-primary text-primary-foreground text-xs font-medium"
-              >
-                <UserRound
-                  v-if="isGuestSession"
-                  class="size-4"
-                  aria-hidden="true"
-                />
-                <span v-else>{{ userInitial }}</span>
-              </AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="w-56">
-          <DropdownMenuLabel>{{ menuLabel }}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <template v-if="isGuestSession">
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette class="mr-2 size-4" />
-                {{ $t("settings.theme.label") }}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  :model-value="themePreference"
-                  @update:model-value="handleThemePreference"
+      <div class="justify-self-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="rounded-full"
+              :aria-label="$t('guest.menu_label')"
+            >
+              <Avatar class="size-8">
+                <AvatarFallback
+                  class="bg-primary text-primary-foreground text-xs font-medium"
                 >
-                  <DropdownMenuRadioItem
-                    v-for="preference in THEME_PREFERENCES"
-                    :key="preference"
-                    :value="preference"
-                  >
-                    {{ $t(`settings.theme.options.${preference}`) }}
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+                  <UserRound
+                    v-if="isGuestSession"
+                    class="size-4"
+                    aria-hidden="true"
+                  />
+                  <span v-else>{{ userInitial }}</span>
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuLabel>{{ menuLabel }}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem @click="leaveGuestSession">
-              <LogOut class="size-4" />
-              {{ $t("guest.leave") }}
+            <template v-if="isGuestSession">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette class="mr-2 size-4" />
+                  {{ $t("settings.theme.label") }}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    :model-value="themePreference"
+                    @update:model-value="handleThemePreference"
+                  >
+                    <DropdownMenuRadioItem
+                      v-for="preference in THEME_PREFERENCES"
+                      :key="preference"
+                      :value="preference"
+                    >
+                      {{ $t(`settings.theme.options.${preference}`) }}
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="leaveGuestSession">
+                <LogOut class="size-4" />
+                {{ $t("guest.leave") }}
+              </DropdownMenuItem>
+            </template>
+            <DropdownMenuItem v-else @click="returnToApp">
+              <ArrowLeft class="size-4" />
+              {{ $t("guest.return_to_app") }}
             </DropdownMenuItem>
-          </template>
-          <DropdownMenuItem v-else @click="returnToApp">
-            <ArrowLeft class="size-4" />
-            {{ $t("guest.return_to_app") }}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
     <main class="min-h-0 flex-1 overflow-y-auto">
       <router-view />
@@ -103,16 +121,26 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, LogOut, Palette, UserRound } from "@lucide/vue";
+import {
+  ArrowLeft,
+  LogOut,
+  Palette,
+  SlidersHorizontal,
+  UserRound,
+} from "@lucide/vue";
 import { computed, provide } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 
 const { state } = useGuestEntryResolver();
 provide(guestEntryStateKey, state);
 
 const router = useRouter();
+const route = useRoute();
 const isGuestSession = authManager.isGuestAccessSession();
+const showHostControls = computed(
+  () => !isGuestSession && route.name === "guest-quiz",
+);
 const menuLabel = computed(() =>
   isGuestSession
     ? $t("guest.access_label")
@@ -140,5 +168,9 @@ function leaveGuestSession(): void {
 
 function returnToApp(): void {
   void router.push({ name: "discover" });
+}
+
+function returnToHostControls(): void {
+  void router.push({ name: "music-quiz" });
 }
 </script>

@@ -71,30 +71,64 @@ describe("AuthManager guest sessions", () => {
     expect(sessionStorage.getItem("ma_guest_server_address")).toBeNull();
   });
 
-  it("preserves affinity only while the same guest token remains active", () => {
+  it("returns only a saved regular token for session reuse", () => {
+    const authManager = new AuthManager();
+    const regularToken = createToken("regular-token", "admin");
+    const connectionIdentity = "local:http://music-assistant:8095";
+    authManager.setToken(regularToken, connectionIdentity);
+
+    expect(authManager.getPersistentToken(connectionIdentity)).toBe(
+      regularToken,
+    );
+    expect(
+      authManager.getPersistentToken("local:http://other-server:8095"),
+    ).toBeNull();
+
+    authManager.setToken(createToken("guest-token", "party_guest"));
+    expect(authManager.getPersistentToken(connectionIdentity)).toBe(
+      regularToken,
+    );
+  });
+
+  it("does not reuse an unbound regular token", () => {
+    const authManager = new AuthManager();
+    const regularToken = createToken("regular-token", "admin");
+    const connectionIdentity = "local:http://music-assistant:8095";
+    authManager.setToken(regularToken);
+
+    expect(authManager.getPersistentToken(connectionIdentity)).toBeNull();
+
+    authManager.bindPersistentToken(connectionIdentity);
+    expect(authManager.getPersistentToken(connectionIdentity)).toBe(
+      regularToken,
+    );
+  });
+
+  it("preserves affinity only while the same participant token remains active", () => {
     const firstToken = createToken("guest-token-1", "party_guest");
     sessionStorage.setItem("ma_guest_access_token", firstToken);
-    createGuestQuizAffinity("guest-token-1").record();
+    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
     const authManager = new AuthManager();
 
     authManager.setToken(firstToken);
-    expect(localStorage.getItem("music_quiz_guest_affinity")).not.toBeNull();
+    expect(sessionStorage.getItem("music_quiz_guest_affinity")).not.toBeNull();
 
     authManager.setToken(createToken("guest-token-2", "party_guest"));
-    expect(localStorage.getItem("music_quiz_guest_affinity")).toBeNull();
+    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
   it("clears persistent and guest credentials on full logout", () => {
     const authManager = new AuthManager();
     authManager.setToken(createToken("regular-token", "admin"));
-    createGuestQuizAffinity("guest-token-1").record();
+    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
 
     authManager.clearAuth();
 
     expect(authManager.getToken()).toBeNull();
     expect(localStorage.getItem("ma_access_token")).toBeNull();
+    expect(localStorage.getItem("ma_access_token_connection")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
-    expect(localStorage.getItem("music_quiz_guest_affinity")).toBeNull();
+    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 });
 
@@ -111,4 +145,11 @@ function createToken(jti: string, username: string): string {
     .replace(/\//g, "_")
     .replace(/=+$/, "");
   return `header.${payload}.signature`;
+}
+
+function createQuizContext(participantIdentity: string) {
+  return {
+    connectionIdentity: "local:http://music-assistant:8095" as const,
+    participantIdentity,
+  };
 }

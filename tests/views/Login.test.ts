@@ -8,10 +8,16 @@ const mocks = vi.hoisted(() => ({
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
   disconnectRemote: vi.fn(),
+  getCurrentUserInfo: vi.fn(),
+  getPersistentToken: vi.fn(),
   getToken: vi.fn(),
   getStoredRemoteId: vi.fn(),
   leaveGuestSession: vi.fn(),
+  routerReplace: vi.fn(),
   sendCommand: vi.fn(),
+  serverInfo: {
+    value: { server_id: "server-id" } as { server_id: string } | null,
+  },
   setToken: vi.fn(),
 }));
 
@@ -27,8 +33,9 @@ vi.mock("@/plugins/api", () => ({
   api: {
     authenticateWithToken: mocks.authenticateWithToken,
     disconnect: vi.fn(),
+    getCurrentUserInfo: mocks.getCurrentUserInfo,
     sendCommand: mocks.sendCommand,
-    serverInfo: { value: { server_id: "server-id" } },
+    serverInfo: mocks.serverInfo,
     state: { value: "disconnected" },
   },
 }));
@@ -37,6 +44,7 @@ vi.mock("@/plugins/auth", () => ({
   authManager: {
     clearAuth: mocks.clearAuth,
     clearGuestSession: mocks.clearGuestSession,
+    getPersistentToken: mocks.getPersistentToken,
     getToken: mocks.getToken,
     isGuestAccessSession: () =>
       sessionStorage.getItem("ma_guest_access_token") !== null,
@@ -56,6 +64,12 @@ vi.mock("@/plugins/remote", () => ({
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
+  }),
+}));
+
+vi.mock("vue-router", () => ({
+  useRouter: () => ({
+    replace: mocks.routerReplace,
   }),
 }));
 
@@ -168,19 +182,29 @@ function mockHostedFrontend() {
 }
 
 function mockSuccessfulGuest(username = "party_guest") {
+  const guestUser = { user_id: "guest-id", username, role: "guest" };
   mocks.sendCommand.mockImplementation((command: string) => {
     if (command === "auth/join_code/exchange") {
       return Promise.resolve({
         success: true,
         access_token: "guest-token",
-        user: { user_id: "guest-id", username, role: "guest" },
+        user: guestUser,
       });
     }
     return Promise.resolve([]);
   });
-  mocks.authenticateWithToken.mockResolvedValue({
-    user: { user_id: "guest-id", username, role: "guest" },
-  });
+  mocks.authenticateWithToken.mockImplementation((token: string) =>
+    Promise.resolve({
+      user:
+        token === "guest-token"
+          ? guestUser
+          : {
+              user_id: "regular-id",
+              username: "regular-user",
+              role: "admin",
+            },
+    }),
+  );
 }
 
 beforeEach(() => {
@@ -188,6 +212,8 @@ beforeEach(() => {
   vi.stubGlobal("sessionStorage", new StorageMock());
   setLocation("");
   vi.clearAllMocks();
+  vi.useRealTimers();
+  mocks.routerReplace.mockResolvedValue(undefined);
   vi.stubGlobal("WebSocket", WebSocketMock);
   mocks.clearAuth.mockImplementation(() => {
     localStorage.removeItem("ma_access_token");
@@ -212,6 +238,17 @@ beforeEach(() => {
       sessionStorage.getItem("ma_guest_access_token") ||
       localStorage.getItem("ma_access_token"),
   );
+  mocks.getPersistentToken.mockImplementation((connectionIdentity: string) =>
+    localStorage.getItem("ma_access_token_connection") === connectionIdentity
+      ? localStorage.getItem("ma_access_token")
+      : null,
+  );
+  mocks.getCurrentUserInfo.mockResolvedValue({
+    user_id: "ingress-user",
+    username: "ingress-user",
+    role: "admin",
+  });
+  mocks.serverInfo.value = { server_id: "server-id" };
   mocks.setToken.mockImplementation((token: string) => {
     sessionStorage.setItem("ma_guest_access_token", token);
   });
@@ -221,6 +258,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -270,6 +308,10 @@ describe("guest join login", () => {
     setLocation("?join=abcd1234");
     mockStandaloneFrontend();
     localStorage.setItem("ma_access_token", "admin-token");
+    localStorage.setItem(
+      "ma_access_token_connection",
+      "local:http://regular-server:8095",
+    );
     mocks.getStoredRemoteId.mockReturnValue(regularRemoteId);
 
     const wrapper = mountLogin();
@@ -295,6 +337,7 @@ describe("guest join login", () => {
       "http://regular-server:8095",
     );
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
   });
 
   it("recovers a pending local join after a service-worker reload", async () => {
@@ -317,7 +360,7 @@ describe("guest join login", () => {
     expect(sessionStorage.getItem("ma_pending_join_code")).toBeNull();
   });
 
-  it("preserves a stored admin token while exchanging a guest code", async () => {
+  it("uses a regular session when the local guest link targets its server", async () => {
     setLocation("?join=abcd1234");
     mockStandaloneFrontend();
     localStorage.setItem(
@@ -325,17 +368,33 @@ describe("guest join login", () => {
       "http://music-assistant.local:8095",
     );
     localStorage.setItem("ma_access_token", "admin-token");
-
-    mountLogin();
-
-    await vi.waitFor(() =>
-      expect(sessionStorage.getItem("ma_guest_access_token")).toBe(
-        "guest-token",
-      ),
+    localStorage.setItem(
+      "ma_access_token_connection",
+      "local:http://music-assistant.local:8095",
     );
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        token: "admin-token",
+        user: {
+          user_id: "regular-id",
+          username: "regular-user",
+          role: "admin",
+        },
+      });
+    });
     expect(mocks.clearAuth).not.toHaveBeenCalled();
     expect(localStorage.getItem("ma_access_token")).toBe("admin-token");
-    expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
+    expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
+    expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
+    expect(mocks.sendCommand).not.toHaveBeenCalledWith(
+      "auth/join_code/exchange",
+      expect.anything(),
+    );
+    expect(window.location.hash).toBe("#/guest");
+    expect(mocks.routerReplace).toHaveBeenCalledWith({ name: "guest" });
   });
 
   it("shows an error and clears pending auth after a failed exchange", async () => {
@@ -346,6 +405,13 @@ describe("guest join login", () => {
       "http://music-assistant.local:8095",
     );
     localStorage.setItem("ma_access_token", "admin-token");
+    localStorage.setItem(
+      "ma_access_token_connection",
+      "local:http://music-assistant.local:8095",
+    );
+    mocks.authenticateWithToken.mockRejectedValueOnce(
+      new Error("Token belongs to another server"),
+    );
     mocks.sendCommand.mockResolvedValue({
       success: false,
       error: "expired",
@@ -384,7 +450,13 @@ describe("guest join login", () => {
     const remoteId = "ABCDEFGH1234512345ABCDEFGH";
     const regularRemoteId = "ZYXWVUTS9876598765ZYXWVUTS";
     setLocation(`?remote_id=${remoteId}&join=abcd1234`);
+    localStorage.setItem("ma_access_token", "admin-token");
     localStorage.setItem("mass_remote_id", regularRemoteId);
+    localStorage.setItem(
+      "ma_access_token_connection",
+      `remote:${regularRemoteId}`,
+    );
+    mocks.getStoredRemoteId.mockReturnValue(regularRemoteId);
 
     const wrapper = mountLogin();
 
@@ -396,8 +468,128 @@ describe("guest join login", () => {
     });
     expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
     expect(localStorage.getItem("mass_remote_id")).toBe(regularRemoteId);
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
     expect(wrapper.emitted("connected")).toEqual([[{ id: "transport" }]]);
     expect(wrapper.emitted("local-connect")).toBeUndefined();
+  });
+
+  it("uses a regular session when a remote guest link targets its server", async () => {
+    const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+    setLocation(`?remote_id=${remoteId}&join=abcd1234`);
+    localStorage.setItem("ma_access_token", "admin-token");
+    localStorage.setItem("mass_remote_id", remoteId);
+    localStorage.setItem("ma_access_token_connection", `remote:${remoteId}`);
+    mocks.getStoredRemoteId.mockReturnValue(remoteId);
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        token: "admin-token",
+        user: {
+          user_id: "regular-id",
+          username: "regular-user",
+          role: "admin",
+        },
+      });
+    });
+    expect(mocks.authenticateWithToken).toHaveBeenCalledWith("admin-token");
+    expect(mocks.sendCommand).not.toHaveBeenCalledWith(
+      "auth/join_code/exchange",
+      expect.anything(),
+    );
+    expect(window.location.hash).toBe("#/guest");
+    expect(mocks.routerReplace).toHaveBeenCalledWith({ name: "guest" });
+  });
+
+  it("does not send a local-server token to a stale remote target", async () => {
+    const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+    setLocation(`?remote_id=${remoteId}&join=abcd1234`);
+    localStorage.setItem("ma_access_token", "admin-token");
+    localStorage.setItem(
+      "ma_access_token_connection",
+      "local:http://music-assistant.local:8095",
+    );
+    localStorage.setItem("mass_remote_id", remoteId);
+    mocks.getStoredRemoteId.mockReturnValue(remoteId);
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        token: "guest-token",
+        user: {
+          user_id: "guest-id",
+          username: "party_guest",
+          role: "guest",
+        },
+      });
+    });
+    expect(mocks.authenticateWithToken).not.toHaveBeenCalledWith("admin-token");
+    expect(mocks.sendCommand).toHaveBeenCalledWith("auth/join_code/exchange", {
+      code: "ABCD1234",
+    });
+  });
+
+  it("keeps a remote join code after a transient connection failure", async () => {
+    const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+    setLocation(`?remote_id=${remoteId}&join=abcd1234`);
+    mocks.connectRemote.mockRejectedValueOnce(new Error("Network unavailable"));
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain("Network unavailable");
+    });
+    expect(sessionStorage.getItem("ma_pending_join_code")).toBe("abcd1234");
+    expect(sessionStorage.getItem("ma_pending_join_type")).toBe("remote");
+    expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
+    expect(mocks.routerReplace).toHaveBeenCalledWith({ name: "guest" });
+  });
+
+  it("keeps a pending remote join through an API recovery timeout", async () => {
+    const remoteId = "ABCDEFGH1234512345ABCDEFGH";
+    setLocation("?remote=1");
+    sessionStorage.setItem("ma_pending_join_code", "abcd1234");
+    sessionStorage.setItem("ma_pending_join_type", "remote");
+    sessionStorage.setItem("ma_guest_remote_id", remoteId);
+    mocks.serverInfo.value = null;
+    vi.useFakeTimers();
+
+    const wrapper = mountLogin();
+    await vi.advanceTimersByTimeAsync(15100);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Connection failed");
+    expect(sessionStorage.getItem("ma_pending_join_code")).toBe("abcd1234");
+    expect(sessionStorage.getItem("ma_pending_join_type")).toBe("remote");
+    expect(sessionStorage.getItem("ma_guest_remote_id")).toBe(remoteId);
+  });
+
+  it("keeps an ingress user signed in when opening a guest link", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "http://localhost:3000/hassio_ingress/server/?join=abcd1234#/guest",
+    );
+    mockHostedFrontend();
+
+    const wrapper = mountLogin();
+
+    await vi.waitFor(() => {
+      expect(wrapper.emitted("authenticated")?.[0]?.[0]).toEqual({
+        user: {
+          user_id: "ingress-user",
+          username: "ingress-user",
+          role: "admin",
+        },
+      });
+    });
+    expect(mocks.getCurrentUserInfo).toHaveBeenCalledOnce();
+    expect(mocks.sendCommand).not.toHaveBeenCalledWith(
+      "auth/join_code/exchange",
+      expect.anything(),
+    );
   });
 
   it("restores regular connection data when a stored guest token expires", async () => {
@@ -415,6 +607,7 @@ describe("guest join login", () => {
     await vi.waitFor(() => {
       expect(mocks.leaveGuestSession).toHaveBeenCalledOnce();
     });
+
     expect(mocks.connectRemote).toHaveBeenCalledWith(guestRemoteId, {
       remember: false,
     });

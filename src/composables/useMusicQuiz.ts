@@ -714,7 +714,7 @@ export function deleteMusicQuiz() {
   return api.sendCommand<null>("music_quiz/delete");
 }
 
-// Guest commands (any authenticated user; server validates guest username)
+// Participant commands (any authenticated user)
 export function getMusicQuizInfo() {
   return api.sendCommand<MusicQuizInfo | null>("music_quiz/info");
 }
@@ -759,7 +759,7 @@ export function readyMusicQuiz(player_id: string) {
   });
 }
 
-// Listen-in commands (Scope.PLAYERS_CONTROL + guest validation)
+// Listen-in commands (Scope.PLAYERS_CONTROL)
 export function listenInMusicQuiz(web_player_id: string) {
   return api.sendCommand<void>("music_quiz/listen_in", { web_player_id });
 }
