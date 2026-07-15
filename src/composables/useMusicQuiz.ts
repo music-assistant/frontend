@@ -714,9 +714,20 @@ export function deleteMusicQuiz() {
   return api.sendCommand<null>("music_quiz/delete");
 }
 
-// Guest commands (any authenticated user; server validates guest username)
-export function getMusicQuizInfo() {
-  return api.sendCommand<MusicQuizInfo | null>("music_quiz/info");
+// Participant game commands (available to any authenticated user)
+export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
+  // Without the music_quiz provider loaded on the server, the command isn't
+  // even registered ("Invalid or unsupported command") — and there can be no
+  // active quiz, so don't bother the server.
+  const hasMusicQuiz = Object.values(api.providers).some(
+    (provider) => provider.domain === "music_quiz",
+  );
+  if (!hasMusicQuiz) return Promise.resolve(null);
+  // Callers treat failures as "no quiz available" and surface their own
+  // messaging, so skip the global error toast.
+  return api.sendCommand<MusicQuizInfo | null>("music_quiz/info", undefined, {
+    suppressGlobalError: true,
+  });
 }
 
 export function joinMusicQuiz(name: string) {
@@ -759,7 +770,7 @@ export function readyMusicQuiz(player_id: string) {
   });
 }
 
-// Listen-in commands (Scope.PLAYERS_CONTROL + guest validation)
+// Listen-in commands (Scope.PLAYERS_CONTROL)
 export function listenInMusicQuiz(web_player_id: string) {
   return api.sendCommand<void>("music_quiz/listen_in", { web_player_id });
 }
