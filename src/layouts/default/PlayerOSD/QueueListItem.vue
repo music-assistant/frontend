@@ -34,7 +34,14 @@
     <div class="qitem__thumb">
       <MediaItemThumb size="48" :item="item" />
       <div v-if="showEqualizer" class="qitem__eq" aria-hidden="true">
-        <NowPlayingBadge :show-badge="false" :show-icon="true" />
+        <MiniEqualizer
+          v-if="waveformBins"
+          color="rgb(var(--v-theme-primary))"
+          :bars="4"
+          :height="16"
+          style="width: 18px;"
+        />
+        <NowPlayingBadge v-else :show-badge="false" :show-icon="true" />
       </div>
     </div>
 
@@ -121,6 +128,7 @@
 <script setup lang="ts">
 import MarqueeText from "@/components/MarqueeText.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
+import MiniEqualizer from "@/components/MiniEqualizer.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PartyPlayerBadge from "@/components/party/PartyPlayerBadge.vue";
 import { Button } from "@/components/ui/button";
@@ -131,6 +139,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
+import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { formatDuration } from "@/helpers/utils";
 import { QueueItem } from "@/plugins/api/interfaces";
@@ -181,6 +190,8 @@ const hovered = ref(false);
 const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
   (evt: Event) => emit("menu", evt),
 );
+
+const { waveformBins } = useActiveTrackWaveform();
 
 // Only animate the title/album marquee for the now-playing track, or while a
 // row is hovered — keeps the list calm and avoids dozens of scrolling rows.
