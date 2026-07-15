@@ -102,7 +102,7 @@ function draw() {
   for (let i = 0; i < n; i++) {
     const binIdx = Math.max(0, Math.min(bins.length - 1, centerBin - half + i));
     const rms = bins[binIdx];
-    const barH = Math.max(2, rms * cssH);
+    const barH = Math.max(cssH * 0.25, rms * cssH);
     const x = startX + i * pitch;
     const y = (cssH - barH) / 2;
     const isCurrent = i === half;
