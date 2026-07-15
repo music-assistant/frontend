@@ -124,8 +124,15 @@ const SearchInputStub = {
 const passthroughStub = { template: "<div><slot /></div>" };
 const SheetContentStub = {
   name: "SheetContent",
-  emits: ["interact-outside"],
-  template: "<div><slot /></div>",
+  emits: ["interact-outside", "open-auto-focus"],
+  template: `
+    <div
+      tabindex="-1"
+      @open-auto-focus="$emit('open-auto-focus', $event)"
+    >
+      <slot />
+    </div>
+  `,
 };
 
 function createPlayer(
@@ -356,6 +363,38 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find('[data-testid="player-select-sheet"]').classes(),
     ).toContain("bottom-[60px]");
+  });
+
+  it("focuses the sheet instead of opening the mobile keyboard", () => {
+    store.mobileLayout = true;
+    api.players = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => {
+        const player = createPlayer(`player-${index}`, `Player ${index}`);
+        return [player.player_id, player];
+      }),
+    );
+    const wrapper = mountPlayerSelect();
+    const sheet = wrapper.get('[data-testid="player-select-sheet"]');
+    if (!(sheet.element instanceof HTMLElement)) {
+      throw new TypeError("Expected sheet to render as an HTML element");
+    }
+    const focus = vi.spyOn(sheet.element, "focus");
+    const event = new Event("open-auto-focus", { cancelable: true });
+
+    sheet.element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it("keeps the default focus behavior in desktop layout", () => {
+    const wrapper = mountPlayerSelect();
+    const sheet = wrapper.get('[data-testid="player-select-sheet"]');
+    const event = new Event("open-auto-focus", { cancelable: true });
+
+    sheet.element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("restores focus to the menu trigger after closing", async () => {
