@@ -1150,6 +1150,8 @@
         },
         "music_quiz": {
             "title": "Music Quiz",
+            "play_along": "Play along",
+            "host_controls": "Host controls",
             "create_intro": "Create a new quiz game to test your music knowledge!",
             "loading": "Loading...",
             "no_active_game": "No active game",
@@ -1691,6 +1693,10 @@
     "menu_section_show_label": "Show section label",
     "media_type": "Media type",
     "guest": {
+        "access_label": "Guest access",
+        "menu_label": "Guest options",
+        "leave": "Leave guest mode",
+        "return_to_app": "Back to Music Assistant",
         "loading_title": "Finding the active experience",
         "loading_description": "Please wait...",
         "error_title": "Unable to load the active experience",

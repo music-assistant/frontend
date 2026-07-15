@@ -21,6 +21,7 @@ const {
   storedPlayerName,
   providerHandlers,
   unmountHandlers,
+  participantContext,
 } = vi.hoisted(() => ({
   mockGetMusicQuizInfo: vi.fn(),
   mockGetMusicQuizState: vi.fn(),
@@ -44,6 +45,10 @@ const {
     (event: { object_id?: string; data?: unknown }) => void
   >,
   unmountHandlers: [] as Array<() => void>,
+  participantContext: {
+    connectionIdentity: "local:http://music-assistant:8095",
+    participantIdentity: "participant-token",
+  } as const,
 }));
 
 vi.mock("vue", async () => {
@@ -79,7 +84,32 @@ vi.mock("@/composables/useMusicQuiz", () => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
+    baseUrl: "http://music-assistant:8095",
+    isRemoteConnection: { value: false },
     subscribe: mockSubscribe,
+  },
+}));
+
+vi.mock("@/helpers/connection_identity", () => ({
+  createLocalConnectionIdentity: () => participantContext.connectionIdentity,
+  createRemoteConnectionIdentity: () => undefined,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    getClaim: () => participantContext.participantIdentity,
+  },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: {
+    currentUser: undefined,
+  },
+}));
+
+vi.mock("@/plugins/remote", () => ({
+  remoteConnectionManager: {
+    currentRemoteId: { value: null },
   },
 }));
 
@@ -948,7 +978,10 @@ describe("useMusicQuizPlayer", () => {
     await player.join("  Player One  ");
 
     expect(mockJoinMusicQuiz).toHaveBeenCalledWith("Player One");
-    expect(mockStorePlayerName).toHaveBeenCalledWith("Player One");
+    expect(mockStorePlayerName).toHaveBeenCalledWith(
+      "Player One",
+      participantContext,
+    );
     expect(player.rememberedName.value).toBe("Player One");
   });
 

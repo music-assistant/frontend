@@ -3,41 +3,115 @@ import type {
   MusicQuizPlayer,
   MusicQuizSupportedPublicState,
 } from "@/composables/useMusicQuiz";
+import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import { $t, i18n } from "@/plugins/i18n";
 
 const MUSIC_QUIZ_PLAYER_ID_KEY = "music_quiz_player_id";
 const MUSIC_QUIZ_PLAYER_NAME_KEY = "music_quiz_player_name";
+const MUSIC_QUIZ_STORAGE_VERSION = 1;
+
+export interface MusicQuizParticipantStorageContext {
+  connectionIdentity: ConnectionIdentity;
+  participantIdentity: string;
+}
+
+interface StoredMusicQuizPlayerId extends MusicQuizParticipantStorageContext {
+  version: typeof MUSIC_QUIZ_STORAGE_VERSION;
+  playerId: string;
+}
+
+interface StoredMusicQuizPlayerName extends MusicQuizParticipantStorageContext {
+  version: typeof MUSIC_QUIZ_STORAGE_VERSION;
+  playerName: string;
+}
 
 /**
- * Store the player_id credential in localStorage (guest's PRIVATE credential).
- * NEVER render this in the UI — it's the guest's authentication token.
+ * Store the private player credential for this tab.
+ *
+ * NEVER render this in the UI — it's the participant's authentication token.
  */
-export function storeMusicQuizPlayerId(playerId: string) {
-  localStorage.setItem(MUSIC_QUIZ_PLAYER_ID_KEY, playerId);
+export function storeMusicQuizPlayerId(
+  playerId: string,
+  context: MusicQuizParticipantStorageContext | undefined,
+) {
+  localStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+    return;
+  }
+  const value: StoredMusicQuizPlayerId = {
+    version: MUSIC_QUIZ_STORAGE_VERSION,
+    ...context,
+    playerId,
+  };
+  sessionStorage.setItem(MUSIC_QUIZ_PLAYER_ID_KEY, JSON.stringify(value));
 }
 
 /**
  * Retrieve the stored player_id credential.
  */
-export function getStoredMusicQuizPlayerId(): string | null {
-  return localStorage.getItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+export function getStoredMusicQuizPlayerId(
+  context: MusicQuizParticipantStorageContext | undefined,
+): string | null {
+  localStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+  if (!context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+    return null;
+  }
+  const storedValue = readStoredValue(
+    MUSIC_QUIZ_PLAYER_ID_KEY,
+    isStoredMusicQuizPlayerId,
+  );
+  if (!storedValue || !isMatchingStorageContext(storedValue, context)) {
+    sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
+    return null;
+  }
+  return storedValue.playerId;
 }
 
 /**
  * Clear the stored player_id (e.g. when leaving the game).
  */
 export function clearStoredMusicQuizPlayerId() {
+  sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
   localStorage.removeItem(MUSIC_QUIZ_PLAYER_ID_KEY);
 }
 
-export function storeMusicQuizPlayerName(name: string) {
+export function storeMusicQuizPlayerName(
+  name: string,
+  context: MusicQuizParticipantStorageContext | undefined,
+) {
   const trimmedName = name.trim();
-  if (trimmedName)
-    localStorage.setItem(MUSIC_QUIZ_PLAYER_NAME_KEY, trimmedName);
+  localStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+  if (!trimmedName || !context) {
+    sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+    return;
+  }
+  const value: StoredMusicQuizPlayerName = {
+    version: MUSIC_QUIZ_STORAGE_VERSION,
+    ...context,
+    playerName: trimmedName,
+  };
+  sessionStorage.setItem(MUSIC_QUIZ_PLAYER_NAME_KEY, JSON.stringify(value));
 }
 
-export function getStoredMusicQuizPlayerName(): string {
-  return localStorage.getItem(MUSIC_QUIZ_PLAYER_NAME_KEY)?.trim() ?? "";
+export function getStoredMusicQuizPlayerName(
+  context: MusicQuizParticipantStorageContext | undefined,
+): string {
+  if (!context) {
+    clearStoredMusicQuizPlayerName();
+    return "";
+  }
+  const storedValue = readStoredValue(
+    MUSIC_QUIZ_PLAYER_NAME_KEY,
+    isStoredMusicQuizPlayerName,
+  );
+  if (storedValue && isMatchingStorageContext(storedValue, context)) {
+    return storedValue.playerName;
+  }
+  sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+  localStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+  return "";
 }
 
 export type RankedMusicQuizPlayer = MusicQuizPlayer & { rank: number };
@@ -161,4 +235,74 @@ export function isNoActiveGameError(err: unknown): boolean {
     );
   }
   return false;
+}
+
+function clearStoredMusicQuizPlayerName(): void {
+  sessionStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+  localStorage.removeItem(MUSIC_QUIZ_PLAYER_NAME_KEY);
+}
+
+function isMatchingStorageContext(
+  storedValue: MusicQuizParticipantStorageContext,
+  context: MusicQuizParticipantStorageContext,
+): boolean {
+  return (
+    storedValue.connectionIdentity === context.connectionIdentity &&
+    storedValue.participantIdentity === context.participantIdentity
+  );
+}
+
+function isStoredMusicQuizPlayerId(
+  value: unknown,
+): value is StoredMusicQuizPlayerId {
+  return (
+    isStoredMusicQuizParticipantValue(value) &&
+    "playerId" in value &&
+    typeof value.playerId === "string" &&
+    value.playerId.length > 0
+  );
+}
+
+function isStoredMusicQuizPlayerName(
+  value: unknown,
+): value is StoredMusicQuizPlayerName {
+  return (
+    isStoredMusicQuizParticipantValue(value) &&
+    "playerName" in value &&
+    typeof value.playerName === "string" &&
+    value.playerName.length > 0
+  );
+}
+
+function isStoredMusicQuizParticipantValue(value: unknown): value is Record<
+  string,
+  unknown
+> &
+  MusicQuizParticipantStorageContext & {
+    version: typeof MUSIC_QUIZ_STORAGE_VERSION;
+  } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "version" in value &&
+    value.version === MUSIC_QUIZ_STORAGE_VERSION &&
+    "connectionIdentity" in value &&
+    typeof value.connectionIdentity === "string" &&
+    "participantIdentity" in value &&
+    typeof value.participantIdentity === "string"
+  );
+}
+
+function readStoredValue<T>(
+  storageKey: string,
+  guard: (value: unknown) => value is T,
+): T | undefined {
+  const rawValue = sessionStorage.getItem(storageKey);
+  if (!rawValue) return undefined;
+  try {
+    const value: unknown = JSON.parse(rawValue);
+    return guard(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }

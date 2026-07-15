@@ -723,8 +723,7 @@ export function getMusicQuizInfo(): Promise<MusicQuizInfo | null> {
     (provider) => provider.domain === "music_quiz",
   );
   if (!hasMusicQuiz) return Promise.resolve(null);
-  // Callers treat failures as "no quiz available" and surface their own
-  // messaging, so skip the global error toast.
+  // Callers handle failures locally, so skip the global error toast.
   return api.sendCommand<MusicQuizInfo | null>("music_quiz/info", undefined, {
     suppressGlobalError: true,
   });

@@ -102,7 +102,19 @@
           :round-label="roundLabel"
           :mode="activeState.mode"
           :listen-in-enabled="listenInEnabled"
-        />
+        >
+          <template #actions>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="music-quiz-play-along"
+              @click="playAlong"
+            >
+              <Gamepad2 class="size-4" aria-hidden="true" />
+              {{ $t("providers.music_quiz.play_along") }}
+            </Button>
+          </template>
+        </MusicQuizSessionHeader>
 
         <MusicQuizHostPanel
           :state="activeState"
@@ -253,7 +265,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper, Plus, Settings } from "@lucide/vue";
+import { Gamepad2, PartyPopper, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -384,6 +396,10 @@ function goToMusicQuizSettings() {
     name: "editprovider",
     params: { instanceId: musicQuizProviderInstanceId.value },
   });
+}
+
+function playAlong() {
+  void router.push({ name: "guest-quiz" });
 }
 
 async function handleCreate(request: MusicQuizCreateRequest) {
