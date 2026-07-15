@@ -1,68 +1,82 @@
 <template>
   <div
-    ref="containerRef"
-    class="flex flex-col gap-2"
-    :class="{
-      'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
-    }"
+    class="flex min-w-0 flex-col gap-2"
     :data-orientation="horizontal ? 'horizontal' : 'vertical'"
   >
     <p v-if="selectable" class="text-muted-foreground text-center text-sm">
       {{ $t("providers.music_quiz.timeline_place_help") }}
     </p>
-    <ol
-      class="flex"
-      :class="
-        horizontal
-          ? 'w-max min-w-full flex-row items-stretch gap-2'
-          : 'mx-auto w-full max-w-2xl flex-col'
-      "
-      :aria-label="$t('providers.music_quiz.timeline')"
+    <p
+      v-if="entries.length"
+      class="text-muted-foreground flex items-center justify-center gap-2 text-xs font-semibold"
+      aria-hidden="true"
     >
-      <template v-for="boundary in boundaries" :key="boundary.key">
-        <li
-          v-if="selectable && entries.length"
-          class="relative z-10 flex justify-center py-2"
-        >
-          <Button
-            type="button"
-            size="sm"
-            class="min-h-11 min-w-44 rounded-full"
-            :disabled="disabled"
-            :aria-label="boundary.label"
-            :aria-pressed="boundary.selected"
-            :data-previous-entry-id="boundary.previousEntryId"
-            :data-next-entry-id="boundary.nextEntryId"
-            @click="
-              emit('select', boundary.previousEntryId, boundary.nextEntryId)
+      <span>{{ $t("providers.music_quiz.timeline_older") }}</span>
+      <ArrowRight v-if="horizontal" class="size-4" />
+      <ArrowDown v-else class="size-4" />
+      <span>{{ $t("providers.music_quiz.timeline_newer") }}</span>
+    </p>
+    <div
+      ref="containerRef"
+      data-timeline-scroll
+      :class="{
+        'min-w-0 overflow-x-auto overscroll-x-contain pb-1': horizontal,
+      }"
+    >
+      <ol
+        class="flex"
+        :class="
+          horizontal
+            ? 'w-max min-w-full flex-row items-stretch gap-2'
+            : 'mx-auto w-full max-w-2xl flex-col'
+        "
+        :aria-label="$t('providers.music_quiz.timeline_order')"
+      >
+        <template v-for="boundary in boundaries" :key="boundary.key">
+          <li
+            v-if="selectable && entries.length"
+            class="relative z-10 flex justify-center py-2"
+          >
+            <Button
+              type="button"
+              size="sm"
+              class="h-auto min-h-11 min-w-44 max-w-full rounded-full px-4 py-2 text-center whitespace-normal"
+              :disabled="disabled"
+              :aria-label="boundary.label"
+              :aria-pressed="boundary.selected"
+              :data-previous-entry-id="boundary.previousEntryId"
+              :data-next-entry-id="boundary.nextEntryId"
+              @click="
+                emit('select', boundary.previousEntryId, boundary.nextEntryId)
+              "
+            >
+              <Check v-if="boundary.selected" class="size-4" />
+              <Plus v-else class="size-4" />
+              {{
+                boundary.selected
+                  ? $t("providers.music_quiz.timeline_placed_here")
+                  : boundary.actionLabel
+              }}
+            </Button>
+          </li>
+          <li
+            v-if="boundary.entry"
+            class="border-primary/25"
+            :class="
+              horizontal
+                ? 'w-52 shrink-0 border-t-2 pt-2'
+                : 'border-l-2 py-2 pl-3'
             "
           >
-            <Check v-if="boundary.selected" class="size-4" />
-            <Plus v-else class="size-4" />
-            {{
-              boundary.selected
-                ? $t("providers.music_quiz.timeline_placed_here")
-                : $t("providers.music_quiz.timeline_place_here")
-            }}
-          </Button>
-        </li>
-        <li
-          v-if="boundary.entry"
-          class="border-primary/25"
-          :class="
-            horizontal
-              ? 'w-52 shrink-0 border-t-2 pt-2'
-              : 'border-l-2 py-2 pl-3'
-          "
-        >
-          <TimelineEntryCard
-            :entry="boundary.entry"
-            :highlighted="boundary.entry.entry_id === highlightedEntryId"
-            :compact="compact"
-          />
-        </li>
-      </template>
-    </ol>
+            <TimelineEntryCard
+              :entry="boundary.entry"
+              :highlighted="boundary.entry.entry_id === highlightedEntryId"
+              :compact="compact"
+            />
+          </li>
+        </template>
+      </ol>
+    </div>
   </div>
 </template>
 
@@ -71,7 +85,7 @@ import TimelineEntryCard from "@/components/music-quiz/answer-types/timeline/Tim
 import { Button } from "@/components/ui/button";
 import type { MusicQuizTimelineEntry } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
-import { Check, Plus } from "@lucide/vue";
+import { ArrowDown, ArrowRight, Check, Plus } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";
 
 interface TimelineBoundary {
@@ -79,6 +93,7 @@ interface TimelineBoundary {
   previousEntryId: string | null;
   nextEntryId: string | null;
   entry?: MusicQuizTimelineEntry;
+  actionLabel: string;
   label: string;
   selected: boolean;
 }
@@ -120,6 +135,7 @@ const boundaries = computed<TimelineBoundary[]>(() =>
       previousEntryId,
       nextEntryId,
       entry: next,
+      actionLabel: boundaryActionLabel(previous, next),
       label: boundaryLabel(previous, next),
       selected:
         previousEntryId === props.selectedPreviousEntryId &&
@@ -164,6 +180,34 @@ function boundaryLabel(
       previous.title,
       next.release_year,
       next.title,
+    ]);
+  }
+  return $t("providers.music_quiz.timeline_place_here");
+}
+
+function boundaryActionLabel(
+  previous: MusicQuizTimelineEntry | undefined,
+  next: MusicQuizTimelineEntry | undefined,
+) {
+  if (!previous && next) {
+    return $t("providers.music_quiz.timeline_place_before_year", [
+      next.release_year,
+    ]);
+  }
+  if (previous && !next) {
+    return $t("providers.music_quiz.timeline_place_after_year", [
+      previous.release_year,
+    ]);
+  }
+  if (previous && next) {
+    if (previous.release_year === next.release_year) {
+      return $t("providers.music_quiz.timeline_place_in_year", [
+        previous.release_year,
+      ]);
+    }
+    return $t("providers.music_quiz.timeline_place_between_years", [
+      previous.release_year,
+      next.release_year,
     ]);
   }
   return $t("providers.music_quiz.timeline_place_here");

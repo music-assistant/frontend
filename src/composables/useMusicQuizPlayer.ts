@@ -32,6 +32,7 @@ import {
 import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
+import { waitForApiInitialization } from "@/plugins/api/helpers";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
@@ -214,7 +215,15 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
   }
 
   onMounted(() => {
-    void fetchState();
+    void (async () => {
+      // Wait until server state (e.g. the provider registry) is available;
+      // on a hard page refresh this composable can mount before the API
+      // connection finishes initializing, and probing quiz state too early
+      // would briefly resolve to a wrong "no quiz" answer.
+      await waitForApiInitialization();
+      if (disposed) return;
+      await fetchState();
+    })();
     unsubscribeProviderEvent = api.subscribe(
       EventType.PROVIDER_EVENT,
       handleProviderEvent,

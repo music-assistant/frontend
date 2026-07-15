@@ -12,7 +12,8 @@ import {
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
 import { consumeMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
-import api, { ConnectionState } from "@/plugins/api";
+import api from "@/plugins/api";
+import { waitForApiInitialization } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
@@ -30,6 +31,7 @@ import { useRoute, useRouter } from "vue-router";
 
 export type GuestEntryState =
   | "loading"
+  | "error"
   | "quiz"
   | "party"
   | "quiz-ended"
@@ -111,7 +113,22 @@ export function useGuestEntryResolver() {
     while (active) {
       const version = requestedVersion;
       const resolutionAffinity = getQuizAffinity();
-      const nextState = await resolveGuestEntryState(resolutionAffinity);
+      let nextState: GuestEntryState;
+      try {
+        nextState = await resolveGuestEntryState(resolutionAffinity);
+      } catch {
+        if (!active) return;
+        if (version !== requestedVersion) continue;
+        if (resolutionAffinity !== getQuizAffinity()) {
+          requestedVersion += 1;
+          continue;
+        }
+        if (state.value === "loading") {
+          state.value = "error";
+          await syncRoute();
+        }
+        return;
+      }
       if (!active) return;
       if (version !== requestedVersion) continue;
       if (resolutionAffinity !== getQuizAffinity()) {
@@ -223,23 +240,7 @@ function getGuestEntryPath(state: GuestEntryState): string | undefined {
   if (state === "quiz") return "/guest/quiz";
   if (state === "quiz-ended") return "/guest/quiz";
   if (state === "party") return "/guest/party";
+  if (state === "error") return "/guest";
   if (state === "quiz-inactive" || state === "inactive") return "/guest";
   return undefined;
-}
-
-async function waitForApiInitialization() {
-  if (api.state.value === ConnectionState.INITIALIZED) return;
-
-  await new Promise<void>((resolve) => {
-    const unwatch = watch(
-      () => api.state.value,
-      (newState) => {
-        if (newState === ConnectionState.INITIALIZED) {
-          unwatch();
-          resolve();
-        }
-      },
-      { immediate: true },
-    );
-  });
 }

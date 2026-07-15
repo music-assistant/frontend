@@ -92,12 +92,23 @@ describe("guest entry decisions", () => {
     apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
 
     await expect(resolveGuestEntry()).resolves.toBe("quiz");
-    expect(apiMock.sendCommand).toHaveBeenCalledWith("music_quiz/info");
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "music_quiz/info",
+      undefined,
+      { suppressGlobalError: true },
+    );
     expect(getStoredAffinity()).toEqual({
       version: 2,
       connectionIdentity: "local:http://music-assistant:8095",
       participantIdentity: "guest-token-1",
     });
+  });
+
+  it("propagates a music quiz info failure", async () => {
+    setProviders("party", "music_quiz");
+    apiMock.sendCommand.mockRejectedValue(new Error("boom"));
+
+    await expect(resolveGuestEntry()).rejects.toThrow("boom");
   });
 
   it("keeps an entered Music Quiz ahead of Party after it disappears", async () => {
@@ -189,6 +200,54 @@ describe("guest entry transitions", () => {
 
   afterEach(() => {
     wrapper?.unmount();
+  });
+
+  it("shows an error state when the initial resolution fails", async () => {
+    setProviders("party", "music_quiz");
+    routeMock.path = "/guest/party";
+    apiMock.sendCommand.mockRejectedValue(new Error("boom"));
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+
+    await expectState("error");
+
+    expect(routeMock.path).toBe("/guest");
+    expect(routerReplace).toHaveBeenCalledOnce();
+    expect(routerReplace).toHaveBeenCalledWith("/guest");
+  });
+
+  it("preserves the current Quiz state when a refresh fails", async () => {
+    setProviders("party", "music_quiz");
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    let resolveEntry!: () => Promise<void>;
+    wrapper = mountResolver((state, resolve) => {
+      resolverState = state;
+      resolveEntry = resolve;
+    });
+    await expectState("quiz");
+
+    apiMock.sendCommand.mockRejectedValue(new Error("boom"));
+    await resolveEntry();
+
+    expect(resolverState.value).toBe("quiz");
+    expect(routeMock.path).toBe("/guest/quiz");
+    expect(routerReplace).toHaveBeenCalledOnce();
+  });
+
+  it("recovers from an initial error on a later provider event", async () => {
+    setProviders("party", "music_quiz");
+    apiMock.sendCommand.mockRejectedValue(new Error("boom"));
+    wrapper = mountResolver((state) => {
+      resolverState = state;
+    });
+    await expectState("error");
+
+    apiMock.sendCommand.mockResolvedValue({ game_id: "active" });
+    signalProviderEvent({ event: "game_updated", state: {} });
+
+    await expectState("quiz");
+    expect(routeMock.path).toBe("/guest/quiz");
   });
 
   it("keeps a Party guest in Quiz context and returns to the next game", async () => {
@@ -485,13 +544,16 @@ describe("guest entry transitions", () => {
 });
 
 function mountResolver(
-  onSetup: (state: DeepReadonly<Ref<GuestEntryState>>) => void,
+  onSetup: (
+    state: DeepReadonly<Ref<GuestEntryState>>,
+    resolve: () => Promise<void>,
+  ) => void,
 ) {
   return mount(
     defineComponent({
       setup() {
-        const { state } = useGuestEntryResolver();
-        onSetup(state);
+        const { state, resolve } = useGuestEntryResolver();
+        onSetup(state, resolve);
         return () => h("div");
       },
     }),

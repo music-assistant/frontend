@@ -16,6 +16,7 @@ const {
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
   mockMarkJoinedGameEnded,
+  mockWaitForApiInitialization,
   storedPlayerId,
   storedPlayerName,
   providerHandlers,
@@ -37,6 +38,7 @@ const {
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
   mockMarkJoinedGameEnded: vi.fn(),
+  mockWaitForApiInitialization: vi.fn(),
   storedPlayerId: { value: null as string | null },
   storedPlayerName: { value: "" },
   providerHandlers: [] as Array<
@@ -109,6 +111,10 @@ vi.mock("@/plugins/remote", () => ({
   remoteConnectionManager: {
     currentRemoteId: { value: null },
   },
+}));
+
+vi.mock("@/plugins/api/helpers", () => ({
+  waitForApiInitialization: mockWaitForApiInitialization,
 }));
 
 vi.mock("@/helpers/music_quiz", () => ({
@@ -371,6 +377,8 @@ describe("useMusicQuizPlayer", () => {
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
     mockMarkJoinedGameEnded.mockReset();
+    mockWaitForApiInitialization.mockReset();
+    mockWaitForApiInitialization.mockResolvedValue(undefined);
     mockHeartbeatMusicQuiz.mockResolvedValue(true);
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockGetStoredPlayerName.mockImplementation(() => storedPlayerName.value);
@@ -415,6 +423,25 @@ describe("useMusicQuizPlayer", () => {
     }
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+
+  it("defers the initial fetch until the API connection is initialized", async () => {
+    // On a hard page refresh the composable can mount before the API has
+    // fetched server state (providers); probing too early would resolve to
+    // a wrong "no quiz" answer.
+    const initialization = deferred<void>();
+    mockWaitForApiInitialization.mockReturnValue(initialization.promise);
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+
+    useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(mockGetMusicQuizInfo).not.toHaveBeenCalled();
+
+    initialization.resolve(undefined);
+    await flushPromises();
+
+    expect(mockGetMusicQuizInfo).toHaveBeenCalled();
   });
 
   it("validates a stored player before fetching personalized state", async () => {
