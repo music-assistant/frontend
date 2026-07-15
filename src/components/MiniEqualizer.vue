@@ -3,12 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  onMounted,
-  onUnmounted,
-  ref,
-  watch,
-} from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { store } from "@/plugins/store";
 import api from "@/plugins/api";
@@ -34,15 +29,25 @@ let timerId: ReturnType<typeof setInterval> | null = null;
 function getElapsedSecs(): number {
   const queueId = store.activePlayerQueue?.queue_id;
   const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-  if (queueTime?.elapsed_time != null && queueTime?.elapsed_time_last_updated != null) {
+  if (
+    queueTime?.elapsed_time != null &&
+    queueTime?.elapsed_time_last_updated != null
+  ) {
     const isPlaying = store.activePlayerQueue?.state === "playing";
-    const delta = isPlaying ? Date.now() / 1000 - queueTime.elapsed_time_last_updated : 0;
+    const delta = isPlaying
+      ? Date.now() / 1000 - queueTime.elapsed_time_last_updated
+      : 0;
     return queueTime.elapsed_time + delta;
   }
   const player = store.activePlayer;
-  if (player?.elapsed_time != null && player?.elapsed_time_last_updated != null) {
+  if (
+    player?.elapsed_time != null &&
+    player?.elapsed_time_last_updated != null
+  ) {
     const isPlaying = player.playback_state === "playing";
-    const delta = isPlaying ? Date.now() / 1000 - player.elapsed_time_last_updated : 0;
+    const delta = isPlaying
+      ? Date.now() / 1000 - player.elapsed_time_last_updated
+      : 0;
     return player.elapsed_time + delta;
   }
   return 0;
@@ -101,7 +106,9 @@ function draw() {
     const x = startX + i * pitch;
     const y = (cssH - barH) / 2;
     const isCurrent = i === half;
-    ctx.globalAlpha = isCurrent ? 1 : 0.3 + 0.7 * (1 - Math.abs(i - half) / half) * rms;
+    ctx.globalAlpha = isCurrent
+      ? 1
+      : 0.3 + 0.7 * (1 - Math.abs(i - half) / half) * rms;
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") {
       ctx.roundRect(x, y, barW, barH, 1);

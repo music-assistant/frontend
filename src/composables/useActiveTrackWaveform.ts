@@ -19,10 +19,11 @@ const showWaveformPref = getPreference("show_waveform", true);
 // Watch both queue_item_id and streamdetails.item_id because streamdetails
 // arrive asynchronously after the queue item switches.
 watch(
-  () => [
-    store.curQueueItem?.queue_item_id,
-    store.curQueueItem?.streamdetails?.item_id,
-  ] as const,
+  () =>
+    [
+      store.curQueueItem?.queue_item_id,
+      store.curQueueItem?.streamdetails?.item_id,
+    ] as const,
   async ([queueItemId, streamItemId]) => {
     const fetchKey = `${queueItemId}:${streamItemId}`;
     if (fetchKey === lastFetchKey) return;

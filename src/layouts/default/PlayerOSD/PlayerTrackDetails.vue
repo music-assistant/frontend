@@ -89,7 +89,7 @@
           color="rgb(var(--v-theme-primary))"
           :bars="4"
           :height="16"
-          style="width: 18px; margin-left: 12px; margin-bottom: 4px;"
+          style="width: 18px; margin-left: 12px; margin-bottom: 4px"
         />
       </div>
     </template>

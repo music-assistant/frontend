@@ -23,7 +23,8 @@ vi.mock("@/plugins/store", () => ({
 }));
 
 vi.mock("@/plugins/api/interfaces", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/plugins/api/interfaces")>();
+  const actual =
+    await importOriginal<typeof import("@/plugins/api/interfaces")>();
   return { ...actual };
 });
 
@@ -63,9 +64,8 @@ describe("useActiveTrackWaveform", () => {
   it("fetches waveform and sets bins when track with streamdetails plays", async () => {
     mockGetWaveForm.mockResolvedValueOnce([0.1, 0.5, 0.9]);
 
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins, trackDurationSecs } = useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem();
@@ -78,9 +78,8 @@ describe("useActiveTrackWaveform", () => {
   });
 
   it("does not fetch when media_type is not track", async () => {
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins } = useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem({
@@ -94,9 +93,8 @@ describe("useActiveTrackWaveform", () => {
   });
 
   it("does not fetch when streamdetails are absent", async () => {
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins } = useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem({ streamdetails: undefined });
@@ -110,9 +108,8 @@ describe("useActiveTrackWaveform", () => {
   it("keeps waveformBins null when api throws", async () => {
     mockGetWaveForm.mockRejectedValueOnce(new Error("no analysis"));
 
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins } = useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem();
@@ -125,9 +122,8 @@ describe("useActiveTrackWaveform", () => {
   it("keeps waveformBins null when api returns empty array", async () => {
     mockGetWaveForm.mockResolvedValueOnce([]);
 
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins } = useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem();
@@ -144,9 +140,8 @@ describe("useActiveTrackWaveform", () => {
       .mockReturnValueOnce(promise1)
       .mockResolvedValueOnce([0.8, 0.9]);
 
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     const { waveformBins } = useActiveTrackWaveform();
 
     // Start first fetch.
@@ -172,9 +167,8 @@ describe("useActiveTrackWaveform", () => {
   it("does not re-fetch when the same queue_item_id is set again", async () => {
     mockGetWaveForm.mockResolvedValue([0.5]);
 
-    const { useActiveTrackWaveform } = await import(
-      "@/composables/useActiveTrackWaveform"
-    );
+    const { useActiveTrackWaveform } =
+      await import("@/composables/useActiveTrackWaveform");
     useActiveTrackWaveform();
 
     storeMock.curQueueItem = makeQueueItem({ queue_item_id: "qi-same" });
