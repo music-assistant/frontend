@@ -9,6 +9,7 @@ import api from "@/plugins/api";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
+import { CassetteTape } from "@lucide/vue";
 
 // Builds the context-menu entries for a single queue item. Items up to and
 // including the buffered region are locked (already cued in the stream), so
@@ -47,7 +48,7 @@ export const getQueueItemMenuItems = (
       label: radioActionLabelKey(mediaItem),
       labelArgs: [],
       action: () => gotoRadio(mediaItem),
-      icon: "mdi-radio-tower",
+      icon: CassetteTape,
       disabled: false,
     });
   }

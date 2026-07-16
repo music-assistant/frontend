@@ -244,6 +244,7 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
   ArrowDown,
   ArrowUp,
+  CassetteTape,
   Disc3,
   Download,
   Folder,
@@ -263,7 +264,6 @@ import {
   PinOff,
   PlayCircle,
   PlusCircle,
-  RadioTower,
   RefreshCw,
   SkipForward,
   Trash2,
@@ -532,7 +532,7 @@ export const getContextMenuItems = async function (
       label: radioActionLabelKey(firstItem),
       labelArgs: [],
       action: () => gotoRadio(firstItem),
-      icon: RadioTower,
+      icon: CassetteTape,
       disabled: !radioSupported(firstItem),
     });
   }
