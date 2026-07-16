@@ -1078,134 +1078,25 @@
     "remove_genre_exclusion": "Remove exclusion",
     "providers": {
         "ai_radio": {
-            "empty": {
-                "title": "Create your first station",
-                "description": "AI Radio turns one of your playlists into a radio show with an AI host. The guided setup walks you through it.",
-                "cta": "Create station"
-            },
             "title": "AI Radio",
-            "header": {
-                "subtitle": "Run, create, and manage AI Radio stations and reusable sections."
-            },
             "context": {
-                "run_with": "Run with AI Radio"
-            },
-            "tabs": {
-                "run": "Run",
-                "stations": "Stations",
-                "sections": "Sections"
+                "run_with": "Play as AI Radio"
             },
             "actions": {
                 "discard": "Discard",
-                "show_tutorial": "Show Tutorial",
-                "refresh": "Refresh",
-                "refreshing": "Refreshing...",
-                "new": "New",
-                "guided": "Guided",
-                "import": "Import",
-                "export": "Export",
                 "delete": "Delete",
-                "deleting": "Deleting...",
-                "save_station": "Save Station",
-                "save_section": "Save Section",
                 "saving": "Saving...",
-                "validate": "Validate",
-                "create_playlist": "Create Playlist",
-                "start_live_radio": "Start Live Radio",
-                "starting": "Starting...",
-                "stop": "Stop",
-                "stopping": "Stopping...",
-                "create_station_guided": "Create Station (Guided)",
-                "create_station": "Create Station",
-                "creating": "Creating...",
-                "add_section": "Add Section",
-                "adding": "Adding...",
-                "cancel": "Cancel",
-                "back": "Back",
-                "next": "Next",
-                "done": "Done",
                 "up": "Up",
                 "down": "Down",
                 "remove": "Remove"
             },
-            "placeholders": {
-                "station": "Select station",
-                "use_station_default": "Use station default",
-                "select": "-- Select --",
-                "none": "-- None --",
-                "select_section": "-- Select section --"
-            },
-            "misc": {
-                "id_locked": "The ID cannot be changed after creation.",
-                "not_available": "Not available"
-            },
-            "run": {
-                "advanced": "Advanced options",
-                "create_playlist_hint": "Generate a finished playlist in your library.",
-                "start_live_hint": "Queue songs and host segments live on a player.",
-                "title": "Start Run",
-                "description": "Select a station, then start playlist generation or live queue injection.",
-                "source_playlist_override": "Source Playlist Override",
-                "source_playlist_override_help": "This run will use the selected playlist from the playlist context menu.",
-                "use_station_source_playlist": "Use station source playlist",
-                "playback_device_override": "Playback Device Override (optional)",
-                "source_playtime_cap_override": "Source Playtime Cap Override (minutes)",
-                "dynamic_batch_size_override": "Dynamic Batch Size Override",
-                "guided_hint": "Recommended for first setup. Advanced settings can be edited later in the Stations tab."
-            },
-            "sessions": {
-                "open_playlist": "Open playlist",
-                "title": "Sessions",
-                "description": "Latest AI Radio sessions for this server.",
-                "empty": "No sessions yet.",
-                "started": "Started",
-                "error": "Backend error"
-            },
-            "stations": {
-                "title": "Stations",
-                "description": "Select and manage station profiles."
-            },
-            "sections": {
-                "title": "Sections",
-                "description": "Reusable prompt blocks shared across stations."
-            },
-            "station_editor": {
-                "title": "Station Editor",
-                "description": "Configure source playlist, section selection, flow rules, and runtime profile.",
-                "custom_source_playlist": "Custom source playlist",
-                "merge_section_help": "Used when one between-song slot generates multiple spoken sections.",
-                "advanced": "Advanced Runtime and Provider Settings",
-                "empty": "No station selected. Create a new station to begin."
-            },
-            "section_editor": {
-                "title": "Section Editor",
-                "description": "Define prompt templates, web-search mode, and section constraints.",
-                "advanced": "Advanced",
-                "empty": "No section selected. Create a new section to begin."
-            },
             "fields": {
-                "station": "Station",
-                "station_name": "Station Name",
-                "station_id": "Station ID (technical key)",
-                "source_playlist": "Source Playlist",
-                "source_playlist_provider": "Source Playlist Provider",
-                "source_playlist_id": "Source Playlist ID",
                 "source_playtime_cap": "Source Playtime Cap (minutes)",
                 "target_playlist_provider": "Target Playlist Provider",
                 "default_playback_device": "Default Playback Device (optional)",
-                "selected_sections": "Selected Sections (shared library)",
-                "merge_section": "Merge Section (optional)",
-                "section": "Section",
-                "section_name": "Section Name",
-                "section_id": "Section ID (technical key)",
-                "section_type": "Section Type",
                 "web_search_mode": "Web Search Mode",
                 "character_limit": "Character Limit",
                 "prompt": "Prompt",
-                "chance_percent": "Chance (%)",
-                "guard_min_song_gap": "Guard: Minimum Song Gap",
-                "guard_max_per_60": "Guard: Max Per 60 Minutes",
-                "guard_placeholders": "Guard: Required Placeholders (comma separated)",
                 "clear_queue_on_dynamic_start": "Clear Queue on Dynamic Start",
                 "dynamic_batch_size": "Dynamic Batch Size",
                 "dynamic_prefetch_remaining": "Dynamic Prefetch Remaining Tracks",
@@ -1213,98 +1104,25 @@
                 "timezone": "Timezone",
                 "weather_city": "Weather City",
                 "weather_country": "Weather Country",
-                "weather_provider": "Weather Provider",
-                "weather_timeout_seconds": "Weather Timeout Seconds",
-                "instructions": "Host and Program Instructions",
-                "insert_at": "Insert At"
-            },
-            "flow": {
-                "type_must": "Always play",
-                "type_alternative": "Pick one (weighted)",
-                "type_optional": "Sometimes play",
-                "title": "Playback Flow Rules",
-                "description": "MUST always includes, ALTERNATIVE picks one weighted choice, OPTIONAL runs by chance and guards.",
-                "add_rule": "Add Placement Rule",
-                "empty": "No flow rules configured yet.",
-                "placement": "Placement",
-                "add_item": "Add Flow Item",
-                "remove_rule": "Remove Rule",
-                "weighted_choices": "Weighted Choices",
-                "add_choice": "Add Choice"
-            },
-            "placement": {
-                "start": "Start of Playlist",
-                "between": "Between Songs",
-                "end": "End of Playlist"
+                "instructions": "Host and Program Instructions"
             },
             "web_search": {
                 "disabled": "disabled (no web tool)",
                 "allow": "allow (model may use web)",
                 "force": "force (web search required)",
-                "help": "Advisory only; passed as prompt guidance, not hard-enforced by provider API."
+                "help": "Whether the host may look things up on the web for this segment."
             },
-            "wizard": {
-                "title": "Create Station (Guided)",
-                "description": "Step-by-step setup for a working station. You can fine-tune all advanced options later.",
-                "step": "Step {0} of 3",
-                "station_name_placeholder": "My AI Radio Station",
-                "choose_existing_sections": "Choose Existing Sections",
-                "choose_existing_sections_help": "Select spoken sections and assign where each should be inserted in the generated flow.",
-                "add_new_section": "Add New Section",
-                "add_new_section_help": "Create a new section here and add it to this station instantly.",
-                "section_name_placeholder": "Artist Fact",
-                "selected_sections": "Selected Sections and Placement",
-                "no_sections_selected": "No sections selected yet.",
-                "merge_section_help": "Used when a between-song slot contains multiple spoken sections.",
-                "summary_name": "Name",
-                "summary_source": "Source",
-                "summary_sections": "Sections",
-                "summary_placement": "Placement",
-                "summary_merge_section": "Merge Section",
-                "summary_help": "The wizard will generate a sensible default section flow. You can edit the exact flow in the Station Editor afterwards."
-            },
-            "tutorial": {
-                "title": "AI Radio Tutorial",
-                "description": "Quick overview of sections, stations, and flow rules.",
-                "station_title": "What is a Station?",
-                "station_text": "A station is the complete profile for a run: source playlist, chosen sections, and flow rules that define where spoken segments are inserted.",
-                "section_title": "What is a Section?",
-                "section_text": "A section is a reusable prompt template. Stations reference sections so you can reuse the same intro\/news\/weather blocks across multiple stations.",
-                "flow_title": "How Flow Rules Work",
-                "flow_text": "Flow rules are evaluated per placement (start, between songs, end). MUST always inserts a section. ALTERNATIVE picks one weighted option. OPTIONAL inserts by chance and guard conditions.",
-                "run_modes_title": "Run Modes",
-                "run_modes_text": "Create Playlist generates a prepared playlist first. Start Live Radio generates in dynamic batches and injects directly into a player queue."
-            },
-            "progress": {
-                "phase": {
-                    "fetch_source_tracks": "Loading source playlist",
-                    "initializing_queue": "Preparing player queue",
-                    "planning_sections": "Planning station sections",
-                    "generating_llm": "Generating AI text",
-                    "generating_tts": "Generating voice audio",
-                    "publishing_playlist": "Publishing generated playlist",
-                    "queueing_batch": "Queueing next dynamic batch",
-                    "waiting_for_playback": "Waiting for playback progress",
-                    "running": "Running"
-                },
-                "details": {
-                    "llm_batch": "Batch {0}: {1} section(s) to generate",
-                    "llm_sections": "{0} section(s) to generate",
-                    "tts_batch": "Batch {0}: {1} section(s) to synthesize",
-                    "tts_sections": "{0} section(s) to synthesize",
-                    "queue_batch": "Batch {0}: {1} queue entries total",
-                    "waiting": "Batch {0} queued, waiting ({1}\/{2} tracks prepared)",
-                    "entries": "{0} entries",
-                    "source_tracks": "{0} source tracks",
-                    "source_processed": "{0}\/{1} source tracks processed"
-                }
+            "plays": {
+                "start": "Once at start",
+                "end": "Once at end",
+                "every_song": "Every song",
+                "every_n_songs": "Every ~{0} songs",
+                "every_n_min": "Every ~{0} min",
+                "occasionally": "Occasionally ({0}%)"
             },
             "validation": {
                 "invalid_import_file": "The file is not a valid AI Radio export.",
-                "select_station_first": "Select a station first",
-                "complete_current_step": "Please complete the current step first",
                 "station_name_required": "Station name is required",
-                "source_playlist_required": "Source playlist is required",
                 "station_source_playlist_required": "Station source playlist is required",
                 "select_section": "Select at least one section",
                 "section_order_required": "Section order requires at least one rule",
@@ -1322,59 +1140,110 @@
                 "discard_changes_title": "Discard changes?",
                 "discard_changes": "You have unsaved changes that will be lost.",
                 "delete_station_title": "Delete station?",
-                "delete_section_title": "Delete section?",
-                "delete_station": "Delete this station?",
-                "delete_section": "Delete this section?"
+                "delete_station": "Delete this station?"
             },
             "toast": {
                 "playlists_truncated": "Only the first {0} playlists were loaded.",
-                "import_used_first": "The file contains {0} items; only the first one was imported.",
                 "unavailable": "AI Radio is not enabled.",
-                "stations_loaded": "AI Radio stations loaded",
-                "stations_load_failed": "Failed to load AI Radio stations",
-                "sections_loaded": "AI Radio sections loaded",
-                "sections_load_failed": "Failed to load AI Radio sections",
-                "templates_loaded": "AI Radio templates loaded",
-                "templates_load_failed": "Failed to load AI Radio templates",
-                "players_loaded": "Players loaded",
-                "players_load_failed": "Failed to load players",
-                "playlists_loaded": "Playlists loaded",
-                "playlists_load_failed": "Failed to load playlists",
-                "status_refreshed": "AI Radio status refreshed",
-                "status_load_failed": "Failed to load AI Radio status",
-                "playlist_starting": "Playlist generation started",
+                "playlist_starting": "Generating playlist — it will appear in your library shortly.",
                 "live_starting": "Live radio started",
                 "playlist_start_failed": "Failed to start playlist generation",
                 "live_start_failed": "Failed to start live radio",
-                "run_start_failed": "Failed to start run: {0}",
                 "session_stopped": "AI Radio session stopped",
                 "session_stop_failed": "Failed to stop AI Radio session",
-                "stop_failed": "Failed to stop session: {0}",
-                "data_refreshed": "AI Radio data refreshed",
-                "refresh_failed": "Refresh failed: {0}",
                 "station_saved": "Station saved",
                 "station_save_failed": "Failed to save station",
-                "station_deleted": "Station deleted",
-                "station_delete_failed": "Failed to delete station",
-                "station_created": "Station created. You can now start AI Radio.",
-                "guided_station_create_failed": "Failed to create guided station: {0}",
-                "station_load_failed": "Failed to load station: {0}",
-                "station_validation_passed": "Station validation passed",
-                "station_validation_failed": "Station validation failed: {0}",
-                "station_imported": "Station imported into editor",
-                "station_import_failed": "Failed to import station: {0}",
-                "station_exported": "Station exported",
-                "section_saved": "Section saved",
-                "section_save_failed": "Failed to save section",
-                "section_deleted": "Section deleted",
-                "section_delete_failed": "Failed to delete section",
-                "section_added_to_setup": "Section added to station setup",
-                "section_create_failed": "Failed to create section: {0}",
-                "section_load_failed": "Failed to load section: {0}",
-                "section_imported": "Section imported into editor",
-                "section_import_failed": "Failed to import section: {0}",
-                "section_exported": "Section exported",
-                "init_failed": "Failed to initialize AI Radio view: {0}"
+                "station_deleted": "Station deleted"
+            },
+            "header": {
+                "subtitle": "Turn a playlist into a radio show with an AI host."
+            },
+            "gallery": {
+                "empty_title": "Create your first show",
+                "empty_description": "AI Radio turns one of your playlists into a radio show with an AI host. AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host — configure one under Settings → Plugins.",
+                "create_cta": "Create show",
+                "new_show": "New show",
+                "refresh": "Refresh"
+            },
+            "card": {
+                "play": "Play",
+                "starting": "Starting...",
+                "stop": "Stop",
+                "stopping": "Stopping...",
+                "on_air": "On air",
+                "generate_playlist": "Generate as playlist",
+                "customize": "Customize",
+                "duplicate": "Duplicate",
+                "duplicate_name": "{0} (copy)",
+                "delete": "Delete",
+                "session_failed": "Last run failed",
+                "no_player": "Select a player first",
+                "start_failed": "Failed to start: {0}",
+                "switch_show_title": "Switch show?",
+                "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
+                "switch_show_confirm_label": "Switch"
+            },
+            "create": {
+                "title": "Create a show",
+                "description": "Pick a playlist, a host style, and how chatty it should be.",
+                "playlist_label": "Source playlist",
+                "playlist_placeholder": "Choose a playlist",
+                "playlist_empty": "No playlists found",
+                "preset_label": "Host style",
+                "talk_label": "Talkativeness",
+                "name_label": "Show name",
+                "default_name": "{0} — {1}",
+                "create": "Create",
+                "create_and_play": "Create & play",
+                "creating": "Creating...",
+                "validation": {
+                    "playlist_required": "Choose a source playlist",
+                    "name_required": "Show name is required"
+                }
+            },
+            "presets": {
+                "morning_show": {
+                    "name": "Morning show",
+                    "description": "Warm, upbeat host with weather and news breaks."
+                },
+                "minimal_dj": {
+                    "name": "Minimal DJ",
+                    "description": "Calm, understated transitions that stay out of the way."
+                },
+                "music_nerd": {
+                    "name": "Music nerd",
+                    "description": "Shares artist facts and trivia between songs."
+                },
+                "party_host": {
+                    "name": "Party host",
+                    "description": "High-energy shout-outs to keep the party going."
+                }
+            },
+            "talk": {
+                "rarely": "Rarely",
+                "normal": "Normal",
+                "chatty": "Chatty"
+            },
+            "prereq": {
+                "title": "AI provider needed",
+                "description": "AI Radio needs an AI-capable provider (e.g. Home Assistant) to generate the host.",
+                "action": "Go to Settings → Plugins"
+            },
+            "customize": {
+                "title": "Customize show",
+                "save": "Save show",
+                "advanced": "Advanced",
+                "basics_title": "Basics",
+                "segments_title": "Segments",
+                "segments_empty": "No segments yet — add one to get started.",
+                "add_segment": "Add segment",
+                "blank_segment": "Blank segment",
+                "blank_segment_name": "New segment",
+                "segment_name": "Segment name",
+                "use_current_player": "Use current player",
+                "lossy_warning_title": "Simplified on save",
+                "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
+                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
             }
         },
         "party": {
