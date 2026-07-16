@@ -50,8 +50,7 @@
           >
             {{ $t("providers.ai_radio.card.generate_playlist") }}
           </DropdownMenuItem>
-          <!-- TODO(task3): enable once the Customize view exists. -->
-          <DropdownMenuItem disabled @click="emit('customize', show.id)">
+          <DropdownMenuItem @click="emit('customize', show.id)">
             {{ $t("providers.ai_radio.card.customize") }}
           </DropdownMenuItem>
           <DropdownMenuItem :disabled="isDuplicating" @click="onDuplicate">

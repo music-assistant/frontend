@@ -510,11 +510,18 @@ export const compileShow = (draft: ShowDraft): AIRadioStation => {
 export interface DecompiledShow {
   basics: ShowBasics;
   segments: ShowSegment[];
+  /**
+   * True when decompiling hit one of the lossy fallback cases below — the
+   * Customize UI shows a warning that saving will rewrite the show in the
+   * simplified segment format.
+   */
+  lossy: boolean;
 }
 
 /**
  * Best-effort inverse of compileShow, for opening an existing/imported
- * station in the Customize view. Lossy cases:
+ * station in the Customize view. Lossy cases (flagged via the returned
+ * `lossy` bit):
  * - ALTERNATIVE with >1 choice decompiles to N independent "occasionally"
  *   segments (weight -> percent of the total); the original weighted
  *   pick-one semantics can't be reconstructed from independent chances.
@@ -527,6 +534,7 @@ export const decompileStation = (
   station: AIRadioStation,
   sections: AIRadioSection[],
 ): DecompiledShow => {
+  let lossy = false;
   const sectionMap = new Map<string, AIRadioSection>();
   for (const section of sections) {
     sectionMap.set(section.id, section);
@@ -567,6 +575,7 @@ export const decompileStation = (
         const segment = toSegment(choices[0].section, { kind: "every_song" });
         return segment ? [segment] : [];
       }
+      lossy = true;
       const total = choices.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
       return choices
         .map((choice) =>
@@ -594,6 +603,7 @@ export const decompileStation = (
     ) {
       plays = { kind: "every_n_songs", n: minGap + 1 };
     } else {
+      lossy = true;
       plays = { kind: "occasionally", percent: Math.round(chance * 100) };
     }
     const segment = toSegment(sectionId, plays);
@@ -634,7 +644,7 @@ export const decompileStation = (
     general: asGeneralDefaults(station.general),
   };
 
-  return { basics, segments };
+  return { basics, segments, lossy };
 };
 
 const PLAYS_RULE_LABEL_KEYS: Record<PlaysRule["kind"], string> = {
@@ -672,11 +682,13 @@ export const getQueryValue = (value: unknown) => {
 };
 
 // -----------------------------------------------------------------------
-// TODO(task3): everything below this line belongs to the flow editor/
-// station-editor UI being replaced. It is retained only because
-// AiRadioFlowEditor.vue, AiRadioStationEditor.vue, AiRadioSectionsTab.vue
-// and their draft composables still import it. Remove once those
-// components are deleted.
+// The flow editor/station-editor UI these helpers were written for has been
+// replaced by the Customize view and is gone. What's left below is retained
+// solely because tests/helpers/ai_radio.test.ts still exercises it directly
+// or transitively (validateStationDraftLocal calls getFlowType/
+// getMustSection/getAlternativeChoices/getOptionalPayload/getOptionalSection
+// internally); per repo policy tests are never modified to drop coverage,
+// so these stay until that test file is revisited.
 // -----------------------------------------------------------------------
 
 export type AIRadioFlowType = "MUST" | "ALTERNATIVE" | "OPTIONAL";
@@ -720,18 +732,6 @@ export const parseOptionalPositiveInt = (
     return undefined;
   }
   return parsed;
-};
-
-export const exportJson = (filename: string, payload: unknown) => {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 };
 
 export const playlistSelectValue = (provider: string, itemId: string) => {
@@ -875,26 +875,6 @@ export const getOptionalPayload = (
 export const getOptionalSection = (item: AIRadioFlowItem): string => {
   const optional = getOptionalPayload(item);
   return optional?.section || "";
-};
-
-export const getOptionalChancePercent = (item: AIRadioFlowItem): number => {
-  const optional = getOptionalPayload(item);
-  return Math.round((optional?.chance ?? 0) * 100);
-};
-
-export const getOptionalMinGap = (item: AIRadioFlowItem): number => {
-  const optional = getOptionalPayload(item);
-  return safeInteger(String(optional?.guards?.min_gap_songs ?? 0), 0, 0);
-};
-
-export const getOptionalMaxPer60 = (item: AIRadioFlowItem): number => {
-  const optional = getOptionalPayload(item);
-  return safeInteger(String(optional?.guards?.max_per_60min ?? 0), 0, 0);
-};
-
-export const getOptionalPlaceholders = (item: AIRadioFlowItem): string => {
-  const optional = getOptionalPayload(item);
-  return (optional?.guards?.require_placeholders_present || []).join(", ");
 };
 
 export const defaultGuidedPlacement = (

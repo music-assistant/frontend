@@ -12,7 +12,7 @@ import { ref } from "vue";
 import { toast } from "vue-sonner";
 
 const STATUS_POLL_INTERVAL_MS = 5000;
-// Library playlist paging, mirrors useAiRadioEditor's loadPlaylists.
+// Loads library playlists in pages to avoid truncating larger libraries.
 const PLAYLIST_PAGE_SIZE = 200;
 const PLAYLIST_FETCH_LIMIT = 5000;
 const NO_AI_PROVIDER_MARKER = /no ai provider/i;
