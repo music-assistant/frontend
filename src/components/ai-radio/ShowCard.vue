@@ -149,7 +149,7 @@ import {
   slugify,
 } from "@/helpers/ai_radio";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import type { AIRadioStation } from "@/plugins/api/interfaces";
+import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -178,6 +178,7 @@ const {
   deleteShow,
   startShow,
   stopShow,
+  loadStatus,
   runningSessionForStation,
   reportStartError,
   dismissNoAiProviderAlert,
@@ -210,16 +211,69 @@ const failedSession = computed(() =>
   latestSession.value?.status === "failed" ? latestSession.value : undefined,
 );
 
+/** Any other station's running session, i.e. the one that would block this show from starting. */
+function findOtherRunningSession(): AIRadioSession | undefined {
+  return sessions.value.find(
+    (session) =>
+      session.status === "running" && session.station_id !== props.show.id,
+  );
+}
+
+/** Confirms swapping the on-air show, like switching radio stations. */
+function confirmSwitchAndPlay(
+  otherSession: AIRadioSession,
+  playerId: string,
+): void {
+  const runningName =
+    shows.value.find((show) => show.id === otherSession.station_id)?.name ||
+    otherSession.station_id;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("providers.ai_radio.card.switch_show_title"),
+    message: $t("providers.ai_radio.card.switch_show_confirm", [
+      runningName,
+      props.show.name,
+    ]),
+    confirmLabel: $t("providers.ai_radio.card.switch_show_confirm_label"),
+    onConfirm: async () => {
+      try {
+        await stopShow(otherSession.session_id);
+        await startShow(props.show.id, "dynamic", {
+          playerIdOverride: playerId,
+        });
+        dismissNoAiProviderAlert();
+      } catch (error) {
+        const message = errorMessage(error);
+        toast.error($t("providers.ai_radio.card.start_failed", [message]));
+        reportStartError(message);
+      }
+    },
+  });
+}
+
 async function onPlay() {
   const playerId = resolveShowPlayerId(props.show, store.activePlayerId);
   if (!playerId) {
     toast.error($t("providers.ai_radio.card.no_player"));
     return;
   }
+  const otherRunning = findOtherRunningSession();
+  if (otherRunning) {
+    confirmSwitchAndPlay(otherRunning, playerId);
+    return;
+  }
   try {
     await startShow(props.show.id, "dynamic", { playerIdOverride: playerId });
     dismissNoAiProviderAlert();
   } catch (error) {
+    // The server localizes error details, so the max-concurrent reason can't be
+    // matched on text. Reconcile status instead: if another show turns out to be
+    // running, that's why the start was rejected — offer to switch.
+    await loadStatus();
+    const raceWinner = findOtherRunningSession();
+    if (raceWinner) {
+      confirmSwitchAndPlay(raceWinner, playerId);
+      return;
+    }
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));
     reportStartError(message);

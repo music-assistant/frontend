@@ -1177,7 +1177,10 @@
                 "delete": "Delete",
                 "session_failed": "Last run failed",
                 "no_player": "Select a player first",
-                "start_failed": "Failed to start: {0}"
+                "start_failed": "Failed to start: {0}",
+                "switch_show_title": "Switch show?",
+                "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
+                "switch_show_confirm_label": "Switch"
             },
             "create": {
                 "title": "Create a show",
