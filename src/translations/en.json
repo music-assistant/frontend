@@ -1242,6 +1242,14 @@
                 "force": "force (web search required)",
                 "help": "Advisory only; passed as prompt guidance, not hard-enforced by provider API."
             },
+            "plays": {
+                "start": "Once at start",
+                "end": "Once at end",
+                "every_song": "Every song",
+                "every_n_songs": "Every ~{0} songs",
+                "every_n_min": "Every ~{0} min",
+                "occasionally": "Occasionally ({0}%)"
+            },
             "wizard": {
                 "title": "Create Station (Guided)",
                 "description": "Step-by-step setup for a working station. You can fine-tune all advanced options later.",
