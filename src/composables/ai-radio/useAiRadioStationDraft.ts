@@ -13,7 +13,6 @@ import { $t } from "@/plugins/i18n";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 import { useAiRadioEditor } from "./useAiRadioEditor";
-import { useAiRadioRun } from "./useAiRadioRun";
 
 const selectedEditorStationId = ref("");
 const stationDraft = ref<AIRadioStationDraft | null>(null);
@@ -64,7 +63,6 @@ export function useAiRadioStationDraft() {
     validateStation,
     createStationDraftFromTemplate,
   } = useAiRadioEditor();
-  const { selectedRunStationId, applyRunStationDefaults } = useAiRadioRun();
 
   const createNewStationDraft = () => {
     confirmDiscardStationDraft(() => {
@@ -129,10 +127,6 @@ export function useAiRadioStationDraft() {
     try {
       const saved = await saveStation(payload);
       adoptStation(saved);
-      if (!selectedRunStationId.value) {
-        selectedRunStationId.value = saved.id;
-        applyRunStationDefaults(saved.id);
-      }
     } catch (error) {
       toast.error(
         $t("providers.ai_radio.toast.station_save_failed", [

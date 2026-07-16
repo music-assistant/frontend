@@ -658,12 +658,25 @@ export const playsRuleLabel = (rule: PlaysRule): string => {
   return $t(key);
 };
 
+/** Player to start a show on: its own default, else the currently active player, else none. */
+export const resolveShowPlayerId = (
+  station: Pick<AIRadioStation, "default_player_id">,
+  activePlayerId: string | undefined,
+): string => {
+  return station.default_player_id || activePlayerId || "";
+};
+
+export const getQueryValue = (value: unknown) => {
+  if (typeof value !== "string") return "";
+  return value.trim();
+};
+
 // -----------------------------------------------------------------------
-// TODO(task2/3): everything below this line belongs to the wizard/flow
-// editor/station-editor UI being replaced. It is retained only because
-// AiRadioFlowEditor.vue, AiRadioGuidedWizard.vue, AiRadioStationEditor.vue,
-// AiRadioSectionsTab.vue, AiRadioStationsTab.vue and their draft composables
-// still import it. Remove once those components are deleted.
+// TODO(task3): everything below this line belongs to the flow editor/
+// station-editor UI being replaced. It is retained only because
+// AiRadioFlowEditor.vue, AiRadioStationEditor.vue, AiRadioSectionsTab.vue
+// and their draft composables still import it. Remove once those
+// components are deleted.
 // -----------------------------------------------------------------------
 
 export type AIRadioFlowType = "MUST" | "ALTERNATIVE" | "OPTIONAL";
@@ -731,11 +744,6 @@ export const splitPlaylistSelectValue = (value: string) => {
     provider: provider || "library",
     itemId: itemId || "",
   };
-};
-
-export const getQueryValue = (value: unknown) => {
-  if (typeof value !== "string") return "";
-  return value.trim();
 };
 
 export const normalizeStationDraft = (

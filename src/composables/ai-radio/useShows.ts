@@ -5,25 +5,36 @@ import type {
   AIRadioSession,
   AIRadioStation,
   AIRadioStatus,
+  Playlist,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ref } from "vue";
 import { toast } from "vue-sonner";
 
 const STATUS_POLL_INTERVAL_MS = 5000;
+// Library playlist paging, mirrors useAiRadioEditor's loadPlaylists.
+const PLAYLIST_PAGE_SIZE = 200;
+const PLAYLIST_FETCH_LIMIT = 5000;
+const NO_AI_PROVIDER_MARKER = /no ai provider/i;
 
 const shows = ref<AIRadioStation[]>([]);
 const sections = ref<AIRadioSection[]>([]);
 const sessions = ref<AIRadioSession[]>([]);
+const playlists = ref<Playlist[]>([]);
 
 const loadingShows = ref(false);
 const loadingSections = ref(false);
 const loadingStatus = ref(false);
+const loadingPlaylists = ref(false);
 const savingShow = ref(false);
 // Station id currently being deleted/started, so only that card reflects it.
 const deletingShowId = ref("");
 const startingShowId = ref("");
 const stoppingSessionId = ref("");
+
+// Set when a start attempt fails with a "No AI provider" error; drives the
+// gallery's persistent prereq banner (a toast alone isn't enough there).
+const noAiProviderAlert = ref(false);
 
 let statusPollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -67,6 +78,45 @@ async function loadSections(): Promise<AIRadioSection[]> {
   } finally {
     loadingSections.value = false;
   }
+}
+
+async function loadPlaylists(): Promise<Playlist[]> {
+  loadingPlaylists.value = true;
+  try {
+    // Load in pages to avoid truncating larger libraries.
+    let offset = 0;
+    let hasMore = true;
+    const allItems: Playlist[] = [];
+    while (hasMore && offset < PLAYLIST_FETCH_LIMIT) {
+      const batch = await api.getLibraryPlaylists(
+        undefined,
+        undefined,
+        PLAYLIST_PAGE_SIZE,
+        offset,
+      );
+      allItems.push(...batch);
+      hasMore = batch.length === PLAYLIST_PAGE_SIZE;
+      offset += PLAYLIST_PAGE_SIZE;
+    }
+    if (hasMore) {
+      toast.warning(
+        $t("providers.ai_radio.toast.playlists_truncated", [
+          PLAYLIST_FETCH_LIMIT,
+        ]),
+      );
+    }
+    playlists.value = sortByName(allItems);
+    return playlists.value;
+  } finally {
+    loadingPlaylists.value = false;
+  }
+}
+
+/** Finds a loaded library playlist by provider+id, for artwork/name resolution on cards. */
+function playlistFor(provider: string, itemId: string): Playlist | undefined {
+  return playlists.value.find(
+    (playlist) => playlist.provider === provider && playlist.item_id === itemId,
+  );
 }
 
 async function getShow(stationId: string): Promise<AIRadioStation> {
@@ -169,6 +219,17 @@ async function stopShow(sessionId: string): Promise<void> {
   }
 }
 
+/** Flags the prereq banner when a start attempt's error indicates no AI provider is configured. */
+function reportStartError(message: string): void {
+  if (NO_AI_PROVIDER_MARKER.test(message)) {
+    noAiProviderAlert.value = true;
+  }
+}
+
+function dismissNoAiProviderAlert(): void {
+  noAiProviderAlert.value = false;
+}
+
 /** The running session for a station, if any (drives a show card's "On air" state). */
 function runningSessionForStation(
   stationId: string,
@@ -201,15 +262,20 @@ export function useShows() {
     shows,
     sections,
     sessions,
+    playlists,
     loadingShows,
     loadingSections,
     loadingStatus,
+    loadingPlaylists,
     savingShow,
     deletingShowId,
     startingShowId,
     stoppingSessionId,
+    noAiProviderAlert,
     loadShows,
     loadSections,
+    loadPlaylists,
+    playlistFor,
     getShow,
     saveShow,
     deleteShow,
@@ -219,5 +285,7 @@ export function useShows() {
     runningSessionForStation,
     startStatusPolling,
     stopStatusPolling,
+    reportStartError,
+    dismissNoAiProviderAlert,
   };
 }
