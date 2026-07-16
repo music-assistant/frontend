@@ -1109,7 +1109,7 @@
                 "disabled": "disabled (no web tool)",
                 "allow": "allow (model may use web)",
                 "force": "force (web search required)",
-                "help": "Advisory only; passed as prompt guidance, not hard-enforced by provider API."
+                "help": "Whether the host may look things up on the web for this segment."
             },
             "plays": {
                 "start": "Once at start",
@@ -1239,7 +1239,7 @@
                 "use_current_player": "Use current player",
                 "lossy_warning_title": "Simplified on save",
                 "lossy_warning_description": "This show uses an advanced configuration that can't be fully represented here. Saving will rewrite it in the simplified segment format above.",
-                "prompt_placeholders_hint": "Available placeholders: <next_songinfo>, <prev_songinfo>, <timestamp>, <weather_hourly>"
+                "prompt_placeholders_hint": "Available placeholders: {placeholders}"
             }
         },
         "party": {

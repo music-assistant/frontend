@@ -35,6 +35,9 @@ const stoppingSessionId = ref("");
 // Set when a start attempt fails with a "No AI provider" error; drives the
 // gallery's persistent prereq banner (a toast alone isn't enough there).
 const noAiProviderAlert = ref(false);
+// Dynamic-mode runs fail asynchronously (the session starts fine and errors
+// during generation), so failed sessions must raise the banner too.
+const seenFailedSessionIds = new Set<string>();
 
 let statusPollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -158,6 +161,13 @@ async function loadStatus(): Promise<AIRadioSession[]> {
   try {
     const result = await api.sendCommand<AIRadioStatus>("ai_radio/status");
     sessions.value = sortSessions(result.sessions || []);
+    for (const session of sessions.value) {
+      if (session.status !== "failed" || seenFailedSessionIds.has(session.session_id)) {
+        continue;
+      }
+      seenFailedSessionIds.add(session.session_id);
+      reportStartError(session.error || "");
+    }
     return sessions.value;
   } finally {
     loadingStatus.value = false;

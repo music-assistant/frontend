@@ -87,7 +87,11 @@
         <Label>{{ $t("providers.ai_radio.fields.prompt") }}</Label>
         <Textarea v-model="prompt" rows="4" class="text-sm" />
         <p class="text-xs text-muted-foreground">
-          {{ $t("providers.ai_radio.customize.prompt_placeholders_hint") }}
+          {{
+            $t("providers.ai_radio.customize.prompt_placeholders_hint", {
+              placeholders: PROMPT_PLACEHOLDERS.join(", "),
+            })
+          }}
         </p>
       </div>
 
@@ -170,6 +174,14 @@ import type { AIRadioWebSearchMode } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ChevronDown, ChevronUp, Trash2 } from "@lucide/vue";
 import { computed, ref } from "vue";
+
+// listed literally so translators never handle raw <placeholder> markup
+const PROMPT_PLACEHOLDERS = [
+  "<next_songinfo>",
+  "<prev_songinfo>",
+  "<timestamp>",
+  "<weather_hourly>",
+];
 
 const props = defineProps<{
   segment: ShowSegment;
