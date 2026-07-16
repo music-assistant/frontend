@@ -165,6 +165,14 @@
               "
               v-model="dsp.filters[selectedStage] as ToneControlFilter"
             />
+            <DSPGain
+              v-if="dsp.filters[selectedStage].type === DSPFilterType.GAIN"
+              v-model="dsp.filters[selectedStage] as GainFilter"
+            />
+            <DSPBalance
+              v-if="dsp.filters[selectedStage].type === DSPFilterType.BALANCE"
+              v-model="dsp.filters[selectedStage] as BalanceFilter"
+            />
           </v-card>
         </v-col>
       </v-row>
@@ -242,6 +250,8 @@ import {
   DSPFilterType,
   ParametricEQFilter,
   ToneControlFilter,
+  GainFilter,
+  BalanceFilter,
   EventType,
 } from "@/plugins/api/interfaces";
 import { getPlayerName } from "@/helpers/utils";
@@ -249,6 +259,8 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import DSPGain from "@/components/dsp/DSPGain.vue";
+import DSPBalance from "@/components/dsp/DSPBalance.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -317,6 +329,20 @@ const addFilter = () => {
         bass_level: 0,
         mid_level: 0,
         treble_level: 0,
+      };
+      break;
+    case DSPFilterType.GAIN:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.GAIN,
+        gain: 0,
+      };
+      break;
+    case DSPFilterType.BALANCE:
+      filter = {
+        enabled: true,
+        type: DSPFilterType.BALANCE,
+        balance: 0,
       };
       break;
     default:

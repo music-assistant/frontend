@@ -14,6 +14,8 @@ export enum AudioChannel {
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
+  GAIN = "gain",
+  BALANCE = "balance",
 }
 
 export enum ParametricEQBandType {
@@ -55,8 +57,22 @@ export interface ToneControlFilter extends DSPFilterBase {
   treble_level: number;
 }
 
+export interface GainFilter extends DSPFilterBase {
+  type: DSPFilterType.GAIN;
+  gain: number;
+}
+
+export interface BalanceFilter extends DSPFilterBase {
+  type: DSPFilterType.BALANCE;
+  balance: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+export type DSPFilter =
+  | ParametricEQFilter
+  | ToneControlFilter
+  | GainFilter
+  | BalanceFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
