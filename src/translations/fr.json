@@ -132,7 +132,6 @@
         "tracks_in_library": "Pistes dans la bibliothèque",
         "playlists_in_library": "Playlists dans la bibliothèque",
         "radio_in_library": "Radio dans la bibliothèque",
-        "server_logging": "Journalisation du serveur",
         "download_log": "Télécharger le fichier journal",
         "edit_group_members": "Modifier les membres du groupe",
         "add_new_provider_button": "Ajouter un fournisseur de {0}",
@@ -147,10 +146,6 @@
                 "light": "Clair",
                 "dark": "Sombre"
             }
-        },
-        "menu_items": {
-            "label": "Éléments de menu activés",
-            "description": "Configurez les éléments à afficher dans le menu.\n\nNotez que si vous désactivez les paramètres, vous risquez de vous bloquer l'accès.\n\nPour y accéder à nouveau, vous devrez saisir manuellement le chemin vers les paramètres ou effacer les cookies du navigateur. Utilisez à vos risques et périls !"
         },
         "language": {
             "label": "Langue",
@@ -309,8 +304,6 @@
         "view_documentation": "Voir la documentation",
         "about": "À propos",
         "about_description": "Informations sur la version, crédits et autres",
-        "system_logging": "Journalisation du serveur",
-        "system_logging_description": "Consulter et télécharger les journaux du serveur pour le dépannage.",
         "auto_refresh_log": "Actualisation automatique",
         "log_truncated": "Affichage des derniers {0} lignes. Téléchargez le fichier journal complet pour obtenir l'historique complet.",
         "version_info": "Informations sur la version",

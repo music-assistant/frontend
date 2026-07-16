@@ -32,9 +32,9 @@
           />
 
           <Button
-            variant="outline"
+            variant="ghost-outline"
             size="icon-xs"
-            class="ml-2 size-7 bg-background/40 backdrop-blur-md hover:bg-background/60"
+            class="ml-2 size-7"
             :aria-label="$t('tooltip.more_options')"
             @click.stop="openQueueMenu"
           >
@@ -324,7 +324,12 @@
       <div class="player-bottom">
         <!-- timeline / progressbar-->
         <div class="row" style="margin-left: 5%; margin-right: 5%">
-          <PlayerTimeline :show-labels="true" :color="sliderColor" />
+          <PlayerTimeline
+            :show-labels="true"
+            :color="sliderColor"
+            :waveform="waveformData"
+            :waveform-loading="waveformLoading"
+          />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
@@ -417,7 +422,7 @@
           <Button
             variant="outline"
             size="xs"
-            class="bg-background/40 backdrop-blur-md hover:bg-background/60"
+            class="border-transparent bg-background/40 shadow-none backdrop-blur-md hover:bg-background/60 dark:border-transparent dark:bg-background/40 dark:hover:bg-background/60"
             @click="
               () => {
                 store.showPlayersMenu = true;
@@ -442,11 +447,11 @@
 import Icon from "@/components/Icon.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import MarqueeText from "@/components/MarqueeText.vue";
+import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
 import { useLyricsElapsedTime } from "@/composables/useLyricsElapsedTime";
 import { useLyricsOffset } from "@/composables/useLyricsOffset";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
-import PlayerIcon from "@/components/PlayerIcon.vue";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import {
   ImageColorPalette,
@@ -454,17 +459,18 @@ import {
   getMediaImageUrl,
   getPlayerName,
 } from "@/helpers/utils";
+import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import NextBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/NextBtn.vue";
 import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
-import LyricsOffsetMenuControl from "@/layouts/default/PlayerOSD/LyricsOffsetMenuControl.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
+import { useUserPreferences } from "@/composables/userPreferences";
 import api from "@/plugins/api";
 import { getSourceName } from "@/plugins/api/helpers";
 import {
@@ -493,7 +499,7 @@ import {
   watchEffect,
 } from "vue";
 import { useDisplay } from "vuetify";
-import { ContextMenuItem } from "../ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
@@ -735,6 +741,96 @@ watch(
     if (isOpen) {
       fetchLyrics();
     }
+  },
+);
+
+// Waveform for the current track, rendered by PlayerTimeline instead of the flat bar.
+const waveformData = ref<number[] | null>(null);
+const waveformLoading = ref(false);
+const { getPreference, setPreference } = useUserPreferences();
+const showWaveformPref = getPreference("show_waveform", true);
+let waveformLoadGeneration = 0;
+let waveformQueueItemId: string | undefined;
+let waveformDetailsTimer: ReturnType<typeof setTimeout> | null = null;
+const WAVEFORM_DETAILS_TIMEOUT_MS = 2000;
+const fetchWaveform = async () => {
+  const generation = ++waveformLoadGeneration;
+
+  const queueItemId = store.curQueueItem?.queue_item_id;
+  if (queueItemId !== waveformQueueItemId) {
+    waveformQueueItemId = queueItemId;
+    waveformData.value = null;
+  }
+
+  const mediaItem = store.curQueueItem?.media_item;
+  // Analysis is keyed by the provider-native (streaming) item id, not the library id.
+  const streamDetails = store.curQueueItem?.streamdetails;
+  if (
+    !showWaveformPref.value ||
+    !store.showFullscreenPlayer ||
+    mediaItem?.media_type !== MediaType.TRACK
+  ) {
+    waveformData.value = null;
+    waveformLoading.value = false;
+    clearWaveformDetailsTimer();
+    return;
+  }
+  if (!streamDetails) {
+    waveformLoading.value = true;
+    clearWaveformDetailsTimer();
+    waveformDetailsTimer = setTimeout(() => {
+      waveformDetailsTimer = null;
+      if (generation === waveformLoadGeneration) {
+        waveformLoading.value = false;
+      }
+    }, WAVEFORM_DETAILS_TIMEOUT_MS);
+    return;
+  }
+
+  clearWaveformDetailsTimer();
+  waveformLoading.value = true;
+  try {
+    const waveform = await api.getWaveForm(
+      streamDetails.item_id,
+      streamDetails.provider,
+    );
+    // a newer track change started while awaiting; this result is stale
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = waveform?.length ? waveform : null;
+    waveformLoading.value = false;
+  } catch {
+    // No analysis available; PlayerTimeline falls back to the flat progress bar.
+    if (generation !== waveformLoadGeneration) return;
+    waveformData.value = null;
+    waveformLoading.value = false;
+  }
+};
+
+const clearWaveformDetailsTimer = () => {
+  if (waveformDetailsTimer === null) return;
+  clearTimeout(waveformDetailsTimer);
+  waveformDetailsTimer = null;
+};
+
+onBeforeUnmount(clearWaveformDetailsTimer);
+
+// Streamdetails can arrive after the queue item switches, so watch both ids.
+watch(
+  () => [
+    store.curQueueItem?.queue_item_id,
+    store.curQueueItem?.streamdetails?.item_id,
+  ],
+  fetchWaveform,
+  { immediate: true },
+);
+
+// FrontendConfig reloads the app on save, but react to live changes anyway (multi-tab sync).
+watch(showWaveformPref, fetchWaveform);
+
+watch(
+  () => store.showFullscreenPlayer,
+  (isOpen) => {
+    if (isOpen) fetchWaveform();
   },
 );
 
@@ -1072,6 +1168,15 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value,
     },
   );
+  menuItems.push({
+    label: "settings.show_waveform.label",
+    action: () => {
+      void setPreference("show_waveform", !showWaveformPref.value);
+    },
+    icon: "mdi-waveform",
+    selected: showWaveformPref.value,
+    close_on_click: false,
+  });
   // While lyrics are open, surface the sync-offset stepper at the top of the
   // overflow menu (only for players that benefit from a latency offset).
   if (showLyrics.value && showLyricsOffset.value) {
@@ -1108,7 +1213,12 @@ onMounted(() => {
 
 // Handle Escape key to close fullscreen player (since persistent disables default behavior)
 const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === "Escape" && store.showFullscreenPlayer && !store.dialogActive) {
+  if (
+    e.key === "Escape" &&
+    store.showFullscreenPlayer &&
+    !store.dialogActive &&
+    !store.showPlayersMenu
+  ) {
     store.showFullscreenPlayer = false;
   }
 };
@@ -1518,6 +1628,8 @@ watchEffect(() => {
   justify-content: center;
   max-width: 100%;
   padding: 15px;
+  /* match the visual gap between the controls and the volume bar below */
+  margin-top: 10px;
   height: 100px;
 }
 

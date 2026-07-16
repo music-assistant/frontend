@@ -1,5 +1,5 @@
 <template>
-  <audio ref="audioRef" controls class="hidden-audio"></audio>
+  <audio ref="audioRef" class="hidden-audio"></audio>
   <audio
     ref="silentAudioRef"
     class="hidden-audio"
@@ -10,14 +10,21 @@
 
 <script setup lang="ts">
 import { useMediaBrowserMetaData } from "@/helpers/useMediaBrowserMetaData";
+import { resetMediaSession } from "@/helpers/mediaSession";
 import { getDeviceName } from "@/plugins/api/helpers";
 import { SendspinPlayer, Codec } from "@sendspin/sendspin-js";
 
 import almostSilentMp3 from "@/assets/almost_silent.mp3";
 import api from "@/plugins/api";
+import authManager from "@/plugins/auth";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
-import { webPlayer } from "@/plugins/web_player";
+import {
+  webPlayer,
+  registerWebPlayerAudioUnlock,
+  clearWebPlayerAudioUnlock,
+  WebPlayerMode,
+} from "@/plugins/web_player";
 import {
   prepareSendspinSession,
   isDirectConnection,
@@ -42,6 +49,36 @@ const isMobileOutput = isAndroid || isIOS;
 
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
+
+// Internal sendspin-js scheduler hooks used to unlock audio within a user
+// gesture; the pinned 3.2.0 release exposes no public equivalent.
+interface SendspinAudioUnlock {
+  initAudioContext?: () => void;
+  resumeAudioContext?: () => void | Promise<void>;
+}
+
+// iOS only lets audio start inside a user gesture, but listen-in audio starts
+// asynchronously (after the server groups this player), so the library would
+// create and resume its AudioContext outside the gesture and stay silent.
+// Create and resume that context now, while the gesture is still active, so the
+// stream plays reliably once it arrives.
+const primeAudio = () => {
+  if (!isIOS) return true;
+  try {
+    const scheduler = (
+      player as unknown as { scheduler?: SendspinAudioUnlock } | null
+    )?.scheduler;
+    if (!scheduler?.initAudioContext || !scheduler.resumeAudioContext) {
+      return false;
+    }
+    scheduler.initAudioContext();
+    void scheduler.resumeAudioContext();
+    return true;
+  } catch (error) {
+    console.debug("Sendspin: failed to prime audio for listen-in", error);
+    return false;
+  }
+};
 
 // Reactive state
 const isPlaying = ref(false);
@@ -71,6 +108,7 @@ let silentAudioInterval: number | undefined;
 // Track seek position for accurate repeated seek forward/backward
 let lastSeekPos: number | undefined;
 let lastSeekPosTimeout: number | undefined;
+const pauseCommandTimeouts = new Set<number>();
 
 const resetLastSeekPos = () => {
   if (lastSeekPosTimeout) clearTimeout(lastSeekPosTimeout);
@@ -104,7 +142,25 @@ watch(
   metadataPlayerId,
   (newPlayerId) => {
     if (unsubMetadata) unsubMetadata();
+    if (isReceiveOnlyGuest()) {
+      resetMediaSession();
+      unsubMetadata = undefined;
+      return;
+    }
     unsubMetadata = useMediaBrowserMetaData(newPlayerId);
+  },
+  { immediate: true },
+);
+
+watch(
+  () => webPlayer.tabMode,
+  () => {
+    if (!isReceiveOnlyGuest()) return;
+    if (unsubMetadata) {
+      unsubMetadata();
+      unsubMetadata = undefined;
+    }
+    resetMediaSession();
   },
   { immediate: true },
 );
@@ -129,6 +185,7 @@ watch(
   (state) => {
     // Only control when showing active player metadata (not web player)
     if (metadataPlayerId.value !== undefined) return;
+    if (isReceiveOnlyGuest()) return;
     if (!silentAudioRef.value) return;
 
     // Clear existing interval
@@ -164,6 +221,10 @@ watch(
     () => webPlayer.interacted,
   ],
   ([, pState, , metaPlayerId, interacted]) => {
+    if (isReceiveOnlyGuest()) {
+      resetMediaSession();
+      return;
+    }
     if (!interacted) return;
 
     let state: MediaSessionPlaybackState;
@@ -195,9 +256,12 @@ watch(correctionMode, (mode) => {
 onMounted(() => {
   console.debug("Sendspin: Component mounted, connecting...");
 
+  registerWebPlayerAudioUnlock(primeAudio);
+
   // If already showing active player metadata, play silent audio now that silentAudioRef exists
   if (
     metadataPlayerId.value === undefined &&
+    !isReceiveOnlyGuest() &&
     webPlayer.interacted &&
     silentAudioRef.value
   ) {
@@ -277,77 +341,10 @@ onMounted(() => {
       });
   }
 
-  // MediaSession setup for browser controls
-  // Commands go to the player whose metadata is being shown
-  const getTargetPlayerId = () => {
-    // If web player is playing, target it; otherwise target the active player
-    return metadataPlayerId.value !== undefined
-      ? props.playerId
-      : store.activePlayerId;
-  };
-
-  navigator.mediaSession.setActionHandler("play", () => {
-    const targetId = getTargetPlayerId();
-    if (!targetId) return;
-    api.playerCommandPlay(targetId);
-  });
-
-  navigator.mediaSession.setActionHandler("pause", () => {
-    const targetId = getTargetPlayerId();
-    if (!targetId) return;
-    // workaround-alert: delay the pause command a tiny bit
-    // to workaround a browser bug where pause is sent if a laptop/computer
-    // goes to standby (lid closed). This issue seems to only exist on Chromium based browsers.
-    setTimeout(() => {
-      api.playerCommandPause(targetId);
-    }, 250);
-  });
-
-  navigator.mediaSession.setActionHandler("nexttrack", () => {
-    const targetId = getTargetPlayerId();
-    if (!targetId) return;
-    api.playerCommandNext(targetId);
-  });
-
-  navigator.mediaSession.setActionHandler("previoustrack", () => {
-    const targetId = getTargetPlayerId();
-    if (!targetId) return;
-    api.playerCommandPrevious(targetId);
-  });
-
-  navigator.mediaSession.setActionHandler("seekto", (evt) => {
-    const targetId = getTargetPlayerId();
-    if (!targetId || !evt.seekTime) return;
-    api.playerCommandSeek(targetId, Math.round(evt.seekTime));
-  });
-
-  // Implementing seek forward/backward hides prev/next buttons on iOS/Mac
-  if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Mac)/i)) {
-    navigator.mediaSession.setActionHandler("seekforward", (evt) => {
-      const targetId = getTargetPlayerId();
-      if (!targetId) return;
-      const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
-      const newPos = Math.round(elapsed + offset);
-      lastSeekPos = newPos;
-      resetLastSeekPos();
-      api.playerCommandSeek(targetId, newPos);
-    });
-
-    navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
-      const targetId = getTargetPlayerId();
-      if (!targetId) return;
-      const offset = evt.seekOffset || 10;
-      const queueId = store.activePlayerQueue?.queue_id;
-      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
-      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
-      const newPos = Math.round(Math.max(0, elapsed - offset));
-      lastSeekPos = newPos;
-      resetLastSeekPos();
-      api.playerCommandSeek(targetId, newPos);
-    });
+  if (isReceiveOnlyGuest()) {
+    resetMediaSession();
+  } else {
+    registerMediaSessionActionHandlers();
   }
 
   // Audio element event listeners for mobile MediaSession resilience
@@ -375,18 +372,98 @@ onMounted(() => {
 
 // Cleanup on unmount
 onBeforeUnmount(() => {
+  clearWebPlayerAudioUnlock(primeAudio);
   if (player) {
     player.disconnect();
     player = null;
   }
   if (unsubMetadata) unsubMetadata();
   if (silentAudioInterval) clearInterval(silentAudioInterval);
-
-  // Clear MediaSession state
-  navigator.mediaSession.metadata = null;
-  navigator.mediaSession.setPositionState();
-  navigator.mediaSession.playbackState = "none";
+  if (lastSeekPosTimeout) clearTimeout(lastSeekPosTimeout);
+  for (const timeout of pauseCommandTimeouts) clearTimeout(timeout);
+  pauseCommandTimeouts.clear();
+  if (
+    isReceiveOnlyGuest() ||
+    webPlayer.tabMode !== WebPlayerMode.CONTROLS_ONLY
+  ) {
+    resetMediaSession();
+  }
 });
+
+function isReceiveOnlyGuest(): boolean {
+  return authManager.isPartyGuest() || authManager.isMusicQuizGuest();
+}
+
+function getTargetPlayerId(): string | undefined {
+  if (metadataPlayerId.value !== undefined) return props.playerId;
+  return store.activePlayerId;
+}
+
+function registerMediaSessionActionHandlers(): void {
+  navigator.mediaSession.setActionHandler("play", () => {
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandPlay(targetId);
+  });
+
+  navigator.mediaSession.setActionHandler("pause", () => {
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    // Delay avoids Chromium sending pause when a computer enters standby.
+    const timeout = window.setTimeout(() => {
+      api.playerCommandPause(targetId);
+      pauseCommandTimeouts.delete(timeout);
+    }, 250);
+    pauseCommandTimeouts.add(timeout);
+  });
+
+  navigator.mediaSession.setActionHandler("nexttrack", () => {
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandNext(targetId);
+  });
+
+  navigator.mediaSession.setActionHandler("previoustrack", () => {
+    const targetId = getTargetPlayerId();
+    if (!targetId) return;
+    api.playerCommandPrevious(targetId);
+  });
+
+  navigator.mediaSession.setActionHandler("seekto", (evt) => {
+    const targetId = getTargetPlayerId();
+    if (!targetId || !evt.seekTime) return;
+    api.playerCommandSeek(targetId, Math.round(evt.seekTime));
+  });
+
+  // Implementing seek forward/backward hides prev/next buttons on iOS/Mac.
+  if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Mac)/i)) {
+    navigator.mediaSession.setActionHandler("seekforward", (evt) => {
+      const targetId = getTargetPlayerId();
+      if (!targetId) return;
+      const offset = evt.seekOffset || 10;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const newPos = Math.round(elapsed + offset);
+      lastSeekPos = newPos;
+      resetLastSeekPos();
+      api.playerCommandSeek(targetId, newPos);
+    });
+
+    navigator.mediaSession.setActionHandler("seekbackward", (evt) => {
+      const targetId = getTargetPlayerId();
+      if (!targetId) return;
+      const offset = evt.seekOffset || 10;
+      const queueId = store.activePlayerQueue?.queue_id;
+      const queueTime = queueId ? api.queueElapsedTime[queueId] : undefined;
+      const elapsed = lastSeekPos ?? queueTime?.elapsed_time ?? 0;
+      const newPos = Math.round(Math.max(0, elapsed - offset));
+      lastSeekPos = newPos;
+      resetLastSeekPos();
+      api.playerCommandSeek(targetId, newPos);
+    });
+  }
+}
 </script>
 
 <style lang="css">

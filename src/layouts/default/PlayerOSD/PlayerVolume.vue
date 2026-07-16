@@ -70,6 +70,10 @@
       }"
       :style="{ width: width }"
       @click="onSliderClick"
+      @pointerdown.capture="onPointerDown"
+      @pointermove.capture="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerCancel"
       @wheel.prevent="onWheel"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
@@ -122,6 +126,7 @@ import {
   type Player,
   PLAYER_CONTROL_NONE,
   PlayerFeature,
+  PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
@@ -138,6 +143,8 @@ export interface Props {
   preferGroupVolume?: boolean;
   /** Enable the Sonos-style group popout (set false when parent already shows child players) */
   enablePopout?: boolean;
+  /** Ask the parent to expand inline group controls when the slider is tapped */
+  requestExpandOnGroupTap?: boolean;
   width?: string;
   step?: number;
   allowWheel?: boolean;
@@ -151,6 +158,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   preferGroupVolume: false,
   enablePopout: true,
+  requestExpandOnGroupTap: false,
   width: "100%",
   step: 2,
   allowWheel: false,
@@ -160,12 +168,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: "update:local-value", value: number): void;
+  (e: "toggle-group-expansion"): void;
 }>();
 
 // --- Player-aware computed properties ---
 
-const isGroup = computed(
-  () => props.player && props.player.group_members.length > 0,
+const isGroup = computed(() =>
+  props.player.type === PlayerType.GROUP
+    ? props.player.group_members.length > 0
+    : props.player.group_members.some(
+        (playerId) => playerId !== props.player.player_id,
+      ),
 );
 
 const useGroupVolume = computed(() => isGroup.value && props.preferGroupVolume);
@@ -188,7 +201,9 @@ const isDisabled = computed(() => {
 });
 
 const isMuted = computed(() => {
-  return props.player.volume_muted ?? false;
+  return useGroupVolume.value
+    ? props.player.group_volume_muted === true
+    : (props.player.volume_muted ?? false);
 });
 
 const isSliderDisabled = computed(() => isDisabled.value || isMuted.value);
@@ -209,7 +224,11 @@ const muteDisabled = computed(() => {
 });
 
 const volumeIconComponent = computed(() => {
-  return getVolumeIconComponent(props.player, displayValue.value);
+  return getVolumeIconComponent(
+    props.player,
+    displayValue.value,
+    isMuted.value,
+  );
 });
 
 // --- Group popout ---
@@ -222,8 +241,12 @@ let lastPopoutToggleTime = 0;
 
 const childPlayers = computed(() => {
   if (!isGroup.value) return [];
+  const playerIds = new Set(props.player.group_members);
+  if (props.player.type !== PlayerType.GROUP) {
+    playerIds.add(props.player.player_id);
+  }
   const items: Player[] = [];
-  for (const childId of props.player.group_members) {
+  for (const childId of playerIds) {
     const child = api?.players[childId];
     if (
       child &&
@@ -240,6 +263,17 @@ const childPlayers = computed(() => {
 const hasGroupPopout = computed(
   () =>
     props.enablePopout && useGroupVolume.value && childPlayers.value.length > 0,
+);
+
+const requestsGroupExpansion = computed(
+  () =>
+    props.requestExpandOnGroupTap &&
+    useGroupVolume.value &&
+    childPlayers.value.length > 0,
+);
+
+const handlesGroupTap = computed(
+  () => hasGroupPopout.value || requestsGroupExpansion.value,
 );
 
 const POPOUT_MIN_WIDTH = 300;
@@ -287,6 +321,15 @@ const toggleGroupPopout = () => {
   }
   showGroupPopout.value = !showGroupPopout.value;
   lastPopoutToggleTime = Date.now();
+};
+
+const handleGroupTap = () => {
+  if (hasGroupPopout.value) {
+    toggleGroupPopout();
+  } else {
+    lastPopoutToggleTime = Date.now();
+    emit("toggle-group-expansion");
+  }
 };
 
 const closeGroupPopout = () => {
@@ -365,9 +408,13 @@ const isTouching = ref(false);
 // Dragging state: blocks server sync only while actively dragging the slider
 const isDragging = ref(false);
 let dragEndTimeout: ReturnType<typeof setTimeout> | null = null;
+let pointerStartX: number | null = null;
+let pointerStartValue = 0;
+let pointerMoved = false;
 
 let sliderUpdateDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 const SLIDER_UPDATE_DEBOUNCE_MS = 100;
+const POINTER_DRAG_THRESHOLD = 4;
 
 onUnmounted(() => {
   if (dragEndTimeout) clearTimeout(dragEndTimeout);
@@ -457,7 +504,7 @@ const getPercentageFromX = (clientX: number): number => {
 // --- Touch handlers ---
 
 const onTouchStart = (event: TouchEvent) => {
-  if (isSliderDisabled.value) return;
+  if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   isTouching.value = true;
   const touch = event.touches[0];
@@ -473,7 +520,9 @@ const onTouchStart = (event: TouchEvent) => {
 };
 
 const onTouchMove = (event: TouchEvent) => {
-  if (isSliderDisabled.value || isScrolling.value) return;
+  if ((isSliderDisabled.value && !handlesGroupTap.value) || isScrolling.value) {
+    return;
+  }
 
   const touch = event.touches[0];
   const deltaX = touch.clientX - touchStartX.value;
@@ -483,6 +532,15 @@ const onTouchMove = (event: TouchEvent) => {
 
   touchMoveCount.value++;
   maxMovement.value = Math.max(maxMovement.value, absDeltaX);
+
+  if (isSliderDisabled.value) {
+    if (absDeltaY > 10 && absDeltaY > absDeltaX * 2) {
+      isScrolling.value = true;
+    } else if (absDeltaX > 8) {
+      isDrag.value = true;
+    }
+    return;
+  }
 
   if (!isDrag.value && !isScrolling.value) {
     if (absDeltaY > 10 && absDeltaY > absDeltaX * 2) {
@@ -515,7 +573,7 @@ const onTouchMove = (event: TouchEvent) => {
 };
 
 const onTouchEnd = (event: TouchEvent) => {
-  if (isSliderDisabled.value) return;
+  if (isSliderDisabled.value && !handlesGroupTap.value) return;
 
   if (isScrolling.value) {
     isScrolling.value = false;
@@ -526,10 +584,15 @@ const onTouchEnd = (event: TouchEvent) => {
   const isTap = !isDrag.value;
 
   if (isTap) {
-    // Group player with popout: toggle the popout on tap
-    if (hasGroupPopout.value) {
-      toggleGroupPopout();
-    } else {
+    if (handlesGroupTap.value) {
+      if (sliderUpdateDebounceTimeout) {
+        clearTimeout(sliderUpdateDebounceTimeout);
+        sliderUpdateDebounceTimeout = null;
+      }
+      displayValue.value = touchStartValue.value;
+      emit("update:local-value", touchStartValue.value);
+      handleGroupTap();
+    } else if (!isSliderDisabled.value) {
       // Single player: tap before/after handle for volume up/down
       const touch = event.changedTouches[0];
       const thumb = sliderContainerRef.value?.querySelector("[role=slider]");
@@ -543,7 +606,7 @@ const onTouchEnd = (event: TouchEvent) => {
         }
       }
     }
-  } else {
+  } else if (!isSliderDisabled.value) {
     // Drag end: send the final absolute value to the server
     const touch = event.changedTouches[0];
     const finalValue = clamp(
@@ -561,6 +624,83 @@ const onTouchEnd = (event: TouchEvent) => {
   touchMoveCount.value = 0;
   maxMovement.value = 0;
   isTouching.value = false;
+};
+
+const onPointerDown = (event: PointerEvent) => {
+  const targetsSlider =
+    event.target instanceof Element &&
+    event.target.closest('[data-slot="slider"]');
+  if (event.pointerType === "touch") {
+    if (targetsSlider) isTouching.value = true;
+    return;
+  }
+  if (!handlesGroupTap.value || !targetsSlider) {
+    return;
+  }
+  pointerStartX = event.clientX;
+  pointerStartValue = displayValue.value;
+  pointerMoved = false;
+};
+
+const onPointerMove = (event: PointerEvent) => {
+  if (pointerStartX === null) return;
+  if (Math.abs(event.clientX - pointerStartX) > POINTER_DRAG_THRESHOLD) {
+    pointerMoved = true;
+  }
+};
+
+const onPointerUp = () => {
+  if (pointerStartX === null) return;
+  const shouldExpand = !pointerMoved;
+  resetPointerInteraction();
+  if (!shouldExpand) {
+    lastPopoutToggleTime = Date.now();
+    if (!sliderUpdateDebounceTimeout) {
+      if (isSliderDisabled.value) {
+        isDragging.value = false;
+        displayValue.value = pointerStartValue;
+        emit("update:local-value", pointerStartValue);
+      } else {
+        setVolume(displayValue.value);
+        stopDragging();
+      }
+    }
+    return;
+  }
+
+  if (sliderUpdateDebounceTimeout) {
+    clearTimeout(sliderUpdateDebounceTimeout);
+    sliderUpdateDebounceTimeout = null;
+  }
+  if (dragEndTimeout) {
+    clearTimeout(dragEndTimeout);
+    dragEndTimeout = null;
+  }
+  isDragging.value = false;
+  displayValue.value = pointerStartValue;
+  emit("update:local-value", pointerStartValue);
+  handleGroupTap();
+};
+
+const onPointerCancel = () => {
+  if (pointerStartX === null) return;
+  resetPointerInteraction();
+  if (sliderUpdateDebounceTimeout) {
+    clearTimeout(sliderUpdateDebounceTimeout);
+    sliderUpdateDebounceTimeout = null;
+  }
+  if (dragEndTimeout) {
+    clearTimeout(dragEndTimeout);
+    dragEndTimeout = null;
+  }
+  isDragging.value = false;
+  displayValue.value = pointerStartValue;
+  emit("update:local-value", pointerStartValue);
+};
+
+const resetPointerInteraction = () => {
+  pointerStartX = null;
+  pointerMoved = false;
 };
 
 const onTouchCancel = () => {
@@ -601,6 +741,8 @@ const onSliderUpdate = (values: number[] | undefined) => {
   displayValue.value = newValue;
   emit("update:local-value", newValue);
 
+  if (pointerStartX !== null && !pointerMoved) return;
+
   if (sliderUpdateDebounceTimeout) {
     clearTimeout(sliderUpdateDebounceTimeout);
     sliderUpdateDebounceTimeout = null;
@@ -613,13 +755,11 @@ const onSliderUpdate = (values: number[] | undefined) => {
   }, SLIDER_UPDATE_DEBOUNCE_MS);
 };
 
-// Desktop: click on slider area toggles popout for group players
+// Desktop clicks use the same group action as touch taps.
 const onSliderClick = () => {
-  // Only toggle for group players; skip if touch-driven, mid-drag,
-  // or within 500ms of a touch-driven toggle (prevents synthesized click)
-  if (!hasGroupPopout.value || isTouching.value || isDragging.value) return;
+  if (!handlesGroupTap.value || isTouching.value || isDragging.value) return;
   if (Date.now() - lastPopoutToggleTime < 500) return;
-  toggleGroupPopout();
+  handleGroupTap();
 };
 
 // Sync server volume to display when not actively dragging

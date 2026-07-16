@@ -55,6 +55,7 @@ import {
   RepeatMode,
   SearchResults,
   SmartPlaylistRules,
+  SoundEffect,
   UserRole,
 } from "./interfaces";
 
@@ -105,6 +106,7 @@ export class MusicAssistantApi {
     {
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
+      suppressGlobalError?: boolean;
     }
   >;
 
@@ -1305,6 +1307,17 @@ export class MusicAssistantApi {
     });
   }
 
+  public getWaveForm(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+  ): Promise<number[] | null> {
+    // Returns RMS energy bins normalized 0.0-1.0, or null when no analysis exists.
+    return this.sendCommand("audio_analysis/wave_form", {
+      item_id,
+      provider_instance_id_or_domain,
+    });
+  }
+
   public getItem(
     media_type: MediaType,
     item_id: string,
@@ -1398,12 +1411,16 @@ export class MusicAssistantApi {
     search_query: string,
     media_types?: MediaType[],
     limit?: number,
+    providers?: string[],
   ): Promise<SearchResults> {
-    // Perform global search for media items on all providers.
+    // Perform global search for media items on the given providers.
+    // providers: provider instance ids/domains and/or "library";
+    // omit to search the library and all available providers combined.
     return this.sendCommand("music/search", {
       search_query,
       media_types,
       limit,
+      providers,
     });
   }
 
@@ -1425,6 +1442,11 @@ export class MusicAssistantApi {
 
   public async getRecommendations(): Promise<RecommendationFolder[]> {
     return this.sendCommand("music/recommendations");
+  }
+
+  public async getSoundEffects(): Promise<SoundEffect[]> {
+    // Fetch all sound effect items from providers that offer them.
+    return this.sendCommand("music/sound_effects");
   }
 
   public markItemPlayed(
@@ -1576,6 +1598,15 @@ export class MusicAssistantApi {
   public queueCommandAutoplayToggle(queueId: string) {
     // Toggle autoplay mode of a queue
     this.queueCommandAutoplay(queueId, !this.queues[queueId].autoplay_enabled);
+  }
+  public queueCommandOverlay(
+    queueId: string,
+    args: { enabled?: boolean; source?: string; volume?: number },
+  ) {
+    // Configure the audio overlay (a looping sound effect mixed into playback) on the queue.
+    // source is the uri of a sound effect item; volume is the overlay loudness
+    // relative to the music in percent (0-200). Omitted args are left unchanged.
+    this.playerQueueCommand(queueId, "overlay", args);
   }
   public queueCommandSetPlaybackSpeed(
     queue_id: string,
@@ -2404,20 +2435,26 @@ export class MusicAssistantApi {
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      console.error("[resultMessage]", msg);
+      if (resultPromise?.suppressGlobalError) {
+        // The caller opted out of global error handling (expected/best-effort
+        // failure); it still receives the rejection below.
+        console.debug("[resultMessage]", msg);
+      } else {
+        console.error("[resultMessage]", msg);
 
-      // Don't show toast for authentication errors - they're handled by the login UI
-      const errorMsg = msg.details || msg.error_code || "";
-      const isAuthError =
-        errorMsg.includes("Invalid credentials") ||
-        errorMsg.includes("Invalid username") ||
-        errorMsg.includes("Invalid password") ||
-        errorMsg.includes("Authentication failed") ||
-        errorMsg.includes("Authentication required") ||
-        errorMsg.toLowerCase().includes("unauthorized");
+        // Don't show toast for authentication errors - they're handled by the login UI
+        const errorMsg = msg.details || msg.error_code || "";
+        const isAuthError =
+          errorMsg.includes("Invalid credentials") ||
+          errorMsg.includes("Invalid username") ||
+          errorMsg.includes("Invalid password") ||
+          errorMsg.includes("Authentication failed") ||
+          errorMsg.includes("Authentication required") ||
+          errorMsg.toLowerCase().includes("unauthorized");
 
-      if (!isAuthError) {
-        toast.error(msg.details || msg.error_code);
+        if (!isAuthError) {
+          toast.error(msg.details || msg.error_code);
+        }
       }
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
@@ -2907,6 +2944,14 @@ export class MusicAssistantApi {
   public sendCommand<Result>(
     command: string,
     args?: Record<string, unknown>,
+    options?: {
+      /**
+       * Suppress the global console.error + error toast for an error result.
+       * Use for best-effort commands where the caller handles (or expects)
+       * failure itself; the returned promise still rejects as usual.
+       */
+      suppressGlobalError?: boolean;
+    },
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -2914,6 +2959,7 @@ export class MusicAssistantApi {
       this.commands.set(cmdId, {
         resolve: resolve as (result: unknown) => void,
         reject,
+        suppressGlobalError: options?.suppressGlobalError,
       });
       this._sendCommand(command, args, cmdId);
     });
@@ -2977,10 +3023,14 @@ export class MusicAssistantApi {
       this.providerManifests[prov.domain] = prov;
     }
 
-    for (const prov of await this.sendCommand<ProviderInstance[]>(
-      "providers",
-    )) {
-      this.providers[prov.instance_id] = prov;
+    await this.fetchProviders();
+  }
+
+  public async fetchProviders() {
+    const providers = await this.sendCommand<ProviderInstance[]>("providers");
+    Object.keys(this.providers).forEach((key) => delete this.providers[key]);
+    for (const provider of providers) {
+      this.providers[provider.instance_id] = provider;
     }
   }
 

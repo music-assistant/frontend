@@ -132,7 +132,6 @@
         "tracks_in_library": "Dziesmas bibliotēkā",
         "playlists_in_library": "Mūzikas saraksti bibliotēkā",
         "radio_in_library": "Radio bibliotēkā",
-        "server_logging": "Servera žurnālfaili",
         "download_log": "Lejupielādēt žurnālfailu",
         "edit_group_members": "Rediģēt grupas dalībniekus",
         "add_new_provider_button": "Pievienot {0} sniedzēju",
@@ -147,10 +146,6 @@
                 "light": "Gaišs",
                 "dark": "Tumšs"
             }
-        },
-        "menu_items": {
-            "label": "Iespējotie izvēlnes vienumi",
-            "description": "Konfigurē, kurus vienumus attēlot izvēlnē.\n\nŅem vērā, ka atspējojot iestatījumus tu vari sevi nobloķēt.\n\nLai atkal iegūtu piekļuvi, tev būs manuāli jāievada ceļš (URL) uz iestatījumu paneli, vai jānotīra pārlūkprogrammas sīkfaili. Izmanto uz savu risku!"
         },
         "language": {
             "label": "Valoda",
@@ -308,8 +303,6 @@
         "view_documentation": "Skatīt dokumentāciju",
         "about": "Par",
         "about_description": "Versijas informācija, autori un vēl",
-        "system_logging": "Servera Žurnālfaili",
-        "system_logging_description": "Apskati un lejupielādē servera žurnālfailus problēmu novēršanai",
         "auto_refresh_log": "Automātiski atsvaidzināt",
         "log_truncated": "Attēlo pēdējās {0} rindas. Lejupielādē pilno žurnālfailu, lai redzētu pilnu vēsturi.",
         "version_info": "Versijas informācija",

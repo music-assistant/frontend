@@ -245,8 +245,11 @@
       </template>
     </div>
     <div
-      class="absolute bottom-1 right-1 flex items-center gap-2 opacity-50 font-medium"
-      :style="{ color: chromeTextColor }"
+      class="absolute right-1 flex items-center gap-2 opacity-50 font-medium"
+      :style="{
+        color: chromeTextColor,
+        bottom: 'var(--party-player-bottom)',
+      }"
     >
       <span>{{ $t("providers.party.powered_by") }}</span>
       <img :src="maLogoSrc" alt="Music Assistant" class="h-5 w-auto" />
@@ -1322,5 +1325,17 @@ watch(
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important;
+  /* total bottom offset for overlays (here, "Powered by"): player bar + tailwind spacing-1 gap */
+  --party-player-bottom: 94px; /* 90px player bar (View.vue .content-section) + 4px (spacing-1) */
+}
+
+.content-section--mobile.party-view-active {
+  padding-bottom: 0 !important;
+  --party-player-bottom: 189px; /* 185px above Footer.vue gradient overlay + 4px (spacing-1) */
+}
+
+.content-section--frameless.party-view-active {
+  --party-player-bottom: 4px; /* no player bar; tw spacing-1 gap from screen edge */
 }
 </style>

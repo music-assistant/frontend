@@ -4,6 +4,7 @@ import {
   BookAudio,
   Disc3,
   EllipsisVertical,
+  GripVertical,
   ListMusic,
   Mic2,
   Music,
@@ -11,7 +12,7 @@ import {
   Radio,
   Tag,
 } from "@lucide/vue";
-import { computed, markRaw } from "vue";
+import { computed, markRaw, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
 
@@ -19,18 +20,33 @@ import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useShortcuts, type ShortcutItem } from "@/composables/useShortcuts";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
+import { useListDragReorder } from "@/composables/useListDragReorder";
+import {
+  getShortcutUri,
+  reorderShortcutStandalone,
+  useShortcuts,
+  type ShortcutItem,
+} from "@/composables/useShortcuts";
 import { useSidebarScrollbarGutter } from "@/composables/useSidebarScrollbarGutter";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import { MediaType } from "@/plugins/api/interfaces";
+import NavSectionHeader from "./NavSectionHeader.vue";
+import { getMenuSectionConfig } from "./utils/getMenuItems";
+
+const props = defineProps<{
+  editMode?: boolean;
+}>();
 
 const RouterLinkComponent = markRaw(RouterLink);
 const route = useRoute();
@@ -39,6 +55,11 @@ const { isMobile, setOpenMobile, state } = useSidebar();
 const isCollapsed = computed(() => state.value === "collapsed");
 
 const { pinnedItems, isLoading, pinnedCount } = useShortcuts();
+
+const sectionConfig = computed(() => getMenuSectionConfig("shortcuts"));
+const sectionLabel = computed(
+  () => sectionConfig.value.label || t("shortcuts"),
+);
 
 const isActive = (url: string) =>
   route.path === url || route.path.startsWith(url + "/");
@@ -97,12 +118,13 @@ const pinnedItemsWithUrls = computed(() =>
   pinnedItems.value.map((item) => ({ item, url: getItemUrl(item) })),
 );
 
-const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
+const openContextMenu = async (event: Event, item: ShortcutItem) => {
+  const pos = getEventPosition(event);
   await showContextMenuForMediaItem(
     item,
     undefined,
-    event.clientX,
-    event.clientY,
+    pos.x,
+    pos.y,
     true,
     true,
     undefined,
@@ -110,76 +132,181 @@ const openContextMenu = async (event: MouseEvent, item: ShortcutItem) => {
   );
 };
 
+const holdToOpenMenu = useHoldToOpenMenu(openContextMenu);
+
+// Long-press context menu conflicts with touch dragging, so gate it off
+// while editing.
+const onHold = (e: Event, item: ShortcutItem) => {
+  if (!props.editMode) holdToOpenMenu.onHold(e, item);
+};
+const onTouchStart = () => {
+  if (!props.editMode) holdToOpenMenu.onTouchStart();
+};
+const swallowClickAfterHold = holdToOpenMenu.swallowClickAfterHold;
+
 const { navEl } = useSidebarScrollbarGutter(pinnedItems);
+
+// ---- edit mode: drag-to-reorder --------------------------------------------
+
+const listEl = ref<HTMLElement | null>(null);
+
+const {
+  startItemDrag,
+  draggingIndex,
+  isDragging,
+  ghostY,
+  dragRowHeight,
+  rowOffset,
+} = useListDragReorder({
+  listEl,
+  count: () => pinnedItems.value.length,
+  onCommit: (from, to) => {
+    const source = pinnedItems.value[from];
+    const target = pinnedItems.value[to];
+    if (!source || !target) return;
+    reorderShortcutStandalone(getShortcutUri(source), getShortcutUri(target));
+  },
+});
+
+const draggedItem = computed(() =>
+  draggingIndex.value != null ? pinnedItems.value[draggingIndex.value] : null,
+);
 </script>
 
 <template>
   <div ref="navEl"></div>
   <template v-if="pinnedItems.length > 0 || isLoading">
     <SidebarGroup :class="{ 'shortcuts-group-collapsed': isCollapsed }">
-      <SidebarGroupLabel>{{ t("shortcuts") }}</SidebarGroupLabel>
+      <NavSectionHeader
+        section-id="shortcuts"
+        :label="sectionLabel"
+        :default-label="t('shortcuts')"
+        :label-hidden="sectionConfig.hide_label"
+        :edit-mode="editMode"
+      />
       <SidebarGroupContent class="flex flex-col gap-0.5">
-        <SidebarMenu>
-          <!-- Skeletons while the API calls are in flight -->
-          <template v-if="isLoading">
-            <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
-              <SidebarMenuSkeleton :show-icon="true" />
+        <div ref="listEl" class="relative">
+          <SidebarMenu>
+            <!-- Skeletons while the API calls are in flight -->
+            <template v-if="isLoading">
+              <SidebarMenuItem v-for="i in pinnedCount" :key="`skeleton-${i}`">
+                <SidebarMenuSkeleton :show-icon="true" />
+              </SidebarMenuItem>
+            </template>
+            <!-- Pinned shortcuts -->
+            <SidebarMenuItem
+              v-for="({ item, url }, index) in pinnedItemsWithUrls"
+              :key="item.uri"
+              v-hold="(e: Event) => onHold(e, item)"
+              class="mr-1.5"
+              :class="{
+                'shortcut-item': editMode,
+                'shortcut-item-dragging': draggingIndex === index,
+              }"
+              :data-drag-index="editMode ? index : undefined"
+              :style="
+                editMode
+                  ? {
+                      transform: `translateY(${rowOffset(index)}px)`,
+                      transition:
+                        isDragging && draggingIndex !== index
+                          ? 'transform 200ms ease-out'
+                          : 'none',
+                    }
+                  : undefined
+              "
+              @click.capture="swallowClickAfterHold"
+              @touchstart.passive="onTouchStart"
+            >
+              <button
+                v-if="editMode && !isCollapsed"
+                class="shortcut-drag-handle"
+                :aria-label="t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, index)"
+                @click.stop
+              >
+                <GripVertical class="size-4" />
+              </button>
+              <SidebarMenuButton
+                :as="editMode ? 'div' : RouterLinkComponent"
+                v-bind="editMode ? {} : { to: url }"
+                :is-active="!editMode && isActive(url)"
+                :tooltip="getDisplayName(item)"
+                :class="[
+                  isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
+                  editMode ? 'shortcut-button-editing' : '',
+                  isActive(url) && !editMode
+                    ? 'no-underline font-bold'
+                    : 'no-underline font-medium',
+                ]"
+                @click="!editMode && handleClick()"
+                @contextmenu.prevent="openContextMenu($event, item)"
+              >
+                <img
+                  v-if="thumbMap[item.uri]"
+                  :src="thumbMap[item.uri]"
+                  :class="[
+                    'shortcut-thumb',
+                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                  ]"
+                  :alt="getDisplayName(item)"
+                />
+                <component
+                  :is="getFallbackIcon(item)"
+                  v-else
+                  :class="[
+                    'shortcut-thumb',
+                    isCollapsed ? 'shortcut-thumb--collapsed' : '',
+                  ]"
+                />
+                <span v-if="!isCollapsed" class="shortcut-label">
+                  <span class="shortcut-name">{{ getDisplayName(item) }}</span>
+                  <span class="shortcut-type">{{ t(item.media_type) }}</span>
+                </span>
+              </SidebarMenuButton>
+              <Button
+                v-if="!isCollapsed"
+                variant="ghost"
+                size="icon"
+                class="shortcut-action-btn absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                :class="
+                  editMode
+                    ? 'opacity-70'
+                    : 'opacity-0 group-hover/menu-item:opacity-100'
+                "
+                :title="t('more_options')"
+                @click.stop="openContextMenu($event, item)"
+              >
+                <EllipsisVertical class="h-4 w-4" />
+              </Button>
             </SidebarMenuItem>
-          </template>
-          <!-- Pinned shortcuts -->
-          <SidebarMenuItem
-            v-for="{ item, url } in pinnedItemsWithUrls"
-            :key="item.uri"
-            class="mr-1.5"
+          </SidebarMenu>
+          <!-- Floating ghost that follows the pointer while dragging -->
+          <div
+            v-if="isDragging && draggedItem"
+            class="shortcut-ghost bg-sidebar-accent text-sidebar-accent-foreground"
+            :style="{ top: `${ghostY}px`, height: `${dragRowHeight}px` }"
           >
-            <SidebarMenuButton
-              :as="RouterLinkComponent"
-              :to="url"
-              :is-active="isActive(url)"
-              :tooltip="getDisplayName(item)"
-              :class="[
-                isCollapsed ? 'shortcut-button-collapsed' : 'shortcut-button',
-                isActive(url)
-                  ? 'no-underline font-bold'
-                  : 'no-underline font-medium',
-              ]"
-              @click="handleClick"
-              @contextmenu.prevent="openContextMenu($event, item)"
-            >
-              <img
-                v-if="thumbMap[item.uri]"
-                :src="thumbMap[item.uri]"
-                :class="[
-                  'shortcut-thumb',
-                  isCollapsed ? 'shortcut-thumb--collapsed' : '',
-                ]"
-                :alt="getDisplayName(item)"
-              />
-              <component
-                :is="getFallbackIcon(item)"
-                v-else
-                :class="[
-                  'shortcut-thumb',
-                  isCollapsed ? 'shortcut-thumb--collapsed' : '',
-                ]"
-              />
-              <span v-if="!isCollapsed" class="shortcut-label">
-                <span class="shortcut-name">{{ getDisplayName(item) }}</span>
-                <span class="shortcut-type">{{ t(item.media_type) }}</span>
-              </span>
-            </SidebarMenuButton>
-            <Button
-              v-if="!isCollapsed"
-              variant="ghost"
-              size="icon"
-              class="shortcut-action-btn opacity-0 group-hover/menu-item:opacity-100 absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              :title="t('more_options')"
-              @click.stop="openContextMenu($event, item)"
-            >
-              <EllipsisVertical class="h-4 w-4" />
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
+            <GripVertical class="size-4 opacity-60 shrink-0" />
+            <img
+              v-if="thumbMap[draggedItem.uri]"
+              :src="thumbMap[draggedItem.uri]"
+              class="shortcut-thumb"
+              :alt="getDisplayName(draggedItem)"
+            />
+            <component
+              :is="getFallbackIcon(draggedItem)"
+              v-else
+              class="shortcut-thumb"
+            />
+            <span class="shortcut-label">
+              <span class="shortcut-name">{{
+                getDisplayName(draggedItem)
+              }}</span>
+              <span class="shortcut-type">{{ t(draggedItem.media_type) }}</span>
+            </span>
+          </div>
+        </div>
       </SidebarGroupContent>
     </SidebarGroup>
   </template>
@@ -207,6 +334,12 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
   height: 3rem !important;
   padding: 0.3rem 2.25rem 0.3rem 0.5rem !important;
   align-items: center !important;
+}
+
+/* Make room for the drag handle on the left while editing */
+:deep([data-sidebar="menu-button"].shortcut-button-editing) {
+  margin-left: 1.5rem !important;
+  cursor: default;
 }
 
 /* padding 0.125rem makes content area exactly 1.75rem = icon width → centered */
@@ -291,5 +424,53 @@ const { navEl } = useSidebarScrollbarGutter(pinnedItems);
    that does not trigger that side-effect. */
 :deep([data-sidebar="group-content"]) {
   overflow-x: clip;
+}
+
+/* ---- edit mode ---- */
+
+.shortcut-item {
+  user-select: none;
+}
+
+.shortcut-item-dragging {
+  opacity: 0.35;
+}
+
+.shortcut-drag-handle {
+  position: absolute;
+  left: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.125rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: grab;
+  touch-action: none;
+}
+
+.shortcut-drag-handle:active {
+  cursor: grabbing;
+}
+
+.shortcut-ghost {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.375rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+  pointer-events: none;
+  cursor: grabbing;
 }
 </style>

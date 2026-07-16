@@ -90,7 +90,7 @@
             <PanelviewItem
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :show-actions="
                 [
                   'tracks',
@@ -122,7 +122,7 @@
             <PanelviewItemCompact
               :item="item"
               :is-selected="isSelected(item)"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
               :disable-play-button="isPlayActionInProgress"
@@ -156,7 +156,7 @@
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
-              :show-checkboxes="showCheckboxes"
+              :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
               :is-selected="isSelected(item)"
               :is-available="itemIsAvailable(item)"
               :is-playing="isPlaying(item, itemtype)"
@@ -644,6 +644,12 @@ const isSelected = function (item: MediaItemTypeOrItemMapping) {
   return selectedItems.value.includes(item);
 };
 
+const isParentDirItem = function (item: MediaItemTypeOrItemMapping) {
+  // the parent directory ("..") link injected in browse listings
+  // must never be selectable as it breaks the action/context menu
+  return item.media_type == MediaType.FOLDER && item.name == "..";
+};
+
 const isPlaying = function (item: MediaItemType, itemtype: string): boolean {
   if (store.activePlayer?.playback_state != PlaybackState.PLAYING) return false;
   const current = store.curQueueItem?.media_item as
@@ -693,6 +699,7 @@ const onSelect = function (
   selected: boolean,
 ) {
   if (selected) {
+    if (isParentDirItem(item)) return;
     if (!selectedItems.value.includes(item)) selectedItems.value.push(item);
   } else {
     for (let i = 0; i < selectedItems.value.length; i++) {
@@ -797,23 +804,18 @@ const providerFilterSubItems = () =>
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
-  if (props.itemtype == "artists") {
-    store.globalSearchType = MediaType.ARTIST;
-  } else if (props.itemtype == "albums") {
-    store.globalSearchType = MediaType.ALBUM;
-  } else if (props.itemtype == "tracks") {
-    store.globalSearchType = MediaType.TRACK;
-  } else if (props.itemtype == "playlists") {
-    store.globalSearchType = MediaType.PLAYLIST;
-  } else if (props.itemtype == "audiobooks") {
-    store.globalSearchType = MediaType.AUDIOBOOK;
-  } else if (props.itemtype == "podcasts") {
-    store.globalSearchType = MediaType.PODCAST;
-  } else if (props.itemtype == "radios") {
-    store.globalSearchType = MediaType.RADIO;
-  } else if (props.itemtype == "genres") {
-    store.globalSearchType = MediaType.GENRE;
-  }
+  const mediaTypeByItemtype: Record<string, MediaType> = {
+    artists: MediaType.ARTIST,
+    albums: MediaType.ALBUM,
+    tracks: MediaType.TRACK,
+    playlists: MediaType.PLAYLIST,
+    audiobooks: MediaType.AUDIOBOOK,
+    podcasts: MediaType.PODCAST,
+    radios: MediaType.RADIO,
+    genres: MediaType.GENRE,
+  };
+  const mediaType = mediaTypeByItemtype[props.itemtype];
+  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
   router.push({ name: "search" });
 };
 
@@ -1506,7 +1508,7 @@ const restoreSettings = async function () {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
+  if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
   // Let searchInput handle this.
@@ -1579,6 +1581,10 @@ watch(
 watch(
   () => props.path,
   (newVal) => {
+    // always leave selection mode: the selection belongs to the previous
+    // folder, and the target may not offer the toggle to turn it off
+    selectedItems.value = [];
+    showCheckboxes.value = false;
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];
@@ -1957,7 +1963,7 @@ const selectAll = async function () {
 
   if (confirmed) {
     await loadAllItems();
-    selectedItems.value = pagedItems.value;
+    selectedItems.value = pagedItems.value.filter((x) => !isParentDirItem(x));
     showCheckboxes.value = true;
   }
 };

@@ -132,7 +132,6 @@
         "tracks_in_library": "Faixas na biblioteca",
         "playlists_in_library": "Listas de reprodução na biblioteca",
         "radio_in_library": "Rádio na biblioteca",
-        "server_logging": "Registro do servidor",
         "download_log": "Baixar arquivo de log",
         "edit_group_members": "Editar membros do grupo",
         "add_new_provider_button": "Adicionar {0} provedor",
@@ -147,10 +146,6 @@
                 "light": "Claro",
                 "dark": "Escuro"
             }
-        },
-        "menu_items": {
-            "label": "Itens de menu ativados",
-            "description": "Configure os itens a serem exibidos no menu.\n\nNote que se você desativar as configurações, você poderá ficar bloqueado. \n\nCaso isso ocorra, para obter acesso novamente você terá que manualmente inserir o caminho para as configurações ou apagar os cookies do seu navegador. Use por sua conta e risco!"
         },
         "language": {
             "label": "Idioma",
@@ -179,7 +174,8 @@
                 "sl_SI": "Esloveno",
                 "hu_HU": "Húngaro",
                 "it": "Italiano",
-                "el_GR": "Grego"
+                "el_GR": "Grego",
+                "bg_BG": "Búlgaro"
             }
         },
         "no_music_providers": "Nenhum provedor de música configurado",
@@ -318,7 +314,19 @@
         "remote_access_encryption": "Criptografia",
         "frontend": "Interface de usuário",
         "api_docs": "Documentação da API",
-        "provider_credits": "Possibilitado por"
+        "provider_credits": "Possibilitado por",
+        "onboarding_music_title": "Música",
+        "advanced": "Avançado",
+        "scan_never": "Nunca",
+        "audio_analysis_coverage": {
+            "col_provider": "Provedor"
+        },
+        "retry": "Tentar novamente",
+        "audio_analysis_failures": {
+            "col_item": "Item",
+            "col_actions": "Ações"
+        },
+        "diagnostics": "Diagnósticos"
     },
     "show_info": "Mostrar informação",
     "show_select_boxes": "Mostrar caixas de seleção",
@@ -527,7 +535,8 @@
         "create_token": "Criar novo token",
         "change_role": "Alterar função",
         "avatar_url": "URL do avatar",
-        "change_avatar": "Alterar avatar"
+        "change_avatar": "Alterar avatar",
+        "guest_role": "Convidado"
     },
     "login": {
         "server_address_placeholder": "http:\/\/192.168.1.100:8095",
@@ -542,5 +551,62 @@
         "authenticating": "Autenticando..."
     },
     "yes": "Sim",
-    "no": "Não"
+    "no": "Não",
+    "add_genre": "Adicionar gênero",
+    "description": "Descrição",
+    "genre": "Gênero",
+    "genres": "Gêneros",
+    "background_tasks": {
+        "progress": "Progresso",
+        "system": "Sistema",
+        "status": {
+            "idle": "Em espera",
+            "success": "Sucesso",
+            "unknown": "Desconhecido"
+        },
+        "schedule": {
+            "never": "nunca"
+        },
+        "schedule_dialog": {
+            "daily": "Diário",
+            "weekly": "Semanal"
+        }
+    },
+    "smart_playlist": {
+        "creating": "Criando…",
+        "year_from": "De",
+        "year_to": "Para",
+        "favorites_yes": "Sim",
+        "field_year": "Ano",
+        "match_all": "todos",
+        "op_between": "entre",
+        "name_label": "Nome",
+        "field_explicit": "Explícito",
+        "duration_min": "Mín.",
+        "duration_max": "Máx.",
+        "unit_hours": "horas",
+        "unit_days": "dias",
+        "unit_weeks": "semanas",
+        "unit_months": "meses",
+        "last_played_ago": "atrás",
+        "op_greater_than": "maior que",
+        "op_less_than": "menor que"
+    },
+    "shortcuts": "Atalhos",
+    "system": "Sistema",
+    "lyrics": "Letra da música",
+    "genre_content_type": {
+        "all": "Todos",
+        "music": "Música"
+    },
+    "show_less": "Mostrar menos",
+    "show_more": "Mostrar mais",
+    "sleep_timer_preset": {
+        "15": "15 minutos",
+        "30": "30 minutos",
+        "45": "45 minutos",
+        "60": "1 hora",
+        "120": "2 horas"
+    },
+    "musical_key": "Chave"
 }

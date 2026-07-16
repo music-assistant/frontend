@@ -170,11 +170,11 @@ type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
 const extraSystemEntries = computed<SystemConfigExtraEntry[]>(() =>
   [
     {
-      domain: "logging",
-      name: "settings.system_logging",
-      description: "settings.system_logging_description",
-      icon: "mdi-text-box-search",
-      route: "/settings/serverlogs",
+      domain: "diagnostics",
+      name: "settings.diagnostics",
+      description: "settings.diagnostics_description",
+      icon: "mdi-stethoscope",
+      route: "/settings/diagnostics",
     },
     {
       domain: "tasks",

@@ -104,6 +104,7 @@ export enum MediaType {
   RADIO = "radio",
   AUDIOBOOK = "audiobook",
   AUDIO_SOURCE = "audio_source",
+  SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
   GENRE = "genre",
@@ -332,6 +333,7 @@ export enum EventType {
   PLAYER_OPTIONS_UPDATED = "player_options_updated",
   DSP_PRESETS_UPDATED = "dsp_presets_updated",
   AUTH_SESSION = "auth_session",
+  PROVIDER_EVENT = "provider_event",
   // special types for local subscriptions only
   CONNECTED = "connected",
   DISCONNECTED = "disconnected",
@@ -343,6 +345,8 @@ export enum ProviderFeature {
   BROWSE = "browse",
   SEARCH = "search",
   RECOMMENDATIONS = "recommendations",
+  // provider can enumerate sound effect items (used as audio overlay sources)
+  SOUND_EFFECTS = "sound_effects",
   // library feature per mediatype
   LIBRARY_ARTISTS = "library_artists",
   LIBRARY_ALBUMS = "library_albums",
@@ -712,6 +716,12 @@ export interface Album extends MediaItem {
   album_type: AlbumType;
 }
 
+export interface AudioMetadata {
+  // Audio analysis details (e.g. bpm, musical key).
+  bpm?: number | null;
+  musical_key?: string | null;
+}
+
 export interface Track extends MediaItem {
   duration: number;
   artists: Array<ItemMapping | Artist>;
@@ -719,6 +729,8 @@ export interface Track extends MediaItem {
   album: ItemMapping | Album;
   disc_number?: number;
   track_number?: number;
+  // only populated when the full track is requested (get_track), never on listings
+  audio_metadata?: AudioMetadata | null;
 }
 
 export interface Playlist extends MediaItem {
@@ -729,6 +741,10 @@ export interface Playlist extends MediaItem {
 }
 
 export interface Radio extends MediaItem {}
+
+export interface SoundEffect extends MediaItem {
+  duration: number;
+}
 
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
@@ -897,6 +913,13 @@ export interface PlayerQueue {
   // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
   // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
   smart_fades_active: boolean;
+  // audio overlay: a looping sound effect mixed into this queue's playback.
+  // overlay_source holds the selected sound effect (kept when the overlay is
+  // disabled so it can be re-enabled with the same sound), overlay_volume is
+  // the overlay loudness relative to the music in percent (100 = equally loud).
+  overlay_enabled: boolean;
+  overlay_source?: ItemMapping;
+  overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;
@@ -1330,6 +1353,8 @@ export interface PartyConfig {
   qr_text: string | null;
   hide_back_button: boolean;
   show_progress_bar: boolean;
+  // Shared-audio experience for guests: "venue" (opt-in) or "remote" (silent disco).
+  mode?: "venue" | "remote";
 }
 
 export interface SmartPlaylistRules {

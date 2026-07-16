@@ -43,7 +43,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { api } from "@/plugins/api";
 import { watch, ref, onMounted, onBeforeUnmount } from "vue";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import { eventbus } from "@/plugins/eventbus";
 

@@ -4,7 +4,7 @@ import {
   radioActionLabelKey,
   radioSupported,
 } from "@/helpers/radio";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import api from "@/plugins/api";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";

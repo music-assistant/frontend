@@ -161,7 +161,7 @@
     </Container>
     <div class="missing-players-hint">
       <v-icon icon="mdi-information-outline" size="16" class="hint-icon" />
-      <i18n-t keypath="settings.missing_players_hint" tag="span">
+      <i18n-t keypath="settings.missing_players_hint" tag="span" scope="global">
         <router-link
           :to="{ name: 'providersettings', query: { types: 'player' } }"
           class="hint-link"
@@ -183,7 +183,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { isHiddenSendspinWebPlayer, openLinkInNewTab } from "@/helpers/utils";
-import { ContextMenuItem } from "@/layouts/default/ItemContextMenu.vue";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import {
   EventType,

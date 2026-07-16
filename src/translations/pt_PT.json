@@ -132,7 +132,6 @@
         "tracks_in_library": "Faixas na biblioteca",
         "playlists_in_library": "Listas de reprodução na biblioteca",
         "radio_in_library": "Rádio na biblioteca",
-        "server_logging": "Registo no servidor",
         "download_log": "Descarregar ficheiro de registo",
         "edit_group_members": "Editar membros do grupo",
         "add_new_provider_button": "Adicionar provedor {0}",
@@ -147,10 +146,6 @@
                 "light": "Claro",
                 "dark": "Escuro"
             }
-        },
-        "menu_items": {
-            "label": "Itens de menu ativados",
-            "description": "Configure os itens a mostrar no menu.\n\nNote que, se desativar as definições, poderá ficar sem acesso.\n\nPara voltar a ter acesso, terá de introduzir manualmente o caminho para as definições ou limpar os cookies do browser. Utilize por sua conta e risco!"
         },
         "language": {
             "label": "Idioma",
@@ -309,8 +304,6 @@
         "view_documentation": "Ver documentação",
         "about": "Sobre",
         "about_description": "Informações sobre a versão, créditos e mais",
-        "system_logging": "Registo do servidor",
-        "system_logging_description": "Visualizar e descarregar registos do servidor para resolução de problemas",
         "auto_refresh_log": "Atualização automática",
         "log_truncated": "Mostrando as últimas {0} linhas. Descarregue o ficheiro de registo completo para obter o histórico completo.",
         "version_info": "Informações sobre a versão",

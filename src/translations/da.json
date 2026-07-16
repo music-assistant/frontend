@@ -130,7 +130,6 @@
         "tracks_in_library": "Sange i biblioteket",
         "playlists_in_library": "Afspilningslister i biblioteket",
         "radio_in_library": "Radio i biblioteket",
-        "server_logging": "Server-logning",
         "download_log": "Download log-fil",
         "edit_group_members": "Rediger gruppe-afspillere",
         "add_new_provider_button": "Tilføj {0} udbyder",
@@ -145,10 +144,6 @@
                 "light": "Lys",
                 "dark": "Mørk"
             }
-        },
-        "menu_items": {
-            "label": "Aktiverede menupunkter",
-            "description": "Konfigurer hvilke elementer der skal vises i menuen.\n\n Bemærk, at hvis du deaktiverer indstillinger, kan du låse dig selv ude. \n\nI så fald skal du manuelt indtaste stien til indstillingerne eller rydde browserens cookies for at få adgang til indstillingerne igen - brug dem på eget ansvar."
         },
         "language": {
             "label": "Sprog",

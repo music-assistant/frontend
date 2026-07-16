@@ -132,7 +132,6 @@
         "tracks_in_library": "Dainos bibliotekoje",
         "playlists_in_library": "Grojaraščiai bibliotekoje",
         "radio_in_library": "Radijas bibliotekoje",
-        "server_logging": "Serverio registravimas",
         "download_log": "Atsisiųsti žurnalo failą",
         "edit_group_members": "Redaguoti grupės narius",
         "add_new_provider_button": "Pridėti {0} paslaugų teikėją",
@@ -147,10 +146,6 @@
                 "light": "Šviesa",
                 "dark": "Tamsu"
             }
-        },
-        "menu_items": {
-            "label": "Įjungti meniu elementai",
-            "description": "Konfigūruokite, kuriuos elementus rodyti meniu. \n \n Atminkite, kad išjungę nustatymus galite užsiblokuoti. \n \n Norėdami vėl gauti prieigą, turėsite rankiniu būdu įvesti kelią į nustatymus arba išvalyti naršyklės slapukus. Naudokite savo pačių rizika!"
         },
         "language": {
             "label": "Kalba",
@@ -309,8 +304,6 @@
         "view_documentation": "Peržiūrėti dokumentaciją",
         "about": "Apie",
         "about_description": "Informacija apie versiją, autoriai ir kita",
-        "system_logging": "Serverio registravimas",
-        "system_logging_description": "Peržiūrėkite ir atsisiųskite serverio žurnalus trikčių šalinimui",
         "auto_refresh_log": "Automatinis atnaujinimas",
         "log_truncated": "Rodoma paskutinė {0} eilutės. Atsisiųskite visą žurnalo failą, kad pamatytumėte visą istoriją.",
         "version_info": "Versijos informacija",

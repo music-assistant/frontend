@@ -5,203 +5,253 @@
     </div>
 
     <template v-else>
-      <EditorialShelf
-        v-if="showPlayers"
-        ref="playersShelf"
-        class="ed-players"
-        :gap="12"
-        :nav-center="42"
-        :dimmed="editMode && !playersEnabled"
-      >
-        <template #header>
-          <div class="ed-players__head">
-            <h2 class="ed-players__label text-foreground">
-              {{ $t("players") }}
-            </h2>
-            <span v-if="activeCount" class="ed-players__count">
-              {{ activeCount }} {{ $t("state.playing") }}
-            </span>
-          </div>
-        </template>
-        <template v-if="editMode" #actions>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            :aria-label="$t('tooltip.toggle_players')"
-            @click="togglePlayers"
-          >
-            <Eye v-if="playersEnabled" />
-            <EyeOff v-else />
-          </Button>
-        </template>
+      <div ref="listEl" class="ed-rows">
         <div
-          v-for="player in players"
-          :key="player.player_id"
-          class="ed-player-slot"
-          :data-player-id="player.player_id"
+          v-for="(row, idx) in displayedRows"
+          :key="row.id"
+          class="ed-row"
+          :data-drag-index="idx"
+          :class="{ 'ed-row--drag-source': draggingIndex === idx }"
+          :style="
+            isDragging
+              ? {
+                  transform: `translateY(${rowOffset(idx)}px)`,
+                  transition:
+                    draggingIndex !== idx ? 'transform 200ms ease-out' : 'none',
+                }
+              : undefined
+          "
         >
-          <PlayerCard
-            :player="player"
-            :show-volume-control="false"
-            :show-menu-button="false"
-            :show-sub-players="false"
-            :show-sync-controls="false"
-            @click="playerClicked(player)"
-          />
-        </div>
-      </EditorialShelf>
-
-      <section
-        v-if="showTopPicks"
-        class="ed-section ed-hero-row"
-        :class="{ 'ed-dimmed': editMode && !topPicksEnabled }"
-      >
-        <div class="ed-hero-row__head">
-          <div class="ed-hero-row__title-group">
-            <h2 class="ed-hero-row__title">{{ $t("top_picks_for_you") }}</h2>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              :title="$t('refresh')"
-              :disabled="heroRefreshing"
-              @click="refreshTopPicks"
-            >
-              <RefreshCw
-                :class="{ 'ed-hero-refresh--spinning': heroRefreshing }"
-              />
-            </Button>
-          </div>
-          <Button
-            v-if="editMode"
-            variant="ghost"
-            size="icon-sm"
-            :aria-label="$t('tooltip.toggle_top_picks')"
-            @click="toggleTopPicks"
+          <!-- Players row -->
+          <EditorialShelf
+            v-if="row.kind === 'players'"
+            :ref="setPlayersShelfRef"
+            class="ed-players"
+            :gap="12"
+            :nav-center="42"
+            :dimmed="editMode && row.hidden"
           >
-            <Eye v-if="topPicksEnabled" />
-            <EyeOff v-else />
-          </Button>
-        </div>
-        <div
-          class="ed-hero-row__viewport"
-          @mouseenter="heroHovering = canHover"
-          @mouseleave="heroHovering = false"
-        >
-          <!-- prev -->
-          <button
-            v-show="heroHovering && heroCanLeft"
-            class="ed-hero-nav ed-hero-nav--left"
-            aria-label="Scroll left"
-            @click="scrollHero(-1)"
-          >
-            <ChevronLeft :size="20" />
-          </button>
-
-          <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
-            <EditorialHeroCard
-              class="ed-hero-grid__lead"
-              :item="heroEntries[0].item"
-              :tag="heroEntries[0].tag"
-              large
-            />
+            <template #header>
+              <div class="ed-players__head">
+                <h2 class="ed-players__label text-foreground">
+                  {{ $t("players") }}
+                </h2>
+                <span v-if="activeCount" class="ed-players__count">
+                  {{ activeCount }} {{ $t("state.playing") }}
+                </span>
+              </div>
+            </template>
+            <template v-if="editMode" #actions>
+              <button
+                class="ed-drag-handle"
+                :aria-label="$t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @click.stop
+              >
+                <GripVertical />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="$t('tooltip.toggle_players')"
+                @click="toggleRow(row)"
+              >
+                <Eye v-if="!row.hidden" />
+                <EyeOff v-else />
+              </Button>
+            </template>
             <div
-              v-for="(col, i) in heroColumns"
-              :key="i"
-              class="ed-hero-grid__col"
+              v-for="player in players"
+              :key="player.player_id"
+              class="ed-player-slot"
+              :data-player-id="player.player_id"
             >
-              <EditorialHeroCard
-                v-for="entry in col"
-                :key="entry.item.uri"
-                :item="entry.item"
-                :tag="entry.tag"
+              <PlayerCard
+                :player="player"
+                :show-volume-control="false"
+                :show-menu-button="false"
+                :show-child-volumes="false"
+                :show-group-controls="false"
+                @click="playerClicked(player)"
               />
             </div>
-          </div>
+          </EditorialShelf>
 
-          <!-- next -->
-          <button
-            v-show="heroHovering && heroCanRight"
-            class="ed-hero-nav ed-hero-nav--right"
-            aria-label="Scroll right"
-            @click="scrollHero(1)"
+          <!-- Top picks row -->
+          <section
+            v-else-if="row.kind === 'top_picks'"
+            class="ed-section ed-hero-row"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
           >
-            <ChevronRight :size="20" />
-          </button>
-        </div>
-      </section>
+            <div class="ed-hero-row__head">
+              <div class="ed-hero-row__title-group">
+                <h2 class="ed-hero-row__title">
+                  {{ $t("top_picks_for_you") }}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :title="$t('refresh')"
+                  :disabled="heroRefreshing"
+                  @click="refreshTopPicks"
+                >
+                  <RefreshCw
+                    :class="{ 'ed-hero-refresh--spinning': heroRefreshing }"
+                  />
+                </Button>
+              </div>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_top_picks')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </div>
+            <div
+              class="ed-hero-row__viewport"
+              @mouseenter="heroHovering = canHover"
+              @mouseleave="heroHovering = false"
+            >
+              <!-- prev -->
+              <button
+                v-show="heroHovering && heroCanLeft"
+                class="ed-hero-nav ed-hero-nav--left"
+                aria-label="Scroll left"
+                @click="scrollHero(-1)"
+              >
+                <ChevronLeft :size="20" />
+              </button>
 
-      <EditorialShelf
-        v-for="(row, idx) in displayedRows"
-        :key="row.folder.uri"
-        :title="row.folder.name"
-        :subtitle="row.folder.subtitle"
-        :provider="folderProvider(row.folder)"
-        :dimmed="editMode && !row.setting.enabled"
-        :tiles-per-view="tilesPerView"
-      >
-        <template v-if="editMode" #actions>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            :aria-label="$t('tooltip.toggle_row')"
-            @click="toggleRow(row.folder.uri)"
-          >
-            <Eye v-if="row.setting.enabled" />
-            <EyeOff v-else />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            :disabled="idx === 0"
-            :aria-label="$t('tooltip.move_row_up')"
-            @click="moveRow(row.folder.uri, -1)"
-          >
-            <ChevronUp />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            :disabled="idx === displayedRows.length - 1"
-            :aria-label="$t('tooltip.move_row_down')"
-            @click="moveRow(row.folder.uri, 1)"
-          >
-            <ChevronDown />
-          </Button>
-        </template>
-        <EditorialMediaCard
-          v-for="item in row.folder.items"
-          :key="item.uri"
-          :item="item"
-        />
-      </EditorialShelf>
+              <div ref="heroGrid" class="ed-hero-grid" @scroll="updateHeroNav">
+                <EditorialHeroCard
+                  class="ed-hero-grid__lead"
+                  :item="heroEntries[0].item"
+                  :tag="heroEntries[0].tag"
+                  large
+                />
+                <div
+                  v-for="(col, i) in heroColumns"
+                  :key="i"
+                  class="ed-hero-grid__col"
+                >
+                  <EditorialHeroCard
+                    v-for="entry in col"
+                    :key="entry.item.uri"
+                    :item="entry.item"
+                    :tag="entry.tag"
+                  />
+                </div>
+              </div>
 
-      <section
-        v-if="showGenres"
-        class="ed-section ed-genres"
-        :class="{ 'ed-dimmed': editMode && !genresEnabled }"
-      >
-        <div class="ed-genres__head">
-          <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
-          <Button
-            v-if="editMode"
-            variant="ghost"
-            size="icon-sm"
-            :title="genresEnabled ? $t('disable') : $t('enable')"
-            :aria-label="genresEnabled ? $t('disable') : $t('enable')"
-            @click="toggleGenres"
+              <!-- next -->
+              <button
+                v-show="heroHovering && heroCanRight"
+                class="ed-hero-nav ed-hero-nav--right"
+                aria-label="Scroll right"
+                @click="scrollHero(1)"
+              >
+                <ChevronRight :size="20" />
+              </button>
+            </div>
+          </section>
+
+          <!-- Recommendation shelf -->
+          <EditorialShelf
+            v-else-if="row.kind === 'recommendation' && row.folder"
+            :title="row.folder.name"
+            :subtitle="row.folder.subtitle"
+            :provider="folderProvider(row.folder)"
+            :dimmed="editMode && row.hidden"
+            :tiles-per-view="tilesPerView"
           >
-            <Eye v-if="genresEnabled" />
-            <EyeOff v-else />
-          </Button>
+            <template v-if="editMode" #actions>
+              <button
+                class="ed-drag-handle"
+                :aria-label="$t('queue_reorder')"
+                @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                @click.stop
+              >
+                <GripVertical />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="$t('tooltip.toggle_row')"
+                @click="toggleRow(row)"
+              >
+                <Eye v-if="!row.hidden" />
+                <EyeOff v-else />
+              </Button>
+            </template>
+            <EditorialMediaCard
+              v-for="item in row.folder.items"
+              :key="item.uri"
+              :item="item"
+            />
+          </EditorialShelf>
+
+          <!-- Genres row -->
+          <section
+            v-else-if="row.kind === 'genres'"
+            class="ed-section ed-genres"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+          >
+            <div class="ed-genres__head">
+              <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :title="row.hidden ? $t('enable') : $t('disable')"
+                  :aria-label="row.hidden ? $t('enable') : $t('disable')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </div>
+            <div class="ed-genres__grid">
+              <EditorialGenreTile
+                v-for="genre in genres"
+                :key="genre.uri"
+                :item="genre"
+              />
+            </div>
+          </section>
         </div>
-        <div class="ed-genres__grid">
-          <EditorialGenreTile
-            v-for="genre in genres"
-            :key="genre.uri"
-            :item="genre"
-          />
+
+        <!-- Floating ghost that follows the pointer while dragging a row -->
+        <div
+          v-if="isDragging && draggedRow"
+          class="ed-drag-ghost"
+          :style="{ top: `${ghostY}px` }"
+        >
+          <GripVertical class="ed-drag-ghost__icon" />
+          <span class="ed-drag-ghost__title">{{ draggedRow.title }}</span>
         </div>
-      </section>
+      </div>
 
       <div class="ed-footer-space"></div>
     </template>
@@ -215,10 +265,20 @@ import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf, {
   type EditorialShelfExpose,
 } from "@/components/discover/EditorialShelf.vue";
+import {
+  GENRES_ROW_ID,
+  PLAYERS_ROW_ID,
+  DEFAULT_PRIORITY_ROWS,
+  TOP_PICKS_ROW_ID,
+  resolveDiscoverRowsConfig,
+  setDiscoverRowHidden,
+  setDiscoverRowsOrder,
+} from "@/components/discover/utils/discoverRows";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
-import { useUserPreferences } from "@/composables/userPreferences";
-import { panelViewItemResponsive, playerVisible } from "@/helpers/utils";
+import { useListDragReorder } from "@/composables/useListDragReorder";
+import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
@@ -235,15 +295,13 @@ import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Eye,
   EyeOff,
+  GripVertical,
   RefreshCw,
 } from "@lucide/vue";
-import { useDebounceFn } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -257,8 +315,6 @@ const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
 
-const { getPreference, setPreference } = useUserPreferences();
-
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
 const recommendations = ref<RecommendationFolder[]>([]);
@@ -270,12 +326,7 @@ const tilesPerView = computed(() => {
   return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
 });
 
-const players = computed(() =>
-  Object.values(api.players)
-    .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1))
-    .sort((a, b) => playerSortScore(a) - playerSortScore(b)),
-);
+const players = useOrderedPlayers();
 
 const activeCount = computed(
   () =>
@@ -283,49 +334,13 @@ const activeCount = computed(
       .length,
 );
 
-// --- Players shelf visibility (edit mode) ---
-const playersEnabledPref = getPreference<boolean>(
-  "discoverPlayersEnabled",
-  true,
-);
-const playersEnabled = computed(() => playersEnabledPref.value !== false);
-const showPlayers = computed(
-  () => players.value.length > 0 && (props.editMode || playersEnabled.value),
-);
-const togglePlayers = () =>
-  setPreference("discoverPlayersEnabled", !playersEnabled.value);
-
-const topPicksEnabledPref = getPreference<boolean>(
-  "discoverTopPicksEnabled",
-  true,
-);
-const topPicksEnabled = computed(() => topPicksEnabledPref.value !== false);
-const showTopPicks = computed(
-  () =>
-    heroEntries.value.length > 0 && (props.editMode || topPicksEnabled.value),
-);
-const toggleTopPicks = () =>
-  setPreference("discoverTopPicksEnabled", !topPicksEnabled.value);
-
-const genresEnabledPref = getPreference<boolean>("discoverGenresEnabled", true);
-const genresEnabled = computed(() => genresEnabledPref.value !== false);
-const showGenres = computed(
-  () => genres.value.length > 0 && (props.editMode || genresEnabled.value),
-);
-const toggleGenres = () =>
-  setPreference("discoverGenresEnabled", !genresEnabled.value);
-
-function playerSortScore(player: Player) {
-  if (player.playback_state == PlaybackState.PLAYING) return 0;
-  if (player.playback_state == PlaybackState.PAUSED) return 1;
-  if (player.current_media && player.powered) return 3;
-  if (player.current_media) return 4;
-  return 99;
-}
-
 function playerClicked(player: Player) {
   store.activePlayerId = player.player_id;
 }
+
+const setPlayersShelfRef = (el: unknown) => {
+  playersShelf.value = (el as EditorialShelfExpose | null) ?? null;
+};
 
 const playersOrderKey = computed(() =>
   players.value.map((p) => p.player_id).join(","),
@@ -341,6 +356,10 @@ function alignPlayersShelf() {
     shelf.scrollToStart();
   }
 }
+
+const showPlayers = computed(() =>
+  displayedRows.value.some((row) => row.kind === "players"),
+);
 
 watch(playersOrderKey, () => {
   if (!showPlayers.value) return;
@@ -486,14 +505,22 @@ const scrollHero = (dir: number) => {
 };
 
 let heroRo: ResizeObserver | undefined;
+let observedHeroGrid: HTMLElement | null = null;
+
 const observeHero = () => {
   const el = heroGrid.value;
-  if (!el) return;
-  updateHeroNav();
-  if ("ResizeObserver" in window && !heroRo) {
-    heroRo = new ResizeObserver(updateHeroNav);
-    heroRo.observe(el);
+  if (!(el instanceof HTMLElement)) {
+    heroRo?.disconnect();
+    observedHeroGrid = null;
+    return;
   }
+  updateHeroNav();
+  if (!("ResizeObserver" in window)) return;
+  heroRo ??= new ResizeObserver(updateHeroNav);
+  if (observedHeroGrid === el) return;
+  heroRo.disconnect();
+  heroRo.observe(el);
+  observedHeroGrid = el;
 };
 
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
@@ -565,66 +592,111 @@ const refreshTopPicks = async () => {
   }
 };
 
-// --- Recommendation shelves with per-row visibility + ordering (edit mode) ---
-interface RowSetting {
-  position: number;
-  enabled: boolean;
+// --- Unified row list: visibility + ordering via the discover.rows pref ---
+type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+
+interface DiscoverRow {
+  id: string;
+  kind: DiscoverRowKind;
+  title: string;
+  hidden: boolean;
+  folder?: RecommendationFolder;
 }
-const savedRowSettings = getPreference<Record<string, RowSetting>>(
-  "discoverRowSettings",
-  {},
-);
-const rowSettings = ref<Record<string, RowSetting>>({});
 
-const ensureRowSettings = () => {
-  const settings: Record<string, RowSetting> = { ...savedRowSettings.value };
-  let maxPos = Object.values(settings).reduce(
-    (m, s) => Math.max(m, s.position),
-    -1,
-  );
-  for (const f of recommendations.value) {
-    if (!settings[f.uri])
-      settings[f.uri] = { position: ++maxPos, enabled: true };
+const recommendationRows = computed(() =>
+  recommendations.value.filter((f) => f.items.length > 0),
+);
+
+// Default order of every row that currently has content: the well-known rows
+// first, then the remaining server rows as returned, genres pinned last.
+const availableRowIds = computed<string[]>(() => {
+  const recUris = recommendationRows.value.map((f) => f.uri);
+  const recSet = new Set(recUris);
+  const ids: string[] = [];
+  for (const id of DEFAULT_PRIORITY_ROWS) {
+    if (id === PLAYERS_ROW_ID) {
+      if (players.value.length > 0) ids.push(id);
+    } else if (id === TOP_PICKS_ROW_ID) {
+      if (heroEntries.value.length > 0) ids.push(id);
+    } else if (recSet.has(id)) {
+      ids.push(id);
+    }
   }
-  rowSettings.value = settings;
-};
+  for (const uri of recUris) {
+    if (!ids.includes(uri)) ids.push(uri);
+  }
+  if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
+  return ids;
+});
 
-watch(savedRowSettings, ensureRowSettings, { deep: true });
+const allRows = computed<DiscoverRow[]>(() => {
+  const { order, hidden } = resolveDiscoverRowsConfig(availableRowIds.value);
+  const folders = new Map(recommendationRows.value.map((f) => [f.uri, f]));
+  const rows: DiscoverRow[] = [];
+  for (const id of order) {
+    if (id === PLAYERS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "players",
+        title: $t("players"),
+        hidden: hidden.has(id),
+      });
+    } else if (id === TOP_PICKS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "top_picks",
+        title: $t("top_picks_for_you"),
+        hidden: hidden.has(id),
+      });
+    } else if (id === GENRES_ROW_ID) {
+      rows.push({
+        id,
+        kind: "genres",
+        title: $t("browse_by_genre"),
+        hidden: hidden.has(id),
+      });
+    } else {
+      const folder = folders.get(id);
+      if (!folder) continue;
+      rows.push({
+        id,
+        kind: "recommendation",
+        title: folder.name,
+        hidden: hidden.has(id),
+        folder,
+      });
+    }
+  }
+  return rows;
+});
 
-const orderedRows = computed(() =>
-  recommendations.value
-    .filter((f) => f.items.length)
-    .map((f) => ({
-      folder: f,
-      setting: rowSettings.value[f.uri] ?? { position: 9999, enabled: true },
-    }))
-    .sort((a, b) => a.setting.position - b.setting.position),
-);
 const displayedRows = computed(() =>
-  props.editMode
-    ? orderedRows.value
-    : orderedRows.value.filter((r) => r.setting.enabled),
+  props.editMode ? allRows.value : allRows.value.filter((row) => !row.hidden),
 );
 
-const persistRowSettings = () =>
-  setPreference("discoverRowSettings", rowSettings.value);
+const toggleRow = (row: DiscoverRow) =>
+  setDiscoverRowHidden(row.id, !row.hidden);
 
-const toggleRow = (uri: string) => {
-  const s = rowSettings.value[uri];
-  if (!s) return;
-  s.enabled = !s.enabled;
-  persistRowSettings();
-};
-const moveRow = (uri: string, dir: number) => {
-  const rows = orderedRows.value;
-  const i = rows.findIndex((r) => r.folder.uri === uri);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= rows.length) return;
-  const a = rowSettings.value[rows[i].folder.uri];
-  const b = rowSettings.value[rows[j].folder.uri];
-  [a.position, b.position] = [b.position, a.position];
-  persistRowSettings();
-};
+// --- Drag-to-reorder (edit mode), same interaction as the navigation menu ---
+const listEl = ref<HTMLElement | null>(null);
+
+const { startItemDrag, draggingIndex, isDragging, ghostY, rowOffset } =
+  useListDragReorder({
+    listEl,
+    count: () => displayedRows.value.length,
+    onCommit: (from, to) => {
+      const ids = displayedRows.value.map((row) => row.id);
+      const [moved] = ids.splice(from, 1);
+      ids.splice(to, 0, moved);
+      setDiscoverRowsOrder(ids, availableRowIds.value);
+    },
+  });
+
+const draggedRow = computed(() =>
+  draggingIndex.value != null
+    ? (displayedRows.value[draggingIndex.value] ?? null)
+    : null,
+);
 
 const loadRecommendations = async () => {
   const [recs, recent] = await Promise.all([
@@ -633,7 +705,6 @@ const loadRecommendations = async () => {
   ]);
   recommendations.value = recs;
   recentlyPlayed.value = recent;
-  ensureRowSettings();
 };
 
 // "Browse by genre": show the 8 genres with the most linked media items
@@ -655,35 +726,66 @@ const loadGenres = async () => {
   genres.value = ranked.slice(0, 8);
 };
 
-onMounted(async () => {
-  await Promise.all([loadRecommendations(), loadGenres()]);
-  resolveHeroPicks();
-  loading.value = false;
-  nextTick(observeHero);
-  window.addEventListener("resize", updateHeroNav);
+let isUnmounted = false;
+let refreshRecommendationsTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const refreshRecommendations = useDebounceFn(async () => {
+const cancelScheduledRecommendationRefresh = () => {
+  if (refreshRecommendationsTimer) {
+    clearTimeout(refreshRecommendationsTimer);
+    refreshRecommendationsTimer = undefined;
+  }
+};
+
+const scheduleRecommendationRefresh = () => {
+  cancelScheduledRecommendationRefresh();
+  refreshRecommendationsTimer = setTimeout(async () => {
+    refreshRecommendationsTimer = undefined;
+    if (isUnmounted) return;
     await loadRecommendations();
+    if (isUnmounted) return;
     // Keeps the same picks while the cache is fresh; rebuilds once expired.
     resolveHeroPicks();
   }, 1500);
+};
 
-  const unsub = api.subscribe(
-    EventType.MEDIA_ITEM_PLAYED,
-    (evt: EventMessage) => {
-      // Only refetch when a track actually finished (is_playing = false),
-      // not on the periodic ~30s progress reports that also emit this event.
-      if (evt.data && !(evt.data as Record<string, unknown>).is_playing) {
-        refreshRecommendations();
-      }
-    },
-  );
-  onBeforeUnmount(unsub);
+const isFinishedPlaybackEvent = (
+  data: unknown,
+): data is { is_playing: false } =>
+  typeof data === "object" &&
+  data !== null &&
+  "is_playing" in data &&
+  data.is_playing === false;
+
+const unsubscribeRecommendations = api.subscribe(
+  EventType.MEDIA_ITEM_PLAYED,
+  (evt: EventMessage) => {
+    // Only refetch when a track actually finished (is_playing = false),
+    // not on the periodic ~30s progress reports that also emit this event.
+    if (isFinishedPlaybackEvent(evt.data)) {
+      scheduleRecommendationRefresh();
+    }
+  },
+);
+
+onMounted(async () => {
+  await Promise.all([loadRecommendations(), loadGenres()]);
+  if (isUnmounted) return;
+  resolveHeroPicks();
+  loading.value = false;
+  nextTick(() => {
+    if (!isUnmounted) observeHero();
+  });
+  window.addEventListener("resize", updateHeroNav);
 });
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   window.removeEventListener("resize", updateHeroNav);
+  unsubscribeRecommendations();
+  cancelScheduledRecommendationRefresh();
   heroRo?.disconnect();
+  heroRo = undefined;
+  observedHeroGrid = null;
 });
 </script>
 
@@ -697,8 +799,83 @@ onBeforeUnmount(() => {
   margin-bottom: 32px;
 }
 
+.ed-rows {
+  position: relative;
+}
+.ed-row {
+  position: relative;
+}
+.ed-row--drag-source {
+  opacity: 0.35;
+}
+
+.ed-edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ed-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: grab;
+  touch-action: none;
+}
+.ed-drag-handle:active {
+  cursor: grabbing;
+}
+.ed-drag-handle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ed-drag-ghost {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: rgb(var(--v-theme-panel));
+  color: rgb(var(--v-theme-on-background));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.95;
+  pointer-events: none;
+  cursor: grabbing;
+}
+.ed-drag-ghost__icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.ed-drag-ghost__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ed-players {
   margin-top: 4px;
+}
+.ed-players :deep(.ed-shelf__track) {
+  align-items: stretch;
 }
 .ed-players__head {
   display: flex;
@@ -716,9 +893,13 @@ onBeforeUnmount(() => {
   color: rgba(var(--v-theme-on-surface), 0.45);
 }
 .ed-player-slot {
+  display: flex;
   flex: 0 0 auto;
   width: 280px;
   scroll-snap-align: start;
+}
+.ed-player-slot :deep([data-slot="card"]) {
+  width: 100%;
 }
 .ed-player-slot :deep(.panel-item) {
   height: auto;
@@ -925,6 +1106,10 @@ onBeforeUnmount(() => {
   }
   .ed-hero-nav {
     display: none;
+  }
+  .ed-drag-ghost {
+    left: 16px;
+    right: 16px;
   }
 }
 </style>

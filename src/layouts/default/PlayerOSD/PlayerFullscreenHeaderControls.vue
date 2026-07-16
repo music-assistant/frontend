@@ -11,18 +11,13 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="outline"
+            variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[
-              pillClass,
-              lyricsActive
-                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
-                : '',
-            ]"
+            :class="[pillClass, lyricsActive ? activePillClass : '']"
             :aria-label="$t('lyrics')"
             @click="emit('toggle-lyrics')"
           >
-            <MicVocal :size="16" />
+            <MicVocal :size="16" :class="{ 'mic-singing': lyricsActive }" />
             <span v-if="showLabel">{{ $t("lyrics") }}</span>
           </Button>
         </TooltipTrigger>
@@ -37,7 +32,7 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="outline"
+            variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
             :class="['text-muted-foreground cursor-default', pillClass]"
             :aria-label="$t('lyrics')"
@@ -63,15 +58,12 @@
         <TooltipTrigger as-child>
           <Button
             as="span"
-            variant="outline"
+            variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[
-              pillClass,
-              'cursor-default border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90',
-            ]"
+            :class="[pillClass, activePillClass, 'cursor-default']"
             :aria-label="$t('autoplay')"
           >
-            <InfinityIcon :size="16" />
+            <AutoplayIcon :size="16" active />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -94,18 +86,13 @@
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="outline"
+            variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[
-              pillClass,
-              autoplayEnabled
-                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
-                : '',
-            ]"
+            :class="[pillClass, autoplayEnabled ? activePillClass : '']"
             :aria-label="$t('autoplay')"
             @click="setAutoplay(!autoplayEnabled)"
           >
-            <InfinityIcon :size="16" />
+            <AutoplayIcon :size="16" :active="autoplayEnabled" />
             <span v-if="showLabel">{{ $t("autoplay") }}</span>
           </Button>
         </TooltipTrigger>
@@ -122,25 +109,21 @@
       </Tooltip>
     </TooltipProvider>
 
-    <!-- crossfade: direct toggle (primary while enabled). The icon twinkles
-         while smart fades are active. -->
+    <!-- crossfade: direct toggle (primary while enabled). The icon slowly
+         crossfades while enabled and twinkles while smart fades are active. -->
     <TooltipProvider v-if="showCrossfade && queue" :delay-duration="200">
       <Tooltip>
         <TooltipTrigger as-child>
           <Button
-            variant="outline"
+            variant="ghost-outline"
             :size="showLabel ? 'xs' : 'icon-xs'"
-            :class="[
-              pillClass,
-              crossfadeEnabled
-                ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:border-primary dark:bg-primary dark:hover:bg-primary/90'
-                : '',
-            ]"
+            :class="[pillClass, crossfadeEnabled ? activePillClass : '']"
             :aria-label="$t('crossfade')"
             @click="toggleCrossfade"
           >
             <CrossfadeIcon
               :size="16"
+              :active="crossfadeEnabled"
               :smart="crossfadeEnabled && smartFadesActive"
             />
             <span v-if="showLabel">{{ $t("crossfade") }}</span>
@@ -166,6 +149,29 @@
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+
+    <!-- audio overlay: shown only while an overlay sound is active. Clicking it
+         reopens the overlay dialog to adjust the sound or volume. -->
+    <TooltipProvider v-if="overlayActive && queue" :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="ghost-outline"
+            :size="showLabel ? 'xs' : 'icon-xs'"
+            :class="[pillClass, activePillClass]"
+            :aria-label="$t('audio_overlay')"
+            @click="openOverlay"
+          >
+            <AudioLines :size="16" />
+            <span v-if="showLabel">{{ $t("audio_overlay") }}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
+          <p class="font-medium">{{ $t("audio_overlay") }}</p>
+          <p v-if="overlayName" class="mt-1 opacity-80">{{ overlayName }}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   </div>
 </template>
 
@@ -179,13 +185,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import AutoplayIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/AutoplayIcon.vue";
 import CrossfadeIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/CrossfadeIcon.vue";
 import { useQueueModes } from "@/layouts/default/PlayerOSD/useQueueModes";
+import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { InfinityIcon, MicVocal } from "@lucide/vue";
+import { AudioLines, MicVocal } from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -224,12 +232,13 @@ const seedNames = computed(() =>
 
 const showLabel = computed(() => !store.mobileLayout);
 
-// Frosted-glass pill styling: in light mode the outline variant uses a solid
-// white background (harsh over the cover gradient), while dark mode already uses
-// a translucent background. Override the light background with a translucent one
-// + backdrop blur so the pills blend with the cover artwork in both themes.
-const pillClass =
-  "relative bg-background/40 backdrop-blur-md hover:bg-background/60";
+// The ghost-outline variant provides the pill look (transparent with a subtle
+// border, frosted background on hover only).
+const pillClass = "relative";
+
+// Solid primary pill for the "enabled" state of the toggles.
+const activePillClass =
+  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
 
 // --- crossfade ---
 const crossfadeEnabled = computed(
@@ -255,6 +264,17 @@ const toggleCrossfade = () => {
   if (!q) return;
   api.queueCommandCrossfade(q.queue_id, !q.crossfade_enabled);
 };
+
+// --- audio overlay ---
+const { openOverlayDialog } = useAudioOverlay();
+
+const overlayActive = computed(() => queue.value?.overlay_enabled === true);
+const overlayName = computed(() => queue.value?.overlay_source?.name);
+
+const openOverlay = () => {
+  const q = queue.value;
+  if (q) openOverlayDialog(q.queue_id);
+};
 </script>
 
 <style scoped>
@@ -262,5 +282,28 @@ const toggleCrossfade = () => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+/* while the lyrics panel is open the mic gently sways, like it's being sung
+   into */
+.mic-singing {
+  transform-origin: 50% 85%;
+  animation: mic-sway 2.4s ease-in-out infinite;
+}
+
+@keyframes mic-sway {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic-singing {
+    animation: none;
+  }
 }
 </style>

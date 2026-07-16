@@ -1,21 +1,11 @@
 <template>
   <div class="filters-container">
-    <InputGroup class="search-field">
-      <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
-      <InputGroupAddon>
-        <Search />
-      </InputGroupAddon>
-    </InputGroup>
+    <SearchInput v-model="searchQuery" :placeholder="$t('search')" />
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Search } from "@lucide/vue";
+import { SearchInput } from "@/components/ui/search-input";
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -76,7 +66,7 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
-.search-field {
+:deep(.search-field) {
   flex: 1 1 auto;
   min-width: 250px;
   max-width: 400px;
@@ -88,7 +78,7 @@ onBeforeUnmount(() => {
     align-items: stretch;
   }
 
-  .search-field {
+  :deep(.search-field) {
     width: 100%;
     min-width: 100%;
     max-width: none;
