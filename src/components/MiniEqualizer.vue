@@ -1,5 +1,11 @@
 <template>
-  <canvas v-if="waveformBins" ref="canvasEl" class="mini-eq" />
+  <canvas
+    v-if="waveformBins"
+    ref="canvasEl"
+    class="mini-eq"
+    aria-hidden="true"
+    role="presentation"
+  />
 </template>
 
 <script setup lang="ts">
@@ -74,12 +80,16 @@ function draw() {
   const dpr = window.devicePixelRatio || 1;
   const cssW = canvas.clientWidth;
   const cssH = props.height;
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
+  const targetW = Math.round(cssW * dpr);
+  const targetH = Math.round(cssH * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
 
   const duration = trackDurationSecs.value;
@@ -106,9 +116,8 @@ function draw() {
     const x = startX + i * pitch;
     const y = (cssH - barH) / 2;
     const isCurrent = i === half;
-    ctx.globalAlpha = isCurrent
-      ? 1
-      : 0.3 + 0.7 * (1 - Math.abs(i - half) / half) * rms;
+    const falloff = half > 0 ? 1 - Math.abs(i - half) / half : 1;
+    ctx.globalAlpha = isCurrent ? 1 : 0.3 + 0.7 * falloff * rms;
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") {
       ctx.roundRect(x, y, barW, barH, 1);
@@ -131,14 +140,33 @@ function stopTimer() {
   }
 }
 
+function syncTimer() {
+  if (store.activePlayerQueue?.state === "playing" && waveformBins.value) {
+    startTimer();
+  } else {
+    stopTimer();
+  }
+}
+
 onMounted(() => {
-  startTimer();
   draw();
 });
 
 onUnmounted(stopTimer);
 
-watch(waveformBins, () => draw());
+watch(
+  () => store.activePlayerQueue?.state,
+  (state) => {
+    syncTimer();
+    if (state !== "playing") draw();
+  },
+  { immediate: true },
+);
+
+watch(waveformBins, () => {
+  syncTimer();
+  draw();
+});
 </script>
 
 <style scoped>
