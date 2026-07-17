@@ -1,4 +1,6 @@
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
+import { getCastViewerNavigationRedirect } from "@/helpers/cast_viewer_access";
+import { CAST_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { watch } from "vue";
 import {
   createRouter,
@@ -79,6 +81,12 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
+          // Cast viewer tokens are scoped like guest accounts and can't read
+          // provider configs, so they can't populate store.enabledPlugins.
+          // Trust the server here: a cast session only exists because it was
+          // created from an already-enabled party dashboard.
+          if (authManager.isCastViewer()) return;
+
           // Only allow access if party plugin is enabled
           if (!store.enabledPlugins.has("party")) {
             return { name: "discover" };
@@ -592,6 +600,21 @@ router.beforeEach(async (to) => {
   );
   if (guestRedirect) {
     return guestRedirect;
+  }
+
+  // Cast viewer sessions are pinned to the dashboard route they were opened
+  // on and render kiosk-style, without navigation/player chrome.
+  if (authManager.isCastViewer()) {
+    store.frameless = true;
+    const pinnedPath = sessionStorage.getItem(CAST_VIEWER_PATH_STORAGE_KEY);
+    const castRedirect = getCastViewerNavigationRedirect(
+      true,
+      pinnedPath,
+      to.path,
+    );
+    if (castRedirect) {
+      return castRedirect;
+    }
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta

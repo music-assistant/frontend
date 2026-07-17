@@ -60,7 +60,9 @@ export class AuthManager {
    */
   getPersistentToken(connectionIdentity: ConnectionIdentity): string | null {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!token || isGuestAccessClaims(this.decodeJWT(token))) return null;
+    if (!token) return null;
+    const claims = this.decodeJWT(token);
+    if (isGuestAccessClaims(claims) || isCastViewerClaims(claims)) return null;
     return localStorage.getItem(TOKEN_CONNECTION_STORAGE_KEY) ===
       connectionIdentity
       ? token
@@ -96,7 +98,7 @@ export class AuthManager {
     const previousIdentity = this.claims?.jti;
     this.token = token;
     this.claims = this.decodeJWT(token);
-    if (this.isGuestAccessSession()) {
+    if (this.isGuestAccessSession() || this.isCastViewer()) {
       sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, token);
       if (localStorage.getItem(TOKEN_STORAGE_KEY) === token) {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -154,6 +156,15 @@ export class AuthManager {
    */
   isGuestAccessSession(): boolean {
     return this.isPartyGuest() || this.isMusicQuizGuest();
+  }
+
+  /**
+   * Check if this is a cast viewer session.
+   * Cast viewers authenticate via a one-time cast code (from casting a
+   * dashboard to a Chromecast) and are pinned to a single dashboard route.
+   */
+  isCastViewer(): boolean {
+    return this.claims?.username === "cast_viewer";
   }
 
   /**
@@ -258,7 +269,7 @@ export class AuthManager {
     const guestToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
     if (guestToken) {
       const guestClaims = this.decodeJWT(guestToken);
-      if (isGuestAccessClaims(guestClaims)) {
+      if (isGuestAccessClaims(guestClaims) || isCastViewerClaims(guestClaims)) {
         this.token = guestToken;
         this.claims = guestClaims;
         return;
@@ -270,7 +281,11 @@ export class AuthManager {
     const persistentClaims = persistentToken
       ? this.decodeJWT(persistentToken)
       : null;
-    if (persistentToken && isGuestAccessClaims(persistentClaims)) {
+    if (
+      persistentToken &&
+      (isGuestAccessClaims(persistentClaims) ||
+        isCastViewerClaims(persistentClaims))
+    ) {
       sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, persistentToken);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
@@ -284,7 +299,11 @@ export class AuthManager {
     const persistentClaims = persistentToken
       ? this.decodeJWT(persistentToken)
       : null;
-    if (persistentToken && isGuestAccessClaims(persistentClaims)) {
+    if (
+      persistentToken &&
+      (isGuestAccessClaims(persistentClaims) ||
+        isCastViewerClaims(persistentClaims))
+    ) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       this.token = null;
       this.claims = null;
@@ -323,6 +342,10 @@ function isGuestAccessClaims(claims: JWTClaims | null): boolean {
     claims?.username === "party_guest" ||
     claims?.username === "music_quiz_guest"
   );
+}
+
+function isCastViewerClaims(claims: JWTClaims | null): boolean {
+  return claims?.username === "cast_viewer";
 }
 
 // Export singleton instance

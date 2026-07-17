@@ -117,6 +117,31 @@ describe("AuthManager guest sessions", () => {
     expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
+  it("stores a cast viewer token like a guest token", () => {
+    const regularToken = createToken("regular-token", "admin");
+    const castToken = createToken("cast-token", "cast_viewer");
+    localStorage.setItem("ma_access_token", regularToken);
+    const authManager = new AuthManager();
+
+    authManager.setToken(castToken);
+
+    expect(authManager.isCastViewer()).toBe(true);
+    expect(authManager.isGuestAccessSession()).toBe(false);
+    expect(authManager.getToken()).toBe(castToken);
+    expect(localStorage.getItem("ma_access_token")).toBe(regularToken);
+    expect(sessionStorage.getItem("ma_guest_access_token")).toBe(castToken);
+  });
+
+  it("restores a stored cast viewer token on reload", () => {
+    const castToken = createToken("cast-token", "cast_viewer");
+    sessionStorage.setItem("ma_guest_access_token", castToken);
+
+    const authManager = new AuthManager();
+
+    expect(authManager.getToken()).toBe(castToken);
+    expect(authManager.isCastViewer()).toBe(true);
+  });
+
   it("clears persistent and guest credentials on full logout", () => {
     const authManager = new AuthManager();
     authManager.setToken(createToken("regular-token", "admin"));
