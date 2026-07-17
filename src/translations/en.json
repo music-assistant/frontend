@@ -1153,7 +1153,9 @@
                 "session_stop_failed": "Failed to stop AI Radio session",
                 "station_saved": "Station saved",
                 "station_save_failed": "Failed to save station",
-                "station_deleted": "Station deleted"
+                "station_deleted": "Station deleted",
+                "station_duplicated": "Station duplicated",
+                "session_failed": "AI Radio run failed: {0}"
             },
             "header": {
                 "subtitle": "Turn a playlist into a radio show with an AI host."
@@ -1177,11 +1179,26 @@
                 "duplicate_name": "{0} (copy)",
                 "delete": "Delete",
                 "session_failed": "Last run failed",
+                "open_playlist": "Open generated playlist",
+                "status_failed": "Failed {0}",
+                "status_playlist_ready": "Playlist ready · {0}",
+                "status_last_on_air": "Last on air {0}",
                 "no_player": "Select a player first",
                 "start_failed": "Failed to start: {0}",
                 "switch_show_title": "Switch show?",
                 "switch_show_confirm": "«{0}» is on air. Stop it and play «{1}»?",
                 "switch_show_confirm_label": "Switch"
+            },
+            "phase": {
+                "preparing": "Preparing your show…",
+                "fetch_source_tracks": "Fetching tracks…",
+                "planning_sections": "Planning the show…",
+                "generating_llm": "Writing the host's lines…",
+                "generating_tts": "Recording the host's voice…",
+                "publishing_playlist": "Publishing playlist…",
+                "initializing_queue": "Preparing the queue…",
+                "queueing_batch": "Queueing music…",
+                "waiting_for_playback": "Waiting for playback…"
             },
             "create": {
                 "title": "Create a show",

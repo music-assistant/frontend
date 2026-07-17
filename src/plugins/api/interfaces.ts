@@ -1500,8 +1500,15 @@ export interface AIRadioSession {
   started_at?: string;
   ended_at?: string;
   error?: string;
-  progress?: Record<string, unknown>;
-  result?: Record<string, unknown>;
+  progress?: {
+    phase?: string;
+    [key: string]: unknown;
+  };
+  result?: {
+    target_playlist_id?: string;
+    target_playlist_name?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface AIRadioStatus {

@@ -60,6 +60,8 @@
         </Button>
       </Alert>
 
+      <OnAirHero />
+
       <div
         v-if="showEmptyState"
         class="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center"
@@ -112,6 +114,7 @@
 <script setup lang="ts">
 import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
+import OnAirHero from "@/components/ai-radio/OnAirHero.vue";
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
 import type { PlaylistSelection } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

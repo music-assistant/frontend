@@ -9,7 +9,7 @@
       </DialogHeader>
 
       <div
-        class="flex max-h-[60vh] flex-col gap-5 overflow-x-hidden overflow-y-auto -mx-6 px-6"
+        class="flex max-h-[60vh] flex-col gap-5 overflow-x-hidden overflow-y-auto -mx-6 px-6 py-1"
       >
         <div class="flex flex-col gap-2">
           <Label>{{ $t("providers.ai_radio.create.playlist_label") }}</Label>
@@ -142,8 +142,7 @@ const emit = defineEmits<{
 
 const TALK_LEVELS: TalkativenessLevel[] = ["rarely", "normal", "chatty"];
 
-const { saveShow, startShow, reportStartError, dismissNoAiProviderAlert } =
-  useShows();
+const { saveShow, startShow, reportStartError } = useShows();
 
 const selectedPlaylist = ref<PlaylistSelection | undefined>();
 const selectedPresetKey = ref<ShowPresetKey>("morning_show");
@@ -269,7 +268,6 @@ async function playAfterCreate(stationId: string, defaultPlayerId?: string) {
   }
   try {
     await startShow(stationId, "dynamic", { playerIdOverride: playerId });
-    dismissNoAiProviderAlert();
   } catch (error) {
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));

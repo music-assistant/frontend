@@ -4,7 +4,7 @@
       <Button
         type="button"
         variant="outline"
-        class="h-10 w-full justify-start gap-2 px-2 font-normal"
+        class="h-9 w-full justify-start gap-2 px-3 font-normal"
       >
         <template v-if="modelValue">
           <div class="h-6 w-6 shrink-0 overflow-hidden rounded">
