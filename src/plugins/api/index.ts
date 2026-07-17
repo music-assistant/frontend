@@ -1439,8 +1439,15 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getRecommendations(): Promise<RecommendationFolder[]> {
-    return this.sendCommand("music/recommendations");
+  public async getRecommendations(
+    wanted?: string[],
+  ): Promise<RecommendationFolder[]> {
+    // Send `wanted` whenever it is defined — including an empty array (the user hid
+    // every row → the server returns nothing). Omit it only when undefined (full fetch).
+    return this.sendCommand(
+      "music/recommendations",
+      wanted !== undefined ? { wanted } : {},
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {

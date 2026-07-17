@@ -786,10 +786,19 @@ export interface BrowseFolder extends MediaItem {
   path?: string;
   image?: MediaItemImage;
 }
+export enum RecommendationFolderType {
+  DEFAULT = "default",
+  TIMELINE = "timeline",
+}
+
+/** Mirrors music_assistant_models RecommendationFolder. `items` is populated by
+ *  the server; per-user visibility is owned by the frontend (discover.rows). */
 export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
   subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
+  enabled_by_default: boolean;
+  type?: RecommendationFolderType;
 }
 
 export type MediaItemType =
