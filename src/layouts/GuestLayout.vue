@@ -1,24 +1,13 @@
 <template>
   <div class="bg-background flex h-dvh flex-col overflow-hidden">
     <header
-      class="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b px-2"
+      class="guest-layout-header grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b"
     >
-      <Button
+      <MusicQuizHostControlsMenu
         v-if="showHostControls"
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="justify-self-start px-2"
-        data-testid="guest-host-controls"
-        :aria-label="$t('providers.music_quiz.host_controls')"
-        :title="$t('providers.music_quiz.host_controls')"
-        @click="returnToHostControls"
-      >
-        <SlidersHorizontal class="size-4" aria-hidden="true" />
-        <span class="hidden sm:inline">
-          {{ $t("providers.music_quiz.host_controls") }}
-        </span>
-      </Button>
+        class="justify-self-start"
+        @open-host-panel="returnToHostPanel"
+      />
       <div v-else />
       <img
         :src="logoSrc"
@@ -94,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import MusicQuizHostControlsMenu from "@/components/music-quiz/MusicQuizHostControlsMenu.vue";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,13 +111,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  ArrowLeft,
-  LogOut,
-  Palette,
-  SlidersHorizontal,
-  UserRound,
-} from "@lucide/vue";
+import { ArrowLeft, LogOut, Palette, UserRound } from "@lucide/vue";
 import { computed, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "vuetify";
@@ -170,7 +154,16 @@ function returnToApp(): void {
   void router.push({ name: "discover" });
 }
 
-function returnToHostControls(): void {
+function returnToHostPanel(): void {
   void router.push({ name: "music-quiz" });
 }
 </script>
+
+<style scoped>
+.guest-layout-header {
+  height: calc(3rem + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px)
+    calc(0.5rem + env(safe-area-inset-right, 0px)) 0
+    calc(0.5rem + env(safe-area-inset-left, 0px));
+}
+</style>

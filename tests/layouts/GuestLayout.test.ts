@@ -85,6 +85,11 @@ function mountLayout() {
         DropdownMenuSubContent: passthroughStub,
         DropdownMenuSubTrigger: passthroughStub,
         DropdownMenuTrigger: passthroughStub,
+        MusicQuizHostControlsMenu: {
+          emits: ["openHostPanel"],
+          template:
+            '<button data-testid="guest-host-controls" @click="$emit(\'openHostPanel\')" />',
+        },
         RouterView: true,
       },
     },
@@ -103,6 +108,7 @@ describe("GuestLayout", () => {
 
     expect(wrapper.classes()).toContain("h-dvh");
     expect(wrapper.classes()).toContain("overflow-hidden");
+    expect(wrapper.get("header").classes()).toContain("guest-layout-header");
     expect(
       wrapper.get('img[alt="Music Assistant"]').attributes("src"),
     ).toContain("logo-dark.svg");
