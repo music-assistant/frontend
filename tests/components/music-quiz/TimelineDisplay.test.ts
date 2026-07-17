@@ -188,20 +188,41 @@ describe("TimelineDisplay", () => {
         selectedPreviousEntryId: "same-a",
         selectedNextEntryId: "same-b",
       },
+      slots: {
+        "selected-boundary":
+          '<section data-testid="inline-follow-up">Follow-up</section>',
+      },
     });
     const buttons = wrapper.findAll("button");
     const selected = buttons[2];
+    const selectedItem = selected.element.closest("li");
 
     expect(selected.attributes("aria-pressed")).toBe("true");
+    expect(selected.attributes("data-selected")).toBe("true");
     expect(buttons.every((button) => "disabled" in button.attributes())).toBe(
       true,
     );
     expect(selected.classes()).toContain("min-h-11");
     expect(selected.classes()).toContain("bg-primary");
+    expect(selected.classes()).toContain("ring-4");
+    expect(selected.classes()).toContain("disabled:opacity-100");
     expect(selected.text()).toContain(
       "providers.music_quiz.timeline_placed_here",
     );
+    expect(selected.text()).toContain(
+      "providers.music_quiz.timeline_place_in_year:2000",
+    );
     expect(selected.find("svg").exists()).toBe(true);
+    expect(
+      buttons
+        .filter((button) => button !== selected)
+        .every((button) => button.classes().includes("bg-background")),
+    ).toBe(true);
+    expect(
+      selectedItem?.contains(
+        wrapper.get('[data-testid="inline-follow-up"]').element,
+      ),
+    ).toBe(true);
   });
 
   it("renders a read-only timeline without placement controls", () => {

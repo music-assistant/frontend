@@ -1,24 +1,23 @@
 import { nextTick, ref, watch } from "vue";
 
-/** Focus post-placement controls when a placement becomes locked. */
+/** Focus each newly available post-placement action. */
 export function useTimelinePostPlacementFocus(
-  hasPlacement: () => boolean,
+  actionKey: () => string | undefined,
   isBusy: () => boolean,
 ) {
   const postPlacementRef = ref<HTMLElement | null>(null);
   let focusPending = false;
 
-  watch(
-    [hasPlacement, isBusy],
-    ([hasLockedPlacement, busy], [hadLockedPlacement]) => {
-      if (hasLockedPlacement && !hadLockedPlacement) focusPending = true;
-      if (!hasLockedPlacement) focusPending = false;
-      if (focusPending && !busy) {
-        focusPending = false;
-        void focusPostPlacement();
-      }
-    },
-  );
+  watch([actionKey, isBusy], ([nextActionKey, busy], [previousActionKey]) => {
+    if (nextActionKey && nextActionKey !== previousActionKey) {
+      focusPending = true;
+    }
+    if (!nextActionKey) focusPending = false;
+    if (focusPending && !busy) {
+      focusPending = false;
+      void focusPostPlacement();
+    }
+  });
 
   return { postPlacementRef };
 
