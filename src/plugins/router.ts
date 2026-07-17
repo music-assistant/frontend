@@ -25,12 +25,14 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "party",
         name: "guest-party",
+        meta: { disableMediaSession: true },
         component: () =>
           import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
       {
         path: "quiz",
         name: "guest-quiz",
+        meta: { disableMediaSession: true },
         component: () =>
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"
@@ -583,16 +585,13 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes and guest mode restrictions
-router.beforeEach(async (to, _from, next) => {
-  const currentUser = store.currentUser;
-
+router.beforeEach(async (to) => {
   const guestRedirect = getGuestNavigationRedirect(
     authManager.isGuestAccessSession(),
     to.path,
   );
   if (guestRedirect) {
-    next(guestRedirect);
-    return;
+    return guestRedirect;
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta
@@ -629,12 +628,9 @@ router.beforeEach(async (to, _from, next) => {
 
     if (!currentUser || currentUser.role !== "admin") {
       console.warn("Admin access required for", to.path);
-      next({ name: "discover" });
-      return;
+      return { name: "discover" };
     }
   }
-
-  next();
 });
 
 router.afterEach((to, from) => {

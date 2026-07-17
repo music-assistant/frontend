@@ -1,8 +1,36 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+
+const { originalUserAgentDescriptor } = vi.hoisted(() => {
+  const originalUserAgentDescriptor = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+  Object.defineProperty(navigator, "userAgent", {
+    configurable: true,
+    value: "iPhone",
+  });
+  return { originalUserAgentDescriptor };
+});
+
+afterAll(() => {
+  if (originalUserAgentDescriptor) {
+    Object.defineProperty(navigator, "userAgent", originalUserAgentDescriptor);
+  } else {
+    Reflect.deleteProperty(navigator, "userAgent");
+  }
+});
 
 const {
   authState,
@@ -12,7 +40,10 @@ const {
   mockPlayerCommandPrevious,
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
+  mockRegisterWebPlayerAudioUnlock,
+  mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
+  routeState,
 } = vi.hoisted(() => ({
   authState: {
     guest: null as "music_quiz" | "party" | null,
@@ -23,7 +54,12 @@ const {
   mockPlayerCommandPrevious: vi.fn(),
   mockPlayerCommandSeek: vi.fn(),
   mockPrepareSendspinSession: vi.fn(),
+  mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
+  mockSendspinUnlock: vi.fn<() => Promise<void>>(),
   mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
+  routeState: {
+    current: null as { meta: Record<string, unknown> } | null,
+  },
 }));
 
 vi.mock("@/helpers/useMediaBrowserMetaData", () => ({
@@ -32,10 +68,20 @@ vi.mock("@/helpers/useMediaBrowserMetaData", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   default: {
+    isGuestAccessSession: () => authState.guest !== null,
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
   },
 }));
+
+vi.mock("vue-router", async () => {
+  const { shallowReactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  routeState.current = shallowReactive({ meta: {} });
+  return {
+    useRoute: () => routeState.current,
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -80,7 +126,7 @@ vi.mock("@/plugins/web_player", async () => {
       SENDSPIN_WITH_CONTROLS: "sendspin_with_controls",
     },
     clearWebPlayerAudioUnlock: vi.fn(),
-    registerWebPlayerAudioUnlock: vi.fn(),
+    registerWebPlayerAudioUnlock: mockRegisterWebPlayerAudioUnlock,
     webPlayer: reactive({
       interacted: false,
       tabMode: "sendspin_only",
@@ -104,6 +150,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
     setVolume = vi.fn();
+    unlock = mockSendspinUnlock;
   },
 }));
 
@@ -150,8 +197,12 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandPlay.mockReset();
     mockPlayerCommandPrevious.mockReset();
     mockPlayerCommandSeek.mockReset();
+    mockRegisterWebPlayerAudioUnlock.mockClear();
+    mockSendspinUnlock.mockReset();
+    mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
+    if (routeState.current) routeState.current.meta = {};
     Object.defineProperty(navigator, "mediaSession", {
       configurable: true,
       value: mediaSession,
@@ -161,6 +212,7 @@ describe("SendspinPlayer MediaSession", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -201,6 +253,49 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
+  it("unlocks iOS audio once the Sendspin player is ready", async () => {
+    let resolvePrepare!: () => void;
+    mockPrepareSendspinSession.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePrepare = resolve;
+      }),
+    );
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    const unlockAudio = getAudioUnlockHandler();
+
+    expect(unlockAudio()).toBe(false);
+    expect(mockSendspinUnlock).not.toHaveBeenCalled();
+
+    resolvePrepare();
+    await flushPromises();
+
+    expect(unlockAudio()).toBe(true);
+    expect(mockSendspinUnlock).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("logs rejected iOS audio unlocks", async () => {
+    const error = new Error("unlock failed");
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    mockSendspinUnlock.mockRejectedValue(error);
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(getAudioUnlockHandler()()).toBe(true);
+    await flushPromises();
+
+    expect(debugSpy).toHaveBeenCalledWith(
+      "Sendspin: failed to prime audio for listen-in",
+      error,
+    );
+    wrapper.unmount();
+  });
+
   it("clears stale guest state again when the player mode changes", async () => {
     authState.guest = "music_quiz";
     const wrapper = mount(SendspinPlayer, {
@@ -215,6 +310,52 @@ describe("SendspinPlayer MediaSession", () => {
     expect(mediaSession.playbackState).toBe("none");
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
     invokeAllActions();
+    expectPlayerCommandsNotCalled();
+    wrapper.unmount();
+  });
+
+  it("disables controls while a signed-in user plays along", async () => {
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    seedStaleMediaSession();
+
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    await nextTick();
+
+    expect(mediaSession.metadata).toBeNull();
+    expect(mediaSession.playbackState).toBe("none");
+    expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
+    invokeAllActions();
+    expectPlayerCommandsNotCalled();
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledTimes(2);
+    invokeAction("play");
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("web-player");
+    wrapper.unmount();
+  });
+
+  it("does not enable controls without MediaSession support", async () => {
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: undefined,
+    });
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
+
+    expect(mockUseMediaBrowserMetaData).not.toHaveBeenCalled();
     expectPlayerCommandsNotCalled();
     wrapper.unmount();
   });
@@ -280,6 +421,12 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 });
+
+function getAudioUnlockHandler(): () => boolean {
+  const handler = mockRegisterWebPlayerAudioUnlock.mock.calls.at(-1)?.[0];
+  if (!handler) throw new Error("Audio unlock handler was not registered");
+  return handler;
+}
 
 function seedStaleMediaSession(): void {
   mediaSession.metadata = {} as MediaMetadata;

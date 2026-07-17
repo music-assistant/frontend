@@ -5,11 +5,19 @@ import {
 import {
   createGuestQuizAffinity,
   type GuestQuizAffinity,
+  type GuestQuizAffinityContext,
 } from "@/helpers/guest_quiz_affinity";
+import {
+  createLocalConnectionIdentity,
+  createRemoteConnectionIdentity,
+} from "@/helpers/connection_identity";
 import { consumeMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
-import api, { ConnectionState } from "@/plugins/api";
+import api from "@/plugins/api";
+import { waitForApiInitialization } from "@/plugins/api/helpers";
 import { authManager } from "@/plugins/auth";
+import { remoteConnectionManager } from "@/plugins/remote";
 import { EventType, type EventMessage } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import {
   onBeforeUnmount,
   onMounted,
@@ -23,6 +31,7 @@ import { useRoute, useRouter } from "vue-router";
 
 export type GuestEntryState =
   | "loading"
+  | "error"
   | "quiz"
   | "party"
   | "quiz-ended"
@@ -33,7 +42,9 @@ export const guestEntryStateKey: InjectionKey<Readonly<Ref<GuestEntryState>>> =
   Symbol("guest-entry-state");
 
 export async function resolveGuestEntry(
-  quizAffinity: GuestQuizAffinity = createGuestQuizAffinity(getGuestIdentity()),
+  quizAffinity: GuestQuizAffinity = createGuestQuizAffinity(
+    getParticipantContext(),
+  ),
 ): Promise<GuestEntryState> {
   const state = await resolveGuestEntryState(quizAffinity);
   if (state === "quiz") quizAffinity.record();
@@ -44,8 +55,8 @@ export function useGuestEntryResolver() {
   const route = useRoute();
   const router = useRouter();
   const state = ref<GuestEntryState>("loading");
-  let guestIdentity = getGuestIdentity();
-  let quizAffinity = createGuestQuizAffinity(guestIdentity);
+  let participantContext = getParticipantContext();
+  let quizAffinity = createGuestQuizAffinity(participantContext);
   let active = false;
   let requestedVersion = 0;
   let preserveEndedState = false;
@@ -102,7 +113,22 @@ export function useGuestEntryResolver() {
     while (active) {
       const version = requestedVersion;
       const resolutionAffinity = getQuizAffinity();
-      const nextState = await resolveGuestEntryState(resolutionAffinity);
+      let nextState: GuestEntryState;
+      try {
+        nextState = await resolveGuestEntryState(resolutionAffinity);
+      } catch {
+        if (!active) return;
+        if (version !== requestedVersion) continue;
+        if (resolutionAffinity !== getQuizAffinity()) {
+          requestedVersion += 1;
+          continue;
+        }
+        if (state.value === "loading") {
+          state.value = "error";
+          await syncRoute();
+        }
+        return;
+      }
       if (!active) return;
       if (version !== requestedVersion) continue;
       if (resolutionAffinity !== getQuizAffinity()) {
@@ -160,19 +186,37 @@ export function useGuestEntryResolver() {
   }
 
   function getQuizAffinity(): GuestQuizAffinity {
-    const currentIdentity = getGuestIdentity();
-    if (currentIdentity !== guestIdentity) {
-      guestIdentity = currentIdentity;
-      quizAffinity = createGuestQuizAffinity(currentIdentity);
+    const currentContext = getParticipantContext();
+    if (!isSameParticipantContext(currentContext, participantContext)) {
+      participantContext = currentContext;
+      quizAffinity = createGuestQuizAffinity(currentContext);
       preserveEndedState = false;
     }
     return quizAffinity;
   }
 }
 
-function getGuestIdentity(): string | undefined {
-  if (!authManager.isGuestAccessSession()) return undefined;
-  return authManager.getClaim("jti") || undefined;
+function getParticipantContext(): GuestQuizAffinityContext | undefined {
+  const connectionIdentity = api.isRemoteConnection.value
+    ? createRemoteConnectionIdentity(
+        remoteConnectionManager.currentRemoteId.value,
+      )
+    : createLocalConnectionIdentity(api.baseUrl);
+  const participantIdentity =
+    authManager.getClaim("jti") || store.currentUser?.user_id;
+  return connectionIdentity && participantIdentity
+    ? { connectionIdentity, participantIdentity }
+    : undefined;
+}
+
+function isSameParticipantContext(
+  first: GuestQuizAffinityContext | undefined,
+  second: GuestQuizAffinityContext | undefined,
+): boolean {
+  return (
+    first?.connectionIdentity === second?.connectionIdentity &&
+    first?.participantIdentity === second?.participantIdentity
+  );
 }
 
 async function resolveGuestEntryState(
@@ -196,23 +240,7 @@ function getGuestEntryPath(state: GuestEntryState): string | undefined {
   if (state === "quiz") return "/guest/quiz";
   if (state === "quiz-ended") return "/guest/quiz";
   if (state === "party") return "/guest/party";
+  if (state === "error") return "/guest";
   if (state === "quiz-inactive" || state === "inactive") return "/guest";
   return undefined;
-}
-
-async function waitForApiInitialization() {
-  if (api.state.value === ConnectionState.INITIALIZED) return;
-
-  await new Promise<void>((resolve) => {
-    const unwatch = watch(
-      () => api.state.value,
-      (newState) => {
-        if (newState === ConnectionState.INITIALIZED) {
-          unwatch();
-          resolve();
-        }
-      },
-      { immediate: true },
-    );
-  });
 }

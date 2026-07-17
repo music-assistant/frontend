@@ -30,6 +30,12 @@ const copy = computed(() => {
       description: $t("guest.loading_description"),
     };
   }
+  if (state.value === "error") {
+    return {
+      title: $t("guest.error_title"),
+      description: $t("guest.error_description"),
+    };
+  }
   if (state.value === "quiz-inactive") {
     return {
       title: $t("guest.no_quiz_title"),

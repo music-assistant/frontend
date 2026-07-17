@@ -139,6 +139,7 @@ import {
 } from "@/composables/useMusicQuiz";
 import {
   getMusicQuizErrorMessage,
+  getMusicQuizRoundScore,
   getMusicQuizRoundScoreLabel,
   getMusicQuizWinnerText,
   rankMusicQuizPlayers,
@@ -262,6 +263,11 @@ const playerRoundScoreLabel = computed(() =>
     ? getMusicQuizRoundScoreLabel(activeState.value, activeState.value.you.name)
     : "",
 );
+const playerRoundScore = computed(() =>
+  activeState.value
+    ? getMusicQuizRoundScore(activeState.value, activeState.value.you.name)
+    : undefined,
+);
 
 const phaseText = computed(() => {
   const currentState = activeState.value;
@@ -291,6 +297,32 @@ watch(
   },
 );
 
+watch(
+  [
+    () => activeState.value?.phase,
+    () => currentRound.value?.round_index,
+    () => activeState.value?.you.answer?.correct,
+    () => playerRoundScore.value,
+  ],
+  ([phase, , correct, points]) => {
+    if (phase !== "reveal" || correct === undefined || points === undefined) {
+      return;
+    }
+    const result = $t(
+      correct
+        ? "providers.music_quiz.correct"
+        : "providers.music_quiz.incorrect",
+    );
+    const message = `${result} +${points}`;
+    if (correct) {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
+  },
+  { immediate: true },
+);
+
 async function handleJoin(name: string) {
   if (listenInEnabled.value) {
     listenInPrimedGeneration.value = webPlayer.primeAudio()
@@ -312,15 +344,16 @@ async function handleReady() {
 <style scoped>
 .music-quiz-player {
   min-height: 100%;
-  padding: calc(0.75rem + env(safe-area-inset-top, 0px))
-    calc(0.75rem + env(safe-area-inset-right, 0px))
+  padding: 0.75rem calc(0.75rem + env(safe-area-inset-right, 0px))
     calc(1rem + env(safe-area-inset-bottom, 0px))
     calc(0.75rem + env(safe-area-inset-left, 0px));
 }
 
 @media (min-width: 768px) {
   .music-quiz-player {
-    padding: 1.25rem;
+    padding: 1.25rem calc(1.25rem + env(safe-area-inset-right, 0px))
+      calc(1.25rem + env(safe-area-inset-bottom, 0px))
+      calc(1.25rem + env(safe-area-inset-left, 0px));
   }
 }
 </style>

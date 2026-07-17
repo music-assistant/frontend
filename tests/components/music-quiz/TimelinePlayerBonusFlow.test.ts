@@ -7,7 +7,7 @@ import {
   player,
   stateWithAnswer,
 } from "./timelinePlayerFixtures";
-import { mount, shallowMount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
@@ -40,11 +40,17 @@ describe("Timeline player bonus flow", () => {
         },
       },
     } satisfies MusicQuizTimelinePersonalizedState;
-    const wrapper = shallowMount(TimelinePlayerAnswer, {
+    const wrapper = mount(TimelinePlayerAnswer, {
       props: {
         state,
         currentRound: baseRound,
         busy: false,
+      },
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineProgress: true,
+        },
       },
     });
 
@@ -65,11 +71,18 @@ describe("Timeline player bonus flow", () => {
       global: {
         stubs: {
           MusicQuizCountdown: true,
-          TimelineDisplay: true,
           TimelineProgress: true,
         },
       },
     });
+
+    const followUp = wrapper.get('[data-testid="timeline-post-placement"]');
+    expect(
+      wrapper
+        .get('button[data-selected="true"]')
+        .element.closest("li")
+        ?.contains(followUp.element),
+    ).toBe(true);
 
     await wrapper.get("input").setValue("  Massive Attack  ");
     await wrapper.get("form").trigger("submit");
@@ -129,7 +142,6 @@ describe("Timeline player bonus flow", () => {
       global: {
         stubs: {
           MusicQuizCountdown: true,
-          TimelineDisplay: true,
           TimelineProgress: true,
         },
       },
@@ -155,7 +167,6 @@ describe("Timeline player bonus flow", () => {
       global: {
         stubs: {
           MusicQuizCountdown: true,
-          TimelineDisplay: true,
           TimelineProgress: true,
         },
       },
@@ -191,7 +202,6 @@ describe("Timeline player bonus flow", () => {
       global: {
         stubs: {
           MusicQuizCountdown: true,
-          TimelineDisplay: true,
           TimelineProgress: true,
         },
       },

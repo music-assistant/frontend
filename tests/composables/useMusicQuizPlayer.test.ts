@@ -16,10 +16,12 @@ const {
   mockClearStoredPlayerId,
   mockGetMusicQuizErrorMessage,
   mockMarkJoinedGameEnded,
+  mockWaitForApiInitialization,
   storedPlayerId,
   storedPlayerName,
   providerHandlers,
   unmountHandlers,
+  participantContext,
 } = vi.hoisted(() => ({
   mockGetMusicQuizInfo: vi.fn(),
   mockGetMusicQuizState: vi.fn(),
@@ -36,12 +38,17 @@ const {
   mockClearStoredPlayerId: vi.fn(),
   mockGetMusicQuizErrorMessage: vi.fn(),
   mockMarkJoinedGameEnded: vi.fn(),
+  mockWaitForApiInitialization: vi.fn(),
   storedPlayerId: { value: null as string | null },
   storedPlayerName: { value: "" },
   providerHandlers: [] as Array<
     (event: { object_id?: string; data?: unknown }) => void
   >,
   unmountHandlers: [] as Array<() => void>,
+  participantContext: {
+    connectionIdentity: "local:http://music-assistant:8095",
+    participantIdentity: "participant-token",
+  } as const,
 }));
 
 vi.mock("vue", async () => {
@@ -77,8 +84,37 @@ vi.mock("@/composables/useMusicQuiz", () => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
+    baseUrl: "http://music-assistant:8095",
+    isRemoteConnection: { value: false },
     subscribe: mockSubscribe,
   },
+}));
+
+vi.mock("@/helpers/connection_identity", () => ({
+  createLocalConnectionIdentity: () => participantContext.connectionIdentity,
+  createRemoteConnectionIdentity: () => undefined,
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: {
+    getClaim: () => participantContext.participantIdentity,
+  },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: {
+    currentUser: undefined,
+  },
+}));
+
+vi.mock("@/plugins/remote", () => ({
+  remoteConnectionManager: {
+    currentRemoteId: { value: null },
+  },
+}));
+
+vi.mock("@/plugins/api/helpers", () => ({
+  waitForApiInitialization: mockWaitForApiInitialization,
 }));
 
 vi.mock("@/helpers/music_quiz", () => ({
@@ -341,6 +377,8 @@ describe("useMusicQuizPlayer", () => {
     mockClearStoredPlayerId.mockReset();
     mockGetMusicQuizErrorMessage.mockReset();
     mockMarkJoinedGameEnded.mockReset();
+    mockWaitForApiInitialization.mockReset();
+    mockWaitForApiInitialization.mockResolvedValue(undefined);
     mockHeartbeatMusicQuiz.mockResolvedValue(true);
     mockGetStoredPlayerId.mockImplementation(() => storedPlayerId.value);
     mockGetStoredPlayerName.mockImplementation(() => storedPlayerName.value);
@@ -385,6 +423,25 @@ describe("useMusicQuizPlayer", () => {
     }
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+
+  it("defers the initial fetch until the API connection is initialized", async () => {
+    // On a hard page refresh the composable can mount before the API has
+    // fetched server state (providers); probing too early would resolve to
+    // a wrong "no quiz" answer.
+    const initialization = deferred<void>();
+    mockWaitForApiInitialization.mockReturnValue(initialization.promise);
+    mockGetMusicQuizInfo.mockResolvedValue(QUIZ_INFO);
+
+    useMusicQuizPlayer({ notifyError: vi.fn() });
+    await flushPromises();
+
+    expect(mockGetMusicQuizInfo).not.toHaveBeenCalled();
+
+    initialization.resolve(undefined);
+    await flushPromises();
+
+    expect(mockGetMusicQuizInfo).toHaveBeenCalled();
   });
 
   it("validates a stored player before fetching personalized state", async () => {
@@ -921,7 +978,10 @@ describe("useMusicQuizPlayer", () => {
     await player.join("  Player One  ");
 
     expect(mockJoinMusicQuiz).toHaveBeenCalledWith("Player One");
-    expect(mockStorePlayerName).toHaveBeenCalledWith("Player One");
+    expect(mockStorePlayerName).toHaveBeenCalledWith(
+      "Player One",
+      participantContext,
+    );
     expect(player.rememberedName.value).toBe("Player One");
   });
 

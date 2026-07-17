@@ -25,6 +25,7 @@ import {
 } from "@/helpers/music_quiz";
 
 export interface UseMusicQuizHostOptions {
+  loadSetupData?: boolean;
   notifyError: (message: string) => void;
 }
 
@@ -35,7 +36,7 @@ export interface UseMusicQuizHostOptions {
  * (game_updated -> re-fetch, game_removed -> clear), and wraps all host actions.
  */
 export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
-  const { notifyError } = options;
+  const { loadSetupData = true, notifyError } = options;
 
   const state = ref<MusicQuizHostState | null>(null);
   const busy = ref(false);
@@ -230,6 +231,36 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
+  async function replay() {
+    if (busy.value) return false;
+    busy.value = true;
+    starting.value = true;
+    let resetComplete = false;
+    try {
+      const lobbyState = await resetMusicQuiz(false);
+      applyState(lobbyState);
+      resetComplete = true;
+      const nextState = await startMusicQuiz();
+      applyState(nextState);
+      return true;
+    } catch (err) {
+      notifyError(
+        getMusicQuizErrorMessage(
+          err,
+          $t(
+            resetComplete
+              ? "providers.music_quiz.error_start"
+              : "providers.music_quiz.error_reset",
+          ),
+        ),
+      );
+      return false;
+    } finally {
+      starting.value = false;
+      busy.value = false;
+    }
+  }
+
   async function deleteGame() {
     if (busy.value) return false;
     busy.value = true;
@@ -282,8 +313,10 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   onMounted(() => {
     fetchState();
-    fetchAvailableQuizTypes();
-    fetchPlaybackOptions();
+    if (loadSetupData) {
+      fetchAvailableQuizTypes();
+      fetchPlaybackOptions();
+    }
     unsubscribeProviderEvent = api.subscribe(
       EventType.PROVIDER_EVENT,
       handleProviderEvent,
@@ -312,6 +345,7 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     reveal,
     next,
     reset,
+    replay,
     deleteGame,
     fetchState,
     fetchAvailableQuizTypes,

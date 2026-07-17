@@ -102,7 +102,19 @@
           :round-label="roundLabel"
           :mode="activeState.mode"
           :listen-in-enabled="listenInEnabled"
-        />
+        >
+          <template #actions>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="music-quiz-play-along"
+              @click="playAlong"
+            >
+              <Gamepad2 class="size-4" aria-hidden="true" />
+              {{ $t("providers.music_quiz.play_along") }}
+            </Button>
+          </template>
+        </MusicQuizSessionHeader>
 
         <MusicQuizHostPanel
           :state="activeState"
@@ -177,34 +189,17 @@
       </DialogContent>
     </Dialog>
 
-    <AlertDialog v-model:open="showEndGameDialog">
-      <AlertDialogContent class="gap-3 p-4 sm:max-w-sm sm:p-5">
-        <AlertDialogHeader class="gap-1 text-left">
-          <AlertDialogTitle>
-            {{ $t("providers.music_quiz.end_game") }}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {{ $t("providers.music_quiz.end_game_confirm") }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter class="flex-row justify-end">
-          <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
-          <Button
-            variant="destructive"
-            data-testid="confirm-end-game"
-            :disabled="busy"
-            @click="confirmEndGame"
-          >
-            {{ $t("providers.music_quiz.end_game") }}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <MusicQuizEndGameDialog
+      v-model="showEndGameDialog"
+      :busy="busy"
+      @confirm="confirmEndGame"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
@@ -220,15 +215,6 @@ import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHead
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -253,7 +239,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { PartyPopper, Plus, Settings } from "@lucide/vue";
+import { Gamepad2, PartyPopper, Plus, Settings } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -386,13 +372,17 @@ function goToMusicQuizSettings() {
   });
 }
 
+function playAlong() {
+  void router.push({ name: "guest-quiz" });
+}
+
 async function handleCreate(request: MusicQuizCreateRequest) {
   if (await host.create(request)) showSetupDialog.value = false;
 }
 
 async function handleReplay() {
   if (busy.value) return;
-  await host.reset(true);
+  await host.replay();
 }
 
 async function handleSetUpNewGame() {
@@ -437,7 +427,6 @@ watch(state, (nextState) => {
 });
 
 async function confirmEndGame() {
-  showEndGameDialog.value = false;
   await host.deleteGame();
 }
 

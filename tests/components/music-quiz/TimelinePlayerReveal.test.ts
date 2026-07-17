@@ -22,7 +22,7 @@ vi.mock("@/helpers/utils", () => ({
 }));
 
 describe("Timeline player reveal", () => {
-  it("shows placement and bonus correctness with points", () => {
+  it("shows placement and bonus results independently", () => {
     const revealedEntry = {
       ...anchor,
       entry_id: "current",
@@ -48,13 +48,18 @@ describe("Timeline player reveal", () => {
         ...stateWithAnswer([], true).you,
         answer: {
           ...stateWithAnswer([], true).you.answer!,
-          correct: true,
-          points: 1000,
+          correct: false,
+          points: 0,
           bonus_results: [
             {
               bonus_type: "artist",
               correct: true,
               points: 250,
+            },
+            {
+              bonus_type: "title",
+              correct: false,
+              points: 0,
             },
           ],
         },
@@ -69,13 +74,32 @@ describe("Timeline player reveal", () => {
     });
 
     expect(wrapper.text()).toContain(
-      "providers.music_quiz.timeline_correct_placement",
+      "providers.music_quiz.timeline_incorrect_placement",
     );
-    expect(wrapper.text()).toContain("+1000");
+    expect(wrapper.text()).toContain("+0");
     expect(wrapper.text()).toContain("+250");
-    expect(wrapper.find(".sr-only").text()).toContain(
+    expect(
+      wrapper
+        .get('[data-testid="timeline-placement-result"]')
+        .classes()
+        .includes("text-destructive"),
+    ).toBe(true);
+    expect(
+      wrapper
+        .get('[data-testid="timeline-artist-result"]')
+        .classes()
+        .includes("text-green-700"),
+    ).toBe(true);
+    expect(
+      wrapper
+        .get('[data-testid="timeline-title-result"]')
+        .classes()
+        .includes("text-destructive"),
+    ).toBe(true);
+    expect(wrapper.findAll(".sr-only").map((result) => result.text())).toEqual([
       "providers.music_quiz.correct",
-    );
+      "providers.music_quiz.incorrect",
+    ]);
   });
 
   it("does not mark a late joiner as missing an answer", () => {

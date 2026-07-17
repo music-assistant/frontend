@@ -405,6 +405,16 @@ import type {
   ServerInfoMessage,
   User,
 } from "@/plugins/api/interfaces";
+import {
+  GUEST_REMOTE_ID_STORAGE_KEY,
+  GUEST_SERVER_ADDRESS_STORAGE_KEY,
+  PENDING_JOIN_CODE_STORAGE_KEY,
+  PENDING_JOIN_TYPE_STORAGE_KEY,
+} from "@/helpers/guest_session";
+import {
+  createLocalConnectionIdentity,
+  createRemoteConnectionIdentity,
+} from "@/helpers/connection_identity";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
 import { remoteConnectionManager } from "@/plugins/remote";
@@ -418,16 +428,14 @@ import {
 } from "vue";
 import { useI18n } from "vue-i18n";
 import { QrcodeStream } from "vue-qrcode-reader";
+import { useRouter } from "vue-router";
 
 const { t } = useI18n();
+const router = useRouter();
 
 // Storage keys
 const STORAGE_KEY_SERVER_ADDRESS = "mass_server_address";
 const STORAGE_KEY_REMOTE_ID = "mass_remote_id";
-const STORAGE_KEY_TOKEN = "ma_access_token";
-// Session storage key for pending guest code (survives SW reload but not browser close)
-const SESSION_KEY_PENDING_JOIN_CODE = "ma_pending_join_code";
-const SESSION_KEY_PENDING_JOIN_TYPE = "ma_pending_join_type";
 
 // Props and emits
 const emit = defineEmits<{
@@ -649,7 +657,7 @@ const tryConnect = async (
  * Try to authenticate with stored token after connection
  */
 const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
-  const authToken = token || localStorage.getItem(STORAGE_KEY_TOKEN);
+  const authToken = token || authManager.getToken();
   if (!authToken) {
     return false;
   }
@@ -664,9 +672,12 @@ const tryStoredTokenAuth = async (token?: string): Promise<boolean> => {
     emit("authenticated", { token: authToken, user: result.user });
     return true;
   } catch {
-    // Clear invalid token if we're not using a URL parameter token
     if (!token) {
-      localStorage.removeItem(STORAGE_KEY_TOKEN);
+      if (authManager.isGuestAccessSession()) {
+        authManager.leaveGuestSession();
+      } else {
+        authManager.clearAuth();
+      }
     }
     return false;
   }
@@ -700,8 +711,6 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    // Store the JWT token for auto-login and decode claims
-    localStorage.setItem(STORAGE_KEY_TOKEN, result.access_token);
     authManager.setToken(result.access_token);
 
     // Authenticate the WebSocket session with the JWT
@@ -715,8 +724,7 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("[Login] Guest code authentication failed:", error);
-    // Clear potentially invalid token to avoid repeated failing auto-login attempts
-    authManager.clearAuth();
+    authManager.clearGuestSession();
     return false;
   }
 };
@@ -724,30 +732,108 @@ const tryGuestCodeAuth = async (code: string): Promise<boolean> => {
 type PendingGuestAuthResult = "none" | "authenticated" | "failed";
 
 const clearPendingGuestAuth = () => {
-  sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_CODE);
-  sessionStorage.removeItem(SESSION_KEY_PENDING_JOIN_TYPE);
+  sessionStorage.removeItem(PENDING_JOIN_CODE_STORAGE_KEY);
+  sessionStorage.removeItem(PENDING_JOIN_TYPE_STORAGE_KEY);
 };
 
 const setPendingGuestAuth = (code: string, type: "local" | "remote") => {
-  authManager.clearAuth();
-  sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_CODE, code);
-  sessionStorage.setItem(SESSION_KEY_PENDING_JOIN_TYPE, type);
+  sessionStorage.setItem(PENDING_JOIN_CODE_STORAGE_KEY, code);
+  sessionStorage.setItem(PENDING_JOIN_TYPE_STORAGE_KEY, type);
 };
 
+function hasGuestConnectionContext(): boolean {
+  return (
+    authManager.isGuestAccessSession() ||
+    sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY) !== null ||
+    new URLSearchParams(window.location.search).has("join")
+  );
+}
+
+function rememberServerAddress(address: string): void {
+  if (hasGuestConnectionContext()) {
+    sessionStorage.setItem(GUEST_SERVER_ADDRESS_STORAGE_KEY, address);
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+}
+
+function rememberRemoteId(remoteId: string): void {
+  if (hasGuestConnectionContext()) {
+    sessionStorage.setItem(GUEST_REMOTE_ID_STORAGE_KEY, remoteId);
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY_REMOTE_ID, remoteId);
+}
+
+function getStoredServerAddress(): string | null {
+  if (hasGuestConnectionContext()) {
+    const guestAddress = sessionStorage.getItem(
+      GUEST_SERVER_ADDRESS_STORAGE_KEY,
+    );
+    if (guestAddress) return guestAddress;
+  }
+  return localStorage.getItem(STORAGE_KEY_SERVER_ADDRESS);
+}
+
+function getStoredRemoteId(): string | null {
+  if (hasGuestConnectionContext()) {
+    const guestRemoteId = sessionStorage.getItem(GUEST_REMOTE_ID_STORAGE_KEY);
+    if (guestRemoteId) return guestRemoteId;
+  }
+  return (
+    remoteConnectionManager.getStoredRemoteId() ||
+    localStorage.getItem(STORAGE_KEY_REMOTE_ID)
+  );
+}
+
+function connectRemote(remoteId: string): Promise<ITransport> {
+  return hasGuestConnectionContext()
+    ? remoteConnectionManager.connectRemote(remoteId, { remember: false })
+    : remoteConnectionManager.connectRemote(remoteId);
+}
+
+function promoteGuestConnectionContext(): void {
+  const guestAddress = sessionStorage.getItem(GUEST_SERVER_ADDRESS_STORAGE_KEY);
+  if (guestAddress) {
+    localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, guestAddress);
+  }
+  sessionStorage.removeItem(GUEST_SERVER_ADDRESS_STORAGE_KEY);
+  sessionStorage.removeItem(GUEST_REMOTE_ID_STORAGE_KEY);
+}
+
+function cleanGuestJoinUrl(
+  urlParams = new URLSearchParams(window.location.search),
+): void {
+  urlParams.delete("remote_id");
+  urlParams.delete("join");
+  const queryString = urlParams.toString();
+  const cleanUrl =
+    window.location.origin +
+    window.location.pathname +
+    (queryString ? `?${queryString}` : "") +
+    "#/guest";
+  window.history.replaceState({}, "", cleanUrl);
+  void router.replace({ name: "guest" });
+}
+
 const tryPendingGuestAuth = async (): Promise<PendingGuestAuthResult> => {
-  const code = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_CODE);
+  const code = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
   if (!code) {
     return "none";
   }
 
-  authManager.clearAuth();
+  if (await tryExistingSessionForGuestJoin()) {
+    clearPendingGuestAuth();
+    return "authenticated";
+  }
+
   if (await tryGuestCodeAuth(code)) {
     clearPendingGuestAuth();
     return "authenticated";
   }
 
   clearPendingGuestAuth();
-  authManager.clearAuth();
+  authManager.clearGuestSession();
   connectionError.value = t(
     "login.error_party_auth_failed",
     "Failed to join party. The code may have expired.",
@@ -756,28 +842,60 @@ const tryPendingGuestAuth = async (): Promise<PendingGuestAuthResult> => {
   return "failed";
 };
 
-/**
- * Try to authenticate in ingress mode (no credentials needed)
- */
-const tryIngressAuth = async (): Promise<boolean> => {
+async function tryExistingSessionForGuestJoin(): Promise<boolean> {
+  if (
+    isIngressMode.value &&
+    sessionStorage.getItem(PENDING_JOIN_TYPE_STORAGE_KEY) === "local"
+  ) {
+    const user = await getIngressUser();
+    if (!user) return false;
+
+    promoteGuestConnectionContext();
+    emit("authenticated", { user });
+    return true;
+  }
+
+  const connectionIdentity = getPendingGuestConnectionIdentity();
+  if (!connectionIdentity) return false;
+  const token = authManager.getPersistentToken(connectionIdentity);
+  if (!token) return false;
+
   try {
     connectionStatusMessage.value = t(
       "login.authenticating",
       "Authenticating...",
     );
-
-    // In ingress mode, simply call auth/me to get the auto-authenticated user
-    const user = await api.getCurrentUserInfo();
-    if (!user) {
-      return false;
-    }
-
-    emit("authenticated", { user });
+    const result = await api.authenticateWithToken(token);
+    promoteGuestConnectionContext();
+    emit("authenticated", { token, user: result.user });
     return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * Try to authenticate in ingress mode (no credentials needed)
+ */
+const tryIngressAuth = async (): Promise<boolean> => {
+  const user = await getIngressUser();
+  if (!user) return false;
+
+  emit("authenticated", { user });
+  return true;
 };
+
+async function getIngressUser(): Promise<User | undefined> {
+  try {
+    connectionStatusMessage.value = t(
+      "login.authenticating",
+      "Authenticating...",
+    );
+    return (await api.getCurrentUserInfo()) || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Smart auto-connect logic
@@ -797,9 +915,11 @@ const autoConnect = async () => {
   const urlJoinCode = urlParams.get("join");
 
   // Also check for pending guest code from sessionStorage (survives SW reload)
-  const pendingJoinCode = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_CODE);
-  const pendingJoinType = sessionStorage.getItem(SESSION_KEY_PENDING_JOIN_TYPE);
-  const storedRemoteIdForPending = localStorage.getItem(STORAGE_KEY_REMOTE_ID);
+  const pendingJoinCode = sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY);
+  const pendingJoinType = sessionStorage.getItem(PENDING_JOIN_TYPE_STORAGE_KEY);
+  const storedRemoteIdForPending =
+    sessionStorage.getItem(GUEST_REMOTE_ID_STORAGE_KEY) ||
+    localStorage.getItem(STORAGE_KEY_REMOTE_ID);
 
   // Determine the effective guest code and remote ID
   // Priority: URL params > sessionStorage (for reload recovery)
@@ -824,8 +944,9 @@ const autoConnect = async () => {
       .replace(/[^A-Z0-9]/g, "");
 
     if (cleanRemoteId.length === 26) {
-      localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
       setPendingGuestAuth(effectiveJoinCode, "remote");
+      rememberRemoteId(cleanRemoteId);
+      cleanGuestJoinUrl();
 
       connectionStatusMessage.value = t(
         "login.connecting_remote_party",
@@ -836,8 +957,7 @@ const autoConnect = async () => {
         setRemoteIdFromString(cleanRemoteId);
         step.value = "connecting";
 
-        const transport =
-          await remoteConnectionManager.connectRemote(cleanRemoteId);
+        const transport = await connectRemote(cleanRemoteId);
 
         // Connection established, emit connected event
         emit("connected", transport);
@@ -846,42 +966,21 @@ const autoConnect = async () => {
         const apiConnected = await waitForApiConnection(15000);
 
         if (apiConnected) {
-          // Exchange the guest code for a JWT token
-          const guestAuthResult = await tryGuestCodeAuth(effectiveJoinCode);
-
-          if (guestAuthResult) {
-            clearPendingGuestAuth();
-            // Clean up URL
-            const successUrlParams = new URLSearchParams(
-              window.location.search,
-            );
-            if (
-              successUrlParams.has("remote_id") ||
-              successUrlParams.has("join")
-            ) {
-              successUrlParams.delete("remote_id");
-              successUrlParams.delete("join");
-              const queryString = successUrlParams.toString();
-              const cleanUrl =
-                window.location.origin +
-                window.location.pathname +
-                (queryString ? "?" + queryString : "");
-              window.history.replaceState({}, "", cleanUrl);
-            }
+          const pendingGuestAuthResult = await tryPendingGuestAuth();
+          if (pendingGuestAuthResult === "authenticated") {
             return; // Success - App.vue will complete initialization
           }
+          if (pendingGuestAuthResult === "failed") return;
         }
 
-        // Code exchange failed
-        clearPendingGuestAuth();
+        // Keep the pending code so the user can retry the connection.
         connectionError.value = t(
-          "login.error_party_auth_failed",
-          "Failed to join party. The code may have expired.",
+          "login.connection_failed",
+          "Connection failed",
         );
         step.value = "error";
         return;
       } catch (error) {
-        clearPendingGuestAuth();
         console.error("[Login] Remote party connection failed:", error);
         connectionError.value =
           error instanceof Error
@@ -907,25 +1006,25 @@ const autoConnect = async () => {
       // path can pick it up after establishing the WebRTC connection.
       if (urlJoinCode) {
         setPendingGuestAuth(urlJoinCode, "remote");
-        localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
+        rememberRemoteId(cleanRemoteId);
+        cleanGuestJoinUrl(urlParams);
+      } else {
+        urlParams.delete("remote_id");
+        const queryString = urlParams.toString();
+        const newUrl =
+          window.location.origin +
+          window.location.pathname +
+          (queryString ? `?${queryString}` : "") +
+          window.location.hash;
+        window.history.replaceState({}, "", newUrl);
       }
-      // Clean up the URL
-      urlParams.delete("remote_id");
-      urlParams.delete("join");
-      const queryString = urlParams.toString();
-      const newUrl =
-        window.location.origin +
-        window.location.pathname +
-        (queryString ? "?" + queryString : "") +
-        window.location.hash;
-      window.history.replaceState({}, "", newUrl);
     }
   }
 
   // Handle auth code from OAuth flow (long codes, not 8-character guest codes)
   if (authCode && authCode.length > 8) {
     // Store the token and clean up the URL
-    localStorage.setItem(STORAGE_KEY_TOKEN, authCode);
+    authManager.setToken(authCode);
     urlParams.delete("code");
     const queryString = urlParams.toString();
     const newUrl =
@@ -940,14 +1039,7 @@ const autoConnect = async () => {
   if (urlJoinCode && !urlRemoteId) {
     setPendingGuestAuth(urlJoinCode, "local");
 
-    // Clean up URL - remove join param
-    urlParams.delete("join");
-    const queryString = urlParams.toString();
-    const cleanUrl =
-      window.location.origin +
-      window.location.pathname +
-      (queryString ? "?" + queryString : "");
-    window.history.replaceState({}, "", cleanUrl);
+    cleanGuestJoinUrl(urlParams);
 
     // Check if we're hosted with the API
     isHostedWithAPI.value = await checkIfHostedWithAPI();
@@ -964,7 +1056,7 @@ const autoConnect = async () => {
         serverAddress.value = address;
 
         emit("local-connect", address);
-        localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+        rememberServerAddress(address);
 
         if (await waitForApiConnection()) {
           const pendingGuestAuthResult = await tryPendingGuestAuth();
@@ -976,10 +1068,9 @@ const autoConnect = async () => {
           }
         }
 
-        clearPendingGuestAuth();
         connectionError.value = t(
-          "login.error_party_auth_failed",
-          "Failed to join party. The code may have expired.",
+          "login.connection_failed",
+          "Connection failed",
         );
         step.value = "error";
         return;
@@ -1037,13 +1128,11 @@ const autoConnect = async () => {
 
   // If in remote-only mode, skip all local connection attempts
   if (isRemoteOnlyMode.value) {
-    const storedRemoteId =
-      localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
-      remoteConnectionManager.getStoredRemoteId();
+    const storedRemoteId = getStoredRemoteId();
 
     // Check for pending guest code - if present, don't use stored token
     const hasPendingGuestCode = sessionStorage.getItem(
-      SESSION_KEY_PENDING_JOIN_CODE,
+      PENDING_JOIN_CODE_STORAGE_KEY,
     );
 
     if (hasPendingGuestCode && storedRemoteId) {
@@ -1057,8 +1146,7 @@ const autoConnect = async () => {
         setRemoteIdFromString(storedRemoteId);
         step.value = "connecting";
 
-        const transport =
-          await remoteConnectionManager.connectRemote(storedRemoteId);
+        const transport = await connectRemote(storedRemoteId);
         emit("connected", transport);
 
         if (await waitForApiConnection(15000)) {
@@ -1080,7 +1168,6 @@ const autoConnect = async () => {
         return;
       } catch (error) {
         console.error("[Login] Pending guest code recovery error:", error);
-        clearPendingGuestAuth();
         // Fall through to show login form
       }
     } else if (hasPendingGuestCode) {
@@ -1088,9 +1175,7 @@ const autoConnect = async () => {
     }
 
     // Use stored token for auto-login (only if no pending guest code)
-    const storedToken = hasPendingGuestCode
-      ? null
-      : localStorage.getItem(STORAGE_KEY_TOKEN);
+    const storedToken = hasPendingGuestCode ? null : authManager.getToken();
 
     // Auto-connect if we have remote_id from URL (from portal redirect)
     // or if we have stored credentials
@@ -1112,8 +1197,7 @@ const autoConnect = async () => {
 
       try {
         const cleanRemoteId = remoteIdToConnect.trim().toUpperCase();
-        const transport =
-          await remoteConnectionManager.connectRemote(cleanRemoteId);
+        const transport = await connectRemote(cleanRemoteId);
 
         emit("connected", transport);
 
@@ -1150,7 +1234,7 @@ const autoConnect = async () => {
       "Checking local server...",
     );
 
-    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+    const storedToken = authManager.getToken();
     const localWsUrl = getWebSocketUrlFromLocation();
 
     if (await tryConnect(localWsUrl, 3000)) {
@@ -1159,7 +1243,7 @@ const autoConnect = async () => {
       serverAddress.value = address;
 
       emit("local-connect", address);
-      localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+      rememberServerAddress(address);
 
       if (await waitForApiConnection()) {
         const pendingGuestAuthResult = await tryPendingGuestAuth();
@@ -1186,8 +1270,8 @@ const autoConnect = async () => {
   }
 
   // 2. Try stored server address + token (for development mode)
-  const storedAddress = localStorage.getItem(STORAGE_KEY_SERVER_ADDRESS);
-  const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+  const storedAddress = getStoredServerAddress();
+  const storedToken = authManager.getToken();
 
   if (storedAddress && storedToken) {
     connectionStatusMessage.value = t(
@@ -1200,7 +1284,7 @@ const autoConnect = async () => {
       serverAddress.value = storedAddress;
 
       emit("local-connect", storedAddress);
-      localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, storedAddress);
+      rememberServerAddress(storedAddress);
 
       if (await waitForApiConnection()) {
         const pendingGuestAuthResult = await tryPendingGuestAuth();
@@ -1242,10 +1326,10 @@ const autoConnect = async () => {
   }
 
   // 4. Try stored remote ID + token (auto-connect remote)
-  const storedRemoteId =
-    localStorage.getItem(STORAGE_KEY_REMOTE_ID) ||
-    remoteConnectionManager.getStoredRemoteId();
-  if (storedRemoteId && storedToken) {
+  const storedRemoteId = getStoredRemoteId();
+  const hasPendingJoinCode =
+    sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY) !== null;
+  if (storedRemoteId && storedToken && !hasPendingJoinCode) {
     connectionStatusMessage.value = t(
       "login.connecting_remote",
       "Connecting to remote server...",
@@ -1254,8 +1338,7 @@ const autoConnect = async () => {
 
     try {
       const cleanRemoteId = storedRemoteId.trim().toUpperCase();
-      const transport =
-        await remoteConnectionManager.connectRemote(cleanRemoteId);
+      const transport = await connectRemote(cleanRemoteId);
 
       emit("connected", transport);
 
@@ -1459,11 +1542,13 @@ const performLocalConnect = async (address: string) => {
   );
 
   try {
+    if (sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY)) {
+      sessionStorage.setItem(PENDING_JOIN_TYPE_STORAGE_KEY, "local");
+    }
     // Emit event to let App.vue handle the actual connection
     emit("local-connect", address);
 
-    // Store the server address for next time
-    localStorage.setItem(STORAGE_KEY_SERVER_ADDRESS, address);
+    rememberServerAddress(address);
 
     // Wait for the WebSocket connection to establish
     const connected = await waitForApiConnection();
@@ -1535,21 +1620,22 @@ const connectToRemote = async () => {
 
   try {
     const cleanRemoteId = remoteId.value.trim().toUpperCase();
+    if (sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY)) {
+      sessionStorage.setItem(PENDING_JOIN_TYPE_STORAGE_KEY, "remote");
+    }
     connectionStatusMessage.value = t(
       "login.finding_server",
       "Finding your server...",
     );
 
-    const transport =
-      await remoteConnectionManager.connectRemote(cleanRemoteId);
+    const transport = await connectRemote(cleanRemoteId);
 
     connectionStatusMessage.value = t(
       "login.establishing_secure",
       "Establishing secure connection...",
     );
 
-    // Store the remote ID for next time
-    localStorage.setItem(STORAGE_KEY_REMOTE_ID, cleanRemoteId);
+    rememberRemoteId(cleanRemoteId);
 
     // Connection established, emit connected event
     emit("connected", transport);
@@ -1559,36 +1645,18 @@ const connectToRemote = async () => {
       throw new Error("Failed to establish API connection");
     }
 
-    // Check if there's a join code in the URL (party)
-    const currentUrlParams = new URLSearchParams(window.location.search);
-    const joinCodeFromUrl = currentUrlParams.get("join");
-
-    if (joinCodeFromUrl) {
+    if (sessionStorage.getItem(PENDING_JOIN_CODE_STORAGE_KEY)) {
       connectionStatusMessage.value = t(
         "login.joining_party",
         "Joining party...",
       );
-
-      if (await tryGuestCodeAuth(joinCodeFromUrl)) {
-        // Clean up URL - remove join param
-        currentUrlParams.delete("join");
-        const queryString = currentUrlParams.toString();
-        const cleanUrl =
-          window.location.origin +
-          window.location.pathname +
-          (queryString ? "?" + queryString : "");
-        window.history.replaceState({}, "", cleanUrl);
+    }
+    const pendingGuestAuthResult = await tryPendingGuestAuth();
+    if (pendingGuestAuthResult !== "none") {
+      if (pendingGuestAuthResult === "authenticated") {
         return; // Success - App.vue will handle redirect
-      } else {
-        // Clean up URL and fall through to login form
-        currentUrlParams.delete("join");
-        const queryString = currentUrlParams.toString();
-        const cleanUrl =
-          window.location.origin +
-          window.location.pathname +
-          (queryString ? "?" + queryString : "");
-        window.history.replaceState({}, "", cleanUrl);
       }
+      if (pendingGuestAuthResult === "failed") return;
     }
 
     // Fetch available auth providers
@@ -1636,6 +1704,21 @@ const fetchAuthProviders = async () => {
     authProviders.value = [];
   }
 };
+
+function getPendingGuestConnectionIdentity() {
+  const type = sessionStorage.getItem(PENDING_JOIN_TYPE_STORAGE_KEY);
+  if (type === "remote") {
+    return createRemoteConnectionIdentity(
+      sessionStorage.getItem(GUEST_REMOTE_ID_STORAGE_KEY),
+    );
+  }
+  if (type === "local") {
+    return createLocalConnectionIdentity(
+      sessionStorage.getItem(GUEST_SERVER_ADDRESS_STORAGE_KEY),
+    );
+  }
+  return undefined;
+}
 
 const login = async () => {
   if (!username.value.trim() || !password.value.trim()) return;
