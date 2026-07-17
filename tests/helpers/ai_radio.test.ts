@@ -13,7 +13,6 @@ import {
   relativeTimeFromIso,
   safeInteger,
   safeNumber,
-  showArtGradient,
   slugify,
   splitPlaylistSelectValue,
   validateStationDraftLocal,
@@ -265,25 +264,5 @@ describe("relativeTimeFromIso", () => {
     expect(at("2026-07-16T11:45:00Z")).toBe("15 minutes ago");
     expect(at("2026-07-16T10:00:00Z")).toBe("2 hours ago");
     expect(at("2026-07-13T12:00:00Z")).toBe("3 days ago");
-  });
-});
-
-describe("showArtGradient", () => {
-  it("is deterministic for the same seed", () => {
-    expect(showArtGradient("Morning show")).toBe(
-      showArtGradient("Morning show"),
-    );
-  });
-
-  it("produces different hues for different seeds", () => {
-    expect(showArtGradient("Morning show")).not.toBe(
-      showArtGradient("Evening show"),
-    );
-  });
-
-  it("emits a valid two-stop hsl gradient", () => {
-    expect(showArtGradient("Morning show")).toMatch(
-      /^linear-gradient\(135deg, hsl\(\d+ 65% 45%\), hsl\(\d+ 70% 28%\)\)$/,
-    );
   });
 });

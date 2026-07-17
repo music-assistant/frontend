@@ -12,9 +12,11 @@
         <div
           v-else
           class="flex h-full w-full items-center justify-center"
-          :style="{ background: fallbackArt }"
+          :style="{ background: bannerBackground }"
         >
-          <Radio class="h-8 w-8 text-white/80" />
+          <span class="text-lg font-bold text-white/90">
+            {{ itemInitials(showName) }}
+          </span>
         </div>
       </div>
 
@@ -69,15 +71,19 @@
 </template>
 
 <script setup lang="ts">
+import {
+  bannerBackground,
+  itemInitials,
+} from "@/components/discover/editorialArtwork";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useShows } from "@/composables/ai-radio/useShows";
-import { errorMessage, showArtGradient } from "@/helpers/ai_radio";
+import { errorMessage } from "@/helpers/ai_radio";
 import { formatDuration } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Radio, Square } from "@lucide/vue";
+import { Loader2, Square } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
@@ -132,8 +138,6 @@ const preparingLabel = computed(() => {
 
   return $t(PHASE_LABEL_KEYS[phase] || "providers.ai_radio.phase.preparing");
 });
-
-const fallbackArt = computed(() => showArtGradient(showName.value));
 
 const isStopping = computed(
   () =>

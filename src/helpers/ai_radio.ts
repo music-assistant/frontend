@@ -104,20 +104,6 @@ export const relativeTimeFromIso = (
   return rtf.format(Math.trunc(diffSeconds / 86400), "day");
 };
 
-/**
- * Deterministic two-hue gradient used as artwork fallback for shows whose
- * source playlist has no image, so cards look designed rather than degraded.
- */
-export const showArtGradient = (seed: string): string => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  }
-  const hue1 = ((hash % 360) + 360) % 360;
-  const hue2 = (hue1 + 45) % 360;
-  return `linear-gradient(135deg, hsl(${hue1} 65% 45%), hsl(${hue2} 70% 28%))`;
-};
-
 export const asGeneralDefaults = (
   general?: AIRadioStationGeneral,
 ): AIRadioStationGeneral => {

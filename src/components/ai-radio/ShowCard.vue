@@ -18,9 +18,9 @@
       <div
         v-else
         class="show-card__fallback"
-        :style="{ background: showArtGradient(show.name) }"
+        :style="{ background: bannerBackground }"
       >
-        <Radio :size="40" class="show-card__fallback-icon" />
+        <span class="show-card__initials">{{ itemInitials(show.name) }}</span>
       </div>
 
       <Badge
@@ -165,6 +165,10 @@
 </template>
 
 <script setup lang="ts">
+import {
+  bannerBackground,
+  itemInitials,
+} from "@/components/discover/editorialArtwork";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,7 +191,6 @@ import {
   errorMessage,
   relativeTimeFromIso,
   resolveShowPlayerId,
-  showArtGradient,
   slugify,
 } from "@/helpers/ai_radio";
 import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
@@ -200,7 +203,6 @@ import {
   Loader2,
   MoreVertical,
   Play,
-  Radio,
   Square,
   TriangleAlert,
 } from "@lucide/vue";
@@ -458,12 +460,19 @@ function onDelete() {
 .show-card__fallback {
   position: absolute;
   inset: 0;
+  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.show-card__fallback-icon {
-  color: rgba(255, 255, 255, 0.85);
+/* mirrors .ed-card__initials on EditorialMediaCard */
+.show-card__initials {
+  font-size: 34cqw;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  user-select: none;
 }
 .show-card__onair {
   position: absolute;
