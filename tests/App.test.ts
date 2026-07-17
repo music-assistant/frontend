@@ -1,5 +1,6 @@
 import { EventType, ProviderType } from "@/plugins/api/interfaces";
 import { shallowMount, type VueWrapper } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -14,6 +15,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRouterPush,
   mockSetPreference,
+  routeState,
   storeMock,
   webPlayerMock,
 } = vi.hoisted(() => {
@@ -69,6 +71,9 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRouterPush: vi.fn(),
     mockSetPreference: vi.fn(),
+    routeState: {
+      current: null as { meta: Record<string, unknown> } | null,
+    },
     storeMock: {
       currentUser: undefined as
         | {
@@ -181,11 +186,17 @@ vi.mock("vuetify", () => ({
   }),
 }));
 
-vi.mock("vue-router", () => ({
-  useRouter: () => ({
-    push: mockRouterPush,
-  }),
-}));
+vi.mock("vue-router", async () => {
+  const { shallowReactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  routeState.current = shallowReactive({ meta: {} });
+  return {
+    useRoute: () => routeState.current,
+    useRouter: () => ({
+      push: mockRouterPush,
+    }),
+  };
+});
 
 vi.mock("vue-sonner", () => ({
   toast: {
@@ -261,6 +272,7 @@ describe("App initialization", () => {
     webPlayerMock.interacted = false;
     webPlayerMock.player_id = null;
     webPlayerMock.tabMode = "disabled";
+    if (routeState.current) routeState.current.meta = {};
     vi.stubGlobal("localStorage", createStorage());
     localStorage.setItem("frontend.settings.theme", "dark");
     Object.defineProperty(window, "matchMedia", {
@@ -269,6 +281,10 @@ describe("App initialization", () => {
         addEventListener: vi.fn(),
         matches: false,
       }),
+    });
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: undefined,
     });
   });
 
@@ -360,11 +376,52 @@ describe("App initialization", () => {
   );
 
   it("keeps browser media controls for regular fallback tabs", async () => {
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: {},
+    });
     webPlayerMock.audioSource = "controls_only";
     webPlayerMock.interacted = true;
     webPlayerMock.tabMode = "controls_only";
 
     wrapper = await mountApp();
+
+    expect(
+      wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+    ).toBe(true);
+  });
+
+  it("clears browser media controls on participant routes for regular users", async () => {
+    const mediaSession = {
+      metadata: {} as MediaMetadata | null,
+      playbackState: "playing" as MediaSessionPlaybackState,
+      setActionHandler: vi.fn(),
+      setPositionState: vi.fn(),
+    };
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: mediaSession,
+    });
+    webPlayerMock.audioSource = "controls_only";
+    webPlayerMock.interacted = true;
+    webPlayerMock.tabMode = "controls_only";
+    wrapper = await mountApp();
+
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    await nextTick();
+
+    expect(
+      wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),
+    ).toBe(false);
+    expect(mediaSession.metadata).toBeNull();
+    expect(mediaSession.playbackState).toBe("none");
+    expect(mediaSession.setPositionState).toHaveBeenCalledWith();
+    expect(mediaSession.setActionHandler).toHaveBeenCalledTimes(7);
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
 
     expect(
       wrapper.findComponent({ name: "PlayerBrowserMediaControls" }).exists(),

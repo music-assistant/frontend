@@ -17,7 +17,7 @@
     v-if="
       webPlayer.audioSource === WebPlayerMode.CONTROLS_ONLY &&
       webPlayer.interacted == true &&
-      !authManager.isGuestAccessSession()
+      !mediaSessionDisabled
     "
     :key="webPlayer.tabMode"
   />
@@ -40,6 +40,10 @@ import {
   createLocalConnectionIdentity,
   createRemoteConnectionIdentity,
 } from "@/helpers/connection_identity";
+import {
+  isMediaSessionDisabled,
+  resetMediaSession,
+} from "@/helpers/mediaSession";
 import { api, ConnectionState } from "@/plugins/api";
 import { CoreState, EventType, ProviderType } from "@/plugins/api/interfaces";
 import { toast } from "vue-sonner";
@@ -48,7 +52,7 @@ import authManager from "@/plugins/auth";
 import { i18n, resolveLocale } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import "vue-sonner/style.css";
 import SendspinPlayer from "./components/SendspinPlayer.vue";
 import PlayerBrowserMediaControls from "./layouts/default/PlayerOSD/PlayerBrowserMediaControls.vue";
@@ -72,7 +76,19 @@ import Login from "./views/Login.vue";
 import { useUserPreferences } from "@/composables/userPreferences";
 
 const router = useRouter();
+const route = useRoute();
 const { applyThemePreference: setTheme } = useThemePreference();
+const mediaSessionDisabled = computed(() =>
+  isMediaSessionDisabled(route, authManager.isGuestAccessSession()),
+);
+
+watch(
+  mediaSessionDisabled,
+  (disabled) => {
+    if (disabled) resetMediaSession();
+  },
+  { immediate: true },
+);
 
 const isConnected = ref(false);
 const loginComponent = ref<InstanceType<typeof Login> | null>(null);

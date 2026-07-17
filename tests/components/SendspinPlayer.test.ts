@@ -13,6 +13,7 @@ const {
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
   mockUseMediaBrowserMetaData,
+  routeState,
 } = vi.hoisted(() => ({
   authState: {
     guest: null as "music_quiz" | "party" | null,
@@ -24,6 +25,9 @@ const {
   mockPlayerCommandSeek: vi.fn(),
   mockPrepareSendspinSession: vi.fn(),
   mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
+  routeState: {
+    current: null as { meta: Record<string, unknown> } | null,
+  },
 }));
 
 vi.mock("@/helpers/useMediaBrowserMetaData", () => ({
@@ -32,10 +36,20 @@ vi.mock("@/helpers/useMediaBrowserMetaData", () => ({
 
 vi.mock("@/plugins/auth", () => ({
   default: {
+    isGuestAccessSession: () => authState.guest !== null,
     isMusicQuizGuest: () => authState.guest === "music_quiz",
     isPartyGuest: () => authState.guest === "party",
   },
 }));
+
+vi.mock("vue-router", async () => {
+  const { shallowReactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  routeState.current = shallowReactive({ meta: {} });
+  return {
+    useRoute: () => routeState.current,
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   default: {
@@ -152,6 +166,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandSeek.mockReset();
     webPlayer.interacted = false;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
+    if (routeState.current) routeState.current.meta = {};
     Object.defineProperty(navigator, "mediaSession", {
       configurable: true,
       value: mediaSession,
@@ -215,6 +230,52 @@ describe("SendspinPlayer MediaSession", () => {
     expect(mediaSession.playbackState).toBe("none");
     expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
     invokeAllActions();
+    expectPlayerCommandsNotCalled();
+    wrapper.unmount();
+  });
+
+  it("disables controls while a signed-in user plays along", async () => {
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    seedStaleMediaSession();
+
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    await nextTick();
+
+    expect(mediaSession.metadata).toBeNull();
+    expect(mediaSession.playbackState).toBe("none");
+    expect(actions.every((action) => handlers.get(action) === null)).toBe(true);
+    invokeAllActions();
+    expectPlayerCommandsNotCalled();
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
+
+    expect(mockUseMediaBrowserMetaData).toHaveBeenCalledTimes(2);
+    invokeAction("play");
+    expect(mockPlayerCommandPlay).toHaveBeenCalledWith("web-player");
+    wrapper.unmount();
+  });
+
+  it("does not enable controls without MediaSession support", async () => {
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: undefined,
+    });
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
+
+    expect(mockUseMediaBrowserMetaData).not.toHaveBeenCalled();
     expectPlayerCommandsNotCalled();
     wrapper.unmount();
   });
