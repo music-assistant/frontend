@@ -140,6 +140,33 @@ describe("Timeline player focus", () => {
     });
     wrapper.unmount();
   });
+
+  it("focuses bonus controls when scrolling is unavailable", async () => {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: undefined,
+    });
+    const wrapper = mount(TimelinePlayerAnswer, {
+      attachTo: document.body,
+      props: {
+        state: baseState,
+        currentRound: bonusRound,
+        busy: false,
+      },
+      global: {
+        stubs: {
+          MusicQuizCountdown: true,
+          TimelineProgress: true,
+        },
+      },
+    });
+
+    await wrapper.setProps({ state: stateWithAnswer() });
+    await nextTick();
+
+    expect(document.activeElement).toBe(wrapper.get("input").element);
+    wrapper.unmount();
+  });
 });
 
 function setReducedMotion(matches: boolean) {

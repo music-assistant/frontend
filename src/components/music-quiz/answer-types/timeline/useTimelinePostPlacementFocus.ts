@@ -25,12 +25,15 @@ export function useTimelinePostPlacementFocus(
     await nextTick();
     const container = postPlacementRef.value;
     if (!container) return;
-    const reducedMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    container.scrollIntoView({
-      behavior: reducedMotion ? "auto" : "smooth",
-      block: "start",
-    });
+    if (typeof container.scrollIntoView === "function") {
+      const reducedMotion =
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
+        false;
+      container.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    }
     const target =
       container.querySelector<HTMLElement>(
         'input:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
