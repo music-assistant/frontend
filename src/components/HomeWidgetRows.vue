@@ -197,7 +197,7 @@
               </Button>
             </template>
             <EditorialMediaCard
-              v-for="item in row.folder.items"
+              v-for="item in row.folder?.items || []"
               :key="item.uri"
               :item="item"
             />
@@ -282,7 +282,6 @@ import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import {
   EventType,
-  MediaType,
   PlaybackState,
   type EventMessage,
   type Genre,
@@ -314,6 +313,18 @@ import {
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
 });
+
+// Entering edit mode needs the whole catalog to toggle/discover rows, so
+// bypass the persisted `wanted` set for a one-off full fetch.
+watch(
+  () => props.editMode,
+  async (isEdit) => {
+    if (isEdit) {
+      await loadRecommendations();
+      resolveHeroPicks();
+    }
+  },
+);
 
 const loading = ref(true);
 const playersShelf = ref<EditorialShelfExpose | null>(null);
@@ -380,20 +391,16 @@ watch(
 
 const folderProvider = (folder: RecommendationFolder) => folder.provider || "";
 
-// --- Top Picks: a curated mix from specific recommendation folders ---
+// --- Top Picks (Model B): a balanced interleave of items across the rows the
+// user has enabled. Only shown, non-empty recommendation folders feed it, so
+// the mix reflects the user's enabled rows; recently-played fills any
+// shortfall. ---
 interface HeroEntry {
   item: MediaItemTypeOrItemMapping;
   tag: string;
 }
 // 1 large lead card + the rest split into columns of 2 (a horizontal scroller).
 const HERO_COUNT = 9;
-
-const norm = (s: string) => (s || "").toLowerCase();
-const findFolder = (...needles: string[]) =>
-  recommendations.value.find((f) => {
-    const hay = norm(f.name);
-    return needles.some((n) => hay.includes(n));
-  });
 
 const shuffled = <T,>(arr: readonly T[]): T[] => {
   const a = [...arr];
@@ -405,70 +412,37 @@ const shuffled = <T,>(arr: readonly T[]): T[] => {
 };
 
 const buildHeroEntries = (randomize = false): HeroEntry[] => {
-  const playlists = findFolder("playlists made for you", "made for you");
-  const mood = findFolder("find your mood", "mood");
-  const stations = findFolder("stations for you", "radio stations for you");
-  const releases = findFolder("new releases for you");
-  // "Artist-focused" stations = artist items inside the stations folder.
-  const artistStations = (stations?.items ?? []).filter(
-    (i) => i.media_type === MediaType.ARTIST,
-  );
-
-  const order = (items: MediaItemTypeOrItemMapping[]) =>
-    randomize ? shuffled(items) : items;
-  const playlistItems = order(playlists?.items ?? []);
-  const moodItems = order(mood?.items ?? []);
-  const stationItems = order(stations?.items ?? []);
-  const releaseItems = order(releases?.items ?? []);
-  const artistStationItems = order(artistStations);
-
-  const entry = (
-    item: MediaItemTypeOrItemMapping | undefined,
-    folder: RecommendationFolder | undefined,
-  ): HeroEntry | null => (item && folder ? { item, tag: folder.name } : null);
-
-  const recipe = [
-    entry(playlistItems[0], playlists),
-    entry(moodItems[0], mood),
-    entry(artistStationItems[0], stations),
-    entry(releaseItems[0], releases),
-    entry(stationItems[0], stations),
-    entry(releaseItems[1], releases),
-    entry(artistStationItems[1], stations),
-    entry(playlistItems[1], playlists),
-    entry(moodItems[1], mood),
-    entry(releaseItems[2], releases),
-  ];
+  // Each shown (non-hidden), non-empty folder contributes its items under its
+  // own tag, so an opted-out row never feeds the hero. `randomize` (explicit
+  // refresh) reshuffles the row order and the items within a row; the resolve
+  // path stays deterministic so repeated builds are content-equal.
+  const rows = recommendations.value
+    .filter((f) => shownRecRowIds.value.has(f.uri) && f.items.length > 0)
+    .map((f) => ({
+      tag: f.name,
+      items: randomize ? shuffled(f.items) : f.items,
+    }));
+  const sources = randomize ? shuffled(rows) : rows;
 
   const seen = new Set<string>();
   const out: HeroEntry[] = [];
-  const push = (e: HeroEntry | null) => {
-    if (e && !seen.has(e.item.uri)) {
-      seen.add(e.item.uri);
-      out.push(e);
+  const push = (item: MediaItemTypeOrItemMapping | undefined, tag: string) => {
+    if (item && !seen.has(item.uri) && out.length < HERO_COUNT) {
+      seen.add(item.uri);
+      out.push({ item, tag });
     }
   };
-  recipe.forEach(push);
 
-  // Top up with random unused items from any folder (then recently played).
-  if (out.length < HERO_COUNT) {
-    const pool: HeroEntry[] = [
-      ...recommendations.value.flatMap((f) =>
-        f.items.map((item) => ({ item, tag: f.name })),
-      ),
-      ...recentlyPlayed.value.map((item) => ({
-        item,
-        tag: $t("recently_played"),
-      })),
-    ].filter((e) => !seen.has(e.item.uri));
-    for (const e of shuffled(pool)) {
-      if (out.length >= HERO_COUNT) break;
-      push(e);
-    }
+  // Round-robin: one item per row per pass, so the mix is balanced across rows.
+  const maxLen = sources.reduce((m, r) => Math.max(m, r.items.length), 0);
+  for (let i = 0; i < maxLen && out.length < HERO_COUNT; i++) {
+    for (const r of sources) push(r.items[i], r.tag);
   }
-  const picks = out.slice(0, HERO_COUNT);
 
-  return randomize ? shuffled(picks) : picks;
+  // Fill any shortfall from recently played.
+  for (const item of recentlyPlayed.value) push(item, $t("recently_played"));
+
+  return out;
 };
 
 const heroEntries = ref<HeroEntry[]>([]);
@@ -524,56 +498,18 @@ const observeHero = () => {
 };
 
 watch(heroEntries, () => nextTick(observeHero), { deep: false });
-const HERO_CACHE_KEY = "discoverTopPicks";
-const HERO_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
-interface HeroCache {
-  ts: number;
-  userId?: string;
-  count?: number;
-  entries: HeroEntry[];
-}
-
-const readHeroCache = (): HeroEntry[] | null => {
-  try {
-    const raw = localStorage.getItem(HERO_CACHE_KEY);
-    if (!raw) return null;
-    const cache = JSON.parse(raw) as HeroCache;
-    if (!cache?.entries?.length) return null;
-    if (Date.now() - cache.ts > HERO_CACHE_TTL) return null;
-    if (cache.userId !== store.currentUser?.user_id) return null;
-    // Invalidate when the target count changes (e.g. layout now wants more).
-    if (cache.count !== HERO_COUNT) return null;
-    return cache.entries;
-  } catch {
-    return null;
-  }
+// Assign heroEntries only when the picks actually changed — cheap insurance
+// against redundant re-renders from repeated builds with identical content.
+const heroEntriesEqual = (a: HeroEntry[], b: HeroEntry[]) =>
+  a.length === b.length &&
+  a.every((e, i) => e.item.uri === b[i].item.uri && e.tag === b[i].tag);
+const setHeroEntries = (next: HeroEntry[]) => {
+  if (!heroEntriesEqual(heroEntries.value, next)) heroEntries.value = next;
 };
 
-const writeHeroCache = (entries: HeroEntry[]) => {
-  try {
-    const cache: HeroCache = {
-      ts: Date.now(),
-      userId: store.currentUser?.user_id,
-      count: HERO_COUNT,
-      entries,
-    };
-    localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // ignore quota / serialization errors
-  }
-};
-
-// Reuse the cached picks while still fresh; otherwise rebuild and re-cache.
 const resolveHeroPicks = () => {
-  const cached = readHeroCache();
-  if (cached) {
-    heroEntries.value = cached;
-    return;
-  }
-  const fresh = buildHeroEntries();
-  heroEntries.value = fresh;
-  if (fresh.length) writeHeroCache(fresh);
+  setHeroEntries(buildHeroEntries());
 };
 
 const heroRefreshing = ref(false);
@@ -582,11 +518,7 @@ const refreshTopPicks = async () => {
   heroRefreshing.value = true;
   try {
     await loadRecommendations();
-    const fresh = buildHeroEntries(true);
-    if (fresh.length) {
-      heroEntries.value = fresh;
-      writeHeroCache(fresh);
-    }
+    heroEntries.value = buildHeroEntries(true);
   } finally {
     heroRefreshing.value = false;
   }
@@ -606,11 +538,14 @@ interface DiscoverRow {
 const recommendationRows = computed(() =>
   recommendations.value.filter((f) => f.items.length > 0),
 );
+const defaultHiddenIds = computed(() =>
+  recommendations.value.filter((f) => !f.enabled_by_default).map((f) => f.uri),
+);
 
-// Default order of every row that currently has content: the well-known rows
-// first, then the remaining server rows as returned, genres pinned last.
+// Default order of every candidate row (recommendation rows not yet known to be
+// empty), well-known rows first, remaining server rows as returned, genres last.
 const availableRowIds = computed<string[]>(() => {
-  const recUris = recommendationRows.value.map((f) => f.uri);
+  const recUris = recommendationRows.value.map((d) => d.uri);
   const recSet = new Set(recUris);
   const ids: string[] = [];
   for (const id of DEFAULT_PRIORITY_ROWS) {
@@ -630,8 +565,11 @@ const availableRowIds = computed<string[]>(() => {
 });
 
 const allRows = computed<DiscoverRow[]>(() => {
-  const { order, hidden } = resolveDiscoverRowsConfig(availableRowIds.value);
-  const folders = new Map(recommendationRows.value.map((f) => [f.uri, f]));
+  const { order, hidden } = resolveDiscoverRowsConfig(
+    availableRowIds.value,
+    defaultHiddenIds.value,
+  );
+  const folders = new Map(recommendationRows.value.map((d) => [d.uri, d]));
   const rows: DiscoverRow[] = [];
   for (const id of order) {
     if (id === PLAYERS_ROW_ID) {
@@ -674,8 +612,20 @@ const displayedRows = computed(() =>
   props.editMode ? allRows.value : allRows.value.filter((row) => !row.hidden),
 );
 
-const toggleRow = (row: DiscoverRow) =>
+// The recommendation rows currently visible to the user (not hidden). The Top
+// Picks hero draws only from these, so an opted-out row never feeds it.
+const shownRecRowIds = computed(
+  () =>
+    new Set(
+      allRows.value
+        .filter((r) => r.kind === "recommendation" && !r.hidden)
+        .map((r) => r.id),
+    ),
+);
+
+const toggleRow = (row: DiscoverRow) => {
   setDiscoverRowHidden(row.id, !row.hidden);
+};
 
 // --- Drag-to-reorder (edit mode), same interaction as the navigation menu ---
 const listEl = ref<HTMLElement | null>(null);
@@ -698,13 +648,69 @@ const draggedRow = computed(() =>
     : null,
 );
 
-const loadRecommendations = async () => {
-  const [recs, recent] = await Promise.all([
-    api.getRecommendations().catch(() => [] as RecommendationFolder[]),
-    api.getRecentlyPlayedItems(12).catch(() => [] as ItemMapping[]),
+// Cache the server's row catalog (which rows exist + their default visibility) — the one
+// thing `discover.rows` prefs don't carry. The wanted set is derived fresh from this catalog
+// resolved against the prefs on each load, so hide/show state lives only in prefs.
+const ROW_CATALOG_KEY = "discoverRowCatalog";
+interface RowCatalogEntry {
+  uri: string;
+  enabled_by_default: boolean;
+}
+const readRowCatalog = (): RowCatalogEntry[] => {
+  try {
+    const raw = localStorage.getItem(ROW_CATALOG_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr)
+      ? arr.filter(
+          (x): x is RowCatalogEntry =>
+            !!x &&
+            typeof x.uri === "string" &&
+            typeof x.enabled_by_default === "boolean",
+        )
+      : [];
+  } catch {
+    return [];
+  }
+};
+const writeRowCatalog = (folders: RecommendationFolder[]): void => {
+  try {
+    const catalog: RowCatalogEntry[] = folders.map((f) => ({
+      uri: f.uri,
+      enabled_by_default: f.enabled_by_default,
+    }));
+    localStorage.setItem(ROW_CATALOG_KEY, JSON.stringify(catalog));
+  } catch {
+    // ignore
+  }
+};
+// The recommendation-row URIs to request, derived from the cached catalog resolved against
+// discover.rows prefs. `undefined` when no catalog is known yet → the caller does a full fetch.
+const wantedFromPrefs = (): string[] | undefined => {
+  const catalog = readRowCatalog();
+  if (!catalog.length) return undefined;
+  const availableIds = catalog.map((c) => c.uri);
+  const defaultHidden = catalog
+    .filter((c) => !c.enabled_by_default)
+    .map((c) => c.uri);
+  const { hidden } = resolveDiscoverRowsConfig(availableIds, defaultHidden);
+  return availableIds.filter((uri) => !hidden.has(uri));
+};
+
+const loadRecommendations = async (wanted?: string[]) => {
+  // Preserve the currently shown rows on a (transient) refresh failure instead
+  // of wiping them; log so a recurring failure is visible.
+  const [rows, recent] = await Promise.allSettled([
+    api.getRecommendations(wanted),
+    api.getRecentlyPlayedItems(12),
   ]);
-  recommendations.value = recs;
-  recentlyPlayed.value = recent;
+  if (rows.status === "fulfilled") {
+    recommendations.value = rows.value;
+    // A full fetch (no `wanted`) returns the whole catalog — remember it so the next
+    // cold load can request only the shown rows.
+    if (wanted === undefined) writeRowCatalog(rows.value);
+  } else console.error("Failed to load recommendations:", rows.reason);
+  if (recent.status === "fulfilled") recentlyPlayed.value = recent.value;
+  else console.error("Failed to load recently played:", recent.reason);
 };
 
 // "Browse by genre": show the 8 genres with the most linked media items
@@ -741,9 +747,9 @@ const scheduleRecommendationRefresh = () => {
   refreshRecommendationsTimer = setTimeout(async () => {
     refreshRecommendationsTimer = undefined;
     if (isUnmounted) return;
-    await loadRecommendations();
+    // Refetches folder content so play-history rows and rotated picks stay current.
+    await loadRecommendations(wantedFromPrefs());
     if (isUnmounted) return;
-    // Keeps the same picks while the cache is fresh; rebuilds once expired.
     resolveHeroPicks();
   }, 1500);
 };
@@ -768,10 +774,10 @@ const unsubscribeRecommendations = api.subscribe(
 );
 
 onMounted(async () => {
-  await Promise.all([loadRecommendations(), loadGenres()]);
+  await Promise.all([loadRecommendations(wantedFromPrefs()), loadGenres()]);
   if (isUnmounted) return;
-  resolveHeroPicks();
   loading.value = false;
+  resolveHeroPicks();
   nextTick(() => {
     if (!isUnmounted) observeHero();
   });
