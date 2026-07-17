@@ -27,8 +27,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       '@sendspin/sendspin-js':
-        specifier: 3.2.0
-        version: 3.2.0
+        specifier: 3.2.1
+        version: 3.2.1
       '@tabler/icons-vue':
         specifier: ^3.44.0
         version: 3.44.0(vue@3.5.39(typescript@6.0.3))
@@ -1880,8 +1880,8 @@ packages:
   '@scure/base@2.2.0':
     resolution: {integrity: sha512-b8XEupJibegiXV+tDUseI8oLQc8ei3d/4Jkb2RpbHh3MfE054ov3uIz2dhFkB3FI8iwYkEh0gGCApkrYggkPNg==}
 
-  '@sendspin/sendspin-js@3.2.0':
-    resolution: {integrity: sha512-sxMibcr9eiue5yT0viXxCruq8LTRSEzaz9epmhSp3Qe4gHcksE+JwFOTEJfgkY5kJBmPq22CkYlyvJXcHacK2g==}
+  '@sendspin/sendspin-js@3.2.1':
+    resolution: {integrity: sha512-FlnHUV2hppNg/W3yIvV0v9XmDkHE/tbmHkc2/wWDE9CMfqNdCkGhaTsd4cRa4n5FafS3wTDccceFtPvNiacKvg==}
     engines: {node: '>=16.0.0'}
 
   '@standard-schema/spec@1.1.0':
@@ -6232,7 +6232,7 @@ snapshots:
 
   '@scure/base@2.2.0': {}
 
-  '@sendspin/sendspin-js@3.2.0':
+  '@sendspin/sendspin-js@3.2.1':
     dependencies:
       opus-encdec: 0.1.1
 

@@ -1,8 +1,15 @@
 import SendspinPlayer from "@/components/SendspinPlayer.vue";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.hoisted(() => {
+  Object.defineProperty(navigator, "userAgent", {
+    configurable: true,
+    value: "iPhone",
+  });
+});
 
 const {
   authState,
@@ -12,6 +19,8 @@ const {
   mockPlayerCommandPrevious,
   mockPlayerCommandSeek,
   mockPrepareSendspinSession,
+  mockRegisterWebPlayerAudioUnlock,
+  mockSendspinUnlock,
   mockUseMediaBrowserMetaData,
   routeState,
 } = vi.hoisted(() => ({
@@ -24,6 +33,8 @@ const {
   mockPlayerCommandPrevious: vi.fn(),
   mockPlayerCommandSeek: vi.fn(),
   mockPrepareSendspinSession: vi.fn(),
+  mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
+  mockSendspinUnlock: vi.fn<() => Promise<void>>(),
   mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
   routeState: {
     current: null as { meta: Record<string, unknown> } | null,
@@ -94,7 +105,7 @@ vi.mock("@/plugins/web_player", async () => {
       SENDSPIN_WITH_CONTROLS: "sendspin_with_controls",
     },
     clearWebPlayerAudioUnlock: vi.fn(),
-    registerWebPlayerAudioUnlock: vi.fn(),
+    registerWebPlayerAudioUnlock: mockRegisterWebPlayerAudioUnlock,
     webPlayer: reactive({
       interacted: false,
       tabMode: "sendspin_only",
@@ -118,6 +129,7 @@ vi.mock("@sendspin/sendspin-js", () => ({
     setCorrectionMode = vi.fn();
     setMuted = vi.fn();
     setVolume = vi.fn();
+    unlock = mockSendspinUnlock;
   },
 }));
 
@@ -164,6 +176,9 @@ describe("SendspinPlayer MediaSession", () => {
     mockPlayerCommandPlay.mockReset();
     mockPlayerCommandPrevious.mockReset();
     mockPlayerCommandSeek.mockReset();
+    mockRegisterWebPlayerAudioUnlock.mockClear();
+    mockSendspinUnlock.mockReset();
+    mockSendspinUnlock.mockResolvedValue(undefined);
     webPlayer.interacted = false;
     webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     if (routeState.current) routeState.current.meta = {};
@@ -176,6 +191,7 @@ describe("SendspinPlayer MediaSession", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -213,6 +229,49 @@ describe("SendspinPlayer MediaSession", () => {
     expect(
       audioElements.every((audio) => !("controls" in audio.attributes())),
     ).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("unlocks iOS audio once the Sendspin player is ready", async () => {
+    let resolvePrepare!: () => void;
+    mockPrepareSendspinSession.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePrepare = resolve;
+      }),
+    );
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    const unlockAudio = getAudioUnlockHandler();
+
+    expect(unlockAudio()).toBe(false);
+    expect(mockSendspinUnlock).not.toHaveBeenCalled();
+
+    resolvePrepare();
+    await flushPromises();
+
+    expect(unlockAudio()).toBe(true);
+    expect(mockSendspinUnlock).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("logs rejected iOS audio unlocks", async () => {
+    const error = new Error("unlock failed");
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    mockSendspinUnlock.mockRejectedValue(error);
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(getAudioUnlockHandler()()).toBe(true);
+    await flushPromises();
+
+    expect(debugSpy).toHaveBeenCalledWith(
+      "Sendspin: failed to prime audio for listen-in",
+      error,
+    );
     wrapper.unmount();
   });
 
@@ -341,6 +400,12 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 });
+
+function getAudioUnlockHandler(): () => boolean {
+  const handler = mockRegisterWebPlayerAudioUnlock.mock.calls.at(-1)?.[0];
+  if (!handler) throw new Error("Audio unlock handler was not registered");
+  return handler;
+}
 
 function seedStaleMediaSession(): void {
   mediaSession.metadata = {} as MediaMetadata;

@@ -55,34 +55,16 @@ const isMobileOutput = isAndroid || isIOS;
 // Sendspin Player instance
 let player: SendspinPlayer | null = null;
 
-// Internal sendspin-js scheduler hooks used to unlock audio within a user
-// gesture; the pinned 3.2.0 release exposes no public equivalent.
-interface SendspinAudioUnlock {
-  initAudioContext?: () => void;
-  resumeAudioContext?: () => void | Promise<void>;
-}
-
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
-// create and resume its AudioContext outside the gesture and stay silent.
-// Create and resume that context now, while the gesture is still active, so the
-// stream plays reliably once it arrives.
+// otherwise unlock its audio outside the gesture and stay silent.
 const primeAudio = () => {
   if (!isIOS) return true;
-  try {
-    const scheduler = (
-      player as unknown as { scheduler?: SendspinAudioUnlock } | null
-    )?.scheduler;
-    if (!scheduler?.initAudioContext || !scheduler.resumeAudioContext) {
-      return false;
-    }
-    scheduler.initAudioContext();
-    void scheduler.resumeAudioContext();
-    return true;
-  } catch (error) {
+  if (!player) return false;
+  void player.unlock().catch((error) => {
     console.debug("Sendspin: failed to prime audio for listen-in", error);
-    return false;
-  }
+  });
+  return true;
 };
 
 // Reactive state
