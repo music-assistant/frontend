@@ -10,8 +10,10 @@ import {
   parseOptionalNumber,
   parseOptionalPositiveInt,
   playlistSelectValue,
+  relativeTimeFromIso,
   safeInteger,
   safeNumber,
+  showArtGradient,
   slugify,
   splitPlaylistSelectValue,
   validateStationDraftLocal,
@@ -243,5 +245,45 @@ describe("defaultGuidedPlacement", () => {
 
   it("does not treat words containing 'ende' as end markers", () => {
     expect(placementFor("sendung", "Sendung Spezial")).toBe("between_songs");
+  });
+});
+
+describe("relativeTimeFromIso", () => {
+  const NOW = Date.parse("2026-07-16T12:00:00Z");
+  const at = (iso: string) => relativeTimeFromIso(iso, NOW);
+
+  it("returns empty for missing or invalid input", () => {
+    expect(relativeTimeFromIso(undefined, NOW)).toBe("");
+    expect(relativeTimeFromIso("not-a-date", NOW)).toBe("");
+  });
+
+  it("formats sub-minute differences as now", () => {
+    expect(at("2026-07-16T11:59:30Z")).toBe("now");
+  });
+
+  it("formats minutes, hours and days ago", () => {
+    expect(at("2026-07-16T11:45:00Z")).toBe("15 minutes ago");
+    expect(at("2026-07-16T10:00:00Z")).toBe("2 hours ago");
+    expect(at("2026-07-13T12:00:00Z")).toBe("3 days ago");
+  });
+});
+
+describe("showArtGradient", () => {
+  it("is deterministic for the same seed", () => {
+    expect(showArtGradient("Morning show")).toBe(
+      showArtGradient("Morning show"),
+    );
+  });
+
+  it("produces different hues for different seeds", () => {
+    expect(showArtGradient("Morning show")).not.toBe(
+      showArtGradient("Evening show"),
+    );
+  });
+
+  it("emits a valid two-stop hsl gradient", () => {
+    expect(showArtGradient("Morning show")).toMatch(
+      /^linear-gradient\(135deg, hsl\(\d+ 65% 45%\), hsl\(\d+ 70% 28%\)\)$/,
+    );
   });
 });

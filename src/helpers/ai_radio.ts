@@ -9,7 +9,7 @@ import type {
   AIRadioStationGeneral,
   AIRadioWebSearchMode,
 } from "@/plugins/api/interfaces";
-import { $t } from "@/plugins/i18n";
+import { $t, i18n } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -77,6 +77,45 @@ export const formatTimestamp = (value?: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
+};
+
+/**
+ * Localized relative label ("2 hours ago") for an ISO timestamp.
+ * `nowMs` is injectable for tests; callers rely on the 5s session polling
+ * to keep displayed values fresh, so no ticking is needed.
+ */
+export const relativeTimeFromIso = (
+  value?: string | null,
+  nowMs = Date.now(),
+): string => {
+  if (!value) return "";
+  const thenMs = new Date(value).getTime();
+  if (Number.isNaN(thenMs)) return "";
+  const diffSeconds = Math.round((thenMs - nowMs) / 1000);
+  const absSeconds = Math.abs(diffSeconds);
+  const rtf = new Intl.RelativeTimeFormat(i18n.global.locale.value, {
+    numeric: "auto",
+  });
+  if (absSeconds < 60) return rtf.format(0, "second");
+  if (absSeconds < 3600)
+    return rtf.format(Math.trunc(diffSeconds / 60), "minute");
+  if (absSeconds < 86400)
+    return rtf.format(Math.trunc(diffSeconds / 3600), "hour");
+  return rtf.format(Math.trunc(diffSeconds / 86400), "day");
+};
+
+/**
+ * Deterministic two-hue gradient used as artwork fallback for shows whose
+ * source playlist has no image, so cards look designed rather than degraded.
+ */
+export const showArtGradient = (seed: string): string => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const hue1 = ((hash % 360) + 360) % 360;
+  const hue2 = (hue1 + 45) % 360;
+  return `linear-gradient(135deg, hsl(${hue1} 65% 45%), hsl(${hue2} 70% 28%))`;
 };
 
 export const asGeneralDefaults = (

@@ -51,7 +51,7 @@
         </AlertDescription>
       </Alert>
 
-      <Card>
+      <Card class="rounded-[6px]">
         <CardHeader>
           <CardTitle>{{
             $t("providers.ai_radio.customize.basics_title")
@@ -95,7 +95,7 @@
         </CardContent>
       </Card>
 
-      <Card>
+      <Card class="rounded-[6px]">
         <CardHeader class="flex-row items-center justify-between space-y-0">
           <CardTitle>
             {{ $t("providers.ai_radio.customize.segments_title") }}
@@ -149,7 +149,10 @@
       </Card>
 
       <Accordion type="single" collapsible>
-        <AccordionItem value="advanced" class="rounded-lg border px-4">
+        <AccordionItem
+          value="advanced"
+          class="rounded-[6px] border bg-card px-6 shadow-sm"
+        >
           <AccordionTrigger>
             {{ $t("providers.ai_radio.customize.advanced") }}
           </AccordionTrigger>
@@ -232,7 +235,7 @@
               </NumberField>
             </div>
 
-            <div class="flex items-center justify-between gap-3 md:col-span-2">
+            <div class="flex items-center gap-3 md:col-span-2">
               <Label for="customize-clear-queue">
                 {{
                   $t("providers.ai_radio.fields.clear_queue_on_dynamic_start")

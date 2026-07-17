@@ -11,8 +11,8 @@ import { $t } from "@/plugins/i18n";
 import { ref } from "vue";
 import { toast } from "vue-sonner";
 
-const STATUS_POLL_INTERVAL_MS = 5000;
-// Loads library playlists in pages to avoid truncating larger libraries.
+const STATUS_POLL_ACTIVE_MS = 5000;
+const STATUS_POLL_IDLE_MS = 30000;
 const PLAYLIST_PAGE_SIZE = 200;
 const PLAYLIST_FETCH_LIMIT = 5000;
 const NO_AI_PROVIDER_MARKER = /no ai provider/i;
@@ -38,8 +38,10 @@ const noAiProviderAlert = ref(false);
 // Dynamic-mode runs fail asynchronously (the session starts fine and errors
 // during generation), so failed sessions must raise the banner too.
 const seenFailedSessionIds = new Set<string>();
+let statusLoadedOnce = false;
 
-let statusPollTimer: ReturnType<typeof setInterval> | null = null;
+let statusPollTimer: ReturnType<typeof setTimeout> | null = null;
+let statusPollingEnabled = false;
 
 interface StartShowOptions {
   playerIdOverride?: string;
@@ -128,14 +130,19 @@ async function getShow(stationId: string): Promise<AIRadioStation> {
   });
 }
 
-async function saveShow(station: AIRadioStation): Promise<AIRadioStation> {
+async function saveShow(
+  station: AIRadioStation,
+  successMessage?: string,
+): Promise<AIRadioStation> {
   savingShow.value = true;
   try {
     const saved = await api.sendCommand<AIRadioStation>(
       "ai_radio/stations/save",
       { station },
     );
-    toast.success($t("providers.ai_radio.toast.station_saved"));
+    toast.success(
+      successMessage || $t("providers.ai_radio.toast.station_saved"),
+    );
     await loadShows();
     return saved;
   } finally {
@@ -162,15 +169,27 @@ async function loadStatus(): Promise<AIRadioSession[]> {
     const result = await api.sendCommand<AIRadioStatus>("ai_radio/status");
     sessions.value = sortSessions(result.sessions || []);
     for (const session of sessions.value) {
-      if (session.status !== "failed" || seenFailedSessionIds.has(session.session_id)) {
+      if (
+        session.status !== "failed" ||
+        seenFailedSessionIds.has(session.session_id)
+      ) {
         continue;
       }
       seenFailedSessionIds.add(session.session_id);
+      if (statusLoadedOnce) {
+        toast.error(
+          $t("providers.ai_radio.toast.session_failed", [
+            session.error || $t("providers.ai_radio.card.session_failed"),
+          ]),
+        );
+      }
       reportStartError(session.error || "");
     }
+    statusLoadedOnce = true;
     return sessions.value;
   } finally {
     loadingStatus.value = false;
+    rescheduleStatusPoll();
   }
 }
 
@@ -180,6 +199,7 @@ async function startShow(
   overrides?: StartShowOptions,
 ): Promise<AIRadioSession> {
   startingShowId.value = stationId;
+  dismissNoAiProviderAlert();
   try {
     const args: Record<string, unknown> = {
       station_id: stationId,
@@ -206,13 +226,18 @@ async function startShow(
       "ai_radio/start",
       args,
     );
-    toast.success(
-      mode === "playlist"
-        ? $t("providers.ai_radio.toast.playlist_starting")
-        : $t("providers.ai_radio.toast.live_starting"),
+    const updated = await loadStatus();
+    const current = updated.find(
+      (item) => item.session_id === result.session_id,
     );
-    await loadStatus();
-    return result;
+    if (current?.status !== "failed") {
+      toast.success(
+        mode === "playlist"
+          ? $t("providers.ai_radio.toast.playlist_starting")
+          : $t("providers.ai_radio.toast.live_starting"),
+      );
+    }
+    return current || result;
   } finally {
     startingShowId.value = "";
   }
@@ -224,6 +249,9 @@ async function stopShow(sessionId: string): Promise<void> {
     await api.sendCommand("ai_radio/stop", { session_id: sessionId });
     toast.success($t("providers.ai_radio.toast.session_stopped"));
     await loadStatus();
+  } catch (error) {
+    await loadStatus().catch(() => undefined);
+    throw error;
   } finally {
     stoppingSessionId.value = "";
   }
@@ -250,21 +278,53 @@ function runningSessionForStation(
   );
 }
 
-/** Starts 5s status polling; the view calls this on mount/activation. */
-function startStatusPolling(): void {
-  if (statusPollTimer) return;
-  void loadStatus();
-  statusPollTimer = setInterval(() => {
+function hasActiveSession(): boolean {
+  return sessions.value.some((session) => session.status === "running");
+}
+
+function clearStatusPollTimer(): void {
+  if (statusPollTimer) {
+    clearTimeout(statusPollTimer);
+    statusPollTimer = null;
+  }
+}
+
+/**
+ * (Re)arms the poll timer: 5s while a session is running, 30s when idle,
+ * suspended entirely while the browser tab is hidden.
+ */
+function rescheduleStatusPoll(): void {
+  clearStatusPollTimer();
+  if (!statusPollingEnabled || document.hidden) return;
+  statusPollTimer = setTimeout(
+    () => {
+      void loadStatus();
+    },
+    hasActiveSession() ? STATUS_POLL_ACTIVE_MS : STATUS_POLL_IDLE_MS,
+  );
+}
+
+function onVisibilityChange(): void {
+  if (document.hidden) {
+    clearStatusPollTimer();
+  } else if (statusPollingEnabled) {
     void loadStatus();
-  }, STATUS_POLL_INTERVAL_MS);
+  }
+}
+
+/** Starts adaptive status polling; the view calls this on mount/activation. */
+function startStatusPolling(): void {
+  if (statusPollingEnabled) return;
+  statusPollingEnabled = true;
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  void loadStatus();
 }
 
 /** Stops status polling; the view calls this on unmount/deactivation. */
 function stopStatusPolling(): void {
-  if (statusPollTimer) {
-    clearInterval(statusPollTimer);
-    statusPollTimer = null;
-  }
+  statusPollingEnabled = false;
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+  clearStatusPollTimer();
 }
 
 export function useShows() {

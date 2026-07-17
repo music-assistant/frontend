@@ -1,33 +1,33 @@
 <template>
-  <Card class="gap-0 overflow-hidden p-0">
-    <div class="group relative aspect-square w-full overflow-hidden">
+  <div
+    class="show-card ma-tap"
+    role="button"
+    tabindex="0"
+    @click="emit('customize', show.id)"
+    @keydown.enter.self="emit('customize', show.id)"
+    @keydown.space.self.prevent="emit('customize', show.id)"
+  >
+    <div class="show-card__art">
       <MediaItemThumb
         v-if="playlist"
         :item="playlist"
-        :size="256"
-        class="h-full w-full"
+        :size="320"
+        :rounded="false"
+        class="show-card__img"
       />
       <div
         v-else
-        class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/25 to-primary/5"
+        class="show-card__fallback"
+        :style="{ background: showArtGradient(show.name) }"
       >
-        <Radio class="h-10 w-10 text-primary/70" />
+        <Radio :size="40" class="show-card__fallback-icon" />
       </div>
 
-      <!-- Hover/tap-to-play affordance; explicit stop control lives in the footer below. -->
-      <button
-        v-if="!runningSession"
-        type="button"
-        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
-        :disabled="isStarting"
-        :aria-label="$t('providers.ai_radio.card.play')"
-        @click.stop="onPlay"
+      <Badge
+        v-if="runningSession"
+        variant="info"
+        class="show-card__onair bg-blue-500 text-white"
       >
-        <Loader2 v-if="isStarting" class="h-8 w-8 animate-spin text-white" />
-        <Play v-else class="h-8 w-8 text-white" />
-      </button>
-
-      <Badge v-if="runningSession" variant="info" class="absolute left-2 top-2">
         {{ $t("providers.ai_radio.card.on_air") }}
       </Badge>
 
@@ -36,7 +36,7 @@
           <Button
             variant="ghost-icon"
             size="icon-sm"
-            class="absolute right-2 top-2 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background/90"
+            class="show-card__menu rounded-full bg-background/70 backdrop-blur-sm hover:bg-background/90"
             :aria-label="$t('open')"
             @click.stop
           >
@@ -68,66 +68,106 @@
       </DropdownMenu>
     </div>
 
-    <CardContent class="flex flex-col gap-0.5 p-3">
-      <span class="truncate font-medium">{{ show.name }}</span>
-      <span class="truncate text-xs text-muted-foreground">
+    <div class="show-card__meta">
+      <div
+        class="show-card__title"
+        :class="{ 'show-card__title--playing': !!runningSession }"
+      >
+        {{ show.name }}
+      </div>
+      <div class="show-card__sub">
         {{ playlist?.name || show.source_playlist_id }}
-      </span>
-      <TooltipProvider v-if="failedSession">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <span class="mt-1 truncate text-xs text-destructive">
-              {{ $t("providers.ai_radio.card.session_failed") }}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" class="max-w-[280px]">
+      </div>
+      <div class="show-card__status">
+        <TooltipProvider v-if="failedSession">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span class="show-card__status-inner text-destructive">
+                <TriangleAlert class="h-3 w-3 shrink-0" />
+                <span class="truncate">
+                  {{
+                    $t("providers.ai_radio.card.status_failed", [
+                      sessionRelativeTime(failedSession),
+                    ])
+                  }}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" class="max-w-[280px]">
+              {{
+                failedSession.error ||
+                $t("providers.ai_radio.card.session_failed")
+              }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <button
+          v-else-if="completedPlaylistSession"
+          type="button"
+          class="show-card__status-inner text-primary hover:underline"
+          :aria-label="$t('providers.ai_radio.card.open_playlist')"
+          @click.stop="onOpenGeneratedPlaylist"
+        >
+          <ListMusic class="h-3 w-3 shrink-0" />
+          <span class="truncate">
             {{
-              failedSession.error ||
-              $t("providers.ai_radio.card.session_failed")
+              $t("providers.ai_radio.card.status_playlist_ready", [
+                sessionRelativeTime(completedPlaylistSession),
+              ])
             }}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </CardContent>
+          </span>
+        </button>
+        <span
+          v-else-if="lastEndedSession"
+          class="show-card__status-inner text-muted-foreground"
+        >
+          <History class="h-3 w-3 shrink-0" />
+          <span class="truncate">
+            {{
+              $t("providers.ai_radio.card.status_last_on_air", [
+                sessionRelativeTime(lastEndedSession),
+              ])
+            }}
+          </span>
+        </span>
+      </div>
 
-    <CardFooter class="p-3 pt-0">
-      <Button
+      <button
         v-if="runningSession"
-        variant="outline"
-        size="sm"
-        class="w-full"
+        type="button"
+        class="show-card__action"
         :disabled="isStopping"
-        @click="onStop"
+        :aria-label="$t('providers.ai_radio.card.stop')"
+        @click.stop="onStop"
       >
-        <Square class="h-4 w-4" />
-        {{
-          isStopping
-            ? $t("providers.ai_radio.card.stopping")
-            : $t("providers.ai_radio.card.stop")
-        }}
-      </Button>
-      <Button
+        <Loader2 v-if="isStopping" :size="18" class="animate-spin" />
+        <Square v-else :size="14" fill="currentColor" :stroke-width="0" />
+      </button>
+      <button
         v-else
-        size="sm"
-        class="w-full"
+        type="button"
+        class="show-card__action show-card__action--reveal"
         :disabled="isStarting"
-        @click="onPlay"
+        :aria-label="$t('providers.ai_radio.card.play')"
+        @click.stop="onPlay"
       >
-        <Play class="h-4 w-4" />
-        {{
-          isStarting
-            ? $t("providers.ai_radio.card.starting")
-            : $t("providers.ai_radio.card.play")
-        }}
-      </Button>
-    </CardFooter>
-  </Card>
+        <Loader2 v-if="isStarting" :size="18" class="animate-spin" />
+        <Play
+          v-else
+          :size="18"
+          fill="currentColor"
+          :stroke-width="0"
+          class="show-card__action-play-icon"
+        />
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -145,16 +185,27 @@ import { useShows } from "@/composables/ai-radio/useShows";
 import {
   deepClone,
   errorMessage,
+  relativeTimeFromIso,
   resolveShowPlayerId,
+  showArtGradient,
   slugify,
 } from "@/helpers/ai_radio";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import type { AIRadioSession, AIRadioStation } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { Loader2, MoreVertical, Play, Radio, Square } from "@lucide/vue";
+import {
+  History,
+  ListMusic,
+  Loader2,
+  MoreVertical,
+  Play,
+  Radio,
+  Square,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 const props = defineProps<{
@@ -181,7 +232,6 @@ const {
   loadStatus,
   runningSessionForStation,
   reportStartError,
-  dismissNoAiProviderAlert,
 } = useShows();
 
 const isStarting = computed(() => startingShowId.value === props.show.id);
@@ -210,6 +260,41 @@ const latestSession = computed(() =>
 const failedSession = computed(() =>
   latestSession.value?.status === "failed" ? latestSession.value : undefined,
 );
+
+const completedPlaylistSession = computed(() => {
+  const session = latestSession.value;
+
+  if (session?.status !== "completed" || session.mode !== "playlist")
+    return undefined;
+
+  return session.result?.target_playlist_id ? session : undefined;
+});
+
+const lastEndedSession = computed(() => {
+  const session = latestSession.value;
+
+  if (!session) return undefined;
+
+  const endedLive =
+    session.status === "stopped" ||
+    (session.status === "completed" && session.mode === "dynamic");
+  return endedLive ? session : undefined;
+});
+
+function sessionRelativeTime(session: AIRadioSession): string {
+  return relativeTimeFromIso(session.ended_at || session.created_at);
+}
+
+const router = useRouter();
+
+function onOpenGeneratedPlaylist(): void {
+  const playlistId = completedPlaylistSession.value?.result?.target_playlist_id;
+  if (!playlistId) return;
+  router.push({
+    name: "playlist",
+    params: { provider: "library", itemId: playlistId },
+  });
+}
 
 /** Any other station's running session, i.e. the one that would block this show from starting. */
 function findOtherRunningSession(): AIRadioSession | undefined {
@@ -240,7 +325,6 @@ function confirmSwitchAndPlay(
         await startShow(props.show.id, "dynamic", {
           playerIdOverride: playerId,
         });
-        dismissNoAiProviderAlert();
       } catch (error) {
         const message = errorMessage(error);
         toast.error($t("providers.ai_radio.card.start_failed", [message]));
@@ -263,7 +347,6 @@ async function onPlay() {
   }
   try {
     await startShow(props.show.id, "dynamic", { playerIdOverride: playerId });
-    dismissNoAiProviderAlert();
   } catch (error) {
     // The server localizes error details, so the max-concurrent reason can't be
     // matched on text. Reconcile status instead: if another show turns out to be
@@ -281,18 +364,22 @@ async function onPlay() {
 }
 
 async function onStop() {
-  if (!runningSession.value) return;
+  const session = runningSession.value;
+  if (!session) return;
   try {
-    await stopShow(runningSession.value.session_id);
+    await stopShow(session.session_id);
   } catch (error) {
-    toast.error(errorMessage(error));
+    const stillRunning = sessions.value.some(
+      (item) =>
+        item.session_id === session.session_id && item.status === "running",
+    );
+    if (stillRunning) toast.error(errorMessage(error));
   }
 }
 
 async function onGenerateAsPlaylist() {
   try {
     await startShow(props.show.id, "playlist");
-    dismissNoAiProviderAlert();
   } catch (error) {
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));
@@ -310,7 +397,7 @@ async function onDuplicate() {
       id = `${id}_${Date.now().toString(36)}`;
     }
     copy.id = id;
-    await saveShow(copy);
+    await saveShow(copy, $t("providers.ai_radio.toast.station_duplicated"));
   } catch (error) {
     toast.error(errorMessage(error));
   }
@@ -331,3 +418,146 @@ function onDelete() {
   });
 }
 </script>
+
+<style scoped>
+.show-card {
+  --show-card-pad: 8px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: var(--show-card-pad);
+  border-radius: var(--show-card-pad);
+  color: rgb(var(--v-theme-on-background));
+  transition: background 0.15s ease;
+}
+.show-card:hover {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.ma-tap:active {
+  transform: scale(0.97);
+}
+
+.show-card__art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--show-card-pad);
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.show-card__img {
+  width: 100%;
+  height: 100%;
+}
+.show-card__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.show-card__fallback-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
+.show-card__onair {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+}
+.show-card__menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+}
+
+.show-card__meta {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+  padding-right: 44px;
+}
+.show-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.show-card__title--playing {
+  color: rgb(var(--v-theme-primary));
+}
+.show-card__sub {
+  font-size: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.show-card__status {
+  margin-top: 2px;
+  min-height: 18px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+.show-card__status-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.show-card__action {
+  position: absolute;
+  bottom: 2px;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgb(var(--v-theme-primary));
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 4;
+}
+.show-card__action:disabled {
+  opacity: 0.7;
+}
+.show-card__action-play-icon {
+  margin-left: 2px;
+  fill: currentColor;
+  stroke: none;
+}
+.show-card__action--reveal {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+.show-card:hover .show-card__action--reveal,
+.show-card:focus-within .show-card__action--reveal {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+@media (hover: none) {
+  .show-card__action--reveal {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+</style>
