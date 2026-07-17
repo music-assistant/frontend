@@ -189,34 +189,17 @@
       </DialogContent>
     </Dialog>
 
-    <AlertDialog v-model:open="showEndGameDialog">
-      <AlertDialogContent class="gap-3 p-4 sm:max-w-sm sm:p-5">
-        <AlertDialogHeader class="gap-1 text-left">
-          <AlertDialogTitle>
-            {{ $t("providers.music_quiz.end_game") }}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {{ $t("providers.music_quiz.end_game_confirm") }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter class="flex-row justify-end">
-          <AlertDialogCancel class="mt-0">{{ $t("cancel") }}</AlertDialogCancel>
-          <Button
-            variant="destructive"
-            data-testid="confirm-end-game"
-            :disabled="busy"
-            @click="confirmEndGame"
-          >
-            {{ $t("providers.music_quiz.end_game") }}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <MusicQuizEndGameDialog
+      v-model="showEndGameDialog"
+      :busy="busy"
+      @confirm="confirmEndGame"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
+import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import {
   getMusicQuizPhaseLabelKey,
   resolveMusicQuizDefinition,
@@ -232,15 +215,6 @@ import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHead
 import MusicQuizSessionPanels from "@/components/music-quiz/MusicQuizSessionPanels.vue";
 import MusicQuizSetupWizard from "@/components/music-quiz/MusicQuizSetupWizard.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -408,7 +382,7 @@ async function handleCreate(request: MusicQuizCreateRequest) {
 
 async function handleReplay() {
   if (busy.value) return;
-  await host.reset(true);
+  await host.replay();
 }
 
 async function handleSetUpNewGame() {
@@ -453,7 +427,6 @@ watch(state, (nextState) => {
 });
 
 async function confirmEndGame() {
-  showEndGameDialog.value = false;
   await host.deleteGame();
 }
 

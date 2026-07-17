@@ -1153,6 +1153,7 @@
             "title": "Music Quiz",
             "play_along": "Play along",
             "host_controls": "Host controls",
+            "return_to_host_panel": "Return to host panel",
             "create_intro": "Create a new quiz game to test your music knowledge!",
             "loading": "Loading...",
             "no_active_game": "No active game",
