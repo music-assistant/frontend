@@ -260,6 +260,26 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
+  it("does not enable controls without MediaSession support", async () => {
+    if (routeState.current) {
+      routeState.current.meta = { disableMediaSession: true };
+    }
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: undefined,
+    });
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+
+    if (routeState.current) routeState.current.meta = {};
+    await nextTick();
+
+    expect(mockUseMediaBrowserMetaData).not.toHaveBeenCalled();
+    expectPlayerCommandsNotCalled();
+    wrapper.unmount();
+  });
+
   it.each(["party", "music_quiz"] as const)(
     "does not require MediaSession for %s guests",
     async (guest) => {

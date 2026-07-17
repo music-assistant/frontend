@@ -282,6 +282,10 @@ describe("App initialization", () => {
         matches: false,
       }),
     });
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   afterEach(() => {
@@ -372,6 +376,10 @@ describe("App initialization", () => {
   );
 
   it("keeps browser media controls for regular fallback tabs", async () => {
+    Object.defineProperty(navigator, "mediaSession", {
+      configurable: true,
+      value: {},
+    });
     webPlayerMock.audioSource = "controls_only";
     webPlayerMock.interacted = true;
     webPlayerMock.tabMode = "controls_only";

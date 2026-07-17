@@ -14,7 +14,11 @@ export function isMediaSessionDisabled(
   route: Pick<RouteLocationNormalizedLoaded, "meta">,
   isGuestAccessSession: boolean,
 ): boolean {
-  return isGuestAccessSession || route.meta.disableMediaSession === true;
+  return (
+    !navigator.mediaSession ||
+    isGuestAccessSession ||
+    route.meta.disableMediaSession === true
+  );
 }
 
 export function resetMediaSession(): void {
