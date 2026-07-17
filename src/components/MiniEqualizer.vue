@@ -144,7 +144,7 @@ watch(waveformBins, () => draw());
 <style scoped>
 .mini-eq {
   display: block;
-  width: 100%;
+  width: v-bind("`${props.bars * (3 + 2) - 2}px`");
   height: v-bind("`${props.height}px`");
 }
 </style>
