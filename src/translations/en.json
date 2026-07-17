@@ -24,6 +24,12 @@
     "artist_toptracks": "Top tracks",
     "artists": "Artists",
     "browse": "Browse",
+    "cast_dashboard": {
+        "loading": "Loading devices...",
+        "no_devices": "No cast devices found",
+        "playing_hint": "Playing music - casting will stop it",
+        "started": "Casting to \"{0}\""
+    },
     "clear_selection": "Clear selection",
     "close": "Close",
     "create_playlist": "Create new playlist on {0}",
@@ -676,6 +682,7 @@
         "increase_offset": "Increase offset",
         "toggle_queue": "Toggle queue",
         "select_player": "Select player",
+        "cast_dashboard": "Cast dashboard to a device",
         "party_settings": "Party settings",
         "group_members": "Group members",
         "toggle_subplayers": "Toggle sub-players",

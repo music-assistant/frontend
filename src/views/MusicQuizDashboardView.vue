@@ -104,15 +104,23 @@
           :listen-in-enabled="listenInEnabled"
         >
           <template #actions>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid="music-quiz-play-along"
-              @click="playAlong"
-            >
-              <Gamepad2 class="size-4" aria-hidden="true" />
-              {{ $t("providers.music_quiz.play_along") }}
-            </Button>
+            <div class="flex items-center gap-2">
+              <CastDashboardButton
+                path="/music-quiz"
+                variant="outline"
+                button-size="icon"
+                :icon-size="16"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="music-quiz-play-along"
+                @click="playAlong"
+              >
+                <Gamepad2 class="size-4" aria-hidden="true" />
+                {{ $t("providers.music_quiz.play_along") }}
+              </Button>
+            </div>
           </template>
         </MusicQuizSessionHeader>
 
@@ -198,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import CastDashboardButton from "@/components/CastDashboardButton.vue";
 import MusicQuizConnectionBanners from "@/components/music-quiz/MusicQuizConnectionBanners.vue";
 import MusicQuizEndGameDialog from "@/components/music-quiz/MusicQuizEndGameDialog.vue";
 import {

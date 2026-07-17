@@ -88,6 +88,7 @@
             >
               <Settings :size="13" />
             </Button>
+            <CastDashboardButton path="/party" />
             <Button
               variant="ghost-icon"
               size="icon-sm"
@@ -290,6 +291,7 @@
 </template>
 
 <script setup lang="ts">
+import CastDashboardButton from "@/components/CastDashboardButton.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import PartyQR from "@/components/party/PartyQR.vue";
 import PartyTrackCard from "@/components/party/PartyTrackCard.vue";
