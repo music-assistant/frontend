@@ -105,8 +105,8 @@ import {
 import {
   isSupportedMusicQuiz,
   type MusicQuizSupportedHostState,
-} from "@/composables/useMusicQuiz";
-import { useMusicQuizHost } from "@/composables/useMusicQuizHost";
+} from "@/composables/music-quiz/useMusicQuiz";
+import { useMusicQuizHost } from "@/composables/music-quiz/useMusicQuizHost";
 import { $t } from "@/plugins/i18n";
 import {
   ArrowLeft,
