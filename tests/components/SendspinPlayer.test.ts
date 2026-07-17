@@ -2,13 +2,34 @@ import SendspinPlayer from "@/components/SendspinPlayer.vue";
 import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-vi.hoisted(() => {
+const { originalUserAgentDescriptor } = vi.hoisted(() => {
+  const originalUserAgentDescriptor = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
   Object.defineProperty(navigator, "userAgent", {
     configurable: true,
     value: "iPhone",
   });
+  return { originalUserAgentDescriptor };
+});
+
+afterAll(() => {
+  if (originalUserAgentDescriptor) {
+    Object.defineProperty(navigator, "userAgent", originalUserAgentDescriptor);
+  } else {
+    Reflect.deleteProperty(navigator, "userAgent");
+  }
 });
 
 const {
