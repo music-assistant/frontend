@@ -14,6 +14,8 @@ export enum AudioChannel {
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
+  GAIN = "gain",
+  BALANCE = "balance",
 }
 
 export enum ParametricEQBandType {
@@ -55,8 +57,22 @@ export interface ToneControlFilter extends DSPFilterBase {
   treble_level: number;
 }
 
+export interface GainFilter extends DSPFilterBase {
+  type: DSPFilterType.GAIN;
+  gain: number;
+}
+
+export interface BalanceFilter extends DSPFilterBase {
+  type: DSPFilterType.BALANCE;
+  balance: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+export type DSPFilter =
+  | ParametricEQFilter
+  | ToneControlFilter
+  | GainFilter
+  | BalanceFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -64,6 +80,7 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+  preset_id?: string | null;
 }
 
 // DSPConfigPreset represents a preset configuration for DSP
@@ -321,7 +338,6 @@ export enum EventType {
   QUEUE_ITEMS_UPDATED = "queue_items_updated",
   QUEUE_TIME_UPDATED = "queue_time_updated",
   QUEUE_SETTINGS_UPDATED = "queue_settings_updated",
-  AUDIO_PROCESSING_UPDATED = "audio_processing_updated",
   CORE_STATE_UPDATED = "core_state_updated",
   MEDIA_ITEM_ADDED = "media_item_added",
   MEDIA_ITEM_UPDATED = "media_item_updated",
@@ -436,12 +452,6 @@ export enum CrossfadeMode {
   UNKNOWN = "unknown",
 }
 
-export enum AudioProcessingState {
-  PENDING = "pending",
-  READY = "ready",
-  UNKNOWN = "unknown",
-}
-
 export enum AudioQuality {
   LOW = "low",
   STANDARD = "standard",
@@ -455,32 +465,6 @@ export enum AudioNormalizationMeasurementSource {
   ALBUM = "album",
   LIVE = "live",
   FALLBACK = "fallback",
-  UNKNOWN = "unknown",
-}
-
-export enum AudioCrossfadeState {
-  PENDING = "pending",
-  APPLIED = "applied",
-  BYPASSED = "bypassed",
-  UNKNOWN = "unknown",
-}
-
-export enum AudioChannelMode {
-  STEREO = "stereo",
-  MONO = "mono",
-  LEFT = "left",
-  RIGHT = "right",
-  UNKNOWN = "unknown",
-}
-
-export enum AudioResamplingMethod {
-  SOXR = "soxr",
-  SWR = "swr",
-  UNKNOWN = "unknown",
-}
-
-export enum AudioDitheringMethod {
-  TRIANGULAR_HP = "triangular_hp",
   UNKNOWN = "unknown",
 }
 
@@ -897,54 +881,20 @@ export interface AudioFidelity {
   bit_perfect?: boolean | null;
 }
 
-export interface AudioFidelitySummary {
-  min_output_quality?: AudioQuality;
-  max_output_quality?: AudioQuality;
-}
-
-export interface AudioInputDetails {
-  source_format?: AudioFormat | null;
-  server_input_format?: AudioFormat | null;
-  fidelity?: AudioFidelity;
-}
-
 export interface AudioNormalizationDetails {
   mode?: VolumeNormalizationMode;
   measurement_source?: AudioNormalizationMeasurementSource;
   target_lufs?: number | null;
   measured_lufs?: number | null;
   applied_gain_db?: number | null;
-  target_true_peak_dbtp?: number | null;
-  target_loudness_range_lu?: number | null;
-  reason_code?: string | null;
-}
-
-export interface AudioTempoDetails {
-  playback_speed?: number;
-}
-
-export interface AudioCrossfadeDetails {
-  mode?: CrossfadeMode;
-  state?: AudioCrossfadeState;
-  from_queue_item_id?: string | null;
-  to_queue_item_id?: string | null;
-  planned_duration?: number | null;
-  actual_duration?: number | null;
-  reason_code?: string | null;
-}
-
-export interface AudioOverlayDetails {
-  source?: ItemMapping | null;
-  volume_percent?: number;
 }
 
 export interface AudioQueueProcessing {
-  input_format?: AudioFormat | null;
-  output_format?: AudioFormat | null;
+  pcm_format?: AudioFormat | null;
   normalization?: AudioNormalizationDetails | null;
-  tempo?: AudioTempoDetails | null;
-  crossfade?: AudioCrossfadeDetails | null;
-  overlay?: AudioOverlayDetails | null;
+  playback_speed?: number;
+  crossfade_mode?: CrossfadeMode;
+  overlay_active?: boolean;
 }
 
 export interface AudioDSPDetails {
@@ -952,47 +902,22 @@ export interface AudioDSPDetails {
   input_gain?: number;
   filters?: DSPFilter[];
   output_gain?: number;
+  output_limiter?: boolean;
+  preset_id?: string | null;
 }
 
-export interface AudioChannelDetails {
-  mode?: AudioChannelMode;
-}
-
-export interface AudioLimiterDetails {
-  enabled?: boolean;
-  threshold_dbfs?: number | null;
-}
-
-export interface AudioResamplingDetails {
-  method?: AudioResamplingMethod;
-}
-
-export interface AudioDitheringDetails {
-  method?: AudioDitheringMethod;
-}
-
-export interface AudioOutputPath {
+export interface AudioOutputDetails {
   player_ids?: string[];
-  input_format?: AudioFormat | null;
   dsp?: AudioDSPDetails;
-  channels?: AudioChannelDetails | null;
-  limiter?: AudioLimiterDetails;
-  resampling?: AudioResamplingDetails | null;
-  dithering?: AudioDitheringDetails | null;
+  source_channel?: AudioChannel | null;
   output_format?: AudioFormat | null;
-  handoff_format?: AudioFormat | null;
   fidelity?: AudioFidelity;
 }
 
 export interface AudioProcessingChain {
-  queue_id: string;
-  queue_item_id?: string | null;
-  revision: number;
-  state?: AudioProcessingState;
-  input?: AudioInputDetails | null;
+  input_fidelity?: AudioFidelity;
   queue_processing?: AudioQueueProcessing | null;
-  outputs?: AudioOutputPath[];
-  fidelity?: AudioFidelitySummary | null;
+  outputs?: AudioOutputDetails[];
 }
 
 export interface LoudnessMeasurement {
@@ -1021,6 +946,7 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_metadata?: StreamMetadata;
   duration?: number;
+  audio_processing?: AudioProcessingChain | null;
 
   queue_id?: string;
   fade_in?: boolean;

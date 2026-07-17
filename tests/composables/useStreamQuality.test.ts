@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ref } from "vue";
 import {
   audioQualityToTier,
+  hasEmbeddedAudioProcessing,
   isContentTypeLossless,
   isHiResFormat,
   isPcm,
@@ -116,6 +117,14 @@ describe("useStreamQuality format helpers", () => {
       qualityTierRangeLabel(QualityTier.LOSSLESS, QualityTier.LOSSLESS),
     ).toBe("HQ");
   });
+
+  it("distinguishes embedded processing from legacy stream details", () => {
+    const legacy = makeStream(makeFormat());
+    const pending = { ...legacy, audio_processing: null };
+
+    expect(hasEmbeddedAudioProcessing(legacy)).toBe(false);
+    expect(hasEmbeddedAudioProcessing(pending)).toBe(true);
+  });
 });
 
 describe("useStreamQuality input tier", () => {
@@ -172,18 +181,13 @@ describe("useStreamQuality output tiers", () => {
     expect(minOutputQualityTier.value).toBe(QualityTier.LOW);
   });
 
-  it("uses authoritative fidelity and top-level min/max without legacy merging", () => {
-    const legacy = makeStream(FLAC_HIRES, {
-      p1: makeDsp(FLAC_HIRES),
-      p2: makeDsp(FLAC_HIRES),
+  it("uses embedded fidelity without legacy merging", () => {
+    const legacy = makeStream(MP3_128, {
+      p1: makeDsp(MP3_128),
+      p2: makeDsp(MP3_128),
     });
     const chain: AudioProcessingChain = {
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      revision: 1,
-      input: {
-        fidelity: { quality: AudioQuality.LOW },
-      },
+      input_fidelity: { quality: AudioQuality.LOSSLESS },
       outputs: [
         {
           player_ids: ["p1"],
@@ -194,15 +198,11 @@ describe("useStreamQuality output tiers", () => {
           fidelity: { quality: AudioQuality.HI_RES },
         },
       ],
-      fidelity: {
-        min_output_quality: AudioQuality.LOW,
-        max_output_quality: AudioQuality.HI_RES,
-      },
     };
 
     const quality = useStreamQuality(ref(legacy), ref(chain));
 
-    expect(quality.inputQualityTier.value).toBe(QualityTier.LOW);
+    expect(quality.inputQualityTier.value).toBe(QualityTier.LOSSLESS);
     expect(quality.outputQualityTiers.value).toEqual({
       p1: QualityTier.GOOD,
       p2: QualityTier.HIRES,
@@ -211,26 +211,19 @@ describe("useStreamQuality output tiers", () => {
       p1: QualityTier.GOOD,
       p2: QualityTier.HIRES,
     });
-    expect(quality.minOutputQualityTier.value).toBe(QualityTier.LOW);
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.GOOD);
     expect(quality.maxOutputQualityTier.value).toBe(QualityTier.HIRES);
   });
 
   it("keeps unknown authoritative fidelity unknown", () => {
     const chain: AudioProcessingChain = {
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      revision: 1,
-      input: { fidelity: { quality: AudioQuality.UNKNOWN } },
+      input_fidelity: { quality: AudioQuality.UNKNOWN },
       outputs: [
         {
           player_ids: ["p1"],
           fidelity: { quality: AudioQuality.UNKNOWN },
         },
       ],
-      fidelity: {
-        min_output_quality: AudioQuality.UNKNOWN,
-        max_output_quality: AudioQuality.UNKNOWN,
-      },
     };
     const quality = useStreamQuality(ref(undefined), ref(chain));
 

@@ -15,7 +15,7 @@
         ></div>
         {{ $t("streamdetails.input_header") }}
         <span class="audio-processing-header-meta">
-          {{ inputQualityLabel }} · {{ processingStateLabel }}
+          {{ inputQualityLabel }}
         </span>
         <div
           class="streamdetails-separator flex-1"
@@ -98,39 +98,36 @@ import {
   Gauge,
   GitMerge,
   Layers,
-  RefreshCw,
+  Radio,
   Shield,
   SlidersHorizontal,
   Speaker,
   Split,
-  Waves,
 } from "@lucide/vue";
 import AudioProcessingStage from "@/components/AudioProcessingStage.vue";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { dspFilterText } from "@/helpers/audioProcessing";
-import api from "@/plugins/api";
-import { $t } from "@/plugins/i18n";
-import {
-  AudioChannelMode,
-  AudioCrossfadeState,
-  AudioDitheringMethod,
-  type AudioFormat,
-  type AudioNormalizationDetails,
-  type AudioOutputPath,
-  type AudioProcessingChain,
-  AudioProcessingState,
-  AudioQuality,
-  AudioResamplingMethod,
-  ContentType,
-  CrossfadeMode,
-  DSPState,
-  VolumeNormalizationMode,
-} from "@/plugins/api/interfaces";
+import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   audioQualityToTier,
   qualityTierToColor,
   type QualityTier,
 } from "@/composables/useStreamQuality";
+import { dspFilterText } from "@/helpers/audioProcessing";
+import api from "@/plugins/api";
+import { $t } from "@/plugins/i18n";
+import {
+  AudioChannel,
+  type AudioFormat,
+  type AudioNormalizationDetails,
+  type AudioOutputDetails,
+  type AudioProcessingChain,
+  AudioQuality,
+  ContentType,
+  CrossfadeMode,
+  DSPState,
+  type StreamDetails,
+  VolumeNormalizationMode,
+} from "@/plugins/api/interfaces";
 
 interface AudioProcessingDisplayStage {
   key: string;
@@ -147,18 +144,21 @@ interface AudioOutputDisplay {
   stages: AudioProcessingDisplayStage[];
 }
 
-const props = defineProps<{ chain: AudioProcessingChain }>();
+const props = defineProps<{
+  chain: AudioProcessingChain;
+  streamDetails: StreamDetails;
+}>();
+const { getPresetName } = useDSPPresets({ optional: true });
 
 const inputQualityTier = computed(() =>
-  audioQualityToTier(props.chain.input?.fidelity?.quality),
+  audioQualityToTier(props.chain.input_fidelity?.quality),
 );
 const inputQualityLabel = computed(() =>
-  audioQualityLabel(props.chain.input?.fidelity?.quality),
+  audioQualityLabel(props.chain.input_fidelity?.quality),
 );
-const processingStateLabel = computed(() =>
-  audioProcessingStateLabel(props.chain.state),
+const inputStages = computed(() =>
+  buildInputStages(props.streamDetails, props.chain),
 );
-const inputStages = computed(() => buildInputStages(props.chain));
 const outputPaths = computed(() =>
   (props.chain.outputs ?? []).map(buildOutputDisplay),
 );
@@ -178,117 +178,75 @@ const PCM_CONTENT_TYPES = new Set<string>([
 ]);
 
 function buildInputStages(
+  streamDetails: StreamDetails,
   chain: AudioProcessingChain,
 ): AudioProcessingDisplayStage[] {
-  const stages: AudioProcessingDisplayStage[] = [];
+  const stages: AudioProcessingDisplayStage[] = [
+    {
+      key: "provider",
+      icon: Radio,
+      label: $t("streamdetails.audio_processing.provider", [
+        api.getProviderName(streamDetails.provider),
+      ]),
+    },
+  ];
   addFormatStage(
     stages,
     "source-format",
     "streamdetails.audio_processing.source_format",
-    chain.input?.source_format,
-  );
-  addFormatStage(
-    stages,
-    "server-input-format",
-    "streamdetails.audio_processing.server_input_format",
-    chain.input?.server_input_format,
+    streamDetails.audio_format,
   );
 
   const processing = chain.queue_processing;
   addFormatStage(
     stages,
-    "shared-input-format",
-    "streamdetails.audio_processing.shared_input_format",
-    processing?.input_format,
+    "pcm-format",
+    "streamdetails.audio_processing.pcm_format",
+    processing?.pcm_format,
   );
   if (processing?.normalization) {
     stages.push(normalizationStage(processing.normalization));
   }
-  if (processing?.tempo) {
+  if (
+    typeof processing?.playback_speed === "number" &&
+    processing.playback_speed !== 1
+  ) {
     stages.push({
-      key: "tempo",
+      key: "playback-speed",
       icon: Gauge,
-      label: $t("streamdetails.audio_processing.tempo", [
-        formatNumber(processing.tempo.playback_speed ?? 1, 2),
+      label: $t("streamdetails.audio_processing.playback_speed", [
+        formatNumber(processing.playback_speed, 2),
       ]),
     });
   }
-  if (processing?.crossfade) {
-    const crossfade = processing.crossfade;
-    const details: string[] = [];
-    addDetail(
-      details,
-      "streamdetails.audio_processing.planned_duration",
-      crossfade.planned_duration,
-    );
-    addDetail(
-      details,
-      "streamdetails.audio_processing.actual_duration",
-      crossfade.actual_duration,
-    );
-    if (crossfade.from_queue_item_id) {
-      details.push(
-        $t("streamdetails.audio_processing.from_queue_item", [
-          crossfade.from_queue_item_id,
-        ]),
-      );
-    }
-    if (crossfade.to_queue_item_id) {
-      details.push(
-        $t("streamdetails.audio_processing.to_queue_item", [
-          crossfade.to_queue_item_id,
-        ]),
-      );
-    }
-    if (crossfade.reason_code) {
-      details.push(
-        $t("streamdetails.audio_processing.reason", [
-          reasonCodeLabel(crossfade.reason_code),
-        ]),
-      );
-    }
+  if (
+    processing?.crossfade_mode &&
+    processing.crossfade_mode !== CrossfadeMode.DISABLED
+  ) {
     stages.push({
       key: "crossfade",
       icon: GitMerge,
       label: $t("streamdetails.audio_processing.crossfade", [
-        crossfadeModeLabel(crossfade.mode),
-        crossfadeStateLabel(crossfade.state),
+        crossfadeModeLabel(processing.crossfade_mode),
       ]),
-      details,
     });
   }
-  if (processing?.overlay) {
+  if (processing?.overlay_active) {
     stages.push({
       key: "overlay",
       icon: Layers,
-      label: $t("streamdetails.audio_processing.overlay", [
-        processing.overlay.source?.name ??
-          $t("streamdetails.audio_processing.unknown"),
-        processing.overlay.volume_percent ?? 100,
-      ]),
+      label: $t("streamdetails.audio_processing.overlay_active"),
     });
   }
-  addFormatStage(
-    stages,
-    "shared-output-format",
-    "streamdetails.audio_processing.shared_output_format",
-    processing?.output_format,
-  );
   return stages;
 }
 
 function buildOutputDisplay(
-  output: AudioOutputPath,
+  output: AudioOutputDetails,
   index: number,
 ): AudioOutputDisplay {
   const playerIds = output.player_ids ?? [];
   const stages: AudioProcessingDisplayStage[] = [];
-  addFormatStage(
-    stages,
-    `path-input-format-${index}`,
-    "streamdetails.audio_processing.path_input_format",
-    output.input_format,
-  );
 
   if (output.dsp) {
     stages.push({
@@ -296,6 +254,16 @@ function buildOutputDisplay(
       icon: SlidersHorizontal,
       label: dspStateLabel(output.dsp.state),
     });
+    if (output.dsp.preset_id) {
+      stages.push({
+        key: `dsp-preset-${index}`,
+        icon: SlidersHorizontal,
+        label: $t("streamdetails.audio_processing.dsp_preset", [
+          getPresetName(output.dsp.preset_id) ??
+            $t("settings.dsp.presets.custom"),
+        ]),
+      });
+    }
     if (output.dsp.input_gain) {
       stages.push({
         key: `dsp-input-gain-${index}`,
@@ -321,55 +289,24 @@ function buildOutputDisplay(
         ]),
       });
     }
+    if (output.dsp.output_limiter) {
+      stages.push({
+        key: `output-limiter-${index}`,
+        icon: Shield,
+        label: $t("streamdetails.output_limiter"),
+      });
+    }
   }
 
-  if (output.channels) {
+  if (output.source_channel) {
     stages.push({
-      key: `channels-${index}`,
+      key: `source-channel-${index}`,
       icon: Split,
-      label: $t("streamdetails.audio_processing.channels", [
-        channelModeLabel(output.channels.mode),
+      label: $t("streamdetails.audio_processing.source_channel", [
+        sourceChannelLabel(output.source_channel),
       ]),
     });
   }
-  if (output.limiter) {
-    const threshold = output.limiter.threshold_dbfs;
-    stages.push({
-      key: `limiter-${index}`,
-      icon: Shield,
-      label: output.limiter.enabled
-        ? typeof threshold === "number"
-          ? $t("streamdetails.audio_processing.limiter_enabled_threshold", [
-              formatNumber(threshold),
-            ])
-          : $t("streamdetails.audio_processing.limiter_enabled")
-        : $t("streamdetails.audio_processing.limiter_disabled"),
-    });
-  }
-  if (output.resampling) {
-    stages.push({
-      key: `resampling-${index}`,
-      icon: RefreshCw,
-      label: $t("streamdetails.audio_processing.resampling", [
-        resamplingMethodLabel(output.resampling.method),
-      ]),
-    });
-  }
-  if (output.dithering) {
-    stages.push({
-      key: `dithering-${index}`,
-      icon: Waves,
-      label: $t("streamdetails.audio_processing.dithering", [
-        ditheringMethodLabel(output.dithering.method),
-      ]),
-    });
-  }
-  addFormatStage(
-    stages,
-    `handoff-format-${index}`,
-    "streamdetails.audio_processing.handoff_format",
-    output.handoff_format,
-  );
   addFormatStage(
     stages,
     `output-format-${index}`,
@@ -421,23 +358,6 @@ function normalizationStage(
     "streamdetails.audio_processing.applied_gain_db",
     normalization.applied_gain_db,
   );
-  addDetail(
-    details,
-    "streamdetails.audio_processing.target_true_peak_dbtp",
-    normalization.target_true_peak_dbtp,
-  );
-  addDetail(
-    details,
-    "streamdetails.audio_processing.target_loudness_range_lu",
-    normalization.target_loudness_range_lu,
-  );
-  if (normalization.reason_code) {
-    details.push(
-      $t("streamdetails.audio_processing.reason", [
-        reasonCodeLabel(normalization.reason_code),
-      ]),
-    );
-  }
   return {
     key: "normalization",
     icon: AudioLines,
@@ -560,17 +480,6 @@ function contentTypeLabel(contentType: string | undefined): string {
   return contentType.toUpperCase();
 }
 
-function audioProcessingStateLabel(state: string | undefined): string {
-  switch (state) {
-    case AudioProcessingState.PENDING:
-      return $t("streamdetails.audio_processing.state.pending");
-    case AudioProcessingState.READY:
-      return $t("streamdetails.audio_processing.state.ready");
-    default:
-      return $t("streamdetails.audio_processing.state.unknown");
-  }
-}
-
 function audioQualityLabel(quality: string | undefined): string {
   switch (quality) {
     case AudioQuality.LOW:
@@ -619,7 +528,7 @@ function measurementSourceLabel(source: string | undefined): string {
   return $t(`streamdetails.audio_processing.measurement.${source}`);
 }
 
-function crossfadeModeLabel(mode: string | undefined): string {
+function crossfadeModeLabel(mode: string): string {
   switch (mode) {
     case CrossfadeMode.SMART_CROSSFADE:
       return $t("streamdetails.audio_processing.crossfade_mode.smart");
@@ -627,19 +536,6 @@ function crossfadeModeLabel(mode: string | undefined): string {
       return $t("streamdetails.audio_processing.crossfade_mode.standard");
     case CrossfadeMode.DISABLED:
       return $t("streamdetails.audio_processing.crossfade_mode.disabled");
-    default:
-      return $t("streamdetails.audio_processing.unknown");
-  }
-}
-
-function crossfadeStateLabel(state: string | undefined): string {
-  switch (state) {
-    case AudioCrossfadeState.PENDING:
-      return $t("streamdetails.audio_processing.crossfade_state.pending");
-    case AudioCrossfadeState.APPLIED:
-      return $t("streamdetails.audio_processing.crossfade_state.applied");
-    case AudioCrossfadeState.BYPASSED:
-      return $t("streamdetails.audio_processing.crossfade_state.bypassed");
     default:
       return $t("streamdetails.audio_processing.unknown");
   }
@@ -660,54 +556,15 @@ function dspStateLabel(state: string | undefined): string {
   }
 }
 
-function channelModeLabel(mode: string | undefined): string {
-  switch (mode) {
-    case AudioChannelMode.STEREO:
-      return $t("streamdetails.audio_processing.channel_mode.stereo");
-    case AudioChannelMode.MONO:
-      return $t("streamdetails.audio_processing.channel_mode.mono");
-    case AudioChannelMode.LEFT:
-      return $t("streamdetails.audio_processing.channel_mode.left");
-    case AudioChannelMode.RIGHT:
-      return $t("streamdetails.audio_processing.channel_mode.right");
+function sourceChannelLabel(channel: string): string {
+  switch (channel) {
+    case AudioChannel.FL:
+      return $t("streamdetails.audio_processing.source_channel_left");
+    case AudioChannel.FR:
+      return $t("streamdetails.audio_processing.source_channel_right");
     default:
       return $t("streamdetails.audio_processing.unknown");
   }
-}
-
-function resamplingMethodLabel(method: string | undefined): string {
-  switch (method) {
-    case AudioResamplingMethod.SOXR:
-      return "SoX Resampler";
-    case AudioResamplingMethod.SWR:
-      return "SWResample";
-    default:
-      return $t("streamdetails.audio_processing.unknown");
-  }
-}
-
-function ditheringMethodLabel(method: string | undefined): string {
-  if (method === AudioDitheringMethod.TRIANGULAR_HP) {
-    return $t("streamdetails.audio_processing.dithering_method.triangular_hp");
-  }
-  return $t("streamdetails.audio_processing.unknown");
-}
-
-function reasonCodeLabel(reasonCode: string): string {
-  const knownReasonCodes = new Set([
-    "fixed_gain",
-    "format_change_requires_restart",
-    "insufficient_audio",
-    "measurement_unavailable",
-    "next_item_unavailable",
-    "not_applicable",
-    "processing_failed",
-    "gapless_playback_unsupported",
-  ]);
-  if (!knownReasonCodes.has(reasonCode)) {
-    return $t("streamdetails.audio_processing.reason_code.unknown");
-  }
-  return $t(`streamdetails.audio_processing.reason_code.${reasonCode}`);
 }
 
 function formatNumber(value: number, maximumFractionDigits = 1): string {

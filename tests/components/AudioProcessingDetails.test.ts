@@ -1,33 +1,45 @@
 import { mount } from "@vue/test-utils";
+import { nextTick, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import { i18n } from "@/plugins/i18n";
 import {
-  AudioChannelMode,
-  AudioCrossfadeState,
-  AudioDitheringMethod,
-  type AudioFormat,
+  AudioChannel,
   AudioNormalizationMeasurementSource,
+  type AudioFormat,
   type AudioProcessingChain,
-  AudioProcessingState,
   AudioQuality,
-  AudioResamplingMethod,
   ContentType,
   CrossfadeMode,
   DSPFilterType,
   DSPState,
   MediaType,
+  type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
 
 const apiMock = vi.hoisted(() => ({
+  getProviderName: vi.fn(() => "Test provider"),
   players: {} as Record<string, { name: string }>,
+}));
+const presetRegistryMock = vi.hoisted(() => ({
+  names: undefined as Ref<Map<string, string>> | undefined,
 }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
   api: apiMock,
 }));
+vi.mock("@/composables/useDSPPresets", async () => {
+  const { ref } = await import("vue");
+  presetRegistryMock.names = ref(new Map<string, string>());
+  return {
+    useDSPPresets: () => ({
+      getPresetName: (presetId: string | null | undefined) =>
+        presetId ? getPresetNames().value.get(presetId) : undefined,
+    }),
+  };
+});
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
@@ -35,10 +47,11 @@ beforeEach(() => {
     "player-1": { name: "Kitchen" },
     "player-2": { name: "Office" },
   };
+  getPresetNames().value = new Map([["preset-1", "Living room"]]);
 });
 
 describe("AudioProcessingDetails", () => {
-  it("renders server-grouped output paths and the effective processing stages", () => {
+  it("renders the embedded processing model and server-grouped outputs", () => {
     const wrapper = mountDetails(makeFullChain());
 
     expect(wrapper.findAll('[data-testid="audio-output-path"]')).toHaveLength(
@@ -60,111 +73,92 @@ describe("AudioProcessingDetails", () => {
       .map((stage) => stage.attributes("data-stage"));
     expect(stageKeys).toEqual(
       expect.arrayContaining([
+        "provider",
         "source-format",
-        "server-input-format",
-        "shared-input-format",
+        "pcm-format",
         "normalization",
-        "tempo",
+        "playback-speed",
         "crossfade",
         "overlay",
-        "shared-output-format",
         "dsp-state-0",
-        "channels-0",
-        "limiter-0",
-        "resampling-0",
-        "dithering-0",
-        "handoff-format-0",
+        "dsp-preset-0",
+        "dsp-input-gain-0",
+        "dsp-filter-0-0",
+        "dsp-filter-0-1",
+        "dsp-filter-0-2",
+        "dsp-output-gain-0",
+        "output-limiter-0",
+        "source-channel-0",
         "output-format-0",
         "bit-perfect-0",
       ]),
     );
-    expect(stageKeys.indexOf("handoff-format-0")).toBeLessThan(
-      stageKeys.indexOf("output-format-0"),
-    );
 
     const text = wrapper.text();
+    expect(text).toContain("Provider: Test provider");
     expect(text).toContain("32-bit float PCM");
     expect(text).toContain("Playback speed: 1.25x");
-    expect(text).toContain("Crossfade: Smart · Applied");
-    expect(text).toContain("Overlay: Rain at 35%");
-    expect(text).toContain("DSP active");
-    expect(text).toContain("Channel routing: Mono");
-    expect(text).toContain("Limiter enabled (-1 dBFS)");
-    expect(text).toContain("Resampling: SoX Resampler");
-    expect(text).toContain("Dithering: High-pass triangular");
+    expect(text).toContain("Crossfade: Smart");
+    expect(text).toContain("Audio overlay active");
+    expect(text).toContain("DSP preset: Living room");
+    expect(text).toContain("Gain");
+    expect(text).toContain("Balance");
+    expect(text).toContain("Source channel: Left");
+    expect(text).toContain("Output Limiter");
     expect(text).toContain("Lossless");
     expect(text).toContain("Bit-perfect output");
   });
 
-  it("renders future enum values as safe unknown states", () => {
-    const wrapper = mountDetails({
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      revision: 1,
-      state: "future" as AudioProcessingState,
-      input: {
-        fidelity: { quality: "future" as AudioQuality },
-      },
-      queue_processing: {
-        crossfade: {
-          reason_code: "insufficient_audio",
-        },
-      },
-      outputs: [
-        {
-          player_ids: ["player-1"],
-          fidelity: { quality: "future" as AudioQuality },
-        },
-      ],
-      fidelity: {
-        min_output_quality: "future" as AudioQuality,
-        max_output_quality: "future" as AudioQuality,
-      },
-    });
+  it("updates a resolved preset name reactively", async () => {
+    const wrapper = mountDetails(makeFullChain());
+    expect(wrapper.text()).toContain("DSP preset: Living room");
 
-    const text = wrapper.text();
-    expect(text).toContain("State unknown");
-    expect(text).toContain("Quality unknown");
-    expect(text).toContain("Not enough audio to apply the crossfade");
-    expect(text).not.toContain("future");
+    getPresetNames().value = new Map([["preset-1", "Cinema"]]);
+    await nextTick();
+
+    expect(wrapper.text()).toContain("DSP preset: Cinema");
+    expect(wrapper.text()).not.toContain("Living room");
   });
 
-  it("renders unknown output processing enums safely", () => {
+  it("uses Custom for an unresolved preset without exposing its ID", () => {
+    getPresetNames().value = new Map();
+    const wrapper = mountDetails(makeFullChain());
+
+    expect(wrapper.text()).toContain("DSP preset: Custom");
+    expect(wrapper.text()).not.toContain("preset-1");
+  });
+
+  it("renders future enum values as safe unknown states", () => {
     const wrapper = mountDetails({
-      queue_id: "queue-1",
-      queue_item_id: "item-1",
-      revision: 1,
-      state: AudioProcessingState.READY,
+      input_fidelity: { quality: "future" as AudioQuality },
+      queue_processing: {
+        crossfade_mode: "future" as CrossfadeMode,
+      },
       outputs: [
         {
           player_ids: ["player-1"],
           dsp: { state: "future" as DSPState },
-          channels: { mode: "future" as AudioChannelMode },
-          limiter: { enabled: false },
-          resampling: { method: "future" as AudioResamplingMethod },
-          dithering: { method: "future" as AudioDitheringMethod },
-          fidelity: { quality: AudioQuality.UNKNOWN },
+          source_channel: "future" as AudioChannel,
+          fidelity: { quality: "future" as AudioQuality },
         },
       ],
-      fidelity: {
-        min_output_quality: AudioQuality.UNKNOWN,
-        max_output_quality: AudioQuality.UNKNOWN,
-      },
     });
 
     const text = wrapper.text();
     expect(text).toContain("Quality unknown");
+    expect(text).toContain("Crossfade: Unknown");
     expect(text).toContain("DSP state unknown");
-    expect(text).toContain("Channel routing: Unknown");
-    expect(text).toContain("Resampling: Unknown");
-    expect(text).toContain("Dithering: Unknown");
+    expect(text).toContain("Source channel: Unknown");
     expect(text).not.toContain("future");
   });
 });
 
 function mountDetails(chain: AudioProcessingChain) {
   return mount(AudioProcessingDetails, {
-    props: { chain },
+    props: {
+      chain,
+      streamDetails: makeStreamDetails(),
+    },
     global: {
       stubs: {
         Tooltip: { template: "<div><slot /></div>" },
@@ -174,6 +168,13 @@ function mountDetails(chain: AudioProcessingChain) {
       },
     },
   });
+}
+
+function getPresetNames(): Ref<Map<string, string>> {
+  if (!presetRegistryMock.names) {
+    throw new Error("Preset registry mock was not initialized");
+  }
+  return presetRegistryMock.names;
 }
 
 function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
@@ -189,6 +190,15 @@ function makeFormat(overrides: Partial<AudioFormat> = {}): AudioFormat {
   };
 }
 
+function makeStreamDetails(): StreamDetails {
+  return {
+    provider: "test",
+    item_id: "track-1",
+    audio_format: makeFormat(),
+    media_type: MediaType.TRACK,
+  };
+}
+
 function makeFullChain(): AudioProcessingChain {
   const floatPcm = makeFormat({
     content_type: ContentType.PCM_F32LE,
@@ -197,18 +207,9 @@ function makeFullChain(): AudioProcessingChain {
     bit_depth: 32,
   });
   return {
-    queue_id: "queue-1",
-    queue_item_id: "item-1",
-    revision: 7,
-    state: AudioProcessingState.READY,
-    input: {
-      source_format: makeFormat(),
-      server_input_format: floatPcm,
-      fidelity: { quality: AudioQuality.HI_RES },
-    },
+    input_fidelity: { quality: AudioQuality.HI_RES },
     queue_processing: {
-      input_format: floatPcm,
-      output_format: floatPcm,
+      pcm_format: floatPcm,
       normalization: {
         mode: VolumeNormalizationMode.DYNAMIC,
         measurement_source: AudioNormalizationMeasurementSource.LIVE,
@@ -216,34 +217,16 @@ function makeFullChain(): AudioProcessingChain {
         measured_lufs: -12.5,
         applied_gain_db: -1.5,
       },
-      tempo: { playback_speed: 1.25 },
-      crossfade: {
-        mode: CrossfadeMode.SMART_CROSSFADE,
-        state: AudioCrossfadeState.APPLIED,
-        from_queue_item_id: "item-1",
-        to_queue_item_id: "item-2",
-        planned_duration: 8,
-        actual_duration: 7.5,
-      },
-      overlay: {
-        source: {
-          item_id: "rain",
-          provider: "test",
-          name: "Rain",
-          uri: "test://sound_effect/rain",
-          is_playable: true,
-          media_type: MediaType.SOUND_EFFECT,
-          available: true,
-        },
-        volume_percent: 35,
-      },
+      playback_speed: 1.25,
+      crossfade_mode: CrossfadeMode.SMART_CROSSFADE,
+      overlay_active: true,
     },
     outputs: [
       {
         player_ids: ["player-1", "player-2"],
-        input_format: floatPcm,
         dsp: {
           state: DSPState.ENABLED,
+          preset_id: "preset-1",
           input_gain: -1,
           filters: [
             {
@@ -253,20 +236,21 @@ function makeFullChain(): AudioProcessingChain {
               mid_level: 0,
               treble_level: -1,
             },
+            {
+              type: DSPFilterType.GAIN,
+              enabled: true,
+              gain: 2,
+            },
+            {
+              type: DSPFilterType.BALANCE,
+              enabled: true,
+              balance: -25,
+            },
           ],
           output_gain: 2,
+          output_limiter: true,
         },
-        channels: { mode: AudioChannelMode.MONO },
-        limiter: { enabled: true, threshold_dbfs: -1 },
-        resampling: { method: AudioResamplingMethod.SOXR },
-        dithering: { method: AudioDitheringMethod.TRIANGULAR_HP },
-        handoff_format: makeFormat({
-          content_type: ContentType.AAC,
-          codec_type: ContentType.AAC,
-          sample_rate: 48000,
-          bit_depth: 16,
-          bit_rate: 256,
-        }),
+        source_channel: AudioChannel.FL,
         output_format: makeFormat({
           sample_rate: 48000,
           bit_depth: 16,
@@ -277,9 +261,5 @@ function makeFullChain(): AudioProcessingChain {
         },
       },
     ],
-    fidelity: {
-      min_output_quality: AudioQuality.LOSSLESS,
-      max_output_quality: AudioQuality.LOSSLESS,
-    },
   };
 }

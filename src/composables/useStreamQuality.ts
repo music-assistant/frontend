@@ -122,6 +122,15 @@ export function audioQualityToTier(quality: AudioQuality | string | undefined) {
   }
 }
 
+export function hasEmbeddedAudioProcessing(
+  streamDetails: StreamDetails | undefined,
+): boolean {
+  return (
+    !!streamDetails &&
+    Object.prototype.hasOwnProperty.call(streamDetails, "audio_processing")
+  );
+}
+
 export function useStreamQuality(
   streamDetails: MaybeRefOrGetter<StreamDetails | undefined>,
   audioProcessingChain: MaybeRefOrGetter<
@@ -131,7 +140,7 @@ export function useStreamQuality(
   const inputQualityTier = computed(() => {
     const chain = toValue(audioProcessingChain);
     if (chain) {
-      return audioQualityToTier(chain.input?.fidelity?.quality);
+      return audioQualityToTier(chain.input_fidelity?.quality);
     }
 
     const sd = toValue(streamDetails);
@@ -224,21 +233,11 @@ export function useStreamQuality(
   });
 
   const minOutputQualityTier = computed(() => {
-    const chain = toValue(audioProcessingChain);
-    if (chain) {
-      return audioQualityToTier(chain.fidelity?.min_output_quality);
-    }
-
     const tiers = Object.values(combinedOutputQualityTiers.value);
     return tiers.length ? Math.min(...tiers) : QualityTier.UNKNOWN;
   });
 
   const maxOutputQualityTier = computed(() => {
-    const chain = toValue(audioProcessingChain);
-    if (chain) {
-      return audioQualityToTier(chain.fidelity?.max_output_quality);
-    }
-
     const tiers = Object.values(combinedOutputQualityTiers.value);
     return tiers.length ? Math.max(...tiers) : QualityTier.UNKNOWN;
   });

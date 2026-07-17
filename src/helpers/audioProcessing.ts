@@ -1,13 +1,24 @@
 import { $t } from "@/plugins/i18n";
+import { toRaw } from "vue";
 import {
   DSPFilterType,
   type AudioFormat,
+  type BalanceFilter,
+  type DSPConfig,
   type DSPDetails,
   type DSPFilter,
+  type GainFilter,
   type ParametricEQBand,
   type ParametricEQFilter,
   type ToneControlFilter,
 } from "@/plugins/api/interfaces";
+
+export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
+  return {
+    ...structuredClone(toRaw(config)),
+    preset_id: null,
+  };
+}
 
 export function areAudioFormatsEqual(
   left?: AudioFormat | null,
@@ -35,6 +46,16 @@ export function areDspDetailsEqual(
     left.output_gain === right.output_gain &&
     left.output_limiter === right.output_limiter &&
     areAudioFormatsEqual(left.output_format, right.output_format) &&
+    areDspFiltersEqual(left.filters, right.filters)
+  );
+}
+
+export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {
+  return (
+    left.enabled === right.enabled &&
+    left.input_gain === right.input_gain &&
+    left.output_gain === right.output_gain &&
+    (left.preset_id ?? null) === (right.preset_id ?? null) &&
     areDspFiltersEqual(left.filters, right.filters)
   );
 }
@@ -75,6 +96,15 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
   ) {
     return areParametricEqFiltersEqual(left, right);
   }
+  if (left.type === DSPFilterType.GAIN && right.type === DSPFilterType.GAIN) {
+    return areGainFiltersEqual(left, right);
+  }
+  if (
+    left.type === DSPFilterType.BALANCE &&
+    right.type === DSPFilterType.BALANCE
+  ) {
+    return areBalanceFiltersEqual(left, right);
+  }
   return false;
 }
 
@@ -101,6 +131,17 @@ function areParametricEqFiltersEqual(
       areParametricEqBandsEqual(band, right.bands[index]),
     )
   );
+}
+
+function areGainFiltersEqual(left: GainFilter, right: GainFilter): boolean {
+  return left.gain === right.gain;
+}
+
+function areBalanceFiltersEqual(
+  left: BalanceFilter,
+  right: BalanceFilter,
+): boolean {
+  return left.balance === right.balance;
 }
 
 function areParametricEqBandsEqual(

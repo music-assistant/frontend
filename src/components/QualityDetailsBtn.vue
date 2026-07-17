@@ -34,10 +34,7 @@
       }"
       @open-auto-focus.prevent
     >
-      <StreamDetailsChain
-        :audio-processing-chain="source.audioProcessingChain"
-        :stream-details="source.streamDetails"
-      />
+      <StreamDetailsChain :stream-details="streamDetails" />
     </PopoverContent>
   </Popover>
 </template>
@@ -54,39 +51,34 @@ import StreamDetailsChain from "@/components/StreamDetailsChain.vue";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 import {
+  hasEmbeddedAudioProcessing,
   qualityTierRangeLabel,
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
-import {
-  selectAudioProcessingSource,
-  useAudioProcessingChain,
-} from "@/composables/useAudioProcessingChain";
 
 // render the quality indicator as a rounded "pill" (matching the shadcn player
 // header controls) instead of the default square chip
 defineProps<{ pill?: boolean }>();
 
-const activeQueue = computed(() => store.activePlayerQueue);
 const streamDetails = computed(
-  () => activeQueue.value?.current_item?.streamdetails,
+  () => store.activePlayerQueue?.current_item?.streamdetails,
 );
-
-const { chain, isSupported } = useAudioProcessingChain(activeQueue);
-const source = computed(() =>
-  selectAudioProcessingSource(
-    isSupported.value,
-    chain.value,
-    streamDetails.value,
-  ),
+const audioProcessing = computed(
+  () => streamDetails.value?.audio_processing ?? undefined,
+);
+const legacyStreamDetails = computed(() =>
+  hasEmbeddedAudioProcessing(streamDetails.value)
+    ? undefined
+    : streamDetails.value,
 );
 const detailsAvailable = computed(
-  () => !!source.value.audioProcessingChain || !!source.value.streamDetails,
+  () => !!audioProcessing.value || !!legacyStreamDetails.value,
 );
 
 const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
-  () => source.value.streamDetails,
-  () => source.value.audioProcessingChain,
+  legacyStreamDetails,
+  audioProcessing,
 );
 
 const qualityLabel = computed(() => {

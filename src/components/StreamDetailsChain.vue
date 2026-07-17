@@ -4,10 +4,14 @@
        chain (input -> processing -> per-player output). The two columns share
        the --sd-row rhythm so rows and rail stay aligned. -->
   <AudioProcessingDetails
-    v-if="audioProcessingChain"
-    :chain="audioProcessingChain"
+    v-if="embeddedAudioProcessing && streamDetails"
+    :chain="embeddedAudioProcessing"
+    :stream-details="streamDetails"
   />
-  <TooltipProvider v-else-if="streamDetails" :delay-duration="200">
+  <TooltipProvider
+    v-else-if="streamDetails && !hasEmbeddedProcessing"
+    :delay-duration="200"
+  >
     <div class="flex">
       <div>
         <!-- Input header -->
@@ -570,7 +574,6 @@ import { AlertCircle, AudioLines, Info, SlidersHorizontal } from "@lucide/vue";
 import api from "@/plugins/api";
 import {
   ContentType,
-  type AudioProcessingChain,
   type DSPDetails,
   DSPState,
   type Player,
@@ -580,6 +583,7 @@ import {
 import { $t } from "@/plugins/i18n";
 import { areDspDetailsEqual, dspFilterText } from "@/helpers/audioProcessing";
 import {
+  hasEmbeddedAudioProcessing,
   isPcm,
   QualityTier,
   qualityTierToColor,
@@ -587,9 +591,14 @@ import {
 } from "@/composables/useStreamQuality";
 
 const props = defineProps<{
-  audioProcessingChain?: AudioProcessingChain;
   streamDetails?: StreamDetails;
 }>();
+const hasEmbeddedProcessing = computed(() =>
+  hasEmbeddedAudioProcessing(props.streamDetails),
+);
+const embeddedAudioProcessing = computed(
+  () => props.streamDetails?.audio_processing ?? undefined,
+);
 
 const { inputQualityTier, combinedOutputQualityTiers } = useStreamQuality(
   () => props.streamDetails,
