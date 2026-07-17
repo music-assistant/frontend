@@ -35,15 +35,26 @@
         <template v-for="boundary in boundaries" :key="boundary.key">
           <li
             v-if="selectable && entries.length"
-            class="relative z-10 flex justify-center py-2"
+            class="relative z-10 flex flex-col items-center justify-center gap-3 py-2"
+            :class="horizontal ? 'w-52 shrink-0' : 'w-full'"
           >
             <Button
               type="button"
               size="sm"
+              :variant="
+                hasSelectedBoundary && !boundary.selected
+                  ? 'outline'
+                  : 'default'
+              "
               class="h-auto min-h-11 min-w-44 max-w-full rounded-full px-4 py-2 text-center whitespace-normal"
+              :class="{
+                'ring-primary/30 ring-4 disabled:opacity-100':
+                  boundary.selected,
+              }"
               :disabled="disabled"
               :aria-label="boundary.label"
               :aria-pressed="boundary.selected"
+              :data-selected="boundary.selected ? 'true' : undefined"
               :data-previous-entry-id="boundary.previousEntryId"
               :data-next-entry-id="boundary.nextEntryId"
               @click="
@@ -52,12 +63,29 @@
             >
               <Check v-if="boundary.selected" class="size-4" />
               <Plus v-else class="size-4" />
-              {{
-                boundary.selected
-                  ? $t("providers.music_quiz.timeline_placed_here")
-                  : boundary.actionLabel
-              }}
+              <span class="flex flex-col">
+                <span>
+                  {{
+                    boundary.selected
+                      ? $t("providers.music_quiz.timeline_placed_here")
+                      : boundary.actionLabel
+                  }}
+                </span>
+                <span
+                  v-if="boundary.selected"
+                  class="text-primary-foreground/80 text-xs"
+                >
+                  {{ boundary.actionLabel }}
+                </span>
+              </span>
             </Button>
+            <div
+              v-if="boundary.selected"
+              data-testid="timeline-selected-boundary"
+              class="w-full max-w-xl"
+            >
+              <slot name="selected-boundary" />
+            </div>
           </li>
           <li
             v-if="boundary.entry"
@@ -142,6 +170,9 @@ const boundaries = computed<TimelineBoundary[]>(() =>
         nextEntryId === props.selectedNextEntryId,
     };
   }),
+);
+const hasSelectedBoundary = computed(() =>
+  boundaries.value.some((boundary) => boundary.selected),
 );
 
 watch(
