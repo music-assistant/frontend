@@ -30,6 +30,57 @@
       >
         {{ $t("providers.ai_radio.card.on_air") }}
       </Badge>
+      <TooltipProvider v-if="failedSession">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <span class="show-card__status-chip bg-destructive/90 text-white">
+              <TriangleAlert class="h-3 w-3 shrink-0" />
+              <span class="truncate">
+                {{
+                  $t("providers.ai_radio.card.status_failed", [
+                    sessionRelativeTime(failedSession),
+                  ])
+                }}
+              </span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" class="max-w-[220px] px-2.5 py-1">
+            {{
+              failedSession.error ||
+              $t("providers.ai_radio.card.session_failed")
+            }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <button
+        v-else-if="completedPlaylistSession"
+        type="button"
+        class="show-card__status-chip bg-primary/90 text-white"
+        :aria-label="$t('providers.ai_radio.card.open_playlist')"
+        @click.stop="onOpenGeneratedPlaylist"
+      >
+        <ListMusic class="h-3 w-3 shrink-0" />
+        <span class="truncate">
+          {{
+            $t("providers.ai_radio.card.status_playlist_ready", [
+              sessionRelativeTime(completedPlaylistSession),
+            ])
+          }}
+        </span>
+      </button>
+      <span
+        v-else-if="lastEndedSession"
+        class="show-card__status-chip bg-black/50 text-white/90"
+      >
+        <History class="h-3 w-3 shrink-0" />
+        <span class="truncate">
+          {{
+            $t("providers.ai_radio.card.status_last_on_air", [
+              sessionRelativeTime(lastEndedSession),
+            ])
+          }}
+        </span>
+      </span>
 
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
@@ -77,59 +128,6 @@
       </div>
       <div class="show-card__sub">
         {{ playlist?.name || show.source_playlist_id }}
-      </div>
-      <div class="show-card__status">
-        <TooltipProvider v-if="failedSession">
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <span class="show-card__status-inner text-destructive">
-                <TriangleAlert class="h-3 w-3 shrink-0" />
-                <span class="truncate">
-                  {{
-                    $t("providers.ai_radio.card.status_failed", [
-                      sessionRelativeTime(failedSession),
-                    ])
-                  }}
-                </span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" class="max-w-[280px]">
-              {{
-                failedSession.error ||
-                $t("providers.ai_radio.card.session_failed")
-              }}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <button
-          v-else-if="completedPlaylistSession"
-          type="button"
-          class="show-card__status-inner text-primary hover:underline"
-          :aria-label="$t('providers.ai_radio.card.open_playlist')"
-          @click.stop="onOpenGeneratedPlaylist"
-        >
-          <ListMusic class="h-3 w-3 shrink-0" />
-          <span class="truncate">
-            {{
-              $t("providers.ai_radio.card.status_playlist_ready", [
-                sessionRelativeTime(completedPlaylistSession),
-              ])
-            }}
-          </span>
-        </button>
-        <span
-          v-else-if="lastEndedSession"
-          class="show-card__status-inner text-muted-foreground"
-        >
-          <History class="h-3 w-3 shrink-0" />
-          <span class="truncate">
-            {{
-              $t("providers.ai_radio.card.status_last_on_air", [
-                sessionRelativeTime(lastEndedSession),
-              ])
-            }}
-          </span>
-        </span>
       </div>
 
       <button
@@ -511,18 +509,21 @@ function onDelete() {
   text-overflow: ellipsis;
   margin-top: 2px;
 }
-.show-card__status {
-  margin-top: 2px;
-  min-height: 18px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-}
-.show-card__status-inner {
+/* compact status pill overlaid on the artwork's bottom-left corner */
+.show-card__status-chip {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  max-width: calc(100% - 12px);
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-width: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 16px;
+  backdrop-filter: blur(4px);
 }
 
 .show-card__action {

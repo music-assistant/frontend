@@ -95,6 +95,7 @@ export const relativeTimeFromIso = (
   const absSeconds = Math.abs(diffSeconds);
   const rtf = new Intl.RelativeTimeFormat(i18n.global.locale.value, {
     numeric: "auto",
+    style: "narrow",
   });
   if (absSeconds < 60) return rtf.format(0, "second");
   if (absSeconds < 3600)

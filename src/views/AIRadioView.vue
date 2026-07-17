@@ -83,7 +83,7 @@
 
       <div
         v-else
-        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        class="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]"
       >
         <ShowCard
           v-for="show in shows"
@@ -112,11 +112,11 @@
 </template>
 
 <script setup lang="ts">
+import type { PlaylistSelection } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
 import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
 import OnAirHero from "@/components/ai-radio/OnAirHero.vue";
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
-import type { PlaylistSelection } from "@/components/ai-radio/AiRadioPlaylistPicker.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useShows } from "@/composables/ai-radio/useShows";
