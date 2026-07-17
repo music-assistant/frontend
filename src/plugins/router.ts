@@ -25,12 +25,14 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "party",
         name: "guest-party",
+        meta: { disableMediaSession: true },
         component: () =>
           import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
       {
         path: "quiz",
         name: "guest-quiz",
+        meta: { disableMediaSession: true },
         component: () =>
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"

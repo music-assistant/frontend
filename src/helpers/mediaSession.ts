@@ -1,3 +1,5 @@
+import type { RouteLocationNormalizedLoaded } from "vue-router";
+
 const actions: MediaSessionAction[] = [
   "play",
   "pause",
@@ -7,6 +9,13 @@ const actions: MediaSessionAction[] = [
   "seekforward",
   "seekbackward",
 ];
+
+export function isMediaSessionDisabled(
+  route: Pick<RouteLocationNormalizedLoaded, "meta">,
+  isGuestAccessSession: boolean,
+): boolean {
+  return isGuestAccessSession || route.meta.disableMediaSession === true;
+}
 
 export function resetMediaSession(): void {
   const session = navigator.mediaSession;
