@@ -261,8 +261,8 @@ describe("relativeTimeFromIso", () => {
   });
 
   it("formats minutes, hours and days ago", () => {
-    expect(at("2026-07-16T11:45:00Z")).toBe("15 minutes ago");
-    expect(at("2026-07-16T10:00:00Z")).toBe("2 hours ago");
-    expect(at("2026-07-13T12:00:00Z")).toBe("3 days ago");
+    expect(at("2026-07-16T11:45:00Z")).toBe("15m ago");
+    expect(at("2026-07-16T10:00:00Z")).toBe("2h ago");
+    expect(at("2026-07-13T12:00:00Z")).toBe("3d ago");
   });
 });
