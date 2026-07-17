@@ -2,7 +2,10 @@ import type {
   MusicQuizGuessTheSongPublicState,
   MusicQuizTimelinePublicState,
 } from "@/composables/useMusicQuiz";
-import { getMusicQuizRoundScoreLabel } from "@/helpers/music_quiz";
+import {
+  getMusicQuizRoundScore,
+  getMusicQuizRoundScoreLabel,
+} from "@/helpers/music_quiz";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
@@ -61,6 +64,7 @@ describe("Music Quiz round score labels", () => {
       current_round: currentRound,
     } satisfies MusicQuizTimelinePublicState;
 
+    expect(getMusicQuizRoundScore(state, "Player")).toBe(1250);
     expect(getMusicQuizRoundScoreLabel(state, "Player")).toBe("(+1250)");
   });
 
@@ -99,6 +103,7 @@ describe("Music Quiz round score labels", () => {
       },
     } satisfies MusicQuizGuessTheSongPublicState;
 
+    expect(getMusicQuizRoundScore(state, "Player")).toBe(1000);
     expect(getMusicQuizRoundScoreLabel(state, "Player")).toBe("(+1000)");
   });
 });

@@ -10,14 +10,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   mockDeleteGame,
   mockFetchPlaybackOptions,
-  mockReset,
+  mockReplay,
   mockResolveMusicQuizDefinition,
   mockStart,
   mockUseMusicQuizHost,
 } = vi.hoisted(() => ({
   mockDeleteGame: vi.fn(),
   mockFetchPlaybackOptions: vi.fn(),
-  mockReset: vi.fn(),
+  mockReplay: vi.fn(),
   mockResolveMusicQuizDefinition: vi.fn(),
   mockStart: vi.fn(),
   mockUseMusicQuizHost: vi.fn(),
@@ -123,8 +123,8 @@ describe("MusicQuizDashboardView host actions", () => {
     mockDeleteGame.mockResolvedValue(true);
     mockFetchPlaybackOptions.mockReset();
     mockFetchPlaybackOptions.mockResolvedValue(undefined);
-    mockReset.mockReset();
-    mockReset.mockResolvedValue(true);
+    mockReplay.mockReset();
+    mockReplay.mockResolvedValue(true);
     mockStart.mockReset();
     mockStart.mockResolvedValue(true);
     mockResolveMusicQuizDefinition.mockReset();
@@ -147,7 +147,7 @@ describe("MusicQuizDashboardView host actions", () => {
       playbackOptionsLegacy: ref(false),
       playbackOptionsError: ref(false),
       next: vi.fn(),
-      reset: mockReset,
+      replay: mockReplay,
       reveal: vi.fn(),
       start: mockStart,
       starting,
@@ -179,20 +179,19 @@ describe("MusicQuizDashboardView host actions", () => {
     expect(mockDeleteGame).toHaveBeenCalledOnce();
   });
 
-  it("replays with auto-start without deleting or opening setup", async () => {
+  it("replays immediately without deleting or opening setup", async () => {
     const wrapper = mountDashboard();
 
     await wrapper.get('[data-testid="play-again"]').trigger("click");
     await flushPromises();
 
-    expect(mockReset).toHaveBeenCalledOnce();
-    expect(mockReset).toHaveBeenCalledWith(true);
+    expect(mockReplay).toHaveBeenCalledOnce();
     expect(mockDeleteGame).not.toHaveBeenCalled();
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false);
   });
 
   it("keeps the finished game when replay reset fails", async () => {
-    mockReset.mockResolvedValue(false);
+    mockReplay.mockResolvedValue(false);
     const wrapper = mountDashboard();
 
     await wrapper.get('[data-testid="play-again"]').trigger("click");
@@ -278,7 +277,7 @@ describe("MusicQuizDashboardView host actions", () => {
   });
 
   it("prevents overlapping replay and fresh setup actions", async () => {
-    mockReset.mockImplementation(() => {
+    mockReplay.mockImplementation(() => {
       busy.value = true;
       return Promise.resolve(true);
     });
@@ -290,7 +289,7 @@ describe("MusicQuizDashboardView host actions", () => {
     await wrapper.get('[data-testid="set-up-new-game"]').trigger("click");
     await replayClick;
 
-    expect(mockReset).toHaveBeenCalledOnce();
+    expect(mockReplay).toHaveBeenCalledOnce();
     expect(mockDeleteGame).not.toHaveBeenCalled();
   });
 

@@ -32,6 +32,7 @@
         store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
       ]"
       @keydown="handleSheetKeydown"
+      @open-auto-focus="handleSheetOpenAutoFocus"
       @interact-outside="handleSheetInteractOutside"
     >
       <SheetHeader class="flex-row items-center gap-2 border-b pr-14">
@@ -186,6 +187,14 @@ function setMenuOpen(isOpen: boolean) {
 function handleSheetKeydown(event: KeyboardEvent) {
   event.stopPropagation();
   if (event.key === "Escape") setMenuOpen(false);
+}
+
+function handleSheetOpenAutoFocus(event: Event) {
+  if (!store.mobileLayout) return;
+  event.preventDefault();
+  if (event.target instanceof HTMLElement) {
+    event.target.focus({ preventScroll: true });
+  }
 }
 
 function handleSheetInteractOutside(event: Event) {

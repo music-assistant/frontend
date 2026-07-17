@@ -106,6 +106,7 @@ export class MusicAssistantApi {
     {
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
+      suppressGlobalError?: boolean;
     }
   >;
 
@@ -2441,20 +2442,26 @@ export class MusicAssistantApi {
     if ("error_code" in msg) {
       // always handle error (as we may be missing a resolve promise for this command)
       msg = msg as ErrorResultMessage;
-      console.error("[resultMessage]", msg);
+      if (resultPromise?.suppressGlobalError) {
+        // The caller opted out of global error handling (expected/best-effort
+        // failure); it still receives the rejection below.
+        console.debug("[resultMessage]", msg);
+      } else {
+        console.error("[resultMessage]", msg);
 
-      // Don't show toast for authentication errors - they're handled by the login UI
-      const errorMsg = msg.details || msg.error_code || "";
-      const isAuthError =
-        errorMsg.includes("Invalid credentials") ||
-        errorMsg.includes("Invalid username") ||
-        errorMsg.includes("Invalid password") ||
-        errorMsg.includes("Authentication failed") ||
-        errorMsg.includes("Authentication required") ||
-        errorMsg.toLowerCase().includes("unauthorized");
+        // Don't show toast for authentication errors - they're handled by the login UI
+        const errorMsg = msg.details || msg.error_code || "";
+        const isAuthError =
+          errorMsg.includes("Invalid credentials") ||
+          errorMsg.includes("Invalid username") ||
+          errorMsg.includes("Invalid password") ||
+          errorMsg.includes("Authentication failed") ||
+          errorMsg.includes("Authentication required") ||
+          errorMsg.toLowerCase().includes("unauthorized");
 
-      if (!isAuthError) {
-        toast.error(msg.details || msg.error_code);
+        if (!isAuthError) {
+          toast.error(msg.details || msg.error_code);
+        }
       }
     } else if (DEBUG) {
       console.log("[resultMessage]", msg);
@@ -2944,6 +2951,14 @@ export class MusicAssistantApi {
   public sendCommand<Result>(
     command: string,
     args?: Record<string, unknown>,
+    options?: {
+      /**
+       * Suppress the global console.error + error toast for an error result.
+       * Use for best-effort commands where the caller handles (or expects)
+       * failure itself; the returned promise still rejects as usual.
+       */
+      suppressGlobalError?: boolean;
+    },
   ): Promise<Result> {
     // send command to the server and return promise where the result can be returned
     const cmdId = this._genCmdId();
@@ -2951,6 +2966,7 @@ export class MusicAssistantApi {
       this.commands.set(cmdId, {
         resolve: resolve as (result: unknown) => void,
         reject,
+        suppressGlobalError: options?.suppressGlobalError,
       });
       this._sendCommand(command, args, cmdId);
     });

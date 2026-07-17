@@ -104,6 +104,7 @@ const makeAlbum = (id: string) =>
 
 beforeEach(() => {
   mockPlayMedia.mockReset();
+  mockPlayMedia.mockResolvedValue(undefined);
   mockShowContextMenu.mockReset();
   mockShowPlayMenu.mockReset();
 });
@@ -165,7 +166,7 @@ describe("handlePlayBtnClick with sortBy", () => {
       "duration_desc",
       "position_desc",
     ]) {
-      mockPlayMedia.mockReset();
+      mockPlayMedia.mockClear();
       handlePlayBtnClick(track, 0, 0, playlist, false, sortKey);
       expect(mockPlayMedia).toHaveBeenCalledWith(
         playlist.uri,

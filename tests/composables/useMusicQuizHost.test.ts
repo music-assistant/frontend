@@ -271,6 +271,18 @@ describe("useMusicQuizHost", () => {
     expect(host.playbackOptionsError.value).toBe(false);
   });
 
+  it("skips setup data when only host controls are needed", async () => {
+    useMusicQuizHost({
+      loadSetupData: false,
+      notifyError: vi.fn(),
+    });
+    await flushPromises();
+
+    expect(mockGetMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockGetAvailableMusicQuizTypes).not.toHaveBeenCalled();
+    expect(mockGetMusicQuizPlaybackOptions).not.toHaveBeenCalled();
+  });
+
   it("exposes playback discovery loading state", async () => {
     const pending = deferred<typeof PLAYBACK_OPTIONS>();
     mockGetMusicQuizPlaybackOptions.mockReturnValue(pending.promise);
@@ -406,6 +418,59 @@ describe("useMusicQuizHost", () => {
 
     expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(1, false);
     expect(mockResetMusicQuiz).toHaveBeenNthCalledWith(2, true);
+  });
+
+  it("replays immediately without scheduling a new lobby", async () => {
+    const startedState = {
+      ...HOST_STATE,
+      phase: "answering",
+    } as const;
+    mockStartMusicQuiz.mockResolvedValueOnce(startedState);
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    await expect(host.replay()).resolves.toBe(true);
+
+    expect(mockResetMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockResetMusicQuiz).toHaveBeenCalledWith(false);
+    expect(mockStartMusicQuiz).toHaveBeenCalledOnce();
+    expect(mockResetMusicQuiz.mock.invocationCallOrder[0]).toBeLessThan(
+      mockStartMusicQuiz.mock.invocationCallOrder[0],
+    );
+    expect(host.state.value).toEqual(startedState);
+  });
+
+  it("keeps replay serialized across reset and start", async () => {
+    const pendingReset = deferred<typeof HOST_STATE>();
+    mockResetMusicQuiz.mockReturnValueOnce(pendingReset.promise);
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    const replay = host.replay();
+
+    await expect(host.replay()).resolves.toBe(false);
+    expect(host.busy.value).toBe(true);
+    expect(host.starting.value).toBe(true);
+    expect(mockStartMusicQuiz).not.toHaveBeenCalled();
+
+    pendingReset.resolve(HOST_STATE);
+    await expect(replay).resolves.toBe(true);
+
+    expect(mockStartMusicQuiz).toHaveBeenCalledOnce();
+    expect(host.busy.value).toBe(false);
+    expect(host.starting.value).toBe(false);
+  });
+
+  it("stays in the lobby when immediate replay cannot start", async () => {
+    mockStartMusicQuiz.mockRejectedValueOnce(new Error("Unavailable"));
+    const host = useMusicQuizHost({ notifyError: vi.fn() });
+    await flushPromises();
+
+    await expect(host.replay()).resolves.toBe(false);
+
+    expect(host.state.value).toEqual(HOST_STATE);
+    expect(host.busy.value).toBe(false);
+    expect(host.starting.value).toBe(false);
   });
 
   it("exposes preparation state while a game is starting", async () => {

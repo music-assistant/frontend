@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   mockAdminState,
   mockGetProviderConfigs,
+  mockResolveMusicQuizDefinition,
   mockRouterPush,
   mockSendCommand,
   mockSubscribe,
@@ -15,6 +16,7 @@ const {
     current: undefined as { value: boolean } | undefined,
   },
   mockGetProviderConfigs: vi.fn(),
+  mockResolveMusicQuizDefinition: vi.fn(),
   mockRouterPush: vi.fn(),
   mockSendCommand: vi.fn(),
   mockSubscribe: vi.fn(),
@@ -22,8 +24,10 @@ const {
 }));
 
 vi.mock("@/components/music-quiz/game_types", () => ({
+  getMusicQuizPhaseLabelKey: () =>
+    "providers.music_quiz.phase_waiting_for_players",
   MUSIC_QUIZ_GAME_TYPES: [],
-  resolveMusicQuizDefinition: vi.fn(),
+  resolveMusicQuizDefinition: mockResolveMusicQuizDefinition,
   supportsMusicQuizListenIn: vi.fn(() => false),
 }));
 
@@ -78,6 +82,7 @@ describe("MusicQuizDashboardView", () => {
     mockSubscribe.mockReset();
     mockToastError.mockReset();
     mockGetProviderConfigs.mockReset();
+    mockResolveMusicQuizDefinition.mockReset();
     mockRouterPush.mockReset();
     if (mockAdminState.current) mockAdminState.current.value = false;
     mockGetProviderConfigs.mockResolvedValue([]);
@@ -217,6 +222,43 @@ describe("MusicQuizDashboardView", () => {
       true,
     );
   });
+
+  it("opens the participant view in the current tab", async () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition());
+    mockSendCommand.mockImplementation((command: string) => {
+      if (command === "music_quiz/get") {
+        return Promise.resolve({
+          quiz_type: "guess_the_song",
+          answer_type: "multiple_choice",
+          phase: "lobby",
+          name: "Quiz",
+          round_count: 3,
+          players: [],
+          current_round: null,
+          mode: "venue",
+        });
+      }
+      if (command === "music_quiz/available_quiz_types") {
+        return Promise.resolve(["guess_the_song"]);
+      }
+      if (command === "music_quiz/playback_options") {
+        return Promise.resolve({
+          default_playback_mode: "venue",
+          default_venue_player_id: "living-room",
+          venue_available: true,
+          remote_available: true,
+          venue_players: [],
+        });
+      }
+      return Promise.resolve(null);
+    });
+    const wrapper = mountDashboard();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="music-quiz-play-along"]').trigger("click");
+
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: "guest-quiz" });
+  });
 });
 
 function mountDashboard() {
@@ -247,6 +289,13 @@ function mountDashboard() {
           template: "<div><slot /></div>",
         },
         MusicQuizConnectionBanners: true,
+        MusicQuizHostPanel: {
+          template: '<div><slot name="game" /></div>',
+        },
+        MusicQuizSessionHeader: {
+          template: '<header><slot name="actions" /></header>',
+        },
+        MusicQuizSessionPanels: true,
         MusicQuizSetupWizard: {
           props: ["playbackSelection"],
           emits: ["update:playbackSelection"],
@@ -256,4 +305,26 @@ function mountDashboard() {
       },
     },
   });
+}
+
+function createDefinition() {
+  return {
+    game: {
+      adapters: {
+        host: { template: "<div />" },
+        hostPanel: { template: "<div />" },
+        present: { template: "<div />" },
+      },
+      icon: { template: "<span />" },
+      labelKey: "providers.music_quiz.title",
+      supportsListenIn: false,
+      usesRevealCountdown: false,
+    },
+    answer: {
+      adapters: {
+        host: { template: "<div />" },
+        present: { template: "<div />" },
+      },
+    },
+  };
 }

@@ -15,7 +15,38 @@ vi.mock("@/helpers/utils", () => ({
 }));
 
 describe("Timeline player placement", () => {
-  it("submits exact start and end placement boundaries", () => {
+  it.each([
+    ["start", null, "anchor"],
+    ["end", "anchor", null],
+  ] as const)(
+    "submits the exact %s placement boundary",
+    (_label, previousEntryId, nextEntryId) => {
+      const wrapper = shallowMount(TimelinePlayerAnswer, {
+        props: {
+          state: baseState,
+          currentRound: baseRound,
+          busy: false,
+        },
+      });
+
+      wrapper
+        .getComponent(TimelineDisplay)
+        .vm.$emit("select", previousEntryId, nextEntryId);
+
+      expect(wrapper.emitted("submit")).toEqual([
+        [
+          {
+            answer_type: "timeline",
+            action: "place",
+            previous_entry_id: previousEntryId,
+            next_entry_id: nextEntryId,
+          },
+        ],
+      ]);
+    },
+  );
+
+  it("shows and locks the chosen boundary while placement is pending", async () => {
     const wrapper = shallowMount(TimelinePlayerAnswer, {
       props: {
         state: baseState,
@@ -25,27 +56,29 @@ describe("Timeline player placement", () => {
     });
     const timeline = wrapper.getComponent(TimelineDisplay);
 
-    timeline.vm.$emit("select", null, "anchor");
     timeline.vm.$emit("select", "anchor", null);
+    await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted("submit")).toEqual([
-      [
-        {
-          answer_type: "timeline",
-          action: "place",
-          previous_entry_id: null,
-          next_entry_id: "anchor",
-        },
-      ],
-      [
-        {
-          answer_type: "timeline",
-          action: "place",
-          previous_entry_id: "anchor",
-          next_entry_id: null,
-        },
-      ],
-    ]);
+    expect(wrapper.text()).toContain(
+      "providers.music_quiz.timeline_placement_locked",
+    );
+    expect(timeline.props()).toMatchObject({
+      disabled: true,
+      selectedPreviousEntryId: "anchor",
+      selectedNextEntryId: null,
+    });
+
+    timeline.vm.$emit("select", null, "anchor");
+    expect(wrapper.emitted("submit")).toHaveLength(1);
+
+    await wrapper.setProps({ busy: true });
+    await wrapper.setProps({ busy: false });
+
+    expect(wrapper.getComponent(TimelineDisplay).props()).toMatchObject({
+      disabled: false,
+      selectedPreviousEntryId: null,
+      selectedNextEntryId: null,
+    });
   });
 
   it("keeps late joiners waiting until their active round", () => {

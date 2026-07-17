@@ -1,6 +1,7 @@
 // several helpers for dealing with the api and its (media) items
 
-import api from ".";
+import { watch } from "vue";
+import api, { ConnectionState } from ".";
 import {
   AudioSource,
   MediaItemType,
@@ -9,6 +10,29 @@ import {
   Player,
   PlayerQueue,
 } from "./interfaces";
+
+/**
+ * Resolve once the API connection is fully initialized (server state such as
+ * providers and players has been fetched). Resolves immediately when already
+ * initialized. Use before commands whose result depends on that state being
+ * present (e.g. provider-presence checks).
+ */
+export async function waitForApiInitialization(): Promise<void> {
+  if (api.state.value === ConnectionState.INITIALIZED) return;
+
+  await new Promise<void>((resolve) => {
+    const unwatch = watch(
+      () => api.state.value,
+      (newState) => {
+        if (newState === ConnectionState.INITIALIZED) {
+          unwatch();
+          resolve();
+        }
+      },
+      { immediate: true },
+    );
+  });
+}
 
 /**
  * Returns true when the queue's current item is an infinite stream

@@ -18,6 +18,7 @@ vi.mock("@/plugins/i18n", () => ({
 describe("GuestEntryView", () => {
   it.each([
     ["loading", "guest.loading_title", "guest.loading_description"],
+    ["error", "guest.error_title", "guest.error_description"],
     ["quiz-inactive", "guest.no_quiz_title", "guest.no_quiz_description"],
     [
       "inactive",

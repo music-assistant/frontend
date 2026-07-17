@@ -30,5 +30,6 @@ describe("guest access routing", () => {
 
   it("does not redirect normal users", () => {
     expect(getGuestNavigationRedirect(false, "/discover")).toBeUndefined();
+    expect(getGuestNavigationRedirect(false, "/guest")).toBeUndefined();
   });
 });
