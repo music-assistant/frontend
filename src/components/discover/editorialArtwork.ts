@@ -10,11 +10,14 @@ type AnyItem = MediaItemType | ItemMapping;
 
 // Items without artwork (and genres, whose images are icons) use the MA
 // banner artwork as background (matches the "Browse by genre" tiles on the
-// home screen).
-const bannerArtwork = new URL(
+// home screen). Exported so non-media cards (e.g. AI Radio shows) can use
+// the same fallback treatment.
+export const bannerArtwork = new URL(
   "@/assets/logo/banner-no-logo.png",
   import.meta.url,
 ).href;
+
+export const bannerBackground = `url("${bannerArtwork}") center / cover no-repeat`;
 
 /** Up-to-two-letter initials from a name (first letters of the first two
  * words, or the first two characters of a single word). */
