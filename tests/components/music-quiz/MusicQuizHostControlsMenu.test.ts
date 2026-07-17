@@ -28,10 +28,7 @@ vi.mock("@/composables/useMusicQuizHost", () => ({
 }));
 
 vi.mock("@/composables/useMusicQuiz", () => ({
-  isSupportedMusicQuiz: (state: {
-    answer_type?: string;
-    quiz_type?: string;
-  }) =>
+  isSupportedMusicQuiz: (state: { answer_type?: string; quiz_type?: string }) =>
     state.quiz_type === "guess_the_song" &&
     state.answer_type === "multiple_choice",
 }));
