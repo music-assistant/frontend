@@ -39,7 +39,6 @@
           color="rgb(var(--v-theme-primary))"
           :bars="4"
           :height="16"
-
         />
         <NowPlayingBadge v-else :show-badge="false" :show-icon="true" />
       </div>
