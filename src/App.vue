@@ -316,10 +316,12 @@ const completeInitialization = async () => {
       console.error("[App] Failed to check music_quiz status:", error);
       store.enabledPlugins.delete("music_quiz");
     }
+  } else if (isCastViewer) {
+    console.debug("[App] Cast viewer - fetching player/queue state only");
+    // Dashboards render live player/queue state, which regular guests don't need
+    await api.fetchState();
   } else {
-    console.debug(
-      "[App] Guest/cast viewer user - skipping regular user initialization",
-    );
+    console.debug("[App] Guest user - skipping regular user initialization");
     await api.fetchProviders();
   }
 
