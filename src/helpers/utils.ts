@@ -816,7 +816,6 @@ export const handleMediaItemClick = function (
       params: {
         itemId: item.item_id,
         provider: item.provider,
-        mediaItem: item,
       },
     });
     return;
