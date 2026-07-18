@@ -212,7 +212,7 @@ interface Props {
   showOnlyArtist?: boolean;
   showQualityDetailsBtn?: boolean;
   colorPalette: ImageColorPalette;
-  primaryColor: string;
+  primaryColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
