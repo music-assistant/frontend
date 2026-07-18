@@ -1176,8 +1176,8 @@ const menuItems = computed(() => {
     items.push({
       label: "tooltip.collapse_collections",
       icon: params.value.collapseCollections
-        ? "mdi-account-music"
-        : "mdi-account-music-outline",
+        ? "mdi-note-multiple"
+        : "mdi-note-multiple-outline",
       action: toggleCollapseCollections,
       active: params.value.collapseCollections,
       overflowAllowed: true,
