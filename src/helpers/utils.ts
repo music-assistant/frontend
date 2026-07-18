@@ -34,7 +34,7 @@ import { toast } from "vue-sonner";
 import { webPlayer } from "@/plugins/web_player";
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
 
-export const openLinkInNewTab = function(url: string) {
+export const openLinkInNewTab = function (url: string) {
   if (!url) return url;
   // auto-translate music-assistant.io links to beta site
   if (
@@ -56,7 +56,7 @@ export const parseBool = (val: string | boolean | undefined | null) => {
   return !!JSON.parse(String(val).toLowerCase());
 };
 
-export const formatDuration = function(totalSeconds: number) {
+export const formatDuration = function (totalSeconds: number) {
   totalSeconds = Math.floor(totalSeconds); // round to whole seconds
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds - hours * 3600) / 60);
@@ -80,7 +80,7 @@ export const formatDuration = function(totalSeconds: number) {
   }
 };
 
-export const truncateString = function(str: string, num: number) {
+export const truncateString = function (str: string, num: number) {
   if (!str) return "";
   // If the length of str is less than or equal to num
   // just return str--don't truncate it.
@@ -91,7 +91,7 @@ export const truncateString = function(str: string, num: number) {
   return str.slice(0, num) + "...";
 };
 
-export const isColorDark = function(hexColor: string) {
+export const isColorDark = function (hexColor: string) {
   if (hexColor.includes("var")) {
     hexColor = getComputedStyle(document.documentElement).getPropertyValue(
       hexColor,
@@ -128,7 +128,7 @@ export const formatRelativeTime = (seconds: number): string => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 };
 
-export const buildItemUri = function(
+export const buildItemUri = function (
   mediaType: MediaType,
   mapping: ProviderMapping | null,
   fallbackItemId: string,
@@ -149,12 +149,12 @@ export const kebabize = (str: string) => {
     .join("");
 };
 
-export const toSentenceCase = function(str: string): string {
+export const toSentenceCase = function (str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-export const getArtistsString = function(
+export const getArtistsString = function (
   artists: Array<Artist | ItemMapping>,
   size?: number,
 ) {
@@ -173,26 +173,27 @@ export const getArtistsString = function(
     .join(" | ");
 };
 
-export const getBrowseFolderName = function(browseItem: BrowseFolder) {
+export const getBrowseFolderName = function (browseItem: BrowseFolder) {
   // The server now provides the display name and (when a resolver is active) strips
   // translation_key from the wire, so the client can no longer localize it itself: use the
   // server-provided name directly, falling back to the path for unnamed folders.
   return browseItem?.name || browseItem?.path || "";
 };
 
-export const getPlayerName = function(player: Player, truncate = 26) {
+export const getPlayerName = function (player: Player, truncate = 26) {
   if (!player) return "";
   const availableChildPlayers = player.group_members.filter(
     (x) => api.players[x]?.available && x != player.player_id,
   );
   if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
-    return `${truncateString(player.name, truncate - 3)} +${availableChildPlayers.length
-      }`;
+    return `${truncateString(player.name, truncate - 3)} +${
+      availableChildPlayers.length
+    }`;
   }
   return truncateString(player.name, truncate);
 };
 
-export const getStreamingProviderMappings = function(
+export const getStreamingProviderMappings = function (
   itemDetails: MediaItemType,
 ) {
   const result: ProviderMapping[] = [];
@@ -225,14 +226,14 @@ const IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION = 31;
 // allowed value for arbitrary caller-supplied sizes.
 const IMAGEPROXY_ALLOWED_SIZES = [80, 160, 256, 512, 1024] as const;
 
-const serverSupportsOpaqueImageProxy = function(): boolean {
+const serverSupportsOpaqueImageProxy = function (): boolean {
   const schema = api.serverInfo.value?.schema_version;
   return (
     typeof schema === "number" && schema >= IMAGEPROXY_OPAQUE_ID_SCHEMA_VERSION
   );
 };
 
-const normalizeImageProxySize = function(size?: number): number {
+const normalizeImageProxySize = function (size?: number): number {
   if (!size || size <= 0) return 0;
   if (!serverSupportsOpaqueImageProxy()) return size;
   for (const allowed of IMAGEPROXY_ALLOWED_SIZES) {
@@ -249,7 +250,7 @@ const normalizeImageProxySize = function(size?: number): number {
  * - If URL is already an imageproxy URL from another host, transform to use our baseUrl
  * - Otherwise return the URL as-is
  */
-export const getMediaImageUrl = function(
+export const getMediaImageUrl = function (
   imageUrl: string | undefined,
 ): string {
   if (!imageUrl) return "";
@@ -298,7 +299,7 @@ export const getMediaImageUrl = function(
 /**
  * Check if an image provider is available.
  */
-const imageProviderIsAvailable = function(provider: string) {
+const imageProviderIsAvailable = function (provider: string) {
   if (provider === "http" || provider === "builtin") return true;
   return api.getProvider(provider)?.available === true;
 };
@@ -306,7 +307,7 @@ const imageProviderIsAvailable = function(provider: string) {
 /**
  * Get image from a MediaItem, ItemMapping, or QueueItem.
  */
-export const getMediaItemImage = function(
+export const getMediaItemImage = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
 ): MediaItemImage | undefined {
@@ -371,7 +372,7 @@ export const getMediaItemImage = function(
  * Get the URL for a MediaItemImage, handling protocol mismatches and resizing.
  * This is used for MediaItem images (albums, tracks, artists, etc.)
  */
-export const getMediaItemImageUrl = function(
+export const getMediaItemImageUrl = function (
   img: MediaItemImage,
   size?: number,
   checksum?: string,
@@ -411,7 +412,7 @@ export const getMediaItemImageUrl = function(
 /**
  * Get the image thumbnail URL for a MediaItem, ItemMapping, or QueueItem.
  */
-export const getImageThumbForItem = function(
+export const getImageThumbForItem = function (
   mediaItem?: MediaItemType | ItemMapping | QueueItem,
   type: ImageType = ImageType.THUMB,
   size?: number,
@@ -425,7 +426,7 @@ export const getImageThumbForItem = function(
   return getMediaItemImageUrl(img, size, checksum);
 };
 
-export const numberRange = function(start: number, end: number): number[] {
+export const numberRange = function (start: number, end: number): number[] {
   return Array(end - start + 1)
     .fill(start)
     .map((x, y) => x + y);
@@ -524,7 +525,7 @@ export function scrollElement(el: HTMLElement, to: number, duration: number) {
   animateScroll();
 }
 
-export const panelViewItemResponsive = function(displaySize: number) {
+export const panelViewItemResponsive = function (displaySize: number) {
   if (
     getBreakpointValue({
       breakpoint: "bp1",
@@ -619,7 +620,7 @@ export function isTouchscreenDevice() {
   return result;
 }
 
-export const markdownToHtml = function(text: string): string {
+export const markdownToHtml = function (text: string): string {
   text = text
     .replaceAll(/\\n/g, "<br />")
     .replaceAll("\n", "<br />")
@@ -686,7 +687,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export const isBuiltinPlayer = function(player: Player): boolean {
+export const isBuiltinPlayer = function (player: Player): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
@@ -698,7 +699,7 @@ export const isBuiltinPlayer = function(player: Player): boolean {
   );
 };
 
-export const playerVisible = function(
+export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
 ): boolean {
@@ -732,7 +733,7 @@ export const playerVisible = function(
 
 // Keep hidden players out of group pickers unless they represent this device or
 // are player types intended to be grouped with audio players.
-export const groupMemberPickerVisible = function(player: Player): boolean {
+export const groupMemberPickerVisible = function (player: Player): boolean {
   return (
     !player.hide_in_ui ||
     isBuiltinPlayer(player) ||
@@ -742,7 +743,7 @@ export const groupMemberPickerVisible = function(player: Player): boolean {
 };
 
 /* Handle play button click */
-export const handlePlayBtnClick = function(
+export const handlePlayBtnClick = function (
   item: MediaItemTypeOrItemMapping,
   posX: number,
   posY: number,
@@ -778,7 +779,7 @@ export const handlePlayBtnClick = function(
 };
 
 /* Handle media item click */
-export const handleMediaItemClick = function(
+export const handleMediaItemClick = function (
   item: MediaItemTypeOrItemMapping,
   posX: number,
   posY: number,
@@ -832,7 +833,7 @@ export const handleMediaItemClick = function(
 };
 
 /* Handle menu button click */
-export const handleMenuBtnClick = function(
+export const handleMenuBtnClick = function (
   item: MediaItemTypeOrItemMapping | MediaItemTypeOrItemMapping[],
   posX: number,
   posY: number,
@@ -855,7 +856,7 @@ export const handleMenuBtnClick = function(
 };
 
 /* Handle menu button click */
-export const handleCollectionClick = function(
+export const handleCollectionClick = function (
   item: MediaCollection,
   posX: number,
   posY: number,
@@ -881,7 +882,7 @@ export const handleCollectionClick = function(
  * This prevents users from being confused by a lot of auto-generated players
  * in the Players and Providers settings pages.
  */
-export const isHiddenSendspinWebPlayer = function(
+export const isHiddenSendspinWebPlayer = function (
   playerConfig: PlayerConfig,
 ): boolean {
   if (playerConfig.provider !== "sendspin") return false;
@@ -898,7 +899,7 @@ export const isHiddenSendspinWebPlayer = function(
   return !player?.available;
 };
 
-export const getVolumeIconComponent = function(
+export const getVolumeIconComponent = function (
   player: Player,
   displayVolume?: number,
   muted = player.volume_muted ?? false,

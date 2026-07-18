@@ -709,7 +709,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem { }
+export interface Artist extends MediaItem {}
 
 export interface Album extends MediaItem {
   year?: number;
@@ -741,7 +741,7 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem { }
+export interface Radio extends MediaItem {}
 
 export interface SoundEffect extends MediaItem {
   duration: number;
