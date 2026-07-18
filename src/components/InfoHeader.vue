@@ -70,6 +70,17 @@
               <MediaItemThumb :item="item" size="calc(100%)" />
             </v-avatar>
           </div>
+          <div
+            v-else-if="
+              item.media_type && item.media_type == MediaType.COLLECTION
+            "
+          >
+            <MediaCollectionThumb
+              :item="item as MediaCollection"
+              size="calc(100%)"
+              style="max-height: 256px"
+            />
+          </div>
           <div v-else>
             <MediaItemThumb
               :item="item"
@@ -462,7 +473,12 @@ import type {
   ItemMapping,
   MediaItemType,
 } from "@/plugins/api/interfaces";
-import { ImageType, MediaType, Track } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  Track,
+  MediaCollection,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -475,6 +491,7 @@ import MarqueeText from "./MarqueeText.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
 import ProviderIcon from "./ProviderIcon.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {

@@ -7,6 +7,7 @@
     :src="imgData"
     :alt="item?.name ?? ''"
     :class="{ rounded: rounded }"
+    :style="imageStyle"
     contain
     :lazy-src="theme.current.value.dark ? imgCoverDark : imgCoverLight"
   />
@@ -35,6 +36,7 @@ export interface Props {
   fallback?: string;
   rounded?: boolean;
   thumbnail?: boolean;
+  scale?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -43,34 +45,49 @@ const props = withDefaults(defineProps<Props>(), {
   fallback: undefined,
   rounded: true,
   thumbnail: true,
+  scale: 1,
 });
 
 const theme = useTheme();
 
+const imageStyle = computed(() => ({
+  transform: `scale(${props.scale})`,
+  transformOrigin: "bottom left",
+}));
+
 function getThumbSize() {
-  if (typeof props.size == "number") {
+  if (typeof props.size === "number") {
     return props.size;
-  } else if (props.thumbnail) return 256;
-  else return 0;
+  } else if (props.thumbnail) {
+    return 256;
+  } else {
+    return 0;
+  }
 }
+
 const thumbSize = getThumbSize();
 
 function getFallbackImage() {
   if (props.fallback) return props.fallback;
+
   if (
     props.item &&
     "media_type" in props.item &&
-    props.item.media_type == MediaType.FOLDER
-  )
+    props.item.media_type === MediaType.FOLDER
+  ) {
     return iconFolder;
+  }
+
   if (!props.item) return "";
   if (!props.item.name) return "";
+
   return getAvatarImage(
     props.item.name,
     theme.current.value.dark,
     thumbSize || 256,
   );
 }
+
 const fallbackImage = getFallbackImage();
 
 const imgData = computed(() =>
@@ -100,6 +117,13 @@ export const getAvatarImage = function (
     }&bold=true&background=a0a0a0&color=cccccc`;
 };
 </script>
+
+<style scoped>
+.v-avatar.v-avatar--density-default {
+  height: 100% !important;
+  width: 100% !important;
+}
+</style>
 
 <style scoped>
 .v-avatar.v-avatar--density-default {

@@ -50,7 +50,23 @@
             v-else-if="!albumTrackView"
             class="media-thumb listitem-media-thumb"
           >
-            <MediaItemThumb size="50" :item="isAvailable ? item : undefined" />
+            <div
+              v-if="
+                item.media_type == MediaType.COLLECTION && item != undefined
+              "
+            >
+              <MediaCollectionThumb
+                size="50"
+                :item="item as MediaCollection"
+                thumb-offset="5"
+              />
+            </div>
+            <div v-else>
+              <MediaItemThumb
+                size="50"
+                :item="isAvailable ? item : undefined"
+              />
+            </div>
           </div>
         </template>
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
@@ -86,10 +102,23 @@
               :class="{ 'is-playable': item.is_playable }"
               @click="onPlayAreaClick"
             >
-              <MediaItemThumb
-                size="50"
-                :item="isAvailable ? item : undefined"
-              />
+              <div
+                v-if="
+                  item.media_type == MediaType.COLLECTION && item != undefined
+                "
+              >
+                <MediaCollectionThumb
+                  size="50"
+                  :item="item as MediaCollection"
+                  thumb-offset="5"
+                />
+              </div>
+              <div v-else>
+                <MediaItemThumb
+                  size="50"
+                  :item="isAvailable ? item : undefined"
+                />
+              </div>
               <span v-if="item.is_playable" class="listitem-play-blue">
                 <Play :size="16" fill="currentColor" :stroke-width="0" />
               </span>
@@ -287,6 +316,7 @@ import {
   AlbumType,
   ContentType,
   MediaType,
+  MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -300,6 +330,7 @@ import { iconHiRes } from "./QualityDetailsBtn.vue";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import ListviewItemTitle from "./ListviewItemTitle.vue";
+import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 
 // properties
 export interface Props {
