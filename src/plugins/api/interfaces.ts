@@ -107,6 +107,7 @@ export enum MediaType {
   SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
+  COLLECTION = "collection",
   GENRE = "genre",
   GENRE_ALIAS = "genre_alias",
   FOLDER = "folder",
@@ -708,7 +709,7 @@ export interface ItemMapping extends _MediaItemBase {
   year?: number;
 }
 
-export interface Artist extends MediaItem {}
+export interface Artist extends MediaItem { }
 
 export interface Album extends MediaItem {
   year?: number;
@@ -740,7 +741,7 @@ export interface Playlist extends MediaItem {
   is_dynamic: boolean;
 }
 
-export interface Radio extends MediaItem {}
+export interface Radio extends MediaItem { }
 
 export interface SoundEffect extends MediaItem {
   duration: number;
@@ -790,6 +791,10 @@ export interface RecommendationFolder extends BrowseFolder {
   icon?: string;
   subtitle?: string;
   items: MediaItemTypeOrItemMapping[];
+}
+
+export interface MediaCollection extends MediaItem {
+  items: MediaItemType[];
 }
 
 export type MediaItemType =

@@ -297,6 +297,7 @@ export interface LoadDataParams {
   refresh?: boolean;
   albumType?: string[];
   provider?: string[];
+  collapseCollections?: boolean;
 }
 // properties
 export interface Props {
@@ -315,6 +316,7 @@ export interface Props {
   showSelectButton?: boolean;
   showAlbumTypeFilter?: boolean;
   showProviderFilter?: boolean;
+  showCollapseCollections?: boolean;
   // when set, the provider filter allows only a single selection at a time
   singleProviderFilter?: boolean;
   // when set, the provider filter is a required single selector: exactly one
@@ -368,6 +370,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSelectButton: undefined,
   showAlbumTypeFilter: undefined,
   showProviderFilter: undefined,
+  showCollapseCollections: undefined,
   singleProviderFilter: false,
   requireProviderSelection: false,
   providerFilterOptions: undefined,
@@ -579,6 +582,17 @@ const toggleAlbumArtistsFilter = function () {
     props.itemtype,
     "albumArtistsFilter",
     params.value.albumArtistsFilter,
+  );
+  loadData(undefined, undefined, true);
+};
+
+const toggleCollapseCollections = function () {
+  params.value.collapseCollections = !params.value.collapseCollections;
+  setItemsListingPreference(
+    props.path || props.itemtype,
+    props.itemtype,
+    "collapseCollections",
+    params.value.collapseCollections,
   );
   loadData(undefined, undefined, true);
 };
@@ -1157,6 +1171,19 @@ const menuItems = computed(() => {
     });
   }
 
+  // collapse collections filter
+  if (props.showCollapseCollections === true) {
+    items.push({
+      label: "tooltip.collapse_collections",
+      icon: params.value.collapseCollections
+        ? "mdi-account-music"
+        : "mdi-account-music-outline",
+      action: toggleCollapseCollections,
+      active: params.value.collapseCollections,
+      overflowAllowed: true,
+    });
+  }
+
   // has media mappings filter (hide empty genres / show only defaults)
   if (props.showHideEmptyFilter === true) {
     const hef = params.value.hideEmptyFilter;
@@ -1460,6 +1487,14 @@ const restoreSettings = async function () {
     prefs.albumArtistsFilter !== undefined
   ) {
     params.value.albumArtistsFilter = prefs.albumArtistsFilter;
+  }
+
+  // get stored/default collapse Collection for this itemtype
+  if (
+    props.showCollapseCollections !== false &&
+    prefs.collapseCollections !== undefined
+  ) {
+    params.value.collapseCollections = prefs.collapseCollections;
   }
 
   // get stored/default hideEmptyFilter for this itemtype (default: true = hide empty)

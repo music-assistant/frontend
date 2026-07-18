@@ -14,6 +14,7 @@ export interface ItemsListingPreferences {
   providerFilter?: string[];
   expand?: boolean;
   search?: string;
+  collapseCollections?: boolean;
 }
 
 /**

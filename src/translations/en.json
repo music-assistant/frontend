@@ -623,6 +623,7 @@
     "sync_running": "One or more music providers are being synchronized.",
     "tooltip": {
         "album_artist_filter": "Toggle album-artist filter",
+        "collapse_collections": "Collapse collections",
         "explicit": "Explicit",
         "filter_library": "Toggle in-library\/favorite filter",
         "library": "Toggle in-library\/favorite",
@@ -744,6 +745,7 @@
     "open_dsp_settings": "Open DSP settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
+    "audiobooks_in_collection": "Audiobooks in this collection",
     "chapter": "Chapter",
     "chapters": "Chapters",
     "podcast": "Podcast",
@@ -1616,6 +1618,7 @@
     "artist_all_tracks": "All tracks",
     "on_provider": "On {0}",
     "open_queue_settings": "Open queue settings",
+    "collection_no_audiobooks": "This collection does not hold any audiobooks.",
     "crossfade_enable": "Enable crossfade",
     "crossfade_disable": "Disable crossfade",
     "crossfade": "Crossfade",
