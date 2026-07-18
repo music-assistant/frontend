@@ -1,21 +1,33 @@
 <template>
   <div
     v-if="visible"
-    class="listen-in"
+    class="listen-in min-w-0"
     :class="{ 'listen-in--active': isListeningIn }"
   >
-    <div class="listen-in__row">
-      <Headphones :size="20" class="listen-in__icon" />
-      <div class="listen-in__text">
-        <span class="listen-in__title">{{ title }}</span>
-        <span class="listen-in__desc">{{ description }}</span>
+    <div class="listen-in__row w-full min-w-0">
+      <Headphones :size="20" class="listen-in__icon" aria-hidden="true" />
+      <div class="listen-in__text min-w-0 overflow-hidden">
+        <div class="listen-in__title-row min-w-0">
+          <span class="listen-in__title block shrink-0 whitespace-nowrap">
+            {{ title }}
+          </span>
+          <span
+            :id="attributionId"
+            :title="labels.poweredBy"
+            class="listen-in__attribution min-w-0 truncate text-[0.625rem]"
+          >
+            {{ labels.poweredBy }}
+          </span>
+        </div>
+        <span class="listen-in__desc block truncate">{{ description }}</span>
       </div>
       <Button
         v-if="mode === 'remote'"
         :variant="isListeningIn ? 'secondary' : 'default'"
         size="sm"
         :disabled="busy"
-        class="listen-in__action"
+        :aria-describedby="attributionId"
+        class="listen-in__action shrink-0"
         @click="isListeningIn ? disableListenIn() : enableListenIn()"
       >
         {{ isListeningIn ? labels.stop : labels.tap }}
@@ -25,11 +37,11 @@
         :model-value="isListeningIn"
         :disabled="busy"
         :aria-label="title"
-        class="listen-in__action"
+        :aria-describedby="attributionId"
+        class="listen-in__action shrink-0"
         @update:model-value="onToggle"
       />
     </div>
-    <span class="listen-in__attribution">{{ labels.poweredBy }}</span>
   </div>
 </template>
 
@@ -61,6 +73,8 @@ export interface ListenInProps {
   recheckEvents?: EventType[];
   /** Optional server-error extractor passed through to useListenIn. */
   getErrorMessage?: (err: unknown, fallback: string) => string;
+  /** Start listening when available until the guest explicitly opts out. */
+  autoEnable?: boolean;
 }
 </script>
 
@@ -69,17 +83,19 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useListenIn } from "@/composables/useListenIn";
 import { Headphones } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, ref, useId } from "vue";
 import { toast } from "vue-sonner";
 
 const props = defineProps<ListenInProps>();
+const attributionId = useId();
+const autoEnableSuppressed = ref(false);
 
 const {
   isListeningIn,
   busy,
   shouldShowListenInToggle,
-  enableListenIn,
-  disableListenIn,
+  enableListenIn: startListenIn,
+  disableListenIn: stopListenIn,
 } = useListenIn({
   domain: props.domain,
   mode: () => props.mode,
@@ -91,6 +107,7 @@ const {
   },
   recheckEvents: props.recheckEvents,
   getErrorMessage: props.getErrorMessage,
+  autoEnable: shouldAutoEnable,
 });
 
 // Remote mode keeps the control visible while listening so guests can stop.
@@ -112,13 +129,27 @@ function onToggle(enabled: boolean) {
   if (enabled) enableListenIn();
   else disableListenIn();
 }
+
+async function enableListenIn() {
+  if (!(await startListenIn())) return;
+  autoEnableSuppressed.value = false;
+}
+
+async function disableListenIn() {
+  autoEnableSuppressed.value = true;
+  await stopListenIn();
+}
+
+function shouldAutoEnable() {
+  return (
+    props.mode === "remote" && !!props.autoEnable && !autoEnableSuppressed.value
+  );
+}
 </script>
 
 <style scoped>
 .listen-in {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
   padding: 0.6rem 0.9rem;
   margin-bottom: 1rem;
   border-radius: 12px;
@@ -150,23 +181,25 @@ function onToggle(enabled: boolean) {
   flex: 1;
 }
 
+.listen-in__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .listen-in__title {
   font-weight: 600;
   font-size: 0.9rem;
 }
 
+.listen-in__attribution {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  line-height: 1;
+}
+
 .listen-in__desc {
   font-size: 0.78rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.listen-in__action {
-  flex-shrink: 0;
-}
-
-.listen-in__attribution {
-  font-size: 0.68rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  text-align: center;
 }
 </style>

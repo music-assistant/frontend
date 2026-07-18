@@ -19,13 +19,11 @@
               <RefreshCw class="size-4" />
               {{ $t("settings.reload") }}
             </Button>
-            <Button size="sm" @click="downloadLog">
+            <Button variant="outline" size="sm" @click="downloadLog">
               <Download class="size-4" />
               {{ $t("settings.download_log") }}
             </Button>
             <Button
-              v-if="diagnosticsSupported"
-              variant="outline"
               size="sm"
               :disabled="downloadingDiagnostics"
               @click="downloadDiagnostics"
@@ -82,7 +80,6 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/plugins/api";
-import { requireServerVersion } from "@/plugins/api/helpers";
 
 const logContent = ref("");
 const loading = ref(true);
@@ -93,8 +90,6 @@ const downloadingDiagnostics = ref(false);
 const logContainer = ref<HTMLDivElement | null>(null);
 const maxLines = 150;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
-
-const diagnosticsSupported = computed(() => requireServerVersion("2.10.0"));
 
 const displayContent = computed(() => {
   const lines = logContent.value.split("\n");

@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from "vue";
+import { resetMediaSession } from "@/helpers/mediaSession";
 import authManager from "./auth";
 import api from "./api";
 import { EventType } from "./api/interfaces";
@@ -27,13 +28,13 @@ export const isPlaybackMode = (mode: WebPlayerMode) =>
 // audio output from within a user gesture. Listen-in audio starts
 // asynchronously, so iOS would otherwise block it; priming during the gesture
 // keeps playback reliable. See SendspinPlayer.vue and useListenIn.
-let audioUnlockHandler: (() => void) | null = null;
+let audioUnlockHandler: (() => boolean) | null = null;
 
-export function registerWebPlayerAudioUnlock(handler: () => void): void {
+export function registerWebPlayerAudioUnlock(handler: () => boolean): void {
   audioUnlockHandler = handler;
 }
 
-export function clearWebPlayerAudioUnlock(handler: () => void): void {
+export function clearWebPlayerAudioUnlock(handler: () => boolean): void {
   if (audioUnlockHandler === handler) audioUnlockHandler = null;
 }
 
@@ -189,7 +190,7 @@ function resolvePreferredMode(): WebPlayerMode {
 
   // Force sendspin mode for music quiz guests (listen-in audio support)
   if (authManager.isMusicQuizGuest()) {
-    return WebPlayerMode.SENDSPIN_WITH_CONTROLS;
+    return WebPlayerMode.SENDSPIN_ONLY;
   }
 
   const webPlayerEnabledPref =
@@ -302,6 +303,8 @@ export const webPlayer = reactive({
   baseUrl: "",
   // id of the player that is provided by this frontend
   player_id: null as string | null,
+  // Monotonic identity for player recreation, including same-ID sessions.
+  player_generation: 0,
   // If the user interacted with the frontend, required to avoid autoplay restrictions
   interacted: false,
   // Timestamp from when the last update was sent
@@ -323,6 +326,7 @@ export const webPlayer = reactive({
       }
     }
     this.audioSource = WebPlayerMode.DISABLED;
+    this.player_generation++;
     this.player_id = null;
 
     // If trying to set to a playback mode, check if another tab already has it
@@ -373,6 +377,7 @@ export const webPlayer = reactive({
     }
 
     this.tabMode = mode;
+    if (authManager.isGuestAccessSession()) resetMediaSession();
 
     if (this.player_id) {
       // The sendspin session follows the main API connection: tear the web player
@@ -416,7 +421,7 @@ export const webPlayer = reactive({
   // Unlock this browser's audio output from within a user gesture so
   // asynchronously-started listen-in audio can play (notably on iOS).
   primeAudio() {
-    audioUnlockHandler?.();
+    return audioUnlockHandler?.() ?? false;
   },
   timedOutDueToThrottling() {
     return Date.now() - webPlayer.lastUpdate >= TIMEOUT_DURATION_MS;

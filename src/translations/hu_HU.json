@@ -132,7 +132,6 @@
         "tracks_in_library": "Zeneszámok a könyvtárban",
         "playlists_in_library": "Lejátszási listák a könyvtárban",
         "radio_in_library": "Rádió a könyvtárban",
-        "server_logging": "Szerver naplózása",
         "download_log": "Naplófájl letöltése",
         "edit_group_members": "Csoporttagok szerkesztése",
         "add_new_provider_button": "{0} szolgáltató hozzáadása",
@@ -147,10 +146,6 @@
                 "light": "Világos",
                 "dark": "Sötét"
             }
-        },
-        "menu_items": {
-            "label": "Engedélyezett menüelemek",
-            "description": "Állítsa be, hogy mely elemek jelenjenek meg a menüben.\n\nVegye figyelembe, hogy ha letiltja a beállításokat, kizárhatja magát.\n\nEbben az esetben manuálisan kell megadnia a beállítások elérési útját, vagy törölnie kell a böngésző sütiket, hogy ismét hozzáférjen. Saját felelősségére használja!"
         },
         "language": {
             "label": "Nyelv",
@@ -309,8 +304,6 @@
         "view_documentation": "Dokumentáció megtekintése",
         "about": "Névjegy",
         "about_description": "Verziószám, köszönetnyilvánítás és egyéb információk",
-        "system_logging": "Kiszolgáló naplózás",
-        "system_logging_description": "Kiszolgáló naplók megtekintése és letöltése hibaelhárításhoz",
         "auto_refresh_log": "Automatikus frissítés",
         "log_truncated": "Az utolsó {0} sor megjelenítése. Töltse le a teljes naplófájlt a teljes előzményekért.",
         "version_info": "Verzióinformáció",
@@ -648,8 +641,6 @@
         "toggle_players": "Lejátszók ki-\/bekapcsolása",
         "toggle_top_picks": "Kiemelt ajánlatok ki-\/bekapcsolása",
         "toggle_row": "Sor láthatóságának ki-\/bekapcsolása",
-        "move_row_up": "Sor mozgatása felfelé",
-        "move_row_down": "Sor mozgatása lefelé",
         "toggle_power": "Bekapcsolás\/kikapcsolás",
         "open_options": "Beállítások megnyitása",
         "more_options": "További lehetőségek",

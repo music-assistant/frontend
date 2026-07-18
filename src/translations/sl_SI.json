@@ -130,7 +130,6 @@
         "tracks_in_library": "Skladbe v knjižnici",
         "playlists_in_library": "Seznami predvajanja v knjižnici",
         "radio_in_library": "Radio v knjižnici",
-        "server_logging": "Pisanje dnevnika v strežniku",
         "download_log": "Prenesite dnevniško datoteko",
         "edit_group_members": "Urejanje članov skupine",
         "add_new_provider_button": "Dodajanje {0} ponudnika",
@@ -145,10 +144,6 @@
                 "light": "Svetlo",
                 "dark": "Temno"
             }
-        },
-        "menu_items": {
-            "label": "Omogočeni elementi menija",
-            "description": "Konfigurirajte elemente, ki bodo prikazani v meniju.\n\nUpoštevajte, da se v primeru izklopa nastavitev lahko zaklenete.\n\nV tem primeru boste morali ročno vnesti pot do nastavitev ali počistiti piškotke brskalnika, da boste znova omogočili dostop do nastavitev. Uporabite na lastno odgovornost."
         },
         "language": {
             "label": "Jezik",

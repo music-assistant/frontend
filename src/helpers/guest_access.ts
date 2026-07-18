@@ -1,19 +1,23 @@
-/**
- * Routes that guest-access sessions (party + Music Quiz QR guests) may visit.
- * Everything else redirects them back to their guest view — this is the guard
- * that keeps a scanned-QR JWT out of the full Music Assistant UI.
- */
+// Enumerate the exact guest routes rather than prefix-matching "/guest/" —
+// the router has a catch-all not-found route, so an unmatched "/guest/x"
+// would otherwise slip through the guard and render under the full UI layout.
+const GUEST_ALLOWED_ROUTES = new Set([
+  "/guest",
+  "/guest/party",
+  "/guest/quiz",
+  "/music-quiz/play",
+]);
+
 export function isGuestAccessAllowedRoute(path: string): boolean {
-  return path === "/guest" || path === "/music-quiz/play";
+  return GUEST_ALLOWED_ROUTES.has(path);
 }
 
-/**
- * Where to send a guest-access session that landed on a disallowed route:
- * Music Quiz guests go back to their game, party guests to the party view.
- */
-export function getGuestHomeRoute(isMusicQuizGuest: boolean): string {
-  if (isMusicQuizGuest) {
-    return "/music-quiz/play";
+export function getGuestNavigationRedirect(
+  isGuestAccessSession: boolean,
+  path: string,
+): string | undefined {
+  if (isGuestAccessSession && !isGuestAccessAllowedRoute(path)) {
+    return "/guest";
   }
-  return "/guest";
+  return undefined;
 }

@@ -1,290 +1,252 @@
 <template>
-  <!-- Overlay scrim -->
-  <Transition name="player-scrim">
-    <div
-      v-if="store.showPlayersMenu"
-      class="player-panel-scrim"
-      @click="store.showPlayersMenu = false"
-    ></div>
-  </Transition>
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-200"
+      enter-from-class="opacity-0"
+      leave-active-class="transition-opacity duration-200"
+      leave-to-class="opacity-0"
+    >
+      <button
+        v-if="store.showPlayersMenu"
+        type="button"
+        :class="[
+          'player-select-backdrop fixed inset-x-0 top-0 z-[99999] bg-black/60 backdrop-blur-sm',
+          store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+        ]"
+        :aria-label="$t('close')"
+        @click="setMenuOpen(false)"
+      ></button>
+    </Transition>
+  </Teleport>
 
-  <!-- Panel: fixed position, slides in via transform -->
-  <div
-    class="player-panel player-panel--overlay"
-    :class="{
-      'player-panel--open': store.showPlayersMenu,
-    }"
+  <Sheet
+    :open="store.showPlayersMenu"
+    :modal="false"
+    @update:open="setMenuOpen"
   >
-    <div class="player-panel-inner">
-      <!-- header -->
-      <div class="player-header">
-        <Speaker class="player-header-icon" />
-        <span class="player-header-title">{{ $t("players") }}</span>
-      </div>
+    <SheetContent
+      data-testid="player-select-sheet"
+      side="right"
+      :class="[
+        'w-[90vw] gap-0 p-0 sm:max-w-[400px]',
+        store.mobileLayout ? 'bottom-[60px]' : 'bottom-0',
+      ]"
+      @keydown="handleSheetKeydown"
+      @open-auto-focus="handleSheetOpenAutoFocus"
+      @interact-outside="handleSheetInteractOutside"
+    >
+      <SheetHeader class="flex-row items-center gap-2 border-b pr-14">
+        <Speaker class="size-5 text-muted-foreground" />
+        <SheetTitle class="text-lg">{{ $t("players") }}</SheetTitle>
+        <SheetDescription class="sr-only">
+          {{ $t("tooltip.select_player") }}
+        </SheetDescription>
+      </SheetHeader>
 
-      <!-- scrollable content -->
-      <div class="player-content">
-        <!-- preferred/active players on top -->
-        <v-list flat style="margin: 0px 10px; padding: 0">
+      <div class="min-h-0 flex-1 overflow-y-auto pb-6">
+        <div
+          v-if="showSearch"
+          class="bg-background sticky top-0 z-10 px-3 pt-3 pb-2"
+        >
+          <SearchInput
+            v-model="playerSearchQuery"
+            :placeholder="$t('search')"
+            clearable
+          />
+        </div>
+
+        <div class="space-y-2 px-3 pt-3">
+          <p
+            v-if="filteredPlayers.length === 0"
+            class="text-muted-foreground px-3 py-8 text-center text-sm"
+          >
+            {{ playerSearchQuery ? $t("no_content_filter") : $t("no_content") }}
+          </p>
           <PlayerCard
-            v-for="player in preferredPlayers"
+            v-for="player in filteredPlayers"
             :id="player.player_id"
             :key="player.player_id"
-            style="margin: 10px 0px"
             :player="player"
             :show-volume-control="true"
             :show-menu-button="true"
-            :show-sub-players="
-              showSubPlayers && player.player_id == store.activePlayerId
+            :show-child-volumes="expandedVolumePlayerIds.has(player.player_id)"
+            :show-member-controls="
+              expandedMemberPlayerIds.has(player.player_id)
             "
-            :show-sync-controls="true"
+            :show-group-controls="true"
+            :show-group-member-names="true"
+            :stack-media-details="true"
             :allow-power-control="true"
-            @click="playerClicked(player)"
-            @toggle-expand="toggleGroupExpand"
+            @click="selectPlayer"
+            @toggle-child-volumes="toggleChildVolumes"
+            @toggle-member-controls="toggleMemberControls"
           />
-        </v-list>
-
-        <!-- collapsible section with all players (only shown if more than 3 players) -->
-        <v-expansion-panels
-          v-if="allPlayers.length > 3"
-          v-model="allPlayersExpanded"
-          variant="accordion"
-          flat
-          class="expansion"
-        >
-          <v-expansion-panel style="padding: 0">
-            <v-expansion-panel-title>
-              <h3>{{ $t("all_players") }}</h3>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text style="padding: 0">
-              <div style="margin: 0 8px 24px 8px">
-                <InputGroup>
-                  <InputGroupInput
-                    ref="playerSearchInput"
-                    v-model="playerSearchQuery"
-                    :placeholder="$t('search')"
-                  />
-                  <InputGroupAddon>
-                    <Search />
-                  </InputGroupAddon>
-                </InputGroup>
-              </div>
-              <v-list flat style="margin: -20px 3px 5px 3px">
-                <PlayerCard
-                  v-for="player in filteredPlayers"
-                  :id="player.player_id"
-                  :key="player.player_id"
-                  style="margin: 8px 0px"
-                  :player="player"
-                  :show-volume-control="true"
-                  :show-menu-button="true"
-                  :show-sub-players="
-                    showSubPlayers && player.player_id == store.activePlayerId
-                  "
-                  :show-sync-controls="
-                    player.supported_features.includes(
-                      PlayerFeature.SET_MEMBERS,
-                    )
-                  "
-                  :allow-power-control="true"
-                  @click="playerClicked(player)"
-                  @toggle-expand="toggleGroupExpand"
-                />
-              </v-list>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
+        </div>
       </div>
-    </div>
-  </div>
+    </SheetContent>
+  </Sheet>
 </template>
 
 <script setup lang="ts">
 import PlayerCard from "@/components/PlayerCard.vue";
+import { SearchInput } from "@/components/ui/search-input";
+import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useUserPreferences } from "@/composables/userPreferences";
-import { playerVisible } from "@/helpers/utils";
 import { api } from "@/plugins/api";
-import { Player, PlayerFeature } from "@/plugins/api/interfaces";
-
+import type { Player } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
-import { Search, Speaker } from "@lucide/vue";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { Speaker } from "@lucide/vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
-const showSubPlayers = ref(false);
-const recentlySelectedPlayerIds = ref<string[]>([]);
-const allPlayersExpanded = ref<number | undefined>(undefined);
+const SEARCH_PLAYER_THRESHOLD = 10;
+
 const playerSearchQuery = ref("");
-const playerSearchInput = ref<InstanceType<typeof InputGroupInput> | null>(
-  null,
-);
+const expandedVolumePlayerIds = reactive(new Set<string>());
+const expandedMemberPlayerIds = reactive(new Set<string>());
 const { getPreference, setPreference } = useUserPreferences();
+let menuTrigger: HTMLElement | null = null;
 
-const MAX_RECENT_PLAYERS = 3;
+const orderedPlayers = useOrderedPlayers();
 
-// Load all players expanded state from user preferences
-const allPlayersExpandedPref = getPreference<boolean>("allPlayersExpanded");
-watch(
-  allPlayersExpandedPref,
-  (newVal) => {
-    // v-expansion-panels uses 0 for expanded, undefined for collapsed
-    allPlayersExpanded.value = newVal ? 0 : undefined;
-  },
-  { immediate: true },
+const showSearch = computed(
+  () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
 );
 
-// Save expanded state when it changes
-watch(allPlayersExpanded, (newVal) => {
-  setPreference("allPlayersExpanded", newVal === 0);
-});
-
-// Load recently selected players from user preferences (only on initial load)
-const recentPlayersPref = getPreference<string[]>("recentlySelectedPlayerIds");
-if (recentPlayersPref.value) {
-  recentlySelectedPlayerIds.value = recentPlayersPref.value;
-}
-
-// computed properties
-const allPlayers = computed(() => {
-  return Object.values(api.players)
-    .filter((x) => playerVisible(x))
-    .sort((a, b) => (a.name.toUpperCase() > b.name?.toUpperCase() ? 1 : -1));
-});
-
-// Filtered players based on search query
 const filteredPlayers = computed(() => {
-  if (playerSearchQuery.value) {
-    // When searching, show all matching players
-    const query = playerSearchQuery.value.toLowerCase();
-    return allPlayers.value.filter((p) => p.name.toLowerCase().includes(query));
-  }
-  // When not searching, exclude players already shown in preferred section
-  const preferredIds = preferredPlayers.value.map((p) => p.player_id);
-  return allPlayers.value.filter((p) => !preferredIds.includes(p.player_id));
+  if (!showSearch.value) return orderedPlayers.value;
+  const query = playerSearchQuery.value.trim().toLocaleLowerCase();
+  if (!query) return orderedPlayers.value;
+  return orderedPlayers.value.filter((player) =>
+    player.name.toLocaleLowerCase().includes(query),
+  );
 });
 
-// Preferred players shown at top (last 3 recently selected players)
-const preferredPlayers = computed(() => {
-  const players = Object.values(api.players).filter((x) => playerVisible(x));
-  if (players.length <= 3) {
-    // If 3 or fewer players, show all sorted alphabetically
-    return players.sort((a, b) =>
-      a.name.toUpperCase() > b.name.toUpperCase() ? 1 : -1,
-    );
-  }
-  // Show only recently selected players that still exist
-  const recentPlayers = recentlySelectedPlayerIds.value
-    .map((id) => players.find((p) => p.player_id === id))
-    .filter((p): p is Player => p !== undefined)
-    .slice(0, MAX_RECENT_PLAYERS);
-  return recentPlayers;
-});
-
-//watchers
 watch(
   () => store.showPlayersMenu,
-  (newVal) => {
-    if (newVal) {
-      showSubPlayers.value = true;
-    } else {
-      // Save preferences and reset state when menu closes
-      playerSearchQuery.value = "";
-      if (store.activePlayerId) {
-        setPreference("activePlayerId", store.activePlayerId);
-        localStorage.setItem("activePlayerId", store.activePlayerId);
-        // Update recently selected players list
-        const recent = recentlySelectedPlayerIds.value.filter(
-          (id) => id !== store.activePlayerId,
-        );
-        recent.unshift(store.activePlayerId);
-        recentlySelectedPlayerIds.value = recent.slice(0, MAX_RECENT_PLAYERS);
-      }
-      setPreference(
-        "recentlySelectedPlayerIds",
-        recentlySelectedPlayerIds.value,
-      );
+  (isOpen) => {
+    if (isOpen) {
+      const activeElement = document.activeElement;
+      menuTrigger =
+        activeElement instanceof HTMLElement && activeElement !== document.body
+          ? activeElement
+          : null;
+      return;
     }
+    resetPanelState();
+    nextTick(() => {
+      const focusTarget = menuTrigger?.isConnected
+        ? menuTrigger
+        : (document.getElementById("active-player-popover") ??
+          document.getElementById("extended-controls-speaker-button"));
+      focusTarget?.focus();
+      menuTrigger = null;
+    });
   },
 );
+
+watch(showSearch, (isVisible) => {
+  if (!isVisible) playerSearchQuery.value = "";
+});
+
+watch(
+  () => store.activePlayerId,
+  (playerId) => {
+    if (!playerId) return;
+    setPreference("activePlayerId", playerId);
+    localStorage.setItem("activePlayerId", playerId);
+  },
+);
+
 watch(
   () => api.players,
-  (newVal) => {
-    if (newVal) {
-      checkDefaultPlayer();
-    }
-  },
+  () => checkDefaultPlayer(),
   { deep: true },
 );
 
 watch(
   () => webPlayer.player_id,
-  (newVal) => {
-    if (newVal) {
-      checkDefaultPlayer();
-    }
-  },
+  () => checkDefaultPlayer(),
 );
-
-function playerClicked(player: Player, close: boolean = false) {
-  if (store.activePlayerId !== player.player_id) {
-    store.activePlayerId = player.player_id;
-  }
-  if (close) store.showPlayersMenu = false;
-  // Scroll the player card into view (use nearest to avoid hiding header)
-  nextTick(() => {
-    const element = document.getElementById(player.player_id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  });
-}
-
-function toggleGroupExpand(player: Player) {
-  if (store.activePlayerId !== player.player_id) {
-    store.activePlayerId = player.player_id;
-    showSubPlayers.value = true;
-  } else {
-    showSubPlayers.value = !showSubPlayers.value;
-  }
-  // Scroll the player card into view when expanding (use nearest to avoid hiding header)
-  if (showSubPlayers.value) {
-    nextTick(() => {
-      const element = document.getElementById(player.player_id);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    });
-  }
-}
 
 onMounted(() => {
   checkDefaultPlayer();
 });
 
-const checkDefaultPlayer = function () {
-  if (store.activePlayer) return;
-  const newDefaultPlayerId = selectDefaultPlayer();
-  if (newDefaultPlayerId) {
-    store.activePlayerId = newDefaultPlayerId;
-  }
-};
+function setMenuOpen(isOpen: boolean) {
+  store.showPlayersMenu = isOpen;
+}
 
-const selectDefaultPlayer = function () {
-  // check if we have a player stored that was last used
-  // we prefer localStorage over user preferences to allow having a preferred
-  // player per device - especially useful in case of using the built-in web player
+function handleSheetKeydown(event: KeyboardEvent) {
+  event.stopPropagation();
+  if (event.key === "Escape") setMenuOpen(false);
+}
+
+function handleSheetOpenAutoFocus(event: Event) {
+  if (!store.mobileLayout) return;
+  event.preventDefault();
+  if (event.target instanceof HTMLElement) {
+    event.target.focus({ preventScroll: true });
+  }
+}
+
+function handleSheetInteractOutside(event: Event) {
+  if (store.dialogActive) event.preventDefault();
+}
+
+function selectPlayer(player: Player) {
+  store.activePlayerId = player.player_id;
+  store.showPlayersMenu = false;
+}
+
+function toggleChildVolumes(player: Player) {
+  const playerId = player.player_id;
+  expandedMemberPlayerIds.delete(playerId);
+  toggleExpandedPlayer(expandedVolumePlayerIds, playerId);
+}
+
+function toggleMemberControls(player: Player) {
+  const playerId = player.player_id;
+  expandedVolumePlayerIds.delete(playerId);
+  toggleExpandedPlayer(expandedMemberPlayerIds, playerId);
+}
+
+function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
+  if (playerIds.has(playerId)) {
+    playerIds.delete(playerId);
+  } else {
+    playerIds.add(playerId);
+  }
+}
+
+function resetPanelState() {
+  playerSearchQuery.value = "";
+  expandedVolumePlayerIds.clear();
+  expandedMemberPlayerIds.clear();
+}
+
+function checkDefaultPlayer() {
+  if (store.activePlayer) return;
+  const defaultPlayerId = selectDefaultPlayer();
+  if (defaultPlayerId) {
+    store.activePlayerId = defaultPlayerId;
+  }
+}
+
+function selectDefaultPlayer() {
   const lastPlayerId =
     localStorage.getItem("activePlayerId") ||
     getPreference<string>("activePlayerId").value;
   if (lastPlayerId && lastPlayerId in api.players) {
     return lastPlayerId;
   }
-  // select webPlayer if available (only if we do not have a previous player stored)
   if (
     !lastPlayerId &&
     webPlayer.player_id &&
@@ -292,7 +254,6 @@ const selectDefaultPlayer = function () {
   ) {
     return webPlayer.player_id;
   }
-  // select companionPlayer if available (only if we do not have a previous player stored)
   if (
     !lastPlayerId &&
     store.companionPlayerId &&
@@ -300,167 +261,5 @@ const selectDefaultPlayer = function () {
   ) {
     return store.companionPlayerId;
   }
-};
+}
 </script>
-
-<style scoped>
-/*
- * Panel: fixed position, slides via GPU-accelerated transform.
- */
-.player-panel {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 400px;
-  z-index: 10;
-  transform: translateX(100%);
-  transition: transform 0.5s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  border-left: 1px solid rgba(var(--v-border-color), 0.12);
-  display: flex;
-  flex-direction: column;
-}
-
-.player-panel--open {
-  transform: translateX(0);
-}
-
-/* Overlay: higher z-index, rounded edges, shadow */
-.player-panel--overlay {
-  z-index: 99999;
-  top: 0px;
-  bottom: 0px;
-  border-left: none;
-  border-radius: 6px 0 0 6px;
-}
-
-.player-panel--overlay.player-panel--open {
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
-}
-
-@media (max-width: 769px) {
-  .player-panel--overlay {
-    width: 90vw;
-    max-width: 400px;
-    bottom: 60px;
-  }
-}
-
-/* Inner wrapper */
-.player-panel-inner {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.player-panel-inner::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 20px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgb(var(--v-theme-surface)) 80%
-  );
-  pointer-events: none;
-  z-index: 1;
-  border-radius: 0 0 0 6px;
-}
-
-/* Mobile scrim/overlay */
-.player-panel-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 1999;
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.player-scrim-enter-active,
-.player-scrim-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.player-scrim-enter-from,
-.player-scrim-leave-to {
-  opacity: 0;
-}
-
-/* Header */
-.player-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 16px;
-  padding-bottom: 8px;
-  padding-left: 16px;
-  flex-shrink: 0;
-}
-
-.player-header-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  opacity: 0.7;
-}
-
-.player-header-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* Scrollable content */
-.player-content {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
-  min-height: 0;
-  padding-bottom: 100px;
-}
-
-/* Force Vuetify children to inherit the panel background */
-.player-content :deep(.v-list),
-.player-content :deep(.v-expansion-panels),
-.player-content :deep(.v-expansion-panel),
-.player-content :deep(.v-expansion-panel-title),
-.player-content :deep(.v-expansion-panel-text) {
-  background: transparent !important;
-}
-
-/* Decrease space above search bar */
-.player-content :deep(.v-expansion-panel .v-expansion-panel-title) {
-  padding-bottom: 0;
-}
-
-/* Prevent panel title from growing when opening */
-.player-content :deep(.v-expansion-panel--active > .v-expansion-panel-title) {
-  min-height: 48px;
-}
-
-/* Disable focus and hover color changes */
-.player-content
-  :deep(
-    .v-expansion-panel-title:focus-visible > .v-expansion-panel-title__overlay
-  ),
-.player-content
-  :deep(.v-expansion-panel-title:hover > .v-expansion-panel-title__overlay) {
-  opacity: 0;
-}
-
-.expansion :deep(.v-expansion-panel-title) {
-  padding: 10px 16px;
-}
-
-.expansion :deep(.v-expansion-panel-text__wrapper) {
-  padding: 10px 5px;
-}
-</style>

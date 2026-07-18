@@ -11,30 +11,21 @@
         @blur="searchHasFocus = false"
       />
 
-      <v-chip-group
-        v-model="selectedSearchType"
-        style="margin-top: 10px; margin-left: 10px"
-        selected-class="text-primary"
-        mandatory
-      >
-        <v-chip
-          v-for="item in [
-            SEARCH_TYPE_ALL,
-            MediaType.TRACK,
-            MediaType.ARTIST,
-            MediaType.ALBUM,
-            MediaType.PLAYLIST,
-            MediaType.PODCAST,
-            MediaType.AUDIOBOOK,
-            MediaType.RADIO,
-            MediaType.GENRE,
-          ]"
-          :key="item"
-          :text="$t(item === SEARCH_TYPE_ALL ? 'searchtype_all' : item + 's')"
-          :value="item"
-          filter
+      <!-- faceted filters (like the settings pages): media type(s) and
+           search target(s); an empty selection means no filtering -->
+      <div class="search-filter-row">
+        <FacetedFilter
+          v-model="selectedMediaTypes"
+          :title="$t('media_type')"
+          :options="mediaTypeOptions"
         />
-      </v-chip-group>
+        <FacetedFilter
+          v-if="providerTargets.length && !genreOnly"
+          v-model="selectedSearchProviders"
+          :title="$t('settings.providers')"
+          :options="providerOptions"
+        />
+      </div>
 
       <v-progress-linear
         v-if="loading"
@@ -45,8 +36,8 @@
         style="margin-top: 15px"
       />
 
-      <!-- compact all-media-types searchresult -->
-      <div v-if="!store.globalSearchType" class="search-shelves">
+      <!-- compact searchresult shelves per media type -->
+      <div v-if="!singleType" class="search-shelves">
         <EditorialShelf
           v-for="section in searchSections"
           :key="section.key"
@@ -62,20 +53,22 @@
           />
         </EditorialShelf>
       </div>
-      <!-- tracks-only searchresult -->
-      <div v-else-if="!loading">
+      <!-- single media type searchresult; mounted as soon as the first
+           target returns items so slower providers merge in progressively -->
+      <div v-else-if="searchResult && (singleTypeHasItems || !loading)">
         <ItemsListing
-          :itemtype="`${store.globalSearchType}s`"
+          ref="listingRef"
+          :itemtype="`${singleType}s`"
           :show-provider="true"
           :show-favorites-only-filter="false"
           :show-select-button="false"
           :show-refresh-button="false"
           :load-items="
             async (params) => {
-              return filteredItems(store.globalSearchType!);
+              return filteredItems(singleType!);
             }
           "
-          :title="$t(`${store.globalSearchType}s`)"
+          :title="$t(`${singleType}s`)"
           :allow-key-hooks="false"
           :show-search-button="false"
           :infinite-scroll="true"
@@ -91,52 +84,147 @@
 import Container from "@/components/Container.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
+import FacetedFilter from "@/components/FacetedFilter.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
 import { SearchInput } from "@/components/ui/search-input";
+import {
+  LIBRARY_SEARCH_TARGET,
+  SEARCHABLE_MEDIA_TYPES,
+  useProgressiveSearch,
+} from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import { MediaType, SearchResults } from "@/plugins/api/interfaces";
+import { MediaType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-const SEARCH_TYPE_ALL = "all";
-
-// computed to bridge between chip-group (needs a real value) and store (uses undefined for "all")
-const selectedSearchType = computed({
-  get: () => store.globalSearchType || SEARCH_TYPE_ALL,
-  set: (val: string) => {
-    store.globalSearchType =
-      val === SEARCH_TYPE_ALL ? undefined : (val as MediaType);
-  },
-});
-
 // local refs
 const searchHasFocus = ref(false);
-const searchResult = ref<SearchResults>();
-const loading = ref(false);
 const throttleId = ref();
+const listingRef = ref<InstanceType<typeof ItemsListing>>();
+let listingReloadTimer: ReturnType<typeof setTimeout> | undefined;
 const { getPreference, setPreference } = useUserPreferences();
+// search targets stored as the included subset; empty means all targets
+const selectedProvidersPref = getPreference<string[]>(
+  "globalSearchProviders",
+  [],
+);
 
 // Responsive tile sizing, shared curve with the rest of the app.
 const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
 
-// Compact "all" results as horizontal shelves; empty categories are hidden.
+const selectedMediaTypes = computed<MediaType[]>({
+  get: () => store.globalSearchMediaTypes,
+  set: (val) => {
+    store.globalSearchMediaTypes = val;
+  },
+});
+
+const mediaTypeOptions = computed(() =>
+  SEARCHABLE_MEDIA_TYPES.map((mediaType) => ({
+    label: $t(mediaType + "s"),
+    value: mediaType,
+  })),
+);
+
+const storedProviders = computed<string[]>(() =>
+  Array.isArray(selectedProvidersPref.value) ? selectedProvidersPref.value : [],
+);
+
+const {
+  loading,
+  searchResult,
+  providerTargets,
+  selectedProviders,
+  singleType,
+  genreOnly,
+  search,
+  filteredItems,
+} = useProgressiveSearch({
+  mediaTypes: selectedMediaTypes,
+  providers: storedProviders,
+});
+
+const selectedSearchProviders = computed<string[]>({
+  // the composable drops stale ids of removed providers from the selection
+  get: () => selectedProviders.value,
+  set: (val) => {
+    setPreference("globalSearchProviders", val);
+  },
+});
+
+const providerOptions = computed(() => [
+  { label: $t("library"), value: LIBRARY_SEARCH_TARGET },
+  ...providerTargets.value.map((target) => ({
+    label: target.name,
+    value: target.id,
+  })),
+]);
+
+const singleTypeHasItems = computed(
+  () => !!singleType.value && filteredItems(singleType.value).length > 0,
+);
+
+// Compact results as horizontal shelves, restricted to the selected media
+// types; empty categories are hidden.
 const searchSections = computed(() => {
   const r = searchResult.value;
-  if (!r || loading.value) return [];
+  if (!r) return [];
+  const selected = store.globalSearchMediaTypes;
   return [
-    { key: "tracks", title: $t("tracks"), items: r.tracks },
-    { key: "artists", title: $t("artists"), items: r.artists },
-    { key: "albums", title: $t("albums"), items: r.albums },
-    { key: "playlists", title: $t("playlists"), items: r.playlists },
-    { key: "podcasts", title: $t("podcasts"), items: r.podcasts },
-    { key: "audiobooks", title: $t("audiobooks"), items: r.audiobooks },
-    { key: "radios", title: $t("radios"), items: r.radio },
-    { key: "genres", title: $t("genres"), items: r.genres },
-  ].filter((s) => s.items?.length);
+    {
+      key: "tracks",
+      type: MediaType.TRACK,
+      title: $t("tracks"),
+      items: r.tracks,
+    },
+    {
+      key: "artists",
+      type: MediaType.ARTIST,
+      title: $t("artists"),
+      items: r.artists,
+    },
+    {
+      key: "albums",
+      type: MediaType.ALBUM,
+      title: $t("albums"),
+      items: r.albums,
+    },
+    {
+      key: "playlists",
+      type: MediaType.PLAYLIST,
+      title: $t("playlists"),
+      items: r.playlists,
+    },
+    {
+      key: "podcasts",
+      type: MediaType.PODCAST,
+      title: $t("podcasts"),
+      items: r.podcasts,
+    },
+    {
+      key: "audiobooks",
+      type: MediaType.AUDIOBOOK,
+      title: $t("audiobooks"),
+      items: r.audiobooks,
+    },
+    {
+      key: "radios",
+      type: MediaType.RADIO,
+      title: $t("radios"),
+      items: r.radio,
+    },
+    {
+      key: "genres",
+      type: MediaType.GENRE,
+      title: $t("genres"),
+      items: r.genres,
+    },
+  ].filter(
+    (s) => s.items?.length && (!selected.length || selected.includes(s.type)),
+  );
 });
 
 // watchers
@@ -145,72 +233,27 @@ watch(
   () => {
     clearTimeout(throttleId.value);
     throttleId.value = setTimeout(() => {
-      loadSearchResults(store.globalSearchTerm, store.globalSearchType);
+      setPreference("globalSearch", store.globalSearchTerm || "");
+      search(store.globalSearchTerm);
     }, 1000);
   },
   { immediate: true },
 );
+// selection changes re-search via the composable; only persist them here
 watch(
-  () => store.globalSearchType,
+  () => store.globalSearchMediaTypes.join(","),
   () => {
-    setPreference(
-      "globalSearchType",
-      store.globalSearchType || SEARCH_TYPE_ALL,
-    );
-    loadSearchResults(store.globalSearchTerm, store.globalSearchType);
+    setPreference("globalSearchMediaTypes", store.globalSearchMediaTypes);
   },
 );
-
-const loadSearchResults = async function (
-  searchTerm?: string,
-  filter?: MediaType,
-) {
-  loading.value = true;
-  setPreference("globalSearch", searchTerm || "");
-  const limit = store.globalSearchType ? 50 : 8;
-  const mediaTypes = filter ? [filter] : undefined;
-  if (searchTerm) {
-    if (filter === MediaType.GENRE) {
-      // Genre-only search: use library search directly
-      const genres = await api.getLibraryGenres({
-        search: searchTerm,
-        limit,
-        offset: 0,
-        order_by: "name",
-      });
-      searchResult.value = {
-        artists: [],
-        albums: [],
-        tracks: [],
-        playlists: [],
-        radio: [],
-        podcasts: [],
-        audiobooks: [],
-        genres,
-      };
-    } else {
-      // Standard search + supplement with genre results
-      const [results, genres] = await Promise.all([
-        api.search(searchTerm, mediaTypes, limit),
-        !filter
-          ? api.getLibraryGenres({
-              search: searchTerm,
-              limit,
-              offset: 0,
-              order_by: "name",
-            })
-          : Promise.resolve([]),
-      ]);
-      searchResult.value = {
-        ...results,
-        genres: results.genres?.length ? results.genres : genres,
-      };
-    }
-  } else {
-    searchResult.value = undefined;
-  }
-  loading.value = false;
-};
+// The single-media-type listing pulls its items through the load-items
+// callback; nudge it to reload when new provider results stream in (coalesced,
+// results arrive in bursts).
+watch(searchResult, () => {
+  if (!singleType.value) return;
+  clearTimeout(listingReloadTimer);
+  listingReloadTimer = setTimeout(() => listingRef.value?.reload(), 150);
+});
 
 onMounted(() => {
   if (!store.globalSearchTerm) {
@@ -219,13 +262,24 @@ onMounted(() => {
       store.globalSearchTerm = savedSearch;
     }
   }
-  const savedSearchType = getPreference<string>("globalSearchType").value;
-  if (
-    savedSearchType &&
-    savedSearchType !== "null" &&
-    savedSearchType !== SEARCH_TYPE_ALL
-  ) {
-    store.globalSearchType = savedSearchType as MediaType;
+  // restore the media type filter, unless it was just set deliberately
+  // (e.g. redirected here from a library listing's search)
+  if (!store.globalSearchMediaTypes.length) {
+    const savedTypes = getPreference<MediaType[]>(
+      "globalSearchMediaTypes",
+    ).value;
+    // legacy single-type preference from the previous chip selector
+    const legacyType = getPreference<string>("globalSearchType").value;
+    if (Array.isArray(savedTypes)) {
+      store.globalSearchMediaTypes = savedTypes.filter((mediaType) =>
+        SEARCHABLE_MEDIA_TYPES.includes(mediaType),
+      );
+    } else if (
+      legacyType &&
+      SEARCHABLE_MEDIA_TYPES.includes(legacyType as MediaType)
+    ) {
+      store.globalSearchMediaTypes = [legacyType as MediaType];
+    }
   }
 });
 
@@ -250,18 +304,17 @@ document.addEventListener("keyup", keyListener);
 
 onBeforeUnmount(() => {
   document.removeEventListener("keyup", keyListener);
+  clearTimeout(throttleId.value);
+  clearTimeout(listingReloadTimer);
 });
-
-const filteredItems = function (mediaType: MediaType) {
-  if (!searchResult.value) return [];
-  if (mediaType == MediaType.TRACK) return searchResult.value.tracks;
-  if (mediaType == MediaType.ARTIST) return searchResult.value.artists;
-  if (mediaType == MediaType.ALBUM) return searchResult.value.albums;
-  if (mediaType == MediaType.PLAYLIST) return searchResult.value.playlists;
-  if (mediaType == MediaType.PODCAST) return searchResult.value.podcasts;
-  if (mediaType == MediaType.AUDIOBOOK) return searchResult.value.audiobooks;
-  if (mediaType == MediaType.RADIO) return searchResult.value.radio;
-  if (mediaType == MediaType.GENRE) return searchResult.value.genres;
-  return [];
-};
 </script>
+
+<style scoped>
+.search-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+</style>

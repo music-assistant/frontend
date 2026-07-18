@@ -347,6 +347,8 @@ const startNowPlayingWatcher = (): void => {
   unwatchNowPlaying = watch(
     () => ({
       uri: store.activePlayer?.current_media?.uri,
+      title: store.activePlayer?.current_media?.title,
+      artist: store.activePlayer?.current_media?.artist,
       state: store.activePlayer?.playback_state,
       playerId: store.activePlayer?.player_id,
     }),
@@ -355,6 +357,8 @@ const startNowPlayingWatcher = (): void => {
       if (
         oldVal &&
         newVal.uri === oldVal.uri &&
+        newVal.title === oldVal.title &&
+        newVal.artist === oldVal.artist &&
         newVal.state === oldVal.state &&
         newVal.playerId === oldVal.playerId
       ) {

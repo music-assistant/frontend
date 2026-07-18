@@ -1,3 +1,4 @@
+import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { watch } from "vue";
 import {
   createRouter,
@@ -10,37 +11,38 @@ import { authManager } from "./auth";
 import { notifyHARouteChange } from "./homeassistant";
 import { store } from "./store";
 
-const routes: RouteRecordRaw[] = [
-  // Guest view uses minimal layout without navigation/player controls
-  // Guest authentication is handled by Login.vue via the ?join= query parameter
-  // which exchanges the short join code for a JWT before navigating here
+export const routes: RouteRecordRaw[] = [
   {
     path: "/guest",
-    component: () => import("@/layouts/PartyGuestLayout.vue"),
+    component: () => import("@/layouts/GuestLayout.vue"),
     children: [
       {
         path: "",
         name: "guest",
         component: () =>
+          import(/* webpackChunkName: "guest" */ "@/views/GuestEntryView.vue"),
+      },
+      {
+        path: "party",
+        name: "guest-party",
+        meta: { disableMediaSession: true },
+        component: () =>
           import(/* webpackChunkName: "guest" */ "@/views/PartyGuestView.vue"),
       },
-    ],
-  },
-  // Music Quiz guest view - uses minimal layout
-  // Music Quiz guests NEED the web player for listen-in audio (do NOT disable it)
-  {
-    path: "/music-quiz/play",
-    component: () => import("@/layouts/PartyGuestLayout.vue"),
-    children: [
       {
-        path: "",
-        name: "music-quiz-play",
+        path: "quiz",
+        name: "guest-quiz",
+        meta: { disableMediaSession: true },
         component: () =>
           import(
             /* webpackChunkName: "music-quiz" */ "@/views/MusicQuizPlayerView.vue"
           ),
       },
     ],
+  },
+  {
+    path: "/music-quiz/play",
+    redirect: "/guest",
   },
   // Party display uses minimal layout (fullscreen for wall-mounted tablets)
   // Placed at top level so it renders without navigation/player controls
@@ -583,15 +585,13 @@ router.onError((error, to) => {
 });
 
 // Navigation guard for admin-only routes and guest mode restrictions
-router.beforeEach(async (to, _from, next) => {
-  const currentUser = store.currentUser;
-
-  // If party guest is trying to navigate away from /guest, redirect back to guest
-  // We check JWT claims (via authManager) rather than role so regular guest users aren't affected
-  if (authManager.isPartyGuest() && to.path !== "/guest") {
-    console.debug("Party guest: preventing navigation to", to.path);
-    next({ name: "guest" });
-    return;
+router.beforeEach(async (to) => {
+  const guestRedirect = getGuestNavigationRedirect(
+    authManager.isGuestAccessSession(),
+    to.path,
+  );
+  if (guestRedirect) {
+    return guestRedirect;
   }
 
   // Check admin-only routes - check all matched routes for requiresAdmin meta
@@ -628,12 +628,9 @@ router.beforeEach(async (to, _from, next) => {
 
     if (!currentUser || currentUser.role !== "admin") {
       console.warn("Admin access required for", to.path);
-      next({ name: "discover" });
-      return;
+      return { name: "discover" };
     }
   }
-
-  next();
 });
 
 router.afterEach((to, from) => {

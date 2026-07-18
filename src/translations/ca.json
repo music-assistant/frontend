@@ -125,10 +125,6 @@
                 "dark": "Fosc"
             }
         },
-        "menu_items": {
-            "label": "Elements de menú habilitats",
-            "description": "Configureu quins elements es mostraran al menú.\n\nTingueu en compte que si desactiveu la configuració, podeu bloquejar-vos.\n\nEn aquest cas, haureu d'introduir manualment el camí a la configuració o esborrar les galetes del navegador per accedir de nou a la configuració, utilitzeu-la sota el vostre propi risc."
-        },
         "language": {
             "label": "Llengua",
             "options": {

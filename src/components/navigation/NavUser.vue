@@ -15,13 +15,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { authManager } from "@/plugins/auth";
-import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Pencil, Settings } from "@lucide/vue";
+import { LogOut, MoreVertical, Settings, SquarePen } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-const isEditMode = computed(() => store.homescreenEditMode);
+const isMenuEditMode = computed(() => store.navMenuEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
@@ -36,10 +35,9 @@ const handleProfile = () => {
   router.push({ name: "profile" });
 };
 
-const handleEditHomescreen = () => {
-  setOpenMobile(false);
-  router.push("/");
-  eventbus.emit("homescreen-edit-toggle");
+const handleEditMenu = () => {
+  // Keep the sidebar (sheet on mobile) open: the menu itself is being edited.
+  store.navMenuEditMode = !store.navMenuEditMode;
 };
 
 const handleLogout = () => {
@@ -82,10 +80,7 @@ const handleLogout = () => {
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          :class="[
-            'z-[100001] w-(--reka-dropdown-menu-trigger-width) rounded-lg',
-            isEditMode ? 'min-w-64' : 'min-w-56',
-          ]"
+          class="z-[100001] w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
@@ -117,15 +112,9 @@ const handleLogout = () => {
             <Settings class="size-4" />
             {{ $t("auth.profile") }}
           </DropdownMenuItem>
-          <DropdownMenuItem @click="handleEditHomescreen">
-            <Pencil class="size-4" />
-            {{
-              $t(
-                isEditMode
-                  ? "homescreen_edit_disable"
-                  : "homescreen_edit_enable",
-              )
-            }}
+          <DropdownMenuItem @click="handleEditMenu">
+            <SquarePen class="size-4" />
+            {{ $t(isMenuEditMode ? "menu_edit_disable" : "menu_edit_enable") }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"

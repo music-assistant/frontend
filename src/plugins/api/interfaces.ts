@@ -104,6 +104,7 @@ export enum MediaType {
   RADIO = "radio",
   AUDIOBOOK = "audiobook",
   AUDIO_SOURCE = "audio_source",
+  SOUND_EFFECT = "sound_effect",
   PODCAST = "podcast",
   PODCAST_EPISODE = "podcast_episode",
   GENRE = "genre",
@@ -351,6 +352,8 @@ export enum ProviderFeature {
   BROWSE = "browse",
   SEARCH = "search",
   RECOMMENDATIONS = "recommendations",
+  // provider can enumerate sound effect items (used as audio overlay sources)
+  SOUND_EFFECTS = "sound_effects",
   // library feature per mediatype
   LIBRARY_ARTISTS = "library_artists",
   LIBRARY_ALBUMS = "library_albums",
@@ -750,6 +753,10 @@ export interface Playlist extends MediaItem {
 
 export interface Radio extends MediaItem {}
 
+export interface SoundEffect extends MediaItem {
+  duration: number;
+}
+
 export interface AudioSource extends MediaItem {
   can_play_pause: boolean;
   can_seek: boolean;
@@ -917,6 +924,13 @@ export interface PlayerQueue {
   // smart_fades_active: whether the effective crossfade is currently smart crossfade (server-derived,
   // read-only). Lets clients show a smart-fades indicator when crossfade is on and smart is active.
   smart_fades_active: boolean;
+  // audio overlay: a looping sound effect mixed into this queue's playback.
+  // overlay_source holds the selected sound effect (kept when the overlay is
+  // disabled so it can be re-enabled with the same sound), overlay_volume is
+  // the overlay loudness relative to the music in percent (100 = equally loud).
+  overlay_enabled: boolean;
+  overlay_source?: ItemMapping;
+  overlay_volume: number;
   current_index?: number;
   index_in_buffer?: number;
   elapsed_time: number;

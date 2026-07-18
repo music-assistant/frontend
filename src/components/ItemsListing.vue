@@ -154,7 +154,7 @@
               :show-track-number="showTrackNumber"
               :show-disc-number="showTrackNumber"
               :show-duration="showDuration"
-              :show-favorite="showFavoritesOnlyFilter"
+              :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
               :show-menu="item.is_playable"
               :show-provider="showProvider"
               :show-album="showAlbum"
@@ -308,6 +308,7 @@ export interface Props {
   showProvider?: boolean;
   showAlbum?: boolean;
   showFavoritesOnlyFilter?: boolean;
+  showFavorite?: boolean;
   showDuration?: boolean;
   parentItem?: MediaItemType;
   showAlbumArtistsOnlyFilter?: boolean;
@@ -363,6 +364,7 @@ const props = withDefaults(defineProps<Props>(), {
   showProvider: Object.keys(api.providers).length > 1,
   showAlbum: true,
   showFavoritesOnlyFilter: true,
+  showFavorite: undefined,
   showDuration: true,
   parentItem: undefined,
   hideOnEmpty: false,
@@ -812,23 +814,18 @@ const providerFilterSubItems = () =>
 
 const redirectSearch = function () {
   store.globalSearchTerm = params.value.search;
-  if (props.itemtype == "artists") {
-    store.globalSearchType = MediaType.ARTIST;
-  } else if (props.itemtype == "albums") {
-    store.globalSearchType = MediaType.ALBUM;
-  } else if (props.itemtype == "tracks") {
-    store.globalSearchType = MediaType.TRACK;
-  } else if (props.itemtype == "playlists") {
-    store.globalSearchType = MediaType.PLAYLIST;
-  } else if (props.itemtype == "audiobooks") {
-    store.globalSearchType = MediaType.AUDIOBOOK;
-  } else if (props.itemtype == "podcasts") {
-    store.globalSearchType = MediaType.PODCAST;
-  } else if (props.itemtype == "radios") {
-    store.globalSearchType = MediaType.RADIO;
-  } else if (props.itemtype == "genres") {
-    store.globalSearchType = MediaType.GENRE;
-  }
+  const mediaTypeByItemtype: Record<string, MediaType> = {
+    artists: MediaType.ARTIST,
+    albums: MediaType.ALBUM,
+    tracks: MediaType.TRACK,
+    playlists: MediaType.PLAYLIST,
+    audiobooks: MediaType.AUDIOBOOK,
+    podcasts: MediaType.PODCAST,
+    radios: MediaType.RADIO,
+    genres: MediaType.GENRE,
+  };
+  const mediaType = mediaTypeByItemtype[props.itemtype];
+  store.globalSearchMediaTypes = mediaType ? [mediaType] : [];
   router.push({ name: "search" });
 };
 
@@ -1521,7 +1518,7 @@ const restoreSettings = async function () {
 
 // lifecycle hooks
 const keyListener = function (e: KeyboardEvent) {
-  if (store.dialogActive) return;
+  if (store.dialogActive || store.showPlayersMenu) return;
   if (loading.value) return;
   if (e.key === "Escape") closeSearch();
   // Let searchInput handle this.

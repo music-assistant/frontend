@@ -1,377 +1,210 @@
 <template>
-  <div class="quiz-host">
-    <div class="quiz-host__qr">
-      <canvas ref="qrCanvas"></canvas>
-      <p v-if="qrError" class="quiz-host__qr-error" role="alert">
-        {{ $t("providers.music_quiz.qr_unavailable") }}
-      </p>
-      <Button
-        class="quiz-host__copy"
-        type="button"
-        variant="outline"
-        @click="copyLink"
+  <div class="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)]">
+    <MusicQuizQrCard
+      class="lg:w-72"
+      :join-link="joinLink"
+      :caption="$t('providers.music_quiz.invite_players')"
+    />
+
+    <div class="flex flex-col gap-4">
+      <slot name="game" />
+
+      <div
+        v-if="state.phase === 'lobby' && state.playback"
+        class="bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+        data-testid="music-quiz-playback-summary"
       >
-        <Copy class="size-4" />
-        {{
-          copied
-            ? $t("providers.music_quiz.copied")
-            : $t("providers.music_quiz.copy_link")
-        }}
-      </Button>
-    </div>
-    <details v-if="nowPlayingRound" class="quiz-host__now-playing-details">
-      <summary>
-        <span>{{ $t("providers.music_quiz.now_playing") }}</span>
-        <ChevronDown class="size-4" />
-      </summary>
-      <div class="quiz-host__now-playing">
-        <img
-          v-if="currentRoundImageUrl"
-          :src="currentRoundImageUrl"
-          :alt="nowPlayingRound.answer_label"
+        <Volume2
+          class="text-muted-foreground size-4 shrink-0"
+          aria-hidden="true"
         />
-        <div>
-          <span>{{ $t("providers.music_quiz.current_music") }}</span>
-          <strong>{{ nowPlayingRound.answer_label }}</strong>
-        </div>
+        <span class="font-medium">
+          {{ `${$t("providers.music_quiz.playback")}: ${playbackSummary}` }}
+        </span>
       </div>
-    </details>
-    <details
-      v-if="(state.sources?.length ?? 0) > 0"
-      class="quiz-host__session-sources"
-      open
-    >
-      <summary>
-        <span>{{ $t("providers.music_quiz.selected_music") }}</span>
-        <strong>{{ sessionSourcesSummary }}</strong>
-        <ChevronDown class="size-4" />
-      </summary>
-      <div class="quiz-host__session-source-list">
-        <div
-          v-for="source in state.sources ?? []"
-          :key="source.uri"
-          class="quiz-host__session-source"
+
+      <div
+        v-if="showActions"
+        class="bg-muted/40 flex min-h-14 flex-wrap items-center justify-end gap-2 rounded-lg border p-2"
+        data-testid="quiz-host-actions"
+      >
+        <Button
+          :disabled="busy"
+          type="button"
+          variant="outline"
+          @click="emit('present')"
         >
-          <strong>{{ source.name }}</strong>
-          <small>{{ musicQuizSourceTypeLabel(source.media_type) }}</small>
-        </div>
+          <Maximize2 class="size-4" />
+          {{ $t("providers.music_quiz.enter_present_mode") }}
+        </Button>
+        <Button
+          :disabled="busy"
+          type="button"
+          variant="destructive"
+          @click="emit('endGame')"
+        >
+          <Square class="size-4" />
+          {{ $t("providers.music_quiz.end_game") }}
+        </Button>
+        <Button
+          v-if="state.phase === 'lobby'"
+          data-testid="start-quiz"
+          :disabled="busy"
+          @click="emit('start')"
+        >
+          <Play class="size-4" />
+          {{ startLabel }}
+        </Button>
+        <Button
+          v-if="state.phase === 'answering'"
+          :disabled="busy"
+          @click="emit('reveal')"
+        >
+          <Eye class="size-4" />
+          {{ $t("providers.music_quiz.phase_reveal") }}
+        </Button>
+        <Button
+          v-if="state.phase === 'reveal'"
+          :disabled="busy"
+          data-testid="next-quiz"
+          @click="emit('next')"
+        >
+          <SkipForward class="size-4" />
+          {{ nextLabel }}
+        </Button>
+        <ButtonGroup v-if="state.phase === 'finished'" class="w-full sm:w-fit">
+          <Button
+            class="grow sm:grow-0"
+            data-testid="play-again"
+            :disabled="busy"
+            type="button"
+            @click="emit('reset')"
+          >
+            <RotateCcw class="size-4" />
+            {{ $t("providers.music_quiz.play_again") }}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                size="icon"
+                data-testid="play-again-menu"
+                :aria-label="$t('providers.music_quiz.set_up_new_game')"
+                :disabled="busy"
+                type="button"
+              >
+                <ChevronDown class="size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                data-testid="set-up-new-game"
+                :disabled="busy"
+                @click="emit('setUpNewGame')"
+              >
+                <Plus class="size-4" />
+                {{ $t("providers.music_quiz.set_up_new_game") }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
-    </details>
-    <div v-if="showActions" class="quiz-host__actions">
-      <Button
-        :disabled="busy"
-        type="button"
-        variant="outline"
-        @click="emit('delete')"
-      >
-        <Trash2 class="size-4" />
-        {{ $t("delete") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'lobby'"
-        :disabled="busy"
-        @click="emit('start')"
-      >
-        <Play class="size-4" />
-        {{ $t("providers.music_quiz.start") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'answering'"
-        :disabled="busy"
-        @click="emit('reveal')"
-      >
-        <Eye class="size-4" />
-        {{ $t("providers.music_quiz.phase_reveal") }}
-      </Button>
-      <Button
-        v-if="state.phase === 'reveal'"
-        :disabled="busy"
-        @click="emit('next')"
-      >
-        <SkipForward class="size-4" />
-        {{
-          isLastRound
-            ? $t("providers.music_quiz.finish")
-            : $t("providers.music_quiz.next")
-        }}
-      </Button>
-      <Button
-        v-if="state.phase === 'finished'"
-        :disabled="busy"
-        @click="emit('reset')"
-      >
-        <RotateCcw class="size-4" />
-        {{ $t("providers.music_quiz.new_game") }}
-      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import MusicQuizQrCard from "@/components/music-quiz/MusicQuizQrCard.vue";
 import { Button } from "@/components/ui/button";
-import type {
-  MusicQuizHostState,
-  MusicQuizRound,
-} from "@/composables/useMusicQuiz";
-import { renderMusicAssistantQr } from "@/helpers/branded_qr";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
-  getMusicQuizSourceSummary,
-  musicQuizSourceTypeLabel,
-} from "@/helpers/music_quiz_sources";
-import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { MusicQuizSupportedHostState } from "@/composables/useMusicQuiz";
+import { useMusicQuizAutoStart } from "@/composables/useMusicQuizAutoStart";
+import { useMusicQuizRevealCountdown } from "@/composables/useMusicQuizRevealCountdown";
 import { $t } from "@/plugins/i18n";
 import {
   ChevronDown,
-  Copy,
   Eye,
+  Maximize2,
   Play,
+  Plus,
   RotateCcw,
   SkipForward,
-  Trash2,
+  Square,
+  Volume2,
 } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { toast } from "vue-sonner";
+import { computed, type VNode } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    state: MusicQuizHostState;
+    state: MusicQuizSupportedHostState;
     busy: boolean;
     joinLink: string;
-    currentRound: MusicQuizRound | null;
     isLastRound: boolean;
+    revealCountdown?: boolean;
     showActions?: boolean;
   }>(),
   {
+    revealCountdown: false,
     showActions: true,
   },
 );
+defineSlots<{ game: () => VNode[] }>();
 const emit = defineEmits<{
-  delete: [];
+  endGame: [];
+  present: [];
   start: [];
   reveal: [];
   next: [];
   reset: [];
+  setUpNewGame: [];
 }>();
 
-const qrCanvas = ref<HTMLCanvasElement | null>(null);
-const copied = ref(false);
-const qrError = ref(false);
-let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
-
-const currentRoundImageUrl = computed(() =>
-  getMediaImageUrl(props.currentRound?.image_url ?? ""),
+const { hasElapsed, isScheduled, remainingLabel } = useMusicQuizAutoStart(
+  () => props.state,
 );
-const nowPlayingRound = computed(() => {
-  const round = props.currentRound;
-  if (props.state.phase === "finished" || !round?.answer_label) return null;
-  return round;
+const startLabel = computed(() => {
+  if (!isScheduled.value) return $t("providers.music_quiz.start");
+  if (hasElapsed.value) {
+    return $t("providers.music_quiz.start_now_waiting");
+  }
+  return $t("providers.music_quiz.start_now_countdown", [remainingLabel.value]);
 });
-const sessionSourcesSummary = computed(() =>
-  getMusicQuizSourceSummary(props.state.sources ?? []),
-);
-
-async function renderQr() {
-  if (!qrCanvas.value || !props.joinLink) return;
-  try {
-    await renderMusicAssistantQr(qrCanvas.value, props.joinLink);
-    qrError.value = false;
-  } catch (err) {
-    console.error("Could not render Music Quiz join QR", err);
-    qrError.value = true;
+const playbackSummary = computed(() => {
+  const playback = props.state.playback;
+  if (!playback) return "";
+  if (playback.mode === "remote") {
+    return $t("providers.music_quiz.playback_summary_remote");
   }
-}
-
-async function copyLink() {
-  if (!props.joinLink) return;
-  copied.value = await copyToClipboard(props.joinLink);
-  if (!copied.value) {
-    toast.error($t("providers.music_quiz.copy_join_link_failed"));
-  }
-  if (copiedTimeout) clearTimeout(copiedTimeout);
-  copiedTimeout = setTimeout(() => {
-    copied.value = false;
-  }, 1600);
-}
-
-watch(qrCanvas, () => renderQr());
-watch(
-  () => props.joinLink,
-  () => renderQr(),
-  { immediate: true },
-);
-
-onBeforeUnmount(() => {
-  if (copiedTimeout) clearTimeout(copiedTimeout);
+  return playback.venue_player_name
+    ? $t("providers.music_quiz.playback_summary_venue", [
+        playback.venue_player_name,
+      ])
+    : $t("providers.music_quiz.playback_venue");
+});
+const {
+  hasElapsed: revealCountdownElapsed,
+  isScheduled: revealCountdownScheduled,
+  remainingLabel: revealCountdownLabel,
+} = useMusicQuizRevealCountdown({
+  active: () => props.revealCountdown && props.state.phase === "reveal",
+  autoAdvanceAt: () => props.state.current_round?.auto_advance_at,
+});
+const nextLabel = computed(() => {
+  const defaultKey = props.isLastRound
+    ? "providers.music_quiz.finish"
+    : "providers.music_quiz.next";
+  if (!revealCountdownScheduled.value || revealCountdownElapsed.value)
+    return $t(defaultKey);
+  return $t(
+    props.isLastRound
+      ? "providers.music_quiz.finish_quiz_countdown"
+      : "providers.music_quiz.next_round_countdown",
+    [revealCountdownLabel.value],
+  );
 });
 </script>
-
-<style scoped>
-.quiz-host {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.quiz-host__qr {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.quiz-host__qr canvas {
-  width: 220px;
-  height: 220px;
-  border-radius: 12px;
-  background: transparent;
-}
-
-.quiz-host__qr-error {
-  margin: 0;
-  max-width: 220px;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.quiz-host__copy {
-  height: auto;
-  min-height: 2.5rem;
-  align-items: center;
-  padding: 0.6rem 1rem;
-  line-height: 1.25;
-  white-space: normal;
-}
-
-.quiz-host__now-playing-details,
-.quiz-host__session-sources {
-  flex: 1 1 320px;
-  min-width: min(100%, 280px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--background);
-  overflow: hidden;
-}
-
-.quiz-host__now-playing-details summary,
-.quiz-host__session-sources summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-weight: 600;
-  list-style: none;
-  padding: 0.75rem 0.9rem;
-  background: var(--muted);
-  color: var(--foreground);
-  user-select: none;
-}
-
-.quiz-host__now-playing-details summary::-webkit-details-marker,
-.quiz-host__session-sources summary::-webkit-details-marker {
-  display: none;
-}
-
-.quiz-host__now-playing-details summary strong,
-.quiz-host__session-sources summary strong {
-  margin-left: auto;
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.quiz-host__now-playing-details summary svg,
-.quiz-host__session-sources summary svg {
-  flex: 0 0 auto;
-  color: var(--muted-foreground);
-  transition: transform 0.15s ease;
-}
-
-.quiz-host__now-playing-details[open] summary svg,
-.quiz-host__session-sources[open] summary svg {
-  transform: rotate(180deg);
-}
-
-.quiz-host__now-playing {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 0.9rem;
-}
-
-.quiz-host__now-playing img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  object-fit: cover;
-  background: var(--muted);
-}
-
-.quiz-host__now-playing div {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.quiz-host__now-playing span {
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.quiz-host__now-playing strong {
-  overflow-wrap: anywhere;
-  font-size: 1.4rem;
-  line-height: 1.2;
-}
-
-.quiz-host__session-source-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 12rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0.75rem;
-}
-
-.quiz-host__session-source {
-  min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  padding: 0.6rem 0.75rem;
-}
-
-.quiz-host__session-source strong,
-.quiz-host__session-source small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.quiz-host__session-source small {
-  color: var(--muted-foreground);
-}
-
-.quiz-host__actions {
-  flex: 1 1 240px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-@media (max-width: 800px) {
-  .quiz-host__actions {
-    justify-content: flex-start;
-  }
-
-  .quiz-host__now-playing {
-    grid-template-columns: 96px minmax(0, 1fr);
-  }
-}
-</style>

@@ -1,22 +1,31 @@
 import {
   createMusicQuiz,
   deleteMusicQuiz,
+  getAvailableMusicQuizTypes,
   getMusicQuiz,
-  type MusicQuizDifficulty,
+  getMusicQuizPlaybackOptions,
+  isSupportedMusicQuiz,
+  isMusicQuizProviderEvent,
   nextMusicQuiz,
   resetMusicQuiz,
   revealMusicQuiz,
   startMusicQuiz,
+  type MusicQuizCreateRequest,
   type MusicQuizCurrentRound,
   type MusicQuizHostState,
+  type MusicQuizPlaybackOptions,
 } from "@/composables/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { getMusicQuizErrorMessage } from "@/helpers/music_quiz";
+import {
+  getMusicQuizErrorMessage,
+  isNoActiveGameError,
+} from "@/helpers/music_quiz";
 
 export interface UseMusicQuizHostOptions {
+  loadSetupData?: boolean;
   notifyError: (message: string) => void;
 }
 
@@ -27,57 +36,57 @@ export interface UseMusicQuizHostOptions {
  * (game_updated -> re-fetch, game_removed -> clear), and wraps all host actions.
  */
 export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
-  const { notifyError } = options;
+  const { loadSetupData = true, notifyError } = options;
 
   const state = ref<MusicQuizHostState | null>(null);
-  const gameRemoved = ref(false);
   const busy = ref(false);
+  const starting = ref(false);
   const loading = ref(false);
+  const availableQuizTypes = ref<string[]>([]);
+  const playbackOptions = ref<MusicQuizPlaybackOptions | null>(null);
+  const playbackOptionsLoading = ref(false);
+  const playbackOptionsLegacy = ref(false);
+  const playbackOptionsError = ref(false);
   const providerInstanceId = ref<string | null>(null);
 
   let unsubscribeProviderEvent: (() => void) | undefined;
+  let stateRequestId = 0;
+  let playbackOptionsRequestId = 0;
 
   const currentRound = computed<MusicQuizCurrentRound | null>(() => {
-    return state.value?.current_round ?? null;
+    const currentState = state.value;
+    return currentState && isSupportedMusicQuiz(currentState)
+      ? (currentState.current_round ?? null)
+      : null;
   });
 
   const isLastRound = computed(() => {
-    if (!state.value) return false;
+    const currentState = state.value;
+    if (!currentState || !isSupportedMusicQuiz(currentState)) return false;
     return (
-      state.value.current_round &&
-      state.value.current_round.round_index >= state.value.round_count - 1
+      currentState.current_round &&
+      currentState.current_round.round_index >= currentState.round_count - 1
     );
   });
 
-  const joinLink = computed(() => state.value?.join_url ?? "");
-
-  const phaseLabel = computed(() => {
-    if (!state.value) return "";
-    if (state.value.phase === "lobby")
-      return $t("providers.music_quiz.phase_waiting_for_players");
-    if (state.value.phase === "answering")
-      return $t("providers.music_quiz.phase_answers_open");
-    if (state.value.phase === "reveal")
-      return $t("providers.music_quiz.phase_enjoy_track");
-    return $t("providers.music_quiz.phase_finished");
+  const joinLink = computed(() => {
+    const currentState = state.value;
+    return currentState && isSupportedMusicQuiz(currentState)
+      ? currentState.join_url
+      : "";
   });
 
   async function fetchState() {
+    const requestId = ++stateRequestId;
     try {
       loading.value = true;
       const nextState = await getMusicQuiz();
+      if (requestId !== stateRequestId) return;
       state.value = nextState;
-      gameRemoved.value = false;
     } catch (err) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "message" in err &&
-        typeof err.message === "string" &&
-        err.message.toLowerCase().includes("no active game")
-      ) {
+      if (requestId !== stateRequestId) return;
+      if (isNoActiveGameError(err)) {
         state.value = null;
-        gameRemoved.value = false;
       } else {
         notifyError(
           getMusicQuizErrorMessage(
@@ -87,60 +96,60 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
         );
       }
     } finally {
-      loading.value = false;
+      if (requestId === stateRequestId) {
+        loading.value = false;
+      }
     }
   }
 
-  function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
-    if (!event.data || typeof event.data !== "object") return;
-    const payload = event.data as {
-      event?: string;
-      state?: MusicQuizHostState;
-    };
-    if (payload.event !== "game_updated" && payload.event !== "game_removed") {
-      return;
-    }
-    if (!isScopedProviderEvent(event.object_id)) return;
-    if (payload.event === "game_updated") {
-      // Re-fetch on game_updated to get the latest host state
-      void fetchState();
-    } else if (payload.event === "game_removed") {
-      state.value = null;
-      gameRemoved.value = true;
+  async function fetchAvailableQuizTypes() {
+    try {
+      availableQuizTypes.value = await getAvailableMusicQuizTypes();
+    } catch (err) {
+      if (isUnknownCommandError(err)) {
+        availableQuizTypes.value = [];
+        return;
+      }
+      notifyError(
+        getMusicQuizErrorMessage(
+          err,
+          $t("providers.music_quiz.error_load_game_types"),
+        ),
+      );
     }
   }
 
-  function isScopedProviderEvent(objectId?: string) {
-    if (!objectId) return false;
-    if (!providerInstanceId.value) {
-      providerInstanceId.value = objectId;
-      return true;
+  async function fetchPlaybackOptions() {
+    const requestId = ++playbackOptionsRequestId;
+    playbackOptionsLoading.value = true;
+    playbackOptionsLegacy.value = false;
+    playbackOptionsError.value = false;
+    try {
+      const options = await getMusicQuizPlaybackOptions();
+      if (requestId !== playbackOptionsRequestId) return;
+      playbackOptions.value = options;
+    } catch (err) {
+      if (requestId !== playbackOptionsRequestId) return;
+      if (isUnknownCommandError(err)) {
+        playbackOptions.value = null;
+        playbackOptionsLegacy.value = true;
+      } else {
+        playbackOptionsError.value = true;
+        notifyError($t("providers.music_quiz.error_load_playback_options"));
+      }
+    } finally {
+      if (requestId === playbackOptionsRequestId) {
+        playbackOptionsLoading.value = false;
+      }
     }
-    return providerInstanceId.value === objectId;
   }
 
-  async function create(
-    quiz_type: string,
-    round_count: number,
-    suggestion_count: number,
-    answer_duration: number,
-    difficulty: MusicQuizDifficulty,
-    source_uris: string[],
-    name?: string,
-  ) {
+  async function create(request: MusicQuizCreateRequest) {
+    if (busy.value) return false;
     busy.value = true;
     try {
-      const nextState = await createMusicQuiz(
-        quiz_type,
-        round_count,
-        suggestion_count,
-        answer_duration,
-        difficulty,
-        source_uris,
-        name,
-      );
-      state.value = nextState;
-      gameRemoved.value = false;
+      const nextState = await createMusicQuiz(request);
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -153,10 +162,12 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function start() {
+    if (busy.value) return false;
     busy.value = true;
+    starting.value = true;
     try {
       const nextState = await startMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -164,15 +175,17 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
       );
       return false;
     } finally {
+      starting.value = false;
       busy.value = false;
     }
   }
 
   async function reveal() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await revealMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -185,10 +198,11 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
   }
 
   async function next() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       const nextState = await nextMusicQuiz();
-      state.value = nextState;
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -200,11 +214,12 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
-  async function reset() {
+  async function reset(autoStart = false) {
+    if (busy.value) return false;
     busy.value = true;
     try {
-      const nextState = await resetMusicQuiz();
-      state.value = nextState;
+      const nextState = await resetMusicQuiz(autoStart);
+      applyState(nextState);
       return true;
     } catch (err) {
       notifyError(
@@ -216,12 +231,42 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
+  async function replay() {
+    if (busy.value) return false;
+    busy.value = true;
+    starting.value = true;
+    let resetComplete = false;
+    try {
+      const lobbyState = await resetMusicQuiz(false);
+      applyState(lobbyState);
+      resetComplete = true;
+      const nextState = await startMusicQuiz();
+      applyState(nextState);
+      return true;
+    } catch (err) {
+      notifyError(
+        getMusicQuizErrorMessage(
+          err,
+          $t(
+            resetComplete
+              ? "providers.music_quiz.error_start"
+              : "providers.music_quiz.error_reset",
+          ),
+        ),
+      );
+      return false;
+    } finally {
+      starting.value = false;
+      busy.value = false;
+    }
+  }
+
   async function deleteGame() {
+    if (busy.value) return false;
     busy.value = true;
     try {
       await deleteMusicQuiz();
-      state.value = null;
-      gameRemoved.value = false;
+      clearState();
       return true;
     } catch (err) {
       notifyError(
@@ -233,8 +278,45 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
     }
   }
 
+  function handleProviderEvent(event: { object_id?: string; data?: unknown }) {
+    if (!isMusicQuizProviderEvent(event.data)) return;
+    const payload = event.data;
+    if (!isScopedProviderEvent(event.object_id)) return;
+    if (payload.event === "game_updated") {
+      // Re-fetch on game_updated to get the latest host state
+      void fetchState();
+    } else if (payload.event === "game_removed") {
+      clearState();
+    }
+  }
+
+  function isScopedProviderEvent(objectId?: string) {
+    if (!objectId) return false;
+    if (!providerInstanceId.value) {
+      providerInstanceId.value = objectId;
+      return true;
+    }
+    return providerInstanceId.value === objectId;
+  }
+
+  function applyState(nextState: MusicQuizHostState) {
+    stateRequestId++;
+    state.value = nextState;
+    loading.value = false;
+  }
+
+  function clearState() {
+    stateRequestId++;
+    state.value = null;
+    loading.value = false;
+  }
+
   onMounted(() => {
     fetchState();
+    if (loadSetupData) {
+      fetchAvailableQuizTypes();
+      fetchPlaybackOptions();
+    }
     unsubscribeProviderEvent = api.subscribe(
       EventType.PROVIDER_EVENT,
       handleProviderEvent,
@@ -247,19 +329,32 @@ export function useMusicQuizHost(options: UseMusicQuizHostOptions) {
 
   return {
     state,
-    gameRemoved,
     busy,
+    starting,
     loading,
+    availableQuizTypes,
+    playbackOptions,
+    playbackOptionsLoading,
+    playbackOptionsLegacy,
+    playbackOptionsError,
     currentRound,
     isLastRound,
     joinLink,
-    phaseLabel,
     create,
     start,
     reveal,
     next,
     reset,
+    replay,
     deleteGame,
     fetchState,
+    fetchAvailableQuizTypes,
+    fetchPlaybackOptions,
   };
+
+  function isUnknownCommandError(err: unknown) {
+    return getMusicQuizErrorMessage(err)
+      .toLowerCase()
+      .includes("invalid command");
+  }
 }

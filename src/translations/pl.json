@@ -132,7 +132,6 @@
         "tracks_in_library": "Utwory w bibliotece",
         "playlists_in_library": "Playlisty w bibliotece",
         "radio_in_library": "Radio w bibliotece",
-        "server_logging": "Logowanie do serwera",
         "download_log": "Pobierz plik logów",
         "edit_group_members": "Edytuj członków grupy",
         "add_new_provider_button": "Dodaj dostawcę {0}",
@@ -147,10 +146,6 @@
                 "light": "Jasny",
                 "dark": "Ciemny"
             }
-        },
-        "menu_items": {
-            "label": "Włączone elementy menu",
-            "description": "Skonfiguruj, które elementy mają być wyświetlane w menu.\n\n Pamiętaj, że jeśli wyłączysz ustawienia, możesz się zablokować.\n\nW takim przypadku konieczne będzie ręczne wprowadzenie ścieżki do ustawień lub wyczyszczenie plików cookie przeglądarki, aby ponownie uzyskać dostęp do ustawień. Korzystasz na własne ryzyko."
         },
         "language": {
             "label": "Język",
@@ -310,8 +305,6 @@
         "view_documentation": "Zobacz dokumentację",
         "about": "O",
         "about_description": "Informacje o wersji, autorzy i więcej",
-        "system_logging": "Rejestrowanie serwera",
-        "system_logging_description": "Przeglądaj i pobieraj dzienniki serwera w celu rozwiązywania problemów",
         "auto_refresh_log": "Automatyczne odświeżanie",
         "log_truncated": "Wyświetlanie ostatnich {0} wierszy. Pobierz pełny plik dziennika, aby zobaczyć całą historię.",
         "version_info": "Informacje o wersji",
@@ -649,8 +642,6 @@
         "toggle_players": "Przełącz odtwarzacze",
         "toggle_top_picks": "Przełącz najlepsze typy",
         "toggle_row": "Przełącz widoczność wiersza",
-        "move_row_up": "Przesuń wiersz w górę",
-        "move_row_down": "Przesuń wiersz w dół",
         "toggle_power": "Przełącz zasilanie",
         "open_options": "Otwórz opcje",
         "more_options": "Więcej opcji",

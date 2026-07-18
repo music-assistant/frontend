@@ -5,7 +5,24 @@
       :icon="Compass"
       color="background"
       :title="$t('discover')"
-    />
+    >
+      <template #append>
+        <Button
+          variant="ghost"
+          size="icon"
+          :class="editMode ? 'text-primary' : 'opacity-80'"
+          :title="
+            $t(editMode ? 'homescreen_edit_disable' : 'homescreen_edit_enable')
+          "
+          :aria-label="
+            $t(editMode ? 'homescreen_edit_disable' : 'homescreen_edit_enable')
+          "
+          @click="handleHomescreenEditToggle"
+        >
+          <SquarePen class="size-5" />
+        </Button>
+      </template>
+    </Toolbar>
 
     <!-- Provider error warning banner -->
     <v-alert
@@ -51,10 +68,8 @@ import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
-import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
-import { Check, Compass } from "@lucide/vue";
-import { onMounted, onUnmounted, ref } from "vue";
+import { Check, Compass, SquarePen } from "@lucide/vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -65,7 +80,6 @@ const erroredProviderType = ref<string | null>(null);
 
 const handleHomescreenEditToggle = () => {
   editMode.value = !editMode.value;
-  store.homescreenEditMode = editMode.value;
 };
 
 const navigateToProviders = () => {
@@ -80,8 +94,6 @@ const navigateToProviders = () => {
 };
 
 onMounted(async () => {
-  eventbus.on("homescreen-edit-toggle", handleHomescreenEditToggle);
-
   if (authManager.isAdmin()) {
     try {
       const configs = await api.getProviderConfigs();
@@ -94,11 +106,6 @@ onMounted(async () => {
       // Ignore errors - this is a best-effort feature
     }
   }
-});
-
-onUnmounted(() => {
-  eventbus.off("homescreen-edit-toggle", handleHomescreenEditToggle);
-  store.homescreenEditMode = false;
 });
 </script>
 
