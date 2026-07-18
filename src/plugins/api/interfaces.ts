@@ -90,26 +90,11 @@ export interface DSPConfigPreset {
   config: DSPConfig;
 }
 
-// DSPDetails used in StreamDetails
 export enum DSPState {
   ENABLED = "enabled",
   DISABLED = "disabled",
   DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
   UNKNOWN = "unknown",
-}
-
-// This describes the DSP configuration as applied,
-// even when the DSP state is disabled. For example,
-// output_limiter can remain true while the DSP is disabled.
-// All filters in the list are guaranteed to be enabled.
-// output_format is the format that will be sent to the output device (if known).
-export interface DSPDetails {
-  state: DSPState;
-  input_gain: number;
-  filters: DSPFilter[];
-  output_gain: number;
-  output_limiter: boolean;
-  output_format?: AudioFormat;
 }
 
 /// enums
@@ -920,14 +905,6 @@ export interface AudioProcessingChain {
   outputs?: AudioOutputDetails[];
 }
 
-export interface LoudnessMeasurement {
-  integrated: number;
-  true_peak: number;
-  lra: number;
-  threshold: number;
-  target_offset: number;
-}
-
 export interface StreamMetadata {
   // mandatory fields
   title: string;
@@ -950,15 +927,6 @@ export interface StreamDetails {
 
   queue_id?: string;
   fade_in?: boolean;
-  loudness?: number;
-  loudness_album?: number;
-  prefer_album_loudness?: boolean;
-  target_loudness?: number;
-  volume_normalization_mode?: VolumeNormalizationMode;
-  volume_normalization_gain_correct?: number;
-  // This contains the DSPDetails of all players in the group.
-  // In case of single player playback, dict will contain only one entry.
-  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item

@@ -532,10 +532,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoder",
     "play_from_here": "Spill herfra",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamisk volumnormalisering",
-    "loudness_fixed": "Fast forsterkningskorreksjon",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Spiller for øyeblikket",
     "all_players": "Alle spillere",
@@ -545,40 +541,20 @@
     "streamdetails": {
         "input_header": "Inngang",
         "output_header": "Utgang",
-        "output_format_info": "Lyd sendes i formatet {0}",
         "eq_band_count": "{0} bånd",
         "eq_band_count_singular": "1 bånd",
         "input_gain": "Inngangsforsterkning ({0} dB)",
         "output_gain": "Utgangsforsterkning ( {0} dB)",
         "output_limiter": "Utgangsbegrenser",
-        "output_limiter_info": "Reduserer automatisk svært høye lyder for å forhindre forvrengning og beskytte høyttalerne dine",
-        "dsp_unsupported": "DSP støttes ikke",
-        "dsp_disabled_by_unsupported_group": "Denne spillerleverandøren støtter ikke DSP med synkronisert avspilling",
         "file_info": {
             "container": "Beholder: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Bithastighet: {0} kbps",
             "sample_rate": "Samplingsfrekvens: {0} kHz",
             "channels": "Kanaler: {0}",
-            "bit_depth": "Bitdybde: {0}",
-            "processing_notice": "Lyden behandles internt som 32-biters float PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Målnivå: {0} LUFS",
-            "integrated_loudness": "Målt (integrert) lydstyrke: {0} LUFS",
-            "integrated_album_loudness": "Albumets lydstyrke: {0} LUFS",
-            "applied_gain_correction": "Brukt forsterkningskorreksjon: {0} Db",
-            "mode": {
-                "dynamic": "Volumnormalisering er påslått i dynamisk modus.",
-                "measurement_only": "Volumnormalisering er aktivert ut fra en lagret verdi for det samlede (integrerte) lydstyrke på lyden.",
-                "measurement_album": "Volumnormalisering er aktivert ut fra en lagret verdi for albumets samlede (integrerte) lydstyrke.",
-                "fixed_gain": "Volumnormalisering er påslått og bruker fast forsterkningskorreksjon."
-            }
-        },
-        "click_to_expand": "Klikk for å vise alle spillere",
-        "output_format_pcm_info": "Lyden sendes som PCM til spillerleverandøren. Spillerleverandøren kan deretter konvertere lyden til et annet format før den sendes til spilleren."
+            "bit_depth": "Bitdybde: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} Db",
     "select_source": "Velg kilde",
     "play_replace_next": "Spill av neste (tøm køen)",
     "all_enqueue_options": "Alle køinstillinger",

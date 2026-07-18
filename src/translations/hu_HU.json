@@ -736,10 +736,6 @@
     "podcast_episode": "Epizód",
     "podcast_episodes": "Epizódok",
     "play_from_here": "Lejátszás innen",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dinamikus hangerő normalizálás",
-    "loudness_fixed": "Rögzített erősítés-korrekció",
     "dsp_active": "Aktív",
     "currently_playing_players": "Jelenleg lejátszás alatt",
     "all_players": "Minden lejátszó",
@@ -749,42 +745,21 @@
     "streamdetails": {
         "input_header": "Bemenet",
         "output_header": "Kimenet",
-        "output_format_info": "A hang {0} formátumban kerül elküldésre",
         "eq_band_count": "{0} sáv",
         "eq_band_count_singular": "1 sáv",
         "input_gain": "Bemeneti erősítés ({0} dB)",
         "output_gain": "Kimeneti erősítés ({0} dB)",
         "output_limiter": "Kimeneti korlátozó",
-        "output_limiter_info": "Automatikusan csökkenti a túl hangos zajokat a torzítás megelőzése és a hangszórók védelme érdekében",
-        "dsp_unsupported": "A DSP nem támogatott",
-        "dsp_disabled_by_unsupported_group": "Ez a lejátszó szolgáltató nem támogatja a DSP-t szinkronizált lejátszás esetén",
         "file_info": {
             "container": "Tároló: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Bitráta: {0} kbps",
             "sample_rate": "Mintavételi frekvencia: {0} kHz",
             "channels": "Csatornák: {0}",
-            "bit_depth": "Bitmélység: {0}",
-            "processing_notice": "A hang belsőleg 32-bit lebegőpontos PCM-ként kerül feldolgozásra"
+            "bit_depth": "Bitmélység: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Célszint: {0} LUFS",
-            "integrated_loudness": "Mért (integrált) hangerő: {0} LUFS",
-            "integrated_album_loudness": "Album hangereje: {0} LUFS",
-            "applied_gain_correction": "Alkalmazott erősítés korrekció: {0} dB",
-            "mode": {
-                "dynamic": "A hangerő normalizálás dinamikus módban aktív.",
-                "measurement_only": "A hangerő normalizálás a hang (integrált) hangerejének tárolt mérése alapján aktív.",
-                "measurement_album": "A hangerő normalizálás az album (integrált) hangerejének tárolt mérése alapján aktív.",
-                "fixed_gain": "A hangerő normalizálás rögzített erősítés korrekció alapján aktív."
-            }
-        },
-        "click_to_expand": "Kattintson az összes lejátszó megjelenítéséhez",
-        "output_format_pcm_info": "A hang PCM formátumban kerül átadásra a lejátszó szolgáltatónak. A lejátszó szolgáltató ezután átalakíthatja a hangot másik formátumra, mielőtt elküldi a lejátszónak.",
-        "more_info": "További információ",
-        "player_not_found": "A lejátszó nem található"
+        "more_info": "További információ"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Forrás kiválasztása",
     "play_replace_next": "Következő lejátszása (sor törlése)",
     "all_enqueue_options": "Összes sorba állítási lehetőség",

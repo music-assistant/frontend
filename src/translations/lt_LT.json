@@ -663,10 +663,6 @@
     "podcast_episode": "Epizodas",
     "podcast_episodes": "Epizodai",
     "play_from_here": "Leisti iš čia",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (albumas)",
-    "loudness_dynamic": "Dinaminis tūrio normalizavimas",
-    "loudness_fixed": "Fiksuoto stiprinimo korekcija",
     "dsp_active": "Aktyvus",
     "currently_playing_players": "Šiuo metu grojama",
     "all_players": "Visi grotuvai",
@@ -676,40 +672,20 @@
     "streamdetails": {
         "input_header": "Įvestis",
         "output_header": "Išvestis",
-        "output_format_info": "Garsas siunčiamas į {0} formatas",
         "eq_band_count": "{0} juostos",
         "eq_band_count_singular": "1 juosta",
         "input_gain": "Įvesties stiprinimas ({0} dB)",
         "output_gain": "Išėjimo stiprinimas ({0} dB)",
         "output_limiter": "Išvesties ribotuvas",
-        "output_limiter_info": "Automatiškai sumažina labai garsius garsus, kad būtų išvengta iškraipymų ir apsaugoti garsiakalbiai",
-        "dsp_unsupported": "DSP nepalaikomas",
-        "dsp_disabled_by_unsupported_group": "Šis grotuvo tiekėjas nepalaiko DSP su sinchronizuotu atkūrimu",
         "file_info": {
             "container": "Konteineris: {0}",
             "codec": "Kodekas: {0}",
             "bit_rate": "Bitų sparta: {0} kbps",
             "sample_rate": "Imties dažnis: {0} kHz",
             "channels": "Kanalai: {0}",
-            "bit_depth": "Bitų gylis: {0}",
-            "processing_notice": "Garsas apdorojamas viduje kaip 32 bitų slankiojantis PCM"
-        },
-        "volume_normalization": {
-            "target_level": "Tikslinis lygis: {0} LUFS",
-            "integrated_loudness": "Išmatuotas (integruotas) garsumas: {0} LUFS",
-            "integrated_album_loudness": "Albumo garsumas: {0} LUFS",
-            "applied_gain_correction": "Taikoma stiprinimo korekcija: {0} dB",
-            "mode": {
-                "dynamic": "Dinaminiame režime aktyvus garsumo normalizavimas.",
-                "measurement_only": "Garsumo normalizavimas aktyvus remiantis saugomu (integruoto) garso garsumo matavimu.",
-                "measurement_album": "Garsumo normalizavimas aktyvus remiantis išsaugotu (integruoto) albumo garsumo matavimu.",
-                "fixed_gain": "Garsumo normalizavimas aktyvus pagal fiksuotą stiprinimo korekciją."
-            }
-        },
-        "click_to_expand": "Spustelėkite, kad būtų rodomi visi grotuvai",
-        "output_format_pcm_info": "Garsas grotuvo tiekėjui perduodamas PCM formatu. Prieš siųsdamas garsą grotuvui, grotuvo tiekėjas gali jį konvertuoti į kitą formatą."
+            "bit_depth": "Bitų gylis: {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Pasirinkite šaltinį",
     "play_replace_next": "Žaisti toliau (išvalyti eilę)",
     "all_enqueue_options": "Visos įtraukimo į eilę parinktys",

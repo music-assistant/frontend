@@ -756,10 +756,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episoden",
     "play_from_here": "Ab hier wiedergeben",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (Album)",
-    "loudness_dynamic": "Dynamische Lautstärkenormalisierung",
-    "loudness_fixed": "Feste Verstärkungskorrektur",
     "dsp_active": "Aktiv",
     "currently_playing_players": "Aktuelle Wiedergabe",
     "all_players": "Alle Wiedergabegeräte",
@@ -769,42 +765,21 @@
     "streamdetails": {
         "input_header": "Eingabe",
         "output_header": "Ausgabe",
-        "output_format_info": "Audio wird im Format {0} übertragen",
         "eq_band_count": "{0} Bänder",
         "eq_band_count_singular": "1 Band",
         "input_gain": "Eingangsverstärkung ({0} dB)",
         "output_gain": "Ausgabepegel({0} dB)",
         "output_limiter": "Ausgangsbegrenzer",
-        "output_limiter_info": "Reduziert automatisch sehr laute Töne, um Verzerrungen zu vermeiden und die Lautsprecher zu schützen",
-        "dsp_unsupported": "DSP nicht unterstützt.",
-        "dsp_disabled_by_unsupported_group": "Dieser Wiedergabegeräte-Anbieter unterstützt keinen DSP bei synchronisierter Wiedergabe.",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bitrate: {0} Kbps",
             "sample_rate": "Abtastrate: {0} kHz",
             "channels": "Kanäle: {0}",
-            "bit_depth": "Bittiefe: {0}",
-            "processing_notice": "Audio wird intern als 32 Bit Float PCM verarbeitet"
+            "bit_depth": "Bittiefe: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Zielpegel: {0} LUFS",
-            "integrated_loudness": "Gemessene (integrierte) Lautstärke: {0} LUFS",
-            "integrated_album_loudness": "Album-Lautstärke: {0} LUFS",
-            "applied_gain_correction": "Angewendete Verstärkungskorrektur: {0} dB",
-            "mode": {
-                "dynamic": "Lautstärkenormalisierung ist im dynamischen Modus aktiv",
-                "measurement_only": "Lautstärkenormalisierung ist basierend auf einer\n gespeicherten Messung der (integrierten) Audio-Loudness.",
-                "measurement_album": "Lautstärkenormalisierung ist auf Basis einer gespeicherten Messung der (integrierten) Loudness des Albums aktiv.",
-                "fixed_gain": "Normalisierung der Lautstärke ist basierend auf fester Verstärkungskorrektur aktiv."
-            }
-        },
-        "click_to_expand": "Zur Anzeige aller Wiedergabegeräte klicken",
-        "output_format_pcm_info": "Audio wird als PCM an den Wiedergabegeräte-Anbieter übergeben. Der Wiedergabegeräte-Anbieter kann das Audio in ein anderes Format konvertieren bevor es an das Wiedergabegerät übertragen wird.",
-        "more_info": "Weitere Informationen",
-        "player_not_found": "Wiedergabegerät nicht gefunden"
+        "more_info": "Weitere Informationen"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Quelle auswählen",
     "play_replace_next": "Nächstes abspielen (Warteschlange leeren)",
     "all_enqueue_options": "Alle Warteschlangenoptionen",

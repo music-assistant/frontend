@@ -1,6 +1,6 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="detailsAvailable">
+  <Popover v-if="audioProcessing && streamDetails">
     <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
@@ -34,7 +34,10 @@
       }"
       @open-auto-focus.prevent
     >
-      <StreamDetailsChain :stream-details="streamDetails" />
+      <AudioProcessingDetails
+        :chain="audioProcessing"
+        :stream-details="streamDetails"
+      />
     </PopoverContent>
   </Popover>
 </template>
@@ -47,11 +50,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import StreamDetailsChain from "@/components/StreamDetailsChain.vue";
+import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 import {
-  hasEmbeddedAudioProcessing,
   qualityTierRangeLabel,
   qualityTierToColor,
   useStreamQuality,
@@ -67,19 +69,9 @@ const streamDetails = computed(
 const audioProcessing = computed(
   () => streamDetails.value?.audio_processing ?? undefined,
 );
-const legacyStreamDetails = computed(() =>
-  hasEmbeddedAudioProcessing(streamDetails.value)
-    ? undefined
-    : streamDetails.value,
-);
-const detailsAvailable = computed(
-  () => !!audioProcessing.value || !!legacyStreamDetails.value,
-);
 
-const { minOutputQualityTier, maxOutputQualityTier } = useStreamQuality(
-  legacyStreamDetails,
-  audioProcessing,
-);
+const { minOutputQualityTier, maxOutputQualityTier } =
+  useStreamQuality(audioProcessing);
 
 const qualityLabel = computed(() => {
   return qualityTierRangeLabel(
@@ -98,7 +90,6 @@ const triggerDisabled = computed(
 </script>
 
 <script lang="ts">
-export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)

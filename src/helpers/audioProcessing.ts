@@ -2,10 +2,8 @@ import { $t } from "@/plugins/i18n";
 import { toRaw } from "vue";
 import {
   DSPFilterType,
-  type AudioFormat,
   type BalanceFilter,
   type DSPConfig,
-  type DSPDetails,
   type DSPFilter,
   type GainFilter,
   type ParametricEQBand,
@@ -18,36 +16,6 @@ export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
     ...structuredClone(toRaw(config)),
     preset_id: null,
   };
-}
-
-export function areAudioFormatsEqual(
-  left?: AudioFormat | null,
-  right?: AudioFormat | null,
-): boolean {
-  if (left === right) return true;
-  if (!left || !right) return false;
-  return (
-    left.content_type === right.content_type &&
-    left.codec_type === right.codec_type &&
-    left.sample_rate === right.sample_rate &&
-    left.bit_depth === right.bit_depth &&
-    left.channels === right.channels &&
-    left.bit_rate === right.bit_rate
-  );
-}
-
-export function areDspDetailsEqual(
-  left: DSPDetails,
-  right: DSPDetails,
-): boolean {
-  return (
-    left.state === right.state &&
-    left.input_gain === right.input_gain &&
-    left.output_gain === right.output_gain &&
-    left.output_limiter === right.output_limiter &&
-    areAudioFormatsEqual(left.output_format, right.output_format) &&
-    areDspFiltersEqual(left.filters, right.filters)
-  );
 }
 
 export function areDSPConfigsEqual(left: DSPConfig, right: DSPConfig): boolean {

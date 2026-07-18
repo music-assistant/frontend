@@ -596,3 +596,66 @@ function formatNumber(value: number, maximumFractionDigits = 1): string {
   white-space: nowrap;
 }
 </style>
+
+<style>
+.streamdetails-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.streamdetails-info:hover {
+  color: var(--foreground);
+}
+
+.streamdetails-glyph {
+  width: 22px;
+  height: 22px;
+  margin-left: 5px;
+  margin-right: 13px;
+  flex: 0 0 auto;
+}
+
+.streamdetails-item {
+  height: var(--sd-row);
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 400px) {
+  .streamdetails-item {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 370px) {
+  .streamdetails-item {
+    font-size: 0.8rem;
+  }
+}
+
+.streamdetails-header {
+  height: calc(var(--sd-row) / 2);
+  display: flex;
+  align-items: center;
+}
+
+.streamdetails-separator {
+  height: 0;
+  border-top: 1px dotted;
+}
+
+.quality-tier-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  margin: auto;
+  margin-right: 10px;
+}
+</style>

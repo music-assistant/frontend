@@ -626,10 +626,6 @@
     "podcast_episode": "Épisode",
     "podcast_episodes": "Épisodes",
     "play_from_here": "Lire à partir d'ici",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Normalisation dynamique du volume",
-    "loudness_fixed": "Correction de gain fixe",
     "dsp_active": "Actif",
     "currently_playing_players": "En cours de lecture",
     "all_players": "Tous les lecteurs",
@@ -639,40 +635,20 @@
     "streamdetails": {
         "input_header": "Entrée",
         "output_header": "Sortie",
-        "output_format_info": "L'audio est envoyé au format {0}",
         "eq_band_count": "{0} bandes",
         "eq_band_count_singular": "1 bande",
         "input_gain": "Gain d'entrée ({0} dB)",
         "output_gain": "Gain de sortie ({0} dB)",
         "output_limiter": "Limiteur de sortie",
-        "output_limiter_info": "Réduit automatiquement les sons très forts pour éviter la distorsion et protéger vos haut-parleurs",
-        "dsp_unsupported": "DSP non pris en charge",
-        "dsp_disabled_by_unsupported_group": "Ce fournisseur de lecteur ne prend pas en charge le DSP avec la lecture synchronisée",
         "file_info": {
             "container": "Conteneur : {0}",
             "codec": "Codec : {0}",
             "bit_rate": "Débit binaire : {0} kbps",
             "sample_rate": "Fréquence d'échantillonnage : {0} kHz",
             "channels": "Canaux : {0}",
-            "bit_depth": "Profondeur de bits : {0}",
-            "processing_notice": "L'audio est traité en interne en PCM 32 bits flottant"
-        },
-        "volume_normalization": {
-            "target_level": "Niveau cible : {0} LUFS",
-            "integrated_loudness": "Niveau sonore mesuré (intégré) : {0} LUFS",
-            "integrated_album_loudness": "Niveau sonore de l'album : {0} LUFS",
-            "applied_gain_correction": "Correction de gain appliquée : {0} dB",
-            "mode": {
-                "dynamic": "La normalisation du volume est active en mode dynamique.",
-                "measurement_only": "La normalisation du volume est active selon une mesure enregistrée de la puissance sonore (intégrée) de l'audio.",
-                "measurement_album": "La normalisation du volume est active selon une mesure enregistrée de la puissance sonore (intégrée) de l'album.",
-                "fixed_gain": "La normalisation du volume est active avec une correction de gain fixe."
-            }
-        },
-        "click_to_expand": "Cliquez pour afficher tous les lecteurs",
-        "output_format_pcm_info": "L'audio est transmis en PCM au fournisseur du lecteur. Le fournisseur du lecteur peut ensuite convertir l'audio dans un format différent avant de l'envoyer au lecteur."
+            "bit_depth": "Profondeur de bits : {0}"
+        }
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Sélectionner la source",
     "play_replace_next": "Jouer ensuite (vider la file d'attente)",
     "all_enqueue_options": "Toutes les options de mise en file d'attente",
