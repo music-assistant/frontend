@@ -77,19 +77,19 @@ export function audioQualityToTier(quality: AudioQuality | string | undefined) {
 export function useStreamQuality(
   audioProcessing: MaybeRefOrGetter<AudioProcessingChain | null | undefined>,
 ) {
-  const outputQualityTiers = computed(() =>
-    (toValue(audioProcessing)?.outputs ?? []).map((output) =>
-      audioQualityToTier(output.fidelity?.quality),
-    ),
+  const knownOutputQualityTiers = computed(() =>
+    (toValue(audioProcessing)?.outputs ?? [])
+      .map((output) => audioQualityToTier(output.fidelity?.quality))
+      .filter((tier) => tier !== QualityTier.UNKNOWN),
   );
   const minOutputQualityTier = computed(() =>
-    outputQualityTiers.value.length
-      ? Math.min(...outputQualityTiers.value)
+    knownOutputQualityTiers.value.length
+      ? Math.min(...knownOutputQualityTiers.value)
       : QualityTier.UNKNOWN,
   );
   const maxOutputQualityTier = computed(() =>
-    outputQualityTiers.value.length
-      ? Math.max(...outputQualityTiers.value)
+    knownOutputQualityTiers.value.length
+      ? Math.max(...knownOutputQualityTiers.value)
       : QualityTier.UNKNOWN,
   );
 

@@ -41,7 +41,28 @@ describe("stream quality presentation", () => {
     expect(quality.maxOutputQualityTier.value).toBe(QualityTier.HIRES);
   });
 
-  it("returns unknown for absent, empty, or future output fidelity", () => {
+  it("excludes unknown qualities from the known output range", () => {
+    const quality = useStreamQuality(
+      ref<AudioProcessingChain>({
+        outputs: [
+          { fidelity: { quality: AudioQuality.UNKNOWN } },
+          { fidelity: { quality: AudioQuality.LOW } },
+          { fidelity: { quality: AudioQuality.HI_RES } },
+        ],
+      }),
+    );
+
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.LOW);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.HIRES);
+    expect(
+      qualityTierRangeLabel(
+        quality.minOutputQualityTier.value,
+        quality.maxOutputQualityTier.value,
+      ),
+    ).toBe("LQ-HR");
+  });
+
+  it("returns unknown for absent or empty output fidelity", () => {
     expect(useStreamQuality(ref(undefined)).minOutputQualityTier.value).toBe(
       QualityTier.UNKNOWN,
     );
@@ -49,13 +70,21 @@ describe("stream quality presentation", () => {
       useStreamQuality(ref<AudioProcessingChain>({ outputs: [] }))
         .maxOutputQualityTier.value,
     ).toBe(QualityTier.UNKNOWN);
-    expect(
-      useStreamQuality(
-        ref<AudioProcessingChain>({
-          outputs: [{ fidelity: { quality: "future" as AudioQuality } }],
-        }),
-      ).maxOutputQualityTier.value,
-    ).toBe(QualityTier.UNKNOWN);
+  });
+
+  it("returns unknown when all output qualities are unknown", () => {
+    const quality = useStreamQuality(
+      ref<AudioProcessingChain>({
+        outputs: [
+          { fidelity: { quality: AudioQuality.UNKNOWN } },
+          { fidelity: { quality: "future" as AudioQuality } },
+          {},
+        ],
+      }),
+    );
+
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.UNKNOWN);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.UNKNOWN);
   });
 
   it("recomputes when the embedded chain changes", () => {
