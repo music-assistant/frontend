@@ -1009,9 +1009,9 @@ export class MusicAssistantApi {
     });
   }
 
-  public getAudiobookCollection(name: string): Promise<MediaCollection> {
+  public getAudiobookCollection(item_id: string): Promise<MediaCollection> {
     return this.sendCommand("music/audiobooks/get_collection", {
-      name,
+      item_id,
     });
   }
 
