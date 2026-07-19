@@ -882,6 +882,7 @@ const hasActiveFilters = computed(() => {
     p.favoritesOnly ||
     p.libraryOnly ||
     p.albumArtistsFilter ||
+    p.collapseCollections ||
     p.hideFullyPlayed ||
     // a required selector always has a provider chosen — that is not a "filter"
     (!props.requireProviderSelection && p.provider && p.provider.length > 0) ||

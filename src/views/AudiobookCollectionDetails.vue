@@ -16,7 +16,7 @@
     ]"
     :title="$t('audiobooks_in_collection')"
     :empty-message="$t('collection_no_audiobooks')"
-    :allow-collapse="true"
+    :allow-collapse="false"
   />
 </template>
 

@@ -757,8 +757,8 @@ export interface AudioSource extends MediaItem {
 
 export interface Audiobook extends MediaItem {
   publisher: string;
-  authors: string[];
-  narrators: string[];
+  authors: string[] | Artist[];
+  narrators: string[] | Artist[];
   duration: number;
   fully_played?: boolean;
   resume_position_ms?: number;
