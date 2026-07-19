@@ -1,6 +1,6 @@
 <template>
   <!-- streaming quality details -->
-  <Popover v-if="streamDetails">
+  <Popover v-if="audioProcessing && streamDetails">
     <!-- quality pill/chip trigger; pill = ghost-outline to match the fullscreen
          header controls. A single clean PopoverTrigger so it opens reliably
          inside the fullscreen v-dialog (a Tooltip wrapper here blocked it). -->
@@ -34,7 +34,10 @@
       }"
       @open-auto-focus.prevent
     >
-      <StreamDetailsChain :stream-details="streamDetails" />
+      <AudioProcessingDetails
+        :chain="audioProcessing"
+        :stream-details="streamDetails"
+      />
     </PopoverContent>
   </Popover>
 </template>
@@ -47,11 +50,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import StreamDetailsChain from "@/components/StreamDetailsChain.vue";
+import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import { store } from "@/plugins/store";
 import { $t } from "@/plugins/i18n";
 import {
-  QualityTier,
+  qualityTierRangeLabel,
   qualityTierToColor,
   useStreamQuality,
 } from "@/composables/useStreamQuality";
@@ -63,23 +66,18 @@ defineProps<{ pill?: boolean }>();
 const streamDetails = computed(
   () => store.activePlayerQueue?.current_item?.streamdetails,
 );
+const audioProcessing = computed(
+  () => streamDetails.value?.audio_processing ?? undefined,
+);
 
-const { maxOutputQualityTier } = useStreamQuality(streamDetails);
+const { minOutputQualityTier, maxOutputQualityTier } =
+  useStreamQuality(audioProcessing);
 
-// two-letter quality label shown inside the trigger button (LQ/SQ/HQ/HR)
 const qualityLabel = computed(() => {
-  switch (maxOutputQualityTier.value) {
-    case QualityTier.LOW:
-      return "LQ";
-    case QualityTier.GOOD:
-      return "SQ";
-    case QualityTier.LOSSLESS:
-      return "HQ";
-    case QualityTier.HIRES:
-      return "HR";
-    default:
-      return "";
-  }
+  return qualityTierRangeLabel(
+    minOutputQualityTier.value,
+    maxOutputQualityTier.value,
+  );
 });
 
 // disable the trigger when there is no active queue with items
@@ -92,7 +90,6 @@ const triggerDisabled = computed(
 </script>
 
 <script lang="ts">
-export const iconVorbis = new URL("@/assets/vorbis.png", import.meta.url).href;
 export const iconHiRes = new URL("@/assets/hires.png", import.meta.url).href;
 
 export const imgCoverDark = new URL("@/assets/cover_dark.png", import.meta.url)

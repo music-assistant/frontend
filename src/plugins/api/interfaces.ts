@@ -14,6 +14,8 @@ export enum AudioChannel {
 export enum DSPFilterType {
   PARAMETRIC_EQ = "parametric_eq",
   TONE_CONTROL = "tone_control",
+  GAIN = "gain",
+  BALANCE = "balance",
 }
 
 export enum ParametricEQBandType {
@@ -55,8 +57,22 @@ export interface ToneControlFilter extends DSPFilterBase {
   treble_level: number;
 }
 
+export interface GainFilter extends DSPFilterBase {
+  type: DSPFilterType.GAIN;
+  gain: number;
+}
+
+export interface BalanceFilter extends DSPFilterBase {
+  type: DSPFilterType.BALANCE;
+  balance: number;
+}
+
 // Union type for all possible filters
-export type DSPFilter = ParametricEQFilter | ToneControlFilter;
+export type DSPFilter =
+  | ParametricEQFilter
+  | ToneControlFilter
+  | GainFilter
+  | BalanceFilter;
 
 // Main DSP chain configuration
 export interface DSPConfig {
@@ -64,6 +80,7 @@ export interface DSPConfig {
   filters: DSPFilter[];
   input_gain: number;
   output_gain: number;
+  preset_id?: string | null;
 }
 
 // DSPConfigPreset represents a preset configuration for DSP
@@ -73,25 +90,11 @@ export interface DSPConfigPreset {
   config: DSPConfig;
 }
 
-// DSPDetails used in StreamDetails
 export enum DSPState {
   ENABLED = "enabled",
   DISABLED = "disabled",
   DISABLED_BY_UNSUPPORTED_GROUP = "disabled_by_unsupported_group",
-}
-
-// This describes the DSP configuration as applied,
-// even when the DSP state is disabled. For example,
-// output_limiter can remain true while the DSP is disabled.
-// All filters in the list are guaranteed to be enabled.
-// output_format is the format that will be sent to the output device (if known).
-export interface DSPDetails {
-  state: DSPState;
-  input_gain: number;
-  filters: DSPFilter[];
-  output_gain: number;
-  output_limiter: boolean;
-  output_format?: AudioFormat;
+  UNKNOWN = "unknown",
 }
 
 /// enums
@@ -424,6 +427,30 @@ export enum VolumeNormalizationMode {
   FALLBACK_FIXED_GAIN = "fallback_fixed_gain",
   FIXED_GAIN = "fixed_gain",
   FALLBACK_DYNAMIC = "fallback_dynamic",
+  UNKNOWN = "unknown",
+}
+
+export enum CrossfadeMode {
+  SMART_CROSSFADE = "smart_crossfade",
+  STANDARD_CROSSFADE = "standard_crossfade",
+  DISABLED = "disabled",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioQuality {
+  LOW = "low",
+  STANDARD = "standard",
+  LOSSLESS = "lossless",
+  HI_RES = "hi_res",
+  UNKNOWN = "unknown",
+}
+
+export enum AudioNormalizationMeasurementSource {
+  TRACK = "track",
+  ALBUM = "album",
+  LIVE = "live",
+  FALLBACK = "fallback",
+  UNKNOWN = "unknown",
 }
 
 export enum IdentifierType {
@@ -834,12 +861,48 @@ export interface AudioFormat {
   bit_rate: number;
 }
 
-export interface LoudnessMeasurement {
-  integrated: number;
-  true_peak: number;
-  lra: number;
-  threshold: number;
-  target_offset: number;
+export interface AudioFidelity {
+  quality?: AudioQuality;
+  bit_perfect?: boolean | null;
+}
+
+export interface AudioNormalizationDetails {
+  mode?: VolumeNormalizationMode;
+  measurement_source?: AudioNormalizationMeasurementSource;
+  target_lufs?: number | null;
+  measured_lufs?: number | null;
+  applied_gain_db?: number | null;
+}
+
+export interface AudioQueueProcessing {
+  pcm_format?: AudioFormat | null;
+  normalization?: AudioNormalizationDetails | null;
+  playback_speed?: number;
+  crossfade_mode?: CrossfadeMode;
+  overlay_active?: boolean;
+}
+
+export interface AudioDSPDetails {
+  state?: DSPState;
+  input_gain?: number;
+  filters?: DSPFilter[];
+  output_gain?: number;
+  output_limiter?: boolean;
+  preset_id?: string | null;
+}
+
+export interface AudioOutputDetails {
+  player_ids?: string[];
+  dsp?: AudioDSPDetails;
+  source_channel?: AudioChannel | null;
+  output_format?: AudioFormat | null;
+  fidelity?: AudioFidelity;
+}
+
+export interface AudioProcessingChain {
+  input_fidelity?: AudioFidelity;
+  queue_processing?: AudioQueueProcessing | null;
+  outputs?: AudioOutputDetails[];
 }
 
 export interface StreamMetadata {
@@ -860,18 +923,10 @@ export interface StreamDetails {
   media_type: MediaType;
   stream_metadata?: StreamMetadata;
   duration?: number;
+  audio_processing?: AudioProcessingChain | null;
 
   queue_id?: string;
   fade_in?: boolean;
-  loudness?: number;
-  loudness_album?: number;
-  prefer_album_loudness?: boolean;
-  target_loudness?: number;
-  volume_normalization_mode?: VolumeNormalizationMode;
-  volume_normalization_gain_correct?: number;
-  // This contains the DSPDetails of all players in the group.
-  // In case of single player playback, dict will contain only one entry.
-  dsp?: Record<string, DSPDetails>;
 }
 
 // queue_item

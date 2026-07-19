@@ -737,10 +737,6 @@
     "podcast_episode": "Odcinek",
     "podcast_episodes": "Odcinki",
     "play_from_here": "Odtwórz stąd",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamiczna normalizacja głośności",
-    "loudness_fixed": "Stała korekta wzmocnienia",
     "dsp_active": "Aktywny",
     "currently_playing_players": "Obecnie odtwarzające",
     "all_players": "Wszystkie odtwarzacze",
@@ -750,42 +746,21 @@
     "streamdetails": {
         "input_header": "Wejście",
         "output_header": "Wyjście",
-        "output_format_info": "Dźwięk jest wysyłany w formacie {0}",
         "eq_band_count": "{0} pasma",
         "eq_band_count_singular": "1 pasmo",
         "input_gain": "Wzmocnienie wejściowe ({0} dB)",
         "output_gain": "Wzmocnienie wyjściowe ({0} dB)",
         "output_limiter": "Limiter wyjścia",
-        "output_limiter_info": "Automatycznie redukuje bardzo głośne dźwięki, aby zapobiec zniekształceniom i chronić głośniki",
-        "dsp_unsupported": "DSP nie jest obsługiwane",
-        "dsp_disabled_by_unsupported_group": "Ten dostawca odtwarzacza nie obsługuje technologii DSP z odtwarzaniem synchronicznym",
         "file_info": {
             "container": "Kontener: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Przepływność: {0} kbps",
             "sample_rate": "Częstotliwość próbkowania: {0} kHz",
             "channels": "Kanały: {0}",
-            "bit_depth": "Głębia bitowa: {0}",
-            "processing_notice": "Dźwięk jest przetwarzany wewnętrznie jako 32-bitowy zmiennoprzecinkowy PCM"
+            "bit_depth": "Głębia bitowa: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Poziom docelowy: {0} LUFS",
-            "integrated_loudness": "Zmierzona (zintegrowana) głośność: {0} LUFS",
-            "integrated_album_loudness": "Głośność albumu: {0} LUFS",
-            "applied_gain_correction": "Zastosowana korekcja wzmocnienia: {0} dB",
-            "mode": {
-                "dynamic": "Normalizacja głośności działa w trybie dynamicznym.",
-                "measurement_only": "Normalizacja głośności jest aktywna na podstawie zapisanego pomiaru (zintegrowanej) głośności dźwięku.",
-                "measurement_album": "Normalizacja głośności działa na podstawie zapisanego pomiaru (zintegrowanej) głośności albumu.",
-                "fixed_gain": "Normalizacja głośności działa na podstawie stałej korekcji wzmocnienia."
-            }
-        },
-        "click_to_expand": "Kliknij, aby wyświetlić wszystkie odtwarzacze",
-        "output_format_pcm_info": "Dźwięk jest przekazywany jako PCM do dostawcy odtwarzacza. Dostawca odtwarzacza może następnie przekonwertować dźwięk na inny format przed wysłaniem go do odtwarzacza.",
-        "more_info": "Więcej informacji",
-        "player_not_found": "Odtwarzacz nie został znaleziony"
+        "more_info": "Więcej informacji"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Wybierz źródło",
     "play_replace_next": "Odtwórz następny (wyczyść kolejkę)",
     "all_enqueue_options": "Wszystkie opcje kolejkowania",

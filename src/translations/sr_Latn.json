@@ -756,10 +756,6 @@
     "podcast_episode": "Epizoda",
     "podcast_episodes": "Epizode",
     "play_from_here": "Pusti odavde",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dinamička normalizacija jačine zvuka",
-    "loudness_fixed": "Korekcija fiksnog pojačanja",
     "dsp_active": "Aktivno",
     "currently_playing_players": "Trenutno se pušta",
     "all_players": "Svi plejeri",
@@ -769,42 +765,21 @@
     "streamdetails": {
         "input_header": "Ulaz",
         "output_header": "Izlaz",
-        "output_format_info": "Audio se šalje u {0} formatu",
         "eq_band_count": "{0} opsege(a)",
         "eq_band_count_singular": "1 opseg",
         "input_gain": "Ulazno pojačanje ({0} dB)",
         "output_gain": "Izlazno pojačanje ({0} dB)",
         "output_limiter": "Ograničivač izlaza",
-        "output_limiter_info": "Automatski smanjuje veoma glasne zvuke kako bi sprečio izobličenje i zaštitio vaše zvučnike",
-        "dsp_unsupported": "DSP nije podržan",
-        "dsp_disabled_by_unsupported_group": "Ova integracija plejera ne podržava DSP sa sinhronizovanim puštanjem zvuka",
         "file_info": {
             "container": "Kontejner: {0}",
             "codec": "Kodek: {0}",
             "bit_rate": "Protok podataka: {0} kbps",
             "sample_rate": "Frekvencija odabiranja {0} kHz",
             "channels": "Kanali: {0}",
-            "bit_depth": "Dubina bita: {0}",
-            "processing_notice": "Zvuk se interno obrađuje u 32-bitnom float PCM formatu"
+            "bit_depth": "Dubina bita: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Ciljni nivo: {0} LUFS",
-            "integrated_loudness": "Izmerena (integrisana) jačina zvuka: {0} LUFS",
-            "integrated_album_loudness": "Glasnoća albuma: {0} LUFS",
-            "applied_gain_correction": "Primenjena korekcija pojačanja: {0} dB",
-            "mode": {
-                "dynamic": "Normalizacija jačine zvuka je aktivna u dinamičkom režimu.",
-                "measurement_only": "Normalizacija jačine zvuka je aktivna na osnovu sačuvanog merenja (integrisane) jačine zvuka.",
-                "measurement_album": "Normalizacija jačine zvuka je aktivna na osnovu sačuvanog merenja (integrisane) glasnoće albuma.",
-                "fixed_gain": "Normalizacija jačine zvuka je aktivna na osnovu korekcije fiksnog pojačanja."
-            }
-        },
-        "click_to_expand": "Kliknite da biste videli sve plejere",
-        "output_format_pcm_info": "Zvuk se prosleđuje kao PCM do integracije plejera, koja ga zatim može konvertovati u drugi format pre slanja na sam plejer.",
-        "more_info": "Više informacija",
-        "player_not_found": "Plejer nije pronađen"
+        "more_info": "Više informacija"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Izaberite izvor",
     "play_replace_next": "Pustite sledeće (ispraznite red čekanja)",
     "all_enqueue_options": "Sve opcije dodavanja u red čekanja",

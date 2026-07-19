@@ -749,10 +749,6 @@
     "podcast_episode": "Эпизод",
     "podcast_episodes": "Эпизоды",
     "play_from_here": "Играть отсюда",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (альбом)",
-    "loudness_dynamic": "Динамическая нормализация громкости",
-    "loudness_fixed": "Фиксированная коррекция усиления",
     "dsp_active": "Активно",
     "currently_playing_players": "Сейчас играет",
     "all_players": "Все плееры",
@@ -762,42 +758,21 @@
     "streamdetails": {
         "input_header": "Вход",
         "output_header": "Выход",
-        "output_format_info": "Аудио передается в формате {0}",
         "eq_band_count": "{0} полос",
         "eq_band_count_singular": "1 полоса",
         "input_gain": "Входной коэффициент усиления ({0} дБ)",
         "output_gain": "Выходной коэффициент усиления ({0} дБ)",
         "output_limiter": "Ограничитель выходного сигнала",
-        "output_limiter_info": "Автоматически приглушать очень громкие звуки, чтобы предотвратить искажения и защитить ваши динамики",
-        "dsp_unsupported": "DSP не поддерживается",
-        "dsp_disabled_by_unsupported_group": "Этот провайдер плеера не поддерживает DSP с синхронизированным воспроизведением",
         "file_info": {
             "container": "Контейнер: {0}",
             "codec": "Кодек: {0}",
             "bit_rate": "Битрейт: {0} кбит\/с",
             "sample_rate": "Частота дискретизации: {0} кГц",
             "channels": "Каналы: {0}",
-            "bit_depth": "Битность: {0}",
-            "processing_notice": "Внутренняя обработка аудио: 32-битный float PCM"
+            "bit_depth": "Битность: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Целевой уровень: {0} LUFS",
-            "integrated_loudness": "Измеренная (интегрированная) громкость: {0} LUFS",
-            "integrated_album_loudness": "Громкость альбома: {0} LUFS",
-            "applied_gain_correction": "Применённая коррекция усиления: {0} дБ",
-            "mode": {
-                "dynamic": "Активна нормализация громкости в динамическом режиме.",
-                "measurement_only": "Активна нормализация громкости на основе сохранённого измерения (интегрированной) громкости аудио.",
-                "measurement_album": "Активна нормализация громкости на основе сохранённого измерения (интегрированной) громкости альбома.",
-                "fixed_gain": "Активна нормализация громкости на основе фиксированной коррекции усиления."
-            }
-        },
-        "click_to_expand": "Показать все плееры",
-        "output_format_pcm_info": "Аудио передается провайдеру плеера в формате PCM. Провайдер плеера может преобразовать аудио в другой формат перед отправкой на плеер.",
-        "more_info": "Дополнительная информация",
-        "player_not_found": "Плеер не найден"
+        "more_info": "Дополнительная информация"
     },
-    "volume_normalization_gain_correction": "{0} дБ",
     "select_source": "Выбрать источник",
     "play_replace_next": "Следующим (очистить очередь)",
     "all_enqueue_options": "Все опции очереди",

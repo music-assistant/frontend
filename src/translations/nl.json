@@ -756,10 +756,6 @@
     "podcast_episode": "Aflevering",
     "podcast_episodes": "Afleveringen",
     "play_from_here": "Speel vanaf hier",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamische volumenormalisatie",
-    "loudness_fixed": "Vaste versterkingscorrectie",
     "dsp_active": "Actief",
     "currently_playing_players": "Nu aan het spelen",
     "all_players": "Alle spelers",
@@ -769,42 +765,21 @@
     "streamdetails": {
         "input_header": "Invoer",
         "output_header": "Uitvoer",
-        "output_format_info": "Audio wordt verzonden in het {0} formaat",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Ingangsversterking ({0} dB)",
         "output_gain": "Uitgangsversterking ({0} dB)",
         "output_limiter": "Uitgangsbegrenzer",
-        "output_limiter_info": "Reduceert automatisch zeer harde geluiden om vervorming te voorkomen en je luidsprekers te beschermen.",
-        "dsp_unsupported": "DSP niet ondersteund",
-        "dsp_disabled_by_unsupported_group": "Deze spelerprovider biedt geen ondersteuning voor DSP met gesynchroniseerd afspelen.",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bitrate: {0} kbps",
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Kanalen: {0}",
-            "bit_depth": "Bitdiepte: {0}",
-            "processing_notice": "Audio wordt intern verwerkt als 32-bits float PCM"
+            "bit_depth": "Bitdiepte: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Doelniveau: {0} LUFS.",
-            "integrated_loudness": "Gemeten (geïntegreerde) loudness: {0} LUFS.",
-            "integrated_album_loudness": "Album loudness: {0} LUFS.",
-            "applied_gain_correction": "Toegepaste versterkingscorrectie: {0} Db.",
-            "mode": {
-                "dynamic": "Volumenormalisatie is actief in de dynamische modus.",
-                "measurement_only": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van de audio.",
-                "measurement_album": "Volumenormalisatie is actief op basis van een opgeslagen meting van de (geïntegreerde) loudness van het album.",
-                "fixed_gain": "Volumenormalisatie is actief op basis van vaste versterkingscorrectie."
-            }
-        },
-        "click_to_expand": "Klik om alle spelers te laten zien",
-        "output_format_pcm_info": "Audio wordt als PCM doorgegeven aan de spelerprovider. De speleraanbieder kan dan de audio converteren naar een ander formaat voordat het naar de speler wordt gestuurd.",
-        "more_info": "Meer informatie",
-        "player_not_found": "Speler niet gevonden"
+        "more_info": "Meer informatie"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Bron selecteren",
     "play_replace_next": "Hierna afspelen (wachtrij wissen)",
     "all_enqueue_options": "Alle afspeelopties",

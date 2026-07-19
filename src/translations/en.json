@@ -236,11 +236,14 @@
             "parameter": {
                 "frequency": "Frequency",
                 "gain": "Gain",
-                "q_factor": "Q Factor"
+                "q_factor": "Q Factor",
+                "balance": "Balance"
             },
             "types": {
                 "parametric_eq": "Parametric EQ",
-                "tone_control": "Tone Control"
+                "tone_control": "Tone Control",
+                "gain": "Gain",
+                "balance": "Balance"
             },
             "channels": {
                 "ALL": "All",
@@ -257,7 +260,8 @@
                 "save": "Save DSP Preset",
                 "name": "Preset Name",
                 "name_placeholder": "My new preset",
-                "remove_confirm": "Are you sure you want to remove this DSP preset?"
+                "remove_confirm": "Are you sure you want to remove this DSP preset?",
+                "custom": "Custom"
             }
         },
         "dsp_enabled": "DSP is enabled",
@@ -758,10 +762,6 @@
     "podcast_episode": "Episode",
     "podcast_episodes": "Episodes",
     "play_from_here": "Play from here",
-    "loudness_measurement": "{0} LUFS",
-    "loudness_measurement_album": "{0} LUFS (album)",
-    "loudness_dynamic": "Dynamic volume normalization",
-    "loudness_fixed": "Fixed gain correction",
     "dsp_active": "Active",
     "currently_playing_players": "Currently playing",
     "all_players": "All players",
@@ -771,42 +771,84 @@
     "streamdetails": {
         "input_header": "Input",
         "output_header": "Output",
-        "output_format_info": "Audio is sent in the {0} format",
         "eq_band_count": "{0} bands",
         "eq_band_count_singular": "1 band",
         "input_gain": "Input Gain ({0} dB)",
         "output_gain": "Output Gain ({0} dB)",
         "output_limiter": "Output Limiter",
-        "output_limiter_info": "Automatically reduces very loud sounds to prevent distortion and protect your speakers",
-        "dsp_unsupported": "DSP not supported",
-        "dsp_disabled_by_unsupported_group": "This player provider does not support DSP with synchronized playback",
         "file_info": {
             "container": "Container: {0}",
             "codec": "Codec: {0}",
             "bit_rate": "Bit rate: {0} kbps",
             "sample_rate": "Sample rate: {0} kHz",
             "channels": "Channels: {0}",
-            "bit_depth": "Bit depth: {0}",
-            "processing_notice": "Audio is processed internally as 32-bit float PCM"
+            "bit_depth": "Bit depth: {0}"
         },
-        "volume_normalization": {
-            "target_level": "Target level: {0} LUFS",
-            "integrated_loudness": "Measured (integrated) loudness: {0} LUFS",
-            "integrated_album_loudness": "Album loudness: {0} LUFS",
-            "applied_gain_correction": "Applied gain correction: {0} dB",
-            "mode": {
-                "dynamic": "Volume normalization is active in the dynamic mode.",
-                "measurement_only": "Volume normalization is active based on a stored measurement of the (integrated) loudness of the audio.",
-                "measurement_album": "Volume normalization is active based on a stored measurement of the (integrated) loudness of the album.",
-                "fixed_gain": "Volume normalization is active based on fixed gain correction."
+        "audio_processing": {
+            "unknown": "Unknown",
+            "unknown_format": "Unknown format",
+            "provider": "Provider: {0}",
+            "source_format": "Source: {0}",
+            "pcm_format": "Shared processing: {0}",
+            "output_format": "Final output: {0}",
+            "sample_rate": "{0} kHz",
+            "bit_depth": "{0}-bit",
+            "channel_count": "{0} channels",
+            "bit_rate": "{0} kbps",
+            "pcm": "PCM",
+            "float_pcm_32": "32-bit float PCM",
+            "float_pcm_64": "64-bit float PCM",
+            "normalization": "Volume normalization: {0}",
+            "measurement_source": "Measurement: {0}",
+            "target_lufs": "Target level: {0} LUFS",
+            "measured_lufs": "Measured loudness: {0} LUFS",
+            "applied_gain_db": "Applied gain: {0} dB",
+            "playback_speed": "Playback speed: {0}x",
+            "crossfade": "Crossfade: {0}",
+            "overlay_active": "Audio overlay active",
+            "source_channel": "Source channel: {0}",
+            "source_channel_left": "Left",
+            "source_channel_right": "Right",
+            "dsp_preset": "DSP preset: {0}",
+            "bit_perfect": "Bit-perfect output",
+            "not_bit_perfect": "Processed output",
+            "destination_unknown": "Destination {0}",
+            "destination_unavailable": "Destination unavailable",
+            "quality": {
+                "low": "Low quality",
+                "standard": "Standard quality",
+                "lossless": "Lossless",
+                "hi_res": "Hi-res",
+                "unknown": "Quality unknown"
+            },
+            "normalization_mode": {
+                "disabled": "Disabled",
+                "dynamic": "Dynamic",
+                "measurement_only": "Measured loudness",
+                "fallback_fixed_gain": "Fallback fixed gain",
+                "fixed_gain": "Fixed gain",
+                "fallback_dynamic": "Fallback dynamic"
+            },
+            "measurement": {
+                "track": "Track",
+                "album": "Album",
+                "live": "Live",
+                "fallback": "Fallback"
+            },
+            "crossfade_mode": {
+                "smart": "Smart",
+                "standard": "Standard",
+                "disabled": "Disabled"
+            },
+            "dsp_state": {
+                "enabled": "DSP active",
+                "disabled": "DSP disabled",
+                "disabled_by_unsupported_group": "DSP unavailable for this group",
+                "unknown": "DSP state unknown"
             }
         },
-        "click_to_expand": "Click to show all players",
-        "output_format_pcm_info": "Audio is passed as PCM to the player provider. The player provider may then convert the audio to a different format before sending it to the player.",
-        "more_info": "More information",
-        "player_not_found": "Player not found"
+        "more_info": "More information"
     },
-    "volume_normalization_gain_correction": "{0} dB",
     "select_source": "Select source",
     "play_replace_next": "Play Next (clear queue)",
     "all_enqueue_options": "All enqueue options",
