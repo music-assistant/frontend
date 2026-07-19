@@ -76,6 +76,7 @@ export interface AudioProcessingDisplayPlayer {
 
 export interface AudioProcessingDetailsDependencies {
   translate: Translate;
+  locale: string;
   getProviderName: (providerId: string) => string;
   getPresetName: (presetId: string | null | undefined) => string | undefined;
   players: Record<string, AudioProcessingDisplayPlayer>;
@@ -142,6 +143,7 @@ export function useAudioProcessingDetails(
       toValue(streamDetails),
       {
         translate,
+        locale: locale.value,
         getProviderName: (providerId) => api.getProviderName(providerId),
         getPresetName,
         players: api.players,
@@ -191,6 +193,7 @@ function buildInputStages(
       "source-format",
       streamDetails.audio_format,
       dependencies.translate,
+      dependencies.locale,
     ),
   ];
 }
@@ -207,7 +210,13 @@ function buildProcessingStages(
     processing?.normalization &&
     processing.normalization.mode !== VolumeNormalizationMode.DISABLED
   ) {
-    stages.push(normalizationStage(processing.normalization, translate));
+    stages.push(
+      normalizationStage(
+        processing.normalization,
+        translate,
+        dependencies.locale,
+      ),
+    );
   }
   if (
     typeof processing?.playback_speed === "number" &&
@@ -217,7 +226,7 @@ function buildProcessingStages(
       key: "playback-speed",
       icon: Gauge,
       title: translate("streamdetails.audio_processing.playback_speed", [
-        formatNumber(processing.playback_speed, 2),
+        formatNumber(processing.playback_speed, 2, dependencies.locale),
       ]),
     });
   }
@@ -247,6 +256,7 @@ function buildProcessingStages(
       chain,
       stages.length === 0,
       translate,
+      dependencies.locale,
     );
     if (contextStage) stages.unshift(contextStage);
   }
@@ -287,7 +297,7 @@ function buildOutputDisplay(
         key: `dsp-input-gain-${index}`,
         icon: SlidersHorizontal,
         title: translate("streamdetails.input_gain", [
-          formatNumber(output.dsp.input_gain),
+          formatNumber(output.dsp.input_gain, 1, dependencies.locale),
         ]),
       });
     }
@@ -303,7 +313,7 @@ function buildOutputDisplay(
         key: `dsp-output-gain-${index}`,
         icon: SlidersHorizontal,
         title: translate("streamdetails.output_gain", [
-          formatNumber(output.dsp.output_gain),
+          formatNumber(output.dsp.output_gain, 1, dependencies.locale),
         ]),
       });
     }
@@ -325,7 +335,7 @@ function buildOutputDisplay(
       title: translate("streamdetails.output_limiter"),
     });
   }
-  stages.push(finalOutputStage(output, index, translate));
+  stages.push(finalOutputStage(output, index, translate, dependencies.locale));
 
   return {
     key: playerIds.join("|") || `output-${index}`,
@@ -410,6 +420,7 @@ function resolveDestinationPlayer(
 function normalizationStage(
   normalization: AudioNormalizationDetails,
   translate: Translate,
+  locale: string,
 ): AudioProcessingDisplayStage {
   const details: string[] = [
     translate("streamdetails.audio_processing.measurement_source", [
@@ -421,18 +432,21 @@ function normalizationStage(
     "streamdetails.audio_processing.target_lufs",
     normalization.target_lufs,
     translate,
+    locale,
   );
   addDetail(
     details,
     "streamdetails.audio_processing.measured_lufs",
     normalization.measured_lufs,
     translate,
+    locale,
   );
   addDetail(
     details,
     "streamdetails.audio_processing.applied_gain_db",
     normalization.applied_gain_db,
     translate,
+    locale,
   );
   return {
     key: "normalization",
@@ -449,11 +463,12 @@ function processingContextStage(
   chain: AudioProcessingChain,
   sharedPathIsDirect: boolean,
   translate: Translate,
+  locale: string,
 ): AudioProcessingDisplayStage | undefined {
   const internalCodec = audioFormatCodec(internalFormat);
   const internalFormatDetail = translate(
     "streamdetails.audio_processing.internal_format_detail",
-    [internalFormatSummary(internalFormat, translate)],
+    [internalFormatSummary(internalFormat, translate, locale)],
   );
 
   if (
@@ -545,9 +560,10 @@ function finalOutputStage(
   output: AudioOutputDetails,
   index: number,
   translate: Translate,
+  locale: string,
 ): AudioProcessingDisplayStage {
   const format = output.output_format;
-  const details = format ? audioFormatDetails(format, translate) : [];
+  const details = format ? audioFormatDetails(format, translate, locale) : [];
   details.push(
     outputFidelityDetail(
       output.fidelity?.bit_perfect,
@@ -562,7 +578,7 @@ function finalOutputStage(
       ? audioFormatTitle(format, translate)
       : translate("streamdetails.audio_processing.unknown_format"),
     subtitleParts: format
-      ? audioFormatTechnicalParts(format, translate)
+      ? audioFormatTechnicalParts(format, translate, locale)
       : undefined,
     atomicSubtitleParts: true,
     badge:
@@ -577,14 +593,15 @@ function formatStage(
   key: string,
   format: AudioFormat,
   translate: Translate,
+  locale: string,
 ): AudioProcessingDisplayStage {
   return {
     key,
     icon: FileAudio,
     title: audioFormatTitle(format, translate),
-    subtitleParts: audioFormatTechnicalParts(format, translate),
+    subtitleParts: audioFormatTechnicalParts(format, translate, locale),
     atomicSubtitleParts: true,
-    details: audioFormatDetails(format, translate),
+    details: audioFormatDetails(format, translate, locale),
   };
 }
 
@@ -648,8 +665,8 @@ function processingHeadroomReasons(
     );
   }
   if (
-    processing?.crossfade_mode === CrossfadeMode.SMART_CROSSFADE ||
-    processing?.crossfade_mode === CrossfadeMode.STANDARD_CROSSFADE
+    processing?.crossfade_mode &&
+    processing.crossfade_mode !== CrossfadeMode.DISABLED
   ) {
     reasons.add(translate("streamdetails.audio_processing.crossfade_title"));
   }
@@ -673,9 +690,10 @@ function addDetail(
   key: string,
   value: number | null | undefined,
   translate: Translate,
+  locale: string,
 ): void {
   if (typeof value === "number") {
-    details.push(translate(key, [formatNumber(value, 2)]));
+    details.push(translate(key, [formatNumber(value, 2, locale)]));
   }
 }
 
@@ -686,13 +704,14 @@ function audioFormatTitle(format: AudioFormat, translate: Translate): string {
 function audioFormatTechnicalParts(
   format: AudioFormat,
   translate: Translate,
+  locale: string,
 ): string[] {
   const codec = audioFormatCodec(format);
   const parts: string[] = [];
   if (format.sample_rate > 0) {
     parts.push(
       translate("streamdetails.audio_processing.sample_rate", [
-        formatNumber(format.sample_rate / 1000, 1),
+        formatNumber(format.sample_rate / 1000, 1, locale),
       ]),
     );
   }
@@ -707,7 +726,7 @@ function audioFormatTechnicalParts(
   if (format.bit_rate > 0 && !PCM_CONTENT_TYPES.has(codec)) {
     parts.push(
       translate("streamdetails.audio_processing.bit_rate", [
-        formatNumber(format.bit_rate),
+        formatNumber(format.bit_rate, 1, locale),
       ]),
     );
   }
@@ -734,6 +753,7 @@ function internalFormatPrimaryLabel(
 function internalFormatSummary(
   format: AudioFormat,
   translate: Translate,
+  locale: string,
 ): string {
   const codec = audioFormatCodec(format);
   const parts = [internalFormatPrimaryLabel(format, translate)];
@@ -745,7 +765,7 @@ function internalFormatSummary(
   if (format.sample_rate > 0) {
     parts.push(
       translate("streamdetails.audio_processing.sample_rate", [
-        formatNumber(format.sample_rate / 1000, 1),
+        formatNumber(format.sample_rate / 1000, 1, locale),
       ]),
     );
   }
@@ -804,6 +824,7 @@ function audioChannelCountLabel(
 function audioFormatDetails(
   format: AudioFormat,
   translate: Translate,
+  locale: string,
 ): string[] {
   const details = [
     translate("streamdetails.file_info.container", [
@@ -825,7 +846,7 @@ function audioFormatDetails(
   if (format.sample_rate > 0) {
     details.push(
       translate("streamdetails.file_info.sample_rate", [
-        formatNumber(format.sample_rate / 1000, 1),
+        formatNumber(format.sample_rate / 1000, 1, locale),
       ]),
     );
   }
@@ -837,7 +858,7 @@ function audioFormatDetails(
   if (format.bit_rate > 0) {
     details.push(
       translate("streamdetails.file_info.bit_rate", [
-        formatNumber(format.bit_rate),
+        formatNumber(format.bit_rate, 1, locale),
       ]),
     );
   }
@@ -976,8 +997,12 @@ function sourceChannelLabel(channel: string, translate: Translate): string {
   }
 }
 
-function formatNumber(value: number, maximumFractionDigits = 1): string {
-  return new Intl.NumberFormat(undefined, {
+function formatNumber(
+  value: number,
+  maximumFractionDigits: number,
+  locale: string,
+): string {
+  return new Intl.NumberFormat(locale.replaceAll("_", "-"), {
     maximumFractionDigits,
   }).format(value);
 }

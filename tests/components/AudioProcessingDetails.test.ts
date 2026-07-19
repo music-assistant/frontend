@@ -241,6 +241,11 @@ describe("AudioProcessingDetails", () => {
     const wrapper = mountDetails({
       input_fidelity: { quality: "future" as AudioQuality },
       queue_processing: {
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
         crossfade_mode: "future" as CrossfadeMode,
       },
       outputs: [
@@ -259,6 +264,38 @@ describe("AudioProcessingDetails", () => {
     expect(text).toContain("DSP state unknown");
     expect(text).toContain("Source channel: Unknown");
     expect(text).not.toContain("future");
+    expect(
+      wrapper
+        .find('[data-stage="pcm-format"]')
+        .findAll("li")
+        .map((detail) => detail.text()),
+    ).toContain("Floating-point headroom is available for: Crossfade.");
+  });
+
+  it("excludes disabled crossfade from component headroom reasons", () => {
+    const wrapper = mountDetails({
+      queue_processing: {
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
+        crossfade_mode: CrossfadeMode.DISABLED,
+      },
+      outputs: [
+        {
+          player_ids: ["player-1"],
+          fidelity: { bit_perfect: false },
+        },
+      ],
+    });
+
+    expect(
+      wrapper
+        .find('[data-stage="pcm-format"]')
+        .findAll("li")
+        .map((detail) => detail.text()),
+    ).not.toContain("Floating-point headroom is available for: Crossfade.");
   });
 
   it("renders audio formats as titles with atomic technical details", () => {

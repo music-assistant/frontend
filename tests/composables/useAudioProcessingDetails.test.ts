@@ -1,7 +1,10 @@
+import { mount } from "@vue/test-utils";
+import { defineComponent, h, nextTick, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildAudioProcessingDetailsDisplay,
   type AudioProcessingDetailsDependencies,
+  useAudioProcessingDetails,
 } from "@/composables/useAudioProcessingDetails";
 import { $t, i18n } from "@/plugins/i18n";
 import {
@@ -9,6 +12,7 @@ import {
   type AudioProcessingChain,
   AudioQuality,
   ContentType,
+  CrossfadeMode,
   DSPState,
   MediaType,
   type StreamDetails,
@@ -30,6 +34,7 @@ vi.mock("@/composables/useDSPPresets", () => ({
 const presetNames = new Map<string, string>();
 const dependencies: AudioProcessingDetailsDependencies = {
   translate: (key, values) => (values ? $t(key, values) : $t(key)),
+  locale: "en-US",
   getProviderName: () => "Test provider",
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
@@ -56,6 +61,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  dependencies.locale = "en-US";
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
 });
@@ -174,6 +180,150 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
     presetNames.set("preset-1", "Cinema");
     expect(buildDisplay(chain).outputPaths[0].stages[1].title).toBe("Cinema");
+  });
+
+  it.each([CrossfadeMode.UNKNOWN, "future_crossfade" as CrossfadeMode])(
+    "keeps %s crossfade in headroom reasons",
+    (crossfadeMode) => {
+      const display = buildDisplay({
+        queue_processing: {
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_F32LE,
+            codec_type: ContentType.PCM_F32LE,
+            bit_depth: 32,
+          }),
+          crossfade_mode: crossfadeMode,
+        },
+        outputs: [
+          {
+            player_ids: ["kitchen"],
+            output_format: makeFormat(),
+            fidelity: { bit_perfect: false },
+          },
+        ],
+      });
+
+      expect(display.processingStages.map((stage) => stage.title)).toContain(
+        "Crossfade: Unknown",
+      );
+      expect(display.processingStages[0].details).toContain(
+        "Floating-point headroom is available for: Crossfade.",
+      );
+    },
+  );
+
+  it("excludes disabled crossfade from headroom reasons", () => {
+    const display = buildDisplay({
+      queue_processing: {
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
+        crossfade_mode: CrossfadeMode.DISABLED,
+      },
+      outputs: [
+        {
+          player_ids: ["kitchen"],
+          output_format: makeFormat(),
+          fidelity: { bit_perfect: false },
+        },
+      ],
+    });
+
+    expect(display.processingStages).toHaveLength(1);
+    expect(display.processingStages[0].details).not.toContain(
+      "Floating-point headroom is available for: Crossfade.",
+    );
+  });
+
+  it("formats every numeric detail with the supplied locale", () => {
+    const audioFormat = makeFormat({
+      content_type: ContentType.MP3,
+      codec_type: ContentType.MP3,
+      sample_rate: 44100,
+      bit_rate: 1234,
+    });
+    const chain: AudioProcessingChain = {
+      queue_processing: {
+        normalization: {
+          mode: VolumeNormalizationMode.DYNAMIC,
+          measured_lufs: -12.5,
+        },
+        playback_speed: 1.25,
+      },
+      outputs: [
+        {
+          player_ids: ["kitchen"],
+          dsp: {
+            state: DSPState.ENABLED,
+            input_gain: -1.5,
+            output_gain: 2.25,
+          },
+          output_format: audioFormat,
+        },
+      ],
+    };
+
+    const english = buildDisplay(chain, audioFormat);
+    expect(english.inputStages[1].subtitleParts).toContain("44.1 kHz");
+    expect(english.inputStages[1].subtitleParts).toContain("1,234 kbps");
+    expect(english.processingStages[0].details).toContain(
+      "Measured loudness: -12.5 LUFS",
+    );
+    expect(english.processingStages[1].title).toBe("Playback speed: 1.25x");
+    expect(english.outputPaths[0].stages[1].title).toBe("Input Gain (-1.5 dB)");
+    expect(english.outputPaths[0].stages[2].title).toBe("Output Gain (2.3 dB)");
+
+    dependencies.locale = "de-DE";
+    const german = buildDisplay(chain, audioFormat);
+    expect(german.inputStages[1].subtitleParts).toContain("44,1 kHz");
+    expect(german.inputStages[1].subtitleParts).toContain("1.234 kbps");
+    expect(german.processingStages[0].details).toContain(
+      "Measured loudness: -12,5 LUFS",
+    );
+    expect(german.processingStages[1].title).toBe("Playback speed: 1,25x");
+    expect(german.outputPaths[0].stages[1].title).toBe("Input Gain (-1,5 dB)");
+    expect(german.outputPaths[0].stages[2].title).toBe("Output Gain (2,3 dB)");
+  });
+
+  it("updates number formatting when the selected locale changes", async () => {
+    const chain = ref<AudioProcessingChain>({
+      queue_processing: { playback_speed: 1.25 },
+    });
+    const streamDetails = ref<StreamDetails>({
+      provider: "test",
+      item_id: "track-1",
+      audio_format: makeFormat(),
+      media_type: MediaType.TRACK,
+    });
+    const harness = defineComponent({
+      setup() {
+        const { processingStages } = useAudioProcessingDetails(
+          chain,
+          streamDetails,
+        );
+        return () =>
+          h(
+            "span",
+            { "data-testid": "playback-speed" },
+            processingStages.value[0]?.title,
+          );
+      },
+    });
+    const wrapper = mount(harness, {
+      global: { plugins: [i18n] },
+    });
+
+    expect(wrapper.get('[data-testid="playback-speed"]').text()).toBe(
+      "Playback speed: 1.25x",
+    );
+    i18n.global.locale.value = "de";
+    await nextTick();
+    expect(wrapper.get('[data-testid="playback-speed"]').text()).toBe(
+      "Playback speed: 1,25x",
+    );
+    wrapper.unmount();
   });
 });
 
