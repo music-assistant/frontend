@@ -80,24 +80,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, useId, type Component } from "vue";
+import { ref, useId } from "vue";
 import { Info } from "@lucide/vue";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { AudioProcessingDisplayStage } from "@/composables/useAudioProcessingDetails";
 import { $t } from "@/plugins/i18n";
-
-interface AudioProcessingDisplayStage {
-  key: string;
-  icon: Component;
-  title: string;
-  subtitleParts?: string[];
-  atomicSubtitleParts?: boolean;
-  badge?: string;
-  details?: string[];
-}
 
 defineProps<{ stage: AudioProcessingDisplayStage }>();
 const detailsId = useId();

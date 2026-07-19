@@ -121,7 +121,6 @@ export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 .audio-processing-popover[data-slot="popover-content"] {
   width: min(420px, calc(100vw - 16px));
   max-width: calc(100vw - 16px);
-  max-height: calc(100vh - 16px);
   max-height: min(
     560px,
     calc(100dvh - 16px),
