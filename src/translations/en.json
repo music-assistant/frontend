@@ -261,7 +261,8 @@
                 "name": "Preset Name",
                 "name_placeholder": "My new preset",
                 "remove_confirm": "Are you sure you want to remove this DSP preset?",
-                "custom": "Custom"
+                "custom": "Custom",
+                "selected": "Preset: {0}"
             }
         },
         "dsp_enabled": "DSP is enabled",

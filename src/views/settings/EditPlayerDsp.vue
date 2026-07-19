@@ -12,10 +12,20 @@
       }}</v-toolbar-title>
       <v-menu offset-y transition="slide-y-transition">
         <template #activator="{ props: menuProps }">
+          <Badge
+            v-if="selectedPresetLabel"
+            :aria-label="selectedPresetLabel"
+            :title="selectedPresetLabel"
+            data-testid="selected-dsp-preset"
+            class="mr-2 max-w-24 md:mr-4 md:max-w-48"
+            variant="outline"
+          >
+            <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
+          </Badge>
           <v-btn v-bind="menuProps" class="mr-4" :class="getButtonClass()">
             <v-icon class="p-0 ms-md-n1 me-md-2"> mdi-tray-arrow-down </v-icon>
-            <span class="d-none d-md-inline" data-testid="selected-dsp-preset">
-              {{ selectedPresetLabel }}
+            <span class="d-none d-md-inline">
+              {{ $t("settings.dsp.presets.load") }}
             </span>
           </v-btn>
         </template>
@@ -262,6 +272,7 @@ import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
 import DSPToneControl from "@/components/dsp/DSPToneControl.vue";
+import { Badge } from "@/components/ui/badge";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
@@ -321,8 +332,10 @@ const filterTypes = Object.values(DSPFilterType).map((value) => {
 });
 const selectedPresetLabel = computed(() => {
   const presetId = dsp.value?.preset_id;
-  if (!presetId) return t("settings.dsp.presets.load");
-  return getPresetName(presetId) ?? t("settings.dsp.presets.custom");
+  if (!presetId) return undefined;
+  const presetName =
+    getPresetName(presetId) ?? t("settings.dsp.presets.custom");
+  return t("settings.dsp.presets.selected", [presetName]);
 });
 
 // Methods

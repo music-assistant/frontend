@@ -88,6 +88,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
   apiMock.playerDSPCallback = undefined;
+  apiMock.players = { "player-1": {} };
   apiMock.getDSPConfig.mockResolvedValue(makeConfig());
   apiMock.applyDSPPreset.mockResolvedValue(
     makeConfig({ preset_id: "preset-1" }),
@@ -111,6 +112,64 @@ afterEach(() => {
 });
 
 describe("EditPlayerDsp preset identity", () => {
+  it("renders the persisted preset name and updates it after a rename", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    expect(
+      wrapper.get('[data-testid="selected-dsp-preset"]').attributes(),
+    ).toMatchObject({
+      "aria-label": "Preset: Living room",
+      title: "Preset: Living room",
+    });
+
+    getPresets().value = [makePreset("preset-1", "Cinema")];
+    await nextTick();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Cinema");
+    expect(
+      wrapper.get('[data-testid="selected-dsp-preset"]').attributes("title"),
+    ).toBe("Preset: Cinema");
+  });
+
+  it("falls back after deletion and clears on the authoritative config event", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    getPresets().value = [];
+    await nextTick();
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Custom");
+
+    emitPlayerDSPUpdate(makeConfig());
+    await nextTick();
+    expect(selectedPresetBadge(wrapper)).toBeUndefined();
+  });
+
+  it("uses the configured parent instead of the active protocol or group path", async () => {
+    apiMock.players["player-1"] = {
+      active_output_protocol: "protocol-1",
+      group_members: ["player-1", "player-2"],
+    };
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+
+    const wrapper = await mountEditor();
+
+    expect(apiMock.getDSPConfig).toHaveBeenCalledWith("player-1");
+    expect(apiMock.subscribe).toHaveBeenCalledWith(
+      EventType.PLAYER_DSP_CONFIG_UPDATED,
+      expect.any(Function),
+      "player-1",
+    );
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+  });
+
   it("applies a preset without echo-saving or sharing the cached config", async () => {
     const cachedPreset = getPresets().value[0];
     const wrapper = await mountEditor();
@@ -119,7 +178,7 @@ describe("EditPlayerDsp preset identity", () => {
     await flushPromises();
 
     expect(apiMock.applyDSPPreset).toHaveBeenCalledWith("player-1", "preset-1");
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
 
@@ -128,7 +187,7 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.get(".nested-edit").trigger("click");
     await nextTick();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Load DSP Preset");
+    expect(selectedPresetBadge(wrapper)).toBeUndefined();
     expect(getToneControl(cachedPreset.config).bass_level).toBe(1);
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
@@ -150,11 +209,11 @@ describe("EditPlayerDsp preset identity", () => {
     );
     const wrapper = await mountEditor();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
     await wrapper.get(".dsp-switch").trigger("click");
     await nextTick();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Load DSP Preset");
+    expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
@@ -173,7 +232,7 @@ describe("EditPlayerDsp preset identity", () => {
     await nextTick();
     await vi.advanceTimersByTimeAsync(2100);
 
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
   });
 
@@ -193,7 +252,7 @@ describe("EditPlayerDsp preset identity", () => {
     resolveApply(makeConfig({ preset_id: "preset-1" }));
     await flushPromises();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Load DSP Preset");
+    expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
@@ -274,7 +333,7 @@ describe("EditPlayerDsp preset identity", () => {
 
     expect(apiMock.applyDSPPreset).toHaveBeenCalledWith("player-1", "preset-1");
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
   });
 
   it("restores a canceled manual save when preset application fails", async () => {
@@ -351,13 +410,13 @@ describe("EditPlayerDsp preset identity", () => {
     await presetItems[1].trigger("click");
     await flushPromises();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
 
     resolveFirstApply(makeConfig({ preset_id: "preset-1" }));
     await flushPromises();
     emitPlayerDSPUpdate(makeConfig({ preset_id: "preset-2" }));
     await nextTick();
-    expect(selectedPresetLabel(wrapper)).toBe("Bedroom");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Bedroom");
   });
 
   it("hides the previous config while a new player config loads", async () => {
@@ -402,7 +461,7 @@ describe("EditPlayerDsp preset identity", () => {
     resolvePlayerConfig(makeConfig());
     await flushPromises();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
   });
 
@@ -468,7 +527,7 @@ describe("EditPlayerDsp preset identity", () => {
     resolveRecovery(makeConfig());
     await flushPromises();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Living room");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
   });
 
   it("keeps a newer server event over a pending apply response", async () => {
@@ -486,7 +545,7 @@ describe("EditPlayerDsp preset identity", () => {
     resolveApply(makeConfig({ preset_id: "preset-1" }));
     await flushPromises();
 
-    expect(selectedPresetLabel(wrapper)).toBe("Bedroom");
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Bedroom");
   });
 
   it("restores the newest edit across overlapping applies after unmount", async () => {
@@ -595,6 +654,7 @@ async function mountEditor() {
         },
       },
       stubs: {
+        Badge: { template: "<span><slot /></span>" },
         DSPParametricEQ: true,
         DSPPipeline: PipelineStub,
         DSPSlider: true,
@@ -633,10 +693,11 @@ async function mountEditor() {
   return wrapper;
 }
 
-function selectedPresetLabel(
+function selectedPresetBadge(
   wrapper: Awaited<ReturnType<typeof mountEditor>>,
-): string {
-  return wrapper.get('[data-testid="selected-dsp-preset"]').text();
+): string | undefined {
+  const badge = wrapper.find('[data-testid="selected-dsp-preset"]');
+  return badge.exists() ? badge.text() : undefined;
 }
 
 function emitPlayerDSPUpdate(config: DSPConfig): void {
@@ -691,8 +752,11 @@ function makePreset(
   };
 }
 
-function translate(key: string): string {
+function translate(key: string, params?: unknown): string {
   if (key === "settings.dsp.presets.load") return "Load DSP Preset";
   if (key === "settings.dsp.presets.custom") return "Custom";
+  if (key === "settings.dsp.presets.selected" && Array.isArray(params)) {
+    return `Preset: ${params[0]}`;
+  }
   return key;
 }
